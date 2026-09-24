@@ -265,7 +265,7 @@ export const CopyButton = ({
         copy(text);
         toaster.show(`${label} copied to clipboard`, 'success');
       }}
-      className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+      className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
     >
       <svg
         width="14"
@@ -334,7 +334,7 @@ const McpSection = ({
         <div className="flex gap-[6px] shrink-0 pt-[2px]">
           {billingEnabled && (
             <a
-              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
               href="https://claude.ai/directory/postiz"
               target="_blank"
             >
@@ -343,7 +343,7 @@ const McpSection = ({
             </a>
           )}
           <a
-            className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+            className="cursor-pointer px-[16px] h-[36px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             href="https://docs.postiz.com/mcp/introduction"
             target="_blank"
           >
@@ -364,15 +364,15 @@ const McpSection = ({
                   key={m}
                   type="button"
                   className={clsx(
-                    'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
+                    'cursor-pointer px-[14px] h-[36px] text-[13px] font-[600] rounded-full transition-colors',
                     auth === m
-                      ? 'bg-[#612BD3] text-white'
-                      : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                      ? 'bg-[#00D9FF] text-[#0a0a0a] border border-[#00D9FF]'
+                      : 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
                   )}
                   onClick={() => setAuth(m)}
                 >
                   {m === 'oauth'
-                    ? t('sign_in_no_api_key', 'Sign in with Postiz (no API key)')
+                    ? t('sign_in_no_api_key', 'Sign in with Crea8one (no API key)')
                     : t('api_key', 'API Key')}
                 </button>
               ))}
@@ -393,10 +393,10 @@ const McpSection = ({
                 key={client}
                 type="button"
                 className={clsx(
-                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors flex items-center gap-[8px]',
+                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[600] rounded-full transition-colors flex items-center gap-[8px]',
                   activeClient === client
-                    ? 'bg-[#612BD3] text-white'
-                    : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                    ? 'bg-[#00D9FF] text-[#0a0a0a] border border-[#00D9FF]'
+                    : 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
                 )}
                 onClick={() =>
                   setActiveClient(client as AnyMcpClient)
@@ -415,7 +415,7 @@ const McpSection = ({
               !chatOnly &&
               ` ${t(
                 'oauth_sign_in_hint',
-                'Your agent will open a browser window to sign in to Postiz.'
+                'Your agent will open a browser window to sign in to Crea8one.'
               )}`}
           </div>
           <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
@@ -426,7 +426,7 @@ const McpSection = ({
               <button
                 type="button"
                 onClick={() => setRevealed(!revealed)}
-                className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+                className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
               >
                 <svg
                   width="14"
@@ -460,7 +460,7 @@ const McpSection = ({
             )}
             {activeClient === 'Claude' && billingEnabled && (
               <a
-                className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+                className="cursor-pointer px-[16px] h-[36px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
                 href="https://claude.ai/directory/postiz"
                 target="_blank"
               >
@@ -545,7 +545,7 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
         </div>
         <div className="flex gap-[6px] shrink-0 pt-[2px]">
           <a
-            className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+            className="cursor-pointer px-[16px] h-[36px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             href="https://docs.postiz.com/cli/introduction"
             target="_blank"
           >
@@ -561,10 +561,10 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
               key={m}
               type="button"
               className={clsx(
-                'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
+                'cursor-pointer px-[14px] h-[36px] text-[13px] font-[600] rounded-full transition-colors',
                 mode === m
-                  ? 'bg-[#612BD3] text-white'
-                  : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                  ? 'bg-[#00D9FF] text-[#0a0a0a] border border-[#00D9FF]'
+                  : 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
               )}
               onClick={() => setMode(m)}
             >
@@ -589,7 +589,7 @@ const CliSection = ({ apiKey }: { apiKey: string }) => {
             <button
               type="button"
               onClick={() => setRevealed(!revealed)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -701,7 +701,7 @@ const PublicApiContent = () => {
           </div>
           <div className="flex gap-[6px] shrink-0 pt-[2px]">
             <a
-              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
               href="https://docs.postiz.com/public-api"
               target="_blank"
             >
@@ -709,7 +709,7 @@ const PublicApiContent = () => {
             {t('read_the_docs', 'Docs')}
             </a>
             <a
-              className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
               href="https://www.npmjs.com/package/n8n-nodes-postiz"
               target="_blank"
             >
@@ -737,7 +737,7 @@ const PublicApiContent = () => {
             <button
               type="button"
               onClick={() => setReveal(!reveal)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -768,7 +768,7 @@ const PublicApiContent = () => {
             <button
               type="button"
               onClick={rotateKey}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -795,7 +795,7 @@ const PublicApiContent = () => {
               onClick={() =>
                 window.open(`${frontEndUrl}/modal/dark/all`, '_blank')
               }
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             >
               <svg
                 width="14"
@@ -855,10 +855,10 @@ export const PublicComponent = () => {
             key={tab}
             type="button"
             className={clsx(
-              'cursor-pointer px-[20px] h-[44px] text-[15px] font-[600] rounded-[8px] transition-colors',
+              'cursor-pointer px-[20px] h-[44px] text-[15px] font-[600] rounded-full transition-colors',
               subTab === tab
-                ? 'bg-[#612BD3] text-white'
-                : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                ? 'bg-[#00D9FF] text-[#0a0a0a] border border-[#00D9FF]'
+                : 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
             )}
             onClick={() => setSubTab(tab)}
           >

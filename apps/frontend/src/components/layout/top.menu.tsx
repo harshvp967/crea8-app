@@ -1,6 +1,9 @@
 'use client';
 
 import { FC, ReactNode, useCallback } from 'react';
+import clsx from 'clsx';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -181,7 +184,7 @@ export const useMenuItem = () => {
           <g id="SVGRepo_iconCarrier">
             <g id="XMLID_230_">
               <g>
-                <path d="M311.056,164.871c41.82-8.912,73.109-49.495,73.109-84.871c0-70-40-80-40-80c0,71.666-19.216,85.621-20,86.666V30 c-50,10-50,96.666-50,116.667c0,7.415-5.414,13.575-12.494,14.773c-5.775-44.153-20.583-71.803-33.729-88.309 c5.77-6.311,12.488-17.252,15.099-35.229c6.586-3.272,11.124-10.049,11.124-17.902c0-11.045-8.955-20-20-20 c-11.046,0-20,8.955-20,20c0,6.912,3.506,13.003,8.837,16.596c-1.916,11.42-5.84,18.233-8.98,22.042 c-5.889-4.981-9.856-6.971-9.856-6.971s-3.968,1.99-9.856,6.971c-3.141-3.809-7.064-10.622-8.98-22.042 c5.33-3.593,8.837-9.685,8.837-16.596c0-11.045-8.955-20-20-20c-11.046,0-20,8.955-20,20c0,7.854,4.537,14.63,11.124,17.902 c2.61,17.977,9.329,28.917,15.099,35.229c-13.146,16.506-27.953,44.156-33.729,88.309c-7.08-1.198-12.494-7.358-12.494-14.773 c0-20,0-106.667-50-116.667v56.666c-0.784-1.045-20-15-20-86.666c0,0-40,10-40,80c0,35.377,31.289,75.96,73.109,84.871 c7.002,19.898,25.135,34.588,46.893,36.558c0,0.08-0.002,0.157-0.002,0.237v15h-21c-13.785,0-25-11.215-25-25h-20 c0,24.813,20.187,45,45,45h21v15h-21c-24.813,0-45,20.187-45,45h20c0-13.785,11.215-25,25-25h21 c0,8.095,3.213,15.436,8.425,20.833c-5.212,5.397-8.425,12.737-8.425,20.833c0,10.41,5.304,19.578,13.355,24.958L134.166,385 c0,0,19.213,23.333,70,23.333c50.787,0,70-23.333,70-23.333l-23.354-46.709c8.051-5.38,13.354-14.548,13.354-24.958 c0-8.096-3.213-15.436-8.425-20.833c5.212-5.397,8.425-12.738,8.425-20.833h21c13.785,0,25,11.215,25,25h20 c0-24.813-20.186-45-45-45h-21v-15h21c24.814,0,45-20.187,45-45h-20c0,13.785-11.215,25-25,25h-21v-15 c0-0.08-0.002-0.158-0.002-0.237C285.923,199.459,304.054,184.77,311.056,164.871z" />
+                <path d="M311.056,164.871c41.82-8.912,73.109-49.495,73.109-84.871c0-70-40-80-40-80c0,71.666-19.216,85.621-20,86.666V30 c-50,10-50,96.666-50,116.667c0,7.415-5.414,13.575-12.494,14.773c-5.775-44.153-20.583-71.803-33.729-88.309 c5.77-6.311,12.488-17.252,15.099-35.229c6.586-3.272,11.124-10.049,11.124-17.902c0-11.045-8.955-20-20-20 c-11.046,0-20,8.955-20,20c0,6.912,3.506,13.003,8.837,16.596c-1.916,11.42-5.84,18.233-8.98,22.042 c-5.889-4.981-9.856-6.971-9.856-6.971s-3.968,1.99-9.856,6.971c-3.141-3.809-7.064-10.622-8.98-22.042 c5.33-3.593,8.837-9.685,8.837,16.596c0-11.045-8.955-20-20-20c-11.046,0-20,8.955-20,20c0,7.854,4.537,14.63,11.124,17.902 c2.61,17.977,9.329,28.917,15.099,35.229c-13.146,16.506-27.953,44.156-33.729,88.309c-7.08-1.198-12.494-7.358-12.494-14.773 c0-20,0-106.667-50-116.667v56.666c-0.784-1.045-20-15-20-86.666c0,0-40,10-40,80c0,35.377,31.289,75.96,73.109,84.871 c7.002,19.898,25.135,34.588,46.893,36.558c0,0.08-0.002,0.157-0.002,0.237v15h-21c-13.785,0-25-11.215-25-25h-20 c0,24.813,20.187,45,45,45h21v15h-21c-24.813,0-45,20.187-45,45h20c0-13.785,11.215-25,25-25h21 c0,8.095,3.213,15.436,8.425,20.833c-5.212,5.397-8.425,12.737-8.425,20.833c0,10.41,5.304,19.578,13.355,24.958L134.166,385 c0,0,19.213,23.333,70,23.333c50.787,0,70-23.333,70-23.333l-23.354-46.709c8.051-5.38,13.354-14.548,13.354-24.958 c0-8.096-3.213-15.436-8.425-20.833c5.212-5.397,8.425-12.738,8.425-20.833h21c13.785,0,25,11.215,25,25h20 c0-24.813-20.186-45-45-45h-21v-15h21c24.814,0,45-20.187,45-45h-20c0,13.785-11.215,25-25,25h-21v-15 c0-0.08-0.002-0.158-0.002-0.237C285.923,199.459,304.054,184.77,311.056,164.871z" />
               </g>
             </g>
           </g>
@@ -311,72 +314,133 @@ export const useMenuItem = () => {
   };
 };
 
+const useVisibleMenuItems = (
+  items: MenuItemInterface[],
+  options?: { excludeSettings?: boolean }
+) => {
+  const user = useUser();
+  const { isGeneral, billingEnabled } = useVariables();
+
+  return items.filter((f) => {
+    if (options?.excludeSettings && f.path === '/settings') {
+      return false;
+    }
+    if (f.hide) {
+      return false;
+    }
+    if (f.requireBilling && !billingEnabled) {
+      return false;
+    }
+    if (f.name === 'Billing' && user?.isLifetime) {
+      return false;
+    }
+    if (f.role) {
+      return f.role.includes(user?.role!);
+    }
+    return true;
+  });
+};
+
+/** Primary top navigation: Calendar, Agent, Analytics, Media, Plugs, Integrations */
 export const TopMenu: FC = () => {
   const user = useUser();
-  const { firstMenu, secondMenu } = useMenuItem();
+  const { firstMenu } = useMenuItem();
   const { isGeneral, billingEnabled } = useVariables();
+  const visible = useVisibleMenuItems(firstMenu);
+
+  // @ts-ignore
+  if (!user?.orgId) return null;
+  // @ts-ignore
+  if (user.tier === 'FREE' && isGeneral && billingEnabled) return null;
+
   return (
-    <>
-      <div className="flex flex-1 flex-col minCustom:gap-[16px] blurMe">
-        {
-          // @ts-ignore
-          user?.orgId &&
-            // @ts-ignore
-            (user.tier !== 'FREE' || !isGeneral || !billingEnabled) &&
-            firstMenu
-              .filter((f) => {
-                if (f.hide) {
-                  return false;
-                }
-                if (f.requireBilling && !billingEnabled) {
-                  return false;
-                }
-                if (f.name === 'Billing' && user?.isLifetime) {
-                  return false;
-                }
-                if (f.role) {
-                  return f.role.includes(user?.role!);
-                }
-                return true;
-              })
-              .map((item, index) => (
-                <MenuItem
-                  path={item.path}
-                  label={item.name}
-                  icon={item.icon}
-                  key={item.name}
-                  onClick={item.onClick}
-                />
-              ))
-        }
-      </div>
-      <div className="flex flex-col minCustom:gap-[20px] custom:gap-[8px] blurMe">
-        {secondMenu
-          .filter((f) => {
-            if (f.hide) {
-              return false;
-            }
-            if (f.requireBilling && !billingEnabled) {
-              return false;
-            }
-            if (f.name === 'Billing' && user?.isLifetime) {
-              return false;
-            }
-            if (f.role) {
-              return f.role.includes(user?.role!);
-            }
-            return true;
-          })
-          .map((item, index) => (
-            <MenuItem
-              path={item.path}
-              label={item.name}
-              icon={item.icon}
-              key={item.name}
-              onClick={item.onClick}
-            />
-          ))}
-      </div>
-    </>
+    <nav
+      className="flex flex-1 items-center gap-[8px] min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      aria-label="Main"
+    >
+      {visible.map((item) => (
+        <MenuItem
+          path={item.path}
+          label={item.name}
+          icon={item.icon}
+          key={item.name}
+          onClick={item.onClick}
+          variant="horizontal"
+        />
+      ))}
+    </nav>
+  );
+};
+
+/**
+ * Secondary items (UGC, Affiliate, Billing) — not primary nav pills.
+ * Settings lives in the global header next to Theme / Language / Notifications.
+ */
+export const TopMenuUtilities: FC = () => {
+  const { secondMenu } = useMenuItem();
+  const visible = useVisibleMenuItems(secondMenu, { excludeSettings: true });
+
+  if (!visible.length) return null;
+
+  return (
+    <div className="flex items-center gap-[6px] shrink-0 max-w-[32vw] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {visible.map((item) => (
+        <MenuItem
+          path={item.path}
+          label={item.name}
+          icon={item.icon}
+          key={item.name}
+          onClick={item.onClick}
+          variant="utility"
+        />
+      ))}
+    </div>
+  );
+};
+
+/** Existing Settings item — /settings route unchanged */
+export const SettingsMenuItem: FC<{
+  collapsed?: boolean;
+  variant?: 'sidebar' | 'utility' | 'header';
+}> = ({ collapsed, variant = 'header' }) => {
+  const { secondMenu } = useMenuItem();
+  const settings = secondMenu.find((item) => item.path === '/settings');
+  const visible = useVisibleMenuItems(settings ? [settings] : []);
+  const pathname = usePathname();
+
+  if (!visible.length || !settings) return null;
+
+  if (variant === 'header') {
+    const isActive = pathname.indexOf(settings.path) === 0;
+    return (
+      <Link
+        href={settings.path}
+        title={settings.name}
+        aria-label={settings.name}
+        className={clsx(
+          'flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors shrink-0 [&_svg]:w-[22px] [&_svg]:h-[22px]',
+          isActive
+            ? 'text-[#00D9FF] bg-[#00D9FF]/15'
+            : 'text-textItemBlur hover:text-[#00D9FF] hover:bg-[#1a1a1a]'
+        )}
+      >
+        {settings.icon}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      className={clsx(
+        collapsed && variant === 'sidebar' && '[&_span]:hidden flex justify-center'
+      )}
+    >
+      <MenuItem
+        path={settings.path}
+        label={settings.name}
+        icon={settings.icon}
+        variant={variant}
+      />
+    </div>
   );
 };

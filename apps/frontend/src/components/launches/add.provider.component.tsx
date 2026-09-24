@@ -46,7 +46,7 @@ export const AddProviderButton: FC<{
   return (
     <div className="flex group-[.sidebar]:block gap-[8px]">
       <button
-        className="flex-1 group-[.sidebar]:w-[100%] group-[.sidebar]:flex-none text-btnText bg-btnSimple h-[44px] pt-[12px] pb-[14px] ps-[16px] pe-[20px] justify-center items-center flex rounded-[8px] gap-[8px]"
+        className="flex-1 group-[.sidebar]:w-[100%] group-[.sidebar]:flex-none text-[#00D9FF] bg-transparent border border-[#00D9FF] h-[44px] pt-[12px] pb-[14px] ps-[16px] pe-[20px] justify-center items-center flex rounded-full gap-[8px] hover:bg-[#00D9FF]/10 transition-colors cursor-pointer"
         onClick={add}
       >
         <div>
@@ -77,7 +77,7 @@ export const AddProviderButton: FC<{
           'invite_link',
           'Send Invite Link to a customer to add channel'
         )}
-        className="group-[.sidebar]:hidden min-h-[44px] min-w-[44px] bg-btnSimple justify-center items-center flex rounded-[8px] cursor-pointer"
+        className="group-[.sidebar]:hidden min-h-[44px] min-w-[44px] bg-[#00D9FF] text-[#0a0a0a] justify-center items-center flex rounded-full cursor-pointer hover:bg-[#00B8D9] transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -280,7 +280,7 @@ const ExtensionNotFound: FC = () => {
       <p className="text-[14px] text-textColor/80">
         {t(
           'extension_not_available',
-          'The Postiz browser extension is not installed. You need to install it before connecting this channel.'
+          'The Crea8one browser extension is not installed. You need to install it before connecting this channel.'
         )}
       </p>
       <div className="flex gap-[10px]">
@@ -346,7 +346,7 @@ const ChromeExtensionWarning: FC<{
           We will store your cookies securely to facilitate the connection.
         </li>
         <li>
-          Postiz does not take responsibility for any issues arising or account
+          Crea8one does not take responsibility for any issues arising or account
           termination due to the use of this method.
         </li>
       </ul>
@@ -574,7 +574,7 @@ export const AddProviderComponent: FC<{
             toaster.show(
               t(
                 'extension_not_installed',
-                'Postiz browser extension is not installed or not reachable.'
+                'Crea8one browser extension is not installed or not reachable.'
               ),
               'warning'
             );
@@ -714,7 +714,7 @@ export const AddProviderComponent: FC<{
                   isMobile
                     ? 'flex-row h-[72px] p-[16px]'
                     : 'flex-col p-[10px] h-[100px] justify-center',
-                  'w-full text-[14px] rounded-[8px] bg-newTableHeader text-textColor relative items-center flex gap-[10px] cursor-pointer'
+                  'w-full text-[14px] rounded-[16px] bg-newTableHeader border border-transparent text-textColor relative items-center flex gap-[10px] cursor-pointer transition-colors hover:border-[#00D9FF] hover:bg-[#00D9FF]/10'
                 )}
               >
                 <div>

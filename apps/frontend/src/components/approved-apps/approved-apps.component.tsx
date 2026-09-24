@@ -67,12 +67,12 @@ export const ApprovedAppsComponent: FC = () => {
         <div className="text-customColor18 mt-[4px]">
           {t(
             'apps_you_have_authorized',
-            'Applications you have authorized to access your Postiz account.'
+            'Applications you have authorized to access your Crea8one account.'
           )}
         </div>
       </div>
 
-      <div className="bg-sixth border-fifth border rounded-[4px] p-[24px]">
+      <div className="bg-sixth border-fifth border rounded-[16px] p-[24px]">
         {!apps?.length ? (
           <div className="text-customColor18">
             {t('no_approved_apps', 'No approved apps yet.')}

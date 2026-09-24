@@ -94,8 +94,8 @@ export default function OAuthAuthorizePage() {
     return (
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
         </div>
         <div className="relative z-10 text-center">
           <div className="flex justify-center mb-[24px]">
@@ -105,7 +105,7 @@ export default function OAuthAuthorizePage() {
             Please wait...
           </div>
           <div className="mt-[32px] flex justify-center">
-            <div className="w-[48px] h-[48px] border-[3px] border-[#612BD3] border-t-transparent rounded-full animate-spin" />
+            <div className="w-[48px] h-[48px] border-[3px] border-[#00D9FF] border-t-transparent rounded-full animate-spin" />
           </div>
         </div>
       </div>
@@ -116,8 +116,8 @@ export default function OAuthAuthorizePage() {
     return (
       <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
+          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
         </div>
         <div className="relative z-10 text-center">
           <div className="flex justify-center mb-[24px]">
@@ -154,8 +154,8 @@ export default function OAuthAuthorizePage() {
   return (
     <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
       <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
+        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-[500px] mx-auto px-[20px]">
@@ -188,7 +188,7 @@ export default function OAuthAuthorizePage() {
 
           <div className="border-t border-[#2A2929] pt-[16px]">
             <div className="text-[14px] text-gray-400 mb-[12px]">
-              This application is requesting access to your Postiz account. It
+              This application is requesting access to your Crea8one account. It
               will be able to:
             </div>
             <ul className="text-[14px] list-disc list-inside space-y-[4px]">
@@ -202,7 +202,7 @@ export default function OAuthAuthorizePage() {
             <button
               onClick={() => handleAction('approve')}
               disabled={submitting}
-              className="flex-1 bg-[#612BD3] hover:bg-[#7B3FF2] disabled:opacity-50 text-white rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-colors"
+              className="flex-1 bg-[#00D9FF] hover:bg-[#00B8D9] disabled:opacity-50 text-[#0a0a0a] rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-colors"
             >
               Authorize
             </button>

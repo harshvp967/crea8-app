@@ -227,7 +227,7 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
       <div className="flex justify-end pt-[24px] mt-[8px]">
         <button
           onClick={onNext}
-          className="group flex items-center gap-[12px] bg-gradient-to-r from-[#622aff] to-[#8b5cf6] hover:from-[#7c3aff] hover:to-[#9d6eff] text-white font-semibold px-[32px] py-[14px] rounded-[12px] text-[16px] transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all shadow-lg shadow-[#00D9FF]/25 hover:shadow-[#00D9FF]/40"
         >
           {sortedIntegrations.length > 0
             ? t('continue', 'Continue')
@@ -371,7 +371,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
             <button
               type="button"
               onClick={() => setRevealed(!revealed)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             >
               {revealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
             </button>
@@ -392,12 +392,12 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
           <div className="text-[13px] text-customColor18 mt-[2px]">
             {t(
               'api_onboarding_description',
-              'Use the Postiz API from your own code, n8n or any other automation'
+              'Use the Crea8one API from your own code, n8n or any other automation'
             )}
           </div>
         </div>
         <a
-          className="cursor-pointer px-[24px] h-[44px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[14px] font-[600] flex items-center gap-[8px] shrink-0"
+          className="cursor-pointer px-[24px] h-[44px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[14px] font-[600] flex items-center gap-[8px] shrink-0"
           href="https://docs.postiz.com/public-api/introduction"
           target="_blank"
         >
@@ -425,7 +425,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
             <button
               type="button"
               onClick={() => setRevealed(!revealed)}
-              className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             >
               {revealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
             </button>
@@ -445,12 +445,12 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         <div className="text-[13px] text-customColor18 mt-[2px]">
           {t(
             'connector_onboarding_description',
-            'The fastest way: add Postiz with one click, you will be asked to sign in'
+            'The fastest way: add Crea8one with one click, you will be asked to sign in'
           )}
         </div>
       </div>
       <a
-        className="cursor-pointer px-[24px] h-[44px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[14px] font-[600] flex items-center gap-[8px] shrink-0"
+        className="cursor-pointer px-[24px] h-[44px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[14px] font-[600] flex items-center gap-[8px] shrink-0"
         href={connector.href}
         target="_blank"
       >
@@ -467,7 +467,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         <div className="text-[13px] text-customColor18 mt-[2px]">
           {t(
             'mcp_onboarding_description',
-            'Give your agent Postiz tools to create, schedule and manage posts'
+            'Give your agent Crea8one tools to create, schedule and manage posts'
           )}
         </div>
       </div>
@@ -482,15 +482,15 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
                 key={m}
                 type="button"
                 className={clsx(
-                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
+                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[600] rounded-full transition-colors',
                   auth === m
-                    ? 'bg-[#612BD3] text-white'
-                    : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                    ? 'bg-[#00D9FF] text-[#0a0a0a] border border-[#00D9FF]'
+                    : 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
                 )}
                 onClick={() => setAuth(m)}
               >
                 {m === 'oauth'
-                  ? t('sign_in_no_api_key', 'Sign in with Postiz (no API key)')
+                  ? t('sign_in_no_api_key', 'Sign in with Crea8one (no API key)')
                   : t('api_key', 'API Key')}
               </button>
             ))}
@@ -502,7 +502,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
             {auth === 'oauth' &&
               ` ${t(
                 'oauth_sign_in_hint',
-                'Your agent will open a browser window to sign in to Postiz.'
+                'Your agent will open a browser window to sign in to Crea8one.'
               )}`}
           </div>
           <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[12px] text-[12px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.5]">
@@ -513,7 +513,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
               <button
                 type="button"
                 onClick={() => setRevealed(!revealed)}
-                className="cursor-pointer px-[16px] h-[36px] bg-btnSimple hover:bg-boxHover transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
+                className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
               >
                 {revealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
               </button>
@@ -572,12 +572,12 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
                 key={item}
                 type="button"
                 className={clsx(
-                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors flex items-center gap-[8px]',
+                  'cursor-pointer px-[14px] h-[36px] text-[13px] font-[600] rounded-full transition-colors flex items-center gap-[8px]',
                   tab === item
-                    ? 'bg-[#612BD3] text-white'
+                    ? 'bg-[#00D9FF] text-[#0a0a0a] border border-[#00D9FF]'
                     : item === apiTab
-                    ? 'bg-btnSimple text-[#a78bfa] hover:bg-boxHover hover:text-[#c4b5fd]'
-                    : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                    ? 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF]/15'
+                    : 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
                 )}
                 onClick={() => setTab(item)}
               >
@@ -593,10 +593,10 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
                   key={item}
                   type="button"
                   className={clsx(
-                    'cursor-pointer px-[12px] h-[32px] text-[12px] font-[500] rounded-[8px] transition-colors flex items-center gap-[6px]',
+                    'cursor-pointer px-[12px] h-[32px] text-[12px] font-[600] rounded-full transition-colors flex items-center gap-[6px]',
                     otherAgent === item
-                      ? 'bg-[#612BD3] text-white'
-                      : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
+                      ? 'bg-[#00D9FF] text-[#0a0a0a] border border-[#00D9FF]'
+                      : 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
                   )}
                   onClick={() => setOtherAgent(item)}
                 >
@@ -634,7 +634,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
       <div className="flex justify-between items-center pt-[8px] mt-auto w-full max-w-[1100px] mx-auto">
         <button
           onClick={onBack}
-          className="group flex items-center gap-[8px] bg-transparent border-2 border-boxFocused font-medium px-[24px] py-[12px] rounded-[12px] text-[15px] transition-all"
+          className="group flex items-center gap-[8px] bg-transparent border-2 border-boxFocused font-medium px-[24px] py-[12px] rounded-full text-[15px] transition-all"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -661,7 +661,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         </div>
         <button
           onClick={onNext}
-          className="group flex items-center gap-[12px] bg-gradient-to-r from-[#622aff] to-[#8b5cf6] hover:from-[#7c3aff] hover:to-[#9d6eff] text-white font-semibold px-[32px] py-[14px] rounded-[12px] text-[16px] transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all shadow-lg shadow-[#00D9FF]/25 hover:shadow-[#00D9FF]/40"
         >
           {t('continue_skip', 'Continue / Skip')}
           <svg
@@ -695,12 +695,12 @@ const OnboardingStep3: FC<{ onBack: () => void; onFinish: () => void }> = ({
     <div className="flex flex-col gap-[24px] flex-1">
       <div className="flex gap-[4px] flex-col text-center">
         <div className="text-[24px] font-semibold">
-          {t('watch_tutorial_title', 'Learn How to Use Postiz')}
+          {t('watch_tutorial_title', 'Learn How to Use Crea8one')}
         </div>
         <div className="text-[14px] text-customColor18">
           {t(
             'watch_tutorial_description',
-            'Watch this short video to learn how to get the most out of Postiz'
+            'Watch this short video to learn how to get the most out of Crea8one'
           )}
         </div>
       </div>
@@ -711,7 +711,7 @@ const OnboardingStep3: FC<{ onBack: () => void; onFinish: () => void }> = ({
           <iframe
             className="h-full aspect-video"
             src="https://www.youtube.com/embed/BdsCVvEYgHU?si=vvhaZJ8I5oXXvVJS?autoplay=1"
-            title="Postiz Tutorial"
+            title="Crea8one Tutorial"
             allow="autoplay"
             allowFullScreen
           />
@@ -722,7 +722,7 @@ const OnboardingStep3: FC<{ onBack: () => void; onFinish: () => void }> = ({
       <div className="flex justify-between pt-[24px] mt-[8px]">
         <button
           onClick={onBack}
-          className="group flex items-center gap-[8px] bg-transparent border-2 border-boxFocused font-medium px-[24px] py-[12px] rounded-[12px] text-[15px] transition-all"
+          className="group flex items-center gap-[8px] bg-transparent border-2 border-boxFocused font-medium px-[24px] py-[12px] rounded-full text-[15px] transition-all"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -743,7 +743,7 @@ const OnboardingStep3: FC<{ onBack: () => void; onFinish: () => void }> = ({
         </button>
         <button
           onClick={onFinish}
-          className="group flex items-center gap-[12px] bg-gradient-to-r from-[#10b981] to-[#059669] hover:from-[#34d399] hover:to-[#10b981] text-white font-semibold px-[32px] py-[14px] rounded-[12px] text-[16px] transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40"
+          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all shadow-lg shadow-[#00D9FF]/25 hover:shadow-[#00D9FF]/40"
         >
           {t('get_started', 'Get Started')}
           <svg

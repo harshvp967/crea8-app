@@ -172,7 +172,7 @@ export const AdminStatsComponent: FC = () => {
               onClick={() => applyRange(next)}
               className={`h-[32px] px-[12px] rounded-[8px] text-[13px] border cursor-pointer whitespace-nowrap ${
                 active
-                  ? 'bg-forth text-white border-forth'
+                  ? 'bg-forth text-[#0a0a0a] border-forth'
                   : 'bg-newBgColorInner text-textColor border-newTableBorder hover:bg-tableBorder'
               }`}
             >

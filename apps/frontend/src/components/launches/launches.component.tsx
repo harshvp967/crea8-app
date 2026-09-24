@@ -58,8 +58,8 @@ export const SVGLine = () => {
           y2="-28.6843"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#662FDA" />
-          <stop offset="1" stopColor="#5720CB" />
+          <stop stopColor="#00D9FF" />
+          <stop offset="1" stopColor="#00A8C7" />
         </linearGradient>
         <radialGradient
           id="paint1_radial_1930_1119"
@@ -69,8 +69,8 @@ export const SVGLine = () => {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(1.19333 7.45342) rotate(21.2064) scale(16.1503 188.627)"
         >
-          <stop stopColor="#8C66FF" />
-          <stop offset="1" stopColor="#8C66FF" stopOpacity="0" />
+          <stop stopColor="#5CEBFF" />
+          <stop offset="1" stopColor="#5CEBFF" stopOpacity="0" />
         </radialGradient>
       </defs>
     </svg>
@@ -527,23 +527,23 @@ export const LaunchesComponent = () => {
         <div
           className={clsx(
             'flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[280px]'
           )}
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner border-e border-newBorder p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">
-              <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
+              <h2 className="group-[.sidebar]:hidden flex-1 text-[18px] font-[600] tracking-[-0.02em]">
                 {t('channels')}
               </h2>
               <div
                 onClick={() =>
                   setCollapseMenu(collapseMenu === '1' ? '0' : '1')
                 }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-full w-[28px] h-[28px] flex items-center justify-center cursor-pointer select-none hover:bg-[#00D9FF]/15 hover:text-[#00D9FF] transition-colors"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -607,21 +607,23 @@ export const LaunchesComponent = () => {
                 />
               ))}
             </div>
-            <div className="mt-[5px] text-center flex flex-col">
-              {billingEnabled && user?.isLifetime && (
-                <div>{capitalize(user?.tier?.current || '')} tier</div>
-              )}
-              <div>
-                {process.env.NEXT_PUBLIC_VERSION
-                  ? process.env.NEXT_PUBLIC_VERSION
-                  : ''}
+            <div className="mt-auto pt-[12px] border-t border-newBorder flex flex-col gap-[10px]">
+              <div className="text-center flex flex-col text-[11px] text-textItemBlur">
+                {billingEnabled && user?.isLifetime && (
+                  <div>{capitalize(user?.tier?.current || '')} tier</div>
+                )}
+                <div>
+                  {process.env.NEXT_PUBLIC_VERSION
+                    ? process.env.NEXT_PUBLIC_VERSION
+                    : ''}
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[16px] min-w-0">
           <Filters />
-          <div className="flex-1 flex">
+          <div className="flex-1 flex min-h-0 rounded-[16px] border border-newBorder bg-[#0f0f0f]/50 overflow-hidden p-[10px]">
             <Calendar />
           </div>
         </div>

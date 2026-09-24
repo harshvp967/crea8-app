@@ -31,8 +31,11 @@ import { CopilotKit } from '@copilotkit/react-core';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import { AnnouncementBanner } from '@gitroom/frontend/components/layout/announcement.banner';
-import { Title } from '@gitroom/frontend/components/layout/title';
-import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
+import {
+  TopMenu,
+  TopMenuUtilities,
+  SettingsMenuItem,
+} from '@gitroom/frontend/components/layout/top.menu';
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
@@ -55,7 +58,6 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   const { backendUrl, billingEnabled, isGeneral } = useVariables();
 
-  // Feedback icon component attaches Sentry feedback to a top-bar icon when DSN is present
   const searchParams = useSearchParams();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
@@ -98,7 +100,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <ContinueProvider />
             <div
               className={clsx(
-                'flex flex-col min-h-screen min-w-screen text-newTextColor p-[12px]',
+                'flex flex-col min-h-screen min-w-screen text-newTextColor p-[16px] gap-[12px]',
                 jakartaSans.className
               )}
             >
@@ -108,43 +110,31 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               ) : (
                 <>
                   <AnnouncementBanner />
-                  <div className="flex-1 flex gap-[8px]">
-                    <Support />
-                    <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
-                      <div
-                        id="left-menu"
-                        className={clsx(
-                          'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
-                          user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
-                        )}
-                      >
-                        <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
-                          <Logo />
-                          <TopMenu />
-                        </div>
+                  <Support />
+                  <header className="flex items-center gap-[16px] min-h-[64px] bg-newBgColorInner rounded-[24px] border border-newBorder px-[20px] py-[8px] shrink-0">
+                    <Logo />
+                    <div className="w-[1px] self-stretch my-[8px] bg-blockSeparator hidden sm:block shrink-0" />
+                    <TopMenu />
+                    <TopMenuUtilities />
+                    <div className="flex items-center gap-[16px] text-textItemBlur shrink-0 ms-auto">
+                      <StreakComponent />
+                      <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
+                      <OrganizationSelector />
+                      <div className="flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors hover:text-[#00D9FF] hover:bg-[#1a1a1a]">
+                        <ModeComponent />
                       </div>
+                      <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
+                      <LanguageComponent />
+                      <ChromeExtensionComponent />
+                      <SettingsMenuItem variant="header" />
+                      <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
+                      <AttachToFeedbackIcon />
+                      <NotificationComponent />
                     </div>
-                    <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
-                      <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
-                        <div className="text-[24px] font-[600] flex flex-1">
-                          <Title />
-                        </div>
-                        <div className="flex gap-[20px] text-textItemBlur">
-                          <StreakComponent />
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                          <OrganizationSelector />
-                          <div className="hover:text-newTextColor">
-                            <ModeComponent />
-                          </div>
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                          <LanguageComponent />
-                          <ChromeExtensionComponent />
-                          <div className="w-[1px] h-[20px] bg-blockSeparator" />
-                          <AttachToFeedbackIcon />
-                          <NotificationComponent />
-                        </div>
-                      </div>
-                      <div className="flex flex-1 gap-[1px]">{children}</div>
+                  </header>
+                  <div className="flex-1 bg-newBgLineColor rounded-[20px] overflow-hidden flex flex-col min-h-0 border border-newBorder blurMe">
+                    <div className="flex flex-1 gap-[1px] min-h-0 overflow-hidden">
+                      {children}
                     </div>
                   </div>
                 </>

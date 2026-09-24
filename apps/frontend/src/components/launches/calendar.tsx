@@ -301,10 +301,10 @@ export const DayView = () => {
 
   return (
     <div className="flex flex-col gap-[10px] flex-1 relative">
-      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor px-[4px]">
         {options.map((option) => (
           <Fragment key={option[0].time}>
-            <div className="text-center text-[14px] min-h-[21px]">
+            <div className="text-center text-[12px] min-h-[21px] text-[#6a6a6a] font-[500] tracking-wide">
               {newDayjs()
                 .utc()
                 .startOf('day')
@@ -314,7 +314,7 @@ export const DayView = () => {
             </div>
             <div
               key={option[0].time}
-              className="min-h-[60px] rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
+              className="min-h-[60px] rounded-[14px] flex justify-center items-center gap-[10px] mb-[16px]"
             >
               <CalendarContext.Provider
                 value={{
@@ -361,25 +361,30 @@ export const WeekView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 relative">
-        <div className="grid [grid-template-columns:136px_repeat(7,_minmax(0,_1fr))] gap-[4px] rounded-[10px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-          <div className="z-10 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"></div>
+        <div className="grid [grid-template-columns:72px_repeat(7,_minmax(0,_1fr))] gap-[6px] rounded-[16px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor p-[2px]">
+          <div className="z-10 bg-[#181818] border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[14px] sticky top-0"></div>
           {localizedDays.map((day, index) => (
             <div
               key={day.name}
-              className="p-2 text-center bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0 z-[20]"
+              className={clsx(
+                'p-2 text-center bg-[#181818] border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[14px] sticky top-0 z-[20]',
+                day.day === newDayjs().format('L') &&
+                  'border-[#00D9FF]/40 ring-1 ring-[#00D9FF]/25'
+              )}
             >
-              <div className="text-[14px] font-[500] text-newTableText">
+              <div className="text-[12px] font-[500] text-[#8a8a8a] tracking-wide uppercase">
                 {day.name}
               </div>
               <div
                 className={clsx(
-                  'text-[14px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.day === newDayjs().format('L') &&
-                    'text-newTableTextFocused'
+                  'text-[13px] font-[600] flex items-center justify-center gap-[6px]',
+                  day.day === newDayjs().format('L')
+                    ? 'text-[#00D9FF]'
+                    : 'text-newTextColor'
                 )}
               >
                 {day.day === newDayjs().format('L') && (
-                  <div className="w-[6px] h-[6px] bg-newTableTextFocused rounded-full" />
+                  <div className="w-[6px] h-[6px] bg-[#00D9FF] rounded-full" />
                 )}
                 {day.day}
               </div>
@@ -387,7 +392,7 @@ export const WeekView = () => {
           ))}
           {hours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pe-4 text-center items-center justify-center flex text-[14px] text-newTableText">
+              <div className="p-2 pe-2 text-center items-center justify-center flex text-[12px] text-[#6a6a6a] font-[500]">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
               {localizedDays.map((day, indexDay) => (
@@ -460,11 +465,11 @@ export const MonthView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+        <div className="grid grid-cols-7 grid-rows-[56px_auto] gap-[6px] rounded-[16px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary p-[2px]">
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
+              className="z-[20] p-2 bg-[#181818] border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[14px] sticky top-0 text-[13px] font-[500] text-[#8a8a8a]"
             >
               <div>{day}</div>
             </div>
@@ -472,7 +477,10 @@ export const MonthView = () => {
           {calendarDays.map((date, index) => (
             <div
               key={index}
-              className="text-center items-center justify-center flex"
+              className={clsx(
+                'text-center items-center justify-center flex rounded-[14px]',
+                date.label !== 'current-month' && 'opacity-40'
+              )}
             >
               <CalendarColumn
                 getDate={newDayjs(date.day).endOf('day')}
@@ -836,22 +844,31 @@ export const CalendarColumn: FC<{
   return (
     <div
       className={clsx(
-        'flex flex-col w-full min-h-full relative',
+        'flex flex-col w-full min-h-full relative rounded-[12px] transition-colors',
         isBeforeNow && 'repeated-strip',
         loading && 'animate-pulse',
         isBeforeNow
-          ? 'cursor-not-allowed'
-          : 'border border-newTextColor/5 rounded-[8px]'
+          ? 'cursor-not-allowed opacity-70'
+          : 'border border-[#2a2a2a]/80 bg-[#121212]/40 hover:border-[#3a3a3a] hover:bg-[#161616]/80'
       )}
       ref={drop as any}
     >
       {display === 'month' && (
-        <div className={clsx('pt-[6px] text-[14px]')}>{getDate.date()}</div>
+        <div
+          className={clsx(
+            'pt-[8px] pb-[2px] text-[13px] font-[600]',
+            getDate.format('YYYY-MM-DD') === newDayjs().format('YYYY-MM-DD')
+              ? 'text-[#00D9FF]'
+              : 'text-[#c0c0c0]'
+          )}
+        >
+          {getDate.date()}
+        </div>
       )}
       <div
         className={clsx(
-          'relative flex flex-col flex-1 text-white rounded-[8px] min-h-[70px]',
-          canDrop && 'border border-[#612BD3]'
+          'relative flex flex-col flex-1 text-white rounded-[12px] min-h-[70px]',
+          canDrop && 'ring-1 ring-[#00D9FF] border border-[#00D9FF]'
         )}
       >
         <div
@@ -930,7 +947,7 @@ export const CalendarColumn: FC<{
                   )}
                 >
                   <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-full transition-all group-hover:bg-[#00D9FF] group-hover:text-[#0a0a0a] w-full h-full max-w-[36px] max-h-[36px]`}
                   />
                 </div>
               )}
@@ -1074,7 +1091,8 @@ const CalendarItem: FC<{
       )}
       <div
         className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
+          'text-[11px] text-[#0a0a0a] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary',
+          post?.tags?.[0]?.tag?.color ? 'text-white' : 'text-[#0a0a0a]'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,

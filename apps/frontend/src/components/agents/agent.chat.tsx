@@ -63,18 +63,24 @@ export const AgentChat: FC = () => {
       <div
         style={
           {
-            '--copilot-kit-primary-color': 'var(--new-btn-text)',
-            '--copilot-kit-background-color': 'var(--new-bg-color)',
+            '--copilot-kit-primary-color': '#00D9FF',
+            '--copilot-kit-contrast-color': '#0a0a0a',
+            '--copilot-kit-background-color': 'transparent',
+            '--copilot-kit-input-background-color': '#1a1a1a',
+            '--copilot-kit-secondary-color': '#141414',
+            '--copilot-kit-secondary-contrast-color': '#ffffff',
+            '--copilot-kit-separator-color': '#2a2a2a',
+            '--copilot-kit-muted-color': '#6a6a6a',
           } as CopilotKitCSSProperties
         }
-        className="trz agent bg-newBgColorInner flex flex-col gap-[15px] transition-all flex-1 items-center relative"
+        className="trz agent bg-newBgColorInner flex flex-col gap-[15px] transition-all flex-1 items-center relative min-w-0"
       >
-        <div className="absolute left-0 w-full h-full pb-[20px]">
+        <div className="absolute left-0 w-full h-full pb-[12px] px-[4px]">
           <CopilotChat
-            className="w-full h-full"
+            className="w-full h-full agent-chat-shell"
             labels={{
-              title: t('your_assistant', 'Your Assistant'),
-              initial: t('agent_welcome_message', `Hello, I am your Postiz agent 🙌🏻.
+              title: t('your_assistant', 'Crea8one AI Agent'),
+              initial: t('agent_welcome_message', `Hello, I'm your Crea8one AI Agent 👋🏻.
               
 I can schedule a post or multiple posts to multiple channels and generate pictures and videos.
 
@@ -181,7 +187,7 @@ const Message: FC<UserMessageProps> = (props) => {
   }, [props.message?.content]);
   return (
     <div
-      className="copilotKitMessage copilotKitUserMessage min-w-[300px]"
+      className="copilotKitMessage copilotKitUserMessage min-w-[300px] max-w-[min(80%,720px)]"
       dangerouslySetInnerHTML={{ __html: convertContentToImagesAndVideo }}
     />
   );

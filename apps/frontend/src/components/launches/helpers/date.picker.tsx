@@ -61,7 +61,7 @@ export const DatePicker: FC<{
                 return '!text-gray';
               }
               if (modifiers.selected) {
-                return '!text-white !bg-seventh !outline-none';
+                return '!text-[#0a0a0a] !bg-seventh !outline-none';
               }
               return '!text-textColor';
             }}

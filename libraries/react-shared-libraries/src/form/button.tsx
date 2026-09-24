@@ -48,8 +48,8 @@ export const Button: FC<
       className={clsx(
         (props.disabled || loading) && 'opacity-50 pointer-events-none',
         `${
-          secondary ? 'bg-third' : 'bg-forth text-white'
-        } px-[24px] h-[40px] cursor-pointer items-center justify-center flex relative`,
+          secondary ? 'bg-third' : 'bg-forth text-[#0a0a0a]'
+        } px-[24px] h-[40px] rounded-full font-[600] text-[14px] cursor-pointer items-center justify-center flex relative`,
         props?.className
       )}
     >
@@ -57,7 +57,7 @@ export const Button: FC<
         <div className="absolute inset-0 flex items-center justify-center">
           <ReactLoading
             type="spin"
-            color="#fff"
+            color={secondary ? '#fff' : '#0a0a0a'}
             width={height! / 2}
             height={height! / 2}
           />
