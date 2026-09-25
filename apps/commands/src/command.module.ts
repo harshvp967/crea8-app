@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { CommandModule as ExternalCommandModule } from 'nestjs-command';
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
+import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
 import { RefreshTokens } from './tasks/refresh.tokens';
 import { ConfigurationTask } from './tasks/configuration';
 
 @Module({
-  imports: [ExternalCommandModule, DatabaseModule],
+  imports: [ExternalCommandModule, DatabaseModule, getTemporalModule(false)],
   controllers: [],
   providers: [RefreshTokens, ConfigurationTask],
   get exports() {
