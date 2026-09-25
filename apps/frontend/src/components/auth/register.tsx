@@ -134,8 +134,6 @@ export function RegisterAfter({
           return track(TrackEnum.CompleteRegistration).then(() => {
             if (response.headers.get('activate') === 'true') {
               router.push('/auth/activate');
-            } else {
-              router.push('/auth/login');
             }
           });
         } else {
