@@ -81,11 +81,9 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 401 || response?.headers?.get('logout')) {
-        if (!isSecured) {
-          setCookie('auth', '', -10);
-          setCookie('showorg', '', -10);
-          setCookie('impersonate', '', -10);
-        }
+        setCookie('auth', '', -10);
+        setCookie('showorg', '', -10);
+        setCookie('impersonate', '', -10);
         window.location.href = '/';
       }
       if (response.status === 406) {
