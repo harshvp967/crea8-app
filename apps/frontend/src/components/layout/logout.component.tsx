@@ -29,9 +29,6 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
         await fetch('/user/logout', {
           method: 'POST',
         });
-        setCookie('auth', '', -10);
-        setCookie('showorg', '', -10);
-        setCookie('impersonate', '', -10);
       }
       window.location.href = '/';
     }

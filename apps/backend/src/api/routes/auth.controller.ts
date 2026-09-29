@@ -86,7 +86,9 @@ export class AuthController {
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
 
-      response.header('auth', jwt);
+      if (process.env.NOT_SECURED) {
+        response.header('auth', jwt);
+      }
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {
@@ -149,7 +151,9 @@ export class AuthController {
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
 
-      response.header('auth', jwt);
+      if (process.env.NOT_SECURED) {
+        response.header('auth', jwt);
+      }
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
         response.cookie('showorg', addedOrg.organizationId, {

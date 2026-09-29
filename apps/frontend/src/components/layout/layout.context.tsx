@@ -21,9 +21,28 @@ export function setCookie(cname: string, cvalue: string, exdays: number) {
   const expires = 'expires=' + d.toUTCString();
   document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/';
 }
+
+// Login and register used to echo the JWT on a CORS-exposed `auth` header.
+// This file copied that header into a host-only cookie JavaScript can read.
+// Production sessions are the HttpOnly cookie instead, which document.cookie
+// cannot see or delete. Drop the readable copies once so they are not sent
+// as a request header and are not left around for script to steal.
+let readableAuthCookiesCleared = false;
+function clearReadableAuthCookies() {
+  if (readableAuthCookiesCleared || typeof document === 'undefined') {
+    return;
+  }
+  readableAuthCookiesCleared = true;
+  setCookie('auth', '', -10);
+  setCookie('showorg', '', -10);
+  setCookie('impersonate', '', -10);
+}
 function LayoutContextInner(params: { children: ReactNode }) {
   const returnUrl = useReturnUrl();
   const { backendUrl, isGeneral, isSecured } = useVariables();
+  if (isSecured) {
+    clearReadableAuthCookies();
+  }
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
       if (
@@ -81,9 +100,11 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 401 || response?.headers?.get('logout')) {
-        setCookie('auth', '', -10);
-        setCookie('showorg', '', -10);
-        setCookie('impersonate', '', -10);
+        if (!isSecured) {
+          setCookie('auth', '', -10);
+          setCookie('showorg', '', -10);
+          setCookie('impersonate', '', -10);
+        }
         window.location.href = '/';
       }
       if (response.status === 406) {
