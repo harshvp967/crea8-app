@@ -90,6 +90,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
           extensionId={process.env.EXTENSION_ID || ''}
+          stalkerEnabled={process.env.STALKER_ENABLED === 'true'}
           googleAdsId={process.env.NEXT_PUBLIC_GTM_ID}
           googleAdsTrialTracking={process.env.NEXT_PUBLIC_TRACKING_TRIAL}
           language={language}

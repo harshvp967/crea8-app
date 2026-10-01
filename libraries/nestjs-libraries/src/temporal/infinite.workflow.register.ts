@@ -15,6 +15,17 @@ export class InfiniteWorkflowRegister implements OnModuleInit {
             taskQueue: 'main',
           });
       } catch (err) {}
+
+      if (process.env.STALKER_ENABLED === 'true') {
+        try {
+          await this._temporalService.client
+            ?.getRawClient()
+            ?.workflow?.start('stalkerPollWorkflow', {
+              workflowId: 'stalker-poll-workflow',
+              taskQueue: 'main',
+            });
+        } catch (err) {}
+      }
     }
   }
 }

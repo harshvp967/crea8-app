@@ -159,6 +159,22 @@ export type FetchPageInformationResult = {
   username: string;
 };
 
+export type StalkerMentionSource =
+  | 'YOUTUBE_COMMENT'
+  | 'YOUTUBE_SEARCH'
+  | 'INSTAGRAM_COMMENT'
+  | 'FACEBOOK_COMMENT';
+
+export type StalkerMentionDraft = {
+  externalId: string;
+  source: StalkerMentionSource;
+  authorName: string;
+  text: string;
+  url?: string;
+  postExternalId?: string;
+  keywordPhrase?: string;
+};
+
 export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
@@ -224,4 +240,11 @@ export interface SocialProvider
     accessToken: string,
     data: any
   ): Promise<FetchPageInformationResult>;
+  // When true, the poll passes this account the org's keywords once per run.
+  searchesPublicKeywords?: boolean;
+  collectStalkerMentions?(input: {
+    accessToken: string;
+    integration: Integration;
+    keywords: string[];
+  }): Promise<StalkerMentionDraft[]>;
 }

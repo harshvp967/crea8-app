@@ -5,6 +5,7 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
+  StalkerMentionDraft,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -1288,5 +1289,70 @@ export class InstagramProvider
       console.error('Error fetching Instagram post analytics:', err);
       return [];
     }
+  }
+
+  async collectStalkerMentions(input: {
+    accessToken: string;
+    integration: Integration;
+    keywords: string[];
+  }): Promise<StalkerMentionDraft[]> {
+    return this.collectInstagramComments(input, 'graph.facebook.com');
+  }
+
+  async collectInstagramComments(
+    input: {
+      accessToken: string;
+      integration: Integration;
+    },
+    host: string
+  ): Promise<StalkerMentionDraft[]> {
+    const drafts: StalkerMentionDraft[] = [];
+    try {
+      const media = await (
+        await this.fetch(
+          `https://${host}/${META_GRAPH_API_VERSION}/${input.integration.internalId}/media?fields=id,permalink&limit=5&access_token=${input.accessToken}`,
+          undefined,
+          'instagram',
+          0,
+          true
+        )
+      ).json();
+
+      for (const item of media?.data || []) {
+        if (!item?.id) {
+          continue;
+        }
+        try {
+          const comments = await (
+            await this.fetch(
+              `https://${host}/${META_GRAPH_API_VERSION}/${item.id}/comments?fields=id,text,username,timestamp&limit=20&access_token=${input.accessToken}`,
+              undefined,
+              'instagram',
+              0,
+              true
+            )
+          ).json();
+          for (const comment of comments?.data || []) {
+            const text = (comment?.text || '').trim();
+            if (!comment?.id || !text) {
+              continue;
+            }
+            drafts.push({
+              externalId: `ig-comment:${comment.id}`,
+              source: 'INSTAGRAM_COMMENT',
+              authorName: comment?.username || 'Someone',
+              text: text.slice(0, 2000),
+              url: item?.permalink,
+              postExternalId: item.id,
+            });
+          }
+        } catch (err) {
+          console.error('Stalker Instagram comments failed', err);
+        }
+      }
+    } catch (err) {
+      console.error('Stalker Instagram media failed', err);
+    }
+    return drafts;
   }
 }

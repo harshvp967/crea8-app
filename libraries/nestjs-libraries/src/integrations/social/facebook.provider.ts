@@ -5,6 +5,7 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
+  StalkerMentionDraft,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import dayjs from 'dayjs';
@@ -1224,5 +1225,60 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       console.error('Error fetching Facebook video post analytics:', err);
       return [];
     }
+  }
+
+  async collectStalkerMentions(input: {
+    accessToken: string;
+    integration: Integration;
+    keywords: string[];
+  }): Promise<StalkerMentionDraft[]> {
+    const drafts: StalkerMentionDraft[] = [];
+    try {
+      const posts = await (
+        await this.fetch(
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${input.integration.internalId}/posts?fields=id,message,permalink_url&limit=5&access_token=${input.accessToken}`,
+          undefined,
+          'facebook',
+          0,
+          true
+        )
+      ).json();
+
+      for (const post of posts?.data || []) {
+        if (!post?.id) {
+          continue;
+        }
+        try {
+          const comments = await (
+            await this.fetch(
+              `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${post.id}/comments?fields=id,message,from,permalink_url&filter=stream&limit=20&access_token=${input.accessToken}`,
+              undefined,
+              'facebook',
+              0,
+              true
+            )
+          ).json();
+          for (const comment of comments?.data || []) {
+            const text = (comment?.message || '').trim();
+            if (!comment?.id || !text) {
+              continue;
+            }
+            drafts.push({
+              externalId: `fb-comment:${comment.id}`,
+              source: 'FACEBOOK_COMMENT',
+              authorName: comment?.from?.name || 'Someone',
+              text: text.slice(0, 2000),
+              url: comment?.permalink_url || post?.permalink_url,
+              postExternalId: post.id,
+            });
+          }
+        } catch (err) {
+          console.error('Stalker Facebook comments failed', err);
+        }
+      }
+    } catch (err) {
+      console.error('Stalker Facebook posts failed', err);
+    }
+    return drafts;
   }
 }
