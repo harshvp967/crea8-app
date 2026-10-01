@@ -52,6 +52,17 @@ export async function proxy(request: NextRequest) {
     return topResponse;
   }
 
+  // Legal pages stay public. Logged-out visitors and review crawlers must
+  // receive the document, not a redirect to login.
+  const legalPath = nextUrl.pathname.replace(/\/+$/, '') || '/';
+  if (
+    legalPath === '/privacy' ||
+    legalPath === '/terms' ||
+    legalPath === '/data-deletion'
+  ) {
+    return topResponse;
+  }
+
   if (
     nextUrl.pathname.startsWith('/integrations/social/') &&
     nextUrl.href.indexOf('state=login') === -1
