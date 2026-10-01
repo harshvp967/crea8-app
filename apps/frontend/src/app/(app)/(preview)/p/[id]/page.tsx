@@ -58,9 +58,9 @@ export default async function Auth(
                   title="Crea8one"
                 >
                   <SafeImage
-                    src="/crea8one-logo.png"
-                    width={180}
-                    height={62}
+                    src="/crea8one-logo-horizontal-color-on-dark.svg"
+                    width={877}
+                    height={263}
                     alt="Crea8one"
                     className="h-[40px] w-auto object-contain object-left"
                   />
