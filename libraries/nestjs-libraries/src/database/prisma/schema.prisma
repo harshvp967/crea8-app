@@ -45,6 +45,9 @@ model Organization {
   webhooks            Webhooks[]
   oauthApp            OAuthApp[]
   oauthAuthorizations OAuthAuthorization[]
+  stalkerKeywords     StalkerKeyword[]
+  stalkerThemes       StalkerTheme[]
+  stalkerMentions     StalkerMention[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -393,6 +396,7 @@ model Integration {
   orderItems            OrderItems[]
   plugs                 Plugs[]
   posts                 Post[]
+  stalkerMentions       StalkerMention[]
 
   @@unique([organizationId, internalId])
   @@index([rootInternalId])
@@ -1800,4 +1804,88 @@ model Announcement {
   description String
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
+}
+
+enum StalkerCategory {
+  IDEA
+  QUESTION
+  COMPLAINT
+  BUG
+  TESTIMONIAL
+  PRAISE
+  SPAM
+  OTHER
+}
+
+enum StalkerSource {
+  YOUTUBE_COMMENT
+  YOUTUBE_SEARCH
+  INSTAGRAM_COMMENT
+  FACEBOOK_COMMENT
+}
+
+enum StalkerSentiment {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+model StalkerKeyword {
+  id             String           @id @default(uuid())
+  organizationId String
+  phrase         String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  mentions       StalkerMention[]
+
+  @@unique([organizationId, phrase])
+  @@index([organizationId])
+}
+
+model StalkerTheme {
+  id             String           @id @default(uuid())
+  organizationId String
+  title          String
+  summary        String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  mentions       StalkerMention[]
+
+  @@index([organizationId])
+}
+
+model StalkerMention {
+  id             String           @id @default(uuid())
+  organizationId String
+  integrationId  String?
+  keywordId      String?
+  themeId        String?
+  externalId     String
+  source         StalkerSource
+  category       StalkerCategory  @default(OTHER)
+  sentiment      StalkerSentiment @default(NEUTRAL)
+  urgency        Int              @default(0)
+  authorName     String
+  text           String
+  url            String?
+  postExternalId String?
+  classifiedAt   DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  integration    Integration?     @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  keyword        StalkerKeyword?  @relation(fields: [keywordId], references: [id], onDelete: SetNull)
+  theme          StalkerTheme?    @relation(fields: [themeId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, externalId])
+  @@index([organizationId])
+  @@index([organizationId, category])
+  @@index([organizationId, source])
+  @@index([organizationId, urgency])
+  @@index([classifiedAt])
+  @@index([themeId])
+  @@index([keywordId])
+  @@index([integrationId])
 }

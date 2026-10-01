@@ -5,6 +5,7 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
+  StalkerMentionDraft,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration } from '@prisma/client';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
@@ -59,6 +60,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = true;
+  searchesPublicKeywords = true;
   dto = YoutubeSettingsDto;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -1032,5 +1034,130 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       console.error('Error fetching YouTube post analytics:', err);
       return [];
     }
+  }
+
+  private pushYoutubeComment(
+    drafts: StalkerMentionDraft[],
+    seen: Set<string>,
+    commentId: string | null | undefined,
+    authorName: string | null | undefined,
+    text: string | null | undefined,
+    videoId: string | null | undefined,
+    keywordPhrase?: string
+  ) {
+    const body = (text || '').trim();
+    if (!commentId || !body || seen.has(commentId)) {
+      return;
+    }
+    seen.add(commentId);
+    drafts.push({
+      externalId: `yt-comment:${commentId}`,
+      source: 'YOUTUBE_COMMENT',
+      authorName: authorName || 'Someone',
+      text: body.slice(0, 2000),
+      url: videoId
+        ? `https://www.youtube.com/watch?v=${videoId}&lc=${commentId}`
+        : undefined,
+      postExternalId: videoId || undefined,
+      keywordPhrase,
+    });
+  }
+
+  async collectStalkerMentions(input: {
+    accessToken: string;
+    integration: Integration;
+    keywords: string[];
+  }): Promise<StalkerMentionDraft[]> {
+    const drafts: StalkerMentionDraft[] = [];
+    const seenComments = new Set<string>();
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: input.accessToken });
+    const youtubeClient = youtube(client);
+
+    try {
+      const threads = await youtubeClient.commentThreads.list({
+        part: ['snippet'],
+        allThreadsRelatedToChannelId: input.integration.internalId,
+        maxResults: 20,
+        order: 'time',
+        textFormat: 'plainText',
+      });
+      for (const item of threads.data.items || []) {
+        const top = item.snippet?.topLevelComment;
+        this.pushYoutubeComment(
+          drafts,
+          seenComments,
+          top?.id,
+          top?.snippet?.authorDisplayName,
+          top?.snippet?.textOriginal || top?.snippet?.textDisplay,
+          top?.snippet?.videoId
+        );
+      }
+    } catch (err) {
+      console.error('Stalker YouTube channel comments failed', err);
+    }
+
+    const phrases = input.keywords.slice(0, 5);
+    for (const phrase of phrases) {
+      try {
+        const search = await youtubeClient.search.list({
+          part: ['snippet'],
+          q: phrase,
+          type: ['video'],
+          maxResults: 5,
+          order: 'date',
+          publishedAfter: dayjs().subtract(7, 'day').toISOString(),
+          safeSearch: 'moderate',
+        });
+        for (const video of search.data.items || []) {
+          const videoId = video.id?.videoId;
+          if (!videoId) {
+            continue;
+          }
+          const title = video.snippet?.title || '';
+          const description = video.snippet?.description || '';
+          const text = `${title}\n${description}`.trim();
+          if (text) {
+            drafts.push({
+              externalId: `yt-video:${videoId}`,
+              source: 'YOUTUBE_SEARCH',
+              authorName: video.snippet?.channelTitle || 'YouTube',
+              text: text.slice(0, 2000),
+              url: `https://www.youtube.com/watch?v=${videoId}`,
+              postExternalId: videoId,
+              keywordPhrase: phrase,
+            });
+          }
+
+          try {
+            const comments = await youtubeClient.commentThreads.list({
+              part: ['snippet'],
+              videoId,
+              searchTerms: phrase,
+              maxResults: 5,
+              textFormat: 'plainText',
+            });
+            for (const item of comments.data.items || []) {
+              const top = item.snippet?.topLevelComment;
+              this.pushYoutubeComment(
+                drafts,
+                seenComments,
+                top?.id,
+                top?.snippet?.authorDisplayName,
+                top?.snippet?.textOriginal || top?.snippet?.textDisplay,
+                videoId,
+                phrase
+              );
+            }
+          } catch (err) {
+            console.error('Stalker YouTube keyword comments failed', err);
+          }
+        }
+      } catch (err) {
+        console.error('Stalker YouTube keyword search failed', err);
+      }
+    }
+
+    return drafts;
   }
 }
