@@ -2,12 +2,21 @@ import React from 'react';
 
 export const LogoTextComponent = () => {
   return (
-    <img
-      src="/crea8one-logo-horizontal-color-on-dark.svg"
-      alt="Crea8one"
-      width={877}
-      height={263}
-      className="h-[48px] w-auto max-w-[200px] object-contain object-left"
-    />
+    <>
+      <img
+        src="/crea8one-logo-horizontal-color.svg"
+        alt="Crea8one"
+        width={877}
+        height={263}
+        className="h-[48px] w-auto max-w-[200px] object-contain object-left dark:hidden"
+      />
+      <img
+        src="/crea8one-logo-horizontal-color-on-dark.svg"
+        alt=""
+        width={877}
+        height={263}
+        className="hidden h-[48px] w-auto max-w-[200px] object-contain object-left dark:block"
+      />
+    </>
   );
 };

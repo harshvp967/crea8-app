@@ -11,11 +11,18 @@ export const Logo = () => {
       title="Crea8one"
     >
       <img
-        src="/crea8one-logo-horizontal-color-on-dark.svg"
+        src="/crea8one-logo-horizontal-color.svg"
         alt="Crea8one"
         width={877}
         height={263}
-        className="h-[52px] w-auto max-w-[220px] object-contain object-left"
+        className="h-[52px] w-auto max-w-[220px] object-contain object-left dark:hidden"
+      />
+      <img
+        src="/crea8one-logo-horizontal-color-on-dark.svg"
+        alt=""
+        width={877}
+        height={263}
+        className="hidden h-[52px] w-auto max-w-[220px] object-contain object-left dark:block"
       />
     </Link>
   );
