@@ -94,10 +94,7 @@ export function LegalOperator() {
     <address className="not-italic">
       Harsh Verma, sole proprietor, trading as Zero Print Plus
       <br />
-      Haldoni Village, Greater Noida, Gautam Buddha Nagar, Uttar Pradesh
-      201308, India
-      <br />
-      GSTIN 09CGGPV5891J1ZG
+      Greater Noida, Uttar Pradesh, India
       <br />
       Email:{' '}
       <LegalLink href="mailto:support@crea8.one">support@crea8.one</LegalLink>
