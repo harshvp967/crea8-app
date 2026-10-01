@@ -12,10 +12,6 @@ export const metadata: Metadata = {
   title: 'Privacy Policy | Crea8one',
   description:
     'Privacy Policy for Crea8one, a social media scheduling and insights tool.',
-  robots: {
-    index: false,
-    follow: false,
-  },
 };
 
 export default function PrivacyPage() {

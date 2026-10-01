@@ -2,7 +2,6 @@ import { Metadata } from 'next';
 import {
   LegalH2,
   LegalLink,
-  LegalList,
   LegalOperator,
   LegalShell,
 } from '@gitroom/frontend/components/legal/legal-shell';
@@ -11,10 +10,6 @@ export const metadata: Metadata = {
   title: 'Terms of Service | Crea8one',
   description:
     'Terms of Service for Crea8one, a social media scheduling and insights tool.',
-  robots: {
-    index: false,
-    follow: false,
-  },
 };
 
 export default function TermsPage() {

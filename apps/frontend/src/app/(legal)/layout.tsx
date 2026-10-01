@@ -21,7 +21,6 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <meta name="robots" content="noindex, nofollow" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body
