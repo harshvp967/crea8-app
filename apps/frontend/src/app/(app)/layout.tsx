@@ -25,6 +25,12 @@ import { HtmlComponent } from '@gitroom/frontend/components/layout/html.componen
 import Script from 'next/script';
 import { ChangeDirClient } from '@gitroom/frontend/components/new-layout/change.dir.client';
 import { browserBackendUrl } from '@gitroom/frontend/components/layout/browser.backend.url';
+import { crea8oneIcons } from '@gitroom/frontend/components/layout/crea8one.icons';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  icons: crea8oneIcons,
+};
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500'],
@@ -41,7 +47,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html>
       <head>
-        <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
         {!!process.env.DATAFAST_WEBSITE_ID && (
           <Script
             data-website-id={process.env.DATAFAST_WEBSITE_ID}
