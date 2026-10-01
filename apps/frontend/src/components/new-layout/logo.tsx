@@ -10,15 +10,11 @@ export const Logo = () => {
       className="flex items-center shrink-0 ps-[4px] pe-[8px]"
       title="Crea8one"
     >
-      {/*
-        Asset is 300×104 with internal padding. Render tall enough so the
-        cyan mark + wordmark read at ~30–34px visual height inside a ~60px header.
-      */}
       <img
-        src="/crea8one-logo.png"
+        src="/crea8one-logo-horizontal-color-on-dark.svg"
         alt="Crea8one"
-        width={300}
-        height={104}
+        width={877}
+        height={263}
         className="h-[52px] w-auto max-w-[220px] object-contain object-left"
       />
     </Link>
