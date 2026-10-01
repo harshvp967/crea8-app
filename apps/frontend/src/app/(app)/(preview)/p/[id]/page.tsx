@@ -3,7 +3,7 @@ import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.conten
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
-import SafeImage from '@gitroom/react/helpers/safe.image';
+import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 import Link from 'next/link';
 import { CommentsComponents } from '@gitroom/frontend/components/preview/comments.components';
 import dayjs from 'dayjs';
@@ -57,20 +57,7 @@ export default async function Auth(
                   className="text-2xl flex items-center justify-center gap-[10px] text-textColor order-1"
                   title="Crea8one"
                 >
-                  <SafeImage
-                    src="/crea8one-logo-horizontal-color.svg"
-                    width={877}
-                    height={263}
-                    alt="Crea8one"
-                    className="h-[40px] w-auto object-contain object-left dark:hidden"
-                  />
-                  <SafeImage
-                    src="/crea8one-logo-horizontal-color-on-dark.svg"
-                    width={877}
-                    height={263}
-                    alt=""
-                    className="hidden h-[40px] w-auto object-contain object-left dark:block"
-                  />
+                  <Crea8oneWordmark className="h-[40px] w-auto object-contain object-left" />
                 </Link>
               </div>
             </div>

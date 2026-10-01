@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ReactNode } from 'react';
 import clsx from 'clsx';
 import '../global.scss';
+import { crea8oneIcons } from '@gitroom/frontend/components/layout/crea8one.icons';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500'],
@@ -15,14 +16,12 @@ export const metadata: Metadata = {
     index: false,
     follow: false,
   },
+  icons: crea8oneIcons,
 };
 
 export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
-      </head>
       <body
         className={clsx(
           jakartaSans.className,

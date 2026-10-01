@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 
 export const Logo = () => {
   return (
@@ -10,20 +11,7 @@ export const Logo = () => {
       className="flex items-center shrink-0 ps-[4px] pe-[8px]"
       title="Crea8one"
     >
-      <img
-        src="/crea8one-logo-horizontal-color.svg"
-        alt="Crea8one"
-        width={877}
-        height={263}
-        className="h-[52px] w-auto max-w-[220px] object-contain object-left dark:hidden"
-      />
-      <img
-        src="/crea8one-logo-horizontal-color-on-dark.svg"
-        alt=""
-        width={877}
-        height={263}
-        className="hidden h-[52px] w-auto max-w-[220px] object-contain object-left dark:block"
-      />
+      <Crea8oneWordmark className="h-[52px] w-auto max-w-[220px] object-contain object-left" />
     </Link>
   );
 };

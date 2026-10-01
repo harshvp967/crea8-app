@@ -9,6 +9,12 @@ import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
 import { browserBackendUrl } from '@gitroom/frontend/components/layout/browser.backend.url';
+import { crea8oneIcons } from '@gitroom/frontend/components/layout/crea8one.icons';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  icons: crea8oneIcons,
+};
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500'],
@@ -19,9 +25,6 @@ const jakartaSans = Plus_Jakarta_Sans({
 export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html>
-      <head>
-        <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
-      </head>
       <body
         className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
       >
