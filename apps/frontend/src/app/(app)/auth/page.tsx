@@ -9,6 +9,10 @@ import { LoginWithOidc } from '@gitroom/frontend/components/auth/login.with.oidc
 export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Crea8one' : 'Gitroom'} Register`,
   description: '',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 export default async function Auth(params: {searchParams: Promise<{provider: string}>}) {
   const t = await getT();
