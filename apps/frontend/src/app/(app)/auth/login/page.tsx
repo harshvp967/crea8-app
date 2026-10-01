@@ -5,6 +5,10 @@ import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.si
 export const metadata: Metadata = {
   title: `${isGeneralServerSide() ? 'Crea8one' : 'Gitroom'} Login`,
   description: '',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 export default async function Auth() {
   return <Login />;
