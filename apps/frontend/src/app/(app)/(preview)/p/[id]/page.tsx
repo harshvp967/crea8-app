@@ -58,11 +58,18 @@ export default async function Auth(
                   title="Crea8one"
                 >
                   <SafeImage
-                    src="/crea8one-logo-horizontal-color-on-dark.svg"
+                    src="/crea8one-logo-horizontal-color.svg"
                     width={877}
                     height={263}
                     alt="Crea8one"
-                    className="h-[40px] w-auto object-contain object-left"
+                    className="h-[40px] w-auto object-contain object-left dark:hidden"
+                  />
+                  <SafeImage
+                    src="/crea8one-logo-horizontal-color-on-dark.svg"
+                    width={877}
+                    height={263}
+                    alt=""
+                    className="hidden h-[40px] w-auto object-contain object-left dark:block"
                   />
                 </Link>
               </div>
