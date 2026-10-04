@@ -25,6 +25,12 @@ import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+// LinkedIn access tokens last 60 days. Standard apps do not return a refresh token.
+const linkedinAccessTokenTtl = 60 * 24 * 60 * 60;
+
+export const linkedinPagesUnavailable =
+  "LinkedIn Pages isn't available yet";
+
 // Travels through the workflow history between postPending, checkPostStatus
 // and finalizePost - keep it small JSON (media urns and the post content, never
 // buffers).
@@ -62,15 +68,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
-  scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
-  ];
+  // Share on LinkedIn + Sign In with LinkedIn using OpenID Connect.
+  // r_basicprofile and the organization scopes are not granted on this app.
+  scopes = ['openid', 'profile', 'email', 'w_member_social'];
   override maxConcurrentJob = 2;
   refreshWait = true;
   editor = 'normal' as const;
@@ -128,6 +128,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
+    // Standard Share on LinkedIn apps do not issue refresh tokens. The access
+    // token lasts 60 days; when it is due, the refresh job marks the channel
+    // for reconnect instead of calling LinkedIn with an empty token.
+    if (!refresh_token) {
+      throw new Error(
+        'LinkedIn did not issue a refresh token. Reconnect the channel.'
+      );
+    }
+
     const {
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -147,34 +156,19 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    if (!accessToken) {
+      throw new Error(
+        'LinkedIn did not issue a refresh token. Reconnect the channel.'
+      );
+    }
 
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    const member = await this.memberFromUserInfo(accessToken);
 
     return {
-      id,
+      ...member,
       accessToken,
-      refreshToken,
-      expiresIn: expires_in,
-      name,
-      picture: picture || '',
-      username: vanityName,
+      refreshToken: refreshToken || refresh_token,
+      expiresIn: expires_in || linkedinAccessTokenTtl,
     };
   }
 
@@ -203,9 +197,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     body.append('code', params.code);
     body.append(
       'redirect_uri',
-      `${process.env.FRONTEND_URL}/integrations/social/linkedin${
-        params.refresh ? `?refresh=${params.refresh}` : ''
-      }`
+      `${process.env.FRONTEND_URL}/integrations/social/linkedin`
     );
     body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
     body.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET!);
@@ -225,13 +217,25 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    this.checkScopes(this.scopes, scope);
+    if (!accessToken) {
+      throw new Error('LinkedIn did not return an access token');
+    }
 
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
+    this.checkScopes(this.scopes, scope || '');
+
+    const member = await this.memberFromUserInfo(accessToken);
+
+    return {
+      ...member,
+      accessToken,
+      refreshToken: refreshToken || '',
+      expiresIn: expiresIn || linkedinAccessTokenTtl,
+    };
+  }
+
+  // OpenID userinfo `sub` is the person id used in urn:li:person:{sub}.
+  private async memberFromUserInfo(accessToken: string) {
+    const profile = await (
       await fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -239,22 +243,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    if (!profile?.sub) {
+      throw new Error('Could not read the LinkedIn profile');
+    }
 
     return {
-      id,
-      accessToken,
-      refreshToken,
-      expiresIn,
-      name,
-      picture,
-      username: vanityName,
+      id: String(profile.sub),
+      name: profile.name || '',
+      picture: profile.picture || '',
+      username: profile.email || profile.name || '',
     };
   }
 

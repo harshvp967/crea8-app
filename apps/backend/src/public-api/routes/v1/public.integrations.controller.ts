@@ -19,6 +19,7 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { GetIncludeDeletedFromRequest } from '@gitroom/nestjs-libraries/user/include.deleted.from.request';
 import { Organization } from '@prisma/client';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
+import { linkedinPagesUnavailable } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -313,6 +314,9 @@ export class PublicIntegrationsController {
 
       return { url };
     } catch (err) {
+      if (err instanceof Error && err.message === linkedinPagesUnavailable) {
+        throw new HttpException({ msg: err.message }, 400);
+      }
       throw new HttpException({ msg: 'Failed to generate auth URL' }, 500);
     }
   }

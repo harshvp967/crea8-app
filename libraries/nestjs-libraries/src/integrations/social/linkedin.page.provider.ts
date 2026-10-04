@@ -6,7 +6,11 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
-import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
+import {
+  LinkedinProvider,
+  linkedinPagesUnavailable,
+} from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
+import { NotEnoughScopes } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
@@ -25,10 +29,10 @@ export class LinkedinPageProvider
   override isBetweenSteps = true;
   override refreshWait = true;
   override maxConcurrentJob = 2; // LinkedIn Page has professional posting limits
+  // Community Management API is the only product on the Pages app, so OpenID
+  // scopes (openid, profile, email) are not available. r_basicprofile is the
+  // profile scope that product grants. https://learn.microsoft.com/en-us/linkedin/marketing/increasing-access
   override scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
     'r_basicprofile',
     'rw_organization_admin',
     'w_organization_social',
@@ -40,6 +44,13 @@ export class LinkedinPageProvider
   override async refreshToken(
     refresh_token: string
   ): Promise<AuthTokenDetails> {
+    if (!refresh_token) {
+      throw new Error(
+        'LinkedIn did not issue a refresh token. Reconnect the channel.'
+      );
+    }
+
+    const { clientId, clientSecret } = this.pageCredentials();
     const {
       access_token: accessToken,
       expires_in,
@@ -53,40 +64,28 @@ export class LinkedinPageProvider
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token,
-          client_id: process.env.LINKEDIN_CLIENT_ID!,
-          client_secret: process.env.LINKEDIN_CLIENT_SECRET!,
+          client_id: clientId,
+          client_secret: clientSecret,
         }),
       })
     ).json();
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    if (!accessToken) {
+      throw new Error(
+        'LinkedIn did not issue a refresh token. Reconnect the channel.'
+      );
+    }
 
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    const member = await this.memberFromBasicProfile(accessToken);
 
     return {
-      id,
+      id: member.id,
       accessToken,
-      refreshToken,
-      expiresIn: expires_in,
-      name,
-      picture,
-      username: vanityName,
+      refreshToken: refreshToken || refresh_token,
+      expiresIn: expires_in || 60 * 24 * 60 * 60,
+      name: member.name,
+      picture: member.picture,
+      username: member.username,
     };
   }
 
@@ -121,10 +120,17 @@ export class LinkedinPageProvider
   }
 
   override async generateAuthUrl() {
+    const { clientId, dedicated } = this.pageCredentials();
+    // The Share on LinkedIn app does not have organization scopes. Asking
+    // LinkedIn for them returns its own error page and never redirects back.
+    if (!dedicated || !clientId) {
+      throw new Error(linkedinPagesUnavailable);
+    }
+
     const state = makeSecureId(6);
     const codeVerifier = makeSecureId(30);
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
-      process.env.LINKEDIN_CLIENT_ID
+      clientId
     }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
     )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
@@ -215,18 +221,20 @@ export class LinkedinPageProvider
     const body = new URLSearchParams();
     body.append('grant_type', 'authorization_code');
     body.append('code', params.code);
+    const { clientId, clientSecret, dedicated } = this.pageCredentials();
     body.append(
       'redirect_uri',
       `${process.env.FRONTEND_URL}/integrations/social/linkedin-page`
     );
-    body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
-    body.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET!);
+    body.append('client_id', clientId);
+    body.append('client_secret', clientSecret);
 
     const {
       access_token: accessToken,
       expires_in: expiresIn,
       refresh_token: refreshToken,
       scope,
+      error,
     } = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
@@ -237,38 +245,84 @@ export class LinkedinPageProvider
       })
     ).json();
 
-    this.checkScopes(this.scopes, scope);
+    if (!accessToken || error) {
+      throw new NotEnoughScopes(
+        dedicated
+          ? error || 'LinkedIn did not return an access token'
+          : linkedinPagesUnavailable
+      );
+    }
 
-    const {
-      name,
-      sub: id,
-      picture,
-    } = await (
-      await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    try {
+      this.checkScopes(this.scopes, scope || '');
+    } catch (err) {
+      if (!dedicated && err instanceof NotEnoughScopes) {
+        throw new NotEnoughScopes(linkedinPagesUnavailable);
+      }
+      throw err;
+    }
 
-    const { vanityName } = await (
-      await fetch('https://api.linkedin.com/v2/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json();
+    const member = await this.memberFromBasicProfile(accessToken);
 
     return {
       // namespaced placeholder so the in-between row never collides with the
-      // personal LinkedIn channel row (same org + same member sub)
-      id: `${this.identifier}_${id}`,
+      // personal LinkedIn channel row (same org + same member id)
+      id: `${this.identifier}_${member.id}`,
       accessToken,
-      refreshToken,
-      expiresIn,
+      refreshToken: refreshToken || '',
+      expiresIn: expiresIn || 60 * 24 * 60 * 60,
+      name: member.name,
+      picture: member.picture,
+      username: member.username,
+    };
+  }
+
+  // LINKEDIN_PAGES_* is the Community Management app. When it is unset, token
+  // refresh can still use the personal app credentials; a new Page connect
+  // does not, because that app cannot grant the organization scopes.
+  private pageCredentials() {
+    const pagesId = process.env.LINKEDIN_PAGES_CLIENT_ID?.trim();
+    const pagesSecret = process.env.LINKEDIN_PAGES_CLIENT_SECRET?.trim();
+    if (pagesId && pagesSecret) {
+      return { clientId: pagesId, clientSecret: pagesSecret, dedicated: true };
+    }
+
+    return {
+      clientId: process.env.LINKEDIN_CLIENT_ID?.trim() || '',
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET?.trim() || '',
+      dedicated: false,
+    };
+  }
+
+  private async memberFromBasicProfile(accessToken: string) {
+    const profile = await (
+      await fetch(
+        'https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,vanityName,profilePicture(displayImage~:playableStreams))',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        }
+      )
+    ).json();
+
+    if (!profile?.id) {
+      throw new NotEnoughScopes(linkedinPagesUnavailable);
+    }
+
+    const name = [profile.localizedFirstName, profile.localizedLastName]
+      .filter(Boolean)
+      .join(' ');
+    const picture =
+      profile?.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]
+        ?.identifier || '';
+
+    return {
+      id: String(profile.id),
       name,
       picture,
-      username: vanityName,
+      username: profile.vanityName || name,
     };
   }
 
