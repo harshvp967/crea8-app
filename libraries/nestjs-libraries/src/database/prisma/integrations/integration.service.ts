@@ -15,6 +15,24 @@ import { Integration, Organization } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
+
+const ANALYTICS_CALL_TIMEOUT_MS = 20000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
+  return new Promise<T>((resolve, reject) => {
+    const timerId = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timerId);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timerId);
+        reject(error);
+      }
+    );
+  });
+}
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import {
   NotEnoughScopes,
@@ -497,11 +515,18 @@ export class IntegrationService {
 
     if (integrationProvider.analytics) {
       try {
-        const loadAnalytics = await integrationProvider.analytics(
-          getIntegration.internalId,
-          getIntegration.token,
-          +date
+        const loadAnalytics = await withTimeout(
+          integrationProvider.analytics(
+            getIntegration.internalId,
+            getIntegration.token,
+            +date
+          ),
+          ANALYTICS_CALL_TIMEOUT_MS,
+          'Analytics request timed out'
         );
+        if (!Array.isArray(loadAnalytics)) {
+          return [];
+        }
         await ioRedis.set(
           `integration:${org.id}:${integration}:${date}`,
           JSON.stringify(loadAnalytics),
@@ -512,9 +537,17 @@ export class IntegrationService {
         );
         return loadAnalytics;
       } catch (e) {
-        if (e instanceof RefreshToken) {
+        if (e instanceof RefreshToken && !forceRefresh) {
           return this.checkAnalytics(org, integration, date, true);
         }
+        console.error(
+          `Analytics failed for ${getIntegration.providerIdentifier}`,
+          e
+        );
+        throw new HttpException(
+          'Could not load analytics for this channel. Try again, or reconnect the channel from the calendar.',
+          HttpStatus.BAD_GATEWAY
+        );
       }
     }
 

@@ -1157,17 +1157,31 @@ export class InstagramProvider
     const until = dayjs().startOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
-    const { data, ...all } = await (
+    const first = await (
       await fetch(
         `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
-    const { data: data2, ...all2 } = await (
+    const second = await (
       await fetch(
         `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+
+    if (first?.error) {
+      throw new Error(
+        first.error.message || 'Instagram insights request failed'
+      );
+    }
+    if (second?.error) {
+      throw new Error(
+        second.error.message || 'Instagram insights request failed'
+      );
+    }
+
+    const data = first?.data;
+    const data2 = Array.isArray(second?.data) ? second.data : [];
     const analytics = [];
 
     analytics.push(

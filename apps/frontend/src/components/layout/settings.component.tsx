@@ -32,6 +32,39 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
+
+const SkeletonBar = ({ className }: { className: string }) => (
+  <div className={`animate-pulse rounded-[8px] bg-[#1f1f1f] ${className}`} />
+);
+
+export const SettingsPageSkeleton = () => {
+  return (
+    <div className="flex flex-1 min-h-0 w-full">
+      <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] w-[260px]">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <SkeletonBar key={index} className="h-[36px] w-full" />
+        ))}
+        <div className="mt-auto">
+          <SkeletonBar className="h-[40px] w-[120px]" />
+        </div>
+      </div>
+      <div className="bg-newBgColorInner flex-1 flex flex-col p-[20px] gap-[16px]">
+        <SkeletonBar className="h-[28px] w-[180px]" />
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="rounded-[16px] border border-newBorder p-[24px] flex flex-col gap-[16px]"
+          >
+            <SkeletonBar className="h-[18px] w-[160px]" />
+            <SkeletonBar className="h-[44px] w-full" />
+            <SkeletonBar className="h-[44px] w-[70%]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {

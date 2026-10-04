@@ -14,7 +14,7 @@ import clsx from 'clsx';
 import dynamic from 'next/dynamic';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
@@ -47,6 +47,7 @@ import { FirstBillingComponent } from '@gitroom/frontend/components/billing/firs
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
 import { DashboardSwitcher } from '@gitroom/frontend/components/dashboard/dashboard.switcher';
+import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settings.component';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500', '700'],
@@ -60,6 +61,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const { backendUrl, billingEnabled, isGeneral } = useVariables();
 
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
@@ -77,7 +79,19 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     );
   }, [user]);
 
-  if (!user) return null;
+  if (!user) {
+    if (pathname?.startsWith('/settings')) {
+      return (
+        <div className="flex flex-col min-h-screen text-newTextColor p-[16px] gap-[12px]">
+          <div className="min-h-[64px] bg-newBgColorInner rounded-[24px] border border-newBorder" />
+          <div className="flex-1 bg-newBgLineColor rounded-[20px] overflow-hidden flex min-h-0 border border-newBorder">
+            <SettingsPageSkeleton />
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <ContextWrapper user={user}>

@@ -2,7 +2,6 @@ import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import { sanitizePostContent } from '@gitroom/helpers/utils/sanitize.post.content';
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
-import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 import Link from 'next/link';
 import { CommentsComponents } from '@gitroom/frontend/components/preview/comments.components';
@@ -16,7 +15,7 @@ import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creat
 
 dayjs.extend(utc);
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Crea8one' : 'Gitroom'} Preview`,
+  title: `Crea8one Preview`,
   description: '',
 };
 export default async function Auth(

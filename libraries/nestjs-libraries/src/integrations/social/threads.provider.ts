@@ -68,7 +68,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body',
         value:
-          "One of the media URLs is invalid or inaccessible, make sure it's being uploaded to Postiz first",
+          "One of the media URLs is invalid or inaccessible, make sure it's being uploaded to Crea8one first",
       };
     }
     if (body.includes('text must be at most 500 characters')) {
@@ -723,11 +723,17 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const until = dayjs().endOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
-    const { data, ...all } = await (
+    const payload = await (
       await fetch(
         `https://graph.threads.net/v1.0/${id}/threads_insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+
+    if (payload?.error) {
+      throw new Error(payload.error.message || 'Threads insights request failed');
+    }
+
+    const data = payload?.data;
 
     return (
       data?.map((d: any) => ({

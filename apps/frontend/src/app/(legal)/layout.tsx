@@ -12,6 +12,7 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  title: 'Crea8one',
   robots: {
     index: false,
     follow: false,
