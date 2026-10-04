@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/nestjs';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { capitalize } from 'lodash';
 
 export const setSentryUserContext = (params: {
@@ -29,6 +28,16 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return null;
   }
+
+  // @sentry/profiling-node dlopens its native addon as soon as it is
+  // imported. On Node 22 that require sometimes never returns
+  // (getsentry/sentry-javascript discussion 16139), which is what wedged
+  // the Railway image smoke test: the test only loads this module and does
+  // not set a DSN. Load the addon after the DSN check so a boot with
+  // Sentry disabled does not touch it. When a DSN is set, the same
+  // nodeProfilingIntegration() is still passed to Sentry.init below.
+  const { nodeProfilingIntegration } =
+    require('@sentry/profiling-node') as typeof import('@sentry/profiling-node');
 
   try {
     Sentry.init({
