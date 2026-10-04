@@ -33,6 +33,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
   isBetweenSteps = true;
+  stalkerComments = { filter: 'FACEBOOK_COMMENT', label: 'Facebook comments' };
   scopes = [
     'pages_show_list',
     'business_management',

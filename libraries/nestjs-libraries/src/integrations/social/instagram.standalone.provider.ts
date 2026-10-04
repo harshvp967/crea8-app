@@ -29,6 +29,7 @@ export class InstagramStandaloneProvider
   identifier = 'instagram-standalone';
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
+  stalkerComments = { filter: 'INSTAGRAM_COMMENT', label: 'Instagram comments' };
   refreshCron = true;
   scopes = [
     'instagram_business_basic',

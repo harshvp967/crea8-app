@@ -332,27 +332,33 @@ Clips must not overlap. Write the title and the post in this language, whatever 
   }
 
   async classifyStalkerMentions(
-    items: { id: string; text: string }[]
+    items: { id: string; text: string }[],
+    categories: { name: string; description: string }[]
   ): Promise<
     {
       id: string;
-      category: string;
+      categoryName: string;
       sentiment: string;
       urgency: number;
     }[]
   > {
-    if (!this.hasApiKey() || !items.length) {
+    if (!this.hasApiKey() || !items.length || !categories.length) {
       return [];
     }
 
+    const allowed = categories
+      .map(
+        (category) =>
+          `- ${category.name}: ${category.description || 'No description'}`
+      )
+      .join('\n');
     const parsed = (
       await openai.chat.completions.parse({
         model: 'gpt-4.1',
         messages: [
           {
             role: 'system',
-            content:
-              'Classify each social mention. category is one of IDEA, QUESTION, COMPLAINT, BUG, TESTIMONIAL, PRAISE, SPAM, OTHER. sentiment is POSITIVE, NEGATIVE, or NEUTRAL. urgency is 0-100. Return every id you were given. Do not invent mentions.',
+            content: `Classify each social mention into exactly one of the project categories below. categoryName must be copied from that list. sentiment is POSITIVE, NEGATIVE, or NEUTRAL. urgency is 0-100. Return every id you were given. Do not invent mentions.\n\n${allowed}`,
           },
           {
             role: 'user',
@@ -369,16 +375,7 @@ Clips must not overlap. Write the title and the post in this language, whatever 
             items: z.array(
               z.object({
                 id: z.string(),
-                category: z.enum([
-                  'IDEA',
-                  'QUESTION',
-                  'COMPLAINT',
-                  'BUG',
-                  'TESTIMONIAL',
-                  'PRAISE',
-                  'SPAM',
-                  'OTHER',
-                ]),
+                categoryName: z.string(),
                 sentiment: z.enum(['POSITIVE', 'NEGATIVE', 'NEUTRAL']),
                 urgency: z.number(),
               })
@@ -390,11 +387,14 @@ Clips must not overlap. Write the title and the post in this language, whatever 
     ).choices[0].message.parsed;
 
     return (parsed?.items || []).flatMap((item) =>
-      item.id && item.category && item.sentiment && typeof item.urgency === 'number'
+      item.id &&
+      item.categoryName &&
+      item.sentiment &&
+      typeof item.urgency === 'number'
         ? [
             {
               id: item.id,
-              category: item.category,
+              categoryName: item.categoryName,
               sentiment: item.sentiment,
               urgency: item.urgency,
             },

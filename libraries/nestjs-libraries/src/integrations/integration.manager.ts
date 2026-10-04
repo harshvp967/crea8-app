@@ -223,4 +223,18 @@ export class IntegrationManager {
   getSocialIntegration(integration: string): SocialProvider {
     return socialIntegrationList.find((i) => i.identifier === integration)!;
   }
+
+  stalkerCommentSources() {
+    const sources = new Map<string, { id: string; label: string }>();
+    for (const provider of socialIntegrationList) {
+      if (!provider.stalkerComments) {
+        continue;
+      }
+      sources.set(provider.stalkerComments.filter, {
+        id: provider.stalkerComments.filter,
+        label: provider.stalkerComments.label,
+      });
+    }
+    return [...sources.values()];
+  }
 }

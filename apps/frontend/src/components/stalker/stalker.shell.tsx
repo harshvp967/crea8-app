@@ -15,6 +15,8 @@ import { CopilotKit } from '@copilotkit/react-core';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { DashboardSwitcher } from '@gitroom/frontend/components/dashboard/dashboard.switcher';
 import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
+import { StalkerProjectProvider, useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import { StalkerWizard } from '@gitroom/frontend/components/stalker/stalker.wizard';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
@@ -35,6 +37,97 @@ const jakartaSans = Plus_Jakarta_Sans({
 const Dot = () => (
   <span className="block h-[8px] w-[8px] rounded-full bg-current" />
 );
+
+const StalkerBody = ({ children }: { children: ReactNode }) => {
+  const t = useT();
+  const {
+    projects,
+    project,
+    setProjectId,
+    loading,
+    showWizard,
+    setShowWizard,
+  } = useStalkerProject();
+  const links = [
+    {
+      label: t('stalker_mentions', 'Mentions'),
+      path: '/stalker/mentions',
+    },
+    {
+      label: t('stalker_analytics', 'Analytics'),
+      path: '/stalker/analytics',
+    },
+    {
+      label: t('stalker_keywords', 'Keywords'),
+      path: '/stalker/keywords',
+    },
+    {
+      label: t('stalker_alerts', 'Alerts'),
+      path: '/stalker/alerts',
+    },
+    {
+      label: t('stalker_settings', 'Settings'),
+      path: '/stalker/settings',
+    },
+  ];
+
+  if (loading) {
+    return <p className="p-[24px] text-[14px] text-textItemBlur">Loading Stalker…</p>;
+  }
+
+  if (showWizard) {
+    return (
+      <div className="flex-1 overflow-auto p-[20px]">
+        <StalkerWizard />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <aside className="flex gap-[8px] overflow-x-auto border-b border-newBorder p-[16px] md:w-[240px] md:shrink-0 md:flex-col md:border-b-0 md:border-r">
+        <label className="mb-[8px] flex min-w-[180px] flex-col gap-[6px] text-[12px] text-textItemBlur">
+          Project
+          <span className="flex items-center gap-[8px]">
+            <span
+              className="h-[10px] w-[10px] shrink-0 rounded-full"
+              style={{ backgroundColor: project?.color || '#00D9FF' }}
+            />
+            <select
+              aria-label="Project"
+              className="w-full rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[8px] py-[6px] text-[13px] text-newTextColor"
+              value={project?.id || ''}
+              onChange={(event) => setProjectId(event.target.value)}
+            >
+              {projects.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </span>
+          <button
+            type="button"
+            className="self-start text-[#00D9FF] underline"
+            onClick={() => setShowWizard(true)}
+          >
+            New project
+          </button>
+        </label>
+        {links.map((link) => (
+          <MenuItem
+            key={link.path}
+            variant="sidebar"
+            label={link.label}
+            path={link.path}
+            icon={<Dot />}
+          />
+        ))}
+      </aside>
+      <main className="min-w-0 flex-1 overflow-auto p-[20px]">{children}</main>
+    </div>
+  );
+};
 
 export const StalkerShell = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
@@ -60,25 +153,6 @@ export const StalkerShell = ({ children }: { children: ReactNode }) => {
   if (!user) {
     return null;
   }
-
-  const links = [
-    {
-      label: t('stalker_mentions', 'Mentions'),
-      path: '/stalker/mentions',
-    },
-    {
-      label: t('stalker_themes', 'Themes'),
-      path: '/stalker/themes',
-    },
-    {
-      label: t('stalker_keywords', 'Keywords'),
-      path: '/stalker/keywords',
-    },
-    {
-      label: t('stalker_settings', 'Settings'),
-      path: '/stalker/settings',
-    },
-  ];
 
   return (
     <ContextWrapper user={user}>
@@ -122,22 +196,9 @@ export const StalkerShell = ({ children }: { children: ReactNode }) => {
                     )}
                   </div>
                 ) : (
-                  <div className="flex flex-1 min-h-0 flex-col md:flex-row">
-                    <aside className="flex md:flex-col gap-[8px] p-[16px] md:w-[240px] md:shrink-0 border-b md:border-b-0 md:border-r border-newBorder overflow-x-auto">
-                      {links.map((link) => (
-                        <MenuItem
-                          key={link.path}
-                          variant="sidebar"
-                          label={link.label}
-                          path={link.path}
-                          icon={<Dot />}
-                        />
-                      ))}
-                    </aside>
-                    <main className="flex-1 min-w-0 overflow-auto p-[20px]">
-                      {children}
-                    </main>
-                  </div>
+                  <StalkerProjectProvider>
+                    <StalkerBody>{children}</StalkerBody>
+                  </StalkerProjectProvider>
                 )}
               </div>
             </>

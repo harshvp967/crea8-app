@@ -60,7 +60,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = true;
-  searchesPublicKeywords = true;
+  stalkerComments = { filter: 'YOUTUBE_COMMENT', label: 'YouTube comments' };
   dto = YoutubeSettingsDto;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -1095,67 +1095,6 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       }
     } catch (err) {
       console.error('Stalker YouTube channel comments failed', err);
-    }
-
-    const phrases = input.keywords.slice(0, 5);
-    for (const phrase of phrases) {
-      try {
-        const search = await youtubeClient.search.list({
-          part: ['snippet'],
-          q: phrase,
-          type: ['video'],
-          maxResults: 5,
-          order: 'date',
-          publishedAfter: dayjs().subtract(7, 'day').toISOString(),
-          safeSearch: 'moderate',
-        });
-        for (const video of search.data.items || []) {
-          const videoId = video.id?.videoId;
-          if (!videoId) {
-            continue;
-          }
-          const title = video.snippet?.title || '';
-          const description = video.snippet?.description || '';
-          const text = `${title}\n${description}`.trim();
-          if (text) {
-            drafts.push({
-              externalId: `yt-video:${videoId}`,
-              source: 'YOUTUBE_SEARCH',
-              authorName: video.snippet?.channelTitle || 'YouTube',
-              text: text.slice(0, 2000),
-              url: `https://www.youtube.com/watch?v=${videoId}`,
-              postExternalId: videoId,
-              keywordPhrase: phrase,
-            });
-          }
-
-          try {
-            const comments = await youtubeClient.commentThreads.list({
-              part: ['snippet'],
-              videoId,
-              searchTerms: phrase,
-              maxResults: 5,
-              textFormat: 'plainText',
-            });
-            for (const item of comments.data.items || []) {
-              const top = item.snippet?.topLevelComment;
-              this.pushYoutubeComment(
-                drafts,
-                seenComments,
-                top?.id,
-                top?.snippet?.authorDisplayName,
-                top?.snippet?.textOriginal || top?.snippet?.textDisplay,
-                videoId,
-                phrase
-              );
-            }
-          } catch (err) {
-            console.error('Stalker YouTube keyword comments failed', err);
-          }
-        }
-      } catch (err) {
-        console.error('Stalker YouTube keyword search failed', err);
-      }
     }
 
     return drafts;

@@ -163,7 +163,11 @@ export type StalkerMentionSource =
   | 'YOUTUBE_COMMENT'
   | 'YOUTUBE_SEARCH'
   | 'INSTAGRAM_COMMENT'
-  | 'FACEBOOK_COMMENT';
+  | 'FACEBOOK_COMMENT'
+  | 'REDDIT_POST'
+  | 'REDDIT_COMMENT'
+  | 'X_POST'
+  | 'LINKEDIN_POST';
 
 export type StalkerMentionDraft = {
   externalId: string;
@@ -240,8 +244,8 @@ export interface SocialProvider
     accessToken: string,
     data: any
   ): Promise<FetchPageInformationResult>;
-  // When true, the poll passes this account the org's keywords once per run.
-  searchesPublicKeywords?: boolean;
+  // Comments on a connected account. Keyword search lives on StalkerSourceProvider.
+  stalkerComments?: { filter: string; label: string };
   collectStalkerMentions?(input: {
     accessToken: string;
     integration: Integration;
