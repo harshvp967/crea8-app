@@ -326,4 +326,172 @@ Clips must not overlap. Write the title and the post in this language, whatever 
 
     return [];
   }
+
+  hasApiKey() {
+    return !!process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'sk-proj-';
+  }
+
+  async classifyStalkerMentions(
+    items: { id: string; text: string }[]
+  ): Promise<
+    {
+      id: string;
+      category: string;
+      sentiment: string;
+      urgency: number;
+    }[]
+  > {
+    if (!this.hasApiKey() || !items.length) {
+      return [];
+    }
+
+    const parsed = (
+      await openai.chat.completions.parse({
+        model: 'gpt-4.1',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Classify each social mention. category is one of IDEA, QUESTION, COMPLAINT, BUG, TESTIMONIAL, PRAISE, SPAM, OTHER. sentiment is POSITIVE, NEGATIVE, or NEUTRAL. urgency is 0-100. Return every id you were given. Do not invent mentions.',
+          },
+          {
+            role: 'user',
+            content: JSON.stringify(
+              items.map((item) => ({
+                id: item.id,
+                text: item.text.slice(0, 500),
+              }))
+            ),
+          },
+        ],
+        response_format: zodResponseFormat(
+          z.object({
+            items: z.array(
+              z.object({
+                id: z.string(),
+                category: z.enum([
+                  'IDEA',
+                  'QUESTION',
+                  'COMPLAINT',
+                  'BUG',
+                  'TESTIMONIAL',
+                  'PRAISE',
+                  'SPAM',
+                  'OTHER',
+                ]),
+                sentiment: z.enum(['POSITIVE', 'NEGATIVE', 'NEUTRAL']),
+                urgency: z.number(),
+              })
+            ),
+          }),
+          'stalkerMentions'
+        ),
+      })
+    ).choices[0].message.parsed;
+
+    return (parsed?.items || []).flatMap((item) =>
+      item.id && item.category && item.sentiment && typeof item.urgency === 'number'
+        ? [
+            {
+              id: item.id,
+              category: item.category,
+              sentiment: item.sentiment,
+              urgency: item.urgency,
+            },
+          ]
+        : []
+    );
+  }
+
+  async clusterStalkerThemes(
+    items: { id: string; text: string; category: string }[]
+  ): Promise<{ title: string; summary: string; mentionIds: string[] }[]> {
+    if (!this.hasApiKey() || items.length < 2) {
+      return [];
+    }
+
+    const parsed = (
+      await openai.chat.completions.parse({
+        model: 'gpt-4.1',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Group recurring social mentions into at most 8 themes. Each theme needs a short title like "12 people asked for a tutorial on X", a one-sentence summary, and the mention ids that belong to it. Skip spam. Only use ids from the input. A mention can belong to one theme.',
+          },
+          {
+            role: 'user',
+            content: JSON.stringify(
+              items.map((item) => ({
+                id: item.id,
+                category: item.category,
+                text: item.text.slice(0, 280),
+              }))
+            ),
+          },
+        ],
+        response_format: zodResponseFormat(
+          z.object({
+            themes: z.array(
+              z.object({
+                title: z.string(),
+                summary: z.string(),
+                mentionIds: z.array(z.string()),
+              })
+            ),
+          }),
+          'stalkerThemes'
+        ),
+      })
+    ).choices[0].message.parsed;
+
+    return (parsed?.themes || []).flatMap((theme) =>
+      theme.title && theme.summary && theme.mentionIds
+        ? [
+            {
+              title: theme.title,
+              summary: theme.summary,
+              mentionIds: theme.mentionIds,
+            },
+          ]
+        : []
+    );
+  }
+
+  async draftStalkerPost(input: {
+    mode: 'post' | 'quote';
+    title: string;
+    body: string;
+  }): Promise<string> {
+    if (!this.hasApiKey()) {
+      return '';
+    }
+
+    const parsed = (
+      await openai.chat.completions.parse({
+        model: 'gpt-4.1',
+        messages: [
+          {
+            role: 'system',
+            content:
+              input.mode === 'quote'
+                ? 'Write a short social post that quotes the testimonial. Use only the words in the source. Do not invent names, numbers, or claims. No hashtags.'
+                : 'Write a short social post a brand could publish from this audience signal. Use only what the source says. Do not invent names, numbers, or claims. No hashtags.',
+          },
+          {
+            role: 'user',
+            content: `Title: ${input.title}\n\n${input.body.slice(0, 2000)}`,
+          },
+        ],
+        response_format: zodResponseFormat(
+          z.object({
+            content: z.string(),
+          }),
+          'stalkerDraft'
+        ),
+      })
+    ).choices[0].message.parsed;
+
+    return parsed?.content || '';
+  }
 }

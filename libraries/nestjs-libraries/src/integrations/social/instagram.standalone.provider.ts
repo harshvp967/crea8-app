@@ -3,6 +3,7 @@ import {
   PostDetails,
   PostResponse,
   SocialProvider,
+  StalkerMentionDraft,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import dayjs from 'dayjs';
@@ -267,6 +268,17 @@ export class InstagramStandaloneProvider
       accessToken,
       postId,
       date,
+      'graph.instagram.com'
+    );
+  }
+
+  async collectStalkerMentions(input: {
+    accessToken: string;
+    integration: Integration;
+    keywords: string[];
+  }): Promise<StalkerMentionDraft[]> {
+    return instagramProvider.collectInstagramComments(
+      input,
       'graph.instagram.com'
     );
   }

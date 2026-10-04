@@ -46,6 +46,7 @@ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/se
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
+import { DashboardSwitcher } from '@gitroom/frontend/components/dashboard/dashboard.switcher';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500', '700'],
@@ -114,6 +115,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <header className="flex items-center gap-[16px] min-h-[64px] bg-newBgColorInner rounded-[24px] border border-newBorder px-[20px] py-[8px] shrink-0">
                     <Logo />
                     <div className="w-[1px] self-stretch my-[8px] bg-blockSeparator hidden sm:block shrink-0" />
+                    <DashboardSwitcher />
                     <TopMenu />
                     <TopMenuUtilities />
                     <div className="flex items-center gap-[16px] text-textItemBlur shrink-0 ms-auto">
