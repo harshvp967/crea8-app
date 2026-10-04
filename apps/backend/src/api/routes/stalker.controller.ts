@@ -9,12 +9,18 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { Organization, StalkerMentionStatus } from '@prisma/client';
 import { StalkerService } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
 import {
   CreateStalkerKeywordDto,
+  CreateStalkerProjectDto,
+  CreateStalkerViewDto,
   StalkerDraftDto,
   StalkerMentionQueryDto,
+  StalkerMentionStatusDto,
+  StalkerReplyDto,
+  StalkerSaveMentionDto,
+  UpdateStalkerProjectDto,
 } from '@gitroom/nestjs-libraries/dtos/stalker/stalker.dto';
 
 @ApiTags('Stalker')
@@ -23,8 +29,30 @@ export class StalkerController {
   constructor(private _stalkerService: StalkerService) {}
 
   @Get('/status')
-  status() {
-    return this._stalkerService.status();
+  status(@GetOrgFromRequest() org: Organization) {
+    return this._stalkerService.status(org.id);
+  }
+
+  @Get('/projects')
+  projects(@GetOrgFromRequest() org: Organization) {
+    return this._stalkerService.projects(org.id);
+  }
+
+  @Post('/projects')
+  createProject(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateStalkerProjectDto
+  ) {
+    return this._stalkerService.createProject(org.id, body);
+  }
+
+  @Post('/projects/:id')
+  updateProject(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: UpdateStalkerProjectDto
+  ) {
+    return this._stalkerService.updateProject(org.id, id, body);
   }
 
   @Get('/mentions')
@@ -35,9 +63,43 @@ export class StalkerController {
     return this._stalkerService.mentions(org.id, query);
   }
 
+  @Post('/mentions/:id/reply')
+  reply(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: StalkerReplyDto
+  ) {
+    return this._stalkerService.reply(org.id, id, body);
+  }
+
+  @Post('/mentions/:id/save')
+  saveMention(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: StalkerSaveMentionDto
+  ) {
+    return this._stalkerService.saveMention(org.id, id, body);
+  }
+
+  @Post('/mentions/:id/status')
+  setMentionStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: StalkerMentionStatusDto
+  ) {
+    return this._stalkerService.setMentionStatus(
+      org.id,
+      id,
+      body.status as StalkerMentionStatus
+    );
+  }
+
   @Get('/keywords')
-  keywords(@GetOrgFromRequest() org: Organization) {
-    return this._stalkerService.keywords(org.id);
+  keywords(
+    @GetOrgFromRequest() org: Organization,
+    @Query('projectId') projectId: string
+  ) {
+    return this._stalkerService.keywords(org.id, projectId);
   }
 
   @Post('/keywords')
@@ -54,6 +116,39 @@ export class StalkerController {
     @Param('id') id: string
   ) {
     return this._stalkerService.deleteKeyword(org.id, id);
+  }
+
+  @Get('/analytics')
+  analytics(
+    @GetOrgFromRequest() org: Organization,
+    @Query('projectId') projectId: string,
+    @Query('date') date?: string
+  ) {
+    return this._stalkerService.analytics(org.id, projectId, date);
+  }
+
+  @Get('/views')
+  views(
+    @GetOrgFromRequest() org: Organization,
+    @Query('projectId') projectId: string
+  ) {
+    return this._stalkerService.views(org.id, projectId);
+  }
+
+  @Post('/views')
+  createView(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateStalkerViewDto
+  ) {
+    return this._stalkerService.createView(org.id, body);
+  }
+
+  @Delete('/views/:id')
+  deleteView(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.deleteView(org.id, id);
   }
 
   @Get('/themes')

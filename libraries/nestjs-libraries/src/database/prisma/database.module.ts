@@ -52,6 +52,7 @@ import { AdminStatsRepository } from '@gitroom/nestjs-libraries/database/prisma/
 import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
 import { StalkerRepository } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
 import { StalkerService } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
+import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.source.manager';
 
 @Global()
 @Module({
@@ -113,6 +114,7 @@ import { StalkerService } from '@gitroom/nestjs-libraries/database/prisma/stalke
     AdminStatsService,
     StalkerRepository,
     StalkerService,
+    StalkerSourceManager,
   ],
   get exports() {
     return this.providers;

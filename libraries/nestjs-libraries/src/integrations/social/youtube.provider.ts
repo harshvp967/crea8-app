@@ -60,7 +60,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   identifier = 'youtube';
   name = 'YouTube';
   isBetweenSteps = true;
-  searchesPublicKeywords = true;
+  stalkerComments = { filter: 'YOUTUBE_COMMENT', label: 'YouTube comments' };
   dto = YoutubeSettingsDto;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -1043,7 +1043,8 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     authorName: string | null | undefined,
     text: string | null | undefined,
     videoId: string | null | undefined,
-    keywordPhrase?: string
+    keywordPhrase?: string,
+    likeCount?: number | null
   ) {
     const body = (text || '').trim();
     if (!commentId || !body || seen.has(commentId)) {
@@ -1060,6 +1061,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         : undefined,
       postExternalId: videoId || undefined,
       keywordPhrase,
+      likeCount: typeof likeCount === 'number' ? likeCount : undefined,
     });
   }
 
@@ -1090,74 +1092,62 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           top?.id,
           top?.snippet?.authorDisplayName,
           top?.snippet?.textOriginal || top?.snippet?.textDisplay,
-          top?.snippet?.videoId
+          top?.snippet?.videoId,
+          undefined,
+          top?.snippet?.likeCount
         );
       }
     } catch (err) {
       console.error('Stalker YouTube channel comments failed', err);
     }
 
-    const phrases = input.keywords.slice(0, 5);
-    for (const phrase of phrases) {
-      try {
-        const search = await youtubeClient.search.list({
-          part: ['snippet'],
-          q: phrase,
-          type: ['video'],
-          maxResults: 5,
-          order: 'date',
-          publishedAfter: dayjs().subtract(7, 'day').toISOString(),
-          safeSearch: 'moderate',
-        });
-        for (const video of search.data.items || []) {
-          const videoId = video.id?.videoId;
-          if (!videoId) {
-            continue;
-          }
-          const title = video.snippet?.title || '';
-          const description = video.snippet?.description || '';
-          const text = `${title}\n${description}`.trim();
-          if (text) {
-            drafts.push({
-              externalId: `yt-video:${videoId}`,
-              source: 'YOUTUBE_SEARCH',
-              authorName: video.snippet?.channelTitle || 'YouTube',
-              text: text.slice(0, 2000),
-              url: `https://www.youtube.com/watch?v=${videoId}`,
-              postExternalId: videoId,
-              keywordPhrase: phrase,
-            });
-          }
-
-          try {
-            const comments = await youtubeClient.commentThreads.list({
-              part: ['snippet'],
-              videoId,
-              searchTerms: phrase,
-              maxResults: 5,
-              textFormat: 'plainText',
-            });
-            for (const item of comments.data.items || []) {
-              const top = item.snippet?.topLevelComment;
-              this.pushYoutubeComment(
-                drafts,
-                seenComments,
-                top?.id,
-                top?.snippet?.authorDisplayName,
-                top?.snippet?.textOriginal || top?.snippet?.textDisplay,
-                videoId,
-                phrase
-              );
-            }
-          } catch (err) {
-            console.error('Stalker YouTube keyword comments failed', err);
-          }
-        }
-      } catch (err) {
-        console.error('Stalker YouTube keyword search failed', err);
-      }
-    }
-
     return drafts;
+  }
+
+  async stalkerReply(input: {
+    accessToken: string;
+    integration: Integration;
+    postExternalId?: string;
+    externalId: string;
+    text: string;
+  }): Promise<{ id?: string }> {
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: input.accessToken });
+    const youtubeClient = youtube(client);
+    const text = input.text.trim().slice(0, 10000);
+    if (input.externalId.startsWith('yt-comment:')) {
+      const parentId = input.externalId.slice('yt-comment:'.length);
+      const response = await youtubeClient.comments.insert({
+        part: ['snippet'],
+        requestBody: {
+          snippet: {
+            parentId,
+            textOriginal: text,
+          },
+        },
+      });
+      return { id: response.data.id || undefined };
+    }
+    const videoId = input.externalId.startsWith('yt-video:')
+      ? input.externalId.slice('yt-video:'.length)
+      : input.postExternalId;
+    if (!videoId) {
+      throw new Error('This YouTube mention cannot be replied to');
+    }
+    const response = await youtubeClient.commentThreads.insert({
+      part: ['snippet'],
+      requestBody: {
+        snippet: {
+          videoId,
+          channelId: input.integration.internalId,
+          topLevelComment: {
+            snippet: {
+              textOriginal: text,
+            },
+          },
+        },
+      },
+    });
+    return { id: response.data.id || undefined };
   }
 }

@@ -29,6 +29,7 @@ export class InstagramStandaloneProvider
   identifier = 'instagram-standalone';
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
+  stalkerComments = { filter: 'INSTAGRAM_COMMENT', label: 'Instagram comments' };
   refreshCron = true;
   scopes = [
     'instagram_business_basic',
@@ -270,6 +271,16 @@ export class InstagramStandaloneProvider
       date,
       'graph.instagram.com'
     );
+  }
+
+  async stalkerReply(input: {
+    accessToken: string;
+    integration: Integration;
+    postExternalId?: string;
+    externalId: string;
+    text: string;
+  }): Promise<{ id?: string }> {
+    return instagramProvider.stalkerReply(input, 'graph.instagram.com');
   }
 
   async collectStalkerMentions(input: {

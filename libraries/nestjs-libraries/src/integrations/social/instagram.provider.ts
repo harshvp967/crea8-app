@@ -32,6 +32,7 @@ export class InstagramProvider
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
+  stalkerComments = { filter: 'INSTAGRAM_COMMENT', label: 'Instagram comments' };
   toolTip = 'Instagram must be business and connected to a Facebook page';
   scopes = [
     'instagram_basic',
@@ -1070,6 +1071,38 @@ export class InstagramProvider
         status: 'success',
       },
     ];
+  }
+
+  async stalkerReply(
+    input: {
+      accessToken: string;
+      integration: Integration;
+      postExternalId?: string;
+      externalId: string;
+      text: string;
+    },
+    host = 'graph.facebook.com'
+  ): Promise<{ id?: string }> {
+    if (!input.postExternalId) {
+      throw new Error('This Instagram mention cannot be replied to');
+    }
+    const [posted] = await this.comment(
+      'stalker',
+      input.postExternalId,
+      undefined,
+      input.accessToken,
+      [
+        {
+          id: 'stalker',
+          message: input.text,
+          media: [],
+          settings: { post_type: 'post', collaborators: [] },
+        },
+      ],
+      input.integration,
+      host
+    );
+    return { id: posted?.postId };
   }
 
   private setTitle(name: string) {

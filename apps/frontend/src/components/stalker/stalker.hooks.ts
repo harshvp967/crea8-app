@@ -11,13 +11,28 @@ const readJson = async (response: Response) => {
   return response.json();
 };
 
-export const useStalkerMentions = (search: string) => {
+export const useStalkerProjects = () => {
   const fetch = useFetch();
   const load = useCallback(async (path: string) => {
     return readJson(await fetch(path));
   }, []);
+  return useSWR('/stalker/projects', load, { revalidateOnFocus: false });
+};
+
+export const useStalkerMentions = (
+  projectId: string | null,
+  search: string
+) => {
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return readJson(await fetch(path));
+  }, []);
+  const query = new URLSearchParams(search);
+  if (projectId) {
+    query.set('projectId', projectId);
+  }
   return useSWR(
-    `/stalker/mentions${search ? `?${search}` : ''}`,
+    projectId ? `/stalker/mentions?${query.toString()}` : null,
     load,
     { revalidateOnFocus: false }
   );
@@ -31,12 +46,45 @@ export const useStalkerThemes = () => {
   return useSWR('/stalker/themes', load, { revalidateOnFocus: false });
 };
 
-export const useStalkerKeywords = () => {
+export const useStalkerKeywords = (projectId: string | null) => {
   const fetch = useFetch();
   const load = useCallback(async (path: string) => {
     return readJson(await fetch(path));
   }, []);
-  return useSWR('/stalker/keywords', load, { revalidateOnFocus: false });
+  return useSWR(
+    projectId ? `/stalker/keywords?projectId=${projectId}` : null,
+    load,
+    { revalidateOnFocus: false }
+  );
+};
+
+export const useStalkerAnalytics = (
+  projectId: string | null,
+  date = '30d'
+) => {
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return readJson(await fetch(path));
+  }, []);
+  return useSWR(
+    projectId
+      ? `/stalker/analytics?projectId=${projectId}&date=${date}`
+      : null,
+    load,
+    { revalidateOnFocus: false }
+  );
+};
+
+export const useStalkerViews = (projectId: string | null) => {
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return readJson(await fetch(path));
+  }, []);
+  return useSWR(
+    projectId ? `/stalker/views?projectId=${projectId}` : null,
+    load,
+    { revalidateOnFocus: false }
+  );
 };
 
 export const useStalkerStatus = () => {

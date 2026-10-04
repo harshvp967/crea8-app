@@ -163,7 +163,11 @@ export type StalkerMentionSource =
   | 'YOUTUBE_COMMENT'
   | 'YOUTUBE_SEARCH'
   | 'INSTAGRAM_COMMENT'
-  | 'FACEBOOK_COMMENT';
+  | 'FACEBOOK_COMMENT'
+  | 'REDDIT_POST'
+  | 'REDDIT_COMMENT'
+  | 'X_POST'
+  | 'LINKEDIN_POST';
 
 export type StalkerMentionDraft = {
   externalId: string;
@@ -173,6 +177,11 @@ export type StalkerMentionDraft = {
   url?: string;
   postExternalId?: string;
   keywordPhrase?: string;
+  authorHandle?: string;
+  likeCount?: number;
+  replyCount?: number;
+  matchKind?: 'BRAND' | 'ALIAS' | 'HANDLE' | 'KEYWORD';
+  matchLabel?: string;
 };
 
 export interface SocialProvider
@@ -240,11 +249,19 @@ export interface SocialProvider
     accessToken: string,
     data: any
   ): Promise<FetchPageInformationResult>;
-  // When true, the poll passes this account the org's keywords once per run.
-  searchesPublicKeywords?: boolean;
+  // Comments on a connected account. Keyword search lives on StalkerSourceProvider.
+  stalkerComments?: { filter: string; label: string };
   collectStalkerMentions?(input: {
     accessToken: string;
     integration: Integration;
     keywords: string[];
   }): Promise<StalkerMentionDraft[]>;
+  // Sends a reply only after a person reviews the text. Never called automatically.
+  stalkerReply?(input: {
+    accessToken: string;
+    integration: Integration;
+    postExternalId?: string;
+    externalId: string;
+    text: string;
+  }): Promise<{ id?: string }>;
 }
