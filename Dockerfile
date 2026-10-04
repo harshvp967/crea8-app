@@ -74,8 +74,12 @@ FROM runtime-base AS backend
 
 COPY --from=build /app/apps/backend/dist ./apps/backend/dist
 COPY --from=build /app/apps/backend/package.json ./apps/backend/package.json
+# These requires must return and the process must exit. Importing
+# @sentry/profiling-node at module scope used to freeze Node 22 here with
+# no further output. timeout -k sends SIGKILL if a native require ignores
+# SIGTERM. process.exit(0) closes the layer if a module leaves a handle open.
 RUN sh var/docker/link-gitroom-aliases.sh backend \
-  && node --experimental-require-module -e "require('@gitroom/nestjs-libraries/sentry/initialize.sentry'); require('@prisma/client'); require('bcrypt'); require('sharp');"
+  && timeout -k 15s 120s node --experimental-require-module -e "const loads=[['sentry',()=>require('@gitroom/nestjs-libraries/sentry/initialize.sentry')],['prisma',()=>require('@prisma/client')],['bcrypt',()=>require('bcrypt')],['sharp',()=>require('sharp')]]; for (const [name,load] of loads){ const started=Date.now(); load(); console.log('loaded '+name+' in '+(Date.now()-started)+'ms'); } process.exit(0);"
 
 WORKDIR /app/apps/backend
 EXPOSE 3000
@@ -89,7 +93,7 @@ FROM runtime-base AS orchestrator
 COPY --from=build /app/apps/orchestrator/dist ./apps/orchestrator/dist
 COPY --from=build /app/apps/orchestrator/package.json ./apps/orchestrator/package.json
 RUN sh var/docker/link-gitroom-aliases.sh orchestrator \
-  && node --experimental-require-module -e "require('@gitroom/nestjs-libraries/sentry/initialize.sentry'); require('@gitroom/orchestrator/workflows'); require('@prisma/client'); require('bcrypt'); require('sharp');"
+  && timeout -k 15s 120s node --experimental-require-module -e "const loads=[['sentry',()=>require('@gitroom/nestjs-libraries/sentry/initialize.sentry')],['workflows',()=>require('@gitroom/orchestrator/workflows')],['prisma',()=>require('@prisma/client')],['bcrypt',()=>require('bcrypt')],['sharp',()=>require('sharp')]]; for (const [name,load] of loads){ const started=Date.now(); load(); console.log('loaded '+name+' in '+(Date.now()-started)+'ms'); } process.exit(0);"
 
 WORKDIR /app/apps/orchestrator
 EXPOSE 3002

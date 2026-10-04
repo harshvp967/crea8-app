@@ -30,6 +30,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # A native require that never returns used to sit in "Build and push"
+    # until the job was cancelled (over an hour). 20 minutes covers a cold
+    # image build; the Dockerfile smoke test itself is capped at 2 minutes.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -82,17 +86,23 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.target }}
 
       - name: Make the package public
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_NAME: ${{ matrix.target == 'backend' && 'crea8-app-backend' || 'crea8-app-orchestrator' }}
+          OWNER: ${{ github.repository_owner }}
         run: |
           # GHCR packages are often private on first publish even for a public
           # repo. Public images can be pulled by Railway with no registry
-          # credential. Actions tokens frequently cannot change visibility
-          # (403); that failure is not fatal. Flip the package to Public once
-          # in GitHub package settings if this step does not.
-          gh api --method PUT \
+          # credential. /user/packages is the token owner. GITHUB_TOKEN is the
+          # Actions bot, so that path 404s after a successful push. The image
+          # lives under the repository owner. A 403/404 is not fatal: the
+          # image is already in GHCR. Flip the package to Public once in
+          # GitHub package settings if a pull still needs it.
+          if gh api --method PUT \
             -H "Accept: application/vnd.github+json" \
-            "/user/packages/container/${IMAGE_NAME}/visibility" \
-            -f visibility=public
+            "/users/${OWNER}/packages/container/${IMAGE_NAME}/visibility" \
+            -f visibility=public; then
+            echo "Package ${IMAGE_NAME} is public"
+          else
+            echo "Could not change visibility of ${IMAGE_NAME}. The image was still pushed."
+          fi
