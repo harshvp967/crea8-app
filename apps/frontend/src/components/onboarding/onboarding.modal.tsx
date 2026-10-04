@@ -17,7 +17,6 @@ import {
   getMcpConfig,
   getMcpOauthUrl,
   isChatOnlyMcpClient,
-  localCliSteps,
   McpAuth,
   McpClient,
   mcpClients,
@@ -274,8 +273,6 @@ const otherAgents = mcpClients.filter(
 const apiTab = 'API' as const;
 type OnboardingTab = OnboardingAgent | typeof otherTab | typeof apiTab;
 
-const cliCommands = localCliSteps.map((step) => step.code);
-
 // Cursor one-click install: https://cursor.com/docs/mcp/install-links
 const getCursorInstallUrl = (
   auth: McpAuth,
@@ -289,7 +286,7 @@ const getCursorInstallUrl = (
           url: `${mcpBase}/mcp`,
           headers: { Authorization: `Bearer ${apiKey}` },
         };
-  return `cursor://anysphere.cursor-deeplink/mcp/install?name=postiz&config=${btoa(
+  return `cursor://anysphere.cursor-deeplink/mcp/install?name=crea8one&config=${btoa(
     JSON.stringify(server)
   )}`;
 };
@@ -300,7 +297,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
 }) => {
   const t = useT();
   const user = useUser();
-  const { backendUrl, mcpUrl, billingEnabled } = useVariables();
+  const { backendUrl, mcpUrl } = useVariables();
   const [tab, setTab] = useState<OnboardingTab>('Claude');
   const [otherAgent, setOtherAgent] = useState<McpClient>(otherAgents[0]);
   // The client the cards describe: the tab itself, or the pick inside "Other agents"
@@ -326,12 +323,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         );
 
   const connector =
-    agent === 'Claude' && billingEnabled
-      ? {
-          href: 'https://claude.ai/directory/postiz',
-          label: t('add_to_claude', 'Add to Claude'),
-        }
-      : agent === 'Cursor'
+    agent === 'Cursor'
       ? {
           href: getCursorInstallUrl(auth, mcpBase, apiKey),
           label: t('add_to_cursor', 'Add to Cursor'),
@@ -347,7 +339,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         <div className="text-[13px] text-customColor18 mt-[2px]">
           {t(
             'chat_onboarding_description',
-            'No MCP or CLI settings needed. Paste this into the chat, the agent installs the Postiz CLI and asks you for your API key.'
+            'No MCP settings needed. Paste this into the chat. The agent asks you for your Crea8one API key and sends it as the Authorization header.'
           )}
         </div>
       </div>
@@ -396,14 +388,6 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
             )}
           </div>
         </div>
-        <a
-          className="cursor-pointer px-[24px] h-[44px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[14px] font-[600] flex items-center gap-[8px] shrink-0"
-          href="https://docs.postiz.com/public-api/introduction"
-          target="_blank"
-        >
-          <McpClientIcon client={apiTab} size={18} />
-          {t('read_the_api_docs', 'Read the API docs')}
-        </a>
       </div>
       <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
         <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder">
@@ -525,31 +509,6 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
     </div>
   );
 
-  const cliSection = (
-    <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden flex flex-col">
-      <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder">
-        <div className="text-[15px] font-[600]">{t('cli', 'CLI')}</div>
-        <div className="text-[13px] text-customColor18 mt-[2px]">
-          {t(
-            'cli_onboarding_description',
-            'Install the Postiz CLI and the skill that teaches your agent how to use it'
-          )}
-        </div>
-      </div>
-      <div className="p-[20px] flex flex-col gap-[8px] flex-1">
-        <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[12px] text-[12px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.5] flex-1">
-          {cliCommands.join('\n')}
-        </pre>
-        <div className="flex gap-[8px]">
-          <CopyButton
-            text={cliCommands.join(' && ')}
-            label={t('copy', 'Copy')}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex flex-col gap-[24px] flex-1">
       <div className="flex gap-[4px] flex-col text-center">
@@ -614,10 +573,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
           ) : (
             <>
               {connectorSection}
-              <div className="grid grid-cols-2 gap-[16px]">
-                {mcpSection}
-                {cliSection}
-              </div>
+              {mcpSection}
             </>
           )}
         </div>

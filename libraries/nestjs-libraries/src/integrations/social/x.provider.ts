@@ -1390,7 +1390,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     id: string,
     until: string,
     since: string,
-    token = ''
+    token = '',
+    pages = 0
   ): Promise<TweetV2[]> => {
     const tweets = await client.v2.userTimeline(id, {
       'tweet.fields': ['id'],
@@ -1409,13 +1410,14 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     return [
       ...list,
-      ...(list.length === 100 && tweets.meta.next_token
+      ...(list.length === 100 && tweets.meta.next_token && pages < 4
         ? await this.loadAllTweets(
             client,
             id,
             until,
             since,
-            tweets.meta.next_token
+            tweets.meta.next_token,
+            pages + 1
           )
         : []),
     ];
@@ -1507,8 +1509,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       }));
     } catch (err) {
       console.log(err);
+      throw new Error('X analytics is unavailable for this account');
     }
-    return [];
   }
 
   async postAnalytics(

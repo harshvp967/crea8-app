@@ -813,8 +813,7 @@ html[dir='rtl'] [dir='ltr'] {
   }
 
   .poweredBy {
-    color: #4a4a4a !important;
-    background: transparent !important;
+    display: none !important;
   }
 }
 

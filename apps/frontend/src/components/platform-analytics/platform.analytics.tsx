@@ -42,28 +42,48 @@ export const PlatformAnalytics = () => {
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   const toaster = useToaster();
   const load = useCallback(async () => {
-    const int = (
-      await (await fetch('/integrations/list')).json()
-    ).integrations.filter((f: any) => {
-      if (f.identifier === 'x' && disableXAnalytics) {
-        return false;
+    const controller = new AbortController();
+    const timerId = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch('/integrations/list', {
+        signal: controller.signal,
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !Array.isArray(body?.integrations)) {
+        throw new Error(
+          'Could not load channels for analytics. Refresh the page and try again.'
+        );
       }
-      return true;
-    });
-    return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
-  }, []);
-  const { data, isLoading } = useSWR('analytics-list', load, {
+      return body.integrations.filter((f: any) => {
+        if (f.identifier === 'x' && disableXAnalytics) {
+          return false;
+        }
+        return allowedIntegrations.includes(f.identifier);
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(
+          'Loading channels took too long. Refresh the page and try again.'
+        );
+      }
+      throw error;
+    } finally {
+      clearTimeout(timerId);
+    }
+  }, [disableXAnalytics]);
+  const { data, error, isLoading } = useSWR('analytics-list', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
     revalidateOnMount: true,
     refreshWhenHidden: false,
     refreshWhenOffline: false,
-    fallbackData: [],
+    shouldRetryOnError: false,
+    errorRetryCount: 0,
   });
   const sortedIntegrations = useMemo(() => {
     return orderBy(
-      data,
+      data || [],
       ['type', 'disabled', 'identifier'],
       ['desc', 'asc', 'asc']
     );
@@ -138,7 +158,22 @@ export const PlatformAnalytics = () => {
     return options[0]?.key;
   }, [key, currentIntegration]);
 
-  if (isLoading) {
+  if (error) {
+    return (
+      <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
+        <div className="text-[24px] max-w-[640px]">
+          {error instanceof Error
+            ? error.message
+            : t(
+                'analytics_load_error',
+                'Could not load analytics. Refresh the page and try again.'
+              )}
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading || !data) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
         <LoadingComponent />
@@ -146,7 +181,7 @@ export const PlatformAnalytics = () => {
     );
   }
 
-  if (!sortedIntegrations.length && !isLoading) {
+  if (!sortedIntegrations.length) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
         <div>
@@ -160,9 +195,10 @@ export const PlatformAnalytics = () => {
             'You have to add Social Media channels'
           )}
         </div>
-        <div className="text-[20px]">
-          {t('supported', 'Supported:')}
+        <div className="text-[20px] max-w-[720px]">
+          {t('supported', 'Supported:')}{' '}
           {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
+          . Bluesky and Mastodon do not provide account analytics here.
         </div>
         <Button onClick={() => router.push('/launches')}>
           {t(

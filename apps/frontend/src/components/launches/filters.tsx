@@ -287,9 +287,9 @@ export const Filters = () => {
   }, [calendar]);
 
   return (
-    <div className="text-textColor flex flex-col md:flex-row gap-[10px] items-center select-none">
+    <div className="text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0">
       {!isListView && (
-        <div className="flex flex-grow flex-row items-center gap-[10px]">
+        <div className="flex flex-1 min-w-[240px] flex-row items-center gap-[10px]">
           <div className="border h-[40px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-full overflow-hidden">
             <div
               onClick={previous}
@@ -350,7 +350,7 @@ export const Filters = () => {
         </div>
       )}
       {isListView && (
-        <div className="flex flex-grow flex-row items-center gap-[10px]">
+        <div className="flex flex-1 min-w-[240px] flex-row items-center gap-[10px]">
           <div className="border h-[40px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-full overflow-hidden">
             <div
               onClick={previousPage}
@@ -432,8 +432,7 @@ export const Filters = () => {
         onChange={(customer: string) => setCustomer(customer)}
         integrations={calendar.integrations}
       />
-      {!isListView && (
-        <div className="flex flex-row p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">
+      <div className="flex flex-row shrink-0 p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">
           <div
             className={clsx(
               'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-full transition-colors',
@@ -468,8 +467,7 @@ export const Filters = () => {
             {t('month', 'Month')}
           </div>
         </div>
-      )}
-      <div className="flex flex-row p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">
+      <div className="flex flex-row shrink-0 p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">
         <div
           onClick={setCalendarView}
           className={clsx(

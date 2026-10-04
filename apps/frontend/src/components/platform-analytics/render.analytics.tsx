@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import { Integration } from '@prisma/client';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -121,9 +121,11 @@ const AnalyticsCard: FC<{
   );
 };
 
-const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
-  const t = useT();
-
+const PanelMessage: FC<{
+  title: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}> = ({ title, actionLabel, onAction }) => {
   return (
     <div className="col-span-full flex flex-col items-center justify-center py-[48px] px-[24px] bg-newTableHeader border border-newTableBorder rounded-[12px]">
       <div className="w-[48px] h-[48px] mb-[16px] rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
@@ -140,29 +142,17 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
           <path d="M12 8v4l2 2" />
         </svg>
       </div>
-      <p className="text-[15px] text-newTableText text-center mb-[12px]">
-        {t(
-          'this_channel_needs_to_be_refreshed',
-          'This channel needs to be refreshed to display analytics'
-        )}
+      <p className="text-[15px] text-newTableText text-center mb-[12px] max-w-[420px]">
+        {title}
       </p>
-      <button
-        onClick={onRefresh}
-        className="inline-flex items-center gap-[6px] px-[16px] py-[8px] text-[14px] font-medium text-[#0a0a0a] bg-[#00D9FF] hover:bg-[#00B8D9] rounded-[8px] transition-colors"
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
+      {actionLabel && onAction && (
+        <button
+          onClick={onAction}
+          className="inline-flex items-center gap-[6px] px-[16px] py-[8px] text-[14px] font-medium text-[#0a0a0a] bg-[#00D9FF] hover:bg-[#00B8D9] rounded-[8px] transition-colors"
         >
-          <path d="M23 4v6h-6M1 20v-6h6" />
-          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-        </svg>
-        {t('refresh_channel', 'Refresh Channel')}
-      </button>
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 };
@@ -172,27 +162,54 @@ export const RenderAnalytics: FC<{
   date: number;
 }> = (props) => {
   const { integration, date } = props;
-  const [loading, setLoading] = useState(true);
   const fetch = useFetch();
 
   const load = useCallback(async () => {
-    setLoading(true);
-    const load = (
-      await fetch(`/analytics/${integration.id}?date=${date}`)
-    ).json();
-    setLoading(false);
-    return load;
+    const controller = new AbortController();
+    const timerId = setTimeout(() => controller.abort(), 60000);
+    try {
+      const response = await fetch(
+        `/analytics/${integration.id}?date=${date}`,
+        { signal: controller.signal }
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !Array.isArray(body)) {
+        const rawMessage = body?.message || body?.error;
+        const message = Array.isArray(rawMessage)
+          ? rawMessage.join(', ')
+          : rawMessage;
+        throw new Error(
+          message || 'Could not load analytics for this channel.'
+        );
+      }
+      return body as AnalyticsDataItem[];
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(
+          'Analytics took too long to load for this channel. Try again, or pick another channel.'
+        );
+      }
+      throw error;
+    } finally {
+      clearTimeout(timerId);
+    }
   }, [integration, date]);
 
-  const { data } = useSWR(`/analytics-${integration?.id}-${date}`, load, {
-    refreshInterval: 0,
-    refreshWhenHidden: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    refreshWhenOffline: false,
-    revalidateOnMount: true,
-  });
+  const { data, error, isLoading, mutate } = useSWR(
+    `/analytics-${integration?.id}-${date}`,
+    load,
+    {
+      refreshInterval: 0,
+      refreshWhenHidden: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      refreshWhenOffline: false,
+      revalidateOnMount: true,
+      shouldRetryOnError: false,
+      errorRetryCount: 0,
+    }
+  );
 
   const refreshChannel = useCallback(
     (
@@ -228,7 +245,7 @@ export const RenderAnalytics: FC<{
     });
   }, [data]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[48px]">
         <LoadingComponent />
@@ -236,10 +253,44 @@ export const RenderAnalytics: FC<{
     );
   }
 
+  if (error) {
+    return (
+      <div className="grid grid-cols-1 gap-[16px]">
+        <PanelMessage
+          title={
+            error instanceof Error
+              ? error.message
+              : t(
+                  'analytics_channel_error',
+                  'Could not load analytics for this channel.'
+                )
+          }
+          actionLabel={t('try_again', 'Try again')}
+          onAction={() => mutate()}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
       {data?.length === 0 && (
-        <EmptyState onRefresh={refreshChannel(integration as any)} />
+        <PanelMessage
+          title={t(
+            'analytics_empty_period',
+            'No analytics for this channel in the selected period.'
+          )}
+          actionLabel={
+            (integration as { refreshNeeded?: boolean }).refreshNeeded
+              ? t('refresh_channel', 'Refresh Channel')
+              : undefined
+          }
+          onAction={
+            (integration as { refreshNeeded?: boolean }).refreshNeeded
+              ? refreshChannel(integration as any)
+              : undefined
+          }
+        />
       )}
       {data?.map((item: AnalyticsDataItem, index: number) => (
         <AnalyticsCard

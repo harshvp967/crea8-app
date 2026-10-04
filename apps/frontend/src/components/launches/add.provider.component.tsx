@@ -280,23 +280,10 @@ const ExtensionNotFound: FC = () => {
       <p className="text-[14px] text-textColor/80">
         {t(
           'extension_not_available',
-          'The Crea8one browser extension is not installed. You need to install it before connecting this channel.'
+          'The browser extension for this channel is not available in Crea8one. Contact support@crea8.one if you need it.'
         )}
       </p>
       <div className="flex gap-[10px]">
-        <Button
-          type="button"
-          className="flex-1"
-          onClick={() => {
-            window.open(
-              'https://chromewebstore.google.com/detail/postiz/cidhffagahknaeodkplfbcpfeielnkjl?hl=en',
-              '_blank'
-            );
-            modals.closeCurrent();
-          }}
-        >
-          {t('install_extension', 'Install Extension')}
-        </Button>
         <Button
           type="button"
           className="flex-1 !bg-transparent border border-tableBorder text-textColor"

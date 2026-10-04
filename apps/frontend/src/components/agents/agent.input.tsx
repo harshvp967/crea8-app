@@ -1,9 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import {
-  useCopilotChatInternal,
-  useCopilotContext,
-  useCopilotReadable,
-} from '@copilotkit/react-core';
+import { useCopilotChatInternal } from '@copilotkit/react-core';
 import AutoResizingTextarea from '@gitroom/frontend/components/agents/agent.textarea';
 import { useChatContext, InputProps } from '@copilotkit/react-ui';
 const MAX_NEWLINES = 6;
@@ -18,8 +14,6 @@ export const Input = ({
   onChange,
 }: InputProps & { onChange: (value: string) => void }) => {
   const context = useChatContext();
-  const copilotContext = useCopilotContext();
-  const showPoweredBy = !copilotContext.copilotApiConfig?.publicApiKey;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isComposing, setIsComposing] = useState(false);
@@ -64,11 +58,7 @@ export const Input = ({
   const sendDisabled = !canSend && !canStop;
 
   return (
-    <div
-      className={`copilotKitInputContainer ${
-        showPoweredBy ? 'poweredByContainer' : ''
-      }`}
-    >
+    <div className="copilotKitInputContainer">
       <div className="copilotKitInput" onClick={handleDivClick}>
         <AutoResizingTextarea
           ref={textareaRef}

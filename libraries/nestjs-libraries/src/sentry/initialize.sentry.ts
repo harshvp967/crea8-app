@@ -48,7 +48,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         },
         contexts: {
           app: {
-            name: `Postiz ${capitalize(appName)}`,
+            name: `Crea8one ${capitalize(appName)}`,
           },
         },
       },

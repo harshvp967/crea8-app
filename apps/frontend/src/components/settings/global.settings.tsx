@@ -11,6 +11,9 @@ const MetricComponent = dynamic(
   () => import('@gitroom/frontend/components/settings/metric.component'),
   {
     ssr: false,
+    loading: () => (
+      <div className="my-[16px] h-[140px] animate-pulse rounded-[16px] border border-fifth bg-sixth" />
+    ),
   }
 );
 

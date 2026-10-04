@@ -29,6 +29,7 @@ import { crea8oneIcons } from '@gitroom/frontend/components/layout/crea8one.icon
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
+  title: 'Crea8one',
   icons: crea8oneIcons,
 };
 
