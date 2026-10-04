@@ -177,6 +177,11 @@ export type StalkerMentionDraft = {
   url?: string;
   postExternalId?: string;
   keywordPhrase?: string;
+  authorHandle?: string;
+  likeCount?: number;
+  replyCount?: number;
+  matchKind?: 'BRAND' | 'ALIAS' | 'HANDLE' | 'KEYWORD';
+  matchLabel?: string;
 };
 
 export interface SocialProvider
@@ -251,4 +256,12 @@ export interface SocialProvider
     integration: Integration;
     keywords: string[];
   }): Promise<StalkerMentionDraft[]>;
+  // Sends a reply only after a person reviews the text. Never called automatically.
+  stalkerReply?(input: {
+    accessToken: string;
+    integration: Integration;
+    postExternalId?: string;
+    externalId: string;
+    text: string;
+  }): Promise<{ id?: string }>;
 }

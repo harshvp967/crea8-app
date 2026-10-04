@@ -973,6 +973,38 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     ];
   }
 
+  async stalkerReply(input: {
+    accessToken: string;
+    integration: Integration;
+    postExternalId?: string;
+    externalId: string;
+    text: string;
+  }): Promise<{ id?: string }> {
+    const commentId = input.externalId.startsWith('fb-comment:')
+      ? input.externalId.slice('fb-comment:'.length)
+      : undefined;
+    const postId = input.postExternalId || commentId;
+    if (!postId) {
+      throw new Error('This Facebook mention cannot be replied to');
+    }
+    const [posted] = await this.comment(
+      'stalker',
+      postId,
+      commentId,
+      input.accessToken,
+      [
+        {
+          id: 'stalker',
+          message: input.text,
+          media: [],
+          settings: {},
+        },
+      ],
+      input.integration
+    );
+    return { id: posted?.postId };
+  }
+
   async analytics(
     id: string,
     accessToken: string,

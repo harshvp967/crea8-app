@@ -1385,6 +1385,40 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     ];
   }
 
+  async stalkerReply(input: {
+    accessToken: string;
+    integration: Integration;
+    postExternalId?: string;
+    externalId: string;
+    text: string;
+  }): Promise<{ id?: string }> {
+    const tweetId = input.externalId.startsWith('x-post:')
+      ? input.externalId.slice('x-post:'.length)
+      : input.postExternalId;
+    if (!tweetId) {
+      throw new Error('This X mention cannot be replied to');
+    }
+    const [posted] = await this.comment(
+      'stalker',
+      tweetId,
+      undefined,
+      input.accessToken,
+      [
+        {
+          id: 'stalker',
+          message: input.text,
+          media: [],
+          settings: {
+            active_thread_finisher: false,
+            thread_finisher: '',
+          },
+        },
+      ],
+      input.integration
+    );
+    return { id: posted?.postId };
+  }
+
   private loadAllTweets = async (
     client: TwitterApi,
     id: string,

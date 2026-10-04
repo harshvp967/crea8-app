@@ -4,18 +4,23 @@ import { Button } from '@gitroom/react/form/button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useStalkerThemes } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerComposer } from '@gitroom/frontend/components/stalker/use.stalker.composer';
+import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 
 export const StalkerThemes = () => {
   const t = useT();
   const openComposer = useStalkerComposer();
+  const { projectId } = useStalkerProject();
   const { data, isLoading } = useStalkerThemes();
   const themes: Array<{
     id: string;
+    projectId?: string | null;
     title: string;
     summary: string;
     _count?: { mentions?: number };
     mentions?: Array<{ id: string; authorName?: string; text: string }>;
-  }> = Array.isArray(data) ? data : [];
+  }> = (Array.isArray(data) ? data : []).filter(
+    (theme) => !projectId || !theme.projectId || theme.projectId === projectId
+  );
 
   return (
     <div className="flex flex-col gap-[16px]">
@@ -63,7 +68,7 @@ export const StalkerThemes = () => {
                 type="button"
                 onClick={() => openComposer({ themeId: theme.id, mode: 'post' })}
               >
-                Create post
+                Draft post
               </Button>
             </div>
           </article>

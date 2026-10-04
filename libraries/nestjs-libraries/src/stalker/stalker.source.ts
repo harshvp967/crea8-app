@@ -6,6 +6,12 @@ export type StalkerSourceAuth = {
   accessToken?: string;
 };
 
+export type StalkerSearchTerms = {
+  phrases: string[];
+  handle?: string;
+  subreddit?: string;
+};
+
 // Keyword listening. Comment ingestion stays on the connected social provider.
 export interface StalkerSourceProvider {
   id: StalkerSourceId;
@@ -16,6 +22,7 @@ export interface StalkerSourceProvider {
   integrationIdentifier(): string | null;
   enabled(auth?: StalkerSourceAuth): boolean;
   statusDetail(available: boolean): string;
+  buildQuery(input: StalkerSearchTerms): string;
   search(
     keyword: string,
     since: Date,

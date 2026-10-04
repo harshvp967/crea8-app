@@ -58,13 +58,30 @@ export const useStalkerKeywords = (projectId: string | null) => {
   );
 };
 
-export const useStalkerAnalytics = (projectId: string | null) => {
+export const useStalkerAnalytics = (
+  projectId: string | null,
+  date = '30d'
+) => {
   const fetch = useFetch();
   const load = useCallback(async (path: string) => {
     return readJson(await fetch(path));
   }, []);
   return useSWR(
-    projectId ? `/stalker/analytics?projectId=${projectId}` : null,
+    projectId
+      ? `/stalker/analytics?projectId=${projectId}&date=${date}`
+      : null,
+    load,
+    { revalidateOnFocus: false }
+  );
+};
+
+export const useStalkerViews = (projectId: string | null) => {
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return readJson(await fetch(path));
+  }, []);
+  return useSWR(
+    projectId ? `/stalker/views?projectId=${projectId}` : null,
     load,
     { revalidateOnFocus: false }
   );

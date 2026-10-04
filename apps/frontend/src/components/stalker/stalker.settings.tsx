@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
+import { Input } from '@gitroom/react/form/input';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -12,8 +13,41 @@ export const StalkerSettings = () => {
   const t = useT();
   const fetch = useFetch();
   const toaster = useToaster();
-  const { status } = useStalkerProject();
+  const { status, project, refreshProjects } = useStalkerProject();
   const [running, setRunning] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [brandName, setBrandName] = useState('');
+  const [aliases, setAliases] = useState('');
+  const [exclusions, setExclusions] = useState('');
+  const [handleX, setHandleX] = useState('');
+  const [handleRedditUser, setHandleRedditUser] = useState('');
+  const [handleRedditSubreddit, setHandleRedditSubreddit] = useState('');
+  const [handleYoutube, setHandleYoutube] = useState('');
+  const [handleLinkedin, setHandleLinkedin] = useState('');
+  const [handleInstagram, setHandleInstagram] = useState('');
+  const [handleFacebook, setHandleFacebook] = useState('');
+  const [alertEmail, setAlertEmail] = useState('');
+  const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+
+  useEffect(() => {
+    if (!project) {
+      return;
+    }
+    setBrandName(project.brandName || project.name || '');
+    setAliases(project.aliases || '');
+    setExclusions(project.exclusions || '');
+    setHandleX(project.handleX || '');
+    setHandleRedditUser(project.handleRedditUser || '');
+    setHandleRedditSubreddit(project.handleRedditSubreddit || '');
+    setHandleYoutube(project.handleYoutube || '');
+    setHandleLinkedin(project.handleLinkedin || '');
+    setHandleInstagram(project.handleInstagram || '');
+    setHandleFacebook(project.handleFacebook || '');
+    setAlertEmail(project.alertEmail || '');
+    setAlertsEnabled(!!project.alertsEnabled);
+    setWebhookUrl(project.webhookUrl || '');
+  }, [project]);
 
   const checkNow = async () => {
     setRunning(true);
@@ -24,6 +58,38 @@ export const StalkerSettings = () => {
       return;
     }
     toaster.show('Check finished. Open Mentions to see what was found.', 'success');
+  };
+
+  const save = async () => {
+    if (!project) {
+      return;
+    }
+    setSaving(true);
+    const response = await fetch(`/stalker/projects/${project.id}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        brandName,
+        aliases,
+        exclusions,
+        handleX,
+        handleRedditUser,
+        handleRedditSubreddit,
+        handleYoutube,
+        handleLinkedin,
+        handleInstagram,
+        handleFacebook,
+        alertEmail,
+        alertsEnabled,
+        webhookUrl,
+      }),
+    });
+    setSaving(false);
+    if (!response.ok) {
+      toaster.show('Could not save these settings', 'warning');
+      return;
+    }
+    refreshProjects();
+    toaster.show('Project settings saved', 'success');
   };
 
   const sources = [
@@ -42,14 +108,48 @@ export const StalkerSettings = () => {
   ];
 
   return (
-    <div className="flex max-w-[640px] flex-col gap-[16px]">
+    <div className="flex max-w-[720px] flex-col gap-[16px]">
       <div>
         <h1 className="text-[28px] font-[600]">
           {t('stalker_settings', 'Settings')}
         </h1>
         <p className="mt-[6px] text-[14px] text-textItemBlur">
-          Keyword search runs on the sources that are connected. Comments still come from YouTube, Instagram, and Facebook channels you have already linked.
+          Brand names and handles are what Stalker searches for. Comments from connected channels stay in the same feed.
         </p>
+      </div>
+      <div className="flex flex-col gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]">
+        <Input label="Brand name" translationKey="label_brand_name" name="brandName" disableForm={true} value={brandName} onChange={(event) => setBrandName(event.target.value)} />
+        <label className="flex flex-col gap-[6px] text-[14px]">
+          Aliases, one per line
+          <textarea name="aliases" className="min-h-[72px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[12px] py-[10px] text-[14px]" value={aliases} onChange={(event) => setAliases(event.target.value)} />
+        </label>
+        <div className="grid gap-[10px] sm:grid-cols-2">
+          <Input label="X handle" translationKey="label_handle_x" name="handleX" disableForm={true} value={handleX} onChange={(event) => setHandleX(event.target.value)} />
+          <Input label="YouTube handle" translationKey="label_handle_youtube" name="handleYoutube" disableForm={true} value={handleYoutube} onChange={(event) => setHandleYoutube(event.target.value)} />
+          <Input label="Reddit username" translationKey="label_handle_reddit_user" name="handleRedditUser" disableForm={true} value={handleRedditUser} onChange={(event) => setHandleRedditUser(event.target.value)} />
+          <Input label="Subreddit" translationKey="label_handle_reddit_subreddit" name="handleRedditSubreddit" disableForm={true} value={handleRedditSubreddit} onChange={(event) => setHandleRedditSubreddit(event.target.value)} />
+          <Input label="LinkedIn company" translationKey="label_handle_linkedin" name="handleLinkedin" disableForm={true} value={handleLinkedin} onChange={(event) => setHandleLinkedin(event.target.value)} />
+          <Input label="Instagram handle" translationKey="label_handle_instagram" name="handleInstagram" disableForm={true} value={handleInstagram} onChange={(event) => setHandleInstagram(event.target.value)} />
+          <Input label="Facebook page" translationKey="label_handle_facebook" name="handleFacebook" disableForm={true} value={handleFacebook} onChange={(event) => setHandleFacebook(event.target.value)} />
+        </div>
+        <label className="flex flex-col gap-[6px] text-[14px]">
+          Negative keywords, one per line
+          <textarea name="exclusions" className="min-h-[72px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[12px] py-[10px] text-[14px]" value={exclusions} onChange={(event) => setExclusions(event.target.value)} />
+        </label>
+        <Input label="Alert email" translationKey="label_alert_email" name="alertEmail" disableForm={true} value={alertEmail} onChange={(event) => setAlertEmail(event.target.value)} placeholder="you@example.com" />
+        <label className="flex items-center gap-[8px] text-[14px]">
+          <input type="checkbox" checked={alertsEnabled} onChange={(event) => setAlertsEnabled(event.target.checked)} />
+          Email bug reports, complaints, and mentions with urgency 70 or higher
+        </label>
+        <Input label="Webhook URL" translationKey="label_webhook_url" name="webhookUrl" disableForm={true} value={webhookUrl} onChange={(event) => setWebhookUrl(event.target.value)} placeholder="https://example.com/hooks/stalker" />
+        <p className="text-[12px] text-textItemBlur">
+          A public https address receives mention.created after each new mention is stored. Leave it empty to turn the webhook off.
+        </p>
+        <div>
+          <Button type="button" loading={saving} onClick={save}>
+            Save project
+          </Button>
+        </div>
       </div>
       <dl className="flex flex-col gap-[8px] rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px] text-[14px]">
         <div className="flex justify-between gap-[12px]">

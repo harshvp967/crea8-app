@@ -14,9 +14,13 @@ import { StalkerService } from '@gitroom/nestjs-libraries/database/prisma/stalke
 import {
   CreateStalkerKeywordDto,
   CreateStalkerProjectDto,
+  CreateStalkerViewDto,
   StalkerDraftDto,
   StalkerMentionQueryDto,
   StalkerMentionStatusDto,
+  StalkerReplyDto,
+  StalkerSaveMentionDto,
+  UpdateStalkerProjectDto,
 } from '@gitroom/nestjs-libraries/dtos/stalker/stalker.dto';
 
 @ApiTags('Stalker')
@@ -42,12 +46,39 @@ export class StalkerController {
     return this._stalkerService.createProject(org.id, body);
   }
 
+  @Post('/projects/:id')
+  updateProject(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: UpdateStalkerProjectDto
+  ) {
+    return this._stalkerService.updateProject(org.id, id, body);
+  }
+
   @Get('/mentions')
   mentions(
     @GetOrgFromRequest() org: Organization,
     @Query() query: StalkerMentionQueryDto
   ) {
     return this._stalkerService.mentions(org.id, query);
+  }
+
+  @Post('/mentions/:id/reply')
+  reply(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: StalkerReplyDto
+  ) {
+    return this._stalkerService.reply(org.id, id, body);
+  }
+
+  @Post('/mentions/:id/save')
+  saveMention(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: StalkerSaveMentionDto
+  ) {
+    return this._stalkerService.saveMention(org.id, id, body);
   }
 
   @Post('/mentions/:id/status')
@@ -90,9 +121,34 @@ export class StalkerController {
   @Get('/analytics')
   analytics(
     @GetOrgFromRequest() org: Organization,
+    @Query('projectId') projectId: string,
+    @Query('date') date?: string
+  ) {
+    return this._stalkerService.analytics(org.id, projectId, date);
+  }
+
+  @Get('/views')
+  views(
+    @GetOrgFromRequest() org: Organization,
     @Query('projectId') projectId: string
   ) {
-    return this._stalkerService.analytics(org.id, projectId);
+    return this._stalkerService.views(org.id, projectId);
+  }
+
+  @Post('/views')
+  createView(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateStalkerViewDto
+  ) {
+    return this._stalkerService.createView(org.id, body);
+  }
+
+  @Delete('/views/:id')
+  deleteView(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.deleteView(org.id, id);
   }
 
   @Get('/themes')

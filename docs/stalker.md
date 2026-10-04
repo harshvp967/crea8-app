@@ -4,7 +4,7 @@ Stalker Lite is an audience-listening dashboard for Crea8one. It is off unless `
 
 ## Projects
 
-A workspace listens per project. A project has a name, description, and one of six colors. Keywords, custom categories, and mentions belong to that project. The left nav has a project switcher (the choice is stored in `localStorage` as `crea8-stalker-project`). A workspace with no project sees a three-step wizard: project, keywords (with an extra-keyword row and per-keyword X / Reddit / YouTube / LinkedIn toggles), then categories. Unavailable sources are greyed and keep a tooltip. Create project is one `POST /stalker/projects`.
+A workspace listens per project. A project has a name, description, and one of six colors. The first wizard step also stores a brand name, aliases, per-platform handles, and negative keywords. Settings edits the same fields, plus an alert email and an optional `mention.created` webhook URL. Handles are suggested from connected channels (`Integration.profile`, otherwise the channel name). Keywords, custom categories, and mentions belong to that project. The left nav has a project switcher (the choice is stored in `localStorage` as `crea8-stalker-project`). A workspace with no project sees a three-step wizard: project, keywords (with an extra-keyword row and per-keyword X / Reddit / YouTube / LinkedIn toggles), then categories. Unavailable sources are greyed and keep a tooltip. Create project is one `POST /stalker/projects`.
 
 Organizations with no project are not polled.
 
@@ -12,15 +12,16 @@ Organizations with no project are not polled.
 
 For each project, about every 6 hours:
 
-1. Comments on the organization's own connected channels, collected once and copied onto every project.
-   - YouTube: one `commentThreads.list` for the channel (`allThreadsRelatedToChannelId`), up to 20 threads.
-   - Instagram (Facebook Login and standalone): the 5 most recent media items, up to 20 comments each.
-   - Facebook Pages: the 5 most recent posts, up to 20 comments each.
-2. Keyword search through `StalkerSourceProvider.search(keyword, since)`. A source runs only when it is enabled and the keyword's platform flag is on. Up to 5 flagged keywords per source per run.
+1. One brand search per enabled source, built by that source from the brand name, aliases, and handle (`"crea8one" OR @crea8one -from:crea8one` on X, name plus `u/` and `r/` on Reddit, name plus `@handle` joined with `|` on YouTube). Own posts are dropped when the author matches that project's handle. Negative keywords drop a hit. A public hit is kept only when the text contains a brand, alias, handle, or keyword as a whole word. Each kept row records what matched (`BRAND`, `ALIAS`, `HANDLE`, or `KEYWORD`).
+2. Keyword search through `StalkerSourceProvider.search(keyword, since)`. A source runs only when it is enabled and the keyword's platform flag is on. Up to 5 flagged keywords per source per run. The same word-boundary and negative-keyword rules apply. Brand search does not wait on those flags.
    - YouTube: a connected channel token. `search.list` (5 videos from the last 7 days) plus comments on those videos.
    - Reddit: app-only OAuth (`REDDIT_STALKER_CLIENT_ID` and `REDDIT_STALKER_CLIENT_SECRET`), User-Agent `web:crea8one-stalker:1.0 (by /u/crea8one)`, posts then comments, at least 1.1s between requests. Unset credentials leave Reddit off.
    - X: official recent search when `X_STALKER_BEARER_TOKEN` is set. The start time stays inside the last 6 days.
    - LinkedIn: placeholder. `enabled()` is always false. No environment variable turns it on.
+3. Comments on the organization's own connected channels, collected once and copied onto every project. These stay in the feed even when they do not contain the brand (own posts and negative keywords are still dropped). Search rows are stored first, so a comment that was also a search hit keeps its match tag.
+   - YouTube: one `commentThreads.list` for the channel (`allThreadsRelatedToChannelId`), up to 20 threads. A reviewed reply uses `comments.insert` on a comment or `commentThreads.insert` on a video. Nothing is posted until the person clicks Send.
+   - Instagram (Facebook Login and standalone): the 5 most recent media items, up to 20 comments each.
+   - Facebook Pages: the 5 most recent posts, up to 20 comments each.
 
 Search results are cached in `StalkerSearchCache` by platform and lowercased phrase for the 6-hour poll window, so the same keyword is not fetched again for another organization. A failed call is not cached. An empty result is cached. Mentions are unique per organization, project, and external id (`yt-comment:`, `yt-video:`, `ig-comment:`, `fb-comment:`, `rd-post:`, `rd-comment:`, `x-post:`).
 
@@ -32,13 +33,21 @@ When `OPENAI_API_KEY` is set and the project has categories, new mentions are se
 
 If there is no API key or the project has no categories, mentions stay unclassified (`OTHER`, `NEUTRAL`, urgency 0).
 
-Themes are still rebuilt per project from classified, non-spam mentions from the last 14 days. `/stalker/themes` remains so the old URL does not 404. It is not in the sidebar.
+Themes are rebuilt per project from classified, non-spam mentions from the last 14 days. Themes is in the sidebar. Draft post on a theme asks `/stalker/draft` and opens the Schedule composer.
 
-Mention status is `NEW`, `REPLIED`, or `IGNORED`.
+Mention status is `NEW`, `REPLIED`, or `IGNORED`. Save marks a row, and Save testimonial or Save idea also points it at a matching project category when one exists.
 
-## Create post
+When alerts are on and an address is saved, a mention classified as a bug report or complaint, or with urgency 70 or higher, is emailed with `EmailService.sendEmailSync`. That uses the app's existing mail settings. It does not start the email workflow.
 
-On a mention, Create post asks `/stalker/draft` and opens the existing post composer with that text. A testimonial also has Make quote post. A theme has Create post. Nothing else in Stalker writes to the calendar.
+If the project has a webhook URL, each newly stored mention is POSTed as `{ "event": "mention.created", "projectId", "mention" }`. The URL is checked with `isSafePublicHttpsUrl` on save and again before the request, which uses `getSsrfSafeDispatcher`. This is separate from the post-integration Webhooks table.
+
+## Create post and reply
+
+Reply on a mention loads an AI draft from `/stalker/draft` into a review box. Send calls `POST /stalker/mentions/:id/reply`, which uses the connected account's `stalkerReply`. YouTube, Facebook, Instagram, and X implement it. If the mention has no connected account, Send fails and Draft post is still available. Draft post opens the existing Schedule composer. Nothing is sent or scheduled automatically.
+
+## Saved views
+
+`POST /stalker/views` stores the current Mentions filters under a name, up to 20 per project. Applying a view restores date, source, author, keyword, category, sentiment, status, search text, and match kind.
 
 ## Data model
 
@@ -48,6 +57,7 @@ Later migrations, also additive:
 
 - `20261004120000_stalker_sources` — `REDDIT_POST`, `REDDIT_COMMENT`, `X_POST`, `LINKEDIN_POST`, and `StalkerSearchCache`.
 - `20261004130000_stalker_projects` — `StalkerProject`, `StalkerProjectCategory`, `StalkerMentionStatus`, nullable `projectId` on keywords, mentions, and themes, per-keyword listen flags, mention `categoryId` and `status`. The old unique keys on `(organizationId, phrase)` and `(organizationId, externalId)` are replaced by `(projectId, phrase)` and `(organizationId, projectId, externalId)` so two projects can store the same public post.
+- `20261004140000_stalker_brand` — brand name, aliases, negative keywords, handles, alert email, webhook URL, `StalkerMatchKind`, match label, author handle, like and reply counts, saved flag, `StalkerSavedView`, and trigram indexes on mention text and author. Apply this SQL migration. `prisma db push` does not create the `pg_trgm` indexes; search still works without them.
 
 A project can store 10 keywords and 12 categories. YouTube and Reddit listen by default. X and LinkedIn do not.
 
@@ -57,12 +67,16 @@ All routes require a signed-in organization and return 404 when the flag is off.
 
 - `GET /stalker/status` — poll settings plus which keyword and comment sources are available for this organization
 - `GET /stalker/projects` and `POST /stalker/projects`
-- `GET /stalker/mentions?projectId=&date=&source=&from=&keywordId=&categoryId=&sentiment=&status=`
+- `POST /stalker/projects/:id` — brand, handles, negative keywords, alert email, webhook URL
+- `GET /stalker/mentions?projectId=&date=&source=&from=&keywordId=&categoryId=&sentiment=&status=&q=&match=`
 - `POST /stalker/mentions/:id/status` `{ "status": "NEW" | "REPLIED" | "IGNORED" }`
+- `POST /stalker/mentions/:id/reply` `{ "text" }` — sends through the connected account after review
+- `POST /stalker/mentions/:id/save` `{ "saved": true, "as"?: "testimonial" | "idea" }`
 - `GET /stalker/keywords?projectId=`
 - `POST /stalker/keywords` `{ "projectId", "phrase", "youtube"?, "reddit"?, "x"?, "linkedin"? }`
 - `DELETE /stalker/keywords/:id`
-- `GET /stalker/analytics?projectId=`
+- `GET /stalker/analytics?projectId=&date=` — `date` is `24h`, `7d`, `30d` (default), or `all`
+- `GET /stalker/views?projectId=`, `POST /stalker/views`, `DELETE /stalker/views/:id`
 - `GET /stalker/themes`
 - `POST /stalker/draft` `{ "mentionId"?: "...", "themeId"?: "...", "mode": "post" | "quote" }`
 - `POST /stalker/poll` — runs one check for the current organization (the Settings "Check now" button).
@@ -74,7 +88,8 @@ The 6-hour loop is the Temporal workflow `stalkerPollWorkflow`. It starts from t
 Set the same flag on the frontend (Vercel) and the backend (Railway):
 
 - `STALKER_ENABLED=true` — turns the API, the poll workflow, and the dashboard switcher on. Any other value, including unset, leaves Stalker off.
-- `OPENAI_API_KEY` — already used by the app. Required for categories, themes, and generated drafts. Mentions still collect without it.
+- `OPENAI_API_KEY` — already used by the app. Required for categories, themes, suggested replies, and generated drafts. Mentions still collect without it.
+- `EMAIL_FROM_ADDRESS` and `EMAIL_FROM_NAME` — already used by the app. Urgent alerts are skipped when either is missing.
 - `YOUTUBE_CLIENT_ID` and `YOUTUBE_CLIENT_SECRET` — already used for YouTube connect. Keyword search and comment reads use the connected channel token. No new YouTube scope is requested. `youtubepartner` is not used.
 - `REDDIT_STALKER_CLIENT_ID` and `REDDIT_STALKER_CLIENT_SECRET` — Reddit app-only credentials. Both must be set or Reddit search stays off.
 - `X_STALKER_BEARER_TOKEN` — X API v2 recent search. Unset leaves X off.
@@ -95,4 +110,4 @@ A full keyword run is about 525 units plus 1 unit per extra YouTube channel. `St
 
 ## UI
 
-`/stalker` redirects to `/stalker/mentions`. The sidebar is Mentions, Analytics, Keywords, Alerts, Settings, plus the project switcher. A workspace with no project sees the wizard instead of that nav. Mentions can be filtered by date, source, author, keyword, category, sentiment, and status. With no rows and no filters, the empty state is `No mentions yet. Stalker is listening for mentions of <project>`. Analytics is counts by source, category, and sentiment, plus a 14-day timeline. Alerts is a placeholder. The Schedule menu is unchanged. The switcher is the way between `/launches` and `/stalker/mentions`.
+`/stalker` redirects to `/stalker/mentions`. The sidebar is Mentions, Analytics, Themes, Keywords, Alerts, Settings, plus the project switcher. A workspace with no project sees the wizard instead of that nav. Mentions can be filtered by date, source, author, keyword, category, sentiment, status, free text, and what matched. Saved views store that combination. The feed is grouped by day. With no rows and no filters, the empty state is `No mentions yet. Stalker is listening for mentions of <project>`. Analytics defaults to the last 30 days and includes mentions over time and the accounts that mention the brand most. Alerts explains the email rule and points at Settings. The Schedule menu is unchanged. The switcher is the way between `/launches` and `/stalker/mentions`. Usage caps are not enforced.

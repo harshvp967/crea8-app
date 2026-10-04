@@ -273,6 +273,16 @@ export class InstagramStandaloneProvider
     );
   }
 
+  async stalkerReply(input: {
+    accessToken: string;
+    integration: Integration;
+    postExternalId?: string;
+    externalId: string;
+    text: string;
+  }): Promise<{ id?: string }> {
+    return instagramProvider.stalkerReply(input, 'graph.instagram.com');
+  }
+
   async collectStalkerMentions(input: {
     accessToken: string;
     integration: Integration;

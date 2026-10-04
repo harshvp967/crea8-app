@@ -49,6 +49,7 @@ model Organization {
   stalkerThemes       StalkerTheme[]
   stalkerMentions     StalkerMention[]
   stalkerProjects     StalkerProject[]
+  stalkerSavedViews   StalkerSavedView[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -1841,12 +1842,32 @@ enum StalkerMentionStatus {
   IGNORED
 }
 
+enum StalkerMatchKind {
+  BRAND
+  ALIAS
+  HANDLE
+  KEYWORD
+}
+
 model StalkerProject {
   id             String                   @id @default(uuid())
   organizationId String
   name           String
   description    String                   @default("")
   color          String                   @default("#00D9FF")
+  brandName      String                   @default("")
+  aliases        String                   @default("")
+  exclusions     String                   @default("")
+  handleX        String                   @default("")
+  handleRedditUser String                 @default("")
+  handleRedditSubreddit String            @default("")
+  handleYoutube  String                   @default("")
+  handleLinkedin String                   @default("")
+  handleInstagram String                  @default("")
+  handleFacebook String                   @default("")
+  alertEmail     String                   @default("")
+  alertsEnabled  Boolean                  @default(false)
+  webhookUrl     String                   @default("")
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   organization   Organization             @relation(fields: [organizationId], references: [id])
@@ -1854,7 +1875,24 @@ model StalkerProject {
   categories     StalkerProjectCategory[]
   mentions       StalkerMention[]
   themes         StalkerTheme[]
+  savedViews     StalkerSavedView[]
 
+  @@index([organizationId])
+}
+
+model StalkerSavedView {
+  id             String         @id @default(uuid())
+  organizationId String
+  projectId      String
+  name           String
+  filters        Json
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  project        StalkerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+  @@index([projectId])
   @@index([organizationId])
 }
 
@@ -1922,6 +1960,12 @@ model StalkerMention {
   category       StalkerCategory       @default(OTHER)
   sentiment      StalkerSentiment      @default(NEUTRAL)
   status         StalkerMentionStatus  @default(NEW)
+  matchKind      StalkerMatchKind?
+  matchLabel     String                @default("")
+  authorHandle   String                @default("")
+  likeCount      Int                   @default(0)
+  replyCount     Int                   @default(0)
+  saved          Boolean               @default(false)
   urgency        Int                   @default(0)
   authorName     String
   text           String
@@ -1944,6 +1988,7 @@ model StalkerMention {
   @@index([organizationId, source])
   @@index([organizationId, urgency])
   @@index([projectId, status])
+  @@index([matchKind])
   @@index([classifiedAt])
   @@index([themeId])
   @@index([keywordId])

@@ -1073,6 +1073,38 @@ export class InstagramProvider
     ];
   }
 
+  async stalkerReply(
+    input: {
+      accessToken: string;
+      integration: Integration;
+      postExternalId?: string;
+      externalId: string;
+      text: string;
+    },
+    host = 'graph.facebook.com'
+  ): Promise<{ id?: string }> {
+    if (!input.postExternalId) {
+      throw new Error('This Instagram mention cannot be replied to');
+    }
+    const [posted] = await this.comment(
+      'stalker',
+      input.postExternalId,
+      undefined,
+      input.accessToken,
+      [
+        {
+          id: 'stalker',
+          message: input.text,
+          media: [],
+          settings: { post_type: 'post', collaborators: [] },
+        },
+      ],
+      input.integration,
+      host
+    );
+    return { id: posted?.postId };
+  }
+
   private setTitle(name: string) {
     switch (name) {
       case 'likes': {

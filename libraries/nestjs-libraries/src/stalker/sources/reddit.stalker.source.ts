@@ -1,5 +1,8 @@
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { StalkerSourceProvider } from '@gitroom/nestjs-libraries/stalker/stalker.source';
+import {
+  StalkerSearchTerms,
+  StalkerSourceProvider,
+} from '@gitroom/nestjs-libraries/stalker/stalker.source';
 
 const USER_AGENT = 'web:crea8one-stalker:1.0 (by /u/crea8one)';
 const MIN_GAP_MS = 1100;
@@ -24,6 +27,8 @@ type RedditChild = {
     permalink?: string;
     created_utc?: number;
     link_id?: string;
+    score?: number;
+    num_comments?: number;
   };
 };
 
@@ -48,6 +53,23 @@ export class RedditStalkerSource implements StalkerSourceProvider {
     return available
       ? 'App credentials set'
       : 'Add Reddit app credentials';
+  }
+
+  buildQuery(input: StalkerSearchTerms) {
+    const parts = (input.phrases || [])
+      .map((phrase) => phrase.trim().replace(/"/g, ''))
+      .filter((phrase) => phrase.length >= 2)
+      .slice(0, 8)
+      .map((phrase) => `"${phrase}"`);
+    const handle = (input.handle || '').trim().replace(/^u\//i, '').replace(/^@/, '');
+    if (handle.length >= 2) {
+      parts.push(`u/${handle}`);
+    }
+    const subreddit = (input.subreddit || '').trim().replace(/^r\//i, '');
+    if (subreddit.length >= 2) {
+      parts.push(`r/${subreddit}`);
+    }
+    return parts.join(' OR ');
   }
 
   async search(keyword: string, since: Date): Promise<StalkerMentionDraft[]> {
@@ -144,12 +166,15 @@ export class RedditStalkerSource implements StalkerSourceProvider {
         externalId: `rd-post:${data.id}`,
         source: 'REDDIT_POST',
         authorName: data.author || 'Someone',
+        authorHandle: data.author || '',
         text: text.slice(0, 2000),
         url: data.permalink
           ? `https://www.reddit.com${data.permalink}`
           : undefined,
         postExternalId: data.id,
         keywordPhrase: keyword,
+        likeCount: data.score || 0,
+        replyCount: data.num_comments || 0,
       });
     }
     return drafts;
@@ -171,7 +196,9 @@ export class RedditStalkerSource implements StalkerSourceProvider {
         externalId: `rd-comment:${data.id}`,
         source: 'REDDIT_COMMENT',
         authorName: data.author || 'Someone',
+        authorHandle: data.author || '',
         text: body.slice(0, 2000),
+        likeCount: data.score || 0,
         url: data.permalink
           ? `https://www.reddit.com${data.permalink}`
           : undefined,

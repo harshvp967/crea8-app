@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useStalkerAnalytics } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 
@@ -45,20 +46,33 @@ const Bars = ({
 
 export const StalkerAnalytics = () => {
   const { projectId } = useStalkerProject();
-  const { data, isLoading } = useStalkerAnalytics(projectId);
+  const [date, setDate] = useState('30d');
+  const { data, isLoading } = useStalkerAnalytics(projectId, date);
   const bySource = Array.isArray(data?.bySource) ? data.bySource : [];
   const byCategory = Array.isArray(data?.byCategory) ? data.byCategory : [];
   const bySentiment = Array.isArray(data?.bySentiment) ? data.bySentiment : [];
   const overTime = Array.isArray(data?.overTime) ? data.overTime : [];
+  const accounts = Array.isArray(data?.accounts) ? data.accounts : [];
 
   return (
     <div className="flex flex-col gap-[16px]">
       <div>
         <h1 className="text-[28px] font-[600]">Analytics</h1>
         <p className="mt-[6px] text-[14px] text-textItemBlur">
-          Counts for this project, grouped by source, category, and sentiment. The timeline is the last 14 days.
+          Counts for this project. The default window is the last 30 days.
         </p>
       </div>
+      <select
+        aria-label="Date"
+        className="w-fit rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[12px] py-[8px] text-[13px]"
+        value={date}
+        onChange={(event) => setDate(event.target.value)}
+      >
+        <option value="24h">Last 24 hours</option>
+        <option value="7d">Last 7 days</option>
+        <option value="30d">Last 30 days</option>
+        <option value="all">All time</option>
+      </select>
       {isLoading ? (
         <p className="text-[14px] text-textItemBlur">Loading analytics…</p>
       ) : null}
@@ -85,9 +99,16 @@ export const StalkerAnalytics = () => {
           }))}
         />
         <Bars
-          title="Over time"
+          title="Mentions over time"
           rows={overTime.map((row: { date: string; count: number }) => ({
             label: row.date,
+            count: row.count,
+          }))}
+        />
+        <Bars
+          title="Accounts mentioning you most"
+          rows={accounts.map((row: { authorName: string; count: number }) => ({
+            label: row.authorName,
             count: row.count,
           }))}
         />

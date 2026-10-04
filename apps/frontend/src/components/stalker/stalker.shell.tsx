@@ -58,6 +58,10 @@ const StalkerBody = ({ children }: { children: ReactNode }) => {
       path: '/stalker/analytics',
     },
     {
+      label: t('stalker_themes', 'Themes'),
+      path: '/stalker/themes',
+    },
+    {
       label: t('stalker_keywords', 'Keywords'),
       path: '/stalker/keywords',
     },

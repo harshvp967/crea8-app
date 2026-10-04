@@ -19,6 +19,19 @@ export type StalkerProjectRecord = {
   name: string;
   description: string;
   color: string;
+  brandName?: string;
+  aliases?: string;
+  exclusions?: string;
+  handleX?: string;
+  handleRedditUser?: string;
+  handleRedditSubreddit?: string;
+  handleYoutube?: string;
+  handleLinkedin?: string;
+  handleInstagram?: string;
+  handleFacebook?: string;
+  alertEmail?: string;
+  alertsEnabled?: boolean;
+  webhookUrl?: string;
   categories?: Array<{ id: string; name: string; description: string }>;
 };
 
@@ -37,6 +50,13 @@ type StalkerStatus = {
   openAi?: boolean;
   sources?: StalkerSourceStatus[];
   commentSources?: Array<{ id: string; label: string; available: boolean }>;
+  suggestedHandles?: {
+    x?: string;
+    youtube?: string;
+    linkedin?: string;
+    instagram?: string;
+    facebook?: string;
+  };
 };
 
 type StalkerProjectContextValue = {

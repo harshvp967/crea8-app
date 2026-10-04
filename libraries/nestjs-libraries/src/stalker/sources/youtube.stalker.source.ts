@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import {
+  StalkerSearchTerms,
   StalkerSourceAuth,
   StalkerSourceProvider,
 } from '@gitroom/nestjs-libraries/stalker/stalker.source';
@@ -34,6 +35,19 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
 
   statusDetail(available: boolean) {
     return available ? 'Connected channel' : 'Connect a YouTube channel';
+  }
+
+  buildQuery(input: StalkerSearchTerms) {
+    const parts = (input.phrases || [])
+      .map((phrase) => phrase.trim().replace(/"/g, ''))
+      .filter((phrase) => phrase.length >= 2)
+      .slice(0, 8)
+      .map((phrase) => (phrase.includes(' ') ? `"${phrase}"` : phrase));
+    const handle = (input.handle || '').trim().replace(/^@/, '');
+    if (handle.length >= 2) {
+      parts.push(`@${handle}`);
+    }
+    return parts.join('|');
   }
 
   async search(
@@ -102,6 +116,7 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
             source: 'YOUTUBE_COMMENT',
             authorName: top?.snippet?.authorDisplayName || 'Someone',
             text: body.slice(0, 2000),
+            likeCount: Number(top?.snippet?.likeCount || 0),
             url: `https://www.youtube.com/watch?v=${videoId}&lc=${commentId}`,
             postExternalId: videoId,
             keywordPhrase: keyword,

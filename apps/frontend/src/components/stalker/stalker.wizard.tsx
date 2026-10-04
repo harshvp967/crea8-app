@@ -70,6 +70,18 @@ export const StalkerWizard = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(COLORS[0].value);
+  const [brandName, setBrandName] = useState('');
+  const [brandTouched, setBrandTouched] = useState(false);
+  const [aliases, setAliases] = useState('');
+  const [exclusions, setExclusions] = useState('');
+  const [handleX, setHandleX] = useState('');
+  const [handleRedditUser, setHandleRedditUser] = useState('');
+  const [handleRedditSubreddit, setHandleRedditSubreddit] = useState('');
+  const [handleYoutube, setHandleYoutube] = useState('');
+  const [handleLinkedin, setHandleLinkedin] = useState('');
+  const [handleInstagram, setHandleInstagram] = useState('');
+  const [handleFacebook, setHandleFacebook] = useState('');
+  const [handlesFilled, setHandlesFilled] = useState(false);
   const [keywords, setKeywords] = useState<KeywordDraft[]>([emptyKeyword()]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [saving, setSaving] = useState(false);
@@ -96,6 +108,19 @@ export const StalkerWizard = () => {
     );
   }, [sources, sourceById]);
 
+  useEffect(() => {
+    const handles = status?.suggestedHandles;
+    if (!handles || handlesFilled) {
+      return;
+    }
+    setHandleX((current) => current || handles.x || '');
+    setHandleYoutube((current) => current || handles.youtube || '');
+    setHandleLinkedin((current) => current || handles.linkedin || '');
+    setHandleInstagram((current) => current || handles.instagram || '');
+    setHandleFacebook((current) => current || handles.facebook || '');
+    setHandlesFilled(true);
+  }, [status, handlesFilled]);
+
   const updateKeyword = (index: number, patch: Partial<KeywordDraft>) => {
     setKeywords((current) =>
       current.map((keyword, keywordIndex) =>
@@ -116,6 +141,16 @@ export const StalkerWizard = () => {
         name: name.trim(),
         description: description.trim(),
         color,
+        brandName: (brandName || name).trim(),
+        aliases,
+        exclusions,
+        handleX,
+        handleRedditUser,
+        handleRedditSubreddit,
+        handleYoutube,
+        handleLinkedin,
+        handleInstagram,
+        handleFacebook,
         keywords: keywords
           .map((keyword) => ({
             phrase: keyword.phrase.trim(),
@@ -184,9 +219,59 @@ export const StalkerWizard = () => {
             name="name"
             disableForm={true}
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              const next = event.target.value;
+              setName(next);
+              if (!brandTouched) {
+                setBrandName(next);
+              }
+            }}
             placeholder="Crea8one"
           />
+          <Input
+            label="Brand name"
+            translationKey="label_brand_name"
+            name="brandName"
+            disableForm={true}
+            value={brandName}
+            onChange={(event) => {
+              setBrandTouched(true);
+              setBrandName(event.target.value);
+            }}
+            placeholder="crea8one"
+          />
+          <label className="flex flex-col gap-[6px] text-[14px]">
+            Aliases, one per line
+            <textarea
+              name="aliases"
+              className="min-h-[72px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[12px] py-[10px] text-[14px]"
+              value={aliases}
+              onChange={(event) => setAliases(event.target.value)}
+              placeholder={'crea8 one\ncrea8.one'}
+            />
+          </label>
+          <div className="grid gap-[10px] sm:grid-cols-2">
+            <Input label="X handle" translationKey="label_handle_x" name="handleX" disableForm={true} value={handleX} onChange={(event) => setHandleX(event.target.value)} placeholder="crea8one" />
+            <Input label="YouTube handle" translationKey="label_handle_youtube" name="handleYoutube" disableForm={true} value={handleYoutube} onChange={(event) => setHandleYoutube(event.target.value)} placeholder="crea8one" />
+            <Input label="Reddit username" translationKey="label_handle_reddit_user" name="handleRedditUser" disableForm={true} value={handleRedditUser} onChange={(event) => setHandleRedditUser(event.target.value)} placeholder="crea8one" />
+            <Input label="Subreddit" translationKey="label_handle_reddit_subreddit" name="handleRedditSubreddit" disableForm={true} value={handleRedditSubreddit} onChange={(event) => setHandleRedditSubreddit(event.target.value)} placeholder="crea8one" />
+            <Input label="LinkedIn company" translationKey="label_handle_linkedin" name="handleLinkedin" disableForm={true} value={handleLinkedin} onChange={(event) => setHandleLinkedin(event.target.value)} placeholder="crea8one" />
+            <Input label="Instagram handle" translationKey="label_handle_instagram" name="handleInstagram" disableForm={true} value={handleInstagram} onChange={(event) => setHandleInstagram(event.target.value)} placeholder="crea8one" />
+            <Input label="Facebook page" translationKey="label_handle_facebook" name="handleFacebook" disableForm={true} value={handleFacebook} onChange={(event) => setHandleFacebook(event.target.value)} placeholder="crea8one" />
+          </div>
+          <p className="text-[12px] text-textItemBlur">
+            Handles fill from connected channels when Stalker can read them.
+          </p>
+          <label className="flex flex-col gap-[6px] text-[14px]">
+            Negative keywords, one per line
+            <textarea
+              name="exclusions"
+              className="min-h-[72px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[12px] py-[10px] text-[14px]"
+              value={exclusions}
+              onChange={(event) => setExclusions(event.target.value)}
+              placeholder="unrelated brand"
+            />
+          </label>
           <label className="flex flex-col gap-[6px] text-[14px]">
             Description
             <textarea
