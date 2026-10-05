@@ -281,6 +281,15 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'Integration not allowed' }, 400);
     }
 
+    // Coming soon providers stay on the add-channel grid, but a new connect
+    // must not start OAuth. Refresh of an already linked channel is unchanged.
+    if (
+      !refresh &&
+      this._integrationManager.isComingSoonProvider(integration)
+    ) {
+      throw new HttpException({ msg: 'Coming soon' }, 400);
+    }
+
     // A provider migrated via MIGRATE_PROVIDERS reconnects through its target
     // provider's OAuth: the callback lands on the target and the channel is
     // migrated in place (see migrateIntegration).

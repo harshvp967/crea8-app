@@ -65,9 +65,12 @@ export default function TermsPage() {
         reviewing anything before you publish it or rely on it. We do not use
         your content or connected-account data to train AI models. Data from
         TikTok, Pinterest, X, and LinkedIn is used only to provide the service,
-        is never sold, and is never used to train AI models. We do not use
-        Reddit data for AI. YouTube data is used in line with the Google API
-        Services User Data Policy, including Limited Use.
+        is never sold, and is never used to train AI models. Reddit mention
+        text may be sent to an AI provider only to label category, sentiment,
+        and urgency and to summarize topics for the customer who set the
+        keywords. We do not train or fine-tune AI models on Reddit data.
+        YouTube data is used in line with the Google API Services User Data
+        Policy, including Limited Use.
       </p>
 
       <LegalH2>Third-party platforms</LegalH2>
@@ -89,13 +92,19 @@ export default function TermsPage() {
         </LegalLink>
         .
       </p>
+      <p>
+        Reddit features are subject to Reddit&apos;s terms. You must not use
+        Crea8one to post identical or substantially similar content across
+        subreddits, or to spam.
+      </p>
 
       <LegalH2>Subscriptions, billing, and refunds</LegalH2>
       <p>
-        Paid plans are billed by a third-party merchant of record (Paddle or
-        Lemon Squeezy). That merchant is the seller of record for the payment,
-        invoice, and applicable taxes. We do not store your card number. The
-        price, billing period, and what a plan includes are shown at checkout.
+        Paid plans are billed by Dodo Payments, which acts as the merchant of
+        record and payment processor. Dodo Payments is the seller of record for
+        the payment, invoice, and applicable taxes. We do not store your card
+        number. The price, billing period, and what a plan includes are shown
+        at checkout.
       </p>
       <p>
         Refunds are handled by the merchant of record under its terms and under

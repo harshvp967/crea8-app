@@ -78,6 +78,21 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   // new MastodonCustomProvider(),
 ];
 
+// Stays on the add-channel grid with a "Coming soon" badge. A new connect
+// does not start OAuth. Add an identifier here to tag another provider.
+// The main `tiktok` provider is intentionally not in this list.
+// COMING_SOON_PROVIDERS env ("discord,vk") appends extra ids the same way
+// HIDDEN_PROVIDERS hides providers. A hidden id is still removed from the grid.
+export const COMING_SOON_PROVIDERS = [
+  'medium',
+  'whop',
+  'mewe',
+  'tiktok-business',
+  'discord',
+  'vk',
+  'gmb',
+];
+
 @Injectable()
 export class IntegrationManager {
   // Both are env-driven so cloud and self-hosted instances can differ:
@@ -89,6 +104,18 @@ export class IntegrationManager {
     return (process.env.HIDDEN_PROVIDERS || '')
       .split(',')
       .map((p) => p.trim())
+      .includes(identifier);
+  }
+
+  isComingSoonProvider(identifier: string) {
+    if (COMING_SOON_PROVIDERS.includes(identifier)) {
+      return true;
+    }
+
+    return (process.env.COMING_SOON_PROVIDERS || '')
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean)
       .includes(identifier);
   }
 
@@ -138,6 +165,7 @@ export class IntegrationManager {
             isExternal: !!p.externalUrl,
             isWeb3: !!p.isWeb3,
             isChromeExtension: !!p.isChromeExtension,
+            comingSoon: this.isComingSoonProvider(p.identifier),
             ...(p.extensionCookies
               ? { extensionCookies: p.extensionCookies }
               : {}),
