@@ -3,6 +3,10 @@
 import { usePathname } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import {
+  CalendarIcon,
+  StalkerIcon,
+} from '@gitroom/frontend/components/ui/icons';
 
 // Add a future dashboard by appending an item and a flag check.
 // Schedule is always on. Stalker is on only when STALKER_ENABLED=true.
@@ -11,11 +15,13 @@ export const DASHBOARDS = [
     id: 'schedule',
     label: 'Schedule',
     href: '/launches',
+    Icon: CalendarIcon,
   },
   {
     id: 'stalker',
     label: 'Stalker',
     href: '/stalker/mentions',
+    Icon: StalkerIcon,
   },
 ] as const;
 
@@ -38,6 +44,7 @@ export const DashboardSwitcher = () => {
         value: item.id,
         label: item.label,
         href: item.href,
+        icon: <item.Icon />,
       }))}
     />
   );

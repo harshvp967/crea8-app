@@ -2,6 +2,11 @@
 
 import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import {
+  DayCalendarIcon,
+  MonthCalendarIcon,
+  WeekCalendarIcon,
+} from '@gitroom/frontend/components/ui/icons';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
@@ -161,9 +166,8 @@ export const Filters = () => {
       if (next === 'day') setDay();
       else if (next === 'week') setWeek();
       else if (next === 'month') setMonth();
-      else if (next === 'list') setList();
     },
-    [setDay, setWeek, setMonth, setList]
+    [setDay, setWeek, setMonth]
   );
 
   const setCalendarView = useCallback(() => {
@@ -450,10 +454,13 @@ export const Filters = () => {
         value={calendar.display}
         onValueChange={setDisplay}
         options={[
-          { value: 'day', label: t('day', 'Day') },
-          { value: 'week', label: t('week', 'Week') },
-          { value: 'month', label: t('month', 'Month') },
-          { value: 'list', label: t('list', 'List') },
+          { value: 'day', label: t('day', 'Day'), icon: <DayCalendarIcon /> },
+          { value: 'week', label: t('week', 'Week'), icon: <WeekCalendarIcon /> },
+          {
+            value: 'month',
+            label: t('month', 'Month'),
+            icon: <MonthCalendarIcon />,
+          },
         ]}
       />
       <div className="flex flex-row shrink-0 p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">

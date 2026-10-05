@@ -2,7 +2,7 @@
 
 // Ported from Tweenly Segmented Control
 // (https://trytweenly.vercel.app/r/segmented-control.json).
-// The active pill is a soft cyan tint with a hairline border, not a solid fill.
+// The active pill is a soft cyan wash with a 1px hairline. No outer glow.
 import {
   useId,
   useRef,
@@ -52,9 +52,8 @@ const sizes = {
 };
 
 const softPill = {
-  background: 'color-mix(in srgb, #00D9FF 22%, var(--new-bgColorInner))',
-  boxShadow:
-    '0 0 14px color-mix(in srgb, #00D9FF 32%, transparent), inset 0 0 0 1px color-mix(in srgb, #00D9FF 70%, transparent)',
+  background: 'color-mix(in srgb, #00D9FF 18%, var(--new-bgColorInner))',
+  boxShadow: 'inset 0 0 0 1px color-mix(in srgb, #00D9FF 42%, transparent)',
 };
 
 export function SegmentedControl({
@@ -114,7 +113,7 @@ export function SegmentedControl({
       {options.map((option, i) => {
         const active = option.value === selected;
         const itemClass = clsx(
-          'relative inline-flex items-center justify-center rounded-full font-[600] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#00D9FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
+          'relative inline-flex items-center justify-center whitespace-nowrap rounded-full font-[600] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#00D9FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
           sizes[size],
           active
             ? 'text-newTextColor'
@@ -134,7 +133,10 @@ export function SegmentedControl({
               />
             )}
             {option.icon && (
-              <span className="relative flex [&_svg]:size-[1.1em]">
+              <span
+                aria-hidden="true"
+                className="relative flex shrink-0 items-center [&_svg]:h-[1.15em] [&_svg]:w-auto"
+              >
                 {option.icon}
               </span>
             )}
