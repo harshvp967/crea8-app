@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -20,6 +20,52 @@ import clsx from 'clsx';
 import copy from 'copy-to-clipboard';
 import { capitalize } from 'lodash';
 const resolver = classValidatorResolver(ApiKeyDto);
+
+async function writeInviteLink(url: string) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(url);
+      return true;
+    } catch {
+      // The async clipboard API needs a secure context and permission.
+      // execCommand still works on the click that follows.
+    }
+  }
+
+  return copy(url);
+}
+
+const InviteLinkModal: FC<{
+  url: string;
+}> = ({ url }) => {
+  const [copied, setCopied] = useState(false);
+  const t = useT();
+  const onCopy = useCallback(async () => {
+    setCopied(await writeInviteLink(url));
+  }, [url]);
+
+  return (
+    <div className="flex flex-col gap-[12px] pt-[8px]">
+      <p className="text-[14px] text-textColor/80">
+        {t(
+          'invite_link_manual_copy',
+          'Copy this link and send it to your customer. It expires in 1 hour.'
+        )}
+      </p>
+      <input
+        readOnly
+        value={url}
+        onFocus={(e) => e.currentTarget.select()}
+        className="w-full bg-newTableHeader border border-tableBorder rounded-[8px] px-[12px] py-[10px] text-[13px] text-textColor"
+      />
+      <Button type="button" onClick={onCopy}>
+        {copied
+          ? t('copied', 'Copied')
+          : t('copy_link', 'Copy link')}
+      </Button>
+    </div>
+  );
+};
 
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
   const modal = useModals();
@@ -463,9 +509,14 @@ export const AddProviderComponent: FC<{
           // carry the `postiz://` deep link so the backend redirects
           // back to the iOS/Android app after OAuth completes, instead
           // of the default web redirect.
+          // Only send externalUrl when the provider asked for an instance
+          // URL. encodeURIComponent(undefined) is the string "undefined".
           const params = [
-            `externalUrl=${encodeURIComponent(externalUrl)}`,
+            externalUrl
+              ? `externalUrl=${encodeURIComponent(externalUrl)}`
+              : '',
             onboardingParam,
+            invite ? 'invite=true' : '',
             isMobile
               ? `redirectUrl=${encodeURIComponent('postiz://integrations')}`
               : '',
@@ -490,12 +541,22 @@ export const AddProviderComponent: FC<{
           }
 
           if (invite) {
-            toaster.show(
-              'Invite link copied to clipboard, link will be available for 1 hour',
-              'success'
-            );
-            modal.closeAll();
-            copy(url);
+            const copied = await writeInviteLink(url);
+            if (copied) {
+              toaster.show(
+                'Invite link copied to clipboard, link will be available for 1 hour',
+                'success'
+              );
+              modal.closeAll();
+              return;
+            }
+
+            modal.openModal({
+              title: t('invite_link_title', 'Invite link'),
+              withCloseButton: true,
+              ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
+              children: <InviteLinkModal url={url} />,
+            });
             return;
           }
 

@@ -10,7 +10,10 @@ import {
   LinkedinProvider,
   linkedinPagesUnavailable,
 } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
-import { NotEnoughScopes } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  NotEnoughScopes,
+  readProviderError,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
@@ -142,7 +145,7 @@ export class LinkedinPageProvider
   }
 
   async companies(accessToken: string) {
-    const { elements, ...all } = await (
+    const companyBody = await (
       await fetch(
         'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&state=APPROVED&projection=(elements*(role,organizationalTarget~(localizedName,vanityName,logoV2(original~:playableStreams))))',
         {
@@ -154,6 +157,18 @@ export class LinkedinPageProvider
         }
       )
     ).json();
+
+    if (companyBody?.status && Number(companyBody.status) >= 400) {
+      throw new Error(
+        readProviderError(companyBody) ||
+          (typeof companyBody.message === 'string'
+            ? companyBody.message
+            : '') ||
+          'Could not load LinkedIn pages'
+      );
+    }
+
+    const { elements } = companyBody;
 
     return (elements || [])
       .filter(

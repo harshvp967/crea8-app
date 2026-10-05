@@ -7,6 +7,7 @@ import {
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import {
   BadBody,
+  readProviderError,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -84,7 +85,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const { access_token, team, bot_user_id, scope } = await (
+    const slackToken = await (
       await this.fetch(`https://slack.com/api/oauth.v2.access`, {
         method: 'POST',
         headers: {
@@ -104,6 +105,13 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
         }),
       })
     ).json();
+
+    const { access_token, team, bot_user_id, scope } = slackToken;
+    if (!access_token || typeof scope !== 'string') {
+      throw new Error(
+        readProviderError(slackToken) || 'Slack rejected this connection'
+      );
+    }
 
     this.checkScopes(this.scopes, scope.split(','));
 

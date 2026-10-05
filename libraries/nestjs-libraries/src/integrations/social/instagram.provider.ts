@@ -12,6 +12,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  readProviderError,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -459,7 +460,14 @@ export class InstagramProvider
       )
     ).json();
 
-    const { access_token, expires_in, ...all } = await (
+    if (!getAccessToken?.access_token) {
+      throw new Error(
+        readProviderError(getAccessToken) ||
+          'The platform rejected this connection'
+      );
+    }
+
+    const longLived = await (
       await fetch(
         `https://graph.facebook.com/${META_GRAPH_API_VERSION}/oauth/access_token` +
           '?grant_type=fb_exchange_token' +
@@ -469,13 +477,27 @@ export class InstagramProvider
       )
     ).json();
 
-    const { data } = await (
+    const access_token = longLived?.access_token;
+    if (!access_token) {
+      throw new Error(
+        readProviderError(longLived) || 'The platform rejected this connection'
+      );
+    }
+
+    const permissionsBody = await (
       await fetch(
         `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/permissions?access_token=${access_token}`
       )
     ).json();
 
-    const permissions = data
+    if (!Array.isArray(permissionsBody?.data)) {
+      throw new Error(
+        readProviderError(permissionsBody) ||
+          'The platform did not return the granted permissions'
+      );
+    }
+
+    const permissions = permissionsBody.data
       .filter((d: any) => d.status === 'granted')
       .map((p: any) => p.permission);
     this.checkScopes(this.scopes, permissions);
@@ -506,6 +528,15 @@ export class InstagramProvider
       let nextUrl: string | undefined = startUrl;
       while (nextUrl) {
         const response = await (await fetch(nextUrl)).json();
+        if (response?.error && !response?.data) {
+          if (!allFacebookPages.length) {
+            throw new Error(
+              readProviderError(response) ||
+                'Could not load Facebook pages for this account'
+            );
+          }
+          break;
+        }
         if (response.data) {
           for (const page of response.data) {
             if (!seenPageIds.has(page.id)) {

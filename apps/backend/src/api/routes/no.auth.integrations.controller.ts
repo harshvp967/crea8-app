@@ -5,8 +5,10 @@ import {
   HttpException,
   Param,
   Post,
+  Req,
   UseFilters,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -16,13 +18,17 @@ import { ApiTags } from '@nestjs/swagger';
 import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { NotEnoughScopes } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  NotEnoughScopes,
+  readThrownProviderError,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 
 @ApiTags('Integrations')
@@ -32,8 +38,49 @@ export class NoAuthIntegrationsController {
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _usersService: UsersService
   ) {}
+
+  // The callback is public. A cookie is optional: invite links are opened by
+  // people who are not members of the inviting workspace, and an invalid
+  // cookie must not fail the connect.
+  private async sessionOrganizationId(
+    req: Request
+  ): Promise<string | undefined> {
+    const headerAuth = req.headers.auth;
+    const auth =
+      (Array.isArray(headerAuth) ? headerAuth[0] : headerAuth) ||
+      req.cookies?.auth;
+    if (!auth || typeof auth !== 'string') {
+      return undefined;
+    }
+
+    try {
+      const payload = AuthService.verifyJWT(auth) as { id?: string } | null;
+      if (!payload?.id) {
+        return undefined;
+      }
+
+      const user = await this._usersService.getUserById(payload.id);
+      if (!user?.activated) {
+        return undefined;
+      }
+
+      const headerOrg = req.headers.showorg;
+      const orgHeader =
+        (Array.isArray(headerOrg) ? headerOrg[0] : headerOrg) ||
+        req.cookies?.showorg;
+      const organization = (
+        await this._organizationService.getOrgsByUserId(user.id)
+      ).filter((f) => !f.users[0].disabled);
+      const setOrg =
+        organization.find((item) => item.id === orgHeader) || organization[0];
+      return setOrg?.id;
+    } catch {
+      return undefined;
+    }
+  }
 
   @Get('/')
   getIntegrations() {
@@ -45,7 +92,8 @@ export class NoAuthIntegrationsController {
   @UseFilters(new NotEnoughScopesFilter())
   async connectSocialMedia(
     @Param('integration') integration: string,
-    @Body() body: ConnectIntegrationDto
+    @Body() body: ConnectIntegrationDto,
+    @Req() req: Request
   ) {
     if (
       !this._integrationManager
@@ -175,7 +223,7 @@ export class NoAuthIntegrationsController {
         }
 
         return res({
-          error: 'Authentication failed',
+          error: readThrownProviderError(err) || 'Authentication failed',
           accessToken: '',
           id: '',
           name: '',
@@ -276,6 +324,7 @@ export class NoAuthIntegrationsController {
 
     // Fetch pages if this is a two-step provider and not a refresh
     let pages: any[] = [];
+    let pagesError: string | undefined;
     if (integrationProvider.isBetweenSteps && !refresh) {
       try {
         // Check which method the provider uses (pages or companies)
@@ -292,6 +341,9 @@ export class NoAuthIntegrationsController {
         }
       } catch (err) {
         console.log('Failed to fetch pages:', err);
+        pagesError =
+          readThrownProviderError(err) ||
+          'Could not load pages for this account';
       }
     }
 
@@ -338,10 +390,20 @@ export class NoAuthIntegrationsController {
       ...safeIntegration
     } = createUpdate as any;
 
+    const invite = (await ioRedis.get(`invite:${body.state}`)) === 'true';
+    const sessionOrg = await this.sessionOrganizationId(req);
+    // The channel is already stored on the org from the OAuth state. When the
+    // browser is signed into a different workspace, the UI must not send that
+    // person to their own calendar.
+    const outsideWorkspace = !!sessionOrg && sessionOrg !== organization;
+
     return {
       ...safeIntegration,
       onboarding: onboarding === 'true',
+      invite,
+      outsideWorkspace,
       pages,
+      ...(pagesError ? { pagesError } : {}),
       ...(returnURL ? { returnURL } : {}),
       ...(extensionToken ? { extensionToken } : {}),
     };

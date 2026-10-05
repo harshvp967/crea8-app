@@ -8,6 +8,7 @@ import {
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import dayjs from 'dayjs';
 import {
+  readProviderError,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -150,7 +151,14 @@ export class InstagramStandaloneProvider
       })
     ).json();
 
-    const { access_token, expires_in, ...all } = await (
+    if (!getAccessToken?.access_token) {
+      throw new Error(
+        readProviderError(getAccessToken) ||
+          'The platform rejected this connection'
+      );
+    }
+
+    const longLived = await (
       await fetch(
         'https://graph.instagram.com/access_token' +
           '?grant_type=ig_exchange_token' +
@@ -159,6 +167,13 @@ export class InstagramStandaloneProvider
           `&access_token=${getAccessToken.access_token}`
       )
     ).json();
+
+    const access_token = longLived?.access_token;
+    if (!access_token) {
+      throw new Error(
+        readProviderError(longLived) || 'The platform rejected this connection'
+      );
+    }
 
     this.checkScopes(this.scopes, getAccessToken.permissions);
 

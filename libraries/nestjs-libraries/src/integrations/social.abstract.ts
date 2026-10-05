@@ -106,6 +106,76 @@ export class NotEnoughScopes {
   ) {}
 }
 
+// User-facing text from a provider JSON body. Query-string credentials stay
+// server-side; a normal OAuth error message ("app not active", "invalid
+// code") is safe to show on the callback page.
+export function readProviderError(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== 'object') {
+    return undefined;
+  }
+
+  const body = payload as {
+    error?: { message?: string } | string;
+    error_description?: string;
+    message?: string;
+  };
+  const description =
+    typeof body.error_description === 'string'
+      ? body.error_description.trim()
+      : '';
+  const errorText =
+    typeof body.error === 'string'
+      ? body.error
+      : typeof body.error?.message === 'string'
+      ? body.error.message
+      : '';
+  const message =
+    body.error && typeof body.message === 'string' ? body.message : '';
+  // error_description is the sentence Google and Meta show people.
+  // The short `error` code ("access_denied") is only a fallback.
+  return safeProviderMessage(description || errorText || message);
+}
+
+export function readThrownProviderError(err: unknown): string | undefined {
+  if (!err || typeof err !== 'object') {
+    return safeProviderMessage(err instanceof Error ? err.message : undefined);
+  }
+
+  const body = err as {
+    message?: string;
+    response?: { data?: unknown };
+    cause?: { message?: string; response?: { data?: unknown } };
+  };
+
+  return (
+    readProviderError(body.response?.data) ||
+    readProviderError(body.cause?.response?.data) ||
+    safeProviderMessage(body.message) ||
+    safeProviderMessage(body.cause?.message)
+  );
+}
+
+export function safeProviderMessage(message: unknown): string | undefined {
+  if (typeof message !== 'string') {
+    return undefined;
+  }
+
+  const cleaned = message.replace(/\s+/g, ' ').trim();
+  if (!cleaned) {
+    return undefined;
+  }
+
+  if (
+    /[?&](access_token|client_secret|refresh_token|fb_exchange_token)=/i.test(
+      cleaned
+    )
+  ) {
+    return undefined;
+  }
+
+  return cleaned.slice(0, 300);
+}
+
 function safeStringify(obj: any) {
   const seen = new WeakSet();
 
