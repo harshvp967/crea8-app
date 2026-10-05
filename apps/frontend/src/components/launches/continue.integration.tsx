@@ -26,8 +26,10 @@ interface SuccessState {
 const META_DEVELOPER_ROLE =
   'Meta blocked this account (Insufficient developer role). The Crea8.one app is still unpublished, so this Facebook user must be added as an Admin, Developer, or Tester. After App Review, switch the app to Live to allow other accounts.';
 
-const GOOGLE_TEST_USER =
-  'Google blocked this connection. While the OAuth consent screen is in Testing, only listed test users can sign in. Add this Google account under Test users, or publish the consent screen. YouTube scopes stay limited to those test users until Google verifies the app.';
+// Google approved YouTube verification for project crea8one (210129842261)
+// on 2026-10-03. Do not tell customers the consent screen is in Testing.
+const YOUTUBE_CONNECT_DENIED =
+  'Google did not complete this YouTube connection. Open the invite link again and allow access. When it succeeds, the channel is saved on the workspace that sent the link.';
 
 function explainConnectFailure(provider: string, message?: string) {
   const text = (message || '').replace(/\s+/g, ' ').trim();
@@ -36,12 +38,12 @@ function explainConnectFailure(provider: string, message?: string) {
   }
 
   if (
-    (provider === 'youtube' || provider === 'gmb') &&
+    provider === 'youtube' &&
     /access_denied|access blocked|verification process|not completed/i.test(
       text
     )
   ) {
-    return GOOGLE_TEST_USER;
+    return YOUTUBE_CONNECT_DENIED;
   }
 
   return text || 'Could not add provider';
@@ -73,11 +75,8 @@ function oauthRedirectError(provider: string, searchParams: any) {
   const code =
     (typeof searchParams?.error === 'string' && searchParams.error) ||
     description;
-  if (
-    code === 'access_denied' &&
-    (provider === 'youtube' || provider === 'gmb')
-  ) {
-    return GOOGLE_TEST_USER;
+  if (code === 'access_denied' && provider === 'youtube') {
+    return YOUTUBE_CONNECT_DENIED;
   }
 
   if (
