@@ -118,6 +118,46 @@ export class StalkerController {
     return this._stalkerService.deleteKeyword(org.id, id);
   }
 
+  @Get('/alerts')
+  alerts(
+    @GetOrgFromRequest() org: Organization,
+    @Query('projectId') projectId: string
+  ) {
+    return this._stalkerService.alerts(org.id, projectId);
+  }
+
+  @Post('/alerts/:id/read')
+  markAlertRead(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.markAlertRead(org.id, id);
+  }
+
+  @Post('/alerts/retry')
+  retryAlerts(
+    @GetOrgFromRequest() org: Organization,
+    @Body('projectId') projectId: string
+  ) {
+    return this._stalkerService.retryAlerts(org.id, projectId);
+  }
+
+  @Post('/keywords/:id/backfill')
+  backfillKeyword(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.requestBackfill(org.id, id);
+  }
+
+  @Get('/export')
+  exportMentions(
+    @GetOrgFromRequest() org: Organization,
+    @Query() query: StalkerMentionQueryDto
+  ) {
+    return this._stalkerService.exportMentions(org.id, query);
+  }
+
   @Get('/analytics')
   analytics(
     @GetOrgFromRequest() org: Organization,

@@ -6,6 +6,9 @@ import { Injectable } from '@nestjs/common';
 import {
   Integration,
   Prisma,
+  StalkerAlertChannel,
+  StalkerAlertKind,
+  StalkerAlertStatus,
   StalkerCategory,
   StalkerMatchKind,
   StalkerMentionStatus,
@@ -13,6 +16,7 @@ import {
   StalkerSource,
 } from '@prisma/client';
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mentionContentHash } from '@gitroom/nestjs-libraries/stalker/stalker.match';
 
 const CATEGORIES = new Set<string>(Object.values(StalkerCategory));
 const SENTIMENTS = new Set<string>(Object.values(StalkerSentiment));
@@ -69,6 +73,8 @@ export class StalkerRepository {
     private _project: PrismaRepository<'stalkerProject'>,
     private _category: PrismaRepository<'stalkerProjectCategory'>,
     private _view: PrismaRepository<'stalkerSavedView'>,
+    private _cursor: PrismaRepository<'stalkerScanCursor'>,
+    private _alert: PrismaRepository<'stalkerAlert'>,
     private _transaction: PrismaTransaction
   ) {}
 
@@ -111,21 +117,7 @@ export class StalkerRepository {
         linkedin: boolean;
       }[];
       categories: { name: string; description: string }[];
-      identity: {
-        brandName: string;
-        aliases: string;
-        exclusions: string;
-        handleX: string;
-        handleRedditUser: string;
-        handleRedditSubreddit: string;
-        handleYoutube: string;
-        handleLinkedin: string;
-        handleInstagram: string;
-        handleFacebook: string;
-        alertEmail: string;
-        alertsEnabled: boolean;
-        webhookUrl: string;
-      };
+      identity: Prisma.StalkerProjectUpdateManyMutationInput;
     }
   ) {
     return this._transaction.model.$transaction(async (tx) => {
@@ -135,7 +127,7 @@ export class StalkerRepository {
           name: input.name,
           description: input.description,
           color: input.color,
-          ...input.identity,
+          ...(input.identity as Prisma.StalkerProjectUncheckedCreateInput),
         },
       });
       if (input.categories.length) {
@@ -231,8 +223,93 @@ export class StalkerRepository {
   }
 
   deleteKeyword(organizationId: string, id: string) {
-    return this._keyword.model.stalkerKeyword.deleteMany({
+    return this._transaction.model.$transaction(async (tx) => {
+      const keyword = await tx.stalkerKeyword.findFirst({
+        where: { id, organizationId },
+      });
+      if (!keyword) {
+        return { count: 0 };
+      }
+      if (keyword.projectId) {
+        await tx.stalkerScanCursor.deleteMany({
+          where: {
+            projectId: keyword.projectId,
+            phraseKey: keyword.phrase.toLowerCase(),
+          },
+        });
+      }
+      return tx.stalkerKeyword.deleteMany({
+        where: { id, organizationId },
+      });
+    });
+  }
+
+  getKeyword(organizationId: string, id: string) {
+    return this._keyword.model.stalkerKeyword.findFirst({
       where: { id, organizationId },
+    });
+  }
+
+  listCursors(projectId: string) {
+    return this._cursor.model.stalkerScanCursor.findMany({
+      where: { projectId },
+    });
+  }
+
+  async armBackfill(
+    projectId: string,
+    sources: string[],
+    phraseKey: string,
+    until: Date
+  ) {
+    for (const source of sources) {
+      await this._cursor.model.stalkerScanCursor.upsert({
+        where: {
+          projectId_source_phraseKey: { projectId, source, phraseKey },
+        },
+        create: { projectId, source, phraseKey, backfillUntil: until },
+        update: { backfillUntil: until },
+      });
+    }
+  }
+
+  async finishScan(
+    projectId: string,
+    source: string,
+    phraseKey: string,
+    backfill: boolean
+  ) {
+    const now = new Date();
+    const existing = await this._cursor.model.stalkerScanCursor.findUnique({
+      where: {
+        projectId_source_phraseKey: { projectId, source, phraseKey },
+      },
+    });
+    if (backfill) {
+      await this._cursor.model.stalkerScanCursor.upsert({
+        where: {
+          projectId_source_phraseKey: { projectId, source, phraseKey },
+        },
+        create: {
+          projectId,
+          source,
+          phraseKey,
+          cursorAt: now,
+          backfillUntil: null,
+        },
+        update: {
+          backfillUntil: null,
+          cursorAt: existing?.cursorAt || now,
+        },
+      });
+      return;
+    }
+    await this._cursor.model.stalkerScanCursor.upsert({
+      where: {
+        projectId_source_phraseKey: { projectId, source, phraseKey },
+      },
+      create: { projectId, source, phraseKey, cursorAt: now },
+      update: { cursorAt: now },
     });
   }
 
@@ -247,8 +324,42 @@ export class StalkerRepository {
       return 0;
     }
 
-    const result = await this._mention.model.stalkerMention.createMany({
-      data: drafts.map((draft) => ({
+    const seenHash = new Set<string>();
+    const prepared = [];
+    for (const draft of drafts) {
+      const contentHash = mentionContentHash(draft);
+      if (seenHash.has(contentHash)) {
+        continue;
+      }
+      seenHash.add(contentHash);
+      prepared.push({ draft, contentHash });
+    }
+    const existing = await this._mention.model.stalkerMention.findMany({
+      where: {
+        organizationId,
+        projectId,
+        OR: [
+          { externalId: { in: prepared.map((row) => row.draft.externalId) } },
+          {
+            contentHash: {
+              in: prepared.map((row) => row.contentHash),
+            },
+          },
+        ],
+      },
+      select: { externalId: true, contentHash: true },
+    });
+    const knownIds = new Set(existing.map((row) => row.externalId));
+    const knownHashes = new Set(
+      existing.map((row) => row.contentHash).filter((hash) => hash)
+    );
+    const data = prepared
+      .filter(
+        (row) =>
+          !knownIds.has(row.draft.externalId) &&
+          !knownHashes.has(row.contentHash)
+      )
+      .map(({ draft, contentHash }) => ({
         organizationId,
         projectId,
         integrationId,
@@ -266,11 +377,43 @@ export class StalkerRepository {
         matchLabel: (draft.matchLabel || '').slice(0, 80),
         likeCount: Math.max(0, Math.round(draft.likeCount || 0)),
         replyCount: Math.max(0, Math.round(draft.replyCount || 0)),
-      })),
-      skipDuplicates: true,
-    });
+        contentHash,
+      }));
+    if (!data.length) {
+      return 0;
+    }
+    try {
+      const result = await this._mention.model.stalkerMention.createMany({
+        data,
+        skipDuplicates: true,
+      });
+      return result.count;
+    } catch (err) {
+      if (!this.isUniqueConflict(err)) {
+        throw err;
+      }
+      let inserted = 0;
+      for (const row of data) {
+        try {
+          await this._mention.model.stalkerMention.create({ data: row });
+          inserted += 1;
+        } catch (rowErr) {
+          if (!this.isUniqueConflict(rowErr)) {
+            throw rowErr;
+          }
+        }
+      }
+      return inserted;
+    }
+  }
 
-    return result.count;
+  private isUniqueConflict(err: unknown) {
+    return (
+      !!err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      (err as { code?: string }).code === 'P2002'
+    );
   }
 
   listMentions(
@@ -287,12 +430,17 @@ export class StalkerRepository {
       minUrgency?: number;
       q?: string;
       match?: string;
+      offTopic?: string;
+      take?: number;
     }
   ) {
     const where: Prisma.StalkerMentionWhereInput = {
       organizationId,
       projectId: filters.projectId,
     };
+    if (filters.offTopic !== 'include') {
+      where.relevant = true;
+    }
     const since = mentionWindow(filters.date);
     if (since) {
       where.createdAt = { gte: since };
@@ -345,7 +493,7 @@ export class StalkerRepository {
     return this._mention.model.stalkerMention.findMany({
       where,
       orderBy: [{ createdAt: 'desc' }],
-      take: 100,
+      take: Math.min(1000, Math.max(1, filters.take || 100)),
       include: {
         keyword: { select: { phrase: true } },
         categoryDef: { select: { id: true, name: true } },
@@ -372,12 +520,13 @@ export class StalkerRepository {
 
   async saveClassification(
     organizationId: string,
-    items: {
+      items: {
       id: string;
       category: string;
       categoryId: string | null;
       sentiment: string;
       urgency: number;
+      relevant: boolean;
     }[]
   ) {
     const now = new Date();
@@ -392,6 +541,7 @@ export class StalkerRepository {
           categoryId: item.categoryId,
           sentiment: item.sentiment as StalkerSentiment,
           urgency: Math.max(0, Math.min(100, Math.round(item.urgency))),
+          relevant: item.relevant,
           classifiedAt: now,
         },
       });
@@ -414,13 +564,14 @@ export class StalkerRepository {
     const where = {
       organizationId,
       projectId,
+      relevant: true,
       ...(since ? { createdAt: { gte: since } } : {}),
     };
     const chartSince =
       date === 'all'
         ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
         : since;
-    const [bySource, bySentiment, byCategory, accounts, recent] =
+    const [bySource, bySentiment, byCategory, byKeyword, byTheme, accounts, recent] =
       await Promise.all([
         this._mention.model.stalkerMention.groupBy({
           by: ['source'],
@@ -434,6 +585,16 @@ export class StalkerRepository {
         }),
         this._mention.model.stalkerMention.groupBy({
           by: ['categoryId'],
+          where,
+          _count: { _all: true },
+        }),
+        this._mention.model.stalkerMention.groupBy({
+          by: ['keywordId'],
+          where,
+          _count: { _all: true },
+        }),
+        this._mention.model.stalkerMention.groupBy({
+          by: ['themeId'],
           where,
           _count: { _all: true },
         }),
@@ -453,9 +614,47 @@ export class StalkerRepository {
           select: { createdAt: true },
         }),
       ]);
-    const categories = await this.listCategories(organizationId, projectId);
+    const [categories, keywords, themes] = await Promise.all([
+      this.listCategories(organizationId, projectId),
+      this.listKeywords(organizationId, projectId),
+      this._theme.model.stalkerTheme.findMany({
+        where: { organizationId, projectId },
+        select: { id: true, title: true },
+      }),
+    ]);
     const names = new Map(categories.map((category) => [category.id, category.name]));
-    return { bySource, bySentiment, byCategory, accounts, names, recent };
+    const keywordNames = new Map(keywords.map((keyword) => [keyword.id, keyword.phrase]));
+    const themeNames = new Map(themes.map((theme) => [theme.id, theme.title]));
+    return {
+      bySource,
+      bySentiment,
+      byCategory,
+      byKeyword,
+      byTheme,
+      accounts,
+      names,
+      keywordNames,
+      themeNames,
+      recent,
+    };
+  }
+
+  countMentionsBetween(
+    organizationId: string,
+    projectId: string,
+    start: Date,
+    end: Date,
+    sentiment?: StalkerSentiment
+  ) {
+    return this._mention.model.stalkerMention.count({
+      where: {
+        organizationId,
+        projectId,
+        relevant: true,
+        createdAt: { gte: start, lt: end },
+        ...(sentiment ? { sentiment } : {}),
+      },
+    });
   }
 
   recentForThemes(organizationId: string, projectId: string) {
@@ -464,6 +663,7 @@ export class StalkerRepository {
         organizationId,
         projectId,
         classifiedAt: { not: null },
+        relevant: true,
         category: { not: 'SPAM' },
         createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
       },
@@ -661,7 +861,140 @@ export class StalkerRepository {
         url: true,
         urgency: true,
         category: true,
+        sentiment: true,
+        categoryDef: { select: { name: true } },
       },
+    });
+  }
+
+  listAlerts(organizationId: string, projectId: string) {
+    return this._alert.model.stalkerAlert.findMany({
+      where: { organizationId, projectId },
+      orderBy: { createdAt: 'desc' },
+      take: 80,
+    });
+  }
+
+  latestAlert(projectId: string, kind: StalkerAlertKind, since: Date) {
+    return this._alert.model.stalkerAlert.findFirst({
+      where: {
+        projectId,
+        kind,
+        createdAt: { gte: since },
+        status: { in: [StalkerAlertStatus.SENT, StalkerAlertStatus.PENDING] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createAlert(input: {
+    organizationId: string;
+    projectId: string;
+    mentionId?: string | null;
+    kind: StalkerAlertKind;
+    channel: StalkerAlertChannel;
+    status: StalkerAlertStatus;
+    dedupeKey: string;
+    title: string;
+    body: string;
+    sentAt?: Date | null;
+  }) {
+    const existing = await this._alert.model.stalkerAlert.findUnique({
+      where: {
+        projectId_dedupeKey: {
+          projectId: input.projectId,
+          dedupeKey: input.dedupeKey,
+        },
+      },
+    });
+    if (existing) {
+      return existing;
+    }
+    try {
+      return await this._alert.model.stalkerAlert.create({
+        data: {
+          organizationId: input.organizationId,
+          projectId: input.projectId,
+          mentionId: input.mentionId || null,
+          kind: input.kind,
+          channel: input.channel,
+          status: input.status,
+          dedupeKey: input.dedupeKey,
+          title: input.title.slice(0, 180),
+          body: input.body.slice(0, 4000),
+          sentAt: input.sentAt || null,
+          attempts: input.status === StalkerAlertStatus.SENT ? 1 : 0,
+        },
+      });
+    } catch (err) {
+      if (!this.isUniqueConflict(err)) {
+        throw err;
+      }
+      return this._alert.model.stalkerAlert.findUnique({
+        where: {
+          projectId_dedupeKey: {
+            projectId: input.projectId,
+            dedupeKey: input.dedupeKey,
+          },
+        },
+      });
+    }
+  }
+
+  pendingEmails(projectId: string) {
+    return this._alert.model.stalkerAlert.findMany({
+      where: {
+        projectId,
+        channel: StalkerAlertChannel.EMAIL,
+        status: {
+          in: [StalkerAlertStatus.PENDING, StalkerAlertStatus.FAILED],
+        },
+        attempts: { lt: 3 },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 40,
+    });
+  }
+
+  markAlert(
+    id: string,
+    status: StalkerAlertStatus,
+    error: string
+  ) {
+    return this._alert.model.stalkerAlert.update({
+      where: { id },
+      data: {
+        status,
+        error: error.slice(0, 300),
+        attempts: { increment: 1 },
+        sentAt: status === StalkerAlertStatus.SENT ? new Date() : null,
+      },
+    });
+  }
+
+  markAlerts(
+    ids: string[],
+    status: StalkerAlertStatus,
+    error: string
+  ) {
+    if (!ids.length) {
+      return Promise.resolve({ count: 0 });
+    }
+    return this._alert.model.stalkerAlert.updateMany({
+      where: { id: { in: ids } },
+      data: {
+        status,
+        error: error.slice(0, 300),
+        attempts: { increment: 1 },
+        sentAt: status === StalkerAlertStatus.SENT ? new Date() : null,
+      },
+    });
+  }
+
+  markAlertRead(organizationId: string, id: string) {
+    return this._alert.model.stalkerAlert.updateMany({
+      where: { id, organizationId, readAt: null },
+      data: { readAt: new Date() },
     });
   }
 

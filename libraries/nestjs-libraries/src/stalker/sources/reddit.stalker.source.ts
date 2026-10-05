@@ -38,7 +38,7 @@ export class RedditStalkerSource implements StalkerSourceProvider {
   filter = 'REDDIT';
   private token: { value: string; expiresAt: number } | null = null;
 
-  integrationIdentifier() {
+  integrationIdentifier(): string | null {
     return null;
   }
 
@@ -78,8 +78,8 @@ export class RedditStalkerSource implements StalkerSourceProvider {
     }
     const token = await this.appToken();
     const sinceSeconds = Math.floor(since.getTime() / 1000);
-    const posts = await this.listing(token, keyword, 'link');
-    const comments = await this.listing(token, keyword, 'comment');
+    const posts = await this.listing(token, keyword, 'link', since);
+    const comments = await this.listing(token, keyword, 'comment', since);
     return [
       ...this.posts(posts, keyword, sinceSeconds),
       ...this.comments(comments, keyword, sinceSeconds),
@@ -120,11 +120,20 @@ export class RedditStalkerSource implements StalkerSourceProvider {
     return this.token.value;
   }
 
-  private async listing(token: string, keyword: string, type: 'link' | 'comment') {
+  private async listing(
+    token: string,
+    keyword: string,
+    type: 'link' | 'comment',
+    since: Date
+  ) {
+    const age = Date.now() - since.getTime();
+    const day = 24 * 60 * 60 * 1000;
+    const window =
+      age <= day ? 'day' : age <= 7 * day ? 'week' : age <= 32 * day ? 'month' : 'year';
     const params = new URLSearchParams({
       q: keyword,
       sort: 'new',
-      t: 'week',
+      t: window,
       type,
       limit: '10',
       restrict_sr: 'false',

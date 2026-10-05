@@ -3,19 +3,39 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, StalkerCategory, StalkerMentionStatus } from '@prisma/client';
+import {
+  Prisma,
+  StalkerAlertChannel,
+  StalkerAlertDelivery,
+  StalkerAlertKind,
+  StalkerAlertScope,
+  StalkerAlertStatus,
+  StalkerCategory,
+  StalkerMentionStatus,
+  StalkerSentiment,
+} from '@prisma/client';
 import { StalkerRepository } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.source.manager';
 import { StalkerSourceId } from '@gitroom/nestjs-libraries/stalker/stalker.source';
 import {
+  BACKFILL_LOOKBACK_MS,
   cleanHandle,
   dedupeDrafts,
+  fallbackClassification,
   handleForSource,
+  mentionMatchesScope,
   readIdentity,
+  resolveScanSince,
+  sentimentShare,
+  SENTIMENT_WINDOW_MS,
+  shouldFireSentimentDrop,
+  shouldFireVolumeSpike,
+  SPIKE_WINDOW_MS,
   splitTerms,
   tagDrafts,
+  type StalkerAlertScopeName,
 } from '@gitroom/nestjs-libraries/stalker/stalker.match';
 import {
   CreateStalkerKeywordDto,
@@ -106,7 +126,16 @@ const escapeHtml = (value: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-const urgentCategory = (name: string) => /bug|complain/i.test(name);
+const sentimentCount = (
+  rows: { sentiment: string; _count: { _all: number } }[],
+  sentiment: string
+) => rows.find((row) => row.sentiment === sentiment)?._count._all || 0;
+
+const csvCell = (value: string | number | null | undefined) =>
+  `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+const clampInt = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, Math.round(value)));
 
 @Injectable()
 export class StalkerService {
@@ -230,7 +259,7 @@ export class StalkerService {
     if (!categories.length) {
       throw new BadRequestException('Add at least one category');
     }
-    const identity = await this.identityFields(body, body.name.trim());
+    const identity = await this.identityFields(body, body.name.trim(), false);
     const project = await this._repository.createProject(organizationId, {
       name: body.name.trim(),
       description: (body.description || '').trim(),
@@ -249,8 +278,12 @@ export class StalkerService {
   ) {
     this.assertEnabled();
     const current = await this.requireProject(organizationId, id);
-    const identity = await this.identityFields(body, current.brandName || current.name);
-    const data: Record<string, string | boolean> = { ...identity };
+    const identity = await this.identityFields(
+      body,
+      current.brandName || current.name,
+      true
+    );
+    const data: Prisma.StalkerProjectUpdateManyMutationInput = { ...identity };
     if (body.name?.trim()) {
       data.name = body.name.trim();
     }
@@ -303,7 +336,102 @@ export class StalkerService {
   async keywords(organizationId: string, projectId: string) {
     this.assertEnabled();
     await this.requireProject(organizationId, projectId);
-    return this._repository.listKeywords(organizationId, projectId);
+    const [rows, cursors] = await Promise.all([
+      this._repository.listKeywords(organizationId, projectId),
+      this._repository.listCursors(projectId),
+    ]);
+    return rows.map((row) => ({
+      ...row,
+      backfillArmed: cursors.some(
+        (cursor) =>
+          cursor.phraseKey === row.phrase.toLowerCase() && !!cursor.backfillUntil
+      ),
+    }));
+  }
+
+  async requestBackfill(organizationId: string, id: string) {
+    this.assertEnabled();
+    const keyword = await this._repository.getKeyword(organizationId, id);
+    if (!keyword?.projectId) {
+      throw new NotFoundException('Keyword not found');
+    }
+    const sources = [
+      keyword.listenYoutube ? 'youtube' : '',
+      keyword.listenReddit ? 'reddit' : '',
+      keyword.listenX ? 'x' : '',
+      keyword.listenLinkedin ? 'linkedin' : '',
+    ].filter((source) => source);
+    if (!sources.length) {
+      throw new BadRequestException('Turn on a source for this keyword first');
+    }
+    const until = new Date(Date.now() - BACKFILL_LOOKBACK_MS);
+    await this._repository.armBackfill(
+      keyword.projectId,
+      sources,
+      keyword.phrase.toLowerCase(),
+      until
+    );
+    return { backfillUntil: until.toISOString(), sources };
+  }
+
+  async alerts(organizationId: string, projectId: string) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, projectId);
+    return this._repository.listAlerts(organizationId, projectId);
+  }
+
+  async markAlertRead(organizationId: string, id: string) {
+    this.assertEnabled();
+    await this._repository.markAlertRead(organizationId, id);
+    return { read: true };
+  }
+
+  async retryAlerts(organizationId: string, projectId: string) {
+    this.assertEnabled();
+    const project = await this.requireProject(organizationId, projectId);
+    await this.dispatchAlerts(organizationId, project, []);
+    return { ok: true };
+  }
+
+  async exportMentions(organizationId: string, query: StalkerMentionQueryDto) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, query.projectId);
+    const rows = await this._repository.listMentions(organizationId, {
+      ...query,
+      take: 1000,
+    });
+    const header = [
+      'createdAt',
+      'source',
+      'author',
+      'handle',
+      'category',
+      'sentiment',
+      'status',
+      'matchedBy',
+      'match',
+      'text',
+      'url',
+    ];
+    const lines = [header.join(',')];
+    for (const row of rows) {
+      lines.push(
+        [
+          csvCell(row.createdAt.toISOString()),
+          csvCell(row.source),
+          csvCell(row.authorName),
+          csvCell(row.authorHandle),
+          csvCell(row.categoryDef?.name || row.category),
+          csvCell(row.sentiment),
+          csvCell(row.status),
+          csvCell(row.matchKind || ''),
+          csvCell(row.matchLabel),
+          csvCell(row.text),
+          csvCell(row.url || ''),
+        ].join(',')
+      );
+    }
+    return { filename: 'stalker-mentions.csv', csv: lines.join('\n') };
   }
 
   async createKeyword(organizationId: string, body: CreateStalkerKeywordDto) {
@@ -389,6 +517,40 @@ export class StalkerService {
         authorName: row.authorName,
         count: row._count._all,
       })),
+      byKeyword: raw.byKeyword
+        .flatMap((row) =>
+          row.keywordId
+            ? [
+                {
+                  keywordId: row.keywordId,
+                  phrase: raw.keywordNames.get(row.keywordId) || 'Keyword',
+                  count: row._count._all,
+                },
+              ]
+            : []
+        )
+        .sort((left, right) => right.count - left.count)
+        .slice(0, 8),
+      byTheme: raw.byTheme
+        .flatMap((row) =>
+          row.themeId
+            ? [
+                {
+                  themeId: row.themeId,
+                  title: raw.themeNames.get(row.themeId) || 'Theme',
+                  count: row._count._all,
+                },
+              ]
+            : []
+        )
+        .sort((left, right) => right.count - left.count)
+        .slice(0, 8),
+      totals: {
+        mentions: raw.bySentiment.reduce((sum, row) => sum + row._count._all, 0),
+        positive: sentimentCount(raw.bySentiment, 'POSITIVE'),
+        negative: sentimentCount(raw.bySentiment, 'NEGATIVE'),
+        neutral: sentimentCount(raw.bySentiment, 'NEUTRAL'),
+      },
     };
   }
 
@@ -681,7 +843,11 @@ export class StalkerService {
       organizationId,
       project.id
     );
-    const since = new Date(Date.now() - SEARCH_SINCE_MS);
+    const cursors = await this._repository.listCursors(project.id);
+    const cursorMap = new Map(
+      cursors.map((cursor) => [`${cursor.source}:${cursor.phraseKey}`, cursor])
+    );
+    const now = Date.now();
     for (const source of this._sources.all()) {
       const identifier = source.integrationIdentifier();
       const integration = identifier
@@ -701,16 +867,41 @@ export class StalkerService {
         handle: handleForSource(source.id, identity),
         subreddit: identity.handles.redditSubreddit,
       });
-      if (query.trim()) {
-        const brandHits = await this.cachedSearch(
-          source,
-          query,
-          since,
-          auth
-        );
-        if (brandHits) {
-          collected.push(...tagDrafts(brandHits, identity, true));
+      const pull = async (
+        phrase: string,
+        phraseKey: string,
+        keywordPhrase?: string
+      ) => {
+        const cursor = cursorMap.get(`${source.id}:${phraseKey}`);
+        const scan = resolveScanSince({
+          now,
+          cursorAt: cursor?.cursorAt,
+          backfillUntil: cursor?.backfillUntil,
+          lookbackMs: SEARCH_SINCE_MS,
+        });
+        const hits = await this.cachedSearch(source, phrase, scan.since, auth);
+        if (!hits) {
+          return;
         }
+        collected.push(
+          ...tagDrafts(
+            hits.map((draft) => ({
+              ...draft,
+              keywordPhrase: keywordPhrase || draft.keywordPhrase,
+            })),
+            identity,
+            true
+          )
+        );
+        await this._repository.finishScan(
+          project.id,
+          source.id,
+          phraseKey,
+          scan.backfill
+        );
+      };
+      if (query.trim()) {
+        await pull(query, 'brand');
       }
       const field = listenField[source.id];
       const selected = keywords
@@ -720,25 +911,7 @@ export class StalkerService {
         selected.map((keyword) => [keyword.phrase.toLowerCase(), keyword.id])
       );
       for (const keyword of selected) {
-        const hits = await this.cachedSearch(
-          source,
-          keyword.phrase,
-          since,
-          auth
-        );
-        if (!hits) {
-          continue;
-        }
-        collected.push(
-          ...tagDrafts(
-            hits.map((draft) => ({
-              ...draft,
-              keywordPhrase: keyword.phrase,
-            })),
-            identity,
-            true
-          )
-        );
+        await pull(keyword.phrase, keyword.phrase.toLowerCase(), keyword.phrase);
       }
       await this.storeMentions(
         organizationId,
@@ -764,9 +937,12 @@ export class StalkerService {
     since: Date,
     auth?: { accessToken?: string }
   ) {
+    const cachePhrase = `${phrase.toLowerCase()}|${Math.floor(
+      since.getTime() / (60 * 60 * 1000)
+    )}`;
     const cached = await this._repository.readSearchCache(
       source.id,
-      phrase,
+      cachePhrase,
       POLL_WINDOW_MS
     );
     if (cached) {
@@ -777,7 +953,7 @@ export class StalkerService {
     }
     try {
       const drafts = await source.search(phrase, since, auth);
-      await this._repository.writeSearchCache(source.id, phrase, drafts);
+      await this._repository.writeSearchCache(source.id, cachePhrase, drafts);
       return drafts;
     } catch (err) {
       console.error('Stalker search failed', source.id, phrase, err);
@@ -790,8 +966,18 @@ export class StalkerService {
     project: {
       id: string;
       name: string;
+      description: string;
+      brandName: string;
+      aliases: string;
       alertsEnabled: boolean;
       alertEmail: string;
+      alertScope: StalkerAlertScope;
+      alertDelivery: StalkerAlertDelivery;
+      spikeEnabled: boolean;
+      spikeMultiplier: number;
+      sentimentDropEnabled: boolean;
+      sentimentDropPoints: number;
+      alertCooldownHours: number;
     }
   ) {
     const projectId = project.id;
@@ -799,7 +985,7 @@ export class StalkerService {
       organizationId,
       projectId
     );
-    if (!this._openaiService.hasApiKey() || !categories.length) {
+    if (!categories.length) {
       return;
     }
     const byName = new Map(
@@ -809,84 +995,395 @@ export class StalkerService {
       organizationId,
       projectId
     );
+    const saved: {
+      id: string;
+      categoryName: string;
+      sentiment: string;
+      urgency: number;
+      relevant: boolean;
+    }[] = [];
     for (let index = 0; index < pending.length; index += 20) {
       const batch = pending.slice(index, index + 20);
+      const classified = await this.classifyBatch(batch, categories, project);
+      const rows = classified.flatMap((item) => {
+        const named = byName.get(item.categoryName.trim().toLowerCase());
+        const fallback = fallbackClassification(item.text || '', categories);
+        const match =
+          named ||
+          byName.get(fallback.categoryName.trim().toLowerCase()) ||
+          categories[0];
+        if (!match) {
+          return [];
+        }
+        return [
+          {
+            id: item.id,
+            category: legacyCategory(match.name),
+            categoryName: match.name,
+            categoryId: match.id,
+            sentiment: item.relevant ? item.sentiment : 'NEUTRAL',
+            urgency: item.relevant ? item.urgency : 0,
+            relevant: item.relevant,
+          },
+        ];
+      });
+      await this._repository.saveClassification(organizationId, rows);
+      saved.push(
+        ...rows.map((row) => ({
+          id: row.id,
+          categoryName: row.categoryName,
+          sentiment: row.sentiment,
+          urgency: row.urgency,
+          relevant: row.relevant,
+        }))
+      );
+    }
+    await this.dispatchAlerts(organizationId, project, saved);
+  }
+
+  private async classifyBatch(
+    batch: { id: string; text: string }[],
+    categories: { name: string; description: string }[],
+    project: { name: string; description: string; brandName: string; aliases: string }
+  ) {
+    const listed = categories.map((category) => ({
+      name: category.name,
+      description: category.description,
+    }));
+    const brand = {
+      name: project.brandName || project.name,
+      aliases: project.aliases || '',
+      description: project.description || '',
+    };
+    const ask = async (items: { id: string; text: string }[]) => {
+      if (!this._openaiService.hasApiKey()) {
+        return [];
+      }
       try {
-        const classified = await this._openaiService.classifyStalkerMentions(
-          batch,
-          categories.map((category) => ({
-            name: category.name,
-            description: category.description,
-          }))
+        return await this._openaiService.classifyStalkerMentions(
+          items,
+          listed,
+          brand
         );
-        const saved = classified.flatMap((item) => {
-          const match = byName.get(item.categoryName.trim().toLowerCase());
-          if (!match) {
-            return [];
-          }
-          return [
-            {
-              id: item.id,
-              category: legacyCategory(match.name),
-              categoryName: match.name,
-              categoryId: match.id,
-              sentiment: item.sentiment,
-              urgency: item.urgency,
-            },
-          ];
-        });
-        await this._repository.saveClassification(organizationId, saved);
-        await this.notifyUrgent(organizationId, project, saved);
       } catch (err) {
         console.error('Stalker classification failed', err);
+        return [];
+      }
+    };
+    let classified = await ask(batch);
+    if (classified.length) {
+      const got = new Set(classified.map((item) => item.id));
+      const missing = batch.filter((item) => !got.has(item.id));
+      if (missing.length) {
+        classified = [...classified, ...(await ask(missing))];
+      }
+    }
+    const byId = new Map(classified.map((item) => [item.id, item]));
+    return batch.map((item) => {
+      const hit = byId.get(item.id);
+      if (!hit) {
+        return { id: item.id, text: item.text, ...fallbackClassification(item.text, categories) };
+      }
+      return { ...hit, text: item.text };
+    });
+  }
+
+  private async dispatchAlerts(
+    organizationId: string,
+    project: {
+      id: string;
+      name: string;
+      alertsEnabled: boolean;
+      alertEmail: string;
+      alertScope: StalkerAlertScope;
+      alertDelivery: StalkerAlertDelivery;
+      spikeEnabled: boolean;
+      spikeMultiplier: number;
+      sentimentDropEnabled: boolean;
+      sentimentDropPoints: number;
+      alertCooldownHours: number;
+    },
+    saved: {
+      id: string;
+      categoryName: string;
+      sentiment: string;
+      urgency: number;
+      relevant: boolean;
+    }[]
+  ) {
+    if (!project.alertsEnabled) {
+      return;
+    }
+    const matches = saved.filter((item) =>
+      mentionMatchesScope(project.alertScope as StalkerAlertScopeName, item)
+    );
+    if (matches.length) {
+      const rows = await this._repository.mentionsByIds(
+        organizationId,
+        matches.map((item) => item.id)
+      );
+      const byId = new Map(rows.map((row) => [row.id, row]));
+      for (const item of matches) {
+        const row = byId.get(item.id);
+        if (!row) {
+          continue;
+        }
+        const title = `${item.categoryName} · ${row.authorName}`;
+        const body = [row.text, row.url || ''].filter(Boolean).join('\n');
+        await this._repository.createAlert({
+          organizationId,
+          projectId: project.id,
+          mentionId: item.id,
+          kind: StalkerAlertKind.MENTION,
+          channel: StalkerAlertChannel.IN_APP,
+          status: StalkerAlertStatus.SENT,
+          dedupeKey: `mention:${item.id}:IN_APP`,
+          title,
+          body,
+          sentAt: new Date(),
+        });
+        if (project.alertEmail.includes('@')) {
+          await this._repository.createAlert({
+            organizationId,
+            projectId: project.id,
+            mentionId: item.id,
+            kind: StalkerAlertKind.MENTION,
+            channel: StalkerAlertChannel.EMAIL,
+            status: StalkerAlertStatus.PENDING,
+            dedupeKey: `mention:${item.id}:EMAIL`,
+            title,
+            body,
+          });
+        }
+      }
+    }
+    await this.evaluateThresholds(organizationId, project);
+    await this.flushEmails(project);
+  }
+
+  private async evaluateThresholds(
+    organizationId: string,
+    project: {
+      id: string;
+      name: string;
+      alertEmail: string;
+      spikeEnabled: boolean;
+      spikeMultiplier: number;
+      sentimentDropEnabled: boolean;
+      sentimentDropPoints: number;
+      alertCooldownHours: number;
+    }
+  ) {
+    const cooldownMs = Math.max(1, project.alertCooldownHours || 12) * 60 * 60 * 1000;
+    const since = new Date(Date.now() - cooldownMs);
+    const now = Date.now();
+    if (project.spikeEnabled) {
+      const recentStart = new Date(now - SPIKE_WINDOW_MS);
+      const previousStart = new Date(now - SPIKE_WINDOW_MS * 2);
+      const [recent, previous] = await Promise.all([
+        this._repository.countMentionsBetween(
+          organizationId,
+          project.id,
+          recentStart,
+          new Date(now)
+        ),
+        this._repository.countMentionsBetween(
+          organizationId,
+          project.id,
+          previousStart,
+          recentStart
+        ),
+      ]);
+      const open = await this._repository.latestAlert(
+        project.id,
+        StalkerAlertKind.VOLUME_SPIKE,
+        since
+      );
+      if (
+        !open &&
+        shouldFireVolumeSpike({
+          recent,
+          previous,
+          multiplier: project.spikeMultiplier || 2,
+        })
+      ) {
+        await this.recordThreshold(
+          organizationId,
+          project,
+          StalkerAlertKind.VOLUME_SPIKE,
+          `Mention volume spiked for ${project.name}`,
+          `${recent} mentions arrived in the last 6 hours, compared with ${previous} in the previous 6 hours.`,
+          cooldownMs
+        );
+      }
+    }
+    if (project.sentimentDropEnabled) {
+      const recentStart = new Date(now - SENTIMENT_WINDOW_MS);
+      const previousStart = new Date(now - SENTIMENT_WINDOW_MS * 2);
+      const nowDate = new Date(now);
+      const [recentTotal, recentNegative, previousTotal, previousNegative] =
+        await Promise.all([
+          this._repository.countMentionsBetween(
+            organizationId,
+            project.id,
+            recentStart,
+            nowDate
+          ),
+          this._repository.countMentionsBetween(
+            organizationId,
+            project.id,
+            recentStart,
+            nowDate,
+            StalkerSentiment.NEGATIVE
+          ),
+          this._repository.countMentionsBetween(
+            organizationId,
+            project.id,
+            previousStart,
+            recentStart
+          ),
+          this._repository.countMentionsBetween(
+            organizationId,
+            project.id,
+            previousStart,
+            recentStart,
+            StalkerSentiment.NEGATIVE
+          ),
+        ]);
+      const open = await this._repository.latestAlert(
+        project.id,
+        StalkerAlertKind.SENTIMENT_DROP,
+        since
+      );
+      if (
+        !open &&
+        shouldFireSentimentDrop({
+          recentNegative,
+          recentTotal,
+          previousNegative,
+          previousTotal,
+          points: project.sentimentDropPoints || 20,
+        })
+      ) {
+        await this.recordThreshold(
+          organizationId,
+          project,
+          StalkerAlertKind.SENTIMENT_DROP,
+          `Negative sentiment rose for ${project.name}`,
+          `Negative mentions are ${sentimentShare(
+            recentNegative,
+            recentTotal
+          )}% of the last 24 hours, up from ${sentimentShare(
+            previousNegative,
+            previousTotal
+          )}% in the previous 24 hours.`,
+          cooldownMs
+        );
       }
     }
   }
 
-  private async notifyUrgent(
+  private async recordThreshold(
     organizationId: string,
-    project: { name: string; alertsEnabled: boolean; alertEmail: string },
-    saved: { id: string; categoryName: string; urgency: number }[]
+    project: { id: string; alertEmail: string },
+    kind: StalkerAlertKind,
+    title: string,
+    body: string,
+    cooldownMs: number
   ) {
-    if (!project.alertsEnabled || !project.alertEmail.includes('@')) {
-      return;
-    }
-    const urgent = saved.filter(
-      (item) => item.urgency >= 70 || urgentCategory(item.categoryName)
-    );
-    if (!urgent.length) {
-      return;
-    }
-    const rows = await this._repository.mentionsByIds(
+    const bucket = Math.floor(Date.now() / cooldownMs);
+    await this._repository.createAlert({
       organizationId,
-      urgent.map((item) => item.id)
-    );
-    if (!rows.length) {
+      projectId: project.id,
+      kind,
+      channel: StalkerAlertChannel.IN_APP,
+      status: StalkerAlertStatus.SENT,
+      dedupeKey: `${kind}:${bucket}:IN_APP`,
+      title,
+      body,
+      sentAt: new Date(),
+    });
+    if (project.alertEmail.includes('@')) {
+      await this._repository.createAlert({
+        organizationId,
+        projectId: project.id,
+        kind,
+        channel: StalkerAlertChannel.EMAIL,
+        status: StalkerAlertStatus.PENDING,
+        dedupeKey: `${kind}:${bucket}:EMAIL`,
+        title,
+        body,
+      });
+    }
+  }
+
+  private async flushEmails(project: {
+    id: string;
+    name: string;
+    alertEmail: string;
+    alertDelivery: StalkerAlertDelivery;
+  }) {
+    if (!project.alertEmail.includes('@')) {
       return;
     }
-    const html = rows
-      .map(
-        (row) =>
-          `<p><strong>${escapeHtml(row.authorName)}</strong> · ${escapeHtml(
-            row.category
-          )} · urgency ${row.urgency}</p><p>${escapeHtml(row.text)}</p>${
-            row.url
-              ? `<p><a href="${escapeHtml(row.url)}">Open</a></p>`
-              : ''
-          }`
-      )
-      .join('');
-    try {
-      await this._emailService.sendEmailSync(
+    const pending = await this._repository.pendingEmails(project.id);
+    if (!pending.length) {
+      return;
+    }
+    const mentionEmails = pending.filter(
+      (alert) => alert.kind === StalkerAlertKind.MENTION
+    );
+    const others = pending.filter(
+      (alert) => alert.kind !== StalkerAlertKind.MENTION
+    );
+    if (
+      project.alertDelivery === StalkerAlertDelivery.DIGEST &&
+      mentionEmails.length
+    ) {
+      const html = mentionEmails
+        .map(
+          (alert) =>
+            `<p><strong>${escapeHtml(alert.title)}</strong></p><p>${escapeHtml(
+              alert.body
+            ).replace(/\n/g, '<br/>')}</p>`
+        )
+        .join('');
+      const ok = await this._emailService.sendEmailSync(
         project.alertEmail,
-        `Stalker: ${rows.length} urgent mention${
-          rows.length === 1 ? '' : 's'
+        `Stalker digest: ${mentionEmails.length} mention${
+          mentionEmails.length === 1 ? '' : 's'
         } for ${project.name}`,
         html
       );
-    } catch (err) {
-      console.error('Stalker alert email failed', err);
+      await this._repository.markAlerts(
+        mentionEmails.map((alert) => alert.id),
+        ok ? StalkerAlertStatus.SENT : StalkerAlertStatus.FAILED,
+        ok ? '' : 'Email was not sent. Check EMAIL_FROM_ADDRESS and EMAIL_FROM_NAME.'
+      );
+    } else {
+      for (const alert of mentionEmails) {
+        await this.sendAlertEmail(project.alertEmail, alert);
+      }
     }
+    for (const alert of others) {
+      await this.sendAlertEmail(project.alertEmail, alert);
+    }
+  }
+
+  private async sendAlertEmail(
+    to: string,
+    alert: { id: string; title: string; body: string }
+  ) {
+    const ok = await this._emailService.sendEmailSync(
+      to,
+      alert.title,
+      `<p>${escapeHtml(alert.body).replace(/\n/g, '<br/>')}</p>`
+    );
+    await this._repository.markAlert(
+      alert.id,
+      ok ? StalkerAlertStatus.SENT : StalkerAlertStatus.FAILED,
+      ok ? '' : 'Email was not sent. Check EMAIL_FROM_ADDRESS and EMAIL_FROM_NAME.'
+    );
   }
 
   private async storeMentions(
@@ -957,29 +1454,105 @@ export class StalkerService {
     }
   }
 
-  private async identityFields(body: StalkerIdentityDto, fallbackBrand: string) {
-    const webhookUrl = (body.webhookUrl || '').trim().slice(0, 300);
-    if (webhookUrl && !(await isSafePublicHttpsUrl(webhookUrl))) {
-      throw new BadRequestException(
-        'Webhook URL must be a public https address'
-      );
-    }
-    const brandName = (body.brandName || fallbackBrand || '').trim().slice(0, 80);
-    return {
-      brandName,
-      aliases: splitTerms(body.aliases || '').join('\n'),
-      exclusions: splitTerms(body.exclusions || '', 20).join('\n'),
-      handleX: cleanHandle(body.handleX || ''),
-      handleRedditUser: cleanHandle(body.handleRedditUser || ''),
-      handleRedditSubreddit: cleanHandle(body.handleRedditSubreddit || ''),
-      handleYoutube: cleanHandle(body.handleYoutube || ''),
-      handleLinkedin: cleanHandle(body.handleLinkedin || ''),
-      handleInstagram: cleanHandle(body.handleInstagram || ''),
-      handleFacebook: cleanHandle(body.handleFacebook || ''),
-      alertEmail: (body.alertEmail || '').trim().slice(0, 120),
-      alertsEnabled: !!body.alertsEnabled,
-      webhookUrl,
+  private async identityFields(
+    body: StalkerIdentityDto,
+    fallbackBrand: string,
+    partial: boolean
+  ) {
+    const data: Prisma.StalkerProjectUpdateManyMutationInput = {};
+    const write = (
+      present: boolean,
+      key: keyof Prisma.StalkerProjectUpdateManyMutationInput,
+      value: string | boolean | number
+    ) => {
+      if (partial && !present) {
+        return;
+      }
+      (data as Record<string, string | boolean | number>)[key] = value;
     };
+    if (!partial || body.webhookUrl !== undefined) {
+      const webhookUrl = (body.webhookUrl || '').trim().slice(0, 300);
+      if (webhookUrl && !(await isSafePublicHttpsUrl(webhookUrl))) {
+        throw new BadRequestException(
+          'Webhook URL must be a public https address'
+        );
+      }
+      data.webhookUrl = webhookUrl;
+    }
+    write(
+      body.brandName !== undefined,
+      'brandName',
+      (body.brandName || fallbackBrand || '').trim().slice(0, 80)
+    );
+    write(
+      body.aliases !== undefined,
+      'aliases',
+      splitTerms(body.aliases || '').join('\n')
+    );
+    write(
+      body.exclusions !== undefined,
+      'exclusions',
+      splitTerms(body.exclusions || '', 20).join('\n')
+    );
+    write(body.handleX !== undefined, 'handleX', cleanHandle(body.handleX || ''));
+    write(
+      body.handleRedditUser !== undefined,
+      'handleRedditUser',
+      cleanHandle(body.handleRedditUser || '')
+    );
+    write(
+      body.handleRedditSubreddit !== undefined,
+      'handleRedditSubreddit',
+      cleanHandle(body.handleRedditSubreddit || '')
+    );
+    write(
+      body.handleYoutube !== undefined,
+      'handleYoutube',
+      cleanHandle(body.handleYoutube || '')
+    );
+    write(
+      body.handleLinkedin !== undefined,
+      'handleLinkedin',
+      cleanHandle(body.handleLinkedin || '')
+    );
+    write(
+      body.handleInstagram !== undefined,
+      'handleInstagram',
+      cleanHandle(body.handleInstagram || '')
+    );
+    write(
+      body.handleFacebook !== undefined,
+      'handleFacebook',
+      cleanHandle(body.handleFacebook || '')
+    );
+    write(
+      body.alertEmail !== undefined,
+      'alertEmail',
+      (body.alertEmail || '').trim().slice(0, 120)
+    );
+    write(body.alertsEnabled !== undefined, 'alertsEnabled', !!body.alertsEnabled);
+    if (body.alertScope) {
+      data.alertScope = body.alertScope;
+    }
+    if (body.alertDelivery) {
+      data.alertDelivery = body.alertDelivery;
+    }
+    write(body.spikeEnabled !== undefined, 'spikeEnabled', !!body.spikeEnabled);
+    write(
+      body.sentimentDropEnabled !== undefined,
+      'sentimentDropEnabled',
+      !!body.sentimentDropEnabled
+    );
+    if (typeof body.spikeMultiplier === 'number') {
+      data.spikeMultiplier = clampInt(body.spikeMultiplier, 2, 10);
+    }
+    if (typeof body.sentimentDropPoints === 'number') {
+      data.sentimentDropPoints = clampInt(body.sentimentDropPoints, 5, 80);
+    }
+    if (typeof body.alertCooldownHours === 'number') {
+      data.alertCooldownHours = clampInt(body.alertCooldownHours, 1, 168);
+    }
+    return data;
   }
 
   private async clusterOrganization(organizationId: string, projectId: string) {

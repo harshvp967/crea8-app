@@ -23,21 +23,21 @@ For each project, about every 6 hours:
    - Instagram (Facebook Login and standalone): the 5 most recent media items, up to 20 comments each.
    - Facebook Pages: the 5 most recent posts, up to 20 comments each.
 
-Search results are cached in `StalkerSearchCache` by platform and lowercased phrase for the 6-hour poll window, so the same keyword is not fetched again for another organization. A failed call is not cached. An empty result is cached. Mentions are unique per organization, project, and external id (`yt-comment:`, `yt-video:`, `ig-comment:`, `fb-comment:`, `rd-post:`, `rd-comment:`, `x-post:`).
+Search results are cached in `StalkerSearchCache` by platform, lowercased phrase, and the hour of the scan window, so the same keyword is not fetched again for another organization during that hour. A failed call is not cached. An empty result is cached. Each project, source, and phrase also stores a `StalkerScanCursor`. The next live scan starts one hour before that cursor, and never earlier than the last 7 days. A keyword backfill (`POST /stalker/keywords/:id/backfill`) sets a one-shot 30-day `backfillUntil` on that phrase. It does not move the live cursor backwards. X recent search still cannot see past about 6 days, and Reddit's search window is day, week, month, or year based on how far back the scan asks. Mentions are unique per organization, project, and external id (`yt-comment:`, `yt-video:`, `ig-comment:`, `fb-comment:`, `rd-post:`, `rd-comment:`, `x-post:`). The same text from the same author on the same platform family is also dropped by a `contentHash`, including a partial unique index that ignores empty hashes on older rows.
 
 Tokens are the ones already stored for posting. Stalker does not refresh or disconnect a channel. A failed provider call is logged and skipped.
 
 ## Classification and themes
 
-When `OPENAI_API_KEY` is set and the project has categories, new mentions are sent to `gpt-4.1` in batches of 20. The prompt lists that project's category names and descriptions. The model returns `categoryName`. Stalker stores the matching `StalkerProjectCategory` id. The older `StalkerCategory` enum stays on the row and is derived from the name (bug, feature/idea, complaint, question, testimonial, praise, spam, otherwise `OTHER`) so existing filters keep working. Sentiment is `POSITIVE`, `NEGATIVE`, or `NEUTRAL`. Urgency is 0 to 100.
+When the project has categories, new mentions are classified in batches of 20. If `OPENAI_API_KEY` is set, `gpt-4.1` first decides whether the mention is about the brand (`relevant`). Off-topic keyword hits are stored with `relevant=false` and stay out of the Mentions feed unless the feed's "Show off-topic" filter is on. They are not alerted and they are not used for themes or analytics. The model then returns `categoryName`. Ids the model skips are asked again once. Anything still missing, and every mention when there is no API key, uses a word-list fallback so the row is still classified. Stalker stores the matching `StalkerProjectCategory` id. The older `StalkerCategory` enum stays on the row and is derived from the name (bug, feature/idea, complaint, question, testimonial, praise, spam, otherwise `OTHER`) so existing filters keep working. Sentiment is `POSITIVE`, `NEGATIVE`, or `NEUTRAL`. Urgency is 0 to 100.
 
-If there is no API key or the project has no categories, mentions stay unclassified (`OTHER`, `NEUTRAL`, urgency 0).
+If the project has no categories, mentions stay unclassified (`OTHER`, `NEUTRAL`, urgency 0).
 
 Themes are rebuilt per project from classified, non-spam mentions from the last 14 days. Themes is in the sidebar. Draft post on a theme asks `/stalker/draft` and opens the Schedule composer.
 
 Mention status is `NEW`, `REPLIED`, or `IGNORED`. Save marks a row, and Save testimonial or Save idea also points it at a matching project category when one exists.
 
-When alerts are on and an address is saved, a mention classified as a bug report or complaint, or with urgency 70 or higher, is emailed with `EmailService.sendEmailSync`. That uses the app's existing mail settings. It does not start the email workflow.
+When alerts are on, each matching mention is written to `StalkerAlert`. The default scope is bug, complaint, or urgency 70 or higher. The project can switch that to negative mentions or every relevant mention. In-app rows are marked sent immediately and listed on Alerts. Email rows stay pending until `EmailService.sendEmailSync` returns. Instant sends one email per mention. Digest sends one email for the pending mention batch on that check. Volume-spike and sentiment-drop rules are optional, email immediately, and will not fire again during the cooldown. A sent `dedupeKey` is not created again. A failed email stays `FAILED` and is retried on the next check, or from Retry failed email, up to three attempts. Mail still uses the app's existing sender settings and does not start the email workflow. If `EMAIL_FROM_ADDRESS` or `EMAIL_FROM_NAME` is missing, the email row is failed and the in-app row remains.
 
 If the project has a webhook URL, each newly stored mention is POSTed as `{ "event": "mention.created", "projectId", "mention" }`. The URL is checked with `isSafePublicHttpsUrl` on save and again before the request, which uses `getSsrfSafeDispatcher`. This is separate from the post-integration Webhooks table.
 
@@ -58,6 +58,7 @@ Later migrations, also additive:
 - `20261004120000_stalker_sources` — `REDDIT_POST`, `REDDIT_COMMENT`, `X_POST`, `LINKEDIN_POST`, and `StalkerSearchCache`.
 - `20261004130000_stalker_projects` — `StalkerProject`, `StalkerProjectCategory`, `StalkerMentionStatus`, nullable `projectId` on keywords, mentions, and themes, per-keyword listen flags, mention `categoryId` and `status`. The old unique keys on `(organizationId, phrase)` and `(organizationId, externalId)` are replaced by `(projectId, phrase)` and `(organizationId, projectId, externalId)` so two projects can store the same public post.
 - `20261004140000_stalker_brand` — brand name, aliases, negative keywords, handles, alert email, webhook URL, `StalkerMatchKind`, match label, author handle, like and reply counts, saved flag, `StalkerSavedView`, and trigram indexes on mention text and author. Apply this SQL migration. `prisma db push` does not create the `pg_trgm` indexes; search still works without them.
+- `20261005180000_stalker_alerts_cursors` — alert scope, delivery, spike and sentiment thresholds, `relevant`, `contentHash`, `StalkerScanCursor`, and `StalkerAlert`. Apply this SQL migration. `prisma db push` does not create the partial unique index on `contentHash`; the application still skips hashes it has already stored.
 
 A project can store 10 keywords and 12 categories. YouTube and Reddit listen by default. X and LinkedIn do not.
 
@@ -68,14 +69,19 @@ All routes require a signed-in organization and return 404 when the flag is off.
 - `GET /stalker/status` — poll settings plus which keyword and comment sources are available for this organization
 - `GET /stalker/projects` and `POST /stalker/projects`
 - `POST /stalker/projects/:id` — brand, handles, negative keywords, alert email, webhook URL
-- `GET /stalker/mentions?projectId=&date=&source=&from=&keywordId=&categoryId=&sentiment=&status=&q=&match=`
+- `GET /stalker/mentions?projectId=&date=&source=&from=&keywordId=&categoryId=&sentiment=&status=&q=&match=&offTopic=` — `offTopic=include` shows keyword hits the relevance gate marked off-topic. Otherwise those rows are hidden.
 - `POST /stalker/mentions/:id/status` `{ "status": "NEW" | "REPLIED" | "IGNORED" }`
 - `POST /stalker/mentions/:id/reply` `{ "text" }` — sends through the connected account after review
 - `POST /stalker/mentions/:id/save` `{ "saved": true, "as"?: "testimonial" | "idea" }`
 - `GET /stalker/keywords?projectId=`
 - `POST /stalker/keywords` `{ "projectId", "phrase", "youtube"?, "reddit"?, "x"?, "linkedin"? }`
 - `DELETE /stalker/keywords/:id`
-- `GET /stalker/analytics?projectId=&date=` — `date` is `24h`, `7d`, `30d` (default), or `all`
+- `POST /stalker/keywords/:id/backfill` — queues a 30-day lookback for that keyword's enabled sources
+- `GET /stalker/analytics?projectId=&date=` — `date` is `24h`, `7d`, `30d` (default), or `all`. Includes totals, volume, sentiment mix, sources, categories, keywords, themes, and accounts. Off-topic rows are excluded.
+- `GET /stalker/alerts?projectId=`
+- `POST /stalker/alerts/:id/read`
+- `POST /stalker/alerts/retry` `{ "projectId" }` — retries failed or pending email and rechecks spike and sentiment rules
+- `GET /stalker/export?projectId=` — same filters as Mentions, CSV in `{ filename, csv }`
 - `GET /stalker/views?projectId=`, `POST /stalker/views`, `DELETE /stalker/views/:id`
 - `GET /stalker/themes`
 - `POST /stalker/draft` `{ "mentionId"?: "...", "themeId"?: "...", "mode": "post" | "quote" }`
@@ -110,4 +116,4 @@ A full keyword run is about 525 units plus 1 unit per extra YouTube channel. `St
 
 ## UI
 
-`/stalker` redirects to `/stalker/mentions`. The sidebar is Mentions, Analytics, Themes, Keywords, Alerts, Settings, plus the project switcher. A workspace with no project sees the wizard instead of that nav. Mentions can be filtered by date, source, author, keyword, category, sentiment, status, free text, and what matched. Saved views store that combination. The feed is grouped by day. With no rows and no filters, the empty state is `No mentions yet. Stalker is listening for mentions of <project>`. Analytics defaults to the last 30 days and includes mentions over time and the accounts that mention the brand most. Alerts explains the email rule and points at Settings. The Schedule menu is unchanged. The switcher is the way between `/launches` and `/stalker/mentions`. Usage caps are not enforced.
+`/stalker` redirects to `/stalker/mentions`. The sidebar is Mentions, Analytics, Themes, Keywords, Alerts, Settings, plus the project switcher. A workspace with no project sees the wizard instead of that nav. Mentions can be filtered by date, source, author, keyword, category, sentiment, status, free text, and what matched. Saved views store that combination. The feed is grouped by day. With no rows and no filters, the empty state is `No mentions yet. Stalker is listening for mentions of <project>`. Analytics defaults to the last 30 days and includes volume, sentiment mix, sources, categories, keywords, themes, and the accounts that mention the brand most. Alerts edits the rules and lists delivery state. Keywords can queue a 30-day backfill. Mentions can export the current filters as CSV. The Schedule menu is unchanged. The switcher is the way between `/launches` and `/stalker/mentions`. Usage caps are not enforced.

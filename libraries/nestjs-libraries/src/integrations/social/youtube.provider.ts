@@ -1066,6 +1066,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       externalId: `yt-comment:${commentId}`,
       source: 'YOUTUBE_COMMENT',
       authorName: authorName || 'Someone',
+      authorHandle: authorName || '',
       text: body.slice(0, 2000),
       url: videoId
         ? `https://www.youtube.com/watch?v=${videoId}&lc=${commentId}`

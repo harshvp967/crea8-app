@@ -87,6 +87,18 @@ export const useStalkerViews = (projectId: string | null) => {
   );
 };
 
+export const useStalkerAlerts = (projectId: string | null) => {
+  const fetch = useFetch();
+  const load = useCallback(async (path: string) => {
+    return readJson(await fetch(path));
+  }, []);
+  return useSWR(
+    projectId ? `/stalker/alerts?projectId=${projectId}` : null,
+    load,
+    { revalidateOnFocus: false }
+  );
+};
+
 export const useStalkerStatus = () => {
   const fetch = useFetch();
   const load = useCallback(async (path: string) => {

@@ -50,6 +50,7 @@ model Organization {
   stalkerMentions     StalkerMention[]
   stalkerProjects     StalkerProject[]
   stalkerSavedViews   StalkerSavedView[]
+  stalkerAlerts       StalkerAlert[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -1849,6 +1850,34 @@ enum StalkerMatchKind {
   KEYWORD
 }
 
+enum StalkerAlertScope {
+  URGENT
+  NEGATIVE
+  ALL
+}
+
+enum StalkerAlertDelivery {
+  INSTANT
+  DIGEST
+}
+
+enum StalkerAlertKind {
+  MENTION
+  VOLUME_SPIKE
+  SENTIMENT_DROP
+}
+
+enum StalkerAlertChannel {
+  EMAIL
+  IN_APP
+}
+
+enum StalkerAlertStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model StalkerProject {
   id             String                   @id @default(uuid())
   organizationId String
@@ -1867,6 +1896,13 @@ model StalkerProject {
   handleFacebook String                   @default("")
   alertEmail     String                   @default("")
   alertsEnabled  Boolean                  @default(false)
+  alertScope     StalkerAlertScope        @default(URGENT)
+  alertDelivery  StalkerAlertDelivery     @default(INSTANT)
+  spikeEnabled   Boolean                  @default(false)
+  spikeMultiplier Int                     @default(2)
+  sentimentDropEnabled Boolean            @default(false)
+  sentimentDropPoints Int                 @default(20)
+  alertCooldownHours Int                  @default(12)
   webhookUrl     String                   @default("")
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
@@ -1876,6 +1912,8 @@ model StalkerProject {
   mentions       StalkerMention[]
   themes         StalkerTheme[]
   savedViews     StalkerSavedView[]
+  cursors        StalkerScanCursor[]
+  alerts         StalkerAlert[]
 
   @@index([organizationId])
 }
@@ -1966,6 +2004,8 @@ model StalkerMention {
   likeCount      Int                   @default(0)
   replyCount     Int                   @default(0)
   saved          Boolean               @default(false)
+  relevant       Boolean               @default(true)
+  contentHash    String                @default("")
   urgency        Int                   @default(0)
   authorName     String
   text           String
@@ -1980,6 +2020,7 @@ model StalkerMention {
   keyword        StalkerKeyword?       @relation(fields: [keywordId], references: [id], onDelete: SetNull)
   theme          StalkerTheme?         @relation(fields: [themeId], references: [id], onDelete: SetNull)
   categoryDef    StalkerProjectCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  alerts         StalkerAlert[]
 
   @@unique([organizationId, projectId, externalId])
   @@index([organizationId])
@@ -1994,6 +2035,53 @@ model StalkerMention {
   @@index([keywordId])
   @@index([categoryId])
   @@index([integrationId])
+  @@index([projectId, contentHash])
+  @@index([projectId, relevant])
+}
+
+// Live scan watermark per project, source, and phrase. backfillUntil is a
+// one-shot older window that does not move cursorAt backwards.
+model StalkerScanCursor {
+  id            String         @id @default(uuid())
+  projectId     String
+  source        String
+  phraseKey     String
+  cursorAt      DateTime?
+  backfillUntil DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  project       StalkerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, source, phraseKey])
+  @@index([projectId])
+}
+
+model StalkerAlert {
+  id             String              @id @default(uuid())
+  organizationId String
+  projectId      String
+  mentionId      String?
+  kind           StalkerAlertKind
+  channel        StalkerAlertChannel
+  status         StalkerAlertStatus  @default(PENDING)
+  dedupeKey      String
+  title          String
+  body           String
+  error          String              @default("")
+  attempts       Int                 @default(0)
+  readAt         DateTime?
+  sentAt         DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  project        StalkerProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  mention        StalkerMention?     @relation(fields: [mentionId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, dedupeKey])
+  @@index([projectId, createdAt])
+  @@index([organizationId])
+  @@index([status])
+  @@index([mentionId])
 }
 
 // Shared keyword-search results. One row per platform and phrase, reused

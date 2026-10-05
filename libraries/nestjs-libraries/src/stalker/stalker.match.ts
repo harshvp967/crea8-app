@@ -1,5 +1,6 @@
-import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { StalkerSourceId } from '@gitroom/nestjs-libraries/stalker/stalker.source';
+import { createHash } from 'crypto';
+import type { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import type { StalkerSourceId } from '@gitroom/nestjs-libraries/stalker/stalker.source';
 
 export type StalkerIdentity = {
   brand: string;
@@ -198,6 +199,179 @@ export const tagDrafts = (
   }
   return kept;
 };
+
+export const SCAN_OVERLAP_MS = 60 * 60 * 1000;
+export const SCAN_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
+export const BACKFILL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
+export const SPIKE_WINDOW_MS = 6 * 60 * 60 * 1000;
+export const SENTIMENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const SPIKE_MINIMUM = 4;
+
+export type StalkerAlertScopeName = 'URGENT' | 'NEGATIVE' | 'ALL';
+
+export const mentionContentHash = (draft: {
+  source: string;
+  authorHandle?: string;
+  authorName?: string;
+  text?: string;
+}) => {
+  const family = (draft.source || '').split('_')[0] || 'OTHER';
+  const author = compact(draft.authorHandle || draft.authorName || '');
+  const text = (draft.text || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 500);
+  return createHash('sha256')
+    .update(`${family}|${author}|${text}`)
+    .digest('hex');
+};
+
+export const resolveScanSince = (input: {
+  now: number;
+  cursorAt?: Date | null;
+  backfillUntil?: Date | null;
+  lookbackMs?: number;
+}) => {
+  const backfill = input.backfillUntil?.getTime();
+  if (backfill && backfill < input.now) {
+    return { since: new Date(backfill), backfill: true };
+  }
+  const lookback = input.lookbackMs ?? SCAN_LOOKBACK_MS;
+  const floor = input.now - lookback;
+  const cursor = input.cursorAt?.getTime();
+  if (cursor) {
+    return {
+      since: new Date(Math.max(floor, cursor - SCAN_OVERLAP_MS)),
+      backfill: false,
+    };
+  }
+  return { since: new Date(floor), backfill: false };
+};
+
+const includesAny = (text: string, words: string[]) =>
+  words.some((word) => text.includes(word));
+
+export const fallbackClassification = (
+  text: string,
+  categories: { name: string }[]
+) => {
+  const value = (text || '').toLowerCase();
+  const negative = [
+    'bug',
+    'broken',
+    'crash',
+    'hate',
+    'terrible',
+    'awful',
+    'scam',
+    'refund',
+    'worst',
+    'angry',
+    "doesn't work",
+    'doesnt work',
+    'disappointed',
+  ];
+  const positive = ['love', 'great', 'awesome', 'thanks', 'amazing', 'helpful', 'best'];
+  let sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' = 'NEUTRAL';
+  if (includesAny(value, negative)) {
+    sentiment = 'NEGATIVE';
+  } else if (includesAny(value, positive)) {
+    sentiment = 'POSITIVE';
+  }
+  let wanted = '';
+  if (includesAny(value, ['bug', 'crash', 'broken', 'error', "doesn't work", 'doesnt work'])) {
+    wanted = 'bug';
+  } else if (
+    includesAny(value, ['feature', 'wish', 'would be nice', 'please add', 'suggestion'])
+  ) {
+    wanted = 'feature';
+  } else if (
+    includesAny(value, ['hate', 'terrible', 'awful', 'scam', 'refund', 'worst', 'angry', 'disappointed'])
+  ) {
+    wanted = 'complain';
+  } else if (includesAny(value, ['love', 'great', 'awesome', 'amazing', 'thank'])) {
+    wanted = 'praise';
+  }
+  const match =
+    categories.find((category) =>
+      wanted ? category.name.toLowerCase().includes(wanted) : false
+    ) ||
+    categories.find((category) => category.name.toLowerCase().includes('other')) ||
+    categories[0];
+  const urgency =
+    sentiment === 'NEGATIVE' && (wanted === 'bug' || wanted === 'complain')
+      ? 75
+      : sentiment === 'NEGATIVE'
+        ? 40
+        : 10;
+  return {
+    categoryName: match?.name || 'Other',
+    sentiment,
+    urgency,
+    relevant: true,
+  };
+};
+
+export const mentionMatchesScope = (
+  scope: StalkerAlertScopeName,
+  item: {
+    categoryName: string;
+    sentiment: string;
+    urgency: number;
+    relevant: boolean;
+  }
+) => {
+  if (!item.relevant) {
+    return false;
+  }
+  if (scope === 'ALL') {
+    return true;
+  }
+  const urgent =
+    item.urgency >= 70 || /bug|complain/i.test(item.categoryName || '');
+  if (scope === 'URGENT') {
+    return urgent;
+  }
+  return item.sentiment === 'NEGATIVE';
+};
+
+export const shouldFireVolumeSpike = (input: {
+  recent: number;
+  previous: number;
+  multiplier: number;
+  minimum?: number;
+}) => {
+  const minimum = input.minimum ?? SPIKE_MINIMUM;
+  const multiplier = Math.max(2, input.multiplier || 2);
+  if (input.recent < minimum) {
+    return false;
+  }
+  if (input.previous <= 0) {
+    return true;
+  }
+  return input.recent >= input.previous * multiplier;
+};
+
+export const shouldFireSentimentDrop = (input: {
+  recentNegative: number;
+  recentTotal: number;
+  previousNegative: number;
+  previousTotal: number;
+  points: number;
+  minimum?: number;
+}) => {
+  const minimum = input.minimum ?? SPIKE_MINIMUM;
+  if (input.recentTotal < minimum || input.previousTotal < minimum) {
+    return false;
+  }
+  const nowPct = (input.recentNegative / input.recentTotal) * 100;
+  const prevPct = (input.previousNegative / input.previousTotal) * 100;
+  return nowPct - prevPct >= Math.max(5, input.points || 20);
+};
+
+export const sentimentShare = (negative: number, total: number) =>
+  total > 0 ? Math.round((negative / total) * 100) : 0;
 
 export const matchRank = (kind?: string) => (kind ? RANK[kind] || 0 : 0);
 

@@ -139,7 +139,7 @@ export const StalkerSettings = () => {
         <Input label="Alert email" translationKey="label_alert_email" name="alertEmail" disableForm={true} value={alertEmail} onChange={(event) => setAlertEmail(event.target.value)} placeholder="you@example.com" />
         <label className="flex items-center gap-[8px] text-[14px]">
           <input type="checkbox" checked={alertsEnabled} onChange={(event) => setAlertsEnabled(event.target.checked)} />
-          Email bug reports, complaints, and mentions with urgency 70 or higher
+          Turn alerts on. Scope, digest, spikes, and the inbox are on the Alerts page.
         </label>
         <Input label="Webhook URL" translationKey="label_webhook_url" name="webhookUrl" disableForm={true} value={webhookUrl} onChange={(event) => setWebhookUrl(event.target.value)} placeholder="https://example.com/hooks/stalker" />
         <p className="text-[12px] text-textItemBlur">

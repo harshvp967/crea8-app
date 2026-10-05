@@ -122,6 +122,7 @@ type SavedView = {
     status?: string;
     q?: string;
     match?: string;
+    offTopic?: string;
   };
 };
 
@@ -143,6 +144,7 @@ export const StalkerMentions = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [q, setQ] = useState('');
   const [match, setMatch] = useState('');
+  const [offTopic, setOffTopic] = useState(false);
   const [viewName, setViewName] = useState('');
   const [replyId, setReplyId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -158,6 +160,7 @@ export const StalkerMentions = () => {
     if (statusFilter) params.set('status', statusFilter);
     if (q.trim()) params.set('q', q.trim());
     if (match) params.set('match', match);
+    if (offTopic) params.set('offTopic', 'include');
     return params.toString();
   }, [
     date,
@@ -169,6 +172,7 @@ export const StalkerMentions = () => {
     statusFilter,
     q,
     match,
+    offTopic,
   ]);
   const { data, isLoading, mutate } = useStalkerMentions(projectId, search);
   const mentions: Mention[] = Array.isArray(data) ? data : [];
@@ -270,6 +274,7 @@ export const StalkerMentions = () => {
     setStatusFilter(filters.status || '');
     setQ(filters.q || '');
     setMatch(filters.match || '');
+    setOffTopic(filters.offTopic === 'include');
   };
 
   const saveView = async () => {
@@ -291,6 +296,7 @@ export const StalkerMentions = () => {
           status: statusFilter,
           q,
           match,
+          ...(offTopic ? { offTopic: 'include' } : {}),
         },
       }),
     });
@@ -304,6 +310,27 @@ export const StalkerMentions = () => {
 
   const filtersActive = Boolean(search);
   const categories = project?.categories || [];
+
+  const exportCsv = async () => {
+    if (!projectId) {
+      return;
+    }
+    const params = new URLSearchParams(search);
+    params.set('projectId', projectId);
+    const response = await fetch(`/stalker/export?${params.toString()}`);
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.csv) {
+      toaster.show('Could not export these mentions', 'warning');
+      return;
+    }
+    const blob = new Blob([payload.csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = payload.filename || 'stalker-mentions.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex flex-col gap-[16px]">
@@ -322,7 +349,7 @@ export const StalkerMentions = () => {
             <span
               key={row.date}
               title={`${row.date}: ${row.count}`}
-              className="w-[8px] rounded-t-[3px] bg-[#00D9FF]"
+              className="w-[8px] rounded-t-[3px] bg-[#00D9FF]/40"
               style={{
                 height: `${Math.max(4, Math.round((row.count / timelineMax) * 46))}px`,
               }}
@@ -434,6 +461,21 @@ export const StalkerMentions = () => {
           <option value="HANDLE">Handle</option>
           <option value="KEYWORD">Keyword</option>
         </select>
+        <label className="inline-flex items-center gap-[6px] text-[13px] text-textItemBlur">
+          <input
+            type="checkbox"
+            checked={offTopic}
+            onChange={(event) => setOffTopic(event.target.checked)}
+          />
+          Show off-topic
+        </label>
+        <button
+          type="button"
+          className="text-[13px] text-[#00D9FF] underline"
+          onClick={exportCsv}
+        >
+          Export CSV
+        </button>
       </div>
       <div className="flex flex-wrap items-center gap-[8px]">
         {views.map((view) => (
@@ -482,7 +524,7 @@ export const StalkerMentions = () => {
             ? 'No mentions match these filters.'
             : `No mentions yet. Stalker is listening for mentions of ${
                 project?.name || 'this project'
-              }`}
+              }. Off-topic keyword hits stay out of this feed until you show them.`}
         </p>
       ) : null}
       <div className="flex flex-col gap-[18px]">

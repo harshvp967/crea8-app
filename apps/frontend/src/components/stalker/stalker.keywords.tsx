@@ -30,6 +30,7 @@ export const StalkerKeywords = () => {
     listenReddit: boolean;
     listenX: boolean;
     listenLinkedin: boolean;
+    backfillArmed?: boolean;
   }> = Array.isArray(data) ? data : [];
 
   const addKeyword = async () => {
@@ -57,6 +58,21 @@ export const StalkerKeywords = () => {
     mutate();
   };
 
+  const backfill = async (id: string) => {
+    const response = await fetch(`/stalker/keywords/${id}/backfill`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      toaster.show('Could not queue that backfill', 'warning');
+      return;
+    }
+    mutate();
+    toaster.show(
+      'Next check looks back 30 days for this keyword. The live scan keeps its place. X and Reddit cannot see further than their APIs allow.',
+      'success'
+    );
+  };
+
   return (
     <div className="flex max-w-[640px] flex-col gap-[16px]">
       <div>
@@ -64,7 +80,7 @@ export const StalkerKeywords = () => {
           {t('stalker_keywords', 'Keywords')}
         </h1>
         <p className="mt-[6px] text-[14px] text-textItemBlur">
-          Brand names, competitors, and niche phrases. Up to five are searched on each connected source every check.
+          Brand names, competitors, and niche phrases. Up to five are searched on each connected source every check. Backfill asks for 30 days once, without moving the live cursor backwards.
         </p>
       </div>
       <div className="flex items-end gap-[8px]">
@@ -90,6 +106,11 @@ export const StalkerKeywords = () => {
       {isLoading ? (
         <p className="text-[14px] text-textItemBlur">Loading keywords…</p>
       ) : null}
+      {!isLoading && !keywords.length ? (
+        <p className="text-[14px] text-textItemBlur">
+          No keywords yet. Add a phrase and the next check will listen for it.
+        </p>
+      ) : null}
       <ul className="flex flex-col gap-[8px]">
         {keywords.map((keyword) => (
           <li
@@ -102,15 +123,25 @@ export const StalkerKeywords = () => {
                 {FLAGS.filter((flag) => keyword[flag.key])
                   .map((flag) => flag.label)
                   .join(', ') || 'No sources'}
+                {keyword.backfillArmed ? ' · Backfill queued' : ''}
               </span>
             </div>
-            <button
-              type="button"
-              className="text-[13px] text-textItemBlur underline"
-              onClick={() => removeKeyword(keyword.id)}
-            >
-              Remove
-            </button>
+            <span className="flex items-center gap-[10px]">
+              <button
+                type="button"
+                className="text-[13px] text-[#00D9FF] underline"
+                onClick={() => backfill(keyword.id)}
+              >
+                Backfill 30 days
+              </button>
+              <button
+                type="button"
+                className="text-[13px] text-textItemBlur underline"
+                onClick={() => removeKeyword(keyword.id)}
+              >
+                Remove
+              </button>
+            </span>
           </li>
         ))}
       </ul>
