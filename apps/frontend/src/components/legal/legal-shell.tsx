@@ -22,7 +22,7 @@ export function LegalShell({
           {title}
         </h1>
         <p className="mt-[12px] text-[14px] text-gray">
-          Last updated: October 1, 2026
+          Last updated: October 5, 2026
         </p>
         <div className="mt-[28px] rounded-[12px] border border-newBorder bg-newBgColorInner p-[20px] sm:p-[32px]">
           <article className="flex flex-col gap-[14px] text-[15px] leading-[1.7]">

@@ -53,10 +53,10 @@ export default function PrivacyPage() {
           analytics cookies that help us understand how it is used.
         </li>
         <li>
-          Payment information is handled by a third-party merchant of record
-          (Paddle or Lemon Squeezy). We do not store your card number or full
-          payment card details. The merchant shares limited billing details
-          with us, such as plan and subscription status.
+          Payment information is handled by Dodo Payments, which acts as the
+          merchant of record and payment processor. We do not store your card
+          number or full payment card details. Dodo Payments shares limited
+          billing details with us, such as plan and subscription status.
         </li>
       </LegalList>
 
@@ -122,7 +122,51 @@ export default function PrivacyPage() {
         the service. It is never sold and never used to train AI models.
       </p>
       <LegalH3>Reddit</LegalH3>
-      <p>We do not use Reddit data for AI.</p>
+      <p>
+        If you connect Reddit, you do so through OAuth. The scopes are
+        identity, read, submit, and flair. We store the tokens so we can post,
+        on your behalf, to the subreddits you choose. Disconnecting Reddit
+        removes that access.
+      </p>
+      <p>
+        Mention monitoring (Stalker) is separate from publishing. When you set
+        a brand or keywords, we retrieve public Reddit posts and comments that
+        match them through Reddit&apos;s API. For each match we store the
+        permalink, the author&apos;s username, an excerpt of up to 2,000
+        characters, the score, and the comment count. We send that mention text
+        to an AI provider (the OpenAI API) only to label category, sentiment,
+        and urgency, and to summarize topics, for that customer.
+      </p>
+      <p>
+        We do not sell or license Reddit data, and we do not share it with
+        third parties except the AI provider named above, which receives
+        mention text only for that labeling and summarization. We do not use
+        Reddit data for ad targeting. We do not train or fine-tune AI models
+        on Reddit data. We do not profile individual Redditors. Mention data
+        is kept for up to 30 days. If content is removed from Reddit, we
+        delete it from our systems. Stored mentions link back to Reddit.
+      </p>
+      <p>
+        These Reddit features follow Reddit&apos;s{' '}
+        <LegalLink href="https://redditinc.com/policies/user-agreement">
+          User Agreement
+        </LegalLink>
+        ,{' '}
+        <LegalLink href="https://redditinc.com/policies/developer-terms">
+          Developer Terms
+        </LegalLink>
+        ,{' '}
+        <LegalLink href="https://redditinc.com/policies/data-api-terms">
+          Data API Terms
+        </LegalLink>
+        , and{' '}
+        <LegalLink href="https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy">
+          Responsible Builder Policy
+        </LegalLink>
+        . To ask us to remove Reddit data, email{' '}
+        <LegalLink href="mailto:support@crea8.one">support@crea8.one</LegalLink>
+        .
+      </p>
 
       <LegalH2>India (DPDP Act 2023)</LegalH2>
       <p>
@@ -227,7 +271,9 @@ export default function PrivacyPage() {
         <li>
           AI providers (for example, OpenAI) that generate drafts and insights.
         </li>
-        <li>The payment processor and merchant of record.</li>
+        <li>
+          Dodo Payments, the payment processor and merchant of record.
+        </li>
         <li>Analytics providers.</li>
       </LegalList>
       <p>
