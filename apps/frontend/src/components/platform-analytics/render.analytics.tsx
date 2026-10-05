@@ -1,9 +1,11 @@
 import { FC, useCallback, useMemo } from 'react';
 import { Integration } from '@prisma/client';
 import useSWR from 'swr';
+import dayjs from 'dayjs';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { ChartLine } from '@gitroom/frontend/components/analytics/chart-line';
+import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 interface AnalyticsDataItem {
@@ -11,6 +13,61 @@ interface AnalyticsDataItem {
   data: Array<{ total: number; date: string }>;
   average?: boolean;
   percentageChange?: number;
+}
+
+function formatOverviewDate(date: string) {
+  if (date.includes(' - ')) {
+    return date;
+  }
+  const parsed = dayjs(date);
+  return parsed.isValid() ? parsed.format('MMM D') : date;
+}
+
+function buildOverview(items: AnalyticsDataItem[]) {
+  const withPoints = items.filter((item) => item.data?.length);
+  const lined = withPoints.filter(
+    (item) => item.data.length >= 2 && !item.average
+  );
+  const picked = (lined.length ? lined : withPoints).slice(0, 2);
+  if (!picked.length) {
+    return null;
+  }
+
+  const dateSets = picked.map(
+    (item) => new Set(item.data.map((point) => point.date))
+  );
+  let dates = [...dateSets[0]];
+  if (dateSets[1]) {
+    const shared = dates.filter((date) => dateSets[1].has(date));
+    dates = (
+      shared.length >= 2 ? shared : [...new Set([...dates, ...dateSets[1]])]
+    ).sort();
+  } else {
+    dates.sort();
+  }
+
+  const rows = dates.map((date) => {
+    const row: Record<string, string | number> = {
+      date: formatOverviewDate(date),
+    };
+    picked.forEach((item, index) => {
+      const match = item.data.find((point) => point.date === date);
+      row[`s${index}`] = match ? Number(match.total) || 0 : 0;
+    });
+    return row;
+  });
+
+  return {
+    rows: rows.length === 1 ? [rows[0], { ...rows[0] }] : rows,
+    series: picked.map((item, index) => ({
+      key: `s${index}`,
+      label: item.label,
+    })),
+    title:
+      picked.length > 1
+        ? `${picked[0].label} and ${picked[1].label}`
+        : picked[0].label,
+  };
 }
 
 const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
@@ -35,10 +92,7 @@ const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
         fill="none"
         className={isPositive ? '' : 'rotate-180'}
       >
-        <path
-          d="M6 2.5L10 7.5H2L6 2.5Z"
-          fill="currentColor"
-        />
+        <path d="M6 2.5L10 7.5H2L6 2.5Z" fill="currentColor" />
       </svg>
       <span>
         {displayValue}
@@ -75,19 +129,21 @@ const AnalyticsCard: FC<{
         <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[8px]">
           <div className="flex items-center gap-[10px]">
             <div
-              className={`
-                w-[8px] h-[8px] rounded-full
-                ${color === 'purple' ? 'bg-[#00D9FF]' : ''}
-                ${color === 'green' ? 'bg-[#32d583]' : ''}
-                ${color === 'blue' ? 'bg-[#1d9bf0]' : ''}
-              `}
+              className="w-[8px] h-[8px] rounded-full"
+              style={{
+                backgroundColor: 'rgba(0, 217, 255, 0.22)',
+                boxShadow: '0 0 0 1.5px #00D9FF',
+              }}
             />
             <span className="text-[15px] font-medium text-newTableText">
               {item.label}
             </span>
           </div>
           {item.percentageChange !== undefined && (
-            <TrendIndicator value={item.percentageChange} average={item.average} />
+            <TrendIndicator
+              value={item.percentageChange}
+              average={item.average}
+            />
           )}
         </div>
 
@@ -97,7 +153,12 @@ const AnalyticsCard: FC<{
             {/* Chart */}
             <div className="flex-1 px-[12px] py-[8px]">
               <div className="h-[120px] relative">
-                <ChartSocial data={item.data} color={color} key={`chart-${index}`} />
+                <ChartSocial
+                  data={item.data}
+                  color={color}
+                  label={item.label}
+                  key={`chart-${index}`}
+                />
               </div>
             </div>
 
@@ -236,8 +297,10 @@ export const RenderAnalytics: FC<{
   const totals = useMemo(() => {
     return data?.map((p: AnalyticsDataItem) => {
       const value =
-        (p?.data.reduce((acc: number, curr: { total: number }) => acc + curr.total, 0) || 0) /
-        (p.average ? p.data.length : 1);
+        (p?.data.reduce(
+          (acc: number, curr: { total: number }) => acc + curr.total,
+          0
+        ) || 0) / (p.average ? p.data.length : 1);
       if (p.average) {
         return value.toFixed(2) + '%';
       }
@@ -245,10 +308,17 @@ export const RenderAnalytics: FC<{
     });
   }, [data]);
 
+  const overview = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return null;
+    }
+    return buildOverview(data);
+  }, [data]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-[48px]">
-        <LoadingComponent />
+        <ScheduleLoading />
       </div>
     );
   }
@@ -273,33 +343,55 @@ export const RenderAnalytics: FC<{
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
-      {data?.length === 0 && (
-        <PanelMessage
-          title={t(
-            'analytics_empty_period',
-            'No analytics for this channel in the selected period.'
-          )}
-          actionLabel={
-            (integration as { refreshNeeded?: boolean }).refreshNeeded
-              ? t('refresh_channel', 'Refresh Channel')
-              : undefined
-          }
-          onAction={
-            (integration as { refreshNeeded?: boolean }).refreshNeeded
-              ? refreshChannel(integration as any)
-              : undefined
-          }
+    <div className="flex flex-col gap-[16px]">
+      {overview && (
+        <ChartLine
+          surface="dark"
+          accent="#00D9FF"
+          radius={12}
+          icon={null}
+          title={overview.title}
+          description={t('last_n_days', `Last ${date} days`)}
+          data={overview.rows}
+          index="date"
+          series={overview.series}
+          fill="gradient"
+          height={220}
+          strokeWidth={2.5}
+          showLegend={overview.series.length > 1}
+          showPoints="last"
+          animate
+          valueFormat="compact"
         />
       )}
-      {data?.map((item: AnalyticsDataItem, index: number) => (
-        <AnalyticsCard
-          key={`analytics-${index}`}
-          item={item}
-          total={totals[index]}
-          index={index}
-        />
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+        {data?.length === 0 && (
+          <PanelMessage
+            title={t(
+              'analytics_empty_period',
+              'No analytics for this channel in the selected period.'
+            )}
+            actionLabel={
+              (integration as { refreshNeeded?: boolean }).refreshNeeded
+                ? t('refresh_channel', 'Refresh Channel')
+                : undefined
+            }
+            onAction={
+              (integration as { refreshNeeded?: boolean }).refreshNeeded
+                ? refreshChannel(integration as any)
+                : undefined
+            }
+          />
+        )}
+        {data?.map((item: AnalyticsDataItem, index: number) => (
+          <AnalyticsCard
+            key={`analytics-${index}`}
+            item={item}
+            total={totals[index]}
+            index={index}
+          />
+        ))}
+      </div>
     </div>
   );
 };
