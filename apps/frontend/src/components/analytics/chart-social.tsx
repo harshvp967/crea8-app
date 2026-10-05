@@ -5,12 +5,6 @@ import dayjs from 'dayjs';
 import { TotalList } from '@gitroom/frontend/components/analytics/stars.and.forks.interface';
 import { ChartLine } from '@gitroom/frontend/components/analytics/chart-line';
 
-const SERIES_COLOR = {
-  purple: '#00D9FF',
-  green: '#8a8a8a',
-  blue: '#8a8a8a',
-} as const;
-
 function formatDateLabel(date: string) {
   if (date.includes(' - ')) {
     return date;
@@ -23,8 +17,7 @@ export const ChartSocial: FC<{
   data: TotalList[];
   color?: 'purple' | 'green' | 'blue';
   label?: string;
-}> = ({ data, color = 'purple', label = 'Total' }) => {
-  const seriesColor = SERIES_COLOR[color];
+}> = ({ data, label = 'Total' }) => {
   const rows = useMemo(() => {
     const points = (data || []).map((point) => ({
       date: formatDateLabel(point.date),
@@ -47,8 +40,9 @@ export const ChartSocial: FC<{
       accent="#00D9FF"
       data={rows}
       index="date"
-      series={[{ key: 'total', label, color: seriesColor }]}
+      series={[{ key: 'total', label }]}
       fill="gradient"
+      animate
       height={112}
       strokeWidth={2}
       showXAxis={false}

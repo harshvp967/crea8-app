@@ -119,7 +119,6 @@ export const StatisticsModal: FC<{
                   {analyticsData.map((p: AnalyticsData, index: number) => {
                     const colorVariants = ['purple', 'green', 'blue'] as const;
                     const color = colorVariants[index % colorVariants.length];
-                    const dotColor = index === 0 ? '#00D9FF' : '#8a8a8a';
                     const hasDataPoints = (p.data?.length || 0) >= 1;
                     return (
                       <div key={`analytics-${index}`} className="group">
@@ -129,14 +128,8 @@ export const StatisticsModal: FC<{
                               <div
                                 className="w-[8px] h-[8px] rounded-full"
                                 style={{
-                                  backgroundColor:
-                                    index === 0
-                                      ? 'rgba(0, 217, 255, 0.22)'
-                                      : dotColor,
-                                  boxShadow:
-                                    index === 0
-                                      ? '0 0 0 1.5px #00D9FF'
-                                      : undefined,
+                                  backgroundColor: 'rgba(0, 217, 255, 0.22)',
+                                  boxShadow: '0 0 0 1.5px #00D9FF',
                                 }}
                               />
                               <span className="text-[15px] font-medium text-newTableText">

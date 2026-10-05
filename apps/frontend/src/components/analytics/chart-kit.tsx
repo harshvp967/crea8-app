@@ -132,7 +132,12 @@ export function resolveSeries(
   theme: ChartTheme,
   palette?: string[]
 ): ResolvedSeries[] {
-  const derived = [theme.accent, theme.muted, theme.subtle, theme.fg];
+  const derived = [
+    theme.accent,
+    `color-mix(in oklab, ${theme.accent} 55%, ${theme.fg})`,
+    theme.muted,
+    theme.fg,
+  ];
   return series.map((s, i) => ({
     key: s.key,
     label: s.label ?? s.key,
@@ -545,9 +550,9 @@ export function ChartLegend({
                       )
                     : s.color
                 }
-                fillOpacity={s.color === theme.accent ? 0.22 : 1}
-                stroke={s.color === theme.accent ? s.color : 'none'}
-                strokeWidth={s.color === theme.accent ? 1.25 : 0}
+                fillOpacity={0.28}
+                stroke={s.color}
+                strokeWidth={1.25}
               />
               {s.texture !== 'solid' && (
                 <rect

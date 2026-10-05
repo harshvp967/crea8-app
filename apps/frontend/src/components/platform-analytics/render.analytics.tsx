@@ -62,7 +62,6 @@ function buildOverview(items: AnalyticsDataItem[]) {
     series: picked.map((item, index) => ({
       key: `s${index}`,
       label: item.label,
-      color: index === 0 ? '#00D9FF' : '#8a8a8a',
     })),
     title:
       picked.length > 1
@@ -110,7 +109,6 @@ const AnalyticsCard: FC<{
 }> = ({ item, total, index }) => {
   const colorVariants = ['purple', 'green', 'blue'] as const;
   const color = colorVariants[index % colorVariants.length];
-  const dotColor = index === 0 ? '#00D9FF' : '#8a8a8a';
 
   const hasDataPoints = item.data.length >= 1;
 
@@ -133,9 +131,8 @@ const AnalyticsCard: FC<{
             <div
               className="w-[8px] h-[8px] rounded-full"
               style={{
-                backgroundColor:
-                  index === 0 ? 'rgba(0, 217, 255, 0.22)' : dotColor,
-                boxShadow: index === 0 ? '0 0 0 1.5px #00D9FF' : undefined,
+                backgroundColor: 'rgba(0, 217, 255, 0.22)',
+                boxShadow: '0 0 0 1.5px #00D9FF',
               }}
             />
             <span className="text-[15px] font-medium text-newTableText">
@@ -363,7 +360,7 @@ export const RenderAnalytics: FC<{
           strokeWidth={2.5}
           showLegend={overview.series.length > 1}
           showPoints="last"
-          total="none"
+          animate
           valueFormat="compact"
         />
       )}
