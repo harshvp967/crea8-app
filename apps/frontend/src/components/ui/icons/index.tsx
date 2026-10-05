@@ -230,6 +230,105 @@ export const DropdownArrowSmallIcon: FC<IconProps & { rotated?: boolean }> = ({
   </svg>
 );
 
+// Shared calendar shell for the Day / Week / Month segmented control.
+// Same stroke language as CalendarIcon: currentColor, 1.5, round caps.
+const calendarShellPath =
+  'M5 1.25v1.9M11 1.25v1.9M2.4 5.9h11.2M3.15 2.75h9.7c.69 0 1.25.56 1.25 1.25v8.85c0 .69-.56 1.25-1.25 1.25h-9.7c-.69 0-1.25-.56-1.25-1.25v-8.85c0-.69.56-1.25 1.25-1.25Z';
+
+const CalendarShell: FC<IconProps & { children?: React.ReactNode }> = ({
+  size = 16,
+  className,
+  children,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    {...props}
+  >
+    <path
+      d={calendarShellPath}
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {children}
+  </svg>
+);
+
+export const DayCalendarIcon: FC<IconProps> = (props) => (
+  <CalendarShell {...props}>
+    <rect
+      x="6.05"
+      y="8.05"
+      width="3.9"
+      height="3.9"
+      rx="0.7"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+  </CalendarShell>
+);
+
+export const WeekCalendarIcon: FC<IconProps> = (props) => (
+  <CalendarShell {...props}>
+    <path
+      d="M5.15 8.05v3.7M8 8.05v3.7M10.85 8.05v3.7"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </CalendarShell>
+);
+
+export const MonthCalendarIcon: FC<IconProps> = (props) => (
+  <CalendarShell {...props}>
+    <circle cx="5.2" cy="8.45" r="0.95" fill="currentColor" />
+    <circle cx="8" cy="8.45" r="0.95" fill="currentColor" />
+    <circle cx="10.8" cy="8.45" r="0.95" fill="currentColor" />
+    <circle cx="5.2" cy="11.15" r="0.95" fill="currentColor" />
+    <circle cx="8" cy="11.15" r="0.95" fill="currentColor" />
+    <circle cx="10.8" cy="11.15" r="0.95" fill="currentColor" />
+  </CalendarShell>
+);
+
+export const StalkerIcon: FC<IconProps> = ({
+  size = 16,
+  className,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    {...props}
+  >
+    <path
+      d="M1.25 8S3.6 4.25 8 4.25 14.75 8 14.75 8 12.4 11.75 8 11.75 1.25 8 1.25 8Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle
+      cx="8"
+      cy="8"
+      r="1.85"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+  </svg>
+);
+
 // Calendar Icon
 export const CalendarIcon: FC<IconProps> = ({ className, ...props }) => (
   <svg

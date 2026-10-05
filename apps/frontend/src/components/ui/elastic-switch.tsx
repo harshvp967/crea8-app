@@ -2,7 +2,7 @@
 
 // Ported from Tweenly Elastic Switch
 // (https://trytweenly.vercel.app/r/elastic-switch.json).
-// The on-track is a soft cyan mix with a hairline and glow, not a solid fill.
+// The on-track is a soft cyan wash with a 1px hairline. No outer glow.
 import { useId, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import clsx from 'clsx';
@@ -37,7 +37,7 @@ const sizes = {
   lg: { w: 64, h: 36, knob: 30, pad: 3, icon: 17 },
 };
 
-const SOFT_ON = 'color-mix(in srgb, #00D9FF 42%, var(--new-col-color))';
+const SOFT_ON = 'color-mix(in srgb, #00D9FF 32%, var(--new-col-color))';
 
 const Sun = ({ size }: { size: number }) => (
   <svg
@@ -129,14 +129,14 @@ export function ElasticSwitch({
         onKeyDown={(event) => event.key === ' ' && setPressed(true)}
         onKeyUp={() => setPressed(false)}
         onBlur={() => setPressed(false)}
-        className="relative shrink-0 cursor-pointer overflow-hidden rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#00D9FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner disabled:cursor-not-allowed"
+        className="relative shrink-0 cursor-pointer overflow-hidden rounded-full outline-none transition-shadow duration-200 focus-visible:ring-2 focus-visible:ring-[#00D9FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner disabled:cursor-not-allowed"
         style={{
           width: s.w,
           height: s.h,
           padding: s.pad,
           background: offColor ?? 'var(--new-col-color)',
           boxShadow: on
-            ? '0 0 14px color-mix(in srgb, #00D9FF 40%, transparent), inset 0 0 0 1px color-mix(in srgb, #00D9FF 68%, transparent)'
+            ? 'inset 0 0 0 1px color-mix(in srgb, #00D9FF 46%, transparent)'
             : 'inset 0 0 0 1px var(--new-border)',
         }}
       >
