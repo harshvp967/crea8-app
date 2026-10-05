@@ -371,6 +371,7 @@ export const AddProviderComponent: FC<{
     isExternal: boolean;
     isWeb3: boolean;
     isChromeExtension?: boolean;
+    comingSoon?: boolean;
     extensionCookies?: Array<{
       name: string;
       domain: string;
@@ -398,6 +399,7 @@ export const AddProviderComponent: FC<{
   const router = useRouter();
   const fetch = useFetch();
   const modal = useModals();
+  const t = useT();
   const getSocialLink = useCallback(
     (
         invite: boolean,
@@ -412,9 +414,14 @@ export const AddProviderComponent: FC<{
           defaultValue?: string;
           type: 'text' | 'password';
           hint?: string;
-        }>
+        }>,
+        comingSoon?: boolean
       ) =>
       async () => {
+        if (comingSoon) {
+          toaster.show(t('coming_soon', 'Coming soon'), 'warning');
+          return;
+        }
         const onboardingParam = onboarding ? 'onboarding=true' : '';
         const openWeb3 = async () => {
           const { component: Web3Providers } = web3List.find(
@@ -654,8 +661,6 @@ export const AddProviderComponent: FC<{
     [onboarding]
   );
 
-  const t = useT();
-
   return (
     <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative]">
       <div className="flex flex-col">
@@ -689,7 +694,8 @@ export const AddProviderComponent: FC<{
                   item.isExternal,
                   item.isWeb3,
                   item.isChromeExtension,
-                  item.customFields
+                  item.customFields,
+                  item.comingSoon
                 )}
                 {...(!!item.toolTip
                   ? {
@@ -704,6 +710,11 @@ export const AddProviderComponent: FC<{
                   'w-full text-[14px] rounded-[16px] bg-newTableHeader border border-transparent text-textColor relative items-center flex gap-[10px] cursor-pointer transition-colors hover:border-[#00D9FF] hover:bg-[#00D9FF]/10'
                 )}
               >
+                {item.comingSoon && (
+                  <span className="pointer-events-none absolute -top-[7px] start-[8px] z-[2] max-w-[calc(100%-16px)] truncate rounded-full bg-[#00D9FF] px-[6px] text-[9px] font-[700] leading-[16px] text-[#0a0a0a]">
+                    {t('coming_soon', 'Coming soon')}
+                  </span>
+                )}
                 <div>
                   {item.identifier === 'youtube' ? (
                     <img src={`/icons/platforms/youtube.svg`} />
