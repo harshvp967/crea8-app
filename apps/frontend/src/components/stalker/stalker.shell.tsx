@@ -185,7 +185,7 @@ export const StalkerShell = ({ children }: { children: ReactNode }) => {
                 <DashboardSwitcher />
                 <div className="flex items-center gap-[16px] text-textItemBlur shrink-0 ms-auto">
                   <OrganizationSelector />
-                  <div className="flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors hover:text-[#00D9FF] hover:bg-[#1a1a1a]">
+                  <div className="flex items-center justify-center">
                     <ModeComponent />
                   </div>
                   <NotificationComponent />
