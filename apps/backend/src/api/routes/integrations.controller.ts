@@ -35,6 +35,7 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { uniqBy } from 'lodash';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { linkedinPagesUnavailable } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -269,6 +270,9 @@ export class IntegrationsController {
 
       return { url };
     } catch (err) {
+      if (err instanceof Error && err.message === linkedinPagesUnavailable) {
+        return { err: true, message: err.message };
+      }
       return { err: true };
     }
   }

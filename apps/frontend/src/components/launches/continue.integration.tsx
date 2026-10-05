@@ -105,6 +105,16 @@ export const ContinueIntegration: FC<{
 
   useEffect(() => {
     (async () => {
+      if (searchParams?.error && !searchParams?.code) {
+        setErrorMessage(
+          provider === 'linkedin-page'
+            ? "LinkedIn Pages isn't available yet"
+            : searchParams.error_description || 'Could not add provider'
+        );
+        setError(true);
+        return;
+      }
+
       const timezone = String(dayjs.tz().utcOffset());
 
       // Try public endpoint first (handles both public and fallback scenarios)
