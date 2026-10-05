@@ -10,7 +10,7 @@ import { capitalize, groupBy, orderBy } from 'lodash';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
 import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
@@ -514,7 +514,7 @@ export const LaunchesComponent = () => {
   if (isLoading || reload) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
-        <LoadingComponent />
+        <ScheduleLoading />
       </div>
     );
   }

@@ -4,7 +4,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
 import { Select } from '@gitroom/react/form/select';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
 
 interface AnalyticsData {
@@ -35,20 +35,21 @@ export const StatisticsModal: FC<{
     loadStatistics
   );
 
-  const { data: analyticsData, isLoading: isLoadingAnalytics, mutate: mutateAnalytics } = useSWR(
-    `/analytics/post/${postId}?date=${dateRange}`,
-    loadPostAnalytics,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
-      revalidateOnMount: true,
-      refreshWhenHidden: false,
-      refreshWhenOffline: false,
-    }
-  );
+  const {
+    data: analyticsData,
+    isLoading: isLoadingAnalytics,
+    mutate: mutateAnalytics,
+  } = useSWR(`/analytics/post/${postId}?date=${dateRange}`, loadPostAnalytics, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
 
-  const isMissing = analyticsData && !Array.isArray(analyticsData) && analyticsData.missing;
+  const isMissing =
+    analyticsData && !Array.isArray(analyticsData) && analyticsData.missing;
 
   const dateOptions = useMemo(() => {
     return [
@@ -62,8 +63,10 @@ export const StatisticsModal: FC<{
     if (!analyticsData || !Array.isArray(analyticsData)) return [];
     return analyticsData.map((p: AnalyticsData) => {
       const value =
-        (p?.data?.reduce((acc: number, curr: any) => acc + Number(curr.total), 0) || 0) /
-        (p.average ? p.data.length : 1);
+        (p?.data?.reduce(
+          (acc: number, curr: any) => acc + Number(curr.total),
+          0
+        ) || 0) / (p.average ? p.data.length : 1);
       if (p.average) {
         return value.toFixed(2) + '%';
       }
@@ -77,74 +80,102 @@ export const StatisticsModal: FC<{
     <div className="relative min-h-[200px]">
       {isLoading ? (
         <div className="flex items-center justify-center py-[40px]">
-          <LoadingComponent />
+          <ScheduleLoading />
         </div>
       ) : isMissing ? (
-        <MissingReleaseModal postId={postId} onSuccess={() => mutateAnalytics()} />
+        <MissingReleaseModal
+          postId={postId}
+          onSuccess={() => mutateAnalytics()}
+        />
       ) : (
         <div className="flex flex-col gap-[24px]">
           {/* Post Analytics Section */}
-          {analyticsData && Array.isArray(analyticsData) && analyticsData.length > 0 && (
-            <div className="flex flex-col gap-[14px]">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[18px] font-[500]">
-                  {t('post_analytics', 'Post Analytics')}
-                </h3>
-                <div className="max-w-[150px]">
-                  <Select
-                    label=""
-                    name="date"
-                    disableForm={true}
-                    hideErrors={true}
-                    value={dateRange}
-                    onChange={(e) => setDateRange(+e.target.value)}
-                  >
-                    {dateOptions.map((option) => (
-                      <option key={option.key} value={option.key}>
-                        {option.value}
-                      </option>
-                    ))}
-                  </Select>
+          {analyticsData &&
+            Array.isArray(analyticsData) &&
+            analyticsData.length > 0 && (
+              <div className="flex flex-col gap-[14px]">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[18px] font-[500]">
+                    {t('post_analytics', 'Post Analytics')}
+                  </h3>
+                  <div className="max-w-[150px]">
+                    <Select
+                      label=""
+                      name="date"
+                      disableForm={true}
+                      hideErrors={true}
+                      value={dateRange}
+                      onChange={(e) => setDateRange(+e.target.value)}
+                    >
+                      {dateOptions.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.value}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
-                {analyticsData.map((p: AnalyticsData, index: number) => {
-                  const colorVariants = ['purple', 'green', 'blue'] as const;
-                  const color = colorVariants[index % colorVariants.length];
-                  return (
-                    <div key={`analytics-${index}`} className="group">
-                      <div className="flex flex-col h-full bg-newTableHeader border border-newTableBorder rounded-[12px] overflow-hidden transition-all duration-200 hover:border-[#00D9FF]/50">
-                        <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[8px]">
-                          <div className="flex items-center gap-[10px]">
-                            <div
-                              className={`w-[8px] h-[8px] rounded-full ${
-                                color === 'purple' ? 'bg-[#00D9FF]' : ''
-                              } ${color === 'green' ? 'bg-[#32d583]' : ''} ${
-                                color === 'blue' ? 'bg-[#1d9bf0]' : ''
-                              }`}
-                            />
-                            <span className="text-[15px] font-medium text-newTableText">
-                              {p.label}
-                            </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+                  {analyticsData.map((p: AnalyticsData, index: number) => {
+                    const colorVariants = ['purple', 'green', 'blue'] as const;
+                    const color = colorVariants[index % colorVariants.length];
+                    const dotColor = index === 0 ? '#00D9FF' : '#8a8a8a';
+                    const hasDataPoints = (p.data?.length || 0) >= 1;
+                    return (
+                      <div key={`analytics-${index}`} className="group">
+                        <div className="flex flex-col h-full bg-newTableHeader border border-newTableBorder rounded-[12px] overflow-hidden transition-all duration-200 hover:border-[#00D9FF]/50">
+                          <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[8px]">
+                            <div className="flex items-center gap-[10px]">
+                              <div
+                                className="w-[8px] h-[8px] rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    index === 0
+                                      ? 'rgba(0, 217, 255, 0.22)'
+                                      : dotColor,
+                                  boxShadow:
+                                    index === 0
+                                      ? '0 0 0 1.5px #00D9FF'
+                                      : undefined,
+                                }}
+                              />
+                              <span className="text-[15px] font-medium text-newTableText">
+                                {p.label}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex-1 px-[12px] py-[8px]">
-                          <div className="h-[120px] relative">
-                            <ChartSocial data={p.data} color={color} key={`chart-${index}`} />
-                          </div>
-                        </div>
-                        <div className="px-[16px] pb-[14px]">
-                          <div className="text-[36px] leading-[42px] font-semibold tracking-tight">
-                            {totals[index]}
-                          </div>
+                          {hasDataPoints ? (
+                            <>
+                              <div className="flex-1 px-[12px] py-[8px]">
+                                <div className="h-[120px] relative">
+                                  <ChartSocial
+                                    data={p.data}
+                                    color={color}
+                                    label={p.label}
+                                    key={`chart-${index}`}
+                                  />
+                                </div>
+                              </div>
+                              <div className="px-[16px] pb-[14px]">
+                                <div className="text-[36px] leading-[42px] font-semibold tracking-tight">
+                                  {totals[index]}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center py-[32px] px-[16px]">
+                              <div className="text-[48px] leading-[56px] font-semibold tracking-tight">
+                                {totals[index]}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Short Links Statistics Section */}
           <div className="flex flex-col gap-[14px]">
@@ -184,10 +215,15 @@ export const StatisticsModal: FC<{
           </div>
 
           {/* No analytics available message */}
-          {(!analyticsData || !Array.isArray(analyticsData) || analyticsData.length === 0) &&
+          {(!analyticsData ||
+            !Array.isArray(analyticsData) ||
+            analyticsData.length === 0) &&
             (!statisticsData?.clicks || statisticsData.clicks.length === 0) && (
               <div className="text-center text-gray-400 py-[20px]">
-                {t('no_statistics_available', 'No statistics available for this post')}
+                {t(
+                  'no_statistics_available',
+                  'No statistics available for this post'
+                )}
               </div>
             )}
         </div>

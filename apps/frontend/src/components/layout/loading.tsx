@@ -1,6 +1,7 @@
 'use client';
 
 import { FC } from 'react';
+import { WavePhysicsLoader } from '@gitroom/frontend/components/layout/wave-physics-loader';
 
 const Spinner: FC<{
   type?: string;
@@ -38,6 +39,18 @@ export const LoadingComponent: FC<{
         width={props.width || 100}
         height={props.height || 100}
       />
+    </div>
+  );
+};
+
+export const ScheduleLoading: FC = () => {
+  return (
+    <div
+      className="flex flex-1 items-center justify-center py-[48px]"
+      role="status"
+    >
+      <span className="sr-only">Loading</span>
+      <WavePhysicsLoader theme="dark" />
     </div>
   );
 };

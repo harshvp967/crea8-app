@@ -16,7 +16,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import useCookie from 'react-use-cookie';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
 const allowedIntegrations = [
   'facebook',
   'instagram',
@@ -176,7 +176,7 @@ export const PlatformAnalytics = () => {
   if (isLoading || !data) {
     return (
       <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
-        <LoadingComponent />
+        <ScheduleLoading />
       </div>
     );
   }
@@ -197,8 +197,8 @@ export const PlatformAnalytics = () => {
         </div>
         <div className="text-[20px] max-w-[720px]">
           {t('supported', 'Supported:')}{' '}
-          {allowedIntegrations.map((p) => capitalize(p)).join(', ')}
-          . Bluesky and Mastodon do not provide account analytics here.
+          {allowedIntegrations.map((p) => capitalize(p)).join(', ')}. Bluesky
+          and Mastodon do not provide account analytics here.
         </div>
         <Button onClick={() => router.push('/launches')}>
           {t(
