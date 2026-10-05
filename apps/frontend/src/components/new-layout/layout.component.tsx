@@ -136,7 +136,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <StreakComponent />
                       <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
                       <OrganizationSelector />
-                      <div className="flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors hover:text-[#00D9FF] hover:bg-[#1a1a1a]">
+                      <div className="flex items-center justify-center">
                         <ModeComponent />
                       </div>
                       <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />

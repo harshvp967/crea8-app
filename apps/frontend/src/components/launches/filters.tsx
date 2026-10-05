@@ -1,6 +1,7 @@
 'use client';
 
 import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
@@ -154,6 +155,16 @@ export const Filters = () => {
       customer: calendar.customer,
     });
   }, [calendar]);
+
+  const setDisplay = useCallback(
+    (next: string) => {
+      if (next === 'day') setDay();
+      else if (next === 'week') setWeek();
+      else if (next === 'month') setMonth();
+      else if (next === 'list') setList();
+    },
+    [setDay, setWeek, setMonth, setList]
+  );
 
   const setCalendarView = useCallback(() => {
     if (calendar.display !== 'list') {
@@ -432,41 +443,19 @@ export const Filters = () => {
         onChange={(customer: string) => setCustomer(customer)}
         integrations={calendar.integrations}
       />
-      <div className="flex flex-row shrink-0 p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">
-          <div
-            className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-full transition-colors',
-              calendar.display === 'day'
-                ? 'text-[#0a0a0a] bg-[#00D9FF]'
-                : 'text-[#8a8a8a] hover:text-white'
-            )}
-            onClick={setDay}
-          >
-            {t('day', 'Day')}
-          </div>
-          <div
-            className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-full transition-colors',
-              calendar.display === 'week'
-                ? 'text-[#0a0a0a] bg-[#00D9FF]'
-                : 'text-[#8a8a8a] hover:text-white'
-            )}
-            onClick={setWeek}
-          >
-            {t('week', 'Week')}
-          </div>
-          <div
-            className={clsx(
-              'pt-[6px] pb-[5px] cursor-pointer w-[74px] text-center rounded-full transition-colors',
-              calendar.display === 'month'
-                ? 'text-[#0a0a0a] bg-[#00D9FF]'
-                : 'text-[#8a8a8a] hover:text-white'
-            )}
-            onClick={setMonth}
-          >
-            {t('month', 'Month')}
-          </div>
-        </div>
+      <SegmentedControl
+        aria-label={t('calendar_view', 'Calendar view')}
+        size="sm"
+        className="shrink-0"
+        value={calendar.display}
+        onValueChange={setDisplay}
+        options={[
+          { value: 'day', label: t('day', 'Day') },
+          { value: 'week', label: t('week', 'Week') },
+          { value: 'month', label: t('month', 'Month') },
+          { value: 'list', label: t('list', 'List') },
+        ]}
+      />
       <div className="flex flex-row shrink-0 p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">
         <div
           onClick={setCalendarView}
