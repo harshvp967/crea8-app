@@ -72,6 +72,16 @@ export class NoAuthIntegrationsController {
 
     const org = await this._organizationService.getOrgById(organization);
 
+    // A fresh connect of a coming soon provider never starts. Reconnect keeps
+    // the refresh key that getIntegrationUrl stored, so existing channels can
+    // still be re-authorized.
+    if (
+      !(await ioRedis.get(`refresh:${body.state}`)) &&
+      this._integrationManager.isComingSoonProvider(integration)
+    ) {
+      throw new HttpException('Coming soon', 400);
+    }
+
     if (!integrationProvider.customFields) {
       await ioRedis.del(`login:${body.state}`);
     }

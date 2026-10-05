@@ -90,6 +90,13 @@ export class EnterpriseController {
         throw new Error('Integration not allowed');
       }
 
+      if (
+        !load.refreshId &&
+        this._integrationManager.isComingSoonProvider(load.provider)
+      ) {
+        return;
+      }
+
       const integrationProvider = this._integrationManager.getSocialIntegration(
         load.provider
       );
