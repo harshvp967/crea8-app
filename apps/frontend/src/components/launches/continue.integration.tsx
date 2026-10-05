@@ -23,6 +23,79 @@ interface SuccessState {
   message: string;
 }
 
+const META_DEVELOPER_ROLE =
+  'Meta blocked this account (Insufficient developer role). The Crea8.one app is still unpublished, so this Facebook user must be added as an Admin, Developer, or Tester. After App Review, switch the app to Live to allow other accounts.';
+
+const GOOGLE_TEST_USER =
+  'Google blocked this connection. While the OAuth consent screen is in Testing, only listed test users can sign in. Add this Google account under Test users, or publish the consent screen. YouTube scopes stay limited to those test users until Google verifies the app.';
+
+function explainConnectFailure(provider: string, message?: string) {
+  const text = (message || '').replace(/\s+/g, ' ').trim();
+  if (/insufficient developer role/i.test(text)) {
+    return META_DEVELOPER_ROLE;
+  }
+
+  if (
+    (provider === 'youtube' || provider === 'gmb') &&
+    /access_denied|access blocked|verification process|not completed/i.test(
+      text
+    )
+  ) {
+    return GOOGLE_TEST_USER;
+  }
+
+  return text || 'Could not add provider';
+}
+
+function oauthRedirectError(provider: string, searchParams: any) {
+  const raw = [
+    searchParams?.error_description,
+    searchParams?.error_message,
+    searchParams?.error_reason,
+  ].find((value) => typeof value === 'string' && value.trim());
+  let description = '';
+  if (typeof raw === 'string') {
+    const spaced = raw.replace(/\+/g, ' ').trim();
+    try {
+      description = decodeURIComponent(spaced);
+    } catch {
+      description = spaced;
+    }
+  }
+
+  const bareCode = /^(access_denied|user_denied|consent_required)$/i.test(
+    description
+  );
+  if (description && !bareCode) {
+    return explainConnectFailure(provider, description);
+  }
+
+  const code =
+    (typeof searchParams?.error === 'string' && searchParams.error) ||
+    description;
+  if (
+    code === 'access_denied' &&
+    (provider === 'youtube' || provider === 'gmb')
+  ) {
+    return GOOGLE_TEST_USER;
+  }
+
+  if (
+    code === 'access_denied' &&
+    ['instagram', 'instagram-standalone', 'facebook', 'threads'].includes(
+      provider
+    )
+  ) {
+    return 'Meta denied this login. While the Crea8.one app is unpublished, this Facebook account must be an Admin, Developer, or Tester on the app.';
+  }
+
+  if (code) {
+    return explainConnectFailure(provider, code);
+  }
+
+  return 'Could not add provider';
+}
+
 export const ContinueIntegration: FC<{
   provider: string;
   searchParams: any;
@@ -38,16 +111,24 @@ export const ContinueIntegration: FC<{
   const [twoStepState, setTwoStepState] = useState<TwoStepState | null>(null);
   const [successState, setSuccessState] = useState<SuccessState | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [finishInline, setFinishInline] = useState(false);
+  const [inviteFinish, setInviteFinish] = useState(false);
 
   // Helper to handle navigation - redirects if logged or returnURL exists, otherwise shows inline
   const navigateOrShow = useCallback(
-    (path: string, returnURL: string | undefined, successMessage: string) => {
+    (
+      path: string,
+      returnURL: string | undefined,
+      successMessage: string,
+      forceInline?: boolean
+    ) => {
       if (returnURL) {
         // If returnURL exists, always redirect to it with the path params
         const params = path.includes('?') ? path.split('?')[1] : '';
         push(params ? `${returnURL}?${params}` : returnURL);
-      } else if (logged) {
-        // If logged in without returnURL, use normal navigation
+      } else if (logged && !forceInline) {
+        // Same workspace that started the connect. An invite opened in
+        // another customer's session stays on this page instead.
         push(path);
       } else {
         // If not logged in without returnURL, show success inline
@@ -105,119 +186,127 @@ export const ContinueIntegration: FC<{
 
   useEffect(() => {
     (async () => {
-      if (searchParams?.error && !searchParams?.code) {
-        setErrorMessage(
-          provider === 'linkedin-page'
-            ? "LinkedIn Pages isn't available yet"
-            : searchParams.error_description || 'Could not add provider'
-        );
-        setError(true);
-        return;
-      }
-
-      const timezone = String(dayjs.tz().utcOffset());
-
-      // Try public endpoint first (handles both public and fallback scenarios)
-      let data = await fetch(`/integrations/social-connect/${provider}`, {
-        method: 'POST',
-        body: JSON.stringify({ ...modifiedParams, timezone }),
-      });
-
-      // If public endpoint fails with specific errors, try authenticated endpoint
-      if (data.status === HttpStatusCode.BadRequest) {
-        const errorData = await data.json().catch(() => ({}));
-        // "Invalid connection type" means this wasn't started as a public flow
-        if (
-          errorData.message?.includes('Invalid connection type') ||
-          errorData.message?.includes('Invalid or expired state')
-        ) {
-          data = await fetch(`/integrations/social-connect/${provider}`, {
-            method: 'POST',
-            body: JSON.stringify({ ...modifiedParams, timezone }),
-          });
-        }
-      }
-
-      if (data.status === HttpStatusCode.PreconditionFailed) {
-        const { returnURL } = await data.json().catch(() => ({}));
-        navigateOrShow(
-          `/launches?precondition=true`,
-          returnURL,
-          'Precondition failed'
-        );
-        return;
-      }
-
-      if (data.status === HttpStatusCode.NotAcceptable) {
-        const { msg, returnURL } = await data.json();
-        navigateOrShow(`/launches?msg=${msg}`, returnURL, msg);
-        return;
-      }
-
-      if (
-        data.status !== HttpStatusCode.Ok &&
-        data.status !== HttpStatusCode.Created
-      ) {
-        const errorData = await data.json().catch(() => ({}));
-        setErrorMessage(
-          errorData.message || errorData.msg || 'Could not add provider'
-        );
-        setError(true);
-        return;
-      }
-
-      const {
-        inBetweenSteps,
-        id,
-        onboarding: resOnboarding,
-        pages,
-        returnURL,
-        extensionToken,
-      } = await data.json();
-      const onboarding = resOnboarding || searchParams.onboarding === 'true';
-
-      // Store refresh token in extension for background cookie refresh
-      if (
-        extensionToken &&
-        extensionId &&
-        typeof chrome !== 'undefined' &&
-        chrome?.runtime?.sendMessage
-      ) {
-        try {
-          chrome.runtime.sendMessage(
-            extensionId,
-            {
-              type: 'STORE_REFRESH_TOKEN',
-              provider,
-              integrationId: id,
-              jwt: extensionToken,
-              backendUrl,
-            },
-            () => {}
+      try {
+        if (searchParams?.error && !searchParams?.code) {
+          setErrorMessage(
+            provider === 'linkedin-page'
+              ? "LinkedIn Pages isn't available yet"
+              : oauthRedirectError(provider, searchParams)
           );
-        } catch {
-          // Silently ignore — extension may not be available
+          setError(true);
+          return;
         }
-      }
 
-      // If it's a two-step provider, show the selection UI inline
-      if (inBetweenSteps && !searchParams.refresh) {
-        setTwoStepState({
-          integrationId: id,
-          onboarding,
-          pages: pages || [],
-          returnURL,
+        const timezone = String(dayjs.tz().utcOffset());
+
+        const data = await fetch(`/integrations/social-connect/${provider}`, {
+          method: 'POST',
+          body: JSON.stringify({ ...modifiedParams, timezone }),
         });
-        return;
-      }
 
-      navigateOrShow(
-        `/launches?added=${provider}&msg=Channel Updated${
-          onboarding ? '&onboarding=true' : ''
-        }`,
-        returnURL,
-        'Channel Updated'
-      );
+        if (data.status === HttpStatusCode.PreconditionFailed) {
+          const { returnURL } = await data.json().catch(() => ({}));
+          navigateOrShow(
+            `/launches?precondition=true`,
+            returnURL,
+            'Precondition failed'
+          );
+          return;
+        }
+
+        if (data.status === HttpStatusCode.NotAcceptable) {
+          const { msg, returnURL } = await data.json();
+          navigateOrShow(`/launches?msg=${msg}`, returnURL, msg);
+          return;
+        }
+
+        if (
+          data.status !== HttpStatusCode.Ok &&
+          data.status !== HttpStatusCode.Created
+        ) {
+          const errorData = await data.json().catch(() => ({}));
+          setErrorMessage(
+            explainConnectFailure(
+              provider,
+              errorData.message || errorData.msg
+            )
+          );
+          setError(true);
+          return;
+        }
+
+        const {
+          inBetweenSteps,
+          id,
+          onboarding: resOnboarding,
+          pages,
+          pagesError,
+          returnURL,
+          extensionToken,
+          invite,
+          outsideWorkspace,
+        } = await data.json();
+        const onboarding = resOnboarding || searchParams.onboarding === 'true';
+        const addedOnInvite = !!(invite || outsideWorkspace);
+        setInviteFinish(addedOnInvite);
+        setFinishInline(!!outsideWorkspace);
+        const successMessage = addedOnInvite
+          ? 'This channel was added to the workspace that sent you the link. You can close this window.'
+          : 'Channel Updated';
+
+        // Store refresh token in extension for background cookie refresh
+        if (
+          extensionToken &&
+          extensionId &&
+          typeof chrome !== 'undefined' &&
+          chrome?.runtime?.sendMessage
+        ) {
+          try {
+            chrome.runtime.sendMessage(
+              extensionId,
+              {
+                type: 'STORE_REFRESH_TOKEN',
+                provider,
+                integrationId: id,
+                jwt: extensionToken,
+                backendUrl,
+              },
+              () => {}
+            );
+          } catch {
+            // Silently ignore — extension may not be available
+          }
+        }
+
+        // If it's a two-step provider, show the selection UI inline
+        if (inBetweenSteps && !searchParams.refresh) {
+          if (pagesError && !(pages || []).length) {
+            setErrorMessage(explainConnectFailure(provider, pagesError));
+            setError(true);
+            return;
+          }
+
+          setTwoStepState({
+            integrationId: id,
+            onboarding,
+            pages: pages || [],
+            returnURL,
+          });
+          return;
+        }
+
+        navigateOrShow(
+          `/launches?added=${provider}&msg=Channel Updated${
+            onboarding ? '&onboarding=true' : ''
+          }`,
+          returnURL,
+          successMessage,
+          !!outsideWorkspace
+        );
+      } catch {
+        setErrorMessage('Could not add provider');
+        setError(true);
+      }
     })();
   }, []);
 
@@ -228,10 +317,13 @@ export const ContinueIntegration: FC<{
       setIsSaving(true);
 
       try {
-        // Use public or authenticated endpoint based on the flow
-        const endpoint = logged
-          ? `/integrations/provider/${twoStepState.integrationId}/connect`
-          : `/integrations/public/provider/${twoStepState.integrationId}/connect`;
+        // OAuth state belongs to the workspace that minted the link. The
+        // public save reads that org from Redis, including when this browser
+        // is signed into a different workspace. Calendar continue has no state
+        // and still uses the signed-in endpoint.
+        const endpoint = modifiedParams?.state
+          ? `/integrations/public/provider/${twoStepState.integrationId}/connect`
+          : `/integrations/provider/${twoStepState.integrationId}/connect`;
 
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -255,13 +347,16 @@ export const ContinueIntegration: FC<{
             twoStepState.onboarding ? '&onboarding=true' : ''
           }`,
           twoStepState.returnURL,
-          'Channel Added'
+          inviteFinish
+            ? 'This channel was added to the workspace that sent you the link. You can close this window.'
+            : 'Channel Added',
+          finishInline
         );
       } finally {
         setIsSaving(false);
       }
     },
-    [twoStepState, fetch, modifiedParams, provider, navigateOrShow]
+    [twoStepState, fetch, modifiedParams, provider, navigateOrShow, inviteFinish, finishInline]
   );
 
   const Provider = useMemo(() => {
@@ -408,14 +503,17 @@ export const ContinueIntegration: FC<{
           <div className="text-[28px] font-semibold mb-[12px]">
             {t('could_not_add_provider', 'Could not add provider')}
           </div>
-          <div className="text-[16px] text-gray-400 max-w-[400px]">
+          <div className="text-[16px] text-gray-400 max-w-[520px]">
             {errorMessage ||
               t(
                 'you_are_being_redirected_back',
                 'An error occurred. Please try again.'
               )}
           </div>
-          {logged && <Redirect url="/launches" delay={3000} />}
+          {logged &&
+            (!errorMessage || errorMessage === 'Could not add provider') && (
+              <Redirect url="/launches" delay={3000} />
+            )}
         </div>
       </div>
     );

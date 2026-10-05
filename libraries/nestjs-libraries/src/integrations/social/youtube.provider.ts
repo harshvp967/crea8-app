@@ -14,6 +14,7 @@ import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import {
   BadBody,
+  readThrownProviderError,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -305,7 +306,14 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     refresh?: string;
   }) {
     const { client, oauth2 } = clientAndYoutube();
-    const { tokens } = await client.getToken(params.code);
+    let tokens;
+    try {
+      ({ tokens } = await client.getToken(params.code));
+    } catch (err) {
+      throw new Error(
+        readThrownProviderError(err) || 'Google rejected this connection'
+      );
+    }
     client.setCredentials(tokens);
     const { scopes } = await client.getTokenInfo(tokens.access_token!);
     this.checkScopes(this.scopes, scopes);
@@ -356,7 +364,10 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       }));
     } catch (error) {
       console.error('Failed to fetch YouTube channels:', error);
-      return [];
+      throw new Error(
+        readThrownProviderError(error) ||
+          'Could not load YouTube channels for this account'
+      );
     }
   }
 

@@ -11,6 +11,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  readProviderError,
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { capitalize, chunk } from 'lodash';
@@ -145,7 +146,14 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    const { access_token } = await (
+    if (!getAccessToken?.access_token) {
+      throw new Error(
+        readProviderError(getAccessToken) ||
+          'The platform rejected this connection'
+      );
+    }
+
+    const longLived = await (
       await this.fetch(
         'https://graph.threads.net/access_token' +
           '?grant_type=th_exchange_token' +
@@ -153,6 +161,13 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
           `&access_token=${getAccessToken.access_token}`
       )
     ).json();
+
+    const access_token = longLived?.access_token;
+    if (!access_token) {
+      throw new Error(
+        readProviderError(longLived) || 'The platform rejected this connection'
+      );
+    }
 
     const { id, name, username, picture } = await this.fetchUserInfo(
       access_token

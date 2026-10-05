@@ -99,7 +99,13 @@ function LayoutContextInner(params: { children: ReactNode }) {
         return true;
       }
 
-      if (response.status === 401 || response?.headers?.get('logout')) {
+      const onSocialCallback =
+        typeof window !== 'undefined' &&
+        window.location.pathname.startsWith('/integrations/social/');
+      if (
+        (response.status === 401 || response?.headers?.get('logout')) &&
+        !onSocialCallback
+      ) {
         if (!isSecured) {
           setCookie('auth', '', -10);
           setCookie('showorg', '', -10);

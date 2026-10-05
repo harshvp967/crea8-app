@@ -14,6 +14,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { timer } from '@gitroom/helpers/utils/timer';
 import {
   BadBody,
+  readProviderError,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -202,12 +203,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     body.append('client_id', process.env.LINKEDIN_CLIENT_ID!);
     body.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET!);
 
-    const {
-      access_token: accessToken,
-      expires_in: expiresIn,
-      refresh_token: refreshToken,
-      scope,
-    } = await (
+    const linkedinToken = await (
       await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
         method: 'POST',
         headers: {
@@ -217,8 +213,18 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
+    const {
+      access_token: accessToken,
+      expires_in: expiresIn,
+      refresh_token: refreshToken,
+      scope,
+    } = linkedinToken;
+
     if (!accessToken) {
-      throw new Error('LinkedIn did not return an access token');
+      throw new Error(
+        readProviderError(linkedinToken) ||
+          'LinkedIn did not return an access token'
+      );
     }
 
     this.checkScopes(this.scopes, scope || '');

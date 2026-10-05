@@ -54,7 +54,19 @@ export class IntegrationsController {
     @Param('id') id: string,
     @Body() body: any
   ) {
-    return this._integrationService.saveProviderPage(org.id, id, body);
+    // An invite link stores the inviting org on the OAuth state. A customer
+    // who is logged into a different workspace still posts here; the state
+    // wins so the page is saved on the inviting org. Calendar "continue"
+    // does not send state and keeps using the signed-in org.
+    const fromState =
+      typeof body?.state === 'string' && body.state
+        ? await ioRedis.get(`organization:${body.state}`)
+        : null;
+    return this._integrationService.saveProviderPage(
+      fromState || org.id,
+      id,
+      body
+    );
   }
 
   @Get('/:identifier/internal-plugs')
@@ -202,6 +214,7 @@ export class IntegrationsController {
     @Query('externalUrl') externalUrl: string,
     @Query('redirectUrl') redirectUrl: string,
     @Query('onboarding') onboarding: string,
+    @Query('invite') invite: string,
     @GetOrgFromRequest() org: Organization
   ) {
     if (
@@ -261,6 +274,9 @@ export class IntegrationsController {
 
       await ioRedis.set(`organization:${state}`, org.id, 'EX', 3600);
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 3600);
+      if (invite === 'true') {
+        await ioRedis.set(`invite:${state}`, 'true', 'EX', 3600);
+      }
       await ioRedis.set(
         `external:${state}`,
         JSON.stringify(getExternalUrl),
