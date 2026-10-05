@@ -85,9 +85,9 @@ export default function DataDeletionPage() {
           the platform.
         </li>
         <li>
-          Records the merchant of record (Paddle or Lemon Squeezy) must keep
-          for tax, accounting, or fraud prevention. We do not store your card
-          number.
+          Records Dodo Payments, the merchant of record and payment processor,
+          must keep for tax, accounting, or fraud prevention. We do not store
+          your card number.
         </li>
         <li>
           Information we must keep to comply with law, resolve a dispute, or
