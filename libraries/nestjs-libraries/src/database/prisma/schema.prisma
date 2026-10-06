@@ -2037,6 +2037,8 @@ model StalkerMention {
   @@index([integrationId])
   @@index([projectId, contentHash])
   @@index([projectId, relevant])
+  @@index([projectId, createdAt(sort: Desc)])
+  @@index([projectId, relevant, createdAt(sort: Desc)])
 }
 
 // Live scan watermark per project, source, and phrase. backfillUntil is a
@@ -2048,6 +2050,8 @@ model StalkerScanCursor {
   phraseKey     String
   cursorAt      DateTime?
   backfillUntil DateTime?
+  lastError     String         @default("")
+  backfillDone  Boolean        @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   project       StalkerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -2079,6 +2083,7 @@ model StalkerAlert {
 
   @@unique([projectId, dedupeKey])
   @@index([projectId, createdAt])
+  @@index([projectId, readAt])
   @@index([organizationId])
   @@index([status])
   @@index([mentionId])

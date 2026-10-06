@@ -44,6 +44,24 @@ export class CreateStalkerKeywordDto {
   linkedin?: boolean;
 }
 
+export class UpdateStalkerKeywordDto {
+  @IsOptional()
+  @IsBoolean()
+  youtube?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  reddit?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  x?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  linkedin?: boolean;
+}
+
 export class StalkerKeywordInputDto {
   @IsString()
   @IsDefined()
@@ -364,6 +382,18 @@ export class StalkerMentionQueryDto {
   @IsOptional()
   @IsIn(['include'])
   offTopic?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  cursor?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  take?: number;
 }
 
 export class StalkerMentionStatusDto {

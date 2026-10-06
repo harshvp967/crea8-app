@@ -26,6 +26,7 @@ import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { isProviderAuthFailure } from '@gitroom/nestjs-libraries/stalker/sources/youtube.stalker.source';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -1110,6 +1111,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         );
       }
     } catch (err) {
+      if (isProviderAuthFailure(err)) {
+        throw err;
+      }
       console.error('Stalker YouTube channel comments failed', err);
     }
 
