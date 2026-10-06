@@ -19,9 +19,11 @@ import {
   nextScheduledScan,
   orderKeywordsForScan,
   scanRunStatus,
+  stalkerAnalyticsDetail,
   stalkerProjectIntervalMs,
   StalkerService,
 } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
+import { mentionRange } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
 import { X_PLAN_ERROR } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
 
 const authError = () => {
@@ -801,5 +803,43 @@ describe('StalkerService keywords and scan status', () => {
     expect(brand.paused).toBe(false);
     expect(brand.lastScan).toBe(at.toISOString());
     expect(brand.nextScanAt).toBeTruthy();
+  });
+});
+
+describe('Stalker analytics math', () => {
+  const fact = (iso: string, sentiment = 'NEUTRAL') => ({
+    createdAt: new Date(iso),
+    sentiment,
+    authorName: 'Ada',
+    authorHandle: 'ada',
+    source: 'YOUTUBE_SEARCH',
+  });
+
+  it('reads YYYY-MM-DD ranges as the user\'s calendar days', () => {
+    const utc = mentionRange('2026-09-07', '2026-10-06');
+    expect(utc.start?.toISOString()).toBe('2026-09-07T00:00:00.000Z');
+    expect(utc.end?.toISOString()).toBe('2026-10-07T00:00:00.000Z');
+    const ist = mentionRange('2026-09-07', '2026-10-06', -330);
+    expect(ist.start?.toISOString()).toBe('2026-09-06T18:30:00.000Z');
+    expect(ist.end?.toISOString()).toBe('2026-10-06T18:30:00.000Z');
+    const pacific = mentionRange('2026-10-06', '2026-10-06', '420');
+    expect(pacific.end?.toISOString()).toBe('2026-10-07T07:00:00.000Z');
+  });
+
+  it('fills every day in the range and averages over the whole span', () => {
+    const range = mentionRange('2026-09-07', '2026-10-06', -330);
+    const detail = stalkerAnalyticsDetail(
+      [fact('2026-10-06T08:21:39.000Z'), fact('2026-10-06T09:00:00.000Z', 'POSITIVE'), fact('2026-10-05T20:00:00.000Z')],
+      { tz: -330, from: range.start, to: range.end, now: Date.parse('2026-10-06T11:00:00.000Z') }
+    );
+    expect(detail.series).toHaveLength(30);
+    expect(detail.series[0].date).toBe('2026-09-07');
+    const last = detail.series[detail.series.length - 1];
+    // 20:00 UTC on Oct 5 is 01:30 IST on Oct 6.
+    expect(last).toEqual({ date: '2026-10-06', positive: 1, negative: 0, neutral: 2 });
+    expect(detail.avgPerDay).toBe(0.1);
+    expect(detail.supporters).toEqual([{ authorName: 'Ada', count: 1 }]);
+    // Tuesday 13:51 IST.
+    expect(detail.heatmap[1][13]).toBe(1);
   });
 });

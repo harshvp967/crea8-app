@@ -420,6 +420,15 @@ export class StalkerMentionQueryDto {
   @MaxLength(20)
   end?: string;
 
+  // Browser getTimezoneOffset() in minutes (IST = -330), so start/end are the
+  // user's calendar days.
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(-840)
+  @Max(840)
+  tz?: number;
+
   @IsOptional()
   @IsString()
   source?: string;

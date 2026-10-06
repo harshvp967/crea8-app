@@ -95,6 +95,29 @@ export const StalkerAnalytics = () => {
         categories={project?.categories || []}
         authors={sample ? SAMPLE_AUTHORS : Array.isArray(authorsQuery.data) ? authorsQuery.data : []}
       />
+      {!data ? (
+        // Never render zeros while the numbers are still loading (or failed):
+        // "0 / day" looked like real data.
+        analytics.isLoading || analytics.isValidating || analytics.data === undefined ? (
+          <div className="flex flex-col gap-[12px]" aria-busy="true">
+            <div className="h-[240px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+            <div className="grid gap-[12px] lg:grid-cols-2">
+              <div className="h-[160px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+              <div className="h-[160px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+            </div>
+          </div>
+        ) : (
+          <Card title="Analytics">
+            <p className="text-[13px] text-textItemBlur">
+              Couldn&apos;t load analytics.{' '}
+              <button type="button" className="underline" onClick={() => analytics.mutate()}>
+                Try again
+              </button>
+            </p>
+          </Card>
+        )
+      ) : (
+      <>
       <Card title="Mentions over time" extra={`${avg} / day`}>
         <div className="mb-[8px] flex justify-end gap-[12px] text-[12px]">
           <span className="text-[#1c8f5a]">● Positive</span>
@@ -239,7 +262,8 @@ export const StalkerAnalytics = () => {
             {keywords.map((keyword: { id?: string; phrase: string }) => {
               const count =
                 keywordCounts.find(
-                  (row: { phrase: string; count: number }) => row.phrase === keyword.phrase
+                  (row: { keywordId?: string; phrase: string; count: number }) =>
+                    (!!keyword.id && row.keywordId === keyword.id) || row.phrase === keyword.phrase
                 )?.count || 0;
               return (
                 <li key={keyword.id || keyword.phrase} className="flex justify-between text-[13px]">
@@ -251,6 +275,8 @@ export const StalkerAnalytics = () => {
           </ul>
         )}
       </Card>
+      </>
+      )}
     </div>
   );
 };

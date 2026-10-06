@@ -111,6 +111,8 @@ export const filtersToSearch = (filters: MentionFilters) => {
   const range = resolveRange(filters);
   if (range.start) params.set('start', range.start);
   if (range.end) params.set('end', range.end);
+  // start/end are local calendar days; tell the API which timezone they're in.
+  if (range.start || range.end) params.set('tz', String(new Date().getTimezoneOffset()));
   if (filters.sources.length) params.set('source', filters.sources.join(','));
   const engagement = Object.entries(filters.engagement)
     .filter(([, value]) => Number(value) > 0)

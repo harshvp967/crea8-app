@@ -16,7 +16,11 @@ import {
   StalkerMentionStatus,
   StalkerSentiment,
 } from '@prisma/client';
-import { StalkerRepository } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
+import {
+  StalkerRepository,
+  mentionRange,
+  stalkerTzOffset,
+} from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.source.manager';
@@ -303,15 +307,24 @@ const sourceFamily = (source: string) => {
   return source;
 };
 
-const stalkerAnalyticsDetail = (
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Daily series, averages and the heatmap in the user's timezone (`tz` is the
+// browser's getTimezoneOffset(), IST = -330). Every day in the range gets a
+// bucket, so quiet days show as zero and avg/day divides by the real span.
+export const stalkerAnalyticsDetail = (
   facts: {
     createdAt: Date;
     sentiment: string;
     authorName: string;
     authorHandle: string;
     source: string;
-  }[]
+  }[],
+  options: { tz?: number | string; from?: Date; to?: Date; now?: number } = {}
 ) => {
+  const offsetMs = stalkerTzOffset(options.tz) * 60 * 1000;
+  const local = (date: Date) => new Date(date.getTime() - offsetMs);
+  const dayKey = (date: Date) => local(date).toISOString().slice(0, 10);
   const days = new Map<
     string,
     { positive: number; negative: number; neutral: number }
@@ -319,8 +332,10 @@ const stalkerAnalyticsDetail = (
   const supporters = new Map<string, { authorName: string; count: number }>();
   const critics = new Map<string, { authorName: string; count: number }>();
   const heat = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
+  let first: Date | undefined;
   for (const fact of facts) {
-    const key = fact.createdAt.toISOString().slice(0, 10);
+    if (!first || fact.createdAt < first) first = fact.createdAt;
+    const key = dayKey(fact.createdAt);
     const bucket = days.get(key) || { positive: 0, negative: 0, neutral: 0 };
     if (fact.sentiment === 'POSITIVE') bucket.positive += 1;
     else if (fact.sentiment === 'NEGATIVE') bucket.negative += 1;
@@ -337,8 +352,24 @@ const stalkerAnalyticsDetail = (
       row.count += 1;
       critics.set(author, row);
     }
-    const weekday = (fact.createdAt.getUTCDay() + 6) % 7;
-    heat[weekday][fact.createdAt.getUTCHours()] += 1;
+    const shifted = local(fact.createdAt);
+    const weekday = (shifted.getUTCDay() + 6) % 7;
+    heat[weekday][shifted.getUTCHours()] += 1;
+  }
+  const now = new Date(options.now ?? Date.now());
+  const lastDay = options.to && options.to.getTime() - 1 < now.getTime()
+    ? new Date(options.to.getTime() - 1)
+    : now;
+  const firstDay = options.from || first;
+  if (firstDay && firstDay <= lastDay) {
+    const cursor = new Date(`${dayKey(firstDay)}T00:00:00.000Z`);
+    const stop = dayKey(lastDay);
+    for (let guard = 0; guard < 400; guard += 1) {
+      const key = cursor.toISOString().slice(0, 10);
+      if (!days.has(key)) days.set(key, { positive: 0, negative: 0, neutral: 0 });
+      if (key >= stop) break;
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
   }
   const series = [...days.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
@@ -1184,7 +1215,7 @@ export class StalkerService {
     organizationId: string,
     projectId: string,
     date = '30d',
-    range?: { start?: string; end?: string }
+    range?: { start?: string; end?: string; tz?: number | string }
   ) {
     this.assertEnabled();
     if (!projectId) {
@@ -1192,17 +1223,9 @@ export class StalkerService {
     }
     await this.requireProject(organizationId, projectId);
     const window = ['24h', '7d', '30d', 'all'].includes(date) ? date : '30d';
-    const raw = await this._repository.analytics(
-      organizationId,
-      projectId,
-      window,
-      range
-    );
-    const rangedStart = range?.start ? new Date(`${range.start}T00:00:00.000Z`) : undefined;
-    const rangedEnd = range?.end ? new Date(`${range.end}T00:00:00.000Z`) : undefined;
-    if (rangedEnd) {
-      rangedEnd.setUTCDate(rangedEnd.getUTCDate() + 1);
-    }
+    const ranged = mentionRange(range?.start, range?.end, range?.tz);
+    const rangedStart = ranged.start;
+    const rangedEnd = ranged.end;
     const windowSince =
       window === '24h'
         ? new Date(Date.now() - 24 * 60 * 60 * 1000)
@@ -1211,13 +1234,22 @@ export class StalkerService {
           : window === 'all'
             ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
             : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const facts = await this._repository.mentionFacts(
-      organizationId,
-      projectId,
-      rangedStart || windowSince,
-      rangedEnd
-    );
-    const detail = stalkerAnalyticsDetail(facts);
+    // One aggregate pass plus one facts read; the daily chart comes from the
+    // facts (it used to be up to 90 separate COUNT queries per page load).
+    const [raw, facts] = await Promise.all([
+      this._repository.analytics(organizationId, projectId, window, range),
+      this._repository.mentionFacts(
+        organizationId,
+        projectId,
+        rangedStart || windowSince,
+        rangedEnd
+      ),
+    ]);
+    const detail = stalkerAnalyticsDetail(facts, {
+      tz: range?.tz,
+      from: window === 'all' && !rangedStart ? undefined : rangedStart || windowSince,
+      to: rangedEnd,
+    });
     return {
       bySource: raw.bySource.map((row) => ({
         source: row.source,
@@ -1234,7 +1266,10 @@ export class StalkerService {
           : 'Uncategorized',
         count: row._count._all,
       })),
-      overTime: raw.overTime,
+      overTime: detail.series.map((row) => ({
+        date: row.date,
+        count: row.positive + row.negative + row.neutral,
+      })),
       accounts: raw.accounts.map((row) => ({
         authorName: row.authorName,
         count: row._count._all,
