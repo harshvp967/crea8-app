@@ -764,6 +764,26 @@ describe('StalkerService keywords and scan status', () => {
     expect(row.sparkline.reduce((sum: number, value: number) => sum + value, 0)).toBe(3);
   });
 
+  it('joins a running scan, and rate-limits a repeat click with retryAt', async () => {
+    const { service, repository } = make();
+    repository.activeScan.mockResolvedValueOnce({ id: 'run-0', status: 'running' });
+    await expect(service.requestScan('org', 'proj', 'manual')).resolves.toEqual({
+      runId: 'run-0',
+      status: 'running',
+      projectId: 'proj',
+    });
+    const startedAt = new Date(Date.now() - 60 * 1000);
+    repository.latestManualScan.mockResolvedValueOnce({ id: 'run-1', startedAt });
+    const error = await service.requestScan('org', 'proj', 'manual').catch((err: unknown) => err);
+    expect((error as { getStatus: () => number }).getStatus()).toBe(429);
+    expect((error as { getResponse: () => unknown }).getResponse()).toEqual({
+      statusCode: 429,
+      message: 'A check just ran. Try again in 4 min',
+      retryAt: new Date(startedAt.getTime() + 5 * 60 * 1000).toISOString(),
+    });
+    expect(repository.createScanRun).not.toHaveBeenCalled();
+  });
+
   it('returns 404 when deleting an unknown keyword', async () => {
     const { service, repository } = make();
     (repository as Record<string, jest.Mock>).deleteKeyword = jest.fn().mockResolvedValue({ count: 0 });

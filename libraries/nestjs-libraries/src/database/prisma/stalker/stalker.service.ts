@@ -1594,27 +1594,28 @@ export class StalkerService {
   ) {
     this.assertEnabled();
     await this.requireProject(organizationId, projectId);
+    // A click while a scan is running joins that scan instead of failing.
+    const active = await this._repository.activeScan(projectId);
+    if (active) {
+      return { runId: active.id, status: active.status, projectId };
+    }
     if (trigger === 'manual') {
       const recent = await this._repository.latestManualScan(
         projectId,
         new Date(Date.now() - MANUAL_SCAN_GAP_MS)
       );
       if (recent) {
+        const retryAt = new Date(recent.startedAt.getTime() + MANUAL_SCAN_GAP_MS);
+        const minutes = Math.max(1, Math.ceil((retryAt.getTime() - Date.now()) / 60000));
         throw new HttpException(
-          `A check just ran. Try again in ${Math.max(
-            1,
-            Math.ceil(
-              (recent.startedAt.getTime() + MANUAL_SCAN_GAP_MS - Date.now()) /
-                60000
-            )
-          )} min`,
+          {
+            statusCode: 429,
+            message: `A check just ran. Try again in ${minutes} min`,
+            retryAt: retryAt.toISOString(),
+          },
           429
         );
       }
-    }
-    const active = await this._repository.activeScan(projectId);
-    if (active) {
-      return { runId: active.id, status: active.status, projectId };
     }
     const run = await this._repository.createScanRun({
       organizationId,
