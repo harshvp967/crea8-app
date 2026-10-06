@@ -322,7 +322,7 @@ export const StalkerTopNav = ({
           if (link.path === '/stalker/keywords') {
             return (
               <span key={link.path} className="inline-flex items-center">
-                <Link href={href} className={pill(active)}>
+                <Link href={href} prefetch={false} className={pill(active)}>
                   <span className="max-[1439px]:hidden">{link.icon}</span>
                   <span>{link.label}</span>
                 </Link>
@@ -338,7 +338,7 @@ export const StalkerTopNav = ({
             );
           }
           return (
-            <Link key={link.path} href={href} className={pill(active)}>
+            <Link key={link.path} href={href} prefetch={false} className={pill(active)}>
               <span className="max-[1439px]:hidden">{link.icon}</span>
               <span>{link.label}</span>
             </Link>
@@ -369,6 +369,7 @@ export const StalkerTopNav = ({
                     <Link
                       key={link.path}
                       href={href}
+                      prefetch={false}
                       role="menuitem"
                       className="flex items-center gap-[8px] rounded-[10px] px-[10px] py-[8px] text-[13px] font-[600] hover:bg-newBoxHover"
                       onClick={() => setMoreOpen(false)}

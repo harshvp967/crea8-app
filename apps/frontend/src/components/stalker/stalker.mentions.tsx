@@ -151,7 +151,10 @@ export const StalkerMentions = () => {
   const authorsQuery = useStalkerAuthors(
     !sample && projectId && mentionsReady ? projectId : null
   );
-  const viewsQuery = useStalkerViews(sample ? null : projectId);
+  // Saved views are secondary: load them after the first mentions page, not in the first-paint burst.
+  const viewsQuery = useStalkerViews(
+    !sample && projectId && mentionsReady ? projectId : null
+  );
   const page = sample ? SAMPLE_MENTIONS : mentionsQuery.data;
   const mentions = useMemo<Mention[]>(
     () => [
