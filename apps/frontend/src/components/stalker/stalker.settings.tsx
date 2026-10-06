@@ -1,230 +1,332 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { Button } from '@gitroom/react/form/button';
-import { Input } from '@gitroom/react/form/input';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import { STALKER_SWATCHES } from '@gitroom/frontend/components/stalker/stalker.wizard';
+
+const field =
+  'w-full rounded-[12px] border border-newBorder bg-newBgColorInner px-[12px] py-[10px] text-[14px] text-newTextColor outline-none focus:border-[#00D9FF]/50';
+
+type CategoryDraft = { id?: string; name: string; description: string };
+
+type Draft = {
+  name: string;
+  description: string;
+  color: string;
+  publicDashboard: boolean;
+  categories: CategoryDraft[];
+};
+
+const icons: Record<string, string> = {
+  Praise: '♡',
+  'Bug report': '⚙',
+  'Feature request': '✦',
+  Complaint: '!',
+};
 
 export const StalkerSettings = () => {
-  const t = useT();
   const fetch = useFetch();
   const toaster = useToaster();
-  const { status, project, refreshProjects } = useStalkerProject();
-  const [running, setRunning] = useState(false);
-  const [lastCheck, setLastCheck] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [brandName, setBrandName] = useState('');
-  const [aliases, setAliases] = useState('');
-  const [exclusions, setExclusions] = useState('');
-  const [handleX, setHandleX] = useState('');
-  const [handleRedditUser, setHandleRedditUser] = useState('');
-  const [handleRedditSubreddit, setHandleRedditSubreddit] = useState('');
-  const [handleYoutube, setHandleYoutube] = useState('');
-  const [handleLinkedin, setHandleLinkedin] = useState('');
-  const [handleInstagram, setHandleInstagram] = useState('');
-  const [handleFacebook, setHandleFacebook] = useState('');
-  const [alertEmail, setAlertEmail] = useState('');
-  const [alertsEnabled, setAlertsEnabled] = useState(false);
-  const [webhookUrl, setWebhookUrl] = useState('');
-
-  useEffect(() => {
-    if (!project) {
-      return;
-    }
-    setBrandName(project.brandName || project.name || '');
-    setAliases(project.aliases || '');
-    setExclusions(project.exclusions || '');
-    setHandleX(project.handleX || '');
-    setHandleRedditUser(project.handleRedditUser || '');
-    setHandleRedditSubreddit(project.handleRedditSubreddit || '');
-    setHandleYoutube(project.handleYoutube || '');
-    setHandleLinkedin(project.handleLinkedin || '');
-    setHandleInstagram(project.handleInstagram || '');
-    setHandleFacebook(project.handleFacebook || '');
-    setAlertEmail(project.alertEmail || '');
-    setAlertsEnabled(!!project.alertsEnabled);
-    setWebhookUrl(project.webhookUrl || '');
+  const { project, sample, refreshProjects, setProjectId, projects } = useStalkerProject();
+  const saved = useMemo<Draft | null>(() => {
+    if (!project) return null;
+    return {
+      name: project.name || '',
+      description: project.description || '',
+      color: project.color || STALKER_SWATCHES[0],
+      publicDashboard: !!project.publicDashboard,
+      categories: (project.categories || []).map((category) => ({
+        id: category.id,
+        name: category.name,
+        description: category.description,
+      })),
+    };
   }, [project]);
+  const savedKey = JSON.stringify(saved);
+  const [draft, setDraft] = useState<Draft | null>(saved);
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [savedKeySeen, setSavedKeySeen] = useState(savedKey);
+  if (savedKeySeen !== savedKey) {
+    setSavedKeySeen(savedKey);
+    setDraft(saved);
+    setConfirmDelete(false);
+  }
 
-  const checkNow = async () => {
-    setRunning(true);
-    setLastCheck('');
-    const response = await fetch('/stalker/poll', { method: 'POST' });
-    const payload = (await response.json().catch(() => null)) as {
-      totals?: { found?: number; stored?: number; duplicates?: number; offTopic?: number };
-      sources?: Array<{ ok?: boolean; error?: string }>;
-    } | null;
-    setRunning(false);
-    const totals = payload?.totals;
-    if (!response.ok || !totals) {
-      toaster.show('The check did not finish', 'warning');
-      setLastCheck('The check did not finish.');
-      return;
-    }
-    const summary = `Found ${totals.found ?? 0}, stored ${totals.stored ?? 0} new (${totals.duplicates ?? 0} duplicates)${
-      totals.offTopic ? `, ${totals.offTopic} off-topic` : ''
-    }`;
-    const failed = (payload?.sources || []).filter((source) => source && source.ok === false);
-    const errors = [
-      ...new Set(
-        failed
-          .map((source) => source.error)
-          .filter((error): error is string => typeof error === 'string' && error.length > 0)
-      ),
-    ];
-    const detail = [summary, ...errors].join(' · ');
-    setLastCheck(detail);
-    toaster.show(errors[0] || summary, errors.length ? 'warning' : 'success');
-  };
+  if (!project || !draft) {
+    return null;
+  }
+
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  const sharePath =
+    project.publicDashboard && project.publicToken ? `/share/${project.publicToken}` : '';
 
   const save = async () => {
-    if (!project) {
+    if (draft.name.trim().length < 2) {
+      toaster.show('Give the project a name', 'warning');
+      return;
+    }
+    if (sample) {
+      toaster.show('Project settings saved');
       return;
     }
     setSaving(true);
-    const response = await fetch(`/stalker/projects/${project.id}`, {
+    const projectResponse = await fetch(`/stalker/projects/${project.id}`, {
       method: 'POST',
       body: JSON.stringify({
-        brandName,
-        aliases,
-        exclusions,
-        handleX,
-        handleRedditUser,
-        handleRedditSubreddit,
-        handleYoutube,
-        handleLinkedin,
-        handleInstagram,
-        handleFacebook,
-        alertEmail,
-        alertsEnabled,
-        webhookUrl,
+        name: draft.name.trim(),
+        description: draft.description.trim(),
+        color: draft.color,
+        publicDashboard: draft.publicDashboard,
+      }),
+    });
+    const categoryResponse = await fetch(`/stalker/projects/${project.id}/categories`, {
+      method: 'POST',
+      body: JSON.stringify({
+        categories: draft.categories
+          .map((category) => ({
+            id: category.id,
+            name: category.name.trim(),
+            description: category.description.trim(),
+          }))
+          .filter((category) => category.name.length >= 2),
       }),
     });
     setSaving(false);
-    if (!response.ok) {
+    if (!projectResponse.ok || !categoryResponse.ok) {
       toaster.show('Could not save these settings', 'warning');
       return;
     }
     refreshProjects();
-    toaster.show('Project settings saved', 'success');
+    toaster.show('Project settings saved');
   };
 
-  const sources = [
-    ...(status?.sources || []).map((source) => ({
-      id: source.id,
-      label: source.label,
-      available: source.available,
-      detail: source.detail,
-    })),
-    ...(status?.commentSources || []).map((source) => ({
-      id: source.id,
-      label: source.label,
-      available: source.available,
-      detail: source.available ? 'Connected account' : 'Connect a channel',
-    })),
-  ];
+  const remove = async () => {
+    if (sample) {
+      toaster.show('This preview project stays put', 'warning');
+      return;
+    }
+    const response = await fetch(`/stalker/projects/${project.id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      toaster.show('Could not delete this project', 'warning');
+      return;
+    }
+    const next = projects.find((item) => item.id !== project.id);
+    if (next) setProjectId(next.id);
+    refreshProjects();
+    toaster.show('Project deleted');
+  };
 
   return (
-    <div className="flex max-w-[720px] flex-col gap-[16px]">
-      <div>
-        <h1 className="text-[28px] font-[600]">
-          {t('stalker_settings', 'Settings')}
-        </h1>
-        <p className="mt-[6px] text-[14px] text-textItemBlur">
-          Brand names and handles are what Stalker searches for. Comments from connected channels stay in the same feed.
-        </p>
-      </div>
-      <div className="flex flex-col gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]">
-        <Input label="Brand name" translationKey="label_brand_name" name="brandName" disableForm={true} value={brandName} onChange={(event) => setBrandName(event.target.value)} />
-        <label className="flex flex-col gap-[6px] text-[14px]">
-          Aliases, one per line
-          <textarea name="aliases" className="min-h-[72px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[12px] py-[10px] text-[14px]" value={aliases} onChange={(event) => setAliases(event.target.value)} />
-        </label>
-        <div className="grid gap-[10px] sm:grid-cols-2">
-          <Input label="X handle" translationKey="label_handle_x" name="handleX" disableForm={true} value={handleX} onChange={(event) => setHandleX(event.target.value)} />
-          <Input label="YouTube handle" translationKey="label_handle_youtube" name="handleYoutube" disableForm={true} value={handleYoutube} onChange={(event) => setHandleYoutube(event.target.value)} />
-          <Input label="Reddit username" translationKey="label_handle_reddit_user" name="handleRedditUser" disableForm={true} value={handleRedditUser} onChange={(event) => setHandleRedditUser(event.target.value)} />
-          <Input label="Subreddit" translationKey="label_handle_reddit_subreddit" name="handleRedditSubreddit" disableForm={true} value={handleRedditSubreddit} onChange={(event) => setHandleRedditSubreddit(event.target.value)} />
-          <Input label="LinkedIn company" translationKey="label_handle_linkedin" name="handleLinkedin" disableForm={true} value={handleLinkedin} onChange={(event) => setHandleLinkedin(event.target.value)} />
-          <Input label="Instagram handle" translationKey="label_handle_instagram" name="handleInstagram" disableForm={true} value={handleInstagram} onChange={(event) => setHandleInstagram(event.target.value)} />
-          <Input label="Facebook page" translationKey="label_handle_facebook" name="handleFacebook" disableForm={true} value={handleFacebook} onChange={(event) => setHandleFacebook(event.target.value)} />
-        </div>
-        <label className="flex flex-col gap-[6px] text-[14px]">
-          Negative keywords, one per line
-          <textarea name="exclusions" className="min-h-[72px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[12px] py-[10px] text-[14px]" value={exclusions} onChange={(event) => setExclusions(event.target.value)} />
-        </label>
-        <Input label="Alert email" translationKey="label_alert_email" name="alertEmail" disableForm={true} value={alertEmail} onChange={(event) => setAlertEmail(event.target.value)} placeholder="you@example.com" />
-        <label className="flex items-center gap-[8px] text-[14px]">
-          <input type="checkbox" checked={alertsEnabled} onChange={(event) => setAlertsEnabled(event.target.checked)} />
-          Turn alerts on. Scope, digest, spikes, and the inbox are on the Alerts page.
-        </label>
-        <Input label="Webhook URL" translationKey="label_webhook_url" name="webhookUrl" disableForm={true} value={webhookUrl} onChange={(event) => setWebhookUrl(event.target.value)} placeholder="https://example.com/hooks/stalker" />
-        <p className="text-[12px] text-textItemBlur">
-          A public https address receives mention.created after each new mention is stored. Leave it empty to turn the webhook off.
-        </p>
+    <div className="relative mx-auto flex w-full max-w-[920px] flex-col px-[20px] py-[24px] pb-[96px]">
+      <h1 className="text-[22px] font-[600]">Project settings</h1>
+      <p className="mt-[6px] text-[14px] text-textItemBlur">
+        Manage your project details, categories, and appearance.
+      </p>
+      <section className="mt-[20px] grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
         <div>
-          <Button type="button" loading={saving} onClick={save}>
-            Save project
-          </Button>
+          <h2 className="text-[14px] font-[600]">Name</h2>
+          <p className="mt-[4px] text-[13px] text-textItemBlur">The display name for this project.</p>
         </div>
-      </div>
-      <dl className="flex flex-col gap-[8px] rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px] text-[14px]">
-        <div className="flex justify-between gap-[12px]">
-          <dt className="text-textItemBlur">Automatic check</dt>
-          <dd>Every {status?.pollHours || 6} hours</dd>
+        <input
+          className={field}
+          value={draft.name}
+          onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+        />
+      </section>
+      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+        <div>
+          <h2 className="text-[14px] font-[600]">Description</h2>
+          <p className="mt-[4px] text-[13px] text-textItemBlur">A short summary of what you&apos;re monitoring.</p>
         </div>
-        <div className="flex justify-between gap-[12px]">
-          <dt className="text-textItemBlur">Keywords searched each run</dt>
-          <dd>{status?.keywordsSearchedPerRun || 5}</dd>
+        <textarea
+          className={`${field} min-h-[72px]`}
+          value={draft.description}
+          onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+        />
+      </section>
+      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+        <div>
+          <h2 className="text-[14px] font-[600]">Colour</h2>
+          <p className="mt-[4px] text-[13px] text-textItemBlur">A visual cue for this project in the bar.</p>
         </div>
-        <div className="flex justify-between gap-[12px]">
-          <dt className="text-textItemBlur">Saved keyword limit</dt>
-          <dd>{status?.maxKeywords || 10}</dd>
-        </div>
-        <div className="flex justify-between gap-[12px]">
-          <dt className="text-textItemBlur">Classification</dt>
-          <dd>
-            {status?.openAi
-              ? 'OpenAI is configured'
-              : 'Waiting for OPENAI_API_KEY'}
-          </dd>
-        </div>
-      </dl>
-      <ul className="flex flex-col gap-[8px]">
-        {sources.map((source) => (
-          <li
-            key={source.id}
-            className="flex items-center justify-between gap-[12px] rounded-[12px] border border-newBorder bg-newBgColorInner px-[14px] py-[10px] text-[14px]"
-          >
-            <span>{source.label}</span>
-            <span
+        <div className="flex flex-wrap gap-[8px]">
+          {STALKER_SWATCHES.map((swatch) => (
+            <button
+              key={swatch}
+              type="button"
+              aria-label={swatch}
               className={clsx(
-                'text-[13px]',
-                source.available ? 'text-[#3DDC97]' : 'text-textItemBlur'
+                'h-[28px] w-[28px] rounded-full border-2',
+                draft.color.toLowerCase() === swatch ? 'border-newTextColor' : 'border-transparent'
               )}
-            >
-              {source.available ? 'Available' : source.detail}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <div className="flex flex-col items-start gap-[8px]">
-        <Button type="button" loading={running} onClick={checkNow}>
-          Check now
-        </Button>
-        {running ? (
-          <p className="text-[13px] text-textItemBlur">Checking sources…</p>
-        ) : null}
-        {lastCheck ? (
-          <p className="max-w-[640px] text-[13px] text-textItemBlur" role="status">
-            {lastCheck}
+              style={{ backgroundColor: swatch }}
+              onClick={() => setDraft({ ...draft, color: swatch })}
+            />
+          ))}
+        </div>
+      </section>
+      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+        <div>
+          <h2 className="text-[14px] font-[600]">Categories</h2>
+          <p className="mt-[4px] text-[13px] text-textItemBlur">
+            How AI organizes your mentions. Edit, remove, or add your own.
           </p>
-        ) : null}
-      </div>
+        </div>
+        <div className="flex flex-col gap-[10px]">
+          {draft.categories.map((category, index) => (
+            <div key={category.id || index} className="flex flex-col gap-[6px]">
+              <div className="flex items-center gap-[8px]">
+                <span className="w-[18px] text-center text-[14px] text-textItemBlur">
+                  {icons[category.name] || '•'}
+                </span>
+                <input
+                  className={field}
+                  value={category.name}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      categories: draft.categories.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, name: event.target.value } : item
+                      ),
+                    })
+                  }
+                />
+                <button
+                  type="button"
+                  aria-label={`Remove ${category.name}`}
+                  className="text-textItemBlur"
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      categories: draft.categories.filter((_, itemIndex) => itemIndex !== index),
+                    })
+                  }
+                >
+                  ×
+                </button>
+              </div>
+              <input
+                className={`${field} ms-[26px]`}
+                value={category.description}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    categories: draft.categories.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, description: event.target.value } : item
+                    ),
+                  })
+                }
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            className="self-start text-[13px] font-[600]"
+            onClick={() =>
+              setDraft({
+                ...draft,
+                categories: [...draft.categories, { name: 'New category', description: '' }],
+              })
+            }
+          >
+            + Add category
+          </button>
+        </div>
+      </section>
+      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+        <div>
+          <h2 className="text-[14px] font-[600]">Public dashboard</h2>
+          <p className="mt-[4px] text-[13px] text-textItemBlur">
+            A read-only Mentions and Analytics page anyone with the link can open.
+          </p>
+        </div>
+        <div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={draft.publicDashboard}
+            className={`relative h-[24px] w-[42px] rounded-full border ${
+              draft.publicDashboard ? 'border-[#00D9FF]/50 bg-[#00D9FF]/20' : 'border-newBorder'
+            }`}
+            onClick={() => setDraft({ ...draft, publicDashboard: !draft.publicDashboard })}
+          >
+            <span
+              className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-newTextColor transition-all ${
+                draft.publicDashboard ? 'start-[20px]' : 'start-[2px]'
+              }`}
+            />
+          </button>
+          {sharePath ? (
+            <p className="mt-[8px] text-[13px]">
+              <a className="text-[#00A3C4] underline" href={sharePath}>
+                {sharePath}
+              </a>
+            </p>
+          ) : draft.publicDashboard ? (
+            <p className="mt-[8px] text-[13px] text-textItemBlur">The public link appears after you save.</p>
+          ) : null}
+        </div>
+      </section>
+      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+        <div>
+          <h2 className="text-[14px] font-[600]">Delete project</h2>
+          <p className="mt-[4px] text-[13px] text-textItemBlur">
+            Removes this project, its keywords, mentions, and alerts.
+          </p>
+        </div>
+        {confirmDelete ? (
+          <div className="flex flex-wrap items-center gap-[8px]">
+            <button
+              type="button"
+              className="rounded-full bg-[#eb4747] px-[14px] py-[8px] text-[13px] font-[600] text-white"
+              onClick={remove}
+            >
+              Delete this project
+            </button>
+            <button
+              type="button"
+              className="text-[13px] text-textItemBlur"
+              onClick={() => setConfirmDelete(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="self-start rounded-full border border-[#eb4747]/50 px-[14px] py-[8px] text-[13px] font-[600] text-[#eb4747]"
+            onClick={() => setConfirmDelete(true)}
+          >
+            Delete project
+          </button>
+        )}
+      </section>
+      {dirty ? (
+        <div className="sticky bottom-[12px] mt-[8px] flex items-center justify-between gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner px-[16px] py-[12px] shadow-[var(--menu-shadow)]">
+          <span className="text-[14px] font-[600]">Unsaved changes</span>
+          <span className="flex gap-[8px]">
+            <button
+              type="button"
+              className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px] font-[600]"
+              onClick={() => setDraft(saved)}
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner disabled:opacity-40"
+              disabled={saving}
+              onClick={save}
+            >
+              {saving ? 'Saving…' : 'Save changes'}
+            </button>
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 };

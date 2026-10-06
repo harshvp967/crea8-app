@@ -1,176 +1,258 @@
 'use client';
 
-import { useState } from 'react';
-import { useStalkerAnalytics } from '@gitroom/frontend/components/stalker/stalker.hooks';
+import { ReactNode, useMemo, useState } from 'react';
+import {
+  useStalkerAnalytics,
+  useStalkerAuthors,
+  useStalkerKeywords,
+} from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import {
+  emptyFilters,
+  filtersToSearch,
+  MentionFilters,
+  StalkerFilters,
+} from '@gitroom/frontend/components/stalker/stalker.filters';
+import {
+  SAMPLE_ANALYTICS,
+  SAMPLE_AUTHORS,
+  SAMPLE_KEYWORDS,
+} from '@gitroom/frontend/components/stalker/stalker.sample';
 
-const labelOf = (value: string) =>
-  value
-    .toLowerCase()
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-
-const Bars = ({
-  title,
-  rows,
-}: {
-  title: string;
-  rows: Array<{ label: string; count: number }>;
-}) => {
-  const max = Math.max(1, ...rows.map((row) => row.count));
-  return (
-    <section className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]">
-      <h2 className="mb-[12px] text-[16px] font-[600]">{title}</h2>
-      {!rows.length ? (
-        <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
-      ) : (
-        <ul className="flex flex-col gap-[8px]">
-          {rows.map((row) => (
-            <li key={row.label} className="grid grid-cols-[140px_1fr_32px] items-center gap-[8px] text-[13px]">
-              <span className="truncate text-textItemBlur">{row.label}</span>
-              <span className="h-[8px] overflow-hidden rounded-full bg-[#1c1c1c]">
-                <span
-                  className="block h-full rounded-full bg-[#00D9FF]/40"
-                  style={{ width: `${Math.round((row.count / max) * 100)}%` }}
-                />
-              </span>
-              <span className="text-right">{row.count}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
+const sourceLabel = (source: string) => {
+  if (source.startsWith('X')) return 'X';
+  if (source.startsWith('REDDIT')) return 'Reddit';
+  if (source.startsWith('YOUTUBE')) return 'YouTube';
+  if (source.startsWith('LINKEDIN')) return 'LinkedIn';
+  if (source.startsWith('INSTAGRAM')) return 'Instagram';
+  if (source.startsWith('FACEBOOK')) return 'Facebook';
+  return source;
 };
 
+const Card = ({
+  title,
+  extra,
+  children,
+}: {
+  title: string;
+  extra?: string;
+  children: ReactNode;
+}) => (
+  <section className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]">
+    <div className="mb-[12px] flex items-baseline justify-between gap-[8px]">
+      <h2 className="text-[15px] font-[600]">{title}</h2>
+      {extra ? <span className="text-[12px] text-textItemBlur">{extra}</span> : null}
+    </div>
+    {children}
+  </section>
+);
+
 export const StalkerAnalytics = () => {
-  const { projectId } = useStalkerProject();
-  const [date, setDate] = useState('30d');
-  const { data, isLoading } = useStalkerAnalytics(projectId, date);
-  const bySource = Array.isArray(data?.bySource) ? data.bySource : [];
-  const byCategory = Array.isArray(data?.byCategory) ? data.byCategory : [];
-  const bySentiment = Array.isArray(data?.bySentiment) ? data.bySentiment : [];
-  const overTime = Array.isArray(data?.overTime) ? data.overTime : [];
-  const accounts = Array.isArray(data?.accounts) ? data.accounts : [];
-  const byKeyword = Array.isArray(data?.byKeyword) ? data.byKeyword : [];
-  const byTheme = Array.isArray(data?.byTheme) ? data.byTheme : [];
-  const totals = data?.totals || {
-    mentions: 0,
-    positive: 0,
-    negative: 0,
-    neutral: 0,
-  };
-  const timelineMax = Math.max(
+  const { project, projectId, sample } = useStalkerProject();
+  const [filters, setFilters] = useState<MentionFilters>({
+    ...emptyFilters(),
+    preset: '30d',
+  });
+  const [window, setWindow] = useState(30);
+  const search = filtersToSearch(filters);
+  const analytics = useStalkerAnalytics(sample ? null : projectId, search || 'date=30d');
+  const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
+  const authorsQuery = useStalkerAuthors(sample ? null : projectId);
+  const data = sample ? SAMPLE_ANALYTICS : analytics.data;
+  const series = Array.isArray(data?.series) ? data.series : [];
+  const visible = series.slice(Math.max(0, series.length - window));
+  const max = Math.max(
     1,
-    ...overTime.map((row: { count: number }) => row.count)
+    ...visible.map(
+      (row: { positive: number; negative: number; neutral: number }) =>
+        row.positive + row.negative + row.neutral
+    )
   );
-  const share = (count: number) =>
-    totals.mentions
-      ? `${Math.round((count / totals.mentions) * 100)}%`
-      : '0%';
+  const total = data?.totals?.mentions || 0;
+  const avg = data?.avgPerDay ?? (visible.length ? Math.round((total / Math.max(1, series.length)) * 10) / 10 : 0);
+  const accounts = Array.isArray(data?.accounts) ? data.accounts : [];
+  const supporters = Array.isArray(data?.supporters) ? data.supporters : [];
+  const critics = Array.isArray(data?.critics) ? data.critics : [];
+  const categories = Array.isArray(data?.byCategory) ? data.byCategory : [];
+  const sources = Array.isArray(data?.bySource) ? data.bySource : [];
+  const keywords = sample
+    ? SAMPLE_KEYWORDS
+    : Array.isArray(keywordsQuery.data)
+      ? keywordsQuery.data
+      : [];
+  const keywordCounts = Array.isArray(data?.byKeyword) ? data.byKeyword : [];
+  const heatmap = useMemo(
+    () => (Array.isArray(data?.heatmap) ? (data.heatmap as number[][]) : []),
+    [data]
+  );
+  const peak = useMemo(() => {
+    let best = 0;
+    heatmap.forEach((row) => row.forEach((value) => {
+      if (value > best) best = value;
+    }));
+    return best;
+  }, [heatmap]);
 
   return (
-    <div className="flex flex-col gap-[16px]">
-      <div>
-        <h1 className="text-[28px] font-[600]">Analytics</h1>
-        <p className="mt-[6px] text-[14px] text-textItemBlur">
-          Counts for this project. The default window is the last 30 days.
-        </p>
+    <div className="flex flex-col gap-[16px] p-[16px] md:p-[24px]">
+      <h1 className="text-[28px] font-[600]">Analytics</h1>
+      <StalkerFilters
+        filters={filters}
+        onChange={setFilters}
+        keywords={keywords}
+        categories={project?.categories || []}
+        authors={sample ? SAMPLE_AUTHORS : Array.isArray(authorsQuery.data) ? authorsQuery.data : []}
+      />
+      <Card title="Mentions over time" extra={`${avg} / day`}>
+        <div className="mb-[8px] flex justify-end gap-[12px] text-[12px]">
+          <span className="text-[#1c8f5a]">● Positive</span>
+          <span className="text-[#c43b3b]">● Negative</span>
+          <span className="text-textItemBlur">● Neutral</span>
+        </div>
+        <div className="flex h-[180px] items-end gap-[3px]">
+          {visible.map((row: { date: string; positive: number; negative: number; neutral: number }) => {
+            const sum = row.positive + row.negative + row.neutral;
+            const height = `${Math.max(2, Math.round((sum / max) * 160))}px`;
+            return (
+              <div key={row.date} className="flex flex-1 flex-col justify-end" title={`${row.date}: ${sum}`} style={{ height }}>
+                <div className="bg-[#c43b3b]/70" style={{ height: sum ? `${(row.negative / sum) * 100}%` : 0 }} />
+                <div className="bg-[#1c8f5a]/70" style={{ height: sum ? `${(row.positive / sum) * 100}%` : 0 }} />
+                <div className="bg-newBorder" style={{ height: sum ? `${(row.neutral / sum) * 100}%` : '100%' }} />
+              </div>
+            );
+          })}
+        </div>
+        <input
+          className="mt-[12px] w-full"
+          type="range"
+          min={7}
+          max={Math.max(7, series.length || 30)}
+          value={Math.min(window, Math.max(7, series.length || 30))}
+          onChange={(event) => setWindow(Number(event.target.value))}
+          aria-label="Chart range"
+        />
+      </Card>
+      <div className="grid gap-[12px] lg:grid-cols-2">
+        <Card title="Accounts mentioning you most" extra={`${accounts.length} accounts`}>
+          {!accounts.length ? (
+            <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
+          ) : (
+            <ul className="flex flex-col gap-[8px]">
+              {accounts.map((row: { authorName: string; count: number }) => (
+                <li key={row.authorName} className="flex items-center justify-between text-[13px]">
+                  <span className="truncate">{row.authorName}</span>
+                  <span className="text-textItemBlur">{row.count}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card title="Top supporters">
+          {!supporters.length ? (
+            <p className="text-[13px] text-textItemBlur">No supporters yet</p>
+          ) : (
+            <ul className="flex flex-col gap-[8px]">
+              {supporters.map((row: { authorName: string; count: number }) => (
+                <li key={row.authorName} className="flex justify-between text-[13px]">
+                  <span>{row.authorName}</span>
+                  <span className="text-[#1c8f5a]">{row.count}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card title="Top critics">
+          {!critics.length ? (
+            <p className="text-[13px] text-textItemBlur">No critics yet</p>
+          ) : (
+            <ul className="flex flex-col gap-[8px]">
+              {critics.map((row: { authorName: string; count: number }) => (
+                <li key={row.authorName} className="flex justify-between text-[13px]">
+                  <span>{row.authorName}</span>
+                  <span className="text-[#c43b3b]">{row.count}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card title="Why people mention you">
+          {!categories.some((row: { count: number; name: string }) => row.name !== 'Uncategorized' && row.count) ? (
+            <p className="text-[13px] text-textItemBlur">No categorized mentions</p>
+          ) : (
+            <ul className="flex flex-col gap-[8px]">
+              {categories.map((row: { name: string; count: number }) => (
+                <li key={row.name} className="flex justify-between text-[13px]">
+                  <span>{row.name}</span>
+                  <span className="text-textItemBlur">{row.count}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card title="Where people mention you">
+          {!sources.length ? (
+            <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
+          ) : (
+            <ul className="flex flex-col gap-[8px]">
+              {sources.map((row: { source: string; count: number }) => (
+                <li key={row.source} className="flex justify-between text-[13px]">
+                  <span>{sourceLabel(row.source)}</span>
+                  <span className="text-textItemBlur">
+                    {total ? `${Math.round((row.count / total) * 100)}%` : '0%'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card title="When people mention you">
+          {!peak ? (
+            <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-[32px_repeat(12,minmax(16px,1fr))] gap-[3px] text-[10px] text-textItemBlur">
+                <span />
+                {Array.from({ length: 12 }, (_, hour) => (
+                  <span key={hour} className="text-center">{hour === 0 ? '12a' : hour}</span>
+                ))}
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+                  <div key={day} className="contents">
+                    <span>{day}</span>
+                    {(heatmap[index] || []).filter((_, hour) => hour % 2 === 0).map((value, hour) => (
+                      <span
+                        key={`${day}-${hour}`}
+                        className="h-[14px] rounded-[3px] border border-newBorder"
+                        style={{
+                          background:
+                            value && value === peak
+                              ? 'color-mix(in srgb, #00D9FF 45%, transparent)'
+                              : value
+                                ? `color-mix(in srgb, #00D9FF ${Math.max(12, Math.round((value / peak) * 40))}%, transparent)`
+                                : 'transparent',
+                        }}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
       </div>
-      <select
-        aria-label="Date"
-        className="w-fit rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[12px] py-[8px] text-[13px]"
-        value={date}
-        onChange={(event) => setDate(event.target.value)}
-      >
-        <option value="24h">Last 24 hours</option>
-        <option value="7d">Last 7 days</option>
-        <option value="30d">Last 30 days</option>
-        <option value="all">All time</option>
-      </select>
-      {isLoading ? (
-        <p className="text-[14px] text-textItemBlur">Loading analytics…</p>
-      ) : null}
-      <div className="grid gap-[12px] sm:grid-cols-4">
-        {[
-          ['Mentions', totals.mentions],
-          ['Positive', `${totals.positive} · ${share(totals.positive)}`],
-          ['Neutral', `${totals.neutral} · ${share(totals.neutral)}`],
-          ['Negative', `${totals.negative} · ${share(totals.negative)}`],
-        ].map(([label, value]) => (
-          <section
-            key={label}
-            className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]"
-          >
-            <p className="text-[12px] text-textItemBlur">{label}</p>
-            <p className="mt-[6px] text-[22px] font-[600]">{value}</p>
-          </section>
-        ))}
-      </div>
-      <section className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]">
-        <h2 className="mb-[12px] text-[16px] font-[600]">Volume over time</h2>
-        {!overTime.length ? (
-          <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
+      <Card title="Keywords">
+        {!keywordCounts.length ? (
+          <p className="text-[13px] text-textItemBlur">No keywords yet.</p>
         ) : (
-          <div className="flex h-[88px] items-end gap-[4px]" aria-label="Volume over time">
-            {overTime.slice(-30).map((row: { date: string; count: number }) => (
-              <span
-                key={row.date}
-                title={`${row.date}: ${row.count}`}
-                className="w-[10px] rounded-t-[3px] bg-[#00D9FF]/40"
-                style={{
-                  height: `${Math.max(4, Math.round((row.count / timelineMax) * 88))}px`,
-                }}
-              />
+          <ul className="flex flex-col gap-[8px]">
+            {keywordCounts.map((row: { phrase: string; count: number }) => (
+              <li key={row.phrase} className="flex justify-between text-[13px]">
+                <span>{row.phrase}</span>
+                <span className="text-textItemBlur">{row.count}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </section>
-      <div className="grid gap-[12px] xl:grid-cols-2">
-        <Bars
-          title="By source"
-          rows={bySource.map((row: { source: string; count: number }) => ({
-            label: labelOf(row.source),
-            count: row.count,
-          }))}
-        />
-        <Bars
-          title="By category"
-          rows={byCategory.map((row: { name: string; count: number }) => ({
-            label: row.name,
-            count: row.count,
-          }))}
-        />
-        <Bars
-          title="Sentiment mix"
-          rows={bySentiment.map((row: { sentiment: string; count: number }) => ({
-            label: `${labelOf(row.sentiment)} · ${share(row.count)}`,
-            count: row.count,
-          }))}
-        />
-        <Bars
-          title="Top keywords"
-          rows={byKeyword.map((row: { phrase: string; count: number }) => ({
-            label: row.phrase,
-            count: row.count,
-          }))}
-        />
-        <Bars
-          title="Top themes"
-          rows={byTheme.map((row: { title: string; count: number }) => ({
-            label: row.title,
-            count: row.count,
-          }))}
-        />
-        <Bars
-          title="Accounts mentioning you most"
-          rows={accounts.map((row: { authorName: string; count: number }) => ({
-            label: row.authorName,
-            count: row.count,
-          }))}
-        />
-      </div>
+      </Card>
     </div>
   );
 };

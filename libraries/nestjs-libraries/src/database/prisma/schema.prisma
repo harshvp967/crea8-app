@@ -51,6 +51,7 @@ model Organization {
   stalkerProjects     StalkerProject[]
   stalkerSavedViews   StalkerSavedView[]
   stalkerAlerts       StalkerAlert[]
+  stalkerAlertRules   StalkerAlertRule[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -1841,6 +1842,8 @@ enum StalkerMentionStatus {
   NEW
   REPLIED
   IGNORED
+  DONE
+  FOLLOW_UP
 }
 
 enum StalkerMatchKind {
@@ -1904,16 +1907,26 @@ model StalkerProject {
   sentimentDropPoints Int                 @default(20)
   alertCooldownHours Int                  @default(12)
   webhookUrl     String                   @default("")
+  publicDashboard Boolean                 @default(false)
+  publicToken    String                   @default("")
+  digestEnabled  Boolean                  @default(false)
+  digestDismissed Boolean                 @default(false)
+  digestHour     Int                      @default(8)
+  digestTimezone String                   @default("UTC")
+  digestGroupName String                  @default("My brand")
+  digestSentOn   String                   @default("")
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   organization   Organization             @relation(fields: [organizationId], references: [id])
   keywords       StalkerKeyword[]
+  groups         StalkerKeywordGroup[]
   categories     StalkerProjectCategory[]
   mentions       StalkerMention[]
   themes         StalkerTheme[]
   savedViews     StalkerSavedView[]
   cursors        StalkerScanCursor[]
   alerts         StalkerAlert[]
+  alertRules     StalkerAlertRule[]
 
   @@index([organizationId])
 }
@@ -1958,15 +1971,49 @@ model StalkerKeyword {
   listenReddit    Boolean          @default(true)
   listenX         Boolean          @default(false)
   listenLinkedin  Boolean          @default(false)
+  groupId         String?
+  excludeAccounts String           @default("")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   organization    Organization     @relation(fields: [organizationId], references: [id])
   project         StalkerProject?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  group           StalkerKeywordGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   mentions        StalkerMention[]
 
   @@unique([projectId, phrase])
   @@index([organizationId])
   @@index([projectId])
+  @@index([groupId])
+}
+
+model StalkerKeywordGroup {
+  id        String          @id @default(uuid())
+  projectId String
+  name      String
+  position  Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  project   StalkerProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  keywords  StalkerKeyword[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model StalkerAlertRule {
+  id             String         @id @default(uuid())
+  organizationId String
+  projectId      String
+  name           String
+  enabled        Boolean        @default(true)
+  filters        Json
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  project        StalkerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([organizationId])
 }
 
 model StalkerTheme {

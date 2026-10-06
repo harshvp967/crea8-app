@@ -4,13 +4,16 @@ import {
   createContext,
   ReactNode,
   useContext,
-  useEffect,
   useState,
 } from 'react';
 import {
   useStalkerProjects,
   useStalkerStatus,
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
+import {
+  SAMPLE_PROJECTS,
+  SAMPLE_STATUS,
+} from '@gitroom/frontend/components/stalker/stalker.sample';
 
 const STORAGE_KEY = 'crea8-stalker-project';
 
@@ -39,6 +42,13 @@ export type StalkerProjectRecord = {
   sentimentDropPoints?: number;
   alertCooldownHours?: number;
   webhookUrl?: string;
+  publicDashboard?: boolean;
+  publicToken?: string;
+  digestEnabled?: boolean;
+  digestDismissed?: boolean;
+  digestHour?: number;
+  digestTimezone?: string;
+  digestGroupName?: string;
   categories?: Array<{ id: string; name: string; description: string }>;
 };
 
@@ -55,6 +65,8 @@ type StalkerStatus = {
   maxKeywords?: number;
   keywordsSearchedPerRun?: number;
   openAi?: boolean;
+  ownerEmail?: string;
+  emailCap?: number;
   sources?: StalkerSourceStatus[];
   commentSources?: Array<{ id: string; label: string; available: boolean }>;
   suggestedHandles?: {
@@ -76,46 +88,65 @@ type StalkerProjectContextValue = {
   showWizard: boolean;
   setShowWizard: (value: boolean) => void;
   refreshProjects: () => void;
+  addKeywordSignal: number;
+  requestAddKeyword: () => void;
+  sample: boolean;
 };
 
 const StalkerProjectContext = createContext<StalkerProjectContextValue | null>(
   null
 );
 
-export const StalkerProjectProvider = ({ children }: { children: ReactNode }) => {
-  const { data, mutate, isLoading } = useStalkerProjects();
-  const { data: status } = useStalkerStatus();
-  const projects: StalkerProjectRecord[] = Array.isArray(data) ? data : [];
-  const [projectId, setProjectIdState] = useState<string | null>(null);
-  const [showWizard, setShowWizard] = useState(false);
-  const [ready, setReady] = useState(false);
+export const StalkerProjectProvider = ({
+  children,
+  sample = false,
+  empty = false,
+  initialWizard = false,
+}: {
+  children: ReactNode;
+  sample?: boolean;
+  empty?: boolean;
+  initialWizard?: boolean;
+}) => {
+  const { data, mutate, isLoading } = useStalkerProjects(!sample);
+  const { data: status } = useStalkerStatus(!sample);
+  const projects: StalkerProjectRecord[] = sample
+    ? empty
+      ? []
+      : SAMPLE_PROJECTS
+    : Array.isArray(data)
+      ? data
+      : [];
+  const [projectId, setProjectIdState] = useState<string | null>(
+    sample ? (empty ? null : SAMPLE_PROJECTS[0].id) : null
+  );
+  const [showWizard, setShowWizard] = useState(initialWizard);
+  const [addKeywordSignal, setAddKeywordSignal] = useState(0);
+  const [hydrated, setHydrated] = useState(sample);
+  const dataIds = Array.isArray(data) ? data.map((item) => item.id).join(',') : '';
+  const [syncedIds, setSyncedIds] = useState(sample ? 'sample' : '');
 
-  useEffect(() => {
+  if (!sample && !hydrated && typeof window !== 'undefined') {
     const stored = window.localStorage.getItem(STORAGE_KEY);
+    setHydrated(true);
     if (stored) {
       setProjectIdState(stored);
     }
-    setReady(true);
-  }, []);
+  }
 
-  useEffect(() => {
-    if (!ready || isLoading || !Array.isArray(data)) {
-      return;
-    }
-    if (!data.length) {
-      setShowWizard(true);
-      return;
-    }
+  if (!sample && hydrated && !isLoading && dataIds && syncedIds !== dataIds) {
+    setSyncedIds(dataIds);
     setProjectIdState((current) => {
-      const selected = data.some((project) => project.id === current)
+      const list = Array.isArray(data) ? data : [];
+      const selected = list.some((item) => item.id === current)
         ? current
-        : data[0].id;
+        : list[0]?.id || null;
       if (selected) {
         window.localStorage.setItem(STORAGE_KEY, selected);
       }
-      return selected || null;
+      return selected;
     });
-  }, [ready, isLoading, data]);
+  }
 
   const setProjectId = (id: string) => {
     setProjectIdState(id);
@@ -133,13 +164,16 @@ export const StalkerProjectProvider = ({ children }: { children: ReactNode }) =>
         project,
         projectId: project?.id || null,
         setProjectId,
-        status: status || null,
-        loading: !ready || isLoading,
+        status: sample ? SAMPLE_STATUS : status || null,
+        loading: sample ? false : !hydrated || isLoading,
         showWizard,
         setShowWizard,
         refreshProjects: () => {
           mutate();
         },
+        addKeywordSignal,
+        requestAddKeyword: () => setAddKeywordSignal((value) => value + 1),
+        sample,
       }}
     >
       {children}

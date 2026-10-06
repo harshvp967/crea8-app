@@ -47,6 +47,7 @@ import { FirstBillingComponent } from '@gitroom/frontend/components/billing/firs
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
 import { DashboardSwitcher } from '@gitroom/frontend/components/dashboard/dashboard.switcher';
+import { StalkerTopNav } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settings.component';
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -64,7 +65,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
-  }, []);
+  }, [fetch]);
   const { data: user, mutate } = useSWR('/user/self', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -130,8 +131,14 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <Logo />
                     <div className="w-[1px] self-stretch my-[8px] bg-blockSeparator hidden sm:block shrink-0" />
                     <DashboardSwitcher />
-                    <TopMenu />
-                    <TopMenuUtilities />
+                    {pathname?.startsWith('/stalker') ? (
+                      <StalkerTopNav />
+                    ) : (
+                      <>
+                        <TopMenu />
+                        <TopMenuUtilities />
+                      </>
+                    )}
                     <div className="flex items-center gap-[16px] text-textItemBlur shrink-0 ms-auto">
                       <StreakComponent />
                       <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
