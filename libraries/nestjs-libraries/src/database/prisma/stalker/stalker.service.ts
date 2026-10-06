@@ -22,6 +22,7 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.source.manager';
 import { StalkerSourceId } from '@gitroom/nestjs-libraries/stalker/stalker.source';
 import { isProviderAuthFailure } from '@gitroom/nestjs-libraries/stalker/sources/youtube.stalker.source';
+import { formatXFailure } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import {
   BACKFILL_LOOKBACK_MS,
@@ -160,7 +161,7 @@ const sourceFailure = (id: string, detail?: string) => {
     return 'Reddit: needs API access';
   }
   if (id === 'x') {
-    return 'X: needs API access';
+    return formatXFailure(detail);
   }
   if (id === 'linkedin') {
     return 'LinkedIn: Coming soon';

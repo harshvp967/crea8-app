@@ -19,6 +19,7 @@ import {
   orderKeywordsForScan,
   StalkerService,
 } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
+import { X_PLAN_ERROR } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
 
 const authError = () => {
   const error = new Error('Invalid Credentials') as Error & {
@@ -71,6 +72,16 @@ const build = (options: {
   search: (auth?: { accessToken?: string }) => Promise<typeof mention[]>;
   refresh: jest.Mock;
   social?: Integration[];
+  source?: {
+    id: string;
+    label: string;
+    filter: string;
+    integrationIdentifier: () => string | null;
+    enabled: (auth?: { accessToken?: string }) => boolean;
+    statusDetail: (available: boolean) => string;
+    buildQuery: () => string;
+    search: (keyword: string, since: Date, auth?: { accessToken?: string }) => Promise<unknown>;
+  };
 }) => {
   const repository = {
     listProjects: jest.fn().mockResolvedValue([project]),
@@ -101,7 +112,7 @@ const build = (options: {
     insertMentions: jest.fn().mockResolvedValue(1),
     listCategories: jest.fn().mockResolvedValue([]),
   };
-  const source = {
+  const source = options.source || {
     id: 'youtube' as const,
     label: 'YouTube',
     filter: 'YOUTUBE_SEARCH',
@@ -322,7 +333,7 @@ describe('StalkerService token refresh', () => {
 
     await service.pollOrganization('org');
 
-    expect(source.search.mock.calls.map((call) => call[0])).toEqual([
+    expect((source.search as jest.Mock).mock.calls.map((call) => call[0])).toEqual([
       'brand',
       'word6',
       'word0',
@@ -450,6 +461,54 @@ describe('StalkerService token refresh', () => {
     await expect(service.listDueProjectScans()).resolves.toEqual([
       { organizationId: 'org', projectId: 'due', trigger: 'schedule' },
     ]);
+  });
+
+  it('keeps an X plan error on the scan result and the keyword cursor', async () => {
+    const refresh = jest.fn();
+    const { service, repository } = build({
+      tokenExpiration: new Date(Date.now() + 60 * 60 * 1000),
+      search: async () => [],
+      refresh,
+      social: [],
+      source: {
+        id: 'x',
+        label: 'X',
+        filter: 'X',
+        integrationIdentifier: () => null,
+        enabled: () => true,
+        statusDetail: () => 'Official recent search',
+        buildQuery: () => '',
+        search: async () => {
+          throw new Error(X_PLAN_ERROR);
+        },
+      },
+    });
+    repository.listKeywords.mockResolvedValue([
+      {
+        id: 'k1',
+        phrase: 'crea8one',
+        listenYoutube: false,
+        listenReddit: false,
+        listenX: true,
+        listenLinkedin: false,
+      },
+    ]);
+    const logged = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    const errors = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const result = await service.pollOrganization('org');
+
+    expect(result.sources[0].ok).toBe(false);
+    expect(result.sources[0].error).toBe(X_PLAN_ERROR);
+    expect(repository.noteScanFailure).toHaveBeenCalledWith(
+      'proj',
+      'x',
+      'crea8one',
+      X_PLAN_ERROR
+    );
+    expect(logged.mock.calls.map((call) => call.join(' ')).join('\n')).toContain(X_PLAN_ERROR);
+    logged.mockRestore();
+    errors.mockRestore();
   });
 });
 

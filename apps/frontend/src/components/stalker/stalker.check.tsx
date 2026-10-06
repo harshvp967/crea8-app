@@ -36,7 +36,11 @@ export const ReconnectText = ({ text }: { text: string }) => {
 const sourceLine = (source: StalkerScanSource, duplicates: number) => {
   const name = sourceName(source.id);
   if (!source.ok) {
-    return `${name}: ${source.error || 'Scan failed'}`;
+    const error = source.error || 'Scan failed';
+    if (error.toLowerCase().startsWith(`${name.toLowerCase()}:`)) {
+      return error;
+    }
+    return `${name}: ${error}`;
   }
   const stored = source.stored || 0;
   if (!stored) {
