@@ -747,6 +747,21 @@ describe('StalkerService keywords and scan status', () => {
     expect(repository.insertMentions).not.toHaveBeenCalled();
   });
 
+  it('counts mentions stored today in the 30 day total and the last sparkline day', async () => {
+    const { service, repository } = make();
+    repository.listKeywords.mockResolvedValue([{ ...kw('k1', 'canva'), group: null }]);
+    repository.keywordFacts.mockResolvedValue([
+      { keywordId: 'k1', createdAt: new Date(), source: 'YOUTUBE_SEARCH' },
+      { keywordId: 'k1', createdAt: new Date(), source: 'YOUTUBE_SEARCH' },
+      { keywordId: 'k1', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), source: 'YOUTUBE_SEARCH' },
+    ]);
+    const [row] = await service.keywords('org', 'proj');
+    expect(row.mentions30d).toBe(3);
+    expect(row.sparkline).toHaveLength(30);
+    expect(row.sparkline[29]).toBe(2);
+    expect(row.sparkline.reduce((sum: number, value: number) => sum + value, 0)).toBe(3);
+  });
+
   it('returns 404 when deleting an unknown keyword', async () => {
     const { service, repository } = make();
     (repository as Record<string, jest.Mock>).deleteKeyword = jest.fn().mockResolvedValue({ count: 0 });

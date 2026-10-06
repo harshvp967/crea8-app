@@ -703,17 +703,22 @@ export class StalkerService {
       this._repository.activeScan(projectId),
     ]);
     const sparks = new Map<string, number[]>();
+    const totals30d = new Map<string, number>();
+    // 30 daily buckets ending with *today* (index 29). The old math anchored on
+    // `since` (now - 30d), so today landed on index 30 and was dropped.
+    const dayMs = 24 * 60 * 60 * 1000;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
     const dayIndex = (date: Date) => {
-      const start = new Date(since);
-      start.setHours(0, 0, 0, 0);
       const point = new Date(date);
       point.setHours(0, 0, 0, 0);
-      return Math.floor((point.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+      return 29 - Math.round((todayStart.getTime() - point.getTime()) / dayMs);
     };
     for (const fact of facts) {
       if (!fact.keywordId) {
         continue;
       }
+      totals30d.set(fact.keywordId, (totals30d.get(fact.keywordId) || 0) + 1);
       const series = sparks.get(fact.keywordId) || Array.from({ length: 30 }, () => 0);
       const index = dayIndex(fact.createdAt);
       if (index >= 0 && index < 30) {
@@ -779,7 +784,7 @@ export class StalkerService {
         ...row,
         backfillArmed: sources.some((source) => source.state === 'queued'),
         backfill: sources,
-        mentions30d: series.reduce((sum, count) => sum + count, 0),
+        mentions30d: totals30d.get(row.id) || 0,
         sparkline: series,
         lastScan: last ? last.toISOString() : null,
         lastError:
