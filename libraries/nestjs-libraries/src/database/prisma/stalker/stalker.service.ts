@@ -56,6 +56,7 @@ import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/soci
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { randomUUID } from 'crypto';
 
 export const isStalkerEnabled = () => process.env.STALKER_ENABLED === 'true';
 
@@ -125,6 +126,17 @@ const tokenExpiresSoon = (tokenExpiration?: Date | null) => {
 };
 
 const PROJECT_COLORS = [
+  '#71717a',
+  '#7e47eb',
+  '#9947eb',
+  '#477eeb',
+  '#47b4eb',
+  '#47ebb4',
+  '#47eb7e',
+  '#ebd047',
+  '#eb9947',
+  '#eb4747',
+  '#eb477e',
   '#00D9FF',
   '#7C5CFF',
   '#FFB020',
@@ -132,6 +144,8 @@ const PROJECT_COLORS = [
   '#3DDC97',
   '#E8E8E8',
 ];
+
+const DAILY_EMAIL_CAP = 3;
 
 const HANDLE_FIELD: Record<
   string,
@@ -199,6 +213,159 @@ const csvCell = (value: string | number | null | undefined) =>
 
 const clampInt = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, Math.round(value)));
+
+const sourceFamily = (source: string) => {
+  if (source.startsWith('X')) return 'X';
+  if (source.startsWith('REDDIT')) return 'REDDIT';
+  if (source.startsWith('YOUTUBE')) return 'YOUTUBE';
+  if (source.startsWith('LINKEDIN')) return 'LINKEDIN';
+  if (source.startsWith('INSTAGRAM')) return 'INSTAGRAM';
+  if (source.startsWith('FACEBOOK')) return 'FACEBOOK';
+  return source;
+};
+
+const stalkerAnalyticsDetail = (
+  facts: {
+    createdAt: Date;
+    sentiment: string;
+    authorName: string;
+    authorHandle: string;
+    source: string;
+  }[]
+) => {
+  const days = new Map<
+    string,
+    { positive: number; negative: number; neutral: number }
+  >();
+  const supporters = new Map<string, { authorName: string; count: number }>();
+  const critics = new Map<string, { authorName: string; count: number }>();
+  const heat = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
+  for (const fact of facts) {
+    const key = fact.createdAt.toISOString().slice(0, 10);
+    const bucket = days.get(key) || { positive: 0, negative: 0, neutral: 0 };
+    if (fact.sentiment === 'POSITIVE') bucket.positive += 1;
+    else if (fact.sentiment === 'NEGATIVE') bucket.negative += 1;
+    else bucket.neutral += 1;
+    days.set(key, bucket);
+    const author = fact.authorName || 'Unknown';
+    if (fact.sentiment === 'POSITIVE') {
+      const row = supporters.get(author) || { authorName: author, count: 0 };
+      row.count += 1;
+      supporters.set(author, row);
+    }
+    if (fact.sentiment === 'NEGATIVE') {
+      const row = critics.get(author) || { authorName: author, count: 0 };
+      row.count += 1;
+      critics.set(author, row);
+    }
+    const weekday = (fact.createdAt.getUTCDay() + 6) % 7;
+    heat[weekday][fact.createdAt.getUTCHours()] += 1;
+  }
+  const series = [...days.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, counts]) => ({ date, ...counts }));
+  const total = facts.length;
+  const span = Math.max(1, series.length);
+  return {
+    series,
+    avgPerDay: Math.round((total / span) * 10) / 10,
+    supporters: [...supporters.values()].sort((a, b) => b.count - a.count).slice(0, 5),
+    critics: [...critics.values()].sort((a, b) => b.count - a.count).slice(0, 5),
+    heatmap: heat,
+  };
+};
+
+const digestClock = (timezone: string) => {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone || 'UTC',
+      hour: '2-digit',
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+    const read = (type: string) =>
+      parts.find((part) => part.type === type)?.value || '';
+    const month = read('month').padStart(2, '0');
+    const day = read('day').padStart(2, '0');
+    return {
+      hour: Number(read('hour')),
+      day: `${read('year')}-${month}-${day}`,
+    };
+  } catch {
+    const now = new Date();
+    return { hour: now.getUTCHours(), day: now.toISOString().slice(0, 10) };
+  }
+};
+
+const ruleMatches = (
+  filters: Record<string, unknown>,
+  row: {
+    source: string;
+    authorName: string;
+    authorHandle: string;
+    keywordId: string | null;
+    categoryId: string | null;
+    sentiment: string;
+    likeCount: number;
+    replyCount: number;
+  }
+) => {
+  const listed = String(filters.sources || filters.source || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (listed.length) {
+    const family = sourceFamily(row.source);
+    if (!listed.includes(family) && !listed.includes(row.source)) {
+      return false;
+    }
+  }
+  const engagement = String(filters.engagement || '');
+  if (engagement) {
+    const family = sourceFamily(row.source);
+    for (const part of engagement.split(',')) {
+      const [name, amount] = part.split(':');
+      const min = Number(amount);
+      if (!name || !Number.isFinite(min) || min <= 0) {
+        continue;
+      }
+      if (name === family || name === row.source) {
+        if (row.likeCount + row.replyCount < min) {
+          return false;
+        }
+      }
+    }
+  }
+  const from = String(filters.from || '')
+    .trim()
+    .replace(/^@/, '')
+    .toLowerCase();
+  if (from) {
+    const blob = `${row.authorName} ${row.authorHandle}`.toLowerCase();
+    if (!blob.includes(from)) {
+      return false;
+    }
+  }
+  if (filters.keywordId && row.keywordId !== filters.keywordId) {
+    return false;
+  }
+  if (filters.categoryId === 'none' && row.categoryId) {
+    return false;
+  }
+  if (
+    filters.categoryId &&
+    filters.categoryId !== 'none' &&
+    row.categoryId !== filters.categoryId
+  ) {
+    return false;
+  }
+  if (filters.sentiment && row.sentiment !== filters.sentiment) {
+    return false;
+  }
+  return true;
+};
 
 @Injectable()
 export class StalkerService {
@@ -270,6 +437,8 @@ export class StalkerService {
       sources,
       commentSources,
       suggestedHandles,
+      ownerEmail: (await this._repository.ownerContact(organizationId))?.user.email || '',
+      emailCap: DAILY_EMAIL_CAP,
     };
   }
 
@@ -324,6 +493,12 @@ export class StalkerService {
       throw new BadRequestException('Add at least one category');
     }
     const identity = await this.identityFields(body, body.name.trim(), false);
+    if (!identity.alertEmail) {
+      const owner = await this._repository.ownerContact(organizationId);
+      if (owner?.user.email) {
+        identity.alertEmail = owner.user.email;
+      }
+    }
     const project = await this._repository.createProject(organizationId, {
       name: body.name.trim(),
       description: (body.description || '').trim(),
@@ -363,6 +538,12 @@ export class StalkerService {
       }
       data.color = color;
     }
+    if (typeof body.publicDashboard === 'boolean') {
+      data.publicDashboard = body.publicDashboard;
+      if (body.publicDashboard && !current.publicToken) {
+        data.publicToken = randomUUID().replace(/-/g, '');
+      }
+    }
     const updated = await this._repository.updateProject(
       organizationId,
       id,
@@ -400,10 +581,33 @@ export class StalkerService {
   async keywords(organizationId: string, projectId: string) {
     this.assertEnabled();
     await this.requireProject(organizationId, projectId);
-    const [rows, cursors] = await Promise.all([
+    await this._repository.ensureGroups(projectId);
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [rows, cursors, facts, groups] = await Promise.all([
       this._repository.listKeywords(organizationId, projectId),
       this._repository.listCursors(projectId),
+      this._repository.keywordFacts(organizationId, projectId, since),
+      this._repository.listGroups(projectId),
     ]);
+    const sparks = new Map<string, number[]>();
+    const dayIndex = (date: Date) => {
+      const start = new Date(since);
+      start.setHours(0, 0, 0, 0);
+      const point = new Date(date);
+      point.setHours(0, 0, 0, 0);
+      return Math.floor((point.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+    };
+    for (const fact of facts) {
+      if (!fact.keywordId) {
+        continue;
+      }
+      const series = sparks.get(fact.keywordId) || Array.from({ length: 30 }, () => 0);
+      const index = dayIndex(fact.createdAt);
+      if (index >= 0 && index < 30) {
+        series[index] += 1;
+      }
+      sparks.set(fact.keywordId, series);
+    }
     return rows.map((row) => {
       const phraseKey = row.phrase.toLowerCase();
       const sources = (
@@ -431,10 +635,19 @@ export class StalkerService {
         }
         return { id, state: 'idle' as const };
       });
+      const scans = cursors.filter((item) => item.phraseKey === phraseKey);
+      const last = scans
+        .map((item) => item.updatedAt)
+        .sort((left, right) => right.getTime() - left.getTime())[0];
+      const series = sparks.get(row.id) || Array.from({ length: 30 }, () => 0);
       return {
         ...row,
         backfillArmed: sources.some((source) => source.state === 'queued'),
         backfill: sources,
+        mentions30d: series.reduce((sum, count) => sum + count, 0),
+        sparkline: series,
+        lastScan: last ? last.toISOString() : null,
+        groups,
       };
     });
   }
@@ -563,6 +776,12 @@ export class StalkerService {
         `You can save up to ${MAX_KEYWORDS} keywords`
       );
     }
+    await this._repository.ensureGroups(body.projectId);
+    let groupId = body.groupId || null;
+    if (!groupId) {
+      const groups = await this._repository.listGroups(body.projectId);
+      groupId = groups.find((group) => group.name === 'My brand')?.id || null;
+    }
     return this._repository.createKeyword(
       organizationId,
       body.projectId,
@@ -572,6 +791,10 @@ export class StalkerService {
         reddit: !!body.reddit,
         x: !!body.x,
         linkedin: !!body.linkedin,
+      },
+      {
+        groupId,
+        excludeAccounts: (body.excludeAccounts || '').trim().slice(0, 400),
       }
     );
   }
@@ -586,6 +809,9 @@ export class StalkerService {
     if (!keyword) {
       throw new NotFoundException('Keyword not found');
     }
+    if (body.groupId) {
+      await this._repository.moveKeyword(organizationId, id, body.groupId);
+    }
     const updated = await this._repository.updateKeywordPlatforms(
       organizationId,
       id,
@@ -594,6 +820,10 @@ export class StalkerService {
         reddit: typeof body.reddit === 'boolean' ? body.reddit : undefined,
         x: typeof body.x === 'boolean' ? body.x : undefined,
         linkedin: typeof body.linkedin === 'boolean' ? body.linkedin : undefined,
+        excludeAccounts:
+          typeof body.excludeAccounts === 'string'
+            ? body.excludeAccounts
+            : undefined,
       }
     );
     if (!updated.count) {
@@ -602,13 +832,177 @@ export class StalkerService {
     return this._repository.getKeyword(organizationId, id);
   }
 
+  async groups(organizationId: string, projectId: string) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, projectId);
+    await this._repository.ensureGroups(projectId);
+    return this._repository.listGroups(projectId);
+  }
+
+  async createGroup(organizationId: string, projectId: string, name: string) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, projectId);
+    const groups = await this._repository.ensureGroups(projectId);
+    const clean = name.trim();
+    if (groups.some((group) => group.name.toLowerCase() === clean.toLowerCase())) {
+      throw new BadRequestException('That group already exists');
+    }
+    if (groups.length >= 12) {
+      throw new BadRequestException('You can save up to 12 groups');
+    }
+    return this._repository.createGroup(projectId, clean, groups.length);
+  }
+
+  async deleteGroup(organizationId: string, projectId: string, id: string) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, projectId);
+    const groups = await this._repository.listGroups(projectId);
+    const group = groups.find((item) => item.id === id);
+    if (!group) {
+      throw new NotFoundException('Group not found');
+    }
+    if (group.name === 'My brand' || group.name === 'Competitors') {
+      throw new BadRequestException('That group stays on the project');
+    }
+    if (group._count.keywords) {
+      throw new BadRequestException('Move the keywords out of this group first');
+    }
+    await this._repository.deleteGroup(projectId, id);
+    return { deleted: true };
+  }
+
+  async authors(organizationId: string, projectId: string) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, projectId);
+    const rows = await this._repository.authors(organizationId, projectId);
+    return rows.map((row) => ({
+      authorName: row.authorName,
+      authorHandle: row.authorHandle,
+      source: row.source,
+      count: row._count._all,
+    }));
+  }
+
+  async alertRules(organizationId: string, projectId: string) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, projectId);
+    return this._repository.listAlertRules(organizationId, projectId);
+  }
+
+  async createAlertRule(
+    organizationId: string,
+    projectId: string,
+    name: string,
+    filters: Record<string, unknown>
+  ) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, projectId);
+    const rules = await this._repository.listAlertRules(organizationId, projectId);
+    if (rules.length >= 20) {
+      throw new BadRequestException('You can save up to 20 alerts');
+    }
+    return this._repository.createAlertRule(
+      organizationId,
+      projectId,
+      name.trim(),
+      filters as Prisma.InputJsonValue
+    );
+  }
+
+  async deleteAlertRule(organizationId: string, id: string) {
+    this.assertEnabled();
+    await this._repository.deleteAlertRule(organizationId, id);
+    return { deleted: true };
+  }
+
+  async saveCategories(
+    organizationId: string,
+    projectId: string,
+    categories: { id?: string; name: string; description?: string }[]
+  ) {
+    this.assertEnabled();
+    await this.requireProject(organizationId, projectId);
+    const seen = new Set<string>();
+    const clean = [];
+    for (const category of categories) {
+      const name = category.name.trim();
+      const key = name.toLowerCase();
+      if (name.length < 2 || seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      clean.push({
+        id: category.id,
+        name,
+        description: (category.description || '').trim(),
+      });
+    }
+    if (!clean.length) {
+      throw new BadRequestException('Add at least one category');
+    }
+    return this._repository.replaceCategories(organizationId, projectId, clean);
+  }
+
+  async deleteProject(organizationId: string, id: string) {
+    this.assertEnabled();
+    const deleted = await this._repository.deleteProject(organizationId, id);
+    if (!deleted.count) {
+      throw new NotFoundException('Project not found');
+    }
+    return { deleted: true };
+  }
+
+  async publicBoard(token: string) {
+    const project = await this._repository.projectByToken(token);
+    if (!project) {
+      throw new NotFoundException('Dashboard not found');
+    }
+    const [mentions, analytics] = await Promise.all([
+      this._repository.listMentions(project.organizationId, {
+        projectId: project.id,
+        date: '30d',
+        take: 30,
+      }),
+      this.analytics(project.organizationId, project.id, '30d'),
+    ]);
+    return {
+      project: {
+        name: project.name,
+        description: project.description,
+        color: project.color,
+      },
+      mentions: mentions.mentions.map((row) => ({
+        id: row.id,
+        authorName: row.authorName,
+        authorHandle: row.authorHandle,
+        text: row.text,
+        source: row.source,
+        sentiment: row.sentiment,
+        createdAt: row.createdAt,
+        url: row.url,
+        category: row.categoryDef?.name || '',
+      })),
+      analytics: {
+        totals: analytics.totals,
+        series: analytics.series,
+        bySource: analytics.bySource,
+        byCategory: analytics.byCategory,
+      },
+    };
+  }
+
   async deleteKeyword(organizationId: string, id: string) {
     this.assertEnabled();
     await this._repository.deleteKeyword(organizationId, id);
     return { deleted: true };
   }
 
-  async analytics(organizationId: string, projectId: string, date = '30d') {
+  async analytics(
+    organizationId: string,
+    projectId: string,
+    date = '30d',
+    range?: { start?: string; end?: string }
+  ) {
     this.assertEnabled();
     if (!projectId) {
       throw new BadRequestException('Choose a project');
@@ -618,8 +1012,29 @@ export class StalkerService {
     const raw = await this._repository.analytics(
       organizationId,
       projectId,
-      window
+      window,
+      range
     );
+    const rangedStart = range?.start ? new Date(`${range.start}T00:00:00.000Z`) : undefined;
+    const rangedEnd = range?.end ? new Date(`${range.end}T00:00:00.000Z`) : undefined;
+    if (rangedEnd) {
+      rangedEnd.setUTCDate(rangedEnd.getUTCDate() + 1);
+    }
+    const windowSince =
+      window === '24h'
+        ? new Date(Date.now() - 24 * 60 * 60 * 1000)
+        : window === '7d'
+          ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+          : window === 'all'
+            ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+            : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const facts = await this._repository.mentionFacts(
+      organizationId,
+      projectId,
+      rangedStart || windowSince,
+      rangedEnd
+    );
+    const detail = stalkerAnalyticsDetail(facts);
     return {
       bySource: raw.bySource.map((row) => ({
         source: row.source,
@@ -675,6 +1090,11 @@ export class StalkerService {
         negative: sentimentCount(raw.bySentiment, 'NEGATIVE'),
         neutral: sentimentCount(raw.bySentiment, 'NEUTRAL'),
       },
+      series: detail.series,
+      avgPerDay: detail.avgPerDay,
+      supporters: detail.supporters,
+      critics: detail.critics,
+      heatmap: detail.heatmap,
     };
   }
 
@@ -1163,7 +1583,29 @@ export class StalkerService {
       for (const keyword of selected) {
         await pull(keyword.phrase, keyword.phrase.toLowerCase(), keyword.phrase);
       }
-      const unique = dedupeDrafts(collected).slice(0, 80);
+      const blocked = new Map<string, Set<string>>();
+      for (const keyword of keywords) {
+        const handles = String(
+          (keyword as { excludeAccounts?: string }).excludeAccounts || ''
+        )
+          .split(/[\s,]+/)
+          .map((handle) => handle.replace(/^@/, '').toLowerCase())
+          .filter(Boolean);
+        if (handles.length) {
+          blocked.set(keyword.phrase.toLowerCase(), new Set(handles));
+        }
+      }
+      const unique = dedupeDrafts(collected)
+        .filter((draft) => {
+          const phrase = (draft.keywordPhrase || '').toLowerCase();
+          const handles = phrase ? blocked.get(phrase) : undefined;
+          if (!handles?.size) {
+            return true;
+          }
+          const handle = (draft.authorHandle || '').replace(/^@/, '').toLowerCase();
+          return !handle || !handles.has(handle);
+        })
+        .slice(0, 80);
       const saved = await this.storeMentions(
         organizationId,
         project,
@@ -1527,6 +1969,12 @@ export class StalkerService {
       sentimentDropEnabled: boolean;
       sentimentDropPoints: number;
       alertCooldownHours: number;
+      digestEnabled?: boolean;
+      digestDismissed?: boolean;
+      digestHour?: number;
+      digestTimezone?: string;
+      digestGroupName?: string;
+      digestSentOn?: string;
     },
     saved: {
       id: string;
@@ -1536,12 +1984,19 @@ export class StalkerService {
       relevant: boolean;
     }[]
   ) {
-    if (!project.alertsEnabled) {
+    const digestOn = !!project.digestEnabled && !project.digestDismissed;
+    const rules =
+      typeof this._repository.listAlertRules === 'function'
+        ? await this._repository.listAlertRules(organizationId, project.id)
+        : [];
+    if (!project.alertsEnabled && !digestOn && !rules.some((rule) => rule.enabled)) {
       return;
     }
-    const matches = saved.filter((item) =>
-      mentionMatchesScope(project.alertScope as StalkerAlertScopeName, item)
-    );
+    const matches = project.alertsEnabled
+      ? saved.filter((item) =>
+          mentionMatchesScope(project.alertScope as StalkerAlertScopeName, item)
+        )
+      : [];
     if (matches.length) {
       const rows = await this._repository.mentionsByIds(
         organizationId,
@@ -1582,8 +2037,79 @@ export class StalkerService {
         }
       }
     }
-    await this.evaluateThresholds(organizationId, project);
-    await this.flushEmails(project);
+    const relevant = saved.filter((item) => item.relevant);
+    if (relevant.length && (digestOn || rules.some((rule) => rule.enabled))) {
+      const rows = await this._repository.mentionsByIds(
+        organizationId,
+        relevant.map((item) => item.id)
+      );
+      const email = project.alertEmail.includes('@')
+        ? project.alertEmail
+        : '';
+      const wanted = (project.digestGroupName || 'My brand').toLowerCase();
+      for (const row of rows) {
+        if (!email) {
+          break;
+        }
+        const groupName = (
+          row.keyword?.group?.name || 'My brand'
+        ).toLowerCase();
+        const inDigest =
+          digestOn &&
+          (groupName === wanted || (!row.keywordId && wanted === 'my brand'));
+        if (inDigest) {
+          await this._repository.createAlert({
+            organizationId,
+            projectId: project.id,
+            mentionId: row.id,
+            kind: StalkerAlertKind.MENTION,
+            channel: StalkerAlertChannel.EMAIL,
+            status: StalkerAlertStatus.PENDING,
+            dedupeKey: `digest:${row.id}:EMAIL`,
+            title: `${row.authorName} mentioned ${project.name}`,
+            body: [row.text, row.url || ''].filter(Boolean).join('\n'),
+          });
+        }
+        for (const rule of rules) {
+          if (!rule.enabled) {
+            continue;
+          }
+          const filters =
+            rule.filters && typeof rule.filters === 'object'
+              ? (rule.filters as Record<string, unknown>)
+              : {};
+          if (
+            !ruleMatches(filters, {
+              source: row.source,
+              authorName: row.authorName,
+              authorHandle: row.authorHandle,
+              keywordId: row.keywordId,
+              categoryId: row.categoryId,
+              sentiment: row.sentiment,
+              likeCount: row.likeCount,
+              replyCount: row.replyCount,
+            })
+          ) {
+            continue;
+          }
+          await this._repository.createAlert({
+            organizationId,
+            projectId: project.id,
+            mentionId: row.id,
+            kind: StalkerAlertKind.MENTION,
+            channel: StalkerAlertChannel.EMAIL,
+            status: StalkerAlertStatus.PENDING,
+            dedupeKey: `rule:${rule.id}:${row.id}`,
+            title: rule.name,
+            body: [row.text, row.url || ''].filter(Boolean).join('\n'),
+          });
+        }
+      }
+    }
+    if (project.alertsEnabled) {
+      await this.evaluateThresholds(organizationId, project);
+    }
+    await this.flushEmails({ ...project, organizationId });
   }
 
   private async evaluateThresholds(
@@ -1745,8 +2271,14 @@ export class StalkerService {
   private async flushEmails(project: {
     id: string;
     name: string;
+    organizationId?: string;
     alertEmail: string;
     alertDelivery: StalkerAlertDelivery;
+    digestEnabled?: boolean;
+    digestDismissed?: boolean;
+    digestHour?: number;
+    digestTimezone?: string;
+    digestSentOn?: string;
   }) {
     if (!project.alertEmail.includes('@')) {
       return;
@@ -1761,38 +2293,101 @@ export class StalkerService {
     const others = pending.filter(
       (alert) => alert.kind !== StalkerAlertKind.MENTION
     );
-    if (
-      project.alertDelivery === StalkerAlertDelivery.DIGEST &&
-      mentionEmails.length
-    ) {
-      const html = mentionEmails
-        .map(
-          (alert) =>
-            `<p><strong>${escapeHtml(alert.title)}</strong></p><p>${escapeHtml(
-              alert.body
-            ).replace(/\n/g, '<br/>')}</p>`
-        )
-        .join('');
-      const ok = await this._emailService.sendEmailSync(
+    const digestEmails = mentionEmails.filter((alert) =>
+      alert.dedupeKey.startsWith('digest:')
+    );
+    const instantEmails = mentionEmails.filter(
+      (alert) => !alert.dedupeKey.startsWith('digest:')
+    );
+    const organizationId = project.organizationId || '';
+    const room = async () => {
+      if (!organizationId || typeof this._repository.countSentEmails !== 'function') {
+        return DAILY_EMAIL_CAP;
+      }
+      const start = new Date();
+      start.setUTCHours(0, 0, 0, 0);
+      const sent = await this._repository.countSentEmails(organizationId, start);
+      return Math.max(0, DAILY_EMAIL_CAP - sent);
+    };
+    let left = await room();
+    const legacyDigest =
+      !project.digestEnabled &&
+      project.alertDelivery === StalkerAlertDelivery.DIGEST;
+    const legacyBatch = legacyDigest
+      ? instantEmails.filter((alert) => alert.dedupeKey.includes(':EMAIL'))
+      : [];
+    const oneByOne = instantEmails.filter(
+      (alert) => !legacyBatch.some((item) => item.id === alert.id)
+    );
+    for (const alert of oneByOne) {
+      if (left <= 0) {
+        break;
+      }
+      await this.sendAlertEmail(project.alertEmail, alert);
+      left -= 1;
+    }
+    if (legacyBatch.length && left > 0) {
+      const ok = await this.sendDigest(
         project.alertEmail,
-        `Stalker digest: ${mentionEmails.length} mention${
-          mentionEmails.length === 1 ? '' : 's'
-        } for ${project.name}`,
-        html
+        project.name,
+        legacyBatch
       );
-      await this._repository.markAlerts(
-        mentionEmails.map((alert) => alert.id),
-        ok ? StalkerAlertStatus.SENT : StalkerAlertStatus.FAILED,
-        ok ? '' : 'Email was not sent. Check EMAIL_FROM_ADDRESS and EMAIL_FROM_NAME.'
-      );
-    } else {
-      for (const alert of mentionEmails) {
-        await this.sendAlertEmail(project.alertEmail, alert);
+      if (ok) {
+        left -= 1;
       }
     }
-    for (const alert of others) {
-      await this.sendAlertEmail(project.alertEmail, alert);
+    const clock = digestClock(project.digestTimezone || 'UTC');
+    const digestDue =
+      !!project.digestEnabled &&
+      !project.digestDismissed &&
+      clock.hour >= (project.digestHour ?? 8) &&
+      project.digestSentOn !== clock.day;
+    if (digestEmails.length && digestDue && left > 0) {
+      const ok = await this.sendDigest(
+        project.alertEmail,
+        project.name,
+        digestEmails
+      );
+      if (ok) {
+        await this._repository.markDigestSent(project.id, clock.day);
+      }
     }
+    left = await room();
+    for (const alert of others) {
+      if (left <= 0) {
+        break;
+      }
+      await this.sendAlertEmail(project.alertEmail, alert);
+      left -= 1;
+    }
+  }
+
+  private async sendDigest(
+    to: string,
+    projectName: string,
+    alerts: { id: string; title: string; body: string }[]
+  ) {
+    const html = alerts
+      .map(
+        (alert) =>
+          `<p><strong>${escapeHtml(alert.title)}</strong></p><p>${escapeHtml(
+            alert.body
+          ).replace(/\n/g, '<br/>')}</p>`
+      )
+      .join('');
+    const ok = await this._emailService.sendEmailSync(
+      to,
+      `Stalker digest: ${alerts.length} mention${
+        alerts.length === 1 ? '' : 's'
+      } for ${projectName}`,
+      html
+    );
+    await this._repository.markAlerts(
+      alerts.map((alert) => alert.id),
+      ok ? StalkerAlertStatus.SENT : StalkerAlertStatus.FAILED,
+      ok ? '' : 'Email was not sent. Check EMAIL_FROM_ADDRESS and EMAIL_FROM_NAME.'
+    );
+    return ok;
   }
 
   private async sendAlertEmail(
@@ -1981,6 +2576,25 @@ export class StalkerService {
     if (typeof body.alertCooldownHours === 'number') {
       data.alertCooldownHours = clampInt(body.alertCooldownHours, 1, 168);
     }
+    write(body.digestEnabled !== undefined, 'digestEnabled', !!body.digestEnabled);
+    write(
+      body.digestDismissed !== undefined,
+      'digestDismissed',
+      !!body.digestDismissed
+    );
+    if (typeof body.digestHour === 'number') {
+      data.digestHour = clampInt(body.digestHour, 0, 23);
+    }
+    write(
+      body.digestTimezone !== undefined,
+      'digestTimezone',
+      (body.digestTimezone || 'UTC').trim().slice(0, 64) || 'UTC'
+    );
+    write(
+      body.digestGroupName !== undefined,
+      'digestGroupName',
+      (body.digestGroupName || 'My brand').trim().slice(0, 40) || 'My brand'
+    );
     return data;
   }
 

@@ -57,6 +57,7 @@ import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.
 import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
 import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
 import { StalkerController } from '@gitroom/backend/api/routes/stalker.controller';
+import { StalkerPublicController } from '@gitroom/backend/api/routes/stalker.public.controller';
 
 const authenticatedController = [
   UsersController,
@@ -96,6 +97,7 @@ const authenticatedController = [
         StripeController,
         AuthController,
         PublicController,
+        StalkerPublicController,
         MonitorController,
         EnterpriseController,
         NoAuthIntegrationsController,

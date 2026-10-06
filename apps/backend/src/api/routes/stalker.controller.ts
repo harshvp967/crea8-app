@@ -16,6 +16,9 @@ import {
   CreateStalkerProjectDto,
   UpdateStalkerKeywordDto,
   CreateStalkerViewDto,
+  CreateStalkerGroupDto,
+  CreateStalkerAlertRuleDto,
+  SaveStalkerCategoriesDto,
   StalkerDraftDto,
   StalkerMentionQueryDto,
   StalkerMentionStatusDto,
@@ -180,9 +183,93 @@ export class StalkerController {
   analytics(
     @GetOrgFromRequest() org: Organization,
     @Query('projectId') projectId: string,
-    @Query('date') date?: string
+    @Query('date') date?: string,
+    @Query('start') start?: string,
+    @Query('end') end?: string
   ) {
-    return this._stalkerService.analytics(org.id, projectId, date);
+    return this._stalkerService.analytics(org.id, projectId, date, {
+      start,
+      end,
+    });
+  }
+
+  @Get('/groups')
+  groups(
+    @GetOrgFromRequest() org: Organization,
+    @Query('projectId') projectId: string
+  ) {
+    return this._stalkerService.groups(org.id, projectId);
+  }
+
+  @Post('/groups')
+  createGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateStalkerGroupDto
+  ) {
+    return this._stalkerService.createGroup(org.id, body.projectId, body.name);
+  }
+
+  @Delete('/groups/:id')
+  deleteGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Query('projectId') projectId: string
+  ) {
+    return this._stalkerService.deleteGroup(org.id, projectId, id);
+  }
+
+  @Get('/authors')
+  authors(
+    @GetOrgFromRequest() org: Organization,
+    @Query('projectId') projectId: string
+  ) {
+    return this._stalkerService.authors(org.id, projectId);
+  }
+
+  @Post('/rules')
+  createRule(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateStalkerAlertRuleDto
+  ) {
+    return this._stalkerService.createAlertRule(
+      org.id,
+      body.projectId,
+      body.name,
+      body.filters as unknown as Record<string, unknown>
+    );
+  }
+
+  @Delete('/rules/:id')
+  deleteRule(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.deleteAlertRule(org.id, id);
+  }
+
+  @Get('/rules')
+  rules(
+    @GetOrgFromRequest() org: Organization,
+    @Query('projectId') projectId: string
+  ) {
+    return this._stalkerService.alertRules(org.id, projectId);
+  }
+
+  @Post('/projects/:id/categories')
+  saveCategories(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: SaveStalkerCategoriesDto
+  ) {
+    return this._stalkerService.saveCategories(org.id, id, body.categories);
+  }
+
+  @Delete('/projects/:id')
+  deleteProject(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.deleteProject(org.id, id);
   }
 
   @Get('/views')

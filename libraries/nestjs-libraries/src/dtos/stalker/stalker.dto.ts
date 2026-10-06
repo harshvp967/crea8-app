@@ -42,6 +42,15 @@ export class CreateStalkerKeywordDto {
   @IsOptional()
   @IsBoolean()
   linkedin?: boolean;
+
+  @IsOptional()
+  @IsString()
+  groupId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(400)
+  excludeAccounts?: string;
 }
 
 export class UpdateStalkerKeywordDto {
@@ -60,6 +69,15 @@ export class UpdateStalkerKeywordDto {
   @IsOptional()
   @IsBoolean()
   linkedin?: boolean;
+
+  @IsOptional()
+  @IsString()
+  groupId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(400)
+  excludeAccounts?: string;
 }
 
 export class StalkerKeywordInputDto {
@@ -200,6 +218,35 @@ export class StalkerIdentityDto {
   @IsString()
   @MaxLength(300)
   webhookUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  publicDashboard?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  digestEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  digestDismissed?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(23)
+  digestHour?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  digestTimezone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  digestGroupName?: string;
 }
 
 export class CreateStalkerProjectDto extends StalkerIdentityDto {
@@ -278,7 +325,7 @@ export class StalkerViewFiltersDto {
   sentiment?: string;
 
   @IsOptional()
-  @IsIn(['NEW', 'REPLIED', 'IGNORED'])
+  @IsIn(['NEW', 'REPLIED', 'IGNORED', 'DONE', 'FOLLOW_UP'])
   status?: string;
 
   @IsOptional()
@@ -293,6 +340,31 @@ export class StalkerViewFiltersDto {
   @IsOptional()
   @IsIn(['include'])
   offTopic?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  preset?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  start?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  end?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  sources?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  engagement?: string;
 }
 
 export class CreateStalkerViewDto {
@@ -340,7 +412,22 @@ export class StalkerMentionQueryDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(20)
+  start?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  end?: string;
+
+  @IsOptional()
+  @IsString()
   source?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  engagement?: string;
 
   @IsOptional()
   @IsString()
@@ -360,7 +447,7 @@ export class StalkerMentionQueryDto {
   sentiment?: string;
 
   @IsOptional()
-  @IsIn(['NEW', 'REPLIED', 'IGNORED'])
+  @IsIn(['NEW', 'REPLIED', 'IGNORED', 'DONE', 'FOLLOW_UP'])
   status?: string;
 
   @IsOptional()
@@ -397,8 +484,8 @@ export class StalkerMentionQueryDto {
 }
 
 export class StalkerMentionStatusDto {
-  @IsIn(['NEW', 'REPLIED', 'IGNORED'])
-  status: 'NEW' | 'REPLIED' | 'IGNORED';
+  @IsIn(['NEW', 'REPLIED', 'IGNORED', 'DONE', 'FOLLOW_UP'])
+  status: 'NEW' | 'REPLIED' | 'IGNORED' | 'DONE' | 'FOLLOW_UP';
 }
 
 export class StalkerDraftDto {
@@ -412,4 +499,47 @@ export class StalkerDraftDto {
 
   @IsIn(['post', 'quote'])
   mode: 'post' | 'quote';
+}
+
+export class CreateStalkerGroupDto {
+  @IsString()
+  @IsDefined()
+  projectId: string;
+
+  @IsString()
+  @IsDefined()
+  @MinLength(2)
+  @MaxLength(40)
+  name: string;
+}
+
+export class CreateStalkerAlertRuleDto {
+  @IsString()
+  @IsDefined()
+  projectId: string;
+
+  @IsString()
+  @IsDefined()
+  @MinLength(2)
+  @MaxLength(80)
+  name: string;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => StalkerViewFiltersDto)
+  filters: StalkerViewFiltersDto;
+}
+
+export class StalkerCategoryWriteDto extends StalkerCategoryInputDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+}
+
+export class SaveStalkerCategoriesDto {
+  @IsArray()
+  @ArrayMaxSize(12)
+  @ValidateNested({ each: true })
+  @Type(() => StalkerCategoryWriteDto)
+  categories: StalkerCategoryWriteDto[];
 }

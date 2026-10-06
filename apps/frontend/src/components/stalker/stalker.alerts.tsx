@@ -1,346 +1,432 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import clsx from 'clsx';
-import { Button } from '@gitroom/react/form/button';
-import { Input } from '@gitroom/react/form/input';
+import { useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useStalkerAlerts } from '@gitroom/frontend/components/stalker/stalker.hooks';
+import {
+  useStalkerAuthors,
+  useStalkerKeywords,
+  useStalkerRules,
+} from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import {
+  emptyFilters,
+  filtersToView,
+  MentionFilters,
+  StalkerFilters,
+} from '@gitroom/frontend/components/stalker/stalker.filters';
+import {
+  SAMPLE_AUTHORS,
+  SAMPLE_KEYWORDS,
+  SAMPLE_RULES,
+} from '@gitroom/frontend/components/stalker/stalker.sample';
 
-const selectClass =
-  'bg-[#141414] border border-[#2a2a2a] rounded-[10px] px-[12px] py-[8px] text-[13px]';
+const field =
+  'w-full rounded-[12px] border border-newBorder bg-newBgColorInner px-[12px] py-[10px] text-[14px] text-newTextColor outline-none focus:border-[#00D9FF]/50';
 
-type AlertRow = {
-  id: string;
-  kind: string;
-  channel: string;
-  status: string;
-  title: string;
-  body: string;
-  error?: string;
-  attempts?: number;
-  readAt?: string | null;
-  createdAt?: string;
+const ZONES = [
+  'UTC',
+  'America/New_York',
+  'America/Chicago',
+  'America/Los_Angeles',
+  'Europe/London',
+  'Europe/Paris',
+  'Asia/Calcutta',
+  'Asia/Singapore',
+  'Asia/Tokyo',
+  'Australia/Sydney',
+];
+
+const hourLabel = (hour: number) => {
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const value = hour % 12 || 12;
+  return `${value}:00 ${suffix}`;
 };
 
-const statusClass = (status: string) => {
-  if (status === 'SENT') return 'text-[#3DDC97]';
-  if (status === 'FAILED') return 'text-[#FF6B6B]';
-  return 'text-[#FFB020]';
+type Rule = {
+  id: string;
+  name: string;
+  enabled?: boolean;
+  filters?: Record<string, string>;
+};
+
+const summary = (filters?: Record<string, string>) => {
+  if (!filters) return '';
+  const parts = [
+    filters.sources,
+    filters.sentiment,
+    filters.from ? `from ${filters.from}` : '',
+    filters.engagement ? `engagement ${filters.engagement}` : '',
+  ].filter(Boolean);
+  return parts.join(' · ');
 };
 
 export const StalkerAlerts = () => {
   const fetch = useFetch();
   const toaster = useToaster();
-  const { project, refreshProjects } = useStalkerProject();
-  const { data, isLoading, mutate } = useStalkerAlerts(project?.id || null);
-  const [extra, setExtra] = useState<AlertRow[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const { project, projectId, status, sample, refreshProjects } = useStalkerProject();
+  const rulesQuery = useStalkerRules(sample ? null : projectId);
+  const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
+  const authorsQuery = useStalkerAuthors(sample ? null : projectId);
+  const [localRules, setLocalRules] = useState<Rule[]>(SAMPLE_RULES);
+  const [digestEnabled, setDigestEnabled] = useState(true);
+  const [digestDismissed, setDigestDismissed] = useState(false);
+  const [digestHour, setDigestHour] = useState(8);
+  const [digestTimezone, setDigestTimezone] = useState('UTC');
+  const [digestGroupName, setDigestGroupName] = useState('My brand');
+  const [configure, setConfigure] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('Negative X posts with traction');
+  const [filters, setFilters] = useState<MentionFilters>(emptyFilters());
   const [saving, setSaving] = useState(false);
-  const [retrying, setRetrying] = useState(false);
-  const [alertsEnabled, setAlertsEnabled] = useState(false);
-  const [alertEmail, setAlertEmail] = useState('');
-  const [alertScope, setAlertScope] = useState('URGENT');
-  const [alertDelivery, setAlertDelivery] = useState('INSTANT');
-  const [spikeEnabled, setSpikeEnabled] = useState(false);
-  const [spikeMultiplier, setSpikeMultiplier] = useState(2);
-  const [sentimentDropEnabled, setSentimentDropEnabled] = useState(false);
-  const [sentimentDropPoints, setSentimentDropPoints] = useState(20);
-  const [alertCooldownHours, setAlertCooldownHours] = useState(12);
 
-  useEffect(() => {
-    if (!project) {
+  const digestSignature = [
+    project?.id || '',
+    project?.digestEnabled,
+    project?.digestDismissed,
+    project?.digestHour,
+    project?.digestTimezone,
+    project?.digestGroupName,
+  ].join('|');
+  const [digestSignatureSeen, setDigestSignatureSeen] = useState(digestSignature);
+  if (digestSignatureSeen !== digestSignature) {
+    setDigestSignatureSeen(digestSignature);
+    setDigestEnabled(project?.digestEnabled !== false);
+    setDigestDismissed(!!project?.digestDismissed);
+    setDigestHour(typeof project?.digestHour === 'number' ? project.digestHour : 8);
+    setDigestTimezone(project?.digestTimezone || 'UTC');
+    setDigestGroupName(project?.digestGroupName || 'My brand');
+  }
+
+  const rules: Rule[] = sample
+    ? localRules
+    : Array.isArray(rulesQuery.data)
+      ? rulesQuery.data
+      : [];
+  const keywords = sample
+    ? SAMPLE_KEYWORDS
+    : Array.isArray(keywordsQuery.data)
+      ? keywordsQuery.data
+      : [];
+  const authors = sample
+    ? SAMPLE_AUTHORS
+    : Array.isArray(authorsQuery.data)
+      ? authorsQuery.data
+      : [];
+  const categories = project?.categories || [];
+  const email = project?.alertEmail || status?.ownerEmail || '';
+  const cap = status?.emailCap || 3;
+  const active = (digestEnabled && !digestDismissed ? 1 : 0) + rules.filter((rule) => rule.enabled !== false).length;
+  const zones = useMemo(
+    () => (ZONES.includes(digestTimezone) ? ZONES : [digestTimezone, ...ZONES]),
+    [digestTimezone]
+  );
+
+  const saveDigest = async (patch: Record<string, unknown>) => {
+    if (!project) return;
+    if (sample) {
+      if (typeof patch.digestEnabled === 'boolean') setDigestEnabled(patch.digestEnabled);
+      if (typeof patch.digestDismissed === 'boolean') setDigestDismissed(patch.digestDismissed);
+      if (typeof patch.digestHour === 'number') setDigestHour(patch.digestHour);
+      if (typeof patch.digestTimezone === 'string') setDigestTimezone(patch.digestTimezone);
+      if (typeof patch.digestGroupName === 'string') setDigestGroupName(patch.digestGroupName);
+      toaster.show('Daily digest updated');
       return;
     }
-    setAlertsEnabled(!!project.alertsEnabled);
-    setAlertEmail(project.alertEmail || '');
-    setAlertScope(project.alertScope || 'URGENT');
-    setAlertDelivery(project.alertDelivery || 'INSTANT');
-    setSpikeEnabled(!!project.spikeEnabled);
-    setSpikeMultiplier(project.spikeMultiplier || 2);
-    setSentimentDropEnabled(!!project.sentimentDropEnabled);
-    setSentimentDropPoints(project.sentimentDropPoints || 20);
-    setAlertCooldownHours(project.alertCooldownHours || 12);
-  }, [project]);
-
-  const page = data && !Array.isArray(data) ? data : null;
-  const firstPage: AlertRow[] = page?.alerts || (Array.isArray(data) ? data : []);
-  const alerts = [...firstPage, ...extra];
-
-  useEffect(() => {
-    setExtra([]);
-    setNextCursor(page?.nextCursor || null);
-  }, [page]);
-
-  const loadMore = async () => {
-    if (!project?.id || !nextCursor) {
-      return;
-    }
-    setLoadingMore(true);
-    const response = await fetch(
-      `/stalker/alerts?projectId=${project.id}&cursor=${encodeURIComponent(nextCursor)}`
-    );
-    const payload = await response.json().catch(() => null);
-    setLoadingMore(false);
-    const rows: AlertRow[] = Array.isArray(payload?.alerts) ? payload.alerts : [];
-    setExtra((current) => [...current, ...rows]);
-    setNextCursor(payload?.nextCursor || null);
-  };
-  const unread = alerts.filter(
-    (alert) => alert.channel === 'IN_APP' && !alert.readAt
-  ).length;
-
-  const save = async () => {
-    if (!project) {
-      return;
-    }
-    setSaving(true);
     const response = await fetch(`/stalker/projects/${project.id}`, {
       method: 'POST',
-      body: JSON.stringify({
-        alertsEnabled,
-        alertEmail,
-        alertScope,
-        alertDelivery,
-        spikeEnabled,
-        spikeMultiplier: Math.min(10, Math.max(2, Number(spikeMultiplier) || 2)),
-        sentimentDropEnabled,
-        sentimentDropPoints: Math.min(
-          80,
-          Math.max(5, Number(sentimentDropPoints) || 20)
-        ),
-        alertCooldownHours: Math.min(
-          168,
-          Math.max(1, Number(alertCooldownHours) || 12)
-        ),
-      }),
+      body: JSON.stringify(patch),
     });
-    setSaving(false);
     if (!response.ok) {
-      toaster.show('Could not save these alert rules', 'warning');
+      toaster.show('Could not update the daily digest', 'warning');
       return;
     }
     refreshProjects();
-    toaster.show('Alert rules saved', 'success');
   };
 
-  const retry = async () => {
-    if (!project) {
+  const createRule = async () => {
+    const clean = name.trim();
+    if (clean.length < 2 || !projectId) return;
+    const body = { projectId, name: clean, filters: filtersToView(filters) };
+    if (sample) {
+      setLocalRules((current) => [
+        ...current,
+        { id: `rule-${Date.now()}`, name: clean, enabled: true, filters: body.filters },
+      ]);
+      setCreating(false);
+      toaster.show('Alert created');
       return;
     }
-    setRetrying(true);
-    const response = await fetch('/stalker/alerts/retry', {
+    setSaving(true);
+    const response = await fetch('/stalker/rules', {
       method: 'POST',
-      body: JSON.stringify({ projectId: project.id }),
+      body: JSON.stringify(body),
     });
-    setRetrying(false);
+    setSaving(false);
     if (!response.ok) {
-      toaster.show('Could not retry alerts', 'warning');
+      toaster.show('Could not create that alert', 'warning');
       return;
     }
-    mutate();
-    toaster.show('Pending alerts were checked again', 'success');
+    setCreating(false);
+    setFilters(emptyFilters());
+    rulesQuery.mutate();
+    toaster.show('Alert created');
   };
 
-  const markRead = async (id: string) => {
-    await fetch(`/stalker/alerts/${id}/read`, { method: 'POST' });
-    mutate();
+  const removeRule = async (id: string) => {
+    if (sample) {
+      setLocalRules((current) => current.filter((rule) => rule.id !== id));
+      return;
+    }
+    await fetch(`/stalker/rules/${id}`, { method: 'DELETE' });
+    rulesQuery.mutate();
   };
 
   return (
-    <div className="flex max-w-[760px] flex-col gap-[16px]">
+    <div className="mx-auto flex w-full max-w-[860px] flex-col gap-[18px] px-[20px] py-[24px]">
       <div>
-        <h1 className="text-[28px] font-[600]">Alerts</h1>
-        <p className="mt-[6px] text-[14px] leading-[1.5] text-textItemBlur">
-          In-app alerts land here. Email uses the address below and the app mail
-          settings. A sent alert is not sent again. A failed email can be retried
-          up to three times.
+        <h1 className="text-[22px] font-[600]">
+          Alerts <span className="text-[14px] font-[500] text-textItemBlur">{active} active</span>
+        </h1>
+        <p className="mt-[6px] text-[14px] text-textItemBlur">
+          Digests and alerts share a limit of {cap} emails per day across your workspace. Resets at midnight UTC.
         </p>
       </div>
-      <div className="flex flex-col gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]">
-        <label className="flex items-center gap-[8px] text-[14px]">
-          <input
-            type="checkbox"
-            checked={alertsEnabled}
-            onChange={(event) => setAlertsEnabled(event.target.checked)}
-          />
-          Turn alerts on
-        </label>
-        <Input
-          label="Alert email"
-          translationKey="label_alert_email"
-          name="alertEmail"
-          disableForm={true}
-          value={alertEmail}
-          onChange={(event) => setAlertEmail(event.target.value)}
-          placeholder="you@example.com"
-        />
-        <div className="grid gap-[10px] sm:grid-cols-2">
-          <label className="flex flex-col gap-[6px] text-[14px]">
-            Which mentions
-            <select
-              aria-label="Alert scope"
-              className={selectClass}
-              value={alertScope}
-              onChange={(event) => setAlertScope(event.target.value)}
-            >
-              <option value="URGENT">Bug, complaint, or urgency 70+</option>
-              <option value="NEGATIVE">Negative mentions</option>
-              <option value="ALL">Every relevant mention</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-[6px] text-[14px]">
-            Email delivery
-            <select
-              aria-label="Alert delivery"
-              className={selectClass}
-              value={alertDelivery}
-              onChange={(event) => setAlertDelivery(event.target.value)}
-            >
-              <option value="INSTANT">Instant</option>
-              <option value="DIGEST">One digest per check</option>
-            </select>
-          </label>
-        </div>
-        <div className="flex flex-wrap items-center gap-[8px] text-[14px]">
-          <label className="inline-flex items-center gap-[8px]">
-            <input
-              type="checkbox"
-              checked={spikeEnabled}
-              onChange={(event) => setSpikeEnabled(event.target.checked)}
-            />
-            Volume spike: at least 4 mentions in 6 hours, and at least
-          </label>
-          <input
-            aria-label="Spike multiplier"
-            className="w-[64px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[8px] py-[6px] text-[13px]"
-            type="number"
-            min={2}
-            max={10}
-            value={spikeMultiplier}
-            onChange={(event) => setSpikeMultiplier(Number(event.target.value))}
-          />
-          <span>times the previous 6 hours</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-[8px] text-[14px]">
-          <label className="inline-flex items-center gap-[8px]">
-            <input
-              type="checkbox"
-              checked={sentimentDropEnabled}
-              onChange={(event) => setSentimentDropEnabled(event.target.checked)}
-            />
-            Sentiment drop: negative share rises by
-          </label>
-          <input
-            aria-label="Sentiment drop points"
-            className="w-[64px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[8px] py-[6px] text-[13px]"
-            type="number"
-            min={5}
-            max={80}
-            value={sentimentDropPoints}
-            onChange={(event) =>
-              setSentimentDropPoints(Number(event.target.value))
-            }
-          />
-          <span>points over 24 hours</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-[8px] text-[14px]">
-          <span>Cooldown</span>
-          <input
-            aria-label="Cooldown hours"
-            className="w-[72px] rounded-[10px] border border-[#2a2a2a] bg-[#141414] px-[8px] py-[6px] text-[13px]"
-            type="number"
-            min={1}
-            max={168}
-            value={alertCooldownHours}
-            onChange={(event) =>
-              setAlertCooldownHours(Number(event.target.value))
-            }
-          />
-          <span>hours before the same spike or sentiment alert can fire again</span>
-        </div>
-        <p className="text-[12px] text-textItemBlur">
-          Off-topic keyword hits are not alerted. Spike and sentiment alerts
-          email immediately. Mention emails follow Instant or Digest. Nothing
-          is sent until alerts are on and, for email, an address is saved.
-        </p>
-        <div className="flex flex-wrap gap-[8px]">
-          <Button type="button" loading={saving} onClick={save}>
-            Save rules
-          </Button>
-          <Button type="button" secondary loading={retrying} onClick={retry}>
-            Retry failed email
-          </Button>
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-[12px]">
-        <h2 className="text-[16px] font-[600]">Inbox</h2>
-        <span className="text-[13px] text-textItemBlur">
-          {unread ? `${unread} unread` : 'No unread in-app alerts'}
-        </span>
-      </div>
-      {isLoading ? (
-        <p className="text-[14px] text-textItemBlur">Loading alerts…</p>
-      ) : null}
-      {!isLoading && !alerts.length ? (
-        <p className="text-[14px] text-textItemBlur">
-          No alerts yet. Save the rules, then use Check now in Settings. New
-          matches, volume spikes, and sentiment drops show up here with their
-          delivery state.
-        </p>
-      ) : null}
-      <ul className="flex flex-col gap-[8px]">
-        {alerts.map((alert) => (
-          <li
-            key={alert.id}
-            className={clsx(
-              'flex flex-col gap-[6px] rounded-[12px] border bg-newBgColorInner px-[14px] py-[10px]',
-              alert.channel === 'IN_APP' && !alert.readAt
-                ? 'border-[#00D9FF]/40'
-                : 'border-newBorder'
-            )}
+      <section>
+        <h2 className="text-[16px] font-[600]">Daily digest</h2>
+        <p className="mt-[4px] text-[13px] text-textItemBlur">A morning summary of the last 24 hours.</p>
+        {digestDismissed ? (
+          <button
+            type="button"
+            className="mt-[12px] rounded-[16px] border border-dashed border-newBorder px-[16px] py-[18px] text-[14px]"
+            onClick={() => saveDigest({ digestDismissed: false, digestEnabled: true })}
           >
-            <div className="flex flex-wrap items-center gap-[8px] text-[13px]">
-              <span className="font-[600]">{alert.title}</span>
-              <span className="text-textItemBlur">{alert.kind}</span>
-              <span className="text-textItemBlur">{alert.channel}</span>
-              <span className={statusClass(alert.status)}>{alert.status}</span>
-              <span className="text-textItemBlur">
-                {alert.createdAt
-                  ? new Date(alert.createdAt).toLocaleString()
-                  : ''}
-              </span>
+            Restore daily digest
+          </button>
+        ) : (
+          <div className="mt-[12px] flex flex-wrap items-center justify-between gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner px-[16px] py-[14px]">
+            <div>
+              <p className="text-[14px] font-[600]">Daily digest</p>
+              <p className="text-[13px] text-textItemBlur">
+                Every day at {hourLabel(digestHour)} · {digestTimezone}
+                {email ? ` · ${email}` : ''} · {digestGroupName}
+              </p>
             </div>
-            <p className="whitespace-pre-wrap text-[13px] leading-[1.5] text-textItemBlur">
-              {alert.body}
-            </p>
-            {alert.error ? (
-              <p className="text-[12px] text-[#FF6B6B]">{alert.error}</p>
-            ) : null}
-            {alert.channel === 'IN_APP' && !alert.readAt ? (
+            <div className="flex items-center gap-[8px]">
               <button
                 type="button"
-                className="self-start text-[12px] text-[#00D9FF] underline"
-                onClick={() => markRead(alert.id)}
+                role="switch"
+                aria-checked={digestEnabled}
+                aria-label="Daily digest"
+                className={`relative h-[24px] w-[42px] rounded-full border ${
+                  digestEnabled ? 'border-[#00D9FF]/50 bg-[#00D9FF]/20' : 'border-newBorder'
+                }`}
+                onClick={() => saveDigest({ digestEnabled: !digestEnabled })}
               >
-                Mark read
+                <span
+                  className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-newTextColor transition-all ${
+                    digestEnabled ? 'start-[20px]' : 'start-[2px]'
+                  }`}
+                />
               </button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-      {nextCursor ? (
-        <button
-          type="button"
-          className="self-start text-[13px] text-[#00D9FF]"
-          disabled={loadingMore}
-          onClick={loadMore}
-        >
-          {loadingMore ? 'Loading…' : 'Load more'}
-        </button>
+              <button
+                type="button"
+                aria-label="Configure daily digest"
+                className="rounded-full border border-newBorder px-[10px] py-[6px] text-[12px]"
+                onClick={() => setConfigure(true)}
+              >
+                Configure
+              </button>
+              <button
+                type="button"
+                aria-label="Remove daily digest"
+                className="rounded-full border border-newBorder px-[10px] py-[6px] text-[12px] text-textItemBlur"
+                onClick={() => saveDigest({ digestDismissed: true, digestEnabled: false })}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+      <section>
+        <div className="flex items-center justify-between gap-[12px]">
+          <h2 className="text-[16px] font-[600]">Custom alerts</h2>
+          <button
+            type="button"
+            className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner"
+            onClick={() => {
+              setName('Negative X posts with traction');
+              setFilters(emptyFilters());
+              setCreating(true);
+            }}
+          >
+            + New alert
+          </button>
+        </div>
+        <p className="mt-[4px] text-[13px] text-textItemBlur">
+          Get an email the moment a mention matches your filter.
+        </p>
+        {!rules.length ? (
+          <div className="mt-[12px] rounded-[16px] border border-dashed border-newBorder px-[16px] py-[28px] text-center">
+            <p className="text-[14px] font-[600]">No custom alerts yet.</p>
+            <p className="mt-[6px] text-[13px] text-textItemBlur">
+              Fire an email when something specific happens — e.g. a negative X post crossing 10 likes.
+            </p>
+          </div>
+        ) : (
+          <ul className="mt-[12px] flex flex-col gap-[8px]">
+            {rules.map((rule) => (
+              <li
+                key={rule.id}
+                className="flex items-center justify-between gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner px-[16px] py-[12px]"
+              >
+                <div>
+                  <p className="text-[14px] font-[600]">{rule.name}</p>
+                  <p className="text-[12px] text-textItemBlur">
+                    {summary(rule.filters)}
+                    {email ? ` · ${email}` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="text-[13px] text-textItemBlur"
+                  onClick={() => removeRule(rule.id)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {configure ? (
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-auto bg-black/40 p-[24px]">
+          <div className="w-full max-w-[440px] rounded-[20px] border border-newBorder bg-newBgColorInner p-[20px]">
+            <div className="mb-[12px] flex items-center justify-between">
+              <h2 className="text-[18px] font-[600]">Daily digest</h2>
+              <button type="button" aria-label="Close" onClick={() => setConfigure(false)}>
+                ×
+              </button>
+            </div>
+            <label className="block text-[13px] font-[600]">
+              Keywords
+              <select
+                className={`${field} mt-[6px]`}
+                value={digestGroupName}
+                onChange={(event) => setDigestGroupName(event.target.value)}
+              >
+                {['My brand', 'Competitors', 'All keywords'].map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="mt-[12px] block text-[13px] font-[600]">
+              Delivery time
+              <select
+                className={`${field} mt-[6px]`}
+                value={digestHour}
+                onChange={(event) => setDigestHour(Number(event.target.value))}
+              >
+                {Array.from({ length: 24 }, (_, hour) => (
+                  <option key={hour} value={hour}>
+                    {hourLabel(hour)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="mt-[12px] block text-[13px] font-[600]">
+              Time zone
+              <select
+                className={`${field} mt-[6px]`}
+                value={digestTimezone}
+                onChange={(event) => setDigestTimezone(event.target.value)}
+              >
+                {zones.map((zone) => (
+                  <option key={zone} value={zone}>
+                    {zone}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="mt-[16px] flex justify-end gap-[8px]">
+              <button
+                type="button"
+                className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px]"
+                onClick={() => setConfigure(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner"
+                onClick={() => {
+                  saveDigest({ digestHour, digestTimezone, digestGroupName, digestEnabled: true });
+                  setConfigure(false);
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {creating ? (
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-auto bg-black/40 p-[24px]">
+          <div className="w-full max-w-[640px] rounded-[20px] border border-newBorder bg-newBgColorInner p-[20px]">
+            <div className="mb-[8px] flex items-start justify-between">
+              <div>
+                <h2 className="text-[18px] font-[600]">New alert</h2>
+                <p className="mt-[4px] text-[13px] text-textItemBlur">
+                  Email you the moment a mention matches these filters.
+                </p>
+              </div>
+              <button type="button" aria-label="Close" onClick={() => setCreating(false)}>
+                ×
+              </button>
+            </div>
+            <label className="mt-[12px] block text-[13px] font-[600]">
+              Name
+              <input className={`${field} mt-[6px]`} value={name} onChange={(event) => setName(event.target.value)} />
+            </label>
+            <p className="mb-[8px] mt-[14px] text-[13px] font-[600]">Filters</p>
+            <StalkerFilters
+              filters={filters}
+              onChange={setFilters}
+              keywords={keywords}
+              categories={categories}
+              authors={authors}
+            />
+            <label className="mt-[14px] block text-[13px] font-[600]">
+              Send to
+              <input className={`${field} mt-[6px]`} value={email} readOnly />
+            </label>
+            <p className="mt-[8px] text-[12px] text-textItemBlur">
+              Alerts are sent to the workspace owner. Digests and alerts share a limit of {cap} emails per day, resetting at midnight UTC.
+            </p>
+            <div className="mt-[16px] flex justify-end gap-[8px]">
+              <button
+                type="button"
+                className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px]"
+                onClick={() => setCreating(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner disabled:opacity-40"
+                disabled={saving || name.trim().length < 2}
+                onClick={createRule}
+              >
+                Create alert
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );
