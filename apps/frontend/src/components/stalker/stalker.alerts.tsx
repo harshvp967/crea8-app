@@ -36,6 +36,9 @@ export const StalkerAlerts = () => {
   const toaster = useToaster();
   const { project, refreshProjects } = useStalkerProject();
   const { data, isLoading, mutate } = useStalkerAlerts(project?.id || null);
+  const [extra, setExtra] = useState<AlertRow[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
@@ -63,7 +66,29 @@ export const StalkerAlerts = () => {
     setAlertCooldownHours(project.alertCooldownHours || 12);
   }, [project]);
 
-  const alerts: AlertRow[] = Array.isArray(data) ? data : [];
+  const page = data && !Array.isArray(data) ? data : null;
+  const firstPage: AlertRow[] = page?.alerts || (Array.isArray(data) ? data : []);
+  const alerts = [...firstPage, ...extra];
+
+  useEffect(() => {
+    setExtra([]);
+    setNextCursor(page?.nextCursor || null);
+  }, [page]);
+
+  const loadMore = async () => {
+    if (!project?.id || !nextCursor) {
+      return;
+    }
+    setLoadingMore(true);
+    const response = await fetch(
+      `/stalker/alerts?projectId=${project.id}&cursor=${encodeURIComponent(nextCursor)}`
+    );
+    const payload = await response.json().catch(() => null);
+    setLoadingMore(false);
+    const rows: AlertRow[] = Array.isArray(payload?.alerts) ? payload.alerts : [];
+    setExtra((current) => [...current, ...rows]);
+    setNextCursor(payload?.nextCursor || null);
+  };
   const unread = alerts.filter(
     (alert) => alert.channel === 'IN_APP' && !alert.readAt
   ).length;
@@ -307,6 +332,16 @@ export const StalkerAlerts = () => {
           </li>
         ))}
       </ul>
+      {nextCursor ? (
+        <button
+          type="button"
+          className="self-start text-[13px] text-[#00D9FF]"
+          disabled={loadingMore}
+          onClick={loadMore}
+        >
+          {loadingMore ? 'Loading…' : 'Load more'}
+        </button>
+      ) : null}
     </div>
   );
 };

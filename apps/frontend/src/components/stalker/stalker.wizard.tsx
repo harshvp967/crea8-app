@@ -56,7 +56,7 @@ type KeywordDraft = {
 const emptyKeyword = (): KeywordDraft => ({
   phrase: '',
   youtube: true,
-  reddit: true,
+  reddit: false,
   x: false,
   linkedin: false,
 });
@@ -337,24 +337,24 @@ export const StalkerWizard = () => {
                   const source = sourceById.get(id);
                   const available = !!source?.available;
                   const on = !!keyword[id as keyof KeywordDraft];
+                  const note = available
+                    ? ''
+                    : id === 'linkedin'
+                      ? 'Coming soon'
+                      : id === 'reddit' || id === 'x'
+                        ? 'Needs API access'
+                        : source?.detail || 'Unavailable';
                   return (
-                    <span
-                      key={id}
-                      title={
-                        available
-                          ? source?.label
-                          : source?.detail || 'Not available yet'
-                      }
-                    >
+                    <span key={id} title={note || source?.label || id}>
                       <button
                         type="button"
                         disabled={!available}
                         className={clsx(
                           'rounded-full border px-[10px] py-[4px] text-[12px]',
-                          !available && 'cursor-not-allowed opacity-40',
+                          !available && 'cursor-not-allowed opacity-60',
                           on && available
-                            ? 'border-[#00D9FF]/50 bg-[#00D9FF]/15 text-[#00D9FF]'
-                            : 'border-[#2a2a2a] text-textItemBlur'
+                            ? 'border-[#00D9FF]/40 bg-[#00D9FF]/10 text-[#00D9FF]'
+                            : 'border-newBorder text-textItemBlur'
                         )}
                         onClick={() =>
                           updateKeyword(index, {
@@ -363,6 +363,7 @@ export const StalkerWizard = () => {
                         }
                       >
                         {source?.label || id}
+                        {note ? ` · ${note}` : ''}
                       </button>
                     </span>
                   );

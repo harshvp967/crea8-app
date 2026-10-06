@@ -15,6 +15,7 @@ export const StalkerSettings = () => {
   const toaster = useToaster();
   const { status, project, refreshProjects } = useStalkerProject();
   const [running, setRunning] = useState(false);
+  const [lastCheck, setLastCheck] = useState('');
   const [saving, setSaving] = useState(false);
   const [brandName, setBrandName] = useState('');
   const [aliases, setAliases] = useState('');
@@ -51,13 +52,33 @@ export const StalkerSettings = () => {
 
   const checkNow = async () => {
     setRunning(true);
+    setLastCheck('');
     const response = await fetch('/stalker/poll', { method: 'POST' });
+    const payload = (await response.json().catch(() => null)) as {
+      totals?: { found?: number; stored?: number; duplicates?: number; offTopic?: number };
+      sources?: Array<{ ok?: boolean; error?: string }>;
+    } | null;
     setRunning(false);
-    if (!response.ok) {
+    const totals = payload?.totals;
+    if (!response.ok || !totals) {
       toaster.show('The check did not finish', 'warning');
+      setLastCheck('The check did not finish.');
       return;
     }
-    toaster.show('Check finished. Open Mentions to see what was found.', 'success');
+    const summary = `Found ${totals.found ?? 0}, stored ${totals.stored ?? 0} new (${totals.duplicates ?? 0} duplicates)${
+      totals.offTopic ? `, ${totals.offTopic} off-topic` : ''
+    }`;
+    const failed = (payload?.sources || []).filter((source) => source && source.ok === false);
+    const errors = [
+      ...new Set(
+        failed
+          .map((source) => source.error)
+          .filter((error): error is string => typeof error === 'string' && error.length > 0)
+      ),
+    ];
+    const detail = [summary, ...errors].join(' · ');
+    setLastCheck(detail);
+    toaster.show(errors[0] || summary, errors.length ? 'warning' : 'success');
   };
 
   const save = async () => {
@@ -191,10 +212,18 @@ export const StalkerSettings = () => {
           </li>
         ))}
       </ul>
-      <div>
+      <div className="flex flex-col items-start gap-[8px]">
         <Button type="button" loading={running} onClick={checkNow}>
           Check now
         </Button>
+        {running ? (
+          <p className="text-[13px] text-textItemBlur">Checking sources…</p>
+        ) : null}
+        {lastCheck ? (
+          <p className="max-w-[640px] text-[13px] text-textItemBlur" role="status">
+            {lastCheck}
+          </p>
+        ) : null}
       </div>
     </div>
   );
