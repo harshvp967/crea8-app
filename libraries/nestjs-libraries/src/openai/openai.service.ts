@@ -333,13 +333,15 @@ Clips must not overlap. Write the title and the post in this language, whatever 
 
   async classifyStalkerMentions(
     items: { id: string; text: string }[],
-    categories: { name: string; description: string }[]
+    categories: { name: string; description: string }[],
+    brand: { name: string; aliases: string; description: string }
   ): Promise<
     {
       id: string;
       categoryName: string;
       sentiment: string;
       urgency: number;
+      relevant: boolean;
     }[]
   > {
     if (!this.hasApiKey() || !items.length || !categories.length) {
@@ -358,7 +360,17 @@ Clips must not overlap. Write the title and the post in this language, whatever 
         messages: [
           {
             role: 'system',
-            content: `Classify each social mention into exactly one of the project categories below. categoryName must be copied from that list. sentiment is POSITIVE, NEGATIVE, or NEUTRAL. urgency is 0-100. Return every id you were given. Do not invent mentions.\n\n${allowed}`,
+            content: `You screen social mentions for one brand, then classify the ones that are about it.
+
+Brand: ${brand.name || 'Unknown'}
+Aliases: ${brand.aliases || 'none'}
+Description: ${brand.description || 'none'}
+
+relevant is false when the text is a keyword collision about a different product, person, or topic. relevant is true when the text is about this brand, its product, or someone asking about it.
+
+Classify each relevant mention into exactly one category below. categoryName must be copied from that list. If relevant is false, still copy a category name from the list (the first one is fine). sentiment is POSITIVE, NEGATIVE, or NEUTRAL. urgency is 0-100, and higher when the mention is a bug, complaint, or needs a response soon. Return every id you were given. Do not invent mentions.
+
+${allowed}`,
           },
           {
             role: 'user',
@@ -378,6 +390,7 @@ Clips must not overlap. Write the title and the post in this language, whatever 
                 categoryName: z.string(),
                 sentiment: z.enum(['POSITIVE', 'NEGATIVE', 'NEUTRAL']),
                 urgency: z.number(),
+                relevant: z.boolean(),
               })
             ),
           }),
@@ -390,13 +403,15 @@ Clips must not overlap. Write the title and the post in this language, whatever 
       item.id &&
       item.categoryName &&
       item.sentiment &&
-      typeof item.urgency === 'number'
+      typeof item.urgency === 'number' &&
+      typeof item.relevant === 'boolean'
         ? [
             {
               id: item.id,
               categoryName: item.categoryName,
               sentiment: item.sentiment,
               urgency: item.urgency,
+              relevant: item.relevant,
             },
           ]
         : []

@@ -31,6 +31,13 @@ export type StalkerProjectRecord = {
   handleFacebook?: string;
   alertEmail?: string;
   alertsEnabled?: boolean;
+  alertScope?: 'URGENT' | 'NEGATIVE' | 'ALL';
+  alertDelivery?: 'INSTANT' | 'DIGEST';
+  spikeEnabled?: boolean;
+  spikeMultiplier?: number;
+  sentimentDropEnabled?: boolean;
+  sentimentDropPoints?: number;
+  alertCooldownHours?: number;
   webhookUrl?: string;
   categories?: Array<{ id: string; name: string; description: string }>;
 };

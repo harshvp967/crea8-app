@@ -12,7 +12,7 @@ export class LinkedinStalkerSource implements StalkerSourceProvider {
   label = 'LinkedIn';
   filter = 'LINKEDIN';
 
-  integrationIdentifier() {
+  integrationIdentifier(): string | null {
     return null;
   }
 
@@ -21,7 +21,7 @@ export class LinkedinStalkerSource implements StalkerSourceProvider {
   }
 
   statusDetail() {
-    return 'Not available yet';
+    return 'Coming soon. LinkedIn has no official keyword search for the posting token.';
   }
 
   buildQuery(input: StalkerSearchTerms) {

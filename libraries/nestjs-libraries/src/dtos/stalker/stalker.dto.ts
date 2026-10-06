@@ -142,6 +142,43 @@ export class StalkerIdentityDto {
   alertsEnabled?: boolean;
 
   @IsOptional()
+  @IsIn(['URGENT', 'NEGATIVE', 'ALL'])
+  alertScope?: 'URGENT' | 'NEGATIVE' | 'ALL';
+
+  @IsOptional()
+  @IsIn(['INSTANT', 'DIGEST'])
+  alertDelivery?: 'INSTANT' | 'DIGEST';
+
+  @IsOptional()
+  @IsBoolean()
+  spikeEnabled?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(2)
+  @Max(10)
+  spikeMultiplier?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  sentimentDropEnabled?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(5)
+  @Max(80)
+  sentimentDropPoints?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(168)
+  alertCooldownHours?: number;
+
+  @IsOptional()
   @IsString()
   @MaxLength(300)
   webhookUrl?: string;
@@ -234,6 +271,10 @@ export class StalkerViewFiltersDto {
   @IsOptional()
   @IsIn(['BRAND', 'ALIAS', 'HANDLE', 'KEYWORD'])
   match?: string;
+
+  @IsOptional()
+  @IsIn(['include'])
+  offTopic?: string;
 }
 
 export class CreateStalkerViewDto {
@@ -319,6 +360,10 @@ export class StalkerMentionQueryDto {
   @IsOptional()
   @IsIn(['BRAND', 'ALIAS', 'HANDLE', 'KEYWORD'])
   match?: string;
+
+  @IsOptional()
+  @IsIn(['include'])
+  offTopic?: string;
 }
 
 export class StalkerMentionStatusDto {

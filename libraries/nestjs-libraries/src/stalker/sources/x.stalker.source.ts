@@ -10,7 +10,7 @@ export class XStalkerSource implements StalkerSourceProvider {
   label = 'X';
   filter = 'X';
 
-  integrationIdentifier() {
+  integrationIdentifier(): string | null {
     return null;
   }
 
@@ -19,7 +19,9 @@ export class XStalkerSource implements StalkerSourceProvider {
   }
 
   statusDetail(available: boolean) {
-    return available ? 'Bearer token set' : 'Not connected';
+    return available
+      ? 'Official recent search'
+      : 'Coming soon until an official X bearer token is set';
   }
 
   buildQuery(input: StalkerSearchTerms) {

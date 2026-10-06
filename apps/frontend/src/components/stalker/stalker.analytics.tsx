@@ -31,7 +31,7 @@ const Bars = ({
               <span className="truncate text-textItemBlur">{row.label}</span>
               <span className="h-[8px] overflow-hidden rounded-full bg-[#1c1c1c]">
                 <span
-                  className="block h-full rounded-full bg-[#00D9FF]"
+                  className="block h-full rounded-full bg-[#00D9FF]/40"
                   style={{ width: `${Math.round((row.count / max) * 100)}%` }}
                 />
               </span>
@@ -53,6 +53,22 @@ export const StalkerAnalytics = () => {
   const bySentiment = Array.isArray(data?.bySentiment) ? data.bySentiment : [];
   const overTime = Array.isArray(data?.overTime) ? data.overTime : [];
   const accounts = Array.isArray(data?.accounts) ? data.accounts : [];
+  const byKeyword = Array.isArray(data?.byKeyword) ? data.byKeyword : [];
+  const byTheme = Array.isArray(data?.byTheme) ? data.byTheme : [];
+  const totals = data?.totals || {
+    mentions: 0,
+    positive: 0,
+    negative: 0,
+    neutral: 0,
+  };
+  const timelineMax = Math.max(
+    1,
+    ...overTime.map((row: { count: number }) => row.count)
+  );
+  const share = (count: number) =>
+    totals.mentions
+      ? `${Math.round((count / totals.mentions) * 100)}%`
+      : '0%';
 
   return (
     <div className="flex flex-col gap-[16px]">
@@ -76,6 +92,41 @@ export const StalkerAnalytics = () => {
       {isLoading ? (
         <p className="text-[14px] text-textItemBlur">Loading analytics…</p>
       ) : null}
+      <div className="grid gap-[12px] sm:grid-cols-4">
+        {[
+          ['Mentions', totals.mentions],
+          ['Positive', `${totals.positive} · ${share(totals.positive)}`],
+          ['Neutral', `${totals.neutral} · ${share(totals.neutral)}`],
+          ['Negative', `${totals.negative} · ${share(totals.negative)}`],
+        ].map(([label, value]) => (
+          <section
+            key={label}
+            className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]"
+          >
+            <p className="text-[12px] text-textItemBlur">{label}</p>
+            <p className="mt-[6px] text-[22px] font-[600]">{value}</p>
+          </section>
+        ))}
+      </div>
+      <section className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]">
+        <h2 className="mb-[12px] text-[16px] font-[600]">Volume over time</h2>
+        {!overTime.length ? (
+          <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
+        ) : (
+          <div className="flex h-[88px] items-end gap-[4px]" aria-label="Volume over time">
+            {overTime.slice(-30).map((row: { date: string; count: number }) => (
+              <span
+                key={row.date}
+                title={`${row.date}: ${row.count}`}
+                className="w-[10px] rounded-t-[3px] bg-[#00D9FF]/40"
+                style={{
+                  height: `${Math.max(4, Math.round((row.count / timelineMax) * 88))}px`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </section>
       <div className="grid gap-[12px] xl:grid-cols-2">
         <Bars
           title="By source"
@@ -92,16 +143,23 @@ export const StalkerAnalytics = () => {
           }))}
         />
         <Bars
-          title="By sentiment"
+          title="Sentiment mix"
           rows={bySentiment.map((row: { sentiment: string; count: number }) => ({
-            label: labelOf(row.sentiment),
+            label: `${labelOf(row.sentiment)} · ${share(row.count)}`,
             count: row.count,
           }))}
         />
         <Bars
-          title="Mentions over time"
-          rows={overTime.map((row: { date: string; count: number }) => ({
-            label: row.date,
+          title="Top keywords"
+          rows={byKeyword.map((row: { phrase: string; count: number }) => ({
+            label: row.phrase,
+            count: row.count,
+          }))}
+        />
+        <Bars
+          title="Top themes"
+          rows={byTheme.map((row: { title: string; count: number }) => ({
+            label: row.title,
             count: row.count,
           }))}
         />
