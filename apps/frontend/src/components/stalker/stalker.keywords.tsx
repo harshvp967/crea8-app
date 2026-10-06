@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
@@ -10,6 +11,7 @@ import {
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import { ReconnectText, StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
+import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
   SAMPLE_GROUPS,
   SAMPLE_KEYWORDS,
@@ -19,10 +21,10 @@ const field =
   'w-full rounded-[12px] border border-newBorder bg-newBgColorInner px-[12px] py-[10px] text-[14px] text-newTextColor outline-none focus:border-[#00D9FF]/50';
 
 const SOURCES = [
-  { id: 'x', label: 'X', key: 'listenX' as const, icon: 'X' },
-  { id: 'reddit', label: 'Reddit', key: 'listenReddit' as const, icon: 'REDDIT' },
-  { id: 'youtube', label: 'YouTube', key: 'listenYoutube' as const, icon: 'YOUTUBE' },
-  { id: 'linkedin', label: 'LinkedIn', key: 'listenLinkedin' as const, icon: 'LINKEDIN' },
+  { id: 'x', label: sourceLabel('x'), key: 'listenX' as const, icon: 'X' },
+  { id: 'reddit', label: sourceLabel('reddit'), key: 'listenReddit' as const, icon: 'REDDIT' },
+  { id: 'youtube', label: sourceLabel('youtube'), key: 'listenYoutube' as const, icon: 'YOUTUBE' },
+  { id: 'linkedin', label: sourceLabel('linkedin'), key: 'listenLinkedin' as const, icon: 'LINKEDIN' },
 ];
 
 type Keyword = {
@@ -40,6 +42,8 @@ type Keyword = {
   lastScan?: string | null;
   lastError?: string | null;
   nextScanAt?: string | null;
+  paused?: boolean;
+  brand?: boolean;
   scanning?: boolean;
 };
 
@@ -142,17 +146,18 @@ export const StalkerKeywords = () => {
   const [rowMenu, setRowMenu] = useState<string | null>(null);
   const [groupName, setGroupName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Keyword | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
+  const { mutate: mutateKeys } = useSWRConfig();
 
   const groups: Group[] = sample
     ? localGroups
     : Array.isArray(groupsQuery.data)
       ? groupsQuery.data
       : [];
-  const keywords: Keyword[] = sample
-    ? localKeywords
-    : Array.isArray(keywordsQuery.data)
-      ? keywordsQuery.data
-      : [];
+  const keywords: Keyword[] = (
+    sample ? localKeywords : Array.isArray(keywordsQuery.data) ? keywordsQuery.data : []
+  ).filter((keyword: Keyword) => !hiddenIds.includes(keyword.id));
 
   const sourceById = useMemo(
     () => new Map((status?.sources || []).map((source) => [source.id, source])),
@@ -178,12 +183,12 @@ export const StalkerKeywords = () => {
       setAddOpen(true);
     }
   }
-  const resolvedGroup =
-    groupId || groups.find((group) => group.name === 'My brand')?.id || groups[0]?.id || '';
+  // The group is an explicit choice (no silent "My brand" default).
+  const resolvedGroup = groups.some((group) => group.id === groupId) ? groupId : '';
 
   const openAdd = (group?: string) => {
     setPresetGroup(group || '');
-    setGroupId(group || groups.find((item) => item.name === 'My brand')?.id || groups[0]?.id || '');
+    setGroupId(group || '');
     setPhrase('');
     setExclude('');
     setSourcesOn({ youtube: true, reddit: false, x: false, linkedin: false });
@@ -198,6 +203,10 @@ export const StalkerKeywords = () => {
   const addKeyword = async () => {
     const clean = phrase.trim();
     if (clean.length < 2) return;
+    if (!resolvedGroup) {
+      toaster.show('Choose a group for this keyword', 'warning');
+      return;
+    }
     if (sample) {
       setLocalKeywords((current) => [
         ...current,
@@ -236,7 +245,9 @@ export const StalkerKeywords = () => {
     });
     setSaving(false);
     if (!response.ok) {
-      toaster.show('Could not add that keyword', 'warning');
+      const body = await response.json().catch(() => null);
+      const message = Array.isArray(body?.message) ? body.message[0] : body?.message;
+      toaster.show(message || 'Could not add that keyword', 'warning');
       return;
     }
     setAddOpen(false);
@@ -284,13 +295,44 @@ export const StalkerKeywords = () => {
     }
   };
 
+  const revalidateFeeds = () =>
+    mutateKeys(
+      (key) =>
+        typeof key === 'string' &&
+        (key.startsWith('/stalker/mentions') ||
+          key.startsWith('/stalker/keywords') ||
+          key.startsWith('/stalker/analytics'))
+    );
+
   const removeKeyword = async (id: string) => {
+    setConfirmDelete(null);
     if (sample) {
       setLocalKeywords((current) => current.filter((item) => item.id !== id));
       return;
     }
-    await fetch(`/stalker/keywords/${id}`, { method: 'DELETE' });
-    refresh();
+    // Optimistic: hide the row now, restore it if the delete fails.
+    setHiddenIds((current) => [...current, id]);
+    const response = await fetch(`/stalker/keywords/${id}`, { method: 'DELETE' }).catch(
+      () => null
+    );
+    if (!response || (!response.ok && response.status !== 404)) {
+      setHiddenIds((current) => current.filter((item) => item !== id));
+      toaster.show('Could not delete that keyword. Try again', 'warning');
+      return;
+    }
+    toaster.show('Keyword deleted');
+    await revalidateFeeds();
+    setHiddenIds((current) => current.filter((item) => item !== id));
+  };
+
+  const resumeKeyword = (keyword: Keyword) => {
+    const first = ['youtube', 'x', 'reddit'].find((id) => !note(id)) || 'youtube';
+    patchKeyword(keyword, {
+      youtube: first === 'youtube',
+      reddit: first === 'reddit',
+      x: first === 'x',
+      linkedin: false,
+    });
   };
 
   const addGroup = async () => {
@@ -397,7 +439,23 @@ export const StalkerKeywords = () => {
                   <tbody>
                     {rows.map((keyword) => (
                       <tr key={keyword.id} className="border-t border-newBorder">
-                        <td className="px-[16px] py-[12px] font-[600]">{keyword.phrase}</td>
+                        <td className="px-[16px] py-[12px] font-[600]">
+                          {keyword.phrase}
+                          {keyword.paused ? (
+                            <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[11px] font-[500] text-textItemBlur">
+                              <span className="rounded-full border border-dashed border-newBorder px-[8px] py-[1px]">
+                                Paused
+                              </span>
+                              <button
+                                type="button"
+                                className="font-[600] text-newTextColor underline decoration-[#00D9FF]/60 underline-offset-[3px]"
+                                onClick={() => resumeKeyword(keyword)}
+                              >
+                                Resume
+                              </button>
+                            </span>
+                          ) : null}
+                        </td>
                         <td className="px-[12px] py-[12px]">
                           <span className="inline-flex items-center gap-[6px]">
                             {SOURCES.map((source) =>
@@ -502,7 +560,9 @@ export const StalkerKeywords = () => {
                           ) : null}
                           {scanning || keyword.scanning || previewScan === 'running' ? null : (
                             <span className="mt-[4px] block text-[11px]">
-                              {nextScanLabel(keyword.nextScanAt)}
+                              {keyword.paused
+                                ? 'Paused — no sources'
+                                : nextScanLabel(keyword.nextScanAt)}
                             </span>
                           )}
                         </td>
@@ -540,7 +600,7 @@ export const StalkerKeywords = () => {
                                 type="button"
                                 className="rounded-[8px] px-[8px] py-[6px] text-start text-[13px] text-[#eb4747]"
                                 onClick={() => {
-                                  removeKeyword(keyword.id);
+                                  setConfirmDelete(keyword);
                                   setRowMenu(null);
                                 }}
                               >
@@ -655,6 +715,9 @@ export const StalkerKeywords = () => {
                 value={resolvedGroup}
                 onChange={(event) => setGroupId(event.target.value)}
               >
+                <option value="" disabled>
+                  Choose a group (My brand, Competitors…)
+                </option>
                 {groups.map((group) => (
                   <option key={group.id} value={group.id}>
                     {group.name}
@@ -670,10 +733,42 @@ export const StalkerKeywords = () => {
               <button
                 type="button"
                 className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner disabled:opacity-40"
-                disabled={saving || phrase.trim().length < 2}
+                disabled={saving || phrase.trim().length < 2 || !resolvedGroup}
                 onClick={addKeyword}
               >
                 Add keyword
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmDelete ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-[24px]"
+        >
+          <div className="mt-[10vh] w-full max-w-[420px] rounded-[20px] border border-newBorder bg-newBgColorInner p-[20px]">
+            <h2 className="text-[18px] font-[600]">Delete “{confirmDelete.phrase}”?</h2>
+            <p className="mt-[8px] text-[13px] text-textItemBlur">
+              Stalker stops tracking it and removes the mentions it found. Adding the same phrase
+              later starts a fresh keyword.
+            </p>
+            <div className="mt-[16px] flex justify-end gap-[8px]">
+              <button
+                type="button"
+                className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px] font-[600]"
+                onClick={() => setConfirmDelete(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-[#eb4747] px-[14px] py-[8px] text-[13px] font-[600] text-white"
+                onClick={() => removeKeyword(confirmDelete.id)}
+              >
+                Delete keyword
               </button>
             </div>
           </div>

@@ -102,7 +102,12 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
           ) : (
             <ul className="flex flex-col gap-[6px]">
               {sources.map((source) => (
-                <li key={source.id} className={source.ok ? '' : 'text-[#c43b3b]'}>
+                <li
+                  key={source.id}
+                  className={
+                    source.ok ? '' : source.skipped ? 'text-textItemBlur' : 'text-[#c43b3b]'
+                  }
+                >
                   {source.ok ? (
                     sourceLine(source, sources.length === 1 ? duplicates : 0)
                   ) : (

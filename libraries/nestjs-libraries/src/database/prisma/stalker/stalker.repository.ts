@@ -306,11 +306,36 @@ export class StalkerRepository {
             phraseKey: keyword.phrase.toLowerCase(),
           },
         });
+        // Mentions collected only because of this keyword go with it. A keyword
+        // equal to the brand/alias just unlinks (brand mentions stay).
+        const project = await tx.stalkerProject.findFirst({
+          where: { id: keyword.projectId, organizationId },
+          select: { name: true, brandName: true, aliases: true },
+        });
+        const brandTerms = [project?.brandName || project?.name || '', ...(project?.aliases || '').split(/[\n,]/)]
+          .map((term) => term.trim().toLowerCase())
+          .filter((term) => term.length >= 2);
+        if (!brandTerms.includes(keyword.phrase.trim().toLowerCase())) {
+          await tx.stalkerMention.deleteMany({
+            where: { organizationId, keywordId: keyword.id },
+          });
+        }
       }
       return tx.stalkerKeyword.deleteMany({
         where: { id, organizationId },
       });
     });
+  }
+
+  async existingKeywordIds(projectId: string, ids: string[]) {
+    if (!ids.length) {
+      return new Set<string>();
+    }
+    const rows = await this._keyword.model.stalkerKeyword.findMany({
+      where: { projectId, id: { in: ids } },
+      select: { id: true },
+    });
+    return new Set(rows.map((row) => row.id));
   }
 
   getKeyword(organizationId: string, id: string) {

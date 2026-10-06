@@ -16,7 +16,10 @@ jest.mock('@gitroom/nestjs-libraries/services/email.service', () => ({
 
 import { Integration } from '@prisma/client';
 import {
+  nextScheduledScan,
   orderKeywordsForScan,
+  scanRunStatus,
+  stalkerProjectIntervalMs,
   StalkerService,
 } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
 import { X_PLAN_ERROR } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
@@ -110,6 +113,7 @@ const build = (options: {
     finishScan: jest.fn().mockResolvedValue(undefined),
     noteScanFailure: jest.fn().mockResolvedValue(undefined),
     insertMentions: jest.fn().mockResolvedValue(1),
+    existingKeywordIds: jest.fn(async (_p: string, ids: string[]) => new Set(ids)),
     listCategories: jest.fn().mockResolvedValue([]),
   };
   const source = options.source || {
@@ -402,7 +406,8 @@ describe('StalkerService token refresh', () => {
     const rows = await service.keywords('org', 'proj');
 
     expect(rows[0].lastError).toContain('Reconnect YouTube');
-    expect(rows[0].lastScan).toBe(scanned.toISOString());
+    // lastScan is the last *successful* pull; a failure alone doesn't count.
+    expect(rows[0].lastScan).toBeNull();
     expect(rows[0].nextScanAt).toBeTruthy();
     expect(rows[0].scanning).toBe(false);
     expect(rows[0].backfill[0]).toEqual(
@@ -653,5 +658,133 @@ describe('StalkerService relevance', () => {
     expect(result.sources[0]).toEqual(
       expect.objectContaining({ id: 'youtube', stored: 1, offTopic: 1 })
     );
+  });
+});
+
+describe('StalkerService keywords and scan status', () => {
+  const previous = process.env.STALKER_ENABLED;
+  beforeEach(() => {
+    process.env.STALKER_ENABLED = 'true';
+    delete process.env.STALKER_PROJECT_INTERVAL_HOURS;
+    delete process.env.STALKER_POLL_MINUTES;
+  });
+  afterAll(() => {
+    process.env.STALKER_ENABLED = previous;
+  });
+  const kw = (id: string, phrase: string, on = true) => ({
+    id,
+    phrase,
+    listenYoutube: on,
+    listenReddit: false,
+    listenX: false,
+    listenLinkedin: false,
+  });
+  const make = () =>
+    build({
+      tokenExpiration: new Date(Date.now() + 60 * 60 * 1000),
+      search: async () => [],
+      refresh: jest.fn(),
+    });
+
+  it('defaults the project interval to 3 hours', () => {
+    expect(stalkerProjectIntervalMs()).toBe(3 * 60 * 60 * 1000);
+  });
+
+  it('computes run status from attempted sources only', () => {
+    expect(scanRunStatus([{ ok: true }, { ok: false, skipped: true }])).toBe('succeeded');
+    expect(scanRunStatus([{ ok: true }, { ok: false }])).toBe('partial');
+    expect(scanRunStatus([{ ok: false }, { ok: false, skipped: true }])).toBe('failed');
+  });
+
+  it('puts the next scan on the schedule tick after lastScanAt + interval', () => {
+    const now = Date.parse('2026-10-06T09:10:00.000Z');
+    const last = new Date('2026-10-06T08:20:00.000Z');
+    expect(nextScheduledScan(last, now).toISOString()).toBe('2026-10-06T12:00:00.000Z');
+    expect(nextScheduledScan(null, now).toISOString()).toBe('2026-10-06T10:00:00.000Z');
+  });
+
+  it('marks an unconfigured source nobody listens on as skipped, and the run succeeded', async () => {
+    const { service, repository } = build({
+      tokenExpiration: new Date(Date.now() + 60 * 60 * 1000),
+      search: async () => [],
+      refresh: jest.fn(),
+      social: [],
+      source: {
+        id: 'reddit',
+        label: 'Reddit',
+        filter: 'REDDIT',
+        integrationIdentifier: () => 'reddit',
+        enabled: () => false,
+        statusDetail: () => 'needs API access',
+        buildQuery: () => 'brand',
+        search: async () => [],
+      },
+    });
+    jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    const result = await service.executeProjectScan({
+      organizationId: 'org',
+      projectId: 'proj',
+      trigger: 'manual',
+      runId: 'run-1',
+    });
+    expect(result.sources[0]).toEqual(expect.objectContaining({ id: 'reddit', skipped: true }));
+    expect(repository.finishScanRun).toHaveBeenCalledWith('run-1', 'succeeded', expect.any(Object), '');
+  });
+
+  it('does not store rows for a keyword deleted during the scan', async () => {
+    const { service, repository, source } = make();
+    repository.listKeywords.mockResolvedValue([kw('k1', 'canva')]);
+    (repository as Record<string, jest.Mock>).existingKeywordIds = jest
+      .fn()
+      .mockResolvedValue(new Set());
+    (source.search as jest.Mock).mockImplementation(async (keyword: string) =>
+      keyword === 'canva'
+        ? [{ ...mention, externalId: 'c1', text: 'canva rocks', keywordPhrase: 'canva' }]
+        : []
+    );
+    jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    await service.pollOrganization('org');
+    expect(repository.insertMentions).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when deleting an unknown keyword', async () => {
+    const { service, repository } = make();
+    (repository as Record<string, jest.Mock>).deleteKeyword = jest.fn().mockResolvedValue({ count: 0 });
+    await expect(service.deleteKeyword('org', 'nope')).rejects.toThrow('Keyword not found');
+  });
+
+  it('rejects a duplicate keyword with 409 and defaults non-brand keywords to Competitors', async () => {
+    const { service, repository } = make();
+    const repo = repository as Record<string, jest.Mock>;
+    repo.findKeyword = jest.fn().mockResolvedValueOnce({ phrase: 'canva' }).mockResolvedValue(null);
+    repo.countKeywords = jest.fn().mockResolvedValue(0);
+    repo.listGroups.mockResolvedValue([
+      { id: 'g-brand', name: 'My brand' },
+      { id: 'g-comp', name: 'Competitors' },
+    ]);
+    repo.createKeyword = jest.fn().mockResolvedValue({ id: 'new' });
+    jest.spyOn(service, 'requestScan').mockResolvedValue({} as never);
+    await expect(service.createKeyword('org', { projectId: 'proj', phrase: 'canva' } as never)).rejects.toMatchObject({ status: 409 });
+    await service.createKeyword('org', { projectId: 'proj', phrase: 'canva' } as never);
+    expect(repo.createKeyword.mock.calls[0][4]).toEqual(expect.objectContaining({ groupId: 'g-comp' }));
+    await service.createKeyword('org', { projectId: 'proj', phrase: 'Brand' } as never);
+    expect(repo.createKeyword.mock.calls[1][4]).toEqual(expect.objectContaining({ groupId: 'g-brand' }));
+  });
+
+  it('shows paused keywords with no next scan, and brand keywords from the brand cursor', async () => {
+    const { service, repository } = make();
+    repository.listKeywords.mockResolvedValue([kw('k1', 'canva', false), kw('kb', 'Brand', false)]);
+    const at = new Date('2026-10-06T08:00:00.000Z');
+    repository.listCursors.mockResolvedValue([
+      { source: 'youtube', phraseKey: 'brand', updatedAt: at, lastError: '' },
+    ]);
+    const rows = await service.keywords('org', 'proj');
+    const canva = rows.find((row) => row.id === 'k1')!;
+    const brand = rows.find((row) => row.id === 'kb')!;
+    expect(canva.paused).toBe(true);
+    expect(canva.nextScanAt).toBeNull();
+    expect(brand.paused).toBe(false);
+    expect(brand.lastScan).toBe(at.toISOString());
+    expect(brand.nextScanAt).toBeTruthy();
   });
 });
