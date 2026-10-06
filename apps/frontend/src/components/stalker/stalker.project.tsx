@@ -89,6 +89,7 @@ export type StalkerScanSource = {
   searched?: number;
   found?: number;
   stored?: number;
+  offTopic?: number;
   error?: string;
 };
 

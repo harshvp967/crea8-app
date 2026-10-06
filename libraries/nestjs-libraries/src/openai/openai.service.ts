@@ -371,7 +371,7 @@ Brand: ${brand.name || 'Unknown'}
 Aliases: ${brand.aliases || 'none'}
 Description: ${brand.description || 'none'}
 
-relevant is false when the text is a keyword collision about a different product, person, or topic. relevant is true when the text is about this brand, its product, or someone asking about it.
+relevant is false ONLY for clear spam, scams, bot output, gibberish, or empty noise with no real content. Never mark a mention irrelevant because it is about a different product, a competitor, or another topic: the user tracks those keywords on purpose. When unsure, relevant is true.
 
 Classify each relevant mention into exactly one category below. categoryName must be copied from that list. If relevant is false, still copy a category name from the list (the first one is fine). sentiment is POSITIVE, NEGATIVE, or NEUTRAL. urgency is 0-100, and higher when the mention is a bug, complaint, or needs a response soon. Return every id you were given. Do not invent mentions.
 

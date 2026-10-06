@@ -3,6 +3,7 @@
 import { ReactNode, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 
 export type MentionFilters = {
   preset: string;
@@ -15,6 +16,7 @@ export type MentionFilters = {
   categoryId: string;
   sentiment: string;
   status: string;
+  offTopic?: boolean;
 };
 
 export const emptyFilters = (): MentionFilters => ({
@@ -28,6 +30,7 @@ export const emptyFilters = (): MentionFilters => ({
   categoryId: '',
   sentiment: '',
   status: '',
+  offTopic: false,
 });
 
 const PRESETS = [
@@ -119,6 +122,7 @@ export const filtersToSearch = (filters: MentionFilters) => {
   if (filters.categoryId) params.set('categoryId', filters.categoryId);
   if (filters.sentiment) params.set('sentiment', filters.sentiment);
   if (filters.status) params.set('status', filters.status);
+  if (filters.offTopic) params.set('offTopic', 'include');
   return params.toString();
 };
 
@@ -135,6 +139,7 @@ export const filtersToView = (filters: MentionFilters) => ({
   categoryId: filters.categoryId,
   sentiment: filters.sentiment,
   status: filters.status,
+  offTopic: filters.offTopic ? 'include' : '',
 });
 
 export const viewToFilters = (raw: Record<string, string | undefined>): MentionFilters => {
@@ -154,6 +159,7 @@ export const viewToFilters = (raw: Record<string, string | undefined>): MentionF
     categoryId: raw.categoryId || '',
     sentiment: raw.sentiment || '',
     status: raw.status || '',
+    offTopic: raw.offTopic === 'include',
   };
 };
 
@@ -369,7 +375,7 @@ export const StalkerFilters = ({
                 }}
               />
               <SourceIcon source={source} />
-              {source === 'YOUTUBE' ? 'YouTube' : source === 'REDDIT' ? 'Reddit' : source === 'LINKEDIN' ? 'LinkedIn' : 'X'}
+              {sourceLabel(source)}
             </label>
             {source !== 'REDDIT' ? (
               <input

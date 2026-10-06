@@ -40,6 +40,7 @@ import {
   SPIKE_WINDOW_MS,
   splitTerms,
   tagDrafts,
+  matchRelevance,
   type StalkerAlertScopeName,
 } from '@gitroom/nestjs-libraries/stalker/stalker.match';
 import {
@@ -131,6 +132,8 @@ export type StalkerPollSource = {
   searched: number;
   found: number;
   stored: number;
+  /** Stored this scan but classified off-topic (hidden by default). */
+  offTopic?: number;
   error?: string;
 };
 
@@ -640,6 +643,23 @@ export class StalkerService {
       throw new NotFoundException('Mention not found');
     }
     return { updated: true };
+  }
+
+  async setMentionRelevant(
+    organizationId: string,
+    id: string,
+    relevant: boolean
+  ) {
+    this.assertEnabled();
+    const updated = await this._repository.setMentionRelevant(
+      organizationId,
+      id,
+      relevant
+    );
+    if (!updated.count) {
+      throw new NotFoundException('Mention not found');
+    }
+    return { updated: true, relevant };
   }
 
   async keywords(organizationId: string, projectId: string) {
@@ -1777,14 +1797,24 @@ export class StalkerService {
     totals.found += searched.found;
     totals.stored += searched.stored;
     totals.duplicates += searched.duplicates;
+    const brandKeyword = searched.brandKeyword;
+    const brandKeywordIds = brandKeyword
+      ? new Map([[brandKeyword.phrase.toLowerCase(), brandKeyword.id]])
+      : new Map<string, string>();
     for (const batch of commentBatches) {
-      const tagged = tagDrafts(batch.drafts, identity, false);
+      const tagged = tagDrafts(batch.drafts, identity, false).map((draft) =>
+        brandKeyword &&
+        !draft.keywordPhrase &&
+        (draft.matchKind === 'BRAND' || draft.matchKind === 'ALIAS')
+          ? { ...draft, keywordPhrase: brandKeyword.phrase }
+          : draft
+      );
       const saved = await this.storeMentions(
         organizationId,
         project,
         batch.integrationId,
         tagged,
-        new Map()
+        brandKeywordIds
       );
       const row = this.sourceRow(sources, project.id, batch.sourceId);
       row.found += batch.drafts.length;
@@ -1798,7 +1828,14 @@ export class StalkerService {
       row.ok = false;
       row.error = row.error || failure.error;
     }
-    totals.offTopic += await this.classifyOrganization(organizationId, project);
+    const classified = await this.classifyOrganization(organizationId, project);
+    totals.offTopic += classified.offTopic;
+    for (const source of sources) {
+      source.offTopic = Math.min(
+        source.stored,
+        classified.bySource[source.id] || 0
+      );
+    }
     await this.clusterOrganization(organizationId, project.id);
     this.logScan(project.id, trigger, { sources, totals });
     return { sources, totals };
@@ -1814,7 +1851,7 @@ export class StalkerService {
         const message = (source.error || 'failed').replace(/"/g, "'");
         return `${source.id} error="${message}"`;
       }
-      return `${source.id} ok searched=${source.searched} found=${source.found} stored=${source.stored}`;
+      return `${source.id} ok searched=${source.searched} found=${source.found} stored=${source.stored} offTopic=${source.offTopic || 0}`;
     });
     console.log(
       `Stalker scan project=${projectId} trigger=${trigger} ${parts.join(
@@ -1875,6 +1912,17 @@ export class StalkerService {
     let found = 0;
     let stored = 0;
     let duplicates = 0;
+    const brandKey = identity.brand.toLowerCase();
+    const brandPhrases = new Set(
+      [identity.brand, ...identity.aliases]
+        .map((phrase) => phrase.toLowerCase())
+        .filter((phrase) => phrase.length >= 2)
+    );
+    // A keyword equal to the brand (or an alias) is covered by the brand pull:
+    // its results are linked to that keyword instead of searching it twice.
+    const brandKeyword =
+      keywords.find((keyword) => keyword.phrase.toLowerCase() === brandKey) ||
+      keywords.find((keyword) => brandPhrases.has(keyword.phrase.toLowerCase()));
     for (const source of this._sources.all()) {
       const stat: StalkerPollSource = {
         projectId: project.id,
@@ -1902,14 +1950,21 @@ export class StalkerService {
         subreddit: identity.handles.redditSubreddit,
       });
       const field = listenField[source.id];
+      const brandCovered = (phrase: string) =>
+        !!query.trim() && brandPhrases.has(phrase.toLowerCase());
       const selected = orderKeywordsForScan(
-        keywords.filter((keyword) => keyword[field]),
+        keywords.filter(
+          (keyword) => keyword[field] && !brandCovered(keyword.phrase)
+        ),
         cursors,
         source.id
       );
       const keywordIds = new Map(
         selected.map((keyword) => [keyword.phrase.toLowerCase(), keyword.id])
       );
+      if (brandKeyword) {
+        keywordIds.set(brandKeyword.phrase.toLowerCase(), brandKeyword.id);
+      }
       const wantsSearch = !!query.trim() || selected.length > 0;
       if (!wantsSearch) {
         continue;
@@ -1987,7 +2042,7 @@ export class StalkerService {
         );
       };
       if (query.trim()) {
-        await pull(query, 'brand');
+        await pull(query, 'brand', brandKeyword?.phrase);
       }
       for (const keyword of selected) {
         await pull(keyword.phrase, keyword.phrase.toLowerCase(), keyword.phrase);
@@ -2032,7 +2087,7 @@ export class StalkerService {
       duplicates += saved.duplicates;
       sources.push(stat);
     }
-    return { sources, found, stored, duplicates };
+    return { sources, found, stored, duplicates, brandKeyword };
   }
 
   private async searchWithFallback(
@@ -2313,8 +2368,9 @@ export class StalkerService {
       organizationId,
       projectId
     );
+    const bySource: Record<string, number> = {};
     if (!categories.length) {
-      return 0;
+      return { offTopic: 0, bySource };
     }
     const byName = new Map(
       categories.map((category) => [category.name.toLowerCase(), category])
@@ -2323,6 +2379,12 @@ export class StalkerService {
       organizationId,
       projectId
     );
+    const keywordPhrases = pending.length
+      ? (await this._repository.listKeywords(organizationId, projectId)).map(
+          (keyword) => keyword.phrase
+        )
+      : [];
+    const pendingById = new Map(pending.map((row) => [row.id, row]));
     const saved: {
       id: string;
       categoryName: string;
@@ -2343,15 +2405,18 @@ export class StalkerService {
         if (!match) {
           return [];
         }
+        const row = pendingById.get(item.id);
+        const gate = row ? matchRelevance(row, keywordPhrases) : null;
+        const relevant = gate === null ? item.relevant : gate;
         return [
           {
             id: item.id,
             category: legacyCategory(match.name),
             categoryName: match.name,
             categoryId: match.id,
-            sentiment: item.relevant ? item.sentiment : 'NEUTRAL',
-            urgency: item.relevant ? item.urgency : 0,
-            relevant: item.relevant,
+            sentiment: relevant ? item.sentiment : 'NEUTRAL',
+            urgency: relevant ? item.urgency : 0,
+            relevant,
           },
         ];
       });
@@ -2367,7 +2432,16 @@ export class StalkerService {
       );
     }
     await this.dispatchAlerts(organizationId, project, saved);
-    return saved.filter((item) => !item.relevant).length;
+    const offTopic = saved.filter((item) => !item.relevant);
+    for (const item of offTopic) {
+      const family = String(pendingById.get(item.id)?.source || '')
+        .split('_')[0]
+        .toLowerCase();
+      if (family) {
+        bySource[family] = (bySource[family] || 0) + 1;
+      }
+    }
+    return { offTopic: offTopic.length, bySource };
   }
 
   private async classifyBatch(

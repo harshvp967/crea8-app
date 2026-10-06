@@ -6,14 +6,9 @@ import {
   StalkerScanSource,
   useStalkerProject,
 } from '@gitroom/frontend/components/stalker/stalker.project';
+import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 
-const sourceName = (id: string) => {
-  if (id === 'youtube') return 'YouTube';
-  if (id === 'reddit') return 'Reddit';
-  if (id === 'x') return 'X';
-  if (id === 'linkedin') return 'LinkedIn';
-  return id;
-};
+const sourceName = sourceLabel;
 
 export const ReconnectText = ({ text }: { text: string }) => {
   const match = text.match(/Reconnect YouTube/i);
@@ -42,13 +37,22 @@ const sourceLine = (source: StalkerScanSource, duplicates: number) => {
     }
     return `${name}: ${error}`;
   }
+  return `${name}: ${scanCounts(source, duplicates)}`;
+};
+
+/** "12 found · 9 new · 3 off-topic" — new excludes rows hidden as off-topic. */
+export const scanCounts = (source: StalkerScanSource, duplicates = 0) => {
+  const found = source.found || 0;
   const stored = source.stored || 0;
-  if (!stored) {
-    return `${name}: no new mentions`;
+  const offTopic = Math.min(stored, source.offTopic || 0);
+  const shown = stored - offTopic;
+  if (!found && !stored) {
+    return 'no new mentions';
   }
-  return duplicates
-    ? `${name}: ${stored} new, ${duplicates} duplicates`
-    : `${name}: ${stored} new`;
+  const parts = [`${found} found`, `${shown} new`];
+  if (offTopic) parts.push(`${offTopic} off-topic`);
+  if (duplicates) parts.push(`${duplicates} duplicates`);
+  return parts.join(' · ');
 };
 
 export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {

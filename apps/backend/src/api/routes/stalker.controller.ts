@@ -22,6 +22,7 @@ import {
   StalkerDraftDto,
   StalkerMentionQueryDto,
   StalkerMentionStatusDto,
+  StalkerMentionRelevantDto,
   StalkerReplyDto,
   StalkerSaveMentionDto,
   UpdateStalkerProjectDto,
@@ -112,6 +113,15 @@ export class StalkerController {
       id,
       body.status as StalkerMentionStatus
     );
+  }
+
+  @Post('/mentions/:id/relevant')
+  setMentionRelevant(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: StalkerMentionRelevantDto
+  ) {
+    return this._stalkerService.setMentionRelevant(org.id, id, body.relevant);
   }
 
   @Get('/keywords')

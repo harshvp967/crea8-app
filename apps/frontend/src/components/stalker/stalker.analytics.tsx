@@ -18,16 +18,8 @@ import {
   SAMPLE_AUTHORS,
   SAMPLE_KEYWORDS,
 } from '@gitroom/frontend/components/stalker/stalker.sample';
+import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 
-const sourceLabel = (source: string) => {
-  if (source.startsWith('X')) return 'X';
-  if (source.startsWith('REDDIT')) return 'Reddit';
-  if (source.startsWith('YOUTUBE')) return 'YouTube';
-  if (source.startsWith('LINKEDIN')) return 'LinkedIn';
-  if (source.startsWith('INSTAGRAM')) return 'Instagram';
-  if (source.startsWith('FACEBOOK')) return 'Facebook';
-  return source;
-};
 
 const Card = ({
   title,

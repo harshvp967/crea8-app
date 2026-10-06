@@ -739,11 +739,18 @@ export class StalkerRepository {
           integration: { select: { name: true, providerIdentifier: true } },
         },
       })
-      .then((rows) => {
+      .then(async (rows) => {
         const mentions = rows.slice(0, take);
+        const hiddenOffTopic =
+          filters.offTopic !== 'include' && !filters.cursor
+            ? await this._mention.model.stalkerMention.count({
+                where: { ...where, relevant: false },
+              })
+            : 0;
         return {
           mentions,
           nextCursor: rows.length > take ? mentions[mentions.length - 1]?.id || null : null,
+          hiddenOffTopic,
         };
       });
   }
@@ -760,7 +767,13 @@ export class StalkerRepository {
       where: { organizationId, projectId, classifiedAt: null },
       orderBy: { createdAt: 'asc' },
       take: 40,
-      select: { id: true, text: true },
+      select: {
+        id: true,
+        text: true,
+        source: true,
+        matchKind: true,
+        keywordId: true,
+      },
     });
   }
 
@@ -792,6 +805,13 @@ export class StalkerRepository {
         },
       });
     }
+  }
+
+  setMentionRelevant(organizationId: string, id: string, relevant: boolean) {
+    return this._mention.model.stalkerMention.updateMany({
+      where: { id, organizationId },
+      data: { relevant },
+    });
   }
 
   setMentionStatus(

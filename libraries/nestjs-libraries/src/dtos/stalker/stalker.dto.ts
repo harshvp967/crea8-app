@@ -488,6 +488,11 @@ export class StalkerMentionStatusDto {
   status: 'NEW' | 'REPLIED' | 'IGNORED' | 'DONE' | 'FOLLOW_UP';
 }
 
+export class StalkerMentionRelevantDto {
+  @IsBoolean()
+  relevant: boolean;
+}
+
 export class StalkerDraftDto {
   @IsOptional()
   @IsString()

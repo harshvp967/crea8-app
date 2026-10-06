@@ -192,6 +192,7 @@ describe('StalkerService token refresh', () => {
           searched: 1,
           found: 1,
           stored: 1,
+          offTopic: 0,
         },
       ],
       totals: { found: 1, stored: 1, duplicates: 0, offTopic: 0 },
@@ -527,5 +528,130 @@ describe('orderKeywordsForScan', () => {
       'old',
       'fresh',
     ]);
+  });
+});
+
+describe('StalkerService relevance', () => {
+  const previous = process.env.STALKER_ENABLED;
+  beforeEach(() => {
+    process.env.STALKER_ENABLED = 'true';
+    process.env.YOUTUBE_STALKER_API_KEY = 'yt-key';
+  });
+  afterAll(() => {
+    process.env.STALKER_ENABLED = previous;
+    delete process.env.YOUTUBE_STALKER_API_KEY;
+  });
+
+  const setup = (
+    pending: {
+      id: string;
+      text: string;
+      source: string;
+      matchKind: string | null;
+      keywordId: string | null;
+    }[],
+    keywords: Record<string, unknown>[] = []
+  ) => {
+    const ctx = build({
+      tokenExpiration: new Date(Date.now() + 60 * 60 * 1000),
+      search: async () => [],
+      refresh: jest.fn(),
+    });
+    const repo = ctx.repository as Record<string, jest.Mock>;
+    repo.listKeywords.mockResolvedValue(keywords);
+    repo.listCategories.mockResolvedValue([
+      { id: 'c1', name: 'General', description: '' },
+    ]);
+    repo.unclassified = jest.fn().mockResolvedValue(pending);
+    repo.saveClassification = jest.fn().mockResolvedValue(undefined);
+    repo.mentionsByIds = jest.fn().mockResolvedValue([]);
+    const classify = jest.fn(async (items: { id: string }[]) =>
+      items.map((item) => ({
+        id: item.id,
+        categoryName: 'General',
+        sentiment: 'POSITIVE',
+        urgency: 10,
+        relevant: false,
+      }))
+    );
+    (ctx.service as unknown as { _openaiService: unknown })._openaiService = {
+      hasApiKey: () => true,
+      classifyStalkerMentions: classify,
+      clusterStalkerThemes: jest.fn().mockResolvedValue([]),
+    };
+    repo.recentForThemes = jest.fn().mockResolvedValue([]);
+    return { ...ctx, repo };
+  };
+
+  const savedRelevance = (repo: Record<string, jest.Mock>) =>
+    Object.fromEntries(
+      repo.saveClassification.mock.calls
+        .flatMap((call) => call[1])
+        .map((row: { id: string; relevant: boolean }) => [row.id, row.relevant])
+    );
+
+  it('keeps keyword matches relevant even when the AI says otherwise', async () => {
+    const { service, repo } = setup(
+      [
+        { id: 'kw', text: 'I love Canva', source: 'YOUTUBE_SEARCH', matchKind: 'KEYWORD', keywordId: 'k1' },
+        { id: 'linked', text: 'some text', source: 'YOUTUBE_COMMENT', matchKind: null, keywordId: 'k1' },
+        { id: 'phrase', text: 'canva templates rock', source: 'YOUTUBE_COMMENT', matchKind: null, keywordId: null },
+        { id: 'brand', text: 'brand is great', source: 'YOUTUBE_SEARCH', matchKind: 'BRAND', keywordId: null },
+        { id: 'noise', text: 'first!', source: 'YOUTUBE_COMMENT', matchKind: null, keywordId: null },
+      ],
+      [{ id: 'k1', phrase: 'Canva', listenYoutube: false, listenReddit: false, listenX: false, listenLinkedin: false }]
+    );
+    const result = await service.pollOrganization('org');
+    expect(savedRelevance(repo)).toEqual({
+      kw: true,
+      linked: true,
+      phrase: true,
+      brand: false,
+      noise: false,
+    });
+    expect(result.totals.offTopic).toBe(2);
+  });
+
+  it('keeps unmatched results off-topic even if the AI calls them relevant', async () => {
+    const { service, repo } = setup([
+      { id: 'fuzzy', text: 'unrelated video', source: 'YOUTUBE_COMMENT', matchKind: null, keywordId: null },
+    ]);
+    (service as unknown as { _openaiService: { classifyStalkerMentions: jest.Mock } })._openaiService.classifyStalkerMentions.mockImplementation(
+      async (items: { id: string }[]) =>
+        items.map((item) => ({ id: item.id, categoryName: 'General', sentiment: 'NEUTRAL', urgency: 0, relevant: true }))
+    );
+    await service.pollOrganization('org');
+    expect(savedRelevance(repo)).toEqual({ fuzzy: false });
+  });
+
+  it('links brand-search results to the keyword equal to the brand and skips its duplicate search', async () => {
+    const { service, repository, source } = setup([], [
+      { id: 'kb', phrase: 'Brand', listenYoutube: true, listenReddit: false, listenX: false, listenLinkedin: false },
+      { id: 'kc', phrase: 'canva', listenYoutube: true, listenReddit: false, listenX: false, listenLinkedin: false },
+    ]);
+    (source.search as jest.Mock).mockImplementation(async (keyword: string) =>
+      keyword === 'brand'
+        ? [{ ...mention, externalId: 'b1', text: 'brand rocks', keywordPhrase: keyword }]
+        : [{ ...mention, externalId: 'c1', text: 'canva rocks', keywordPhrase: keyword }]
+    );
+    await service.pollOrganization('org');
+    expect((source.search as jest.Mock).mock.calls.map((call) => call[0])).toEqual(['brand', 'canva']);
+    const [, , , drafts, ids] = repository.insertMentions.mock.calls[0];
+    expect(ids.get('brand')).toBe('kb');
+    expect(ids.get('canva')).toBe('kc');
+    const brandDraft = drafts.find((draft: { externalId: string }) => draft.externalId === 'b1');
+    expect(brandDraft.keywordPhrase).toBe('Brand');
+    expect(brandDraft.matchKind).toBe('BRAND');
+  });
+
+  it('reports per-source off-topic counts for Check now', async () => {
+    const { service, source } = setup([
+      { id: 'noise', text: 'nothing', source: 'YOUTUBE_SEARCH', matchKind: null, keywordId: null },
+    ]);
+    (source.search as jest.Mock).mockResolvedValue([mention]);
+    const result = await service.pollOrganization('org');
+    expect(result.sources[0]).toEqual(
+      expect.objectContaining({ id: 'youtube', stored: 1, offTopic: 1 })
+    );
   });
 });

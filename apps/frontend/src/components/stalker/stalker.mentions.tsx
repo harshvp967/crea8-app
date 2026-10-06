@@ -41,6 +41,7 @@ type Mention = {
   replyCount?: number;
   sentiment?: string;
   status?: string;
+  relevant?: boolean;
   keyword?: { phrase?: string } | null;
   categoryDef?: { id: string; name: string } | null;
 };
@@ -240,6 +241,29 @@ export const StalkerMentions = () => {
     mentionsQuery.mutate();
   };
 
+  const setRelevant = async (id: string, relevant: boolean) => {
+    setMarking(null);
+    if (sample) {
+      toaster.show('Updated');
+      return;
+    }
+    const response = await fetch(`/stalker/mentions/${id}/relevant`, {
+      method: 'POST',
+      body: JSON.stringify({ relevant }),
+    });
+    if (!response.ok) {
+      toaster.show('Could not update the mention', 'warning');
+      return;
+    }
+    setExtra((current) =>
+      current.map((row) => (row.id === id ? { ...row, relevant } : row))
+    );
+    toaster.show(relevant ? 'Marked relevant' : 'Marked off-topic');
+    mentionsQuery.mutate();
+  };
+
+  const hiddenOffTopic = sample ? 0 : Number(page?.hiddenOffTopic || 0);
+
   const saveView = async () => {
     const name = viewName.trim();
     if (name.length < 2 || !projectId) return;
@@ -295,6 +319,31 @@ export const StalkerMentions = () => {
         categories={project?.categories || []}
         authors={authors}
       />
+      <div className="flex flex-wrap items-center gap-[10px] text-[13px]">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={!!filters.offTopic}
+          className="inline-flex items-center gap-[8px] text-textItemBlur hover:text-newTextColor"
+          onClick={() => setFilters({ ...filters, offTopic: !filters.offTopic })}
+        >
+          <span
+            className={clsx(
+              'relative inline-flex h-[18px] w-[32px] items-center rounded-full border transition-colors',
+              filters.offTopic ? 'border-[#00D9FF]/60 bg-[#00D9FF]/15' : 'border-newBorder bg-newBoxHover'
+            )}
+          >
+            <span
+              className={clsx(
+                'absolute h-[12px] w-[12px] rounded-full bg-newTextColor transition-all',
+                filters.offTopic ? 'start-[16px]' : 'start-[2px]'
+              )}
+            />
+          </span>
+          Show off-topic
+          {!filters.offTopic && hiddenOffTopic ? ` (${hiddenOffTopic})` : ''}
+        </button>
+      </div>
       {mentionsQuery.isLoading && !mentions.length ? (
         <div className="flex flex-col gap-[12px]" aria-hidden>
           <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
@@ -303,9 +352,22 @@ export const StalkerMentions = () => {
         </div>
       ) : null}
       {!mentionsQuery.isLoading && !mentions.length ? (
-        <p className="text-[14px] text-textItemBlur">
-          No mentions yet. Stalker is listening for mentions of {project?.name || 'this project'}.
-        </p>
+        hiddenOffTopic && !filters.offTopic ? (
+          <p className="text-[14px] text-textItemBlur">
+            {hiddenOffTopic} mention{hiddenOffTopic === 1 ? '' : 's'} hidden as off-topic ·{' '}
+            <button
+              type="button"
+              className="font-[600] text-newTextColor underline decoration-[#00D9FF]/60 underline-offset-[3px]"
+              onClick={() => setFilters({ ...filters, offTopic: true })}
+            >
+              Show them
+            </button>
+          </p>
+        ) : (
+          <p className="text-[14px] text-textItemBlur">
+            No mentions yet. Stalker is listening for mentions of {project?.name || 'this project'}.
+          </p>
+        )
       ) : null}
       {groups.map(([key, rows]) => (
         <section key={key} className="flex flex-col gap-[12px]">
@@ -385,6 +447,11 @@ export const StalkerMentions = () => {
                           {mention.sentiment === 'POSITIVE' ? 'Positive' : 'Negative'}
                         </span>
                       ) : null}
+                      {mention.relevant === false ? (
+                        <span className="rounded-full border border-dashed border-newBorder px-[8px] py-[2px] text-[12px] text-textItemBlur">
+                          Off-topic
+                        </span>
+                      ) : null}
                       {statusLabel(mention.status) ? (
                         <span className="rounded-full border border-newBorder px-[8px] py-[2px] text-[12px]">
                           {statusLabel(mention.status)}
@@ -409,6 +476,15 @@ export const StalkerMentions = () => {
                     >
                       Copy link
                     </button>
+                    {mention.relevant === false ? (
+                      <button
+                        type="button"
+                        className="font-[600] text-newTextColor hover:underline"
+                        onClick={() => setRelevant(mention.id, true)}
+                      >
+                        Mark relevant
+                      </button>
+                    ) : null}
                     <div className="relative">
                       <button
                         type="button"
@@ -422,6 +498,11 @@ export const StalkerMentions = () => {
                           <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start" onClick={() => setStatus(mention.id, 'DONE')}>Done</button>
                           <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start" onClick={() => setStatus(mention.id, 'FOLLOW_UP')}>Follow up</button>
                           <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start text-[#c43b3b]" onClick={() => setStatus(mention.id, 'IGNORED')}>Irrelevant</button>
+                          {mention.relevant === false ? (
+                            <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start" onClick={() => setRelevant(mention.id, true)}>Relevant</button>
+                          ) : (
+                            <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start" onClick={() => setRelevant(mention.id, false)}>Off-topic</button>
+                          )}
                         </div>
                       ) : null}
                     </div>
