@@ -12,6 +12,7 @@ import {
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import {
   emptyFilters,
   filtersActive,
@@ -269,7 +270,10 @@ export const StalkerMentions = () => {
 
   return (
     <div className="relative flex min-h-full flex-col gap-[16px] p-[16px] md:p-[24px]">
-      <h1 className="text-[28px] font-[600]">Mentions</h1>
+      <div className="flex flex-wrap items-center justify-between gap-[12px]">
+        <h1 className="text-[28px] font-[600]">Mentions</h1>
+        <StalkerCheckNow />
+      </div>
       {views.length ? (
         <div className="flex flex-wrap gap-[8px]">
           {views.map((view: { id: string; name: string; filters: Record<string, string> }) => (

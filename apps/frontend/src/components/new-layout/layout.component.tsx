@@ -185,11 +185,23 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <ModeComponent />
                       </div>
                       <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
-                      <LanguageComponent />
+                      <div
+                        className={clsx(
+                          pathname?.startsWith('/stalker') && 'hidden min-[1440px]:block'
+                        )}
+                      >
+                        <LanguageComponent />
+                      </div>
                       <ChromeExtensionComponent />
                       <SettingsMenuItem variant="header" />
                       <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
-                      <AttachToFeedbackIcon />
+                      <div
+                        className={clsx(
+                          pathname?.startsWith('/stalker') && 'hidden min-[1440px]:block'
+                        )}
+                      >
+                        <AttachToFeedbackIcon />
+                      </div>
                       <NotificationComponent />
                     </div>
                   </header>

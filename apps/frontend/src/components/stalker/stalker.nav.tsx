@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
-import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 
 const Icon = ({ children }: { children: ReactNode }) => (
   <svg
@@ -174,21 +173,40 @@ export const StalkerTopNav = ({
     if (!nav || !measure) {
       return;
     }
+    let frame = 0;
+    let attempts = 0;
     const fit = () => {
       const tabs = Array.from(measure.querySelectorAll<HTMLElement>('[data-tab]'));
       const more = measure.querySelector<HTMLElement>('[data-more]');
       const widths = tabs.map((tab) => tab.offsetWidth);
-      if (!widths.length || widths.some((width) => !width)) {
+      if (!widths.length || widths.some((width) => width < 8)) {
+        if (attempts < 8) {
+          attempts += 1;
+          frame = requestAnimationFrame(fit);
+        }
         return;
       }
-      setVisible(
-        chooseVisibleTabs(widths, nav.clientWidth, activeIndex, more?.offsetWidth || 72)
+      const next = chooseVisibleTabs(
+        widths,
+        nav.clientWidth,
+        activeIndex,
+        more?.offsetWidth || 72
+      );
+      setVisible((current) =>
+        current.length === next.length && current.every((value, index) => value === next[index])
+          ? current
+          : next
       );
     };
     const observer = new ResizeObserver(fit);
     observer.observe(nav);
     fit();
-    return () => observer.disconnect();
+    const fonts = document.fonts?.ready.then(() => fit());
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      void fonts;
+    };
   }, [activeIndex, pathname]);
 
   if (!force && !sample && (!stalkerEnabled || !pathname.startsWith('/stalker'))) {
@@ -200,7 +218,7 @@ export const StalkerTopNav = ({
       <div className="relative shrink-0" ref={menu}>
         <button
           type="button"
-          className="flex max-w-[220px] items-center gap-[8px] rounded-full border border-newBorder bg-newBgColorInner px-[12px] py-[7px] text-[13px] font-[600] lg:max-w-[160px]"
+          className="flex max-w-[128px] items-center gap-[8px] rounded-full border border-newBorder bg-newBgColorInner px-[12px] py-[7px] text-[13px] font-[600] min-[1440px]:max-w-[160px]"
           aria-haspopup="listbox"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
@@ -365,7 +383,6 @@ export const StalkerTopNav = ({
           </div>
         ) : null}
       </nav>
-      <StalkerCheckNow compact />
     </div>
   );
 };

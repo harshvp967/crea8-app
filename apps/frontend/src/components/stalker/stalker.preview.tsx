@@ -39,7 +39,7 @@ const Frame = ({ page }: { page: string }) => {
       <Toaster />
       <header className="flex min-h-[64px] items-center gap-[8px] rounded-[24px] border border-newBorder bg-newBgColorInner px-[12px] py-[8px]">
         <Logo compact />
-        <div className="hidden h-[32px] w-[168px] shrink-0 items-center justify-center rounded-full border border-newBorder text-[12px] font-[600] text-textItemBlur sm:flex">
+        <div className="hidden h-[32px] shrink-0 items-center justify-center rounded-full border border-newBorder px-[12px] text-[12px] font-[600] text-textItemBlur sm:flex">
           Schedule | Stalker
         </div>
         <StalkerTopNav force base="/stalker-preview" />
