@@ -3,9 +3,11 @@ import { ReactNode } from 'react';
 
 export function LegalShell({
   title,
+  updated = 'October 5, 2026',
   children,
 }: {
   title: string;
+  updated?: string;
   children: ReactNode;
 }) {
   return (
@@ -22,7 +24,7 @@ export function LegalShell({
           {title}
         </h1>
         <p className="mt-[12px] text-[14px] text-gray">
-          Last updated: October 5, 2026
+          Last updated: {updated}
         </p>
         <div className="mt-[28px] rounded-[12px] border border-newBorder bg-newBgColorInner p-[20px] sm:p-[32px]">
           <article className="flex flex-col gap-[14px] text-[15px] leading-[1.7]">
