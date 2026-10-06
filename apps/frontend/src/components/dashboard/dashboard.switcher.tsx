@@ -39,6 +39,7 @@ export const DashboardSwitcher = () => {
       aria-label="Dashboards"
       size="sm"
       className="shrink-0"
+      compactBelow1440={pathname.startsWith('/stalker')}
       value={active}
       options={DASHBOARDS.map((item) => ({
         value: item.id,

@@ -43,6 +43,8 @@ export interface SegmentedControlProps {
   /** Accessible label for the group. */
   'aria-label'?: string;
   className?: string;
+  /** Hide option text below 1440px. Icons stay, and each option keeps its label for assistive tech. */
+  compactBelow1440?: boolean;
 }
 
 const sizes = {
@@ -67,6 +69,7 @@ export function SegmentedControl({
   damping = 32,
   'aria-label': ariaLabel,
   className,
+  compactBelow1440 = false,
 }: SegmentedControlProps) {
   const reduced = useReducedMotion();
   const id = useId();
@@ -140,7 +143,9 @@ export function SegmentedControl({
                 {option.icon}
               </span>
             )}
-            <span className="relative">{option.label}</span>
+            <span className={clsx('relative', compactBelow1440 && 'max-[1439px]:sr-only')}>
+              {option.label}
+            </span>
           </>
         );
         const shared = {

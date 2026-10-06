@@ -50,6 +50,22 @@ export class StalkerController {
     return this._stalkerService.createProject(org.id, body);
   }
 
+  @Post('/projects/:id/scan')
+  scanProject(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.requestScan(org.id, id, 'manual');
+  }
+
+  @Get('/projects/:id/scan')
+  latestScan(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.latestScan(org.id, id);
+  }
+
   @Post('/projects/:id')
   updateProject(
     @GetOrgFromRequest() org: Organization,
@@ -308,6 +324,6 @@ export class StalkerController {
 
   @Post('/poll')
   poll(@GetOrgFromRequest() org: Organization) {
-    return this._stalkerService.pollOrganization(org.id);
+    return this._stalkerService.requestOrganizationScans(org.id, 'manual');
   }
 }

@@ -11,4 +11,19 @@ export class StalkerActivity {
   async pollStalker() {
     return this._stalkerService.pollAll();
   }
+
+  @ActivityMethod()
+  async scanStalkerProject(input: {
+    organizationId: string;
+    projectId: string;
+    trigger: string;
+    runId?: string;
+  }) {
+    return this._stalkerService.executeProjectScan(input);
+  }
+
+  @ActivityMethod()
+  async listDueStalkerProjects() {
+    return this._stalkerService.listDueProjectScans();
+  }
 }

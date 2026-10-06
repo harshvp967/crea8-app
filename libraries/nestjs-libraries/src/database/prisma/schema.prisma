@@ -52,6 +52,7 @@ model Organization {
   stalkerSavedViews   StalkerSavedView[]
   stalkerAlerts       StalkerAlert[]
   stalkerAlertRules   StalkerAlertRule[]
+  stalkerScanRuns     StalkerScanRun[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -1915,6 +1916,7 @@ model StalkerProject {
   digestTimezone String                   @default("UTC")
   digestGroupName String                  @default("My brand")
   digestSentOn   String                   @default("")
+  lastScanAt     DateTime?
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   organization   Organization             @relation(fields: [organizationId], references: [id])
@@ -1927,8 +1929,10 @@ model StalkerProject {
   cursors        StalkerScanCursor[]
   alerts         StalkerAlert[]
   alertRules     StalkerAlertRule[]
+  scanRuns       StalkerScanRun[]
 
   @@index([organizationId])
+  @@index([lastScanAt])
 }
 
 model StalkerSavedView {
@@ -2086,6 +2090,28 @@ model StalkerMention {
   @@index([projectId, relevant])
   @@index([projectId, createdAt(sort: Desc)])
   @@index([projectId, relevant, createdAt(sort: Desc)])
+}
+
+// One row per Stalker scan of a project. Written when a scan is queued and
+// updated when it finishes. result is the per-source StalkerPollResult.
+model StalkerScanRun {
+  id             String         @id @default(uuid())
+  organizationId String
+  projectId      String
+  trigger        String
+  status         String
+  startedAt      DateTime       @default(now())
+  finishedAt     DateTime?
+  result         Json?
+  error          String         @default("")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  project        StalkerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, startedAt(sort: Desc)])
+  @@index([organizationId])
+  @@index([status])
 }
 
 // Live scan watermark per project, source, and phrase. backfillUntil is a

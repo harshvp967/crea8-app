@@ -121,6 +121,7 @@ export class StalkerRepository {
     private _integration: PrismaRepository<'integration'>,
     private _searchCache: PrismaRepository<'stalkerSearchCache'>,
     private _project: PrismaRepository<'stalkerProject'>,
+    private _scan: PrismaRepository<'stalkerScanRun'>,
     private _category: PrismaRepository<'stalkerProjectCategory'>,
     private _view: PrismaRepository<'stalkerSavedView'>,
     private _cursor: PrismaRepository<'stalkerScanCursor'>,
@@ -321,6 +322,90 @@ export class StalkerRepository {
   listCursors(projectId: string) {
     return this._cursor.model.stalkerScanCursor.findMany({
       where: { projectId },
+    });
+  }
+
+  listDueProjects(cutoff: Date) {
+    return this._project.model.stalkerProject.findMany({
+      where: {
+        keywords: { some: {} },
+        OR: [{ lastScanAt: null }, { lastScanAt: { lt: cutoff } }],
+      },
+      select: { id: true, organizationId: true },
+      orderBy: { lastScanAt: 'asc' },
+    });
+  }
+
+  touchLastScan(projectId: string) {
+    return this._project.model.stalkerProject.updateMany({
+      where: { id: projectId },
+      data: { lastScanAt: new Date() },
+    });
+  }
+
+  createScanRun(input: {
+    organizationId: string;
+    projectId: string;
+    trigger: string;
+    status?: string;
+  }) {
+    return this._scan.model.stalkerScanRun.create({
+      data: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+        trigger: input.trigger,
+        status: input.status || 'queued',
+        error: '',
+      },
+    });
+  }
+
+  markScanRunning(id: string) {
+    return this._scan.model.stalkerScanRun.updateMany({
+      where: { id },
+      data: { status: 'running' },
+    });
+  }
+
+  finishScanRun(
+    id: string,
+    status: string,
+    result: Prisma.InputJsonValue | null,
+    error: string
+  ) {
+    return this._scan.model.stalkerScanRun.updateMany({
+      where: { id },
+      data: {
+        status,
+        finishedAt: new Date(),
+        error: error.slice(0, 500),
+        ...(result ? { result } : {}),
+      },
+    });
+  }
+
+  latestScan(projectId: string) {
+    return this._scan.model.stalkerScanRun.findFirst({
+      where: { projectId },
+      orderBy: { startedAt: 'desc' },
+    });
+  }
+
+  activeScan(projectId: string) {
+    return this._scan.model.stalkerScanRun.findFirst({
+      where: {
+        projectId,
+        status: { in: ['queued', 'running'] },
+        startedAt: { gt: new Date(Date.now() - 20 * 60 * 1000) },
+      },
+      orderBy: { startedAt: 'desc' },
+    });
+  }
+
+  latestManualScan(projectId: string, since: Date) {
+    return this._scan.model.stalkerScanRun.findFirst({
+      where: { projectId, trigger: 'manual', startedAt: { gt: since } },
+      orderBy: { startedAt: 'desc' },
     });
   }
 
@@ -1319,7 +1404,7 @@ export class StalkerRepository {
         keywordId: { not: null },
         createdAt: { gte: since },
       },
-      select: { keywordId: true, createdAt: true },
+      select: { keywordId: true, createdAt: true, source: true },
       take: 5000,
     });
   }

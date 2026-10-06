@@ -20,6 +20,8 @@ export interface StalkerSourceProvider {
   filter: string;
   // Connected-account identifier this source needs, or null when it uses env credentials.
   integrationIdentifier(): string | null;
+  // Keyword search can run on platform env credentials, with no connected account.
+  searchesWithoutAccount?(): boolean;
   enabled(auth?: StalkerSourceAuth): boolean;
   statusDetail(available: boolean): string;
   buildQuery(input: StalkerSearchTerms): string;

@@ -9,6 +9,7 @@ import {
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { ReconnectText, StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import {
   SAMPLE_GROUPS,
   SAMPLE_KEYWORDS,
@@ -37,6 +38,9 @@ type Keyword = {
   mentions30d?: number;
   sparkline?: number[];
   lastScan?: string | null;
+  lastError?: string | null;
+  nextScanAt?: string | null;
+  scanning?: boolean;
 };
 
 type Group = {
@@ -54,6 +58,17 @@ const ago = (iso?: string | null) => {
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.round(hours / 24)}d ago`;
+};
+
+const nextScanLabel = (iso?: string | null) => {
+  if (!iso) return '';
+  const delta = new Date(iso).getTime() - Date.now();
+  if (delta < 2 * 60 * 1000) return 'Next scan soon';
+  const minutes = Math.round(delta / 60000);
+  if (minutes < 60) return `Next scan in ${Math.max(1, minutes)}m`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `Next scan in ${hours}h`;
+  return `Next scan in ${Math.round(hours / 24)}d`;
 };
 
 const Spark = ({ values }: { values: number[] }) => {
@@ -104,7 +119,8 @@ const PreviewPost = ({ phrase }: { phrase: string }) => (
 export const StalkerKeywords = () => {
   const fetch = useFetch();
   const toaster = useToaster();
-  const { projectId, sample, status, addKeywordSignal } = useStalkerProject();
+  const { projectId, sample, status, addKeywordSignal, scanning, watchScan, previewScan } =
+    useStalkerProject();
   const groupsQuery = useStalkerGroups(sample ? null : projectId);
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
   const [localGroups, setLocalGroups] = useState<Group[]>(SAMPLE_GROUPS);
@@ -225,7 +241,8 @@ export const StalkerKeywords = () => {
     }
     setAddOpen(false);
     refresh();
-    toaster.show('Keyword added');
+    toaster.show('Scanning now…');
+    watchScan();
   };
 
   const patchKeyword = async (keyword: Keyword, body: Record<string, unknown>) => {
@@ -258,6 +275,13 @@ export const StalkerKeywords = () => {
       return;
     }
     refresh();
+    if (
+      ['youtube', 'reddit', 'x', 'linkedin'].some(
+        (key) => typeof body[key] === 'boolean' && body[key] === true
+      )
+    ) {
+      watchScan();
+    }
   };
 
   const removeKeyword = async (id: string) => {
@@ -328,6 +352,7 @@ export const StalkerKeywords = () => {
           >
             Manage groups
           </button>
+          <StalkerCheckNow />
           <button
             type="button"
             className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner"
@@ -461,7 +486,26 @@ export const StalkerKeywords = () => {
                             <span>{keyword.mentions30d || 0}</span>
                           </span>
                         </td>
-                        <td className="px-[12px] py-[12px] text-textItemBlur">{ago(keyword.lastScan)}</td>
+                        <td className="px-[12px] py-[12px] text-textItemBlur">
+                          {scanning || keyword.scanning || previewScan === 'running' ? (
+                            <span className="text-[#00A3C4]">Scanning…</span>
+                          ) : (
+                            <span>Last scan: {ago(keyword.lastScan)}</span>
+                          )}
+                          {keyword.lastError && !(scanning || keyword.scanning || previewScan === 'running') ? (
+                            <span
+                              title={keyword.lastError}
+                              className="mt-[4px] block max-w-[240px] truncate rounded-full border border-[#c43b3b] px-[8px] py-[2px] text-[11px] text-[#c43b3b]"
+                            >
+                              <ReconnectText text={keyword.lastError} />
+                            </span>
+                          ) : null}
+                          {scanning || keyword.scanning || previewScan === 'running' ? null : (
+                            <span className="mt-[4px] block text-[11px]">
+                              {nextScanLabel(keyword.nextScanAt)}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-[12px] py-[12px] text-end">
                           <button
                             type="button"

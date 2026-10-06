@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -82,11 +82,46 @@ const links = [
 
 const pill = (active: boolean) =>
   clsx(
-    'inline-flex items-center gap-[8px] whitespace-nowrap rounded-full border px-[14px] py-[8px] text-[14px] font-[600] transition-colors',
+    'inline-flex items-center gap-[6px] whitespace-nowrap rounded-full border px-[10px] py-[7px] text-[13px] font-[600] transition-colors',
     active
       ? 'border-[#00D9FF]/45 bg-[#00D9FF]/10 text-newTextColor'
       : 'border-transparent text-textItemBlur hover:border-newBorder hover:bg-newBoxHover hover:text-newTextColor'
   );
+
+const chooseVisibleTabs = (
+  widths: number[],
+  available: number,
+  activeIndex: number,
+  moreWidth: number
+) => {
+  const gap = 2;
+  const sum = (indexes: number[]) =>
+    indexes.reduce((total, index) => total + widths[index], 0) +
+    Math.max(0, indexes.length - 1) * gap;
+  const all = widths.map((_, index) => index);
+  if (sum(all) <= available) {
+    return all;
+  }
+  const room = Math.max(0, available - moreWidth - gap);
+  const chosen: number[] = [];
+  for (let index = 0; index < widths.length; index += 1) {
+    const next = [...chosen, index];
+    const pending =
+      activeIndex > index && !next.includes(activeIndex) ? widths[activeIndex] + gap : 0;
+    if (sum(next) + pending <= room) {
+      chosen.push(index);
+    }
+  }
+  if (activeIndex >= 0 && !chosen.includes(activeIndex)) {
+    const without = [...chosen];
+    while (without.length && sum(without) + widths[activeIndex] + gap > room) {
+      without.pop();
+    }
+    without.push(activeIndex);
+    return without;
+  }
+  return chosen;
+};
 
 export const StalkerTopNav = ({
   force = false,
@@ -100,23 +135,79 @@ export const StalkerTopNav = ({
   const {
     projects,
     project,
+    loading,
     setProjectId,
     setShowWizard,
     requestAddKeyword,
     sample,
   } = useStalkerProject();
   const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [visible, setVisible] = useState<number[]>(links.map((_, index) => index));
   const menu = useRef<HTMLDivElement>(null);
+  const moreMenu = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
       if (!menu.current?.contains(event.target as Node)) {
         setOpen(false);
       }
+      if (!moreMenu.current?.contains(event.target as Node)) {
+        setMoreOpen(false);
+      }
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, []);
+
+  const activeIndex = links.findIndex((link) => {
+    const href = `${base}${link.path.replace('/stalker', '')}`;
+    return pathname.startsWith(href);
+  });
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const measure = measureRef.current;
+    if (!nav || !measure) {
+      return;
+    }
+    let frame = 0;
+    let attempts = 0;
+    const fit = () => {
+      const tabs = Array.from(measure.querySelectorAll<HTMLElement>('[data-tab]'));
+      const more = measure.querySelector<HTMLElement>('[data-more]');
+      const widths = tabs.map((tab) => tab.offsetWidth);
+      if (!widths.length || widths.some((width) => width < 8)) {
+        if (attempts < 8) {
+          attempts += 1;
+          frame = requestAnimationFrame(fit);
+        }
+        return;
+      }
+      const next = chooseVisibleTabs(
+        widths,
+        nav.clientWidth,
+        activeIndex,
+        more?.offsetWidth || 72
+      );
+      setVisible((current) =>
+        current.length === next.length && current.every((value, index) => value === next[index])
+          ? current
+          : next
+      );
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(nav);
+    fit();
+    const fonts = document.fonts?.ready.then(() => fit());
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      void fonts;
+    };
+  }, [activeIndex, pathname]);
 
   if (!force && !sample && (!stalkerEnabled || !pathname.startsWith('/stalker'))) {
     return null;
@@ -127,7 +218,7 @@ export const StalkerTopNav = ({
       <div className="relative shrink-0" ref={menu}>
         <button
           type="button"
-          className="flex max-w-[220px] items-center gap-[8px] rounded-full border border-newBorder bg-newBgColorInner px-[12px] py-[8px] text-[13px] font-[600]"
+          className="flex max-w-[128px] items-center gap-[8px] rounded-full border border-newBorder bg-newBgColorInner px-[12px] py-[7px] text-[13px] font-[600] min-[1440px]:max-w-[160px]"
           aria-haspopup="listbox"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
@@ -136,7 +227,11 @@ export const StalkerTopNav = ({
             className="h-[10px] w-[10px] shrink-0 rounded-full border border-black/10"
             style={{ backgroundColor: project?.color || '#71717a' }}
           />
-          <span className="truncate">{project?.name || 'No project'}</span>
+          {loading && !project ? (
+            <span className="inline-block h-[14px] w-[88px] animate-pulse rounded-full bg-newBoxHover" />
+          ) : (
+            <span className="truncate">{project?.name || 'New project'}</span>
+          )}
           <span className="text-textItemBlur" aria-hidden>
             ▾
           </span>
@@ -194,17 +289,41 @@ export const StalkerTopNav = ({
         ) : null}
       </div>
       <nav
-        className="flex min-w-0 flex-1 items-center gap-[4px] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        ref={navRef}
+        className="relative flex min-w-0 flex-1 items-center gap-[2px]"
         aria-label="Stalker"
       >
-        {links.map((link) => {
+        <div
+          ref={measureRef}
+          className="pointer-events-none invisible absolute left-0 top-0 flex w-max items-center gap-[2px]"
+          aria-hidden
+        >
+          {links.map((link) => (
+            <span key={link.path} data-tab className="inline-flex items-center">
+              <span className={pill(false)}>
+                <span className="max-[1439px]:hidden">{link.icon}</span>
+                <span>{link.label}</span>
+              </span>
+              {link.path === '/stalker/keywords' ? (
+                <span className="ms-[2px] flex h-[28px] w-[28px]" />
+              ) : null}
+            </span>
+          ))}
+          <span data-more className={pill(false)}>
+            More ▾
+          </span>
+        </div>
+        {links.map((link, index) => {
+          if (!visible.includes(index)) {
+            return null;
+          }
           const href = `${base}${link.path.replace('/stalker', '')}`;
           const active = pathname.startsWith(href);
           if (link.path === '/stalker/keywords') {
             return (
               <span key={link.path} className="inline-flex items-center">
                 <Link href={href} className={pill(active)}>
-                  {link.icon}
+                  <span className="max-[1439px]:hidden">{link.icon}</span>
                   <span>{link.label}</span>
                 </Link>
                 <button
@@ -220,11 +339,49 @@ export const StalkerTopNav = ({
           }
           return (
             <Link key={link.path} href={href} className={pill(active)}>
-              {link.icon}
+              <span className="max-[1439px]:hidden">{link.icon}</span>
               <span>{link.label}</span>
             </Link>
           );
         })}
+        {visible.length < links.length ? (
+          <div className="relative" ref={moreMenu}>
+            <button
+              type="button"
+              className={pill(false)}
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((value) => !value)}
+            >
+              More ▾
+            </button>
+            {moreOpen ? (
+              <div
+                role="menu"
+                className="absolute end-0 top-[calc(100%+8px)] z-30 w-[180px] rounded-[14px] border border-newBorder bg-newBgColorInner p-[6px] shadow-[var(--menu-shadow)]"
+              >
+                {links.map((link, index) => {
+                  if (visible.includes(index)) {
+                    return null;
+                  }
+                  const href = `${base}${link.path.replace('/stalker', '')}`;
+                  return (
+                    <Link
+                      key={link.path}
+                      href={href}
+                      role="menuitem"
+                      className="flex items-center gap-[8px] rounded-[10px] px-[10px] py-[8px] text-[13px] font-[600] hover:bg-newBoxHover"
+                      onClick={() => setMoreOpen(false)}
+                    >
+                      {link.icon}
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </nav>
     </div>
   );

@@ -3,9 +3,14 @@
 import {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
 } from 'react';
+import { useSWRConfig } from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import {
   useStalkerProjects,
   useStalkerStatus,
@@ -78,6 +83,24 @@ type StalkerStatus = {
   };
 };
 
+export type StalkerScanSource = {
+  id: string;
+  ok: boolean;
+  searched?: number;
+  found?: number;
+  stored?: number;
+  error?: string;
+};
+
+export type StalkerScanView = {
+  runId?: string | null;
+  status: string;
+  trigger?: string | null;
+  error?: string;
+  sources?: StalkerScanSource[];
+  totals?: { found: number; stored: number; duplicates: number; offTopic: number };
+};
+
 type StalkerProjectContextValue = {
   projects: StalkerProjectRecord[];
   project: StalkerProjectRecord | null;
@@ -91,6 +114,11 @@ type StalkerProjectContextValue = {
   addKeywordSignal: number;
   requestAddKeyword: () => void;
   sample: boolean;
+  previewScan: string | null;
+  scanning: boolean;
+  scanResult: StalkerScanView | null;
+  runScan: () => Promise<void>;
+  watchScan: (id?: string) => Promise<void>;
 };
 
 const StalkerProjectContext = createContext<StalkerProjectContextValue | null>(
@@ -102,12 +130,16 @@ export const StalkerProjectProvider = ({
   sample = false,
   empty = false,
   initialWizard = false,
+  previewScan = null,
 }: {
   children: ReactNode;
   sample?: boolean;
   empty?: boolean;
   initialWizard?: boolean;
+  previewScan?: string | null;
 }) => {
+  const fetch = useFetch();
+  const { mutate: mutateKeys } = useSWRConfig();
   const { data, mutate, isLoading } = useStalkerProjects(!sample);
   const { data: status } = useStalkerStatus(!sample);
   const projects: StalkerProjectRecord[] = sample
@@ -122,6 +154,9 @@ export const StalkerProjectProvider = ({
   );
   const [showWizard, setShowWizard] = useState(initialWizard);
   const [addKeywordSignal, setAddKeywordSignal] = useState(0);
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<StalkerScanView | null>(null);
+  const scanToken = useRef(0);
   const [hydrated, setHydrated] = useState(sample);
   const dataIds = Array.isArray(data) ? data.map((item) => item.id).join(',') : '';
   const [syncedIds, setSyncedIds] = useState(sample ? 'sample' : '');
@@ -154,15 +189,138 @@ export const StalkerProjectProvider = ({
     setShowWizard(false);
   };
 
-  const project =
-    projects.find((item) => item.id === projectId) || projects[0] || null;
+  const matched = projects.find((item) => item.id === projectId) || null;
+  const project = matched || (projects.length ? projects[0] : null);
+  const activeId = project?.id || projectId;
+
+  const revalidateFeeds = useCallback(() => {
+    mutateKeys(
+      (key) =>
+        typeof key === 'string' &&
+        (key.startsWith('/stalker/mentions') ||
+          key.startsWith('/stalker/keywords') ||
+          key.startsWith('/stalker/analytics'))
+    );
+  }, [mutateKeys]);
+
+  const watchScan = useCallback(
+    async (id?: string) => {
+      const target = id || activeId;
+      if (!target || sample) {
+        return;
+      }
+      const token = ++scanToken.current;
+      setScanning(true);
+      const started = Date.now();
+      while (Date.now() - started < 180000) {
+        if (scanToken.current !== token) {
+          return;
+        }
+        const response = await fetch(`/stalker/projects/${target}/scan`);
+        const body = response.ok ? await response.json() : null;
+        if (scanToken.current !== token) {
+          return;
+        }
+        if (body?.status === 'queued' || body?.status === 'running') {
+          setScanResult(body);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          continue;
+        }
+        setScanning(false);
+        if (body) {
+          setScanResult(body);
+        }
+        if (body?.status === 'succeeded' || body?.status === 'failed') {
+          revalidateFeeds();
+        }
+        return;
+      }
+      if (scanToken.current === token) {
+        setScanning(false);
+      }
+    },
+    [activeId, fetch, revalidateFeeds, sample]
+  );
+
+  const runScan = useCallback(async () => {
+    if (sample) {
+      setScanning(true);
+      setScanResult(null);
+      window.setTimeout(() => {
+        setScanning(false);
+        setScanResult({
+          status: 'succeeded',
+          sources: [
+            { id: 'youtube', ok: true, searched: 3, found: 15, stored: 12 },
+          ],
+          totals: { found: 15, stored: 12, duplicates: 3, offTopic: 0 },
+        });
+      }, 400);
+      return;
+    }
+    if (!activeId) {
+      return;
+    }
+    setScanning(true);
+    setScanResult(null);
+    const response = await fetch(`/stalker/projects/${activeId}/scan`, {
+      method: 'POST',
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) {
+      setScanning(false);
+      setScanResult({
+        status: 'failed',
+        error:
+          body?.message ||
+          (response.status === 429
+            ? 'A check just ran. Try again in a couple of minutes'
+            : 'Could not start a scan'),
+        sources: [],
+      });
+      return;
+    }
+    await watchScan(activeId);
+  }, [activeId, fetch, sample, watchScan]);
+
+  useEffect(() => {
+    if (sample || !activeId) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const response = await fetch(`/stalker/projects/${activeId}/scan`);
+      if (cancelled || !response.ok) {
+        return;
+      }
+      const body = await response.json();
+      if (cancelled) {
+        return;
+      }
+      if (body?.status === 'queued' || body?.status === 'running') {
+        watchScan(activeId);
+        return;
+      }
+      const finished = body?.finishedAt ? new Date(body.finishedAt).getTime() : 0;
+      if (
+        finished &&
+        Date.now() - finished < 2 * 60 * 1000 &&
+        (body?.status === 'succeeded' || body?.status === 'failed')
+      ) {
+        setScanResult(body);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeId, fetch, sample, watchScan]);
 
   return (
     <StalkerProjectContext.Provider
       value={{
         projects,
         project,
-        projectId: project?.id || null,
+        projectId: activeId,
         setProjectId,
         status: sample ? SAMPLE_STATUS : status || null,
         loading: sample ? false : !hydrated || isLoading,
@@ -174,6 +332,11 @@ export const StalkerProjectProvider = ({
         addKeywordSignal,
         requestAddKeyword: () => setAddKeywordSignal((value) => value + 1),
         sample,
+        previewScan,
+        scanning,
+        scanResult,
+        runScan,
+        watchScan,
       }}
     >
       {children}

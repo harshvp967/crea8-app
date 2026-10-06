@@ -12,6 +12,7 @@ import {
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import {
   emptyFilters,
   filtersActive,
@@ -144,8 +145,11 @@ export const StalkerMentions = () => {
   const [extra, setExtra] = useState<Mention[]>([]);
   const search = filtersToSearch(filters);
   const mentionsQuery = useStalkerMentions(sample ? null : projectId, search);
+  const mentionsReady = sample || !!mentionsQuery.data || mentionsQuery.error;
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
-  const authorsQuery = useStalkerAuthors(sample ? null : projectId);
+  const authorsQuery = useStalkerAuthors(
+    !sample && projectId && mentionsReady ? projectId : null
+  );
   const viewsQuery = useStalkerViews(sample ? null : projectId);
   const page = sample ? SAMPLE_MENTIONS : mentionsQuery.data;
   const mentions = useMemo<Mention[]>(
@@ -266,7 +270,10 @@ export const StalkerMentions = () => {
 
   return (
     <div className="relative flex min-h-full flex-col gap-[16px] p-[16px] md:p-[24px]">
-      <h1 className="text-[28px] font-[600]">Mentions</h1>
+      <div className="flex flex-wrap items-center justify-between gap-[12px]">
+        <h1 className="text-[28px] font-[600]">Mentions</h1>
+        <StalkerCheckNow />
+      </div>
       {views.length ? (
         <div className="flex flex-wrap gap-[8px]">
           {views.map((view: { id: string; name: string; filters: Record<string, string> }) => (
@@ -289,7 +296,11 @@ export const StalkerMentions = () => {
         authors={authors}
       />
       {mentionsQuery.isLoading && !mentions.length ? (
-        <p className="text-[14px] text-textItemBlur">Loading mentions…</p>
+        <div className="flex flex-col gap-[12px]" aria-hidden>
+          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+        </div>
       ) : null}
       {!mentionsQuery.isLoading && !mentions.length ? (
         <p className="text-[14px] text-textItemBlur">

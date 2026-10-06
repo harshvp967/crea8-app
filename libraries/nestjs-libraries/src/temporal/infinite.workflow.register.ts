@@ -14,18 +14,15 @@ export class InfiniteWorkflowRegister implements OnModuleInit {
             workflowId: 'missing-post-workflow',
             taskQueue: 'main',
           });
-      } catch (err) {}
-
-      if (process.env.STALKER_ENABLED === 'true') {
-        try {
-          await this._temporalService.client
-            ?.getRawClient()
-            ?.workflow?.start('stalkerPollWorkflow', {
-              workflowId: 'stalker-poll-workflow',
-              taskQueue: 'main',
-            });
-        } catch (err) {}
+      } catch (err) {
+        const message = err instanceof Error ? `${err.name} ${err.message}` : '';
+        if (!/AlreadyStarted|already started/i.test(message)) {
+          console.error('Could not start missing-post workflow', err);
+        }
       }
+      // Stalker scans are started by the orchestrator schedule `stalker-poll`.
+      // The old stalker-poll-workflow loop is left untouched so a running
+      // execution can finish, and the orchestrator terminates it on boot.
     }
   }
 }

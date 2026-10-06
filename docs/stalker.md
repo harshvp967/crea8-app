@@ -10,13 +10,13 @@ Organizations with no project are not polled.
 
 ## What it collects
 
-For each project, about every 6 hours:
+For each project, when it has not been scanned in `STALKER_PROJECT_INTERVAL_HOURS` (default 6). The orchestrator checks every `STALKER_POLL_MINUTES` (default 60) and starts one workflow per due project:
 
 1. One brand search per enabled source, built by that source from the brand name, aliases, and handle (`"crea8one" OR @crea8one -from:crea8one` on X, name plus `u/` and `r/` on Reddit, name plus `@handle` joined with `|` on YouTube). Own posts are dropped when the author matches that project's handle. Negative keywords drop a hit. A public hit is kept only when the text contains a brand, alias, handle, or keyword as a whole word. Each kept row records what matched (`BRAND`, `ALIAS`, `HANDLE`, or `KEYWORD`).
-2. Keyword search through `StalkerSourceProvider.search(keyword, since)`. A source runs only when it is enabled and the keyword's platform flag is on. Up to 5 flagged keywords per source per run. The same word-boundary and negative-keyword rules apply. Brand search does not wait on those flags.
+2. Keyword search through `StalkerSourceProvider.search(keyword, since)`. A source runs only when it is enabled and the keyword's platform flag is on. Every flagged keyword is scanned, oldest cursor first, up to the 10 keyword cap. The same word-boundary and negative-keyword rules apply. Brand search does not wait on those flags.
    - YouTube: a connected channel token, refreshed on use when `tokenExpiration` is past or inside 5 minutes. A Google 401 forces one refresh and one retry. The refresh failure path is still `RefreshIntegrationService` (that is the only place a channel is disconnected). If `YOUTUBE_STALKER_API_KEY` is set, `search.list` and public `commentThreads.list` use that API key instead of the channel token. Channel-comment collection (`allThreadsRelatedToChannelId`) still needs the connected channel. `search.list` asks for 5 videos from the scan window, plus comments on those videos.
    - Reddit: app-only OAuth (`REDDIT_STALKER_CLIENT_ID` and `REDDIT_STALKER_CLIENT_SECRET`), User-Agent `web:crea8one-stalker:1.0 (by /u/crea8one)`, posts then comments, at least 1.1s between requests. Unset credentials leave Reddit off.
-   - X: official recent search when `X_STALKER_BEARER_TOKEN` is set. The start time stays inside the last 6 days.
+   - X: official recent search. `X_STALKER_BEARER_TOKEN` is used when it is set. Otherwise `X_API_KEY` and `X_API_SECRET` (the same app keys used for posting) are exchanged for an app-only bearer via `POST https://api.x.com/oauth2/token` with `grant_type=client_credentials`. That bearer is cached in memory and Redis and refreshed once after a 401. The start time stays inside the last 6 days. A 401 or 403 whose body says `client-not-enrolled` or that the app needs a higher access level is stored as `X plan doesn't include search (needs X API Basic or pay-per-use credits)`. A 429 is stored as `rate limited, retrying next scan`. Tokens are not logged.
    - LinkedIn: placeholder. `enabled()` is always false. No environment variable turns it on.
 3. Comments on the organization's own connected channels, collected once and copied onto every project. These stay in the feed even when they do not contain the brand (own posts and negative keywords are still dropped). Search rows are stored first, so a comment that was also a search hit keeps its match tag.
    - YouTube: one `commentThreads.list` for the channel (`allThreadsRelatedToChannelId`), up to 20 threads. A reviewed reply uses `comments.insert` on a comment or `commentThreads.insert` on a video. Nothing is posted until the person clicks Send.
@@ -62,8 +62,9 @@ Later migrations, also additive:
 - `20261004140000_stalker_brand` — brand name, aliases, negative keywords, handles, alert email, webhook URL, `StalkerMatchKind`, match label, author handle, like and reply counts, saved flag, `StalkerSavedView`, and trigram indexes on mention text and author. Apply this SQL migration. `prisma db push` does not create the `pg_trgm` indexes; search still works without them.
 - `20261005180000_stalker_alerts_cursors` — alert scope, delivery, spike and sentiment thresholds, `relevant`, `contentHash`, `StalkerScanCursor`, and `StalkerAlert`. Apply this SQL migration. `prisma db push` does not create the partial unique index on `contentHash`; the application still skips hashes it has already stored.
 - `20261006153000_stalker_perf` — **MIGRATION REQUIRED.** `StalkerScanCursor.lastError` and `backfillDone`, plus indexes on `StalkerMention (projectId, createdAt DESC)`, `StalkerMention (projectId, relevant, createdAt DESC)`, and `StalkerAlert (projectId, readAt)`. The SQL is additive (`ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`). `prisma db push` creates the columns and indexes; production without a `_prisma_migrations` table should run this file once.
+- `20261006200000_stalker_scan_runs` — **MIGRATION REQUIRED.** `StalkerProject.lastScanAt` and `StalkerScanRun` (trigger, status, per-source result, error). Additive (`ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`). `prisma db push` creates them; production without a `_prisma_migrations` table should run this file once.
 
-A project can store 10 keywords and 12 categories. YouTube listens by default. Reddit, X, and LinkedIn do not, unless the keyword form turns them on. Reddit and X stay disabled in the form with "Needs API access" when their credentials are missing. LinkedIn stays "Coming soon".
+A project can store 10 keywords and 12 categories. YouTube listens by default. Reddit, X, and LinkedIn do not, unless the keyword form turns them on. Reddit stays disabled in the form with "Needs API access" when its app credentials are missing. X shows that badge only when `X_STALKER_BEARER_TOKEN` and the `X_API_KEY` / `X_API_SECRET` pair are all unset. LinkedIn stays "Coming soon".
 
 ## API
 
@@ -104,7 +105,7 @@ Set the same flag on the frontend (Vercel) and the backend (Railway):
 - `EMAIL_FROM_ADDRESS` and `EMAIL_FROM_NAME` — already used by the app. Urgent alerts are skipped when either is missing.
 - `YOUTUBE_CLIENT_ID` and `YOUTUBE_CLIENT_SECRET` — already used for YouTube connect. Keyword search and comment reads use the connected channel token. No new YouTube scope is requested. `youtubepartner` is not used.
 - `REDDIT_STALKER_CLIENT_ID` and `REDDIT_STALKER_CLIENT_SECRET` — Reddit app-only credentials. Both must be set or Reddit search stays off.
-- `X_STALKER_BEARER_TOKEN` — X API v2 recent search. Unset leaves X off.
+- `X_STALKER_BEARER_TOKEN` — X API v2 recent search bearer. When unset, Stalker uses `X_API_KEY` and `X_API_SECRET` to mint an app-only bearer. X stays off only when neither the bearer nor both app keys are set.
 - LinkedIn has no credential. It stays off.
 - `RUN_CRON=1` on the backend process that registers long-running workflows, or the 6-hour loop never starts. "Check now" still works without it.
 
