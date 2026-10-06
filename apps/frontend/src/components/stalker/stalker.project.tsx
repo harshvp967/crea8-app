@@ -89,6 +89,8 @@ export type StalkerScanSource = {
   searched?: number;
   found?: number;
   stored?: number;
+  offTopic?: number;
+  skipped?: boolean;
   error?: string;
 };
 
@@ -161,13 +163,18 @@ export const StalkerProjectProvider = ({
   const dataIds = Array.isArray(data) ? data.map((item) => item.id).join(',') : '';
   const [syncedIds, setSyncedIds] = useState(sample ? 'sample' : '');
 
-  if (!sample && !hydrated && typeof window !== 'undefined') {
+  // Read the stored project after mount, so the server render and the first
+  // client render are identical (skeleton) and React doesn't throw #418.
+  useEffect(() => {
+    if (sample || hydrated) {
+      return;
+    }
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    setHydrated(true);
     if (stored) {
       setProjectIdState(stored);
     }
-  }
+    setHydrated(true);
+  }, [sample, hydrated]);
 
   if (!sample && hydrated && !isLoading && dataIds && syncedIds !== dataIds) {
     setSyncedIds(dataIds);
@@ -230,7 +237,7 @@ export const StalkerProjectProvider = ({
         if (body) {
           setScanResult(body);
         }
-        if (body?.status === 'succeeded' || body?.status === 'failed') {
+        if (body?.status === 'succeeded' || body?.status === 'partial' || body?.status === 'failed') {
           revalidateFeeds();
         }
         return;
@@ -274,7 +281,7 @@ export const StalkerProjectProvider = ({
         error:
           body?.message ||
           (response.status === 429
-            ? 'A check just ran. Try again in a couple of minutes'
+            ? 'A check just ran. Try again in a few minutes'
             : 'Could not start a scan'),
         sources: [],
       });
@@ -305,7 +312,7 @@ export const StalkerProjectProvider = ({
       if (
         finished &&
         Date.now() - finished < 2 * 60 * 1000 &&
-        (body?.status === 'succeeded' || body?.status === 'failed')
+        (body?.status === 'succeeded' || body?.status === 'partial' || body?.status === 'failed')
       ) {
         setScanResult(body);
       }

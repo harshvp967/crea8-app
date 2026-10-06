@@ -36,6 +36,8 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // Skip the extra server round-trip of the /stalker index page.
+      { source: '/stalker', destination: '/stalker/mentions', permanent: false },
       {
         source: '/api/uploads/:path*',
         destination:

@@ -71,6 +71,35 @@ const wordMatch = (text: string, term: string) => {
   ).test(text);
 };
 
+export const containsPhrase = (text: string, phrase: string) => {
+  const needle = (phrase || '').trim().replace(/\s+/g, ' ');
+  return needle.length >= 2 && wordMatch(text || '', needle);
+};
+
+/**
+ * Deterministic relevance gate that runs before (and overrides) the AI verdict.
+ * - true: the mention matched a tracked keyword (any group, competitors included),
+ *   is linked to a keyword, or its text contains an active keyword phrase.
+ * - false: nothing matched at all (no brand, alias, handle or keyword in the text),
+ *   e.g. fuzzy search results or unrelated comments. These stay off-topic.
+ * - null: brand / alias / handle match. The AI may only drop clear spam or noise.
+ */
+export const matchRelevance = (
+  row: { text?: string | null; matchKind?: string | null; keywordId?: string | null },
+  keywordPhrases: string[]
+): boolean | null => {
+  if (row.matchKind === 'KEYWORD' || row.keywordId) {
+    return true;
+  }
+  if (keywordPhrases.some((phrase) => containsPhrase(row.text || '', phrase))) {
+    return true;
+  }
+  if (!row.matchKind) {
+    return false;
+  }
+  return null;
+};
+
 export const readIdentity = (project: {
   name: string;
   brandName?: string | null;

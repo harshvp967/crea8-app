@@ -306,11 +306,36 @@ export class StalkerRepository {
             phraseKey: keyword.phrase.toLowerCase(),
           },
         });
+        // Mentions collected only because of this keyword go with it. A keyword
+        // equal to the brand/alias just unlinks (brand mentions stay).
+        const project = await tx.stalkerProject.findFirst({
+          where: { id: keyword.projectId, organizationId },
+          select: { name: true, brandName: true, aliases: true },
+        });
+        const brandTerms = [project?.brandName || project?.name || '', ...(project?.aliases || '').split(/[\n,]/)]
+          .map((term) => term.trim().toLowerCase())
+          .filter((term) => term.length >= 2);
+        if (!brandTerms.includes(keyword.phrase.trim().toLowerCase())) {
+          await tx.stalkerMention.deleteMany({
+            where: { organizationId, keywordId: keyword.id },
+          });
+        }
       }
       return tx.stalkerKeyword.deleteMany({
         where: { id, organizationId },
       });
     });
+  }
+
+  async existingKeywordIds(projectId: string, ids: string[]) {
+    if (!ids.length) {
+      return new Set<string>();
+    }
+    const rows = await this._keyword.model.stalkerKeyword.findMany({
+      where: { projectId, id: { in: ids } },
+      select: { id: true },
+    });
+    return new Set(rows.map((row) => row.id));
   }
 
   getKeyword(organizationId: string, id: string) {
@@ -739,11 +764,18 @@ export class StalkerRepository {
           integration: { select: { name: true, providerIdentifier: true } },
         },
       })
-      .then((rows) => {
+      .then(async (rows) => {
         const mentions = rows.slice(0, take);
+        const hiddenOffTopic =
+          filters.offTopic !== 'include' && !filters.cursor
+            ? await this._mention.model.stalkerMention.count({
+                where: { ...where, relevant: false },
+              })
+            : 0;
         return {
           mentions,
           nextCursor: rows.length > take ? mentions[mentions.length - 1]?.id || null : null,
+          hiddenOffTopic,
         };
       });
   }
@@ -760,7 +792,13 @@ export class StalkerRepository {
       where: { organizationId, projectId, classifiedAt: null },
       orderBy: { createdAt: 'asc' },
       take: 40,
-      select: { id: true, text: true },
+      select: {
+        id: true,
+        text: true,
+        source: true,
+        matchKind: true,
+        keywordId: true,
+      },
     });
   }
 
@@ -792,6 +830,13 @@ export class StalkerRepository {
         },
       });
     }
+  }
+
+  setMentionRelevant(organizationId: string, id: string, relevant: boolean) {
+    return this._mention.model.stalkerMention.updateMany({
+      where: { id, organizationId },
+      data: { relevant },
+    });
   }
 
   setMentionStatus(
