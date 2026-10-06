@@ -14,6 +14,7 @@ import { StalkerService } from '@gitroom/nestjs-libraries/database/prisma/stalke
 import {
   CreateStalkerKeywordDto,
   CreateStalkerProjectDto,
+  UpdateStalkerKeywordDto,
   CreateStalkerViewDto,
   StalkerDraftDto,
   StalkerMentionQueryDto,
@@ -110,6 +111,15 @@ export class StalkerController {
     return this._stalkerService.createKeyword(org.id, body);
   }
 
+  @Post('/keywords/:id')
+  updateKeyword(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: UpdateStalkerKeywordDto
+  ) {
+    return this._stalkerService.updateKeyword(org.id, id, body);
+  }
+
   @Delete('/keywords/:id')
   deleteKeyword(
     @GetOrgFromRequest() org: Organization,
@@ -121,9 +131,17 @@ export class StalkerController {
   @Get('/alerts')
   alerts(
     @GetOrgFromRequest() org: Organization,
-    @Query('projectId') projectId: string
+    @Query('projectId') projectId: string,
+    @Query('cursor') cursor?: string,
+    @Query('take') take?: string
   ) {
-    return this._stalkerService.alerts(org.id, projectId);
+    const parsed = take ? Number(take) : undefined;
+    return this._stalkerService.alerts(
+      org.id,
+      projectId,
+      cursor,
+      Number.isFinite(parsed) ? parsed : undefined
+    );
   }
 
   @Post('/alerts/:id/read')

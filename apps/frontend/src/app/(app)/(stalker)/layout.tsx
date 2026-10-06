@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Metadata } from 'next';
+import { LayoutComponent } from '@gitroom/frontend/components/new-layout/layout.component';
 import { StalkerShell } from '@gitroom/frontend/components/stalker/stalker.shell';
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function StalkerLayout({ children }: { children: ReactNode }) {
-  return <StalkerShell>{children}</StalkerShell>;
+  return (
+    <LayoutComponent>
+      <StalkerShell>{children}</StalkerShell>
+    </LayoutComponent>
+  );
 }

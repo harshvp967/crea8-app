@@ -34,7 +34,7 @@ export const useStalkerMentions = (
   return useSWR(
     projectId ? `/stalker/mentions?${query.toString()}` : null,
     load,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, keepPreviousData: true }
   );
 };
 
@@ -54,7 +54,7 @@ export const useStalkerKeywords = (projectId: string | null) => {
   return useSWR(
     projectId ? `/stalker/keywords?projectId=${projectId}` : null,
     load,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, keepPreviousData: true }
   );
 };
 
@@ -71,7 +71,7 @@ export const useStalkerAnalytics = (
       ? `/stalker/analytics?projectId=${projectId}&date=${date}`
       : null,
     load,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, keepPreviousData: true }
   );
 };
 
@@ -95,7 +95,7 @@ export const useStalkerAlerts = (projectId: string | null) => {
   return useSWR(
     projectId ? `/stalker/alerts?projectId=${projectId}` : null,
     load,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, keepPreviousData: true }
   );
 };
 

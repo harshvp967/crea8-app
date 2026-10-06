@@ -14,7 +14,7 @@ For each project, about every 6 hours:
 
 1. One brand search per enabled source, built by that source from the brand name, aliases, and handle (`"crea8one" OR @crea8one -from:crea8one` on X, name plus `u/` and `r/` on Reddit, name plus `@handle` joined with `|` on YouTube). Own posts are dropped when the author matches that project's handle. Negative keywords drop a hit. A public hit is kept only when the text contains a brand, alias, handle, or keyword as a whole word. Each kept row records what matched (`BRAND`, `ALIAS`, `HANDLE`, or `KEYWORD`).
 2. Keyword search through `StalkerSourceProvider.search(keyword, since)`. A source runs only when it is enabled and the keyword's platform flag is on. Up to 5 flagged keywords per source per run. The same word-boundary and negative-keyword rules apply. Brand search does not wait on those flags.
-   - YouTube: a connected channel token. `search.list` (5 videos from the last 7 days) plus comments on those videos.
+   - YouTube: a connected channel token, refreshed on use when `tokenExpiration` is past or inside 5 minutes. A Google 401 forces one refresh and one retry. The refresh failure path is still `RefreshIntegrationService` (that is the only place a channel is disconnected). If `YOUTUBE_STALKER_API_KEY` is set, `search.list` and public `commentThreads.list` use that API key instead of the channel token. Channel-comment collection (`allThreadsRelatedToChannelId`) still needs the connected channel. `search.list` asks for 5 videos from the scan window, plus comments on those videos.
    - Reddit: app-only OAuth (`REDDIT_STALKER_CLIENT_ID` and `REDDIT_STALKER_CLIENT_SECRET`), User-Agent `web:crea8one-stalker:1.0 (by /u/crea8one)`, posts then comments, at least 1.1s between requests. Unset credentials leave Reddit off.
    - X: official recent search when `X_STALKER_BEARER_TOKEN` is set. The start time stays inside the last 6 days.
    - LinkedIn: placeholder. `enabled()` is always false. No environment variable turns it on.
@@ -25,7 +25,9 @@ For each project, about every 6 hours:
 
 Search results are cached in `StalkerSearchCache` by platform, lowercased phrase, and the hour of the scan window, so the same keyword is not fetched again for another organization during that hour. A failed call is not cached. An empty result is cached. Each project, source, and phrase also stores a `StalkerScanCursor`. The next live scan starts one hour before that cursor, and never earlier than the last 7 days. A keyword backfill (`POST /stalker/keywords/:id/backfill`) sets a one-shot 30-day `backfillUntil` on that phrase. It does not move the live cursor backwards. X recent search still cannot see past about 6 days, and Reddit's search window is day, week, month, or year based on how far back the scan asks. Mentions are unique per organization, project, and external id (`yt-comment:`, `yt-video:`, `ig-comment:`, `fb-comment:`, `rd-post:`, `rd-comment:`, `x-post:`). The same text from the same author on the same platform family is also dropped by a `contentHash`, including a partial unique index that ignores empty hashes on older rows.
 
-Tokens are the ones already stored for posting. Stalker does not refresh or disconnect a channel. A failed provider call is logged and skipped.
+Tokens are the ones already stored for posting. Stalker refreshes a connected account before search, channel-comment collection, and reply when the access token is expired or inside 5 minutes, and once more if Google returns 401. A failed phrase is not cached and does not clear that phrase's backfill flag. `POST /stalker/poll` returns `{ sources: [{ projectId, id, ok, searched, found, stored, error? }], totals: { found, stored, duplicates, offTopic } }`. The 6-hour activity ignores that payload.
+
+YouTube does not set `refreshCron`, so `startRefreshWorkflow` never starts `refresh_<integrationId>` for a YouTube channel. Posting and analytics already refresh YouTube on use; Stalker now does the same. Providers that do set `refreshCron` are re-armed with `TERMINATE_EXISTING` after a Stalker refresh succeeds. Background refresh for every integration, including ones whose workflow is missing, is still a follow-up: nothing in this change starts a workflow for YouTube.
 
 ## Classification and themes
 
@@ -59,8 +61,9 @@ Later migrations, also additive:
 - `20261004130000_stalker_projects` — `StalkerProject`, `StalkerProjectCategory`, `StalkerMentionStatus`, nullable `projectId` on keywords, mentions, and themes, per-keyword listen flags, mention `categoryId` and `status`. The old unique keys on `(organizationId, phrase)` and `(organizationId, externalId)` are replaced by `(projectId, phrase)` and `(organizationId, projectId, externalId)` so two projects can store the same public post.
 - `20261004140000_stalker_brand` — brand name, aliases, negative keywords, handles, alert email, webhook URL, `StalkerMatchKind`, match label, author handle, like and reply counts, saved flag, `StalkerSavedView`, and trigram indexes on mention text and author. Apply this SQL migration. `prisma db push` does not create the `pg_trgm` indexes; search still works without them.
 - `20261005180000_stalker_alerts_cursors` — alert scope, delivery, spike and sentiment thresholds, `relevant`, `contentHash`, `StalkerScanCursor`, and `StalkerAlert`. Apply this SQL migration. `prisma db push` does not create the partial unique index on `contentHash`; the application still skips hashes it has already stored.
+- `20261006153000_stalker_perf` — **MIGRATION REQUIRED.** `StalkerScanCursor.lastError` and `backfillDone`, plus indexes on `StalkerMention (projectId, createdAt DESC)`, `StalkerMention (projectId, relevant, createdAt DESC)`, and `StalkerAlert (projectId, readAt)`. The SQL is additive (`ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`). `prisma db push` creates the columns and indexes; production without a `_prisma_migrations` table should run this file once.
 
-A project can store 10 keywords and 12 categories. YouTube and Reddit listen by default. X and LinkedIn do not.
+A project can store 10 keywords and 12 categories. YouTube listens by default. Reddit, X, and LinkedIn do not, unless the keyword form turns them on. Reddit and X stay disabled in the form with "Needs API access" when their credentials are missing. LinkedIn stays "Coming soon".
 
 ## API
 
@@ -69,7 +72,9 @@ All routes require a signed-in organization and return 404 when the flag is off.
 - `GET /stalker/status` — poll settings plus which keyword and comment sources are available for this organization
 - `GET /stalker/projects` and `POST /stalker/projects`
 - `POST /stalker/projects/:id` — brand, handles, negative keywords, alert email, webhook URL
-- `GET /stalker/mentions?projectId=&date=&source=&from=&keywordId=&categoryId=&sentiment=&status=&q=&match=&offTopic=` — `offTopic=include` shows keyword hits the relevance gate marked off-topic. Otherwise those rows are hidden.
+- `GET /stalker/mentions?projectId=&date=&source=&from=&keywordId=&categoryId=&sentiment=&status=&q=&match=&offTopic=&cursor=&take=` — returns `{ mentions, nextCursor }`. `take` defaults to 50 and caps at 100. `offTopic=include` shows keyword hits the relevance gate marked off-topic. Otherwise those rows are hidden.
+- `GET /stalker/alerts?projectId=&cursor=&take=` — returns `{ alerts, nextCursor }`. `take` defaults to 50.
+- `POST /stalker/keywords/:id` — updates `listenYoutube`, `listenReddit`, `listenX`, and `listenLinkedin` for an existing keyword.
 - `POST /stalker/mentions/:id/status` `{ "status": "NEW" | "REPLIED" | "IGNORED" }`
 - `POST /stalker/mentions/:id/reply` `{ "text" }` — sends through the connected account after review
 - `POST /stalker/mentions/:id/save` `{ "saved": true, "as"?: "testimonial" | "idea" }`

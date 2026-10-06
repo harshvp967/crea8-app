@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  Integration,
   Prisma,
   StalkerAlertChannel,
   StalkerAlertDelivery,
@@ -19,6 +20,8 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.source.manager';
 import { StalkerSourceId } from '@gitroom/nestjs-libraries/stalker/stalker.source';
+import { isProviderAuthFailure } from '@gitroom/nestjs-libraries/stalker/sources/youtube.stalker.source';
+import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import {
   BACKFILL_LOOKBACK_MS,
   cleanHandle,
@@ -46,6 +49,7 @@ import {
   StalkerMentionQueryDto,
   StalkerReplyDto,
   StalkerSaveMentionDto,
+  UpdateStalkerKeywordDto,
   UpdateStalkerProjectDto,
 } from '@gitroom/nestjs-libraries/dtos/stalker/stalker.dto';
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
@@ -60,6 +64,65 @@ const KEYWORDS_PER_POLL = 5;
 const POLL_HOURS = 6;
 const POLL_WINDOW_MS = POLL_HOURS * 60 * 60 * 1000;
 const SEARCH_SINCE_MS = 7 * 24 * 60 * 60 * 1000;
+const TOKEN_REFRESH_LEEWAY_MS = 5 * 60 * 1000;
+
+export type StalkerPollSource = {
+  projectId: string;
+  id: string;
+  ok: boolean;
+  searched: number;
+  found: number;
+  stored: number;
+  error?: string;
+};
+
+export type StalkerPollResult = {
+  sources: StalkerPollSource[];
+  totals: {
+    found: number;
+    stored: number;
+    duplicates: number;
+    offTopic: number;
+  };
+};
+
+const emptyTotals = () => ({
+  found: 0,
+  stored: 0,
+  duplicates: 0,
+  offTopic: 0,
+});
+
+const safeProviderError = (err: unknown) => {
+  const message = err instanceof Error ? err.message : 'Search failed';
+  return message.replace(/ya29\.[A-Za-z0-9._-]+/g, '[token]').slice(0, 180);
+};
+
+const sourceFailure = (id: string, detail?: string) => {
+  if (id === 'reddit') {
+    return 'Reddit: needs API access';
+  }
+  if (id === 'x') {
+    return 'X: needs API access';
+  }
+  if (id === 'linkedin') {
+    return 'LinkedIn: Coming soon';
+  }
+  if (id === 'youtube') {
+    if (detail && /token|credential|reconnect/i.test(detail)) {
+      return 'YouTube: channel token expired. Reconnect YouTube in Channels';
+    }
+    return detail ? `YouTube: ${detail}` : 'YouTube: Connect a YouTube channel';
+  }
+  return detail || 'Search failed';
+};
+
+const tokenExpiresSoon = (tokenExpiration?: Date | null) => {
+  if (!tokenExpiration) {
+    return false;
+  }
+  return tokenExpiration.getTime() <= Date.now() + TOKEN_REFRESH_LEEWAY_MS;
+};
 
 const PROJECT_COLORS = [
   '#00D9FF',
@@ -144,7 +207,8 @@ export class StalkerService {
     private _integrationManager: IntegrationManager,
     private _sources: StalkerSourceManager,
     private _openaiService: OpenaiService,
-    private _emailService: EmailService
+    private _emailService: EmailService,
+    private _refreshIntegrationService: RefreshIntegrationService
   ) {}
 
   assertEnabled() {
@@ -237,7 +301,7 @@ export class StalkerService {
       keywords.push({
         phrase,
         youtube: keyword.youtube !== false,
-        reddit: keyword.reddit !== false,
+        reddit: !!keyword.reddit,
         x: !!keyword.x,
         linkedin: !!keyword.linkedin,
       });
@@ -340,13 +404,39 @@ export class StalkerService {
       this._repository.listKeywords(organizationId, projectId),
       this._repository.listCursors(projectId),
     ]);
-    return rows.map((row) => ({
-      ...row,
-      backfillArmed: cursors.some(
-        (cursor) =>
-          cursor.phraseKey === row.phrase.toLowerCase() && !!cursor.backfillUntil
-      ),
-    }));
+    return rows.map((row) => {
+      const phraseKey = row.phrase.toLowerCase();
+      const sources = (
+        ['youtube', 'reddit', 'x', 'linkedin'] as const
+      ).map((id) => {
+        const on = !!row[listenField[id]];
+        const cursor = cursors.find(
+          (item) => item.source === id && item.phraseKey === phraseKey
+        );
+        if (!on) {
+          return { id, state: 'off' as const };
+        }
+        if (cursor?.backfillUntil && cursor.lastError) {
+          return {
+            id,
+            state: 'failed' as const,
+            error: cursor.lastError,
+          };
+        }
+        if (cursor?.backfillUntil) {
+          return { id, state: 'queued' as const };
+        }
+        if (cursor?.backfillDone) {
+          return { id, state: 'done' as const };
+        }
+        return { id, state: 'idle' as const };
+      });
+      return {
+        ...row,
+        backfillArmed: sources.some((source) => source.state === 'queued'),
+        backfill: sources,
+      };
+    });
   }
 
   async requestBackfill(organizationId: string, id: string) {
@@ -374,10 +464,15 @@ export class StalkerService {
     return { backfillUntil: until.toISOString(), sources };
   }
 
-  async alerts(organizationId: string, projectId: string) {
+  async alerts(
+    organizationId: string,
+    projectId: string,
+    cursor?: string,
+    take?: number
+  ) {
     this.assertEnabled();
     await this.requireProject(organizationId, projectId);
-    return this._repository.listAlerts(organizationId, projectId);
+    return this._repository.listAlerts(organizationId, projectId, cursor, take);
   }
 
   async markAlertRead(organizationId: string, id: string) {
@@ -396,10 +491,20 @@ export class StalkerService {
   async exportMentions(organizationId: string, query: StalkerMentionQueryDto) {
     this.assertEnabled();
     await this.requireProject(organizationId, query.projectId);
-    const rows = await this._repository.listMentions(organizationId, {
-      ...query,
-      take: 1000,
-    });
+    const rows = [];
+    let cursor = query.cursor;
+    while (rows.length < 1000) {
+      const page = await this._repository.listMentions(organizationId, {
+        ...query,
+        take: 100,
+        cursor,
+      });
+      rows.push(...page.mentions);
+      if (!page.nextCursor || page.mentions.length === 0) {
+        break;
+      }
+      cursor = page.nextCursor;
+    }
     const header = [
       'createdAt',
       'source',
@@ -464,11 +569,37 @@ export class StalkerService {
       phrase,
       {
         youtube: body.youtube !== false,
-        reddit: body.reddit !== false,
+        reddit: !!body.reddit,
         x: !!body.x,
         linkedin: !!body.linkedin,
       }
     );
+  }
+
+  async updateKeyword(
+    organizationId: string,
+    id: string,
+    body: UpdateStalkerKeywordDto
+  ) {
+    this.assertEnabled();
+    const keyword = await this._repository.getKeyword(organizationId, id);
+    if (!keyword) {
+      throw new NotFoundException('Keyword not found');
+    }
+    const updated = await this._repository.updateKeywordPlatforms(
+      organizationId,
+      id,
+      {
+        youtube: typeof body.youtube === 'boolean' ? body.youtube : undefined,
+        reddit: typeof body.reddit === 'boolean' ? body.reddit : undefined,
+        x: typeof body.x === 'boolean' ? body.x : undefined,
+        linkedin: typeof body.linkedin === 'boolean' ? body.linkedin : undefined,
+      }
+    );
+    if (!updated.count) {
+      throw new NotFoundException('Keyword not found');
+    }
+    return this._repository.getKeyword(organizationId, id);
   }
 
   async deleteKeyword(organizationId: string, id: string) {
@@ -489,11 +620,6 @@ export class StalkerService {
       projectId,
       window
     );
-    const days = new Map<string, number>();
-    for (const row of raw.recent) {
-      const key = row.createdAt.toISOString().slice(0, 10);
-      days.set(key, (days.get(key) || 0) + 1);
-    }
     return {
       bySource: raw.bySource.map((row) => ({
         source: row.source,
@@ -510,9 +636,7 @@ export class StalkerService {
           : 'Uncategorized',
         count: row._count._all,
       })),
-      overTime: [...days.entries()]
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([day, count]) => ({ date: day, count })),
+      overTime: raw.overTime,
       accounts: raw.accounts.map((row) => ({
         authorName: row.authorName,
         count: row._count._all,
@@ -613,15 +737,24 @@ export class StalkerService {
     if (!provider?.stalkerReply) {
       throw new BadRequestException('Replies are not available for this account');
     }
+    const bag = this.tokenBag();
     try {
-      await provider.stalkerReply({
-        accessToken: integration.token,
-        integration,
-        postExternalId: mention.postExternalId || undefined,
-        externalId: mention.externalId,
-        text: body.text.trim(),
-      });
+      const called = await this.callWithFreshToken(integration, bag, (current) =>
+        provider.stalkerReply({
+          accessToken: current.token,
+          integration: current,
+          postExternalId: mention.postExternalId || undefined,
+          externalId: mention.externalId,
+          text: body.text.trim(),
+        })
+      );
+      if ('error' in called) {
+        throw new BadRequestException(called.error);
+      }
     } catch (err) {
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
       console.error('Stalker reply failed', err);
       throw new BadRequestException('The reply was not sent');
     }
@@ -733,17 +866,20 @@ export class StalkerService {
     };
   }
 
-  async pollOrganization(organizationId: string) {
+  async pollOrganization(organizationId: string): Promise<StalkerPollResult> {
     this.assertEnabled();
     const projects = await this._repository.listProjects(organizationId);
     if (!projects.length) {
-      return { ok: true };
+      return { sources: [], totals: emptyTotals() };
     }
     const integrations = await this.organizationIntegrations(organizationId);
+    const bag = this.tokenBag();
     const commentBatches: {
       integrationId: string;
+      sourceId: string;
       drafts: StalkerMentionDraft[];
     }[] = [];
+    const commentErrors: { sourceId: string; error: string }[] = [];
 
     for (const integration of integrations) {
       const provider = this._integrationManager.getSocialIntegration(
@@ -752,43 +888,79 @@ export class StalkerService {
       if (!provider?.collectStalkerMentions) {
         continue;
       }
+      const sourceId = this.sourceIdFor(integration.providerIdentifier);
       try {
-        const drafts = await provider.collectStalkerMentions({
-          accessToken: integration.token,
+        const called = await this.callWithFreshToken(
           integration,
-          keywords: [],
-        });
+          bag,
+          (current) =>
+            provider.collectStalkerMentions!({
+              accessToken: current.token,
+              integration: current,
+              keywords: [],
+            })
+        );
+        if ('error' in called) {
+          commentErrors.push({ sourceId, error: called.error });
+          continue;
+        }
         commentBatches.push({
-          integrationId: integration.id,
-          drafts: drafts.slice(0, 40),
+          integrationId: called.integration.id,
+          sourceId,
+          drafts: called.value.slice(0, 40),
         });
       } catch (err) {
         console.error('Stalker collect failed', integration.id, err);
+        commentErrors.push({
+          sourceId,
+          error: sourceFailure(sourceId, safeProviderError(err)),
+        });
       }
     }
 
+    const sources: StalkerPollSource[] = [];
+    const totals = emptyTotals();
     for (const project of projects) {
       const identity = readIdentity(project);
-      await this.searchProject(
+      const searched = await this.searchProject(
         organizationId,
         project,
         integrations,
-        identity
+        identity,
+        bag
       );
+      sources.push(...searched.sources);
+      totals.found += searched.found;
+      totals.stored += searched.stored;
+      totals.duplicates += searched.duplicates;
       for (const batch of commentBatches) {
         const tagged = tagDrafts(batch.drafts, identity, false);
-        await this.storeMentions(
+        const saved = await this.storeMentions(
           organizationId,
           project,
           batch.integrationId,
           tagged,
           new Map()
         );
+        const row = this.sourceRow(sources, project.id, batch.sourceId);
+        row.found += batch.drafts.length;
+        row.stored += saved.stored;
+        totals.found += batch.drafts.length;
+        totals.stored += saved.stored;
+        totals.duplicates += saved.duplicates;
       }
-      await this.classifyOrganization(organizationId, project);
+      for (const failure of commentErrors) {
+        const row = this.sourceRow(sources, project.id, failure.sourceId);
+        row.ok = false;
+        row.error = row.error || failure.error;
+      }
+      totals.offTopic += await this.classifyOrganization(
+        organizationId,
+        project
+      );
       await this.clusterOrganization(organizationId, project.id);
     }
-    return { ok: true };
+    return { sources, totals };
   }
 
   async pollAll() {
@@ -836,8 +1008,9 @@ export class StalkerService {
       handleInstagram: string;
       handleFacebook: string;
     },
-    integrations: { id: string; providerIdentifier: string; token: string }[],
-    identity: ReturnType<typeof readIdentity>
+    integrations: Integration[],
+    identity: ReturnType<typeof readIdentity>,
+    bag: { fresh: Map<string, Integration>; blocked: Set<string> }
   ) {
     const keywords = await this._repository.listKeywords(
       organizationId,
@@ -848,16 +1021,29 @@ export class StalkerService {
       cursors.map((cursor) => [`${cursor.source}:${cursor.phraseKey}`, cursor])
     );
     const now = Date.now();
+    const sources: StalkerPollSource[] = [];
+    let found = 0;
+    let stored = 0;
+    let duplicates = 0;
+    const youtubeKey = !!(process.env.YOUTUBE_STALKER_API_KEY || '').trim();
     for (const source of this._sources.all()) {
+      const stat: StalkerPollSource = {
+        projectId: project.id,
+        id: source.id,
+        ok: true,
+        searched: 0,
+        found: 0,
+        stored: 0,
+      };
       const identifier = source.integrationIdentifier();
-      const integration = identifier
-        ? integrations.find(
-            (item) => item.providerIdentifier === identifier
-          )
+      let integration = identifier
+        ? integrations.find((item) => item.providerIdentifier === identifier)
         : undefined;
-      const auth = identifier
-        ? { accessToken: integration?.token }
-        : undefined;
+      if (integration && bag.fresh.has(integration.id)) {
+        integration = bag.fresh.get(integration.id);
+      }
+      const auth =
+        identifier && integration ? { accessToken: integration.token } : undefined;
       const collected: StalkerMentionDraft[] = [];
       const phrases = [identity.brand, ...identity.aliases].filter(
         (phrase) => phrase.length >= 2
@@ -867,6 +1053,57 @@ export class StalkerService {
         handle: handleForSource(source.id, identity),
         subreddit: identity.handles.redditSubreddit,
       });
+      const field = listenField[source.id];
+      const selected = keywords
+        .filter((keyword) => keyword[field])
+        .slice(0, KEYWORDS_PER_POLL);
+      const keywordIds = new Map(
+        selected.map((keyword) => [keyword.phrase.toLowerCase(), keyword.id])
+      );
+      const wantsSearch = !!query.trim() || selected.length > 0;
+      if (!wantsSearch) {
+        continue;
+      }
+      if (integration && tokenExpiresSoon(integration.tokenExpiration)) {
+        const ready = await this.ensureToken(integration, bag);
+        if ('error' in ready) {
+          if (!(source.id === 'youtube' && youtubeKey)) {
+            stat.ok = false;
+            stat.error = ready.error;
+            for (const keyword of selected) {
+              await this._repository.noteScanFailure(
+                project.id,
+                source.id,
+                keyword.phrase.toLowerCase(),
+                ready.error
+              );
+            }
+            sources.push(stat);
+            continue;
+          }
+          integration = undefined;
+        } else {
+          integration = ready.integration;
+        }
+      }
+      const liveAuth =
+        integration && identifier
+          ? { accessToken: integration.token }
+          : auth;
+      if (!source.enabled(source.id === 'youtube' && youtubeKey ? undefined : liveAuth)) {
+        stat.ok = false;
+        stat.error = sourceFailure(source.id, source.statusDetail(false));
+        for (const keyword of selected) {
+          await this._repository.noteScanFailure(
+            project.id,
+            source.id,
+            keyword.phrase.toLowerCase(),
+            stat.error
+          );
+        }
+        sources.push(stat);
+        continue;
+      }
       const pull = async (
         phrase: string,
         phraseKey: string,
@@ -879,13 +1116,33 @@ export class StalkerService {
           backfillUntil: cursor?.backfillUntil,
           lookbackMs: SEARCH_SINCE_MS,
         });
-        const hits = await this.cachedSearch(source, phrase, scan.since, auth);
-        if (!hits) {
+        const outcome = await this.cachedSearch(
+          source,
+          phrase,
+          scan.since,
+          source.id === 'youtube' && youtubeKey ? undefined : integration,
+          bag
+        );
+        if (outcome.error || !outcome.drafts) {
+          const message =
+            outcome.error ||
+            stat.error ||
+            sourceFailure(source.id, 'Search failed');
+          stat.ok = false;
+          stat.error = message;
+          await this._repository.noteScanFailure(
+            project.id,
+            source.id,
+            phraseKey,
+            message
+          );
           return;
         }
+        stat.searched += 1;
+        stat.found += outcome.drafts.length;
         collected.push(
           ...tagDrafts(
-            hits.map((draft) => ({
+            outcome.drafts.map((draft) => ({
               ...draft,
               keywordPhrase: keywordPhrase || draft.keywordPhrase,
             })),
@@ -903,24 +1160,24 @@ export class StalkerService {
       if (query.trim()) {
         await pull(query, 'brand');
       }
-      const field = listenField[source.id];
-      const selected = keywords
-        .filter((keyword) => keyword[field])
-        .slice(0, KEYWORDS_PER_POLL);
-      const keywordIds = new Map(
-        selected.map((keyword) => [keyword.phrase.toLowerCase(), keyword.id])
-      );
       for (const keyword of selected) {
         await pull(keyword.phrase, keyword.phrase.toLowerCase(), keyword.phrase);
       }
-      await this.storeMentions(
+      const unique = dedupeDrafts(collected).slice(0, 80);
+      const saved = await this.storeMentions(
         organizationId,
         project,
         identifier && integration ? integration.id : null,
-        dedupeDrafts(collected).slice(0, 80),
+        unique,
         keywordIds
       );
+      stat.stored += saved.stored;
+      found += stat.found;
+      stored += stat.stored;
+      duplicates += saved.duplicates;
+      sources.push(stat);
     }
+    return { sources, found, stored, duplicates };
   }
 
   private async cachedSearch(
@@ -935,8 +1192,9 @@ export class StalkerService {
     },
     phrase: string,
     since: Date,
-    auth?: { accessToken?: string }
-  ) {
+    integration: Integration | undefined,
+    bag: { fresh: Map<string, Integration>; blocked: Set<string> }
+  ): Promise<{ drafts: StalkerMentionDraft[] | null; error?: string }> {
     const cachePhrase = `${phrase.toLowerCase()}|${Math.floor(
       since.getTime() / (60 * 60 * 1000)
     )}`;
@@ -946,18 +1204,184 @@ export class StalkerService {
       POLL_WINDOW_MS
     );
     if (cached) {
-      return cached;
+      return { drafts: cached };
     }
-    if (!source.enabled(auth)) {
-      return null;
-    }
-    try {
+    const execute = async (
+      auth?: { accessToken?: string }
+    ): Promise<{ drafts: StalkerMentionDraft[] | null; error?: string }> => {
+      if (!source.enabled(auth)) {
+        return {
+          drafts: null,
+          error: sourceFailure(source.id),
+        };
+      }
       const drafts = await source.search(phrase, since, auth);
       await this._repository.writeSearchCache(source.id, cachePhrase, drafts);
-      return drafts;
+      return { drafts };
+    };
+    try {
+      if (!integration) {
+        return await execute(undefined);
+      }
+      const called = await this.callWithFreshToken(integration, bag, (current) =>
+        execute({ accessToken: current.token })
+      );
+      if ('error' in called) {
+        return { drafts: null, error: called.error };
+      }
+      return called.value;
     } catch (err) {
       console.error('Stalker search failed', source.id, phrase, err);
+      return {
+        drafts: null,
+        error: sourceFailure(source.id, safeProviderError(err)),
+      };
+    }
+  }
+
+  private tokenBag() {
+    return {
+      fresh: new Map<string, Integration>(),
+      blocked: new Set<string>(),
+    };
+  }
+
+  private sourceIdFor(providerIdentifier: string) {
+    if (providerIdentifier.startsWith('instagram')) {
+      return 'instagram';
+    }
+    if (providerIdentifier === 'facebook') {
+      return 'facebook';
+    }
+    return providerIdentifier;
+  }
+
+  private sourceRow(
+    sources: StalkerPollSource[],
+    projectId: string,
+    id: string
+  ) {
+    const existing = sources.find(
+      (source) => source.projectId === projectId && source.id === id
+    );
+    if (existing) {
+      return existing;
+    }
+    const created: StalkerPollSource = {
+      projectId,
+      id,
+      ok: true,
+      searched: 0,
+      found: 0,
+      stored: 0,
+    };
+    sources.push(created);
+    return created;
+  }
+
+  private async ensureToken(
+    integration: Integration,
+    bag: { fresh: Map<string, Integration>; blocked: Set<string> }
+  ): Promise<{ integration: Integration } | { error: string }> {
+    const current = bag.fresh.get(integration.id) || integration;
+    if (bag.blocked.has(current.id)) {
+      return {
+        error: sourceFailure(this.sourceIdFor(current.providerIdentifier), 'token'),
+      };
+    }
+    if (!tokenExpiresSoon(current.tokenExpiration)) {
+      return { integration: current };
+    }
+    const refreshed = await this.forceRefresh(current, bag);
+    if (!refreshed) {
+      return {
+        error: sourceFailure(this.sourceIdFor(current.providerIdentifier), 'token'),
+      };
+    }
+    return { integration: refreshed };
+  }
+
+  private async forceRefresh(
+    integration: Integration,
+    bag: { fresh: Map<string, Integration>; blocked: Set<string> }
+  ): Promise<Integration | null> {
+    if (bag.blocked.has(integration.id)) {
       return null;
+    }
+    if (!integration.refreshToken) {
+      bag.blocked.add(integration.id);
+      return null;
+    }
+    const data = await this._refreshIntegrationService.refresh(integration);
+    if (!data || !data.accessToken) {
+      bag.blocked.add(integration.id);
+      return null;
+    }
+    const provider = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+    if (provider?.refreshCron) {
+      this._refreshIntegrationService
+        .startRefreshWorkflow(
+          integration.organizationId,
+          integration.id,
+          provider
+        )
+        .catch((err) => {
+          console.error('Stalker could not re-arm token refresh', integration.id, err);
+        });
+    }
+    const expiresIn = data.expiresIn && data.expiresIn > 0 ? data.expiresIn : 3600;
+    const next: Integration = {
+      ...integration,
+      token: data.accessToken,
+      refreshToken: data.refreshToken || integration.refreshToken,
+      tokenExpiration: new Date(Date.now() + expiresIn * 1000),
+    };
+    bag.fresh.set(integration.id, next);
+    return next;
+  }
+
+  private async callWithFreshToken<T>(
+    integration: Integration,
+    bag: { fresh: Map<string, Integration>; blocked: Set<string> },
+    run: (current: Integration) => Promise<T>
+  ): Promise<{ value: T; integration: Integration } | { error: string }> {
+    const ready = await this.ensureToken(integration, bag);
+    if ('error' in ready) {
+      return ready;
+    }
+    try {
+      return {
+        value: await run(ready.integration),
+        integration: ready.integration,
+      };
+    } catch (err) {
+      if (!isProviderAuthFailure(err)) {
+        throw err;
+      }
+      const refreshed = await this.forceRefresh(ready.integration, bag);
+      if (!refreshed) {
+        return {
+          error: sourceFailure(
+            this.sourceIdFor(ready.integration.providerIdentifier),
+            'token'
+          ),
+        };
+      }
+      try {
+        return { value: await run(refreshed), integration: refreshed };
+      } catch (retryErr) {
+        if (isProviderAuthFailure(retryErr)) {
+          return {
+            error: sourceFailure(
+              this.sourceIdFor(refreshed.providerIdentifier),
+              'token'
+            ),
+          };
+        }
+        throw retryErr;
+      }
     }
   }
 
@@ -986,7 +1410,7 @@ export class StalkerService {
       projectId
     );
     if (!categories.length) {
-      return;
+      return 0;
     }
     const byName = new Map(
       categories.map((category) => [category.name.toLowerCase(), category])
@@ -1039,6 +1463,7 @@ export class StalkerService {
       );
     }
     await this.dispatchAlerts(organizationId, project, saved);
+    return saved.filter((item) => !item.relevant).length;
   }
 
   private async classifyBatch(
@@ -1394,10 +1819,10 @@ export class StalkerService {
     keywordIds: Map<string, string>
   ) {
     if (!drafts.length) {
-      return;
+      return { stored: 0, duplicates: 0 };
     }
     const started = new Date(Date.now() - 2000);
-    await this._repository.insertMentions(
+    const stored = await this._repository.insertMentions(
       organizationId,
       project.id,
       integrationId,
@@ -1410,6 +1835,10 @@ export class StalkerService {
       drafts.map((draft) => draft.externalId),
       started
     );
+    return {
+      stored,
+      duplicates: Math.max(0, drafts.length - stored),
+    };
   }
 
   private async emitCreated(

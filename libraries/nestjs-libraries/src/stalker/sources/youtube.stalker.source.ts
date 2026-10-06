@@ -20,6 +20,61 @@ const youtubeClient = (accessToken: string) => {
   });
 };
 
+const youtubeApiKey = () => (process.env.YOUTUBE_STALKER_API_KEY || '').trim();
+
+// Public search.list / commentThreads.list accept an API key, so keyword
+// listening does not need a connected channel when the key is set.
+const youtubeForSearch = (accessToken?: string) => {
+  const apiKey = youtubeApiKey();
+  if (apiKey) {
+    return google.youtube({ version: 'v3', auth: apiKey });
+  }
+  if (!accessToken) {
+    return null;
+  }
+  return youtubeClient(accessToken);
+};
+
+export const isProviderAuthFailure = (err: unknown) => {
+  if (!err || typeof err !== 'object') {
+    return false;
+  }
+  const value = err as {
+    code?: number | string;
+    status?: number;
+    message?: string;
+    response?: {
+      status?: number;
+      data?: {
+        error?: string | { status?: string; message?: string };
+        error_description?: string;
+      };
+    };
+  };
+  const status = value.response?.status;
+  if (status === 401) {
+    return true;
+  }
+  if (value.code === 401 || value.status === 401) {
+    return true;
+  }
+  const dataError = value.response?.data?.error;
+  if (dataError === 'invalid_token' || dataError === 'invalid_grant') {
+    return true;
+  }
+  if (
+    typeof dataError === 'object' &&
+    (dataError.status === 'UNAUTHENTICATED' ||
+      /invalid credentials|invalid_token/i.test(dataError.message || ''))
+  ) {
+    return true;
+  }
+  const message = `${value.message || ''} ${
+    value.response?.data?.error_description || ''
+  }`;
+  return /invalid credentials|invalid_token|unauthenticated/i.test(message);
+};
+
 export class YoutubeStalkerSource implements StalkerSourceProvider {
   id = 'youtube' as const;
   label = 'YouTube';
@@ -30,10 +85,13 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
   }
 
   enabled(auth?: StalkerSourceAuth) {
-    return !!auth?.accessToken;
+    return !!youtubeApiKey() || !!auth?.accessToken;
   }
 
   statusDetail(available: boolean) {
+    if (youtubeApiKey()) {
+      return 'Using YOUTUBE_STALKER_API_KEY';
+    }
     return available ? 'Connected channel' : 'Connect a YouTube channel';
   }
 
@@ -55,10 +113,10 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
     since: Date,
     auth?: StalkerSourceAuth
   ): Promise<StalkerMentionDraft[]> {
-    if (!auth?.accessToken) {
+    const youtube = youtubeForSearch(auth?.accessToken);
+    if (!youtube) {
       return [];
     }
-    const youtube = youtubeClient(auth.accessToken);
     const drafts: StalkerMentionDraft[] = [];
     const seenComments = new Set<string>();
     const search = await youtube.search.list({
@@ -125,6 +183,9 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
           });
         }
       } catch (err) {
+        if (isProviderAuthFailure(err)) {
+          throw err;
+        }
         console.error('Stalker YouTube keyword comments failed', err);
       }
     }
