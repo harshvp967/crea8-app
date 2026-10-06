@@ -13,6 +13,7 @@ import {
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
+import { authorUrl, cleanMention } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
   emptyFilters,
   filtersActive,
@@ -396,7 +397,7 @@ export const StalkerMentions = () => {
                     <div className="flex flex-wrap items-baseline gap-[6px]">
                       <a
                         className="truncate text-[14px] font-[600]"
-                        href={mention.authorHandle ? `https://x.com/${mention.authorHandle}` : mention.url || '#'}
+                        href={authorUrl(mention.source || '', mention.authorHandle || '', mention.url || '')}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -405,7 +406,7 @@ export const StalkerMentions = () => {
                       {mention.authorHandle ? (
                         <a
                           className="text-[13px] text-textItemBlur"
-                          href={`https://x.com/${mention.authorHandle}`}
+                          href={authorUrl(mention.source || '', mention.authorHandle, mention.url || '')}
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -525,7 +526,7 @@ export const StalkerMentions = () => {
               `/stalker/mentions?projectId=${projectId}&${search}&cursor=${page.nextCursor}`
             );
             const payload = await response.json();
-            setExtra((current) => [...current, ...(payload.mentions || [])]);
+            setExtra((current) => [...current, ...(payload.mentions || []).map(cleanMention)]);
           }}
         >
           Load more

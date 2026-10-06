@@ -423,7 +423,7 @@ export const StalkerFilters = ({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px]">{author.authorName}</span>
-                  <span className="block truncate text-[11px] text-textItemBlur">@{author.authorHandle}</span>
+                  <span className="block truncate text-[11px] text-textItemBlur">{author.authorHandle ? `@${author.authorHandle}` : ''}</span>
                 </span>
                 <SourceIcon source={author.source} />
                 <span className="text-[12px] text-textItemBlur">{author.count}</span>

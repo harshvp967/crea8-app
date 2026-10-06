@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { decodeHtmlEntities, normalizeHandle } from '@gitroom/helpers/utils/stalker.text';
 
 type Board = {
   project: { name: string; description: string; color: string };
@@ -93,10 +94,10 @@ export const StalkerShare = ({ token }: { token: string }) => {
           {(board.mentions || []).map((mention) => (
             <li key={mention.id} className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[14px]">
               <p className="text-[13px] font-[600]">
-                {mention.authorName}{' '}
-                <span className="font-[500] text-textItemBlur">@{mention.authorHandle}</span>
+                {decodeHtmlEntities(mention.authorName)}{' '}
+                <span className="font-[500] text-textItemBlur">@{normalizeHandle(mention.authorHandle)}</span>
               </p>
-              <p className="mt-[6px] text-[14px] leading-[1.5]">{mention.text}</p>
+              <p className="mt-[6px] text-[14px] leading-[1.5]">{decodeHtmlEntities(mention.text)}</p>
               <p className="mt-[6px] text-[12px] text-textItemBlur">
                 {mention.sentiment}
                 {mention.category ? ` · ${mention.category}` : ''}

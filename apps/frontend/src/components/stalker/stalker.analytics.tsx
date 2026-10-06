@@ -19,6 +19,7 @@ import {
   SAMPLE_KEYWORDS,
 } from '@gitroom/frontend/components/stalker/stalker.sample';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
+import { decodeHtmlEntities } from '@gitroom/helpers/utils/stalker.text';
 
 
 const Card = ({
@@ -155,7 +156,7 @@ export const StalkerAnalytics = () => {
             <ul className="flex flex-col gap-[8px]">
               {accounts.map((row: { authorName: string; count: number }) => (
                 <li key={row.authorName} className="flex items-center justify-between text-[13px]">
-                  <span className="truncate">{row.authorName}</span>
+                  <span className="truncate">{decodeHtmlEntities(row.authorName)}</span>
                   <span className="text-textItemBlur">{row.count}</span>
                 </li>
               ))}
@@ -169,7 +170,7 @@ export const StalkerAnalytics = () => {
             <ul className="flex flex-col gap-[8px]">
               {supporters.map((row: { authorName: string; count: number }) => (
                 <li key={row.authorName} className="flex justify-between text-[13px]">
-                  <span>{row.authorName}</span>
+                  <span>{decodeHtmlEntities(row.authorName)}</span>
                   <span className="text-[#1c8f5a]">{row.count}</span>
                 </li>
               ))}
@@ -183,7 +184,7 @@ export const StalkerAnalytics = () => {
             <ul className="flex flex-col gap-[8px]">
               {critics.map((row: { authorName: string; count: number }) => (
                 <li key={row.authorName} className="flex justify-between text-[13px]">
-                  <span>{row.authorName}</span>
+                  <span>{decodeHtmlEntities(row.authorName)}</span>
                   <span className="text-[#c43b3b]">{row.count}</span>
                 </li>
               ))}

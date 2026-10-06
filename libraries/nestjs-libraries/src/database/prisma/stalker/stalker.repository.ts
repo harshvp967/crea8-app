@@ -17,6 +17,10 @@ import {
 } from '@prisma/client';
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { mentionContentHash } from '@gitroom/nestjs-libraries/stalker/stalker.match';
+import {
+  decodeHtmlEntities,
+  normalizeHandle,
+} from '@gitroom/helpers/utils/stalker.text';
 
 const CATEGORIES = new Set<string>(Object.values(StalkerCategory));
 const SENTIMENTS = new Set<string>(Object.values(StalkerSentiment));
@@ -578,7 +582,15 @@ export class StalkerRepository {
 
     const seenHash = new Set<string>();
     const prepared = [];
-    for (const draft of drafts) {
+    // Store plain text: sources (YouTube titles especially) send HTML entities
+    // like &amp;, and some handles already start with "@".
+    for (const raw of drafts) {
+      const draft = {
+        ...raw,
+        authorName: decodeHtmlEntities(raw.authorName),
+        authorHandle: normalizeHandle(raw.authorHandle),
+        text: decodeHtmlEntities(raw.text),
+      };
       const contentHash = mentionContentHash(draft);
       if (seenHash.has(contentHash)) {
         continue;
