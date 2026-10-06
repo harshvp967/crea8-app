@@ -25,6 +25,9 @@ async function start() {
     rawBody: true,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
+      // Cache preflights (browsers cap this at 2h). Every API call sends custom
+      // headers, so without this each request paid an extra OPTIONS round trip.
+      maxAge: 7200,
       allowedHeaders: [
         'Content-Type',
         'Authorization',

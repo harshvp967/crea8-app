@@ -147,15 +147,12 @@ export const StalkerMentions = () => {
   const [extra, setExtra] = useState<Mention[]>([]);
   const search = filtersToSearch(filters);
   const mentionsQuery = useStalkerMentions(sample ? null : projectId, search);
-  const mentionsReady = sample || !!mentionsQuery.data || mentionsQuery.error;
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
-  const authorsQuery = useStalkerAuthors(
-    !sample && projectId && mentionsReady ? projectId : null
-  );
-  // Saved views are secondary: load them after the first mentions page, not in the first-paint burst.
-  const viewsQuery = useStalkerViews(
-    !sample && projectId && mentionsReady ? projectId : null
-  );
+  // Load authors and saved views alongside the first page instead of after it:
+  // the API answers each in ~30ms, and the waterfall cost a full extra round
+  // trip (plus CORS preflight) before the filter bar was usable.
+  const authorsQuery = useStalkerAuthors(!sample && projectId ? projectId : null);
+  const viewsQuery = useStalkerViews(!sample && projectId ? projectId : null);
   const page = sample ? SAMPLE_MENTIONS : mentionsQuery.data;
   const mentions = useMemo<Mention[]>(
     () => [
