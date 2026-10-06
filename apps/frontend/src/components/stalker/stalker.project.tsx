@@ -101,6 +101,10 @@ export type StalkerScanView = {
   error?: string;
   sources?: StalkerScanSource[];
   totals?: { found: number; stored: number; duplicates: number; offTopic: number };
+  finishedAt?: string | null;
+  /** Set when Check now was rate-limited: the result shown is the latest run. */
+  notice?: string;
+  retryAt?: string;
 };
 
 type StalkerProjectContextValue = {
@@ -159,6 +163,7 @@ export const StalkerProjectProvider = ({
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<StalkerScanView | null>(null);
   const scanToken = useRef(0);
+  const scanRequest = useRef(false);
   const [hydrated, setHydrated] = useState(sample);
   const dataIds = Array.isArray(data) ? data.map((item) => item.id).join(',') : '';
   const [syncedIds, setSyncedIds] = useState(sample ? 'sample' : '');
@@ -265,29 +270,50 @@ export const StalkerProjectProvider = ({
       }, 400);
       return;
     }
-    if (!activeId) {
+    // One request at a time: double clicks / re-renders used to fire several
+    // POSTs, and every one after the first came back 429.
+    if (!activeId || scanRequest.current) {
       return;
     }
-    setScanning(true);
-    setScanResult(null);
-    const response = await fetch(`/stalker/projects/${activeId}/scan`, {
-      method: 'POST',
-    });
-    const body = await response.json().catch(() => null);
-    if (!response.ok) {
-      setScanning(false);
-      setScanResult({
-        status: 'failed',
-        error:
-          body?.message ||
-          (response.status === 429
-            ? 'A check just ran. Try again in a few minutes'
-            : 'Could not start a scan'),
-        sources: [],
+    scanRequest.current = true;
+    try {
+      setScanning(true);
+      setScanResult(null);
+      const response = await fetch(`/stalker/projects/${activeId}/scan`, {
+        method: 'POST',
       });
-      return;
+      const body = await response.json().catch(() => null);
+      if (response.status === 429) {
+        // Rate-limited: show what the latest run found and when the next check
+        // is allowed, instead of a bare error.
+        const latestResponse = await fetch(`/stalker/projects/${activeId}/scan`).catch(
+          () => null
+        );
+        const latest =
+          latestResponse && latestResponse.ok
+            ? await latestResponse.json().catch((): null => null)
+            : null;
+        setScanning(false);
+        setScanResult({
+          ...(latest && latest.status !== 'idle' ? latest : { status: 'failed', sources: [] }),
+          notice: body?.message || 'A check just ran. Try again in a few minutes',
+          retryAt: typeof body?.retryAt === 'string' ? body.retryAt : undefined,
+        });
+        return;
+      }
+      if (!response.ok) {
+        setScanning(false);
+        setScanResult({
+          status: 'failed',
+          error: body?.message || 'Could not start a scan',
+          sources: [],
+        });
+        return;
+      }
+      await watchScan(activeId);
+    } finally {
+      scanRequest.current = false;
     }
-    await watchScan(activeId);
   }, [activeId, fetch, sample, watchScan]);
 
   useEffect(() => {

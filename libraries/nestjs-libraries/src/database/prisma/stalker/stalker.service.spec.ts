@@ -19,9 +19,11 @@ import {
   nextScheduledScan,
   orderKeywordsForScan,
   scanRunStatus,
+  stalkerAnalyticsDetail,
   stalkerProjectIntervalMs,
   StalkerService,
 } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
+import { mentionRange } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
 import { X_PLAN_ERROR } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
 
 const authError = () => {
@@ -747,6 +749,58 @@ describe('StalkerService keywords and scan status', () => {
     expect(repository.insertMentions).not.toHaveBeenCalled();
   });
 
+  it('counts mentions stored today in the 30 day total and the last sparkline day', async () => {
+    const { service, repository } = make();
+    repository.listKeywords.mockResolvedValue([{ ...kw('k1', 'canva'), group: null }]);
+    repository.keywordFacts.mockResolvedValue([
+      { keywordId: 'k1', createdAt: new Date(), source: 'YOUTUBE_SEARCH' },
+      { keywordId: 'k1', createdAt: new Date(), source: 'YOUTUBE_SEARCH' },
+      { keywordId: 'k1', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), source: 'YOUTUBE_SEARCH' },
+    ]);
+    const [row] = await service.keywords('org', 'proj');
+    expect(row.mentions30d).toBe(3);
+    expect(row.sparkline).toHaveLength(30);
+    expect(row.sparkline[29]).toBe(2);
+    expect(row.sparkline.reduce((sum: number, value: number) => sum + value, 0)).toBe(3);
+  });
+
+  it('joins a running scan, and rate-limits a repeat click with retryAt', async () => {
+    const { service, repository } = make();
+    repository.activeScan.mockResolvedValueOnce({ id: 'run-0', status: 'running' });
+    await expect(service.requestScan('org', 'proj', 'manual')).resolves.toEqual({
+      runId: 'run-0',
+      status: 'running',
+      projectId: 'proj',
+    });
+    const startedAt = new Date(Date.now() - 60 * 1000);
+    repository.latestManualScan.mockResolvedValueOnce({ id: 'run-1', startedAt });
+    const error = await service.requestScan('org', 'proj', 'manual').catch((err: unknown) => err);
+    expect((error as { getStatus: () => number }).getStatus()).toBe(429);
+    expect((error as { getResponse: () => unknown }).getResponse()).toEqual({
+      statusCode: 429,
+      message: 'A check just ran. Try again in 4 min',
+      retryAt: new Date(startedAt.getTime() + 5 * 60 * 1000).toISOString(),
+    });
+    expect(repository.createScanRun).not.toHaveBeenCalled();
+  });
+
+  it('moves a keyword to another group without a 404', async () => {
+    const { service, repository } = make();
+    const repo = repository as Record<string, jest.Mock>;
+    repo.getKeyword = jest.fn().mockResolvedValue({ ...kw('k1', 'canva'), projectId: 'proj' });
+    repo.listGroups.mockResolvedValue([{ id: 'g-brand' }, { id: 'g-comp' }]);
+    repo.moveKeyword = jest.fn().mockResolvedValue({ count: 1 });
+    repo.updateKeywordPlatforms = jest.fn().mockResolvedValue({ count: 0 });
+    await expect(service.updateKeyword('org', 'k1', { groupId: 'g-comp' } as never)).resolves.toEqual(
+      expect.objectContaining({ id: 'k1' })
+    );
+    expect(repo.moveKeyword).toHaveBeenCalledWith('org', 'k1', 'g-comp');
+    expect(repo.updateKeywordPlatforms).not.toHaveBeenCalled();
+    await expect(service.updateKeyword('org', 'k1', { groupId: 'nope' } as never)).rejects.toThrow(
+      'Group not found'
+    );
+  });
+
   it('returns 404 when deleting an unknown keyword', async () => {
     const { service, repository } = make();
     (repository as Record<string, jest.Mock>).deleteKeyword = jest.fn().mockResolvedValue({ count: 0 });
@@ -786,5 +840,43 @@ describe('StalkerService keywords and scan status', () => {
     expect(brand.paused).toBe(false);
     expect(brand.lastScan).toBe(at.toISOString());
     expect(brand.nextScanAt).toBeTruthy();
+  });
+});
+
+describe('Stalker analytics math', () => {
+  const fact = (iso: string, sentiment = 'NEUTRAL') => ({
+    createdAt: new Date(iso),
+    sentiment,
+    authorName: 'Ada',
+    authorHandle: 'ada',
+    source: 'YOUTUBE_SEARCH',
+  });
+
+  it('reads YYYY-MM-DD ranges as the user\'s calendar days', () => {
+    const utc = mentionRange('2026-09-07', '2026-10-06');
+    expect(utc.start?.toISOString()).toBe('2026-09-07T00:00:00.000Z');
+    expect(utc.end?.toISOString()).toBe('2026-10-07T00:00:00.000Z');
+    const ist = mentionRange('2026-09-07', '2026-10-06', -330);
+    expect(ist.start?.toISOString()).toBe('2026-09-06T18:30:00.000Z');
+    expect(ist.end?.toISOString()).toBe('2026-10-06T18:30:00.000Z');
+    const pacific = mentionRange('2026-10-06', '2026-10-06', '420');
+    expect(pacific.end?.toISOString()).toBe('2026-10-07T07:00:00.000Z');
+  });
+
+  it('fills every day in the range and averages over the whole span', () => {
+    const range = mentionRange('2026-09-07', '2026-10-06', -330);
+    const detail = stalkerAnalyticsDetail(
+      [fact('2026-10-06T08:21:39.000Z'), fact('2026-10-06T09:00:00.000Z', 'POSITIVE'), fact('2026-10-05T20:00:00.000Z')],
+      { tz: -330, from: range.start, to: range.end, now: Date.parse('2026-10-06T11:00:00.000Z') }
+    );
+    expect(detail.series).toHaveLength(30);
+    expect(detail.series[0].date).toBe('2026-09-07');
+    const last = detail.series[detail.series.length - 1];
+    // 20:00 UTC on Oct 5 is 01:30 IST on Oct 6.
+    expect(last).toEqual({ date: '2026-10-06', positive: 1, negative: 0, neutral: 2 });
+    expect(detail.avgPerDay).toBe(0.1);
+    expect(detail.supporters).toEqual([{ authorName: 'Ada', count: 1 }]);
+    // Tuesday 13:51 IST.
+    expect(detail.heatmap[1][13]).toBe(1);
   });
 });

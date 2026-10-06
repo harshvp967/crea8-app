@@ -17,6 +17,10 @@ import {
 } from '@prisma/client';
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { mentionContentHash } from '@gitroom/nestjs-libraries/stalker/stalker.match';
+import {
+  decodeHtmlEntities,
+  normalizeHandle,
+} from '@gitroom/helpers/utils/stalker.text';
 
 const CATEGORIES = new Set<string>(Object.values(StalkerCategory));
 const SENTIMENTS = new Set<string>(Object.values(StalkerSentiment));
@@ -50,13 +54,27 @@ const mentionWindow = (date?: string) => {
   return undefined;
 };
 
-const mentionRange = (start?: string, end?: string) => {
+// Clamp a browser `getTimezoneOffset()` value (minutes, IST = -330).
+export const stalkerTzOffset = (value?: number | string) => {
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes)) {
+    return 0;
+  }
+  return Math.max(-840, Math.min(840, Math.round(minutes)));
+};
+
+// YYYY-MM-DD days are the *user's* calendar days: midnight local time is
+// midnight UTC plus the browser's timezone offset. Without a tz the days are UTC.
+export const mentionRange = (start?: string, end?: string, tz?: number | string) => {
+  const offsetMs = stalkerTzOffset(tz) * 60 * 1000;
   const parsed = (value?: string) => {
     if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
       return undefined;
     }
     const date = new Date(`${value}T00:00:00.000Z`);
-    return Number.isNaN(date.getTime()) ? undefined : date;
+    return Number.isNaN(date.getTime())
+      ? undefined
+      : new Date(date.getTime() + offsetMs);
   };
   const from = parsed(start);
   const to = parsed(end);
@@ -564,7 +582,15 @@ export class StalkerRepository {
 
     const seenHash = new Set<string>();
     const prepared = [];
-    for (const draft of drafts) {
+    // Store plain text: sources (YouTube titles especially) send HTML entities
+    // like &amp;, and some handles already start with "@".
+    for (const raw of drafts) {
+      const draft = {
+        ...raw,
+        authorName: decodeHtmlEntities(raw.authorName),
+        authorHandle: normalizeHandle(raw.authorHandle),
+        text: decodeHtmlEntities(raw.text),
+      };
       const contentHash = mentionContentHash(draft);
       if (seenHash.has(contentHash)) {
         continue;
@@ -672,6 +698,7 @@ export class StalkerRepository {
       q?: string;
       match?: string;
       offTopic?: string;
+      tz?: number | string;
       take?: number;
       cursor?: string;
     }
@@ -683,7 +710,7 @@ export class StalkerRepository {
     if (filters.offTopic !== 'include') {
       where.relevant = true;
     }
-    const ranged = mentionRange(filters.start, filters.end);
+    const ranged = mentionRange(filters.start, filters.end, filters.tz);
     const since = ranged.start || mentionWindow(filters.date);
     if (since || ranged.end) {
       where.createdAt = {
@@ -854,9 +881,9 @@ export class StalkerRepository {
     organizationId: string,
     projectId: string,
     date = '30d',
-    range?: { start?: string; end?: string }
+    range?: { start?: string; end?: string; tz?: number | string }
   ) {
-    const ranged = mentionRange(range?.start, range?.end);
+    const ranged = mentionRange(range?.start, range?.end, range?.tz);
     const since =
       ranged.start ||
       (date === 'all' ? undefined : mentionWindow(date) || mentionWindow('30d'));
@@ -873,11 +900,7 @@ export class StalkerRepository {
           }
         : {}),
     };
-    const chartSince =
-      date === 'all'
-        ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-        : since;
-    const [bySource, bySentiment, byCategory, byKeyword, byTheme, accounts, overTime] =
+    const [bySource, bySentiment, byCategory, byKeyword, byTheme, accounts] =
       await Promise.all([
         this._mention.model.stalkerMention.groupBy({
           by: ['source'],
@@ -911,11 +934,6 @@ export class StalkerRepository {
           orderBy: { _count: { authorName: 'desc' } },
           take: 8,
         }),
-        this.mentionCountsByDay(
-          organizationId,
-          projectId,
-          chartSince || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-        ),
       ]);
     const [categories, keywords, themes] = await Promise.all([
       this.listCategories(organizationId, projectId),
@@ -938,44 +956,7 @@ export class StalkerRepository {
       names,
       keywordNames,
       themeNames,
-      overTime,
     };
-  }
-
-  private async mentionCountsByDay(
-    organizationId: string,
-    projectId: string,
-    since: Date
-  ) {
-    const dayMs = 24 * 60 * 60 * 1000;
-    const start = new Date(since);
-    start.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const days = Math.min(
-      90,
-      Math.max(1, Math.round((today.getTime() - start.getTime()) / dayMs) + 1)
-    );
-    const counts = await Promise.all(
-      Array.from({ length: days }, (_, index) => {
-        const dayStart = new Date(start.getTime() + index * dayMs);
-        const dayEnd = new Date(dayStart.getTime() + dayMs);
-        return this._mention.model.stalkerMention
-          .count({
-            where: {
-              organizationId,
-              projectId,
-              relevant: true,
-              createdAt: { gte: dayStart, lt: dayEnd },
-            },
-          })
-          .then((count) => ({
-            date: dayStart.toISOString().slice(0, 10),
-            count,
-          }));
-      })
-    );
-    return counts;
   }
 
   countMentionsBetween(

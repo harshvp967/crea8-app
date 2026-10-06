@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { cleanMention } from '@gitroom/frontend/components/stalker/stalker.labels';
 
 const readJson = async (response: Response) => {
   if (!response.ok) {
@@ -28,7 +29,10 @@ export const useStalkerMentions = (
 ) => {
   const fetch = useFetch();
   const load = useCallback(async (path: string) => {
-    return readJson(await fetch(path));
+    const body = await readJson(await fetch(path));
+    return body && Array.isArray(body.mentions)
+      ? { ...body, mentions: body.mentions.map(cleanMention) }
+      : body;
   }, [fetch]);
   const query = new URLSearchParams(search);
   if (projectId) {
@@ -122,7 +126,8 @@ export const useStalkerGroups = (projectId: string | null) => {
 export const useStalkerAuthors = (projectId: string | null) => {
   const fetch = useFetch();
   const load = useCallback(async (path: string) => {
-    return readJson(await fetch(path));
+    const body = await readJson(await fetch(path));
+    return Array.isArray(body) ? body.map(cleanMention) : body;
   }, [fetch]);
   return useSWR(
     projectId ? `/stalker/authors?projectId=${projectId}` : null,

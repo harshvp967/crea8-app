@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -13,6 +13,7 @@ import {
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
+import { authorUrl, cleanMention } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
   emptyFilters,
   filtersActive,
@@ -146,15 +147,12 @@ export const StalkerMentions = () => {
   const [extra, setExtra] = useState<Mention[]>([]);
   const search = filtersToSearch(filters);
   const mentionsQuery = useStalkerMentions(sample ? null : projectId, search);
-  const mentionsReady = sample || !!mentionsQuery.data || mentionsQuery.error;
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
-  const authorsQuery = useStalkerAuthors(
-    !sample && projectId && mentionsReady ? projectId : null
-  );
-  // Saved views are secondary: load them after the first mentions page, not in the first-paint burst.
-  const viewsQuery = useStalkerViews(
-    !sample && projectId && mentionsReady ? projectId : null
-  );
+  // Load authors and saved views alongside the first page instead of after it:
+  // the API answers each in ~30ms, and the waterfall cost a full extra round
+  // trip (plus CORS preflight) before the filter bar was usable.
+  const authorsQuery = useStalkerAuthors(!sample && projectId ? projectId : null);
+  const viewsQuery = useStalkerViews(!sample && projectId ? projectId : null);
   const page = sample ? SAMPLE_MENTIONS : mentionsQuery.data;
   const mentions = useMemo<Mention[]>(
     () => [
@@ -396,7 +394,7 @@ export const StalkerMentions = () => {
                     <div className="flex flex-wrap items-baseline gap-[6px]">
                       <a
                         className="truncate text-[14px] font-[600]"
-                        href={mention.authorHandle ? `https://x.com/${mention.authorHandle}` : mention.url || '#'}
+                        href={authorUrl(mention.source || '', mention.authorHandle || '', mention.url || '')}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -405,7 +403,7 @@ export const StalkerMentions = () => {
                       {mention.authorHandle ? (
                         <a
                           className="text-[13px] text-textItemBlur"
-                          href={`https://x.com/${mention.authorHandle}`}
+                          href={authorUrl(mention.source || '', mention.authorHandle, mention.url || '')}
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -525,7 +523,7 @@ export const StalkerMentions = () => {
               `/stalker/mentions?projectId=${projectId}&${search}&cursor=${page.nextCursor}`
             );
             const payload = await response.json();
-            setExtra((current) => [...current, ...(payload.mentions || [])]);
+            setExtra((current) => [...current, ...(payload.mentions || []).map(cleanMention)]);
           }}
         >
           Load more
@@ -556,10 +554,36 @@ export const StalkerMentions = () => {
   );
 };
 
+// Each cluster needs ~84px (3 avatars + "+N"); merge hours until it fits.
+const TIMELINE_SPANS = [1, 2, 3, 4, 6, 8, 12, 24];
+const TIMELINE_MIN_PX = 84;
+
 const Timeline = ({ rows }: { rows: Mention[] }) => {
-  const hours = Array.from({ length: 24 }, (_, hour) =>
-    rows.filter((row) => row.createdAt && new Date(row.createdAt).getHours() === hour)
-  );
+  const track = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(720);
+  useEffect(() => {
+    const element = track.current;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    setWidth(element.getBoundingClientRect().width || 720);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry?.contentRect.width) setWidth(entry.contentRect.width);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  const span =
+    TIMELINE_SPANS.find((hours) => (width / 24) * hours >= TIMELINE_MIN_PX) || 24;
+  const clusters = Array.from({ length: 24 / span }, (_, index) => {
+    const start = index * span;
+    return {
+      start,
+      rows: rows.filter((row) => {
+        if (!row.createdAt) return false;
+        const hour = new Date(row.createdAt).getHours();
+        return hour >= start && hour < start + span;
+      }),
+    };
+  });
   const now = new Date();
   const nowLeft = ((now.getHours() * 60 + now.getMinutes()) / (24 * 60)) * 100;
   const sameDay = rows[0]?.createdAt && dayKey(rows[0].createdAt) === dayKey(new Date().toISOString());
@@ -570,30 +594,42 @@ const Timeline = ({ rows }: { rows: Mention[] }) => {
           <span key={label}>{label}</span>
         ))}
       </div>
-      <div className="relative mt-[10px] h-[8px]">
+      <div ref={track} className="relative mt-[10px] h-[8px]">
         <div className="absolute inset-x-0 top-[3px] border-t border-dashed border-newBorder" />
-        {hours.map((bucket, hour) =>
-          bucket.length ? (
+        {clusters.map((cluster) => {
+          if (!cluster.rows.length) return null;
+          const shown = cluster.rows.slice(0, 3);
+          const names = cluster.rows
+            .map((mention) => mention.authorName || 'Someone')
+            .slice(0, 8)
+            .join(', ');
+          return (
             <div
-              key={hour}
-              className="absolute -top-[14px] flex -translate-x-1/2"
-              style={{ left: `${(hour / 24) * 100}%` }}
+              key={cluster.start}
+              className="absolute -top-[14px] flex -translate-x-1/2 items-center"
+              style={{ left: `${((cluster.start + span / 2) / 24) * 100}%` }}
+              title={cluster.rows.length > 8 ? `${names} and ${cluster.rows.length - 8} more` : names}
             >
-              {bucket.slice(0, 3).map((mention) => (
+              {shown.map((mention, index) => (
                 <span
                   key={mention.id}
-                  title={mention.authorName}
-                  className="-ms-[6px] flex h-[22px] w-[22px] items-center justify-center rounded-full border border-newBgColorInner bg-newBoxHover text-[9px] font-[600]"
+                  style={{ zIndex: shown.length - index }}
+                  className={clsx(
+                    'relative flex h-[22px] w-[22px] items-center justify-center rounded-full bg-newBoxHover text-[9px] font-[600] ring-2 ring-newBgColorInner',
+                    index ? '-ms-[4px]' : ''
+                  )}
                 >
                   {initials(mention.authorName)}
                 </span>
               ))}
-              {bucket.length > 3 ? (
-                <span className="ms-[2px] text-[11px] text-textItemBlur">+{bucket.length - 3}</span>
+              {cluster.rows.length > 3 ? (
+                <span className="ms-[6px] whitespace-nowrap text-[11px] text-textItemBlur">
+                  +{cluster.rows.length - 3}
+                </span>
               ) : null}
             </div>
-          ) : null
-        )}
+          );
+        })}
         {sameDay ? (
           <span className="absolute -top-[18px] text-[11px] font-[600] text-[#00A3C4]" style={{ left: `${nowLeft}%` }}>
             Now

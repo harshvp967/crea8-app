@@ -71,6 +71,13 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
   const duplicates = preview === 'success' ? 3 : scanResult?.totals?.duplicates || 0;
   const showResult = !showScanning && (previewError || preview === 'success' || !!scanResult);
   const topError = previewError || (!sources.length ? scanResult?.error : '');
+  const notice = !previewError && scanResult?.notice ? scanResult.notice : '';
+  const clock = (value?: string | null) => {
+    const date = value ? new Date(value) : null;
+    return date && !Number.isNaN(date.getTime())
+      ? date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : '';
+  };
 
   return (
     <div className="relative shrink-0">
@@ -91,11 +98,25 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
             aria-hidden
           />
         ) : null}
-        {showScanning ? 'Scanning YouTube…' : 'Check now'}
+        {showScanning ? 'Checking…' : 'Check now'}
       </button>
       {showResult ? (
         <div className="absolute end-0 top-[calc(100%+8px)] z-30 w-[280px] rounded-[14px] border border-newBorder bg-newBgColorInner p-[12px] text-[13px] shadow-[var(--menu-shadow)]">
-          {topError && !sources.length ? (
+          {notice ? (
+            <div className="mb-[8px] text-textItemBlur">
+              <p>
+                {scanResult?.retryAt
+                  ? `Next check available at ${clock(scanResult.retryAt)}`
+                  : notice}
+              </p>
+              {sources.length ? (
+                <p className="mt-[2px] text-[12px]">
+                  Latest check{scanResult?.finishedAt ? ` (${clock(scanResult.finishedAt)})` : ''}:
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {notice && !sources.length ? null : topError && !sources.length ? (
             <p className="text-[#c43b3b]">
               <ReconnectText text={topError} />
             </p>

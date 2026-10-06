@@ -211,11 +211,13 @@ export class StalkerController {
     @Query('projectId') projectId: string,
     @Query('date') date?: string,
     @Query('start') start?: string,
-    @Query('end') end?: string
+    @Query('end') end?: string,
+    @Query('tz') tz?: string
   ) {
     return this._stalkerService.analytics(org.id, projectId, date, {
       start,
       end,
+      tz,
     });
   }
 

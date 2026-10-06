@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@gitroom/react/form/button';
+import { decodeHtmlEntities } from '@gitroom/helpers/utils/stalker.text';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useStalkerThemes } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerComposer } from '@gitroom/frontend/components/stalker/use.stalker.composer';
@@ -58,8 +59,8 @@ export const StalkerThemes = () => {
             <ul className="flex flex-col gap-[6px] text-[13px]">
               {(theme.mentions || []).map((mention) => (
                 <li key={mention.id} className="text-textItemBlur">
-                  <span className="text-white">{mention.authorName}: </span>
-                  {mention.text}
+                  <span className="text-white">{decodeHtmlEntities(mention.authorName || '')}: </span>
+                  {decodeHtmlEntities(mention.text)}
                 </li>
               ))}
             </ul>

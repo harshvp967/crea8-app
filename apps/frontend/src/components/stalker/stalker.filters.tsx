@@ -111,6 +111,8 @@ export const filtersToSearch = (filters: MentionFilters) => {
   const range = resolveRange(filters);
   if (range.start) params.set('start', range.start);
   if (range.end) params.set('end', range.end);
+  // start/end are local calendar days; tell the API which timezone they're in.
+  if (range.start || range.end) params.set('tz', String(new Date().getTimezoneOffset()));
   if (filters.sources.length) params.set('source', filters.sources.join(','));
   const engagement = Object.entries(filters.engagement)
     .filter(([, value]) => Number(value) > 0)
@@ -421,7 +423,7 @@ export const StalkerFilters = ({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px]">{author.authorName}</span>
-                  <span className="block truncate text-[11px] text-textItemBlur">@{author.authorHandle}</span>
+                  <span className="block truncate text-[11px] text-textItemBlur">{author.authorHandle ? `@${author.authorHandle}` : ''}</span>
                 </span>
                 <SourceIcon source={author.source} />
                 <span className="text-[12px] text-textItemBlur">{author.count}</span>

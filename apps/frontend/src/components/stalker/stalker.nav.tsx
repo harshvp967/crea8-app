@@ -322,7 +322,7 @@ export const StalkerTopNav = ({
           if (link.path === '/stalker/keywords') {
             return (
               <span key={link.path} className="inline-flex items-center">
-                <Link href={href} prefetch={false} className={pill(active)}>
+                <Link href={href} prefetch className={pill(active)}>
                   <span className="max-[1439px]:hidden">{link.icon}</span>
                   <span>{link.label}</span>
                 </Link>
@@ -338,7 +338,7 @@ export const StalkerTopNav = ({
             );
           }
           return (
-            <Link key={link.path} href={href} prefetch={false} className={pill(active)}>
+            <Link key={link.path} href={href} prefetch className={pill(active)}>
               <span className="max-[1439px]:hidden">{link.icon}</span>
               <span>{link.label}</span>
             </Link>
