@@ -31,7 +31,7 @@ YouTube does not set `refreshCron`, so `startRefreshWorkflow` never starts `refr
 
 ## Classification and themes
 
-When the project has categories, new mentions are classified in batches of 20. If `OPENAI_API_KEY` is set, `gpt-4.1` first decides whether the mention is about the brand (`relevant`). Off-topic keyword hits are stored with `relevant=false` and stay out of the Mentions feed unless the feed's "Show off-topic" filter is on. They are not alerted and they are not used for themes or analytics. The model then returns `categoryName`. Ids the model skips are asked again once. Anything still missing, and every mention when there is no API key, uses a word-list fallback so the row is still classified. Stalker stores the matching `StalkerProjectCategory` id. The older `StalkerCategory` enum stays on the row and is derived from the name (bug, feature/idea, complaint, question, testimonial, praise, spam, otherwise `OTHER`) so existing filters keep working. Sentiment is `POSITIVE`, `NEGATIVE`, or `NEUTRAL`. Urgency is 0 to 100.
+When the project has categories, new mentions are classified in batches of 20. If `OPENAI_API_KEY` is set, `STALKER_OPENAI_MODEL` (default `gpt-4o-mini`) first decides whether the mention is about the brand (`relevant`). Off-topic keyword hits are stored with `relevant=false` and stay out of the Mentions feed unless the feed's "Show off-topic" filter is on. They are not alerted and they are not used for themes or analytics. The model then returns `categoryName`. Ids the model skips are asked again once. Anything still missing, and every mention when there is no API key, uses a word-list fallback so the row is still classified. Stalker stores the matching `StalkerProjectCategory` id. The older `StalkerCategory` enum stays on the row and is derived from the name (bug, feature/idea, complaint, question, testimonial, praise, spam, otherwise `OTHER`) so existing filters keep working. Sentiment is `POSITIVE`, `NEGATIVE`, or `NEUTRAL`. Urgency is 0 to 100.
 
 If the project has no categories, mentions stay unclassified (`OTHER`, `NEUTRAL`, urgency 0).
 
@@ -100,6 +100,7 @@ Set the same flag on the frontend (Vercel) and the backend (Railway):
 
 - `STALKER_ENABLED=true` — turns the API, the poll workflow, and the dashboard switcher on. Any other value, including unset, leaves Stalker off.
 - `OPENAI_API_KEY` — already used by the app. Required for categories, themes, suggested replies, and generated drafts. Mentions still collect without it.
+- `STALKER_OPENAI_MODEL` — model for Stalker classification (relevance, category, sentiment), theme clustering, and AI reply or post drafts. Defaults to `gpt-4o-mini` when unset.
 - `EMAIL_FROM_ADDRESS` and `EMAIL_FROM_NAME` — already used by the app. Urgent alerts are skipped when either is missing.
 - `YOUTUBE_CLIENT_ID` and `YOUTUBE_CLIENT_SECRET` — already used for YouTube connect. Keyword search and comment reads use the connected channel token. No new YouTube scope is requested. `youtubepartner` is not used.
 - `REDDIT_STALKER_CLIENT_ID` and `REDDIT_STALKER_CLIENT_SECRET` — Reddit app-only credentials. Both must be set or Reddit search stays off.

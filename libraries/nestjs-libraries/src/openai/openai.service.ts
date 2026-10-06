@@ -8,6 +8,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
 });
 
+function stalkerOpenAiModel() {
+  const configured = process.env.STALKER_OPENAI_MODEL?.trim();
+  return configured || 'gpt-4o-mini';
+}
+
 const PicturePrompt = z.object({
   prompt: z.string(),
 });
@@ -356,7 +361,7 @@ Clips must not overlap. Write the title and the post in this language, whatever 
       .join('\n');
     const parsed = (
       await openai.chat.completions.parse({
-        model: 'gpt-4.1',
+        model: stalkerOpenAiModel(),
         messages: [
           {
             role: 'system',
@@ -427,7 +432,7 @@ ${allowed}`,
 
     const parsed = (
       await openai.chat.completions.parse({
-        model: 'gpt-4.1',
+        model: stalkerOpenAiModel(),
         messages: [
           {
             role: 'system',
@@ -484,7 +489,7 @@ ${allowed}`,
 
     const parsed = (
       await openai.chat.completions.parse({
-        model: 'gpt-4.1',
+        model: stalkerOpenAiModel(),
         messages: [
           {
             role: 'system',

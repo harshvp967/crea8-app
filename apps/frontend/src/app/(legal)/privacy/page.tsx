@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalShell title="Privacy Policy">
+    <LegalShell title="Privacy Policy" updated="October 6, 2026">
       <p>
         This Privacy Policy explains how Crea8one (crea8.one), a social media
         scheduling and insights tool, handles personal information. You connect
@@ -277,8 +277,18 @@ export default function PrivacyPage() {
         <li>Analytics providers.</li>
       </LegalList>
       <p>
-        These providers may use personal information only to perform services
-        for us, and they must protect it.
+        Content processed by Crea8one&apos;s AI features, for example Stalker
+        mention classification and AI writing assistance, is sent to OpenAI.
+        OpenAI may use that content to improve and train its models. Avoid
+        putting sensitive personal data into AI features. Questions can be
+        sent to{' '}
+        <LegalLink href="mailto:support@crea8.one">support@crea8.one</LegalLink>
+        .
+      </p>
+      <p>
+        These providers must protect personal information. They may use it
+        only to perform services for us, except for the OpenAI training use
+        described above.
       </p>
 
       <LegalH2>How long we keep information</LegalH2>
