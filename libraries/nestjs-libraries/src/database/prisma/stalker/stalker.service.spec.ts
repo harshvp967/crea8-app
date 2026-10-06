@@ -784,6 +784,23 @@ describe('StalkerService keywords and scan status', () => {
     expect(repository.createScanRun).not.toHaveBeenCalled();
   });
 
+  it('moves a keyword to another group without a 404', async () => {
+    const { service, repository } = make();
+    const repo = repository as Record<string, jest.Mock>;
+    repo.getKeyword = jest.fn().mockResolvedValue({ ...kw('k1', 'canva'), projectId: 'proj' });
+    repo.listGroups.mockResolvedValue([{ id: 'g-brand' }, { id: 'g-comp' }]);
+    repo.moveKeyword = jest.fn().mockResolvedValue({ count: 1 });
+    repo.updateKeywordPlatforms = jest.fn().mockResolvedValue({ count: 0 });
+    await expect(service.updateKeyword('org', 'k1', { groupId: 'g-comp' } as never)).resolves.toEqual(
+      expect.objectContaining({ id: 'k1' })
+    );
+    expect(repo.moveKeyword).toHaveBeenCalledWith('org', 'k1', 'g-comp');
+    expect(repo.updateKeywordPlatforms).not.toHaveBeenCalled();
+    await expect(service.updateKeyword('org', 'k1', { groupId: 'nope' } as never)).rejects.toThrow(
+      'Group not found'
+    );
+  });
+
   it('returns 404 when deleting an unknown keyword', async () => {
     const { service, repository } = make();
     (repository as Record<string, jest.Mock>).deleteKeyword = jest.fn().mockResolvedValue({ count: 0 });

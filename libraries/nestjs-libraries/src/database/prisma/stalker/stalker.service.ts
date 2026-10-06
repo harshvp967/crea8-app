@@ -1009,7 +1009,25 @@ export class StalkerService {
       throw new NotFoundException('Keyword not found');
     }
     if (body.groupId) {
+      const groups = keyword.projectId
+        ? await this._repository.listGroups(keyword.projectId)
+        : [];
+      if (!groups.some((group: { id: string }) => group.id === body.groupId)) {
+        throw new NotFoundException('Group not found');
+      }
       await this._repository.moveKeyword(organizationId, id, body.groupId);
+    }
+    const hasPlatformChange = [
+      body.youtube,
+      body.reddit,
+      body.x,
+      body.linkedin,
+    ].some((value) => typeof value === 'boolean') ||
+      typeof body.excludeAccounts === 'string';
+    if (!hasPlatformChange) {
+      // A group-only move: an empty updateMany reports count 0, which used to
+      // turn a successful move into "Keyword not found" (404).
+      return this._repository.getKeyword(organizationId, id);
     }
     const updated = await this._repository.updateKeywordPlatforms(
       organizationId,
