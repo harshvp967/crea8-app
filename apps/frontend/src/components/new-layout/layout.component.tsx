@@ -81,6 +81,32 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   if (!user) {
+    if (pathname?.startsWith('/stalker')) {
+      return (
+        <div
+          className={clsx(
+            'flex flex-col min-h-screen min-w-screen text-newTextColor p-[16px] gap-[12px]',
+            jakartaSans.className
+          )}
+        >
+          <header className="flex items-center gap-[8px] min-h-[64px] bg-newBgColorInner rounded-[24px] border border-newBorder px-[12px] py-[8px] shrink-0">
+            <Logo compact />
+            <div className="w-[1px] self-stretch my-[8px] bg-blockSeparator hidden sm:block shrink-0" />
+            <DashboardSwitcher />
+            <StalkerTopNav />
+            <div className="ms-auto flex shrink-0 items-center gap-[8px]" aria-hidden>
+              <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
+              <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
+              <span className="hidden h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover md:block" />
+            </div>
+          </header>
+          <div className="flex-1 bg-newBgLineColor rounded-[20px] overflow-hidden flex flex-col min-h-0 border border-newBorder">
+            <div className="flex flex-1 gap-[1px] min-h-0 overflow-hidden">{children}</div>
+          </div>
+          <Toaster />
+        </div>
+      );
+    }
     if (pathname?.startsWith('/settings')) {
       return (
         <div className="flex flex-col min-h-screen text-newTextColor p-[16px] gap-[12px]">
@@ -127,8 +153,15 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                 <>
                   <AnnouncementBanner />
                   <Support />
-                  <header className="flex items-center gap-[16px] min-h-[64px] bg-newBgColorInner rounded-[24px] border border-newBorder px-[20px] py-[8px] shrink-0">
-                    <Logo />
+                  <header
+                    className={clsx(
+                      'flex items-center min-h-[64px] bg-newBgColorInner rounded-[24px] border border-newBorder py-[8px] shrink-0',
+                      pathname?.startsWith('/stalker')
+                        ? 'gap-[8px] px-[12px]'
+                        : 'gap-[16px] px-[20px]'
+                    )}
+                  >
+                    <Logo compact={!!pathname?.startsWith('/stalker')} />
                     <div className="w-[1px] self-stretch my-[8px] bg-blockSeparator hidden sm:block shrink-0" />
                     <DashboardSwitcher />
                     {pathname?.startsWith('/stalker') ? (
@@ -139,7 +172,12 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <TopMenuUtilities />
                       </>
                     )}
-                    <div className="flex items-center gap-[16px] text-textItemBlur shrink-0 ms-auto">
+                    <div
+                      className={clsx(
+                        'flex items-center text-textItemBlur shrink-0 ms-auto',
+                        pathname?.startsWith('/stalker') ? 'gap-[8px]' : 'gap-[16px]'
+                      )}
+                    >
                       <StreakComponent />
                       <div className="w-[1px] h-[20px] bg-blockSeparator hidden md:block" />
                       <OrganizationSelector />

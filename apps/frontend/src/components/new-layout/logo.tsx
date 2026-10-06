@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 
-export const Logo = () => {
+export const Logo = ({ compact = false }: { compact?: boolean }) => {
   return (
     <Link
       href="/launches"
@@ -11,7 +11,13 @@ export const Logo = () => {
       className="flex items-center shrink-0 ps-[4px] pe-[8px]"
       title="Crea8one"
     >
-      <Crea8oneWordmark className="h-[52px] w-auto max-w-[220px] object-contain object-left" />
+      <Crea8oneWordmark
+        className={
+          compact
+            ? 'h-[40px] w-auto max-w-[148px]'
+            : 'h-[52px] w-auto max-w-[220px]'
+        }
+      />
     </Link>
   );
 };

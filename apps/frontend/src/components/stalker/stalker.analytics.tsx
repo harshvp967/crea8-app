@@ -240,16 +240,22 @@ export const StalkerAnalytics = () => {
         </Card>
       </div>
       <Card title="Keywords">
-        {!keywordCounts.length ? (
+        {!keywords.length ? (
           <p className="text-[13px] text-textItemBlur">No keywords yet.</p>
         ) : (
           <ul className="flex flex-col gap-[8px]">
-            {keywordCounts.map((row: { phrase: string; count: number }) => (
-              <li key={row.phrase} className="flex justify-between text-[13px]">
-                <span>{row.phrase}</span>
-                <span className="text-textItemBlur">{row.count}</span>
-              </li>
-            ))}
+            {keywords.map((keyword: { id?: string; phrase: string }) => {
+              const count =
+                keywordCounts.find(
+                  (row: { phrase: string; count: number }) => row.phrase === keyword.phrase
+                )?.count || 0;
+              return (
+                <li key={keyword.id || keyword.phrase} className="flex justify-between text-[13px]">
+                  <span>{keyword.phrase}</span>
+                  <span className="text-textItemBlur">{count}</span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Card>

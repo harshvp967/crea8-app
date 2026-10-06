@@ -84,6 +84,10 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
     return 'youtube';
   }
 
+  searchesWithoutAccount() {
+    return !!youtubeApiKey();
+  }
+
   enabled(auth?: StalkerSourceAuth) {
     return !!youtubeApiKey() || !!auth?.accessToken;
   }

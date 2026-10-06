@@ -144,8 +144,11 @@ export const StalkerMentions = () => {
   const [extra, setExtra] = useState<Mention[]>([]);
   const search = filtersToSearch(filters);
   const mentionsQuery = useStalkerMentions(sample ? null : projectId, search);
+  const mentionsReady = sample || !!mentionsQuery.data || mentionsQuery.error;
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
-  const authorsQuery = useStalkerAuthors(sample ? null : projectId);
+  const authorsQuery = useStalkerAuthors(
+    !sample && projectId && mentionsReady ? projectId : null
+  );
   const viewsQuery = useStalkerViews(sample ? null : projectId);
   const page = sample ? SAMPLE_MENTIONS : mentionsQuery.data;
   const mentions = useMemo<Mention[]>(
@@ -289,7 +292,11 @@ export const StalkerMentions = () => {
         authors={authors}
       />
       {mentionsQuery.isLoading && !mentions.length ? (
-        <p className="text-[14px] text-textItemBlur">Loading mentions…</p>
+        <div className="flex flex-col gap-[12px]" aria-hidden>
+          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+        </div>
       ) : null}
       {!mentionsQuery.isLoading && !mentions.length ? (
         <p className="text-[14px] text-textItemBlur">

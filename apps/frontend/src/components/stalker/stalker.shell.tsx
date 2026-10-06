@@ -5,7 +5,6 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { StalkerWizard } from '@gitroom/frontend/components/stalker/stalker.wizard';
-import { WavePhysicsLoader } from '@gitroom/frontend/components/layout/wave-physics-loader';
 
 const Welcome = ({ onCreate }: { onCreate: () => void }) => (
   <div className="flex flex-1 items-center justify-center px-[24px] py-[64px]">
@@ -25,17 +24,24 @@ const Welcome = ({ onCreate }: { onCreate: () => void }) => (
   </div>
 );
 
+const PageSkeleton = () => (
+  <div className="flex flex-col gap-[12px] p-[24px]" aria-hidden>
+    <div className="h-[28px] w-[180px] animate-pulse rounded-full bg-newBoxHover" />
+    <div className="h-[18px] w-[260px] animate-pulse rounded-full bg-newBoxHover" />
+    <div className="mt-[8px] h-[120px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+    <div className="h-[120px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+  </div>
+);
+
 const StalkerBody = ({ children }: { children: ReactNode }) => {
-  const { projects, loading, showWizard, setShowWizard } = useStalkerProject();
+  const { projects, projectId, loading, showWizard, setShowWizard } = useStalkerProject();
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-newBgColorInner">
       <main className="min-h-0 min-w-0 flex-1 overflow-auto">
-        {loading ? (
-          <div className="flex h-[240px] items-center justify-center">
-            <WavePhysicsLoader theme="dark" />
-          </div>
-        ) : !projects.length ? (
+        {loading && !projectId ? (
+          <PageSkeleton />
+        ) : !loading && !projects.length ? (
           <Welcome onCreate={() => setShowWizard(true)} />
         ) : (
           children

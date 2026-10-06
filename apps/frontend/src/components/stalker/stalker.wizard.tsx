@@ -55,7 +55,7 @@ const field =
 export const StalkerWizard = () => {
   const fetch = useFetch();
   const toaster = useToaster();
-  const { status, setProjectId, refreshProjects, setShowWizard, sample } =
+  const { status, setProjectId, refreshProjects, setShowWizard, sample, watchScan } =
     useStalkerProject();
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
@@ -162,9 +162,10 @@ export const StalkerWizard = () => {
     refreshProjects();
     if (created?.id) {
       setProjectId(created.id);
+      watchScan(created.id);
     }
     setShowWizard(false);
-    toaster.show('Project created');
+    toaster.show('Scanning now…');
   };
 
   return (

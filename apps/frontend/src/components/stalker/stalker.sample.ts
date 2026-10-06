@@ -87,7 +87,7 @@ export const SAMPLE_STATUS = {
 };
 
 export const SAMPLE_GROUPS = [
-  { id: 'group-brand', name: 'My brand', position: 0, _count: { keywords: 1 } },
+  { id: 'group-brand', name: 'My brand', position: 0, _count: { keywords: 2 } },
   { id: 'group-comp', name: 'Competitors', position: 1, _count: { keywords: 0 } },
 ];
 
@@ -107,6 +107,25 @@ export const SAMPLE_KEYWORDS = [
     mentions30d: 8,
     sparkline: spark.map((value, index) => (index === 29 ? 8 : value)),
     lastScan: new Date().toISOString(),
+    lastError: '',
+    nextScanAt: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+    backfill: [] as Array<{ id: string; state: string; error?: string }>,
+  },
+  {
+    id: 'kw-brand',
+    phrase: 'crea8one',
+    listenYoutube: true,
+    listenReddit: false,
+    listenX: false,
+    listenLinkedin: false,
+    groupId: 'group-brand',
+    group: { id: 'group-brand', name: 'My brand' },
+    excludeAccounts: '',
+    mentions30d: 0,
+    sparkline: Array.from({ length: 30 }, () => 0),
+    lastScan: hoursAgo(5),
+    lastError: 'YouTube: channel token expired. Reconnect YouTube in Channels',
+    nextScanAt: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
     backfill: [] as Array<{ id: string; state: string; error?: string }>,
   },
 ];

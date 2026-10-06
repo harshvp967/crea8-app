@@ -11,6 +11,7 @@ import { ClippingActivity } from '@gitroom/orchestrator/activities/clipping.acti
 import { StalkerActivity } from '@gitroom/orchestrator/activities/stalker.activity';
 import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 import { HealthController } from '@gitroom/orchestrator/health.controller';
+import { StalkerScheduleRegister } from '@gitroom/orchestrator/stalker.schedule';
 
 const activities = [
   PostActivity,
@@ -29,7 +30,7 @@ const activities = [
     getTemporalModule(true, require.resolve('./workflows'), activities),
   ],
   controllers: [HealthController],
-  providers: [...activities],
+  providers: [...activities, StalkerScheduleRegister],
   get exports() {
     return [...this.providers, ...this.imports];
   },

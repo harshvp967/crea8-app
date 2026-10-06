@@ -18,6 +18,7 @@ export const useStalkerProjects = (enabled = true) => {
   }, [fetch]);
   return useSWR(enabled ? '/stalker/projects' : null, load, {
     revalidateOnFocus: false,
+    keepPreviousData: true,
   });
 };
 

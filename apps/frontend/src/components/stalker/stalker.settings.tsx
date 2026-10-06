@@ -6,6 +6,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { STALKER_SWATCHES } from '@gitroom/frontend/components/stalker/stalker.wizard';
+import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 
 const field =
   'w-full rounded-[12px] border border-newBorder bg-newBgColorInner px-[12px] py-[10px] text-[14px] text-newTextColor outline-none focus:border-[#00D9FF]/50';
@@ -122,7 +123,10 @@ export const StalkerSettings = () => {
 
   return (
     <div className="relative mx-auto flex w-full max-w-[920px] flex-col px-[20px] py-[24px] pb-[96px]">
-      <h1 className="text-[22px] font-[600]">Project settings</h1>
+      <div className="flex flex-wrap items-center justify-between gap-[12px]">
+        <h1 className="text-[22px] font-[600]">Project settings</h1>
+        <StalkerCheckNow />
+      </div>
       <p className="mt-[6px] text-[14px] text-textItemBlur">
         Manage your project details, categories, and appearance.
       </p>
