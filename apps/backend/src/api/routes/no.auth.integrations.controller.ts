@@ -313,7 +313,8 @@ export class NoAuthIntegrationsController {
           ? AuthService.fixedEncryption(
               Buffer.from(body.code, 'base64').toString()
             )
-          : undefined
+          : undefined,
+        !!refresh && !!integrationProvider.syncNameOnReconnect
       );
 
     this._refreshIntegrationService

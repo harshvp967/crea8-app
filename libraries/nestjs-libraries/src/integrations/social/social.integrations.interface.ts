@@ -230,6 +230,9 @@ export interface SocialProvider
   name: string;
   toolTip?: string;
   oneTimeToken?: boolean;
+  // Overwrite the stored channel name with the provider's name on reconnect
+  // (by default a reconnect keeps the existing name).
+  syncNameOnReconnect?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];
   externalUrl?: (
