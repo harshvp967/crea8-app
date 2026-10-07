@@ -88,7 +88,6 @@ export const COMING_SOON_PROVIDERS = [
   'whop',
   'mewe',
   'tiktok-business',
-  'discord',
   'vk',
   'gmb',
 ];
