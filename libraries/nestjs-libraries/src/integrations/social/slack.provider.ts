@@ -31,6 +31,13 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     'channels:join',
     'chat:write.customize',
   ];
+  // team:read lets authenticate() read the workspace's name, domain and icon.
+  // It is requested on every connect but not required, so a workspace that
+  // connected before it was added keeps working and can still reconnect.
+  optionalScopes = ['team:read'];
+  // Reconnecting refreshes the channel name, so connections made before the
+  // workspace name was used pick it up without having to be deleted.
+  syncNameOnReconnect = true;
   dto = SlackDto;
 
   // Media goes out as Block Kit image blocks, which Slack only accepts for
@@ -74,7 +81,9 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
             ? 'https://redirectmeto.com/'
             : ''
         }${process?.env?.FRONTEND_URL}/integrations/social/slack`
-      )}&scope=channels:read,chat:write,users:read,groups:read,channels:join,chat:write.customize&state=${state}`,
+      )}&scope=${[...this.scopes, ...this.optionalScopes].join(
+        ','
+      )}&state=${state}`,
       codeVerifier: makeSecureId(10),
       state,
     };
@@ -115,24 +124,53 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
 
     this.checkScopes(this.scopes, scope.split(','));
 
-    const { user } = await (
-      await fetch(`https://slack.com/api/users.info?user=${bot_user_id}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      })
-    ).json();
+    // Name the channel after the customer's workspace. The bot user is the
+    // Crea8one app itself, so its name and picture were the same for every
+    // workspace that connected.
+    const teamInfo = await this.slackGet(access_token, 'team.info');
+    const workspace = teamInfo?.ok ? teamInfo.team : undefined;
+
+    let picture: string =
+      workspace?.icon?.image_230 ||
+      workspace?.icon?.image_132 ||
+      workspace?.icon?.image_original ||
+      '';
+    if (!picture && bot_user_id) {
+      // No team:read (or team.info failed): fall back to the bot's picture so
+      // the channel still has an avatar.
+      const botInfo = await this.slackGet(
+        access_token,
+        `users.info?user=${encodeURIComponent(bot_user_id)}`
+      );
+      picture = botInfo?.user?.profile?.image_original || '';
+    }
 
     return {
       id: team.id,
-      name: user.real_name,
+      name: workspace?.name || team?.name || 'Slack',
       accessToken: access_token,
       refreshToken: 'null',
       expiresIn: dayjs().add(100, 'years').unix() - dayjs().unix(),
-      picture: user?.profile?.image_original || '',
-      username: user.name,
+      picture,
+      // The workspace domain (acme for acme.slack.com) tells two workspaces
+      // with similar names apart.
+      username: workspace?.domain || team?.name || '',
     };
+  }
+
+  private async slackGet(accessToken: string, path: string) {
+    try {
+      return await (
+        await fetch(`https://slack.com/api/${path}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+      ).json();
+    } catch {
+      return undefined;
+    }
   }
 
   @Tool({
@@ -205,7 +243,9 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
       }),
     });
 
-    // Post the main message
+    // Post the main message. No username / icon_url: the channel's name and
+    // picture are the customer's workspace, so messages go out under the app's
+    // own bot identity (crea8.one and its icon) instead.
     const posted = await (
       await fetch(`https://slack.com/api/chat.postMessage`, {
         method: 'POST',
@@ -215,8 +255,6 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
         },
         body: JSON.stringify({
           channel,
-          username: integration.name,
-          icon_url: integration.picture,
           blocks: [
             {
               type: 'section',
@@ -284,8 +322,6 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
         },
         body: JSON.stringify({
           channel,
-          username: integration.name,
-          icon_url: integration.picture,
           thread_ts: threadTs,
           blocks: [
             {
@@ -330,17 +366,5 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
         status: 'posted',
       },
     ];
-  }
-
-  async changeProfilePicture(id: string, accessToken: string, url: string) {
-    return {
-      url,
-    };
-  }
-
-  async changeNickname(id: string, accessToken: string, name: string) {
-    return {
-      name,
-    };
   }
 }

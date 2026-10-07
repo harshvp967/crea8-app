@@ -294,7 +294,8 @@ export class IntegrationRepository {
     isBetweenSteps = false,
     refresh?: string,
     timezone?: number,
-    customInstanceDetails?: string
+    customInstanceDetails?: string,
+    updateName = false
   ) {
     const postTimes = timezone
       ? {
@@ -346,6 +347,7 @@ export class IntegrationRepository {
             }
           : {}),
         ...(picture ? { picture } : {}),
+        ...(updateName && name ? { name } : {}),
         profile: username,
         providerIdentifier: provider,
         token,
