@@ -34,7 +34,7 @@ export const ShowNotification: FC<{
     <div
       className={clsx(
         `text-textColor px-[16px] py-[10px] border-b border-tableBorder last:border-b-0 transition-colors`,
-        newNotification && 'font-bold bg-seventh animate-newMessages'
+        newNotification && 'font-[500] bg-[var(--arc-selected)] text-[color:var(--arc-accent-text)]'
       )}
     >
       <div
@@ -63,10 +63,10 @@ export const NotificationOpenComponent = () => {
   return (
     <div
       id="notification-popup"
-      className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[420px] min-h-[200px] top-[100%] end-0 bg-third text-textColor rounded-[16px] flex flex-col border border-tableBorder z-[600]"
+      className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[min(420px,calc(100vw-24px))] min-h-[200px] top-[100%] end-0 bg-newBgColorInner text-textColor rounded-[26px] flex flex-col border border-newBorder z-[600] shadow-[var(--menu-shadow)]"
     >
       <div
-        className={`p-[16px] border-b border-tableBorder font-bold`}
+        className="p-[16px] border-b border-newBorder font-[600] text-[16px]"
       >
         {t('notifications', 'Notifications')}
       </div>
@@ -123,7 +123,7 @@ const NotificationComponent = () => {
   }, [show, data]);
   const ref = useClickAway<HTMLDivElement>(() => setShow(false));
   return (
-    <div className="relative cursor-pointer select-none flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors text-textItemBlur hover:text-[#00D9FF] hover:bg-[#1a1a1a]" ref={ref}>
+    <div className="relative cursor-pointer select-none flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors text-textItemBlur hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]" ref={ref}>
       <div onClick={changeShow}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
