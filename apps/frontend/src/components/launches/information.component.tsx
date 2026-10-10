@@ -113,10 +113,6 @@ export const InformationComponent: FC<{
   }, [isGlobal, internal, selectedIntegrations]);
 
   const isValid = useMemo(() => {
-    if (showStripLinkWarning) {
-      return false;
-    }
-
     if (!isPicture && !totalChars) {
       return false;
     }
@@ -153,7 +149,6 @@ export const InformationComponent: FC<{
     isInternal,
     isPicture,
     chars,
-    showStripLinkWarning,
   ]);
 
   const globalDisplayLimit = useMemo(() => {
@@ -200,7 +195,9 @@ export const InformationComponent: FC<{
           {globalDisplayLimit.count}/{globalDisplayLimit.limit}
         </div>
       )}
-      {((isGlobal && selectedIntegrations.length) || !isValid) && (
+      {((isGlobal && selectedIntegrations.length) ||
+        !isValid ||
+        showStripLinkWarning) && (
         <svg
           className={clsx('group-hover:rotate-180', !isValid && 'text-white')}
           xmlns="http://www.w3.org/2000/svg"
@@ -215,7 +212,9 @@ export const InformationComponent: FC<{
           />
         </svg>
       )}
-      {((isGlobal && selectedIntegrations.length) || !isValid) && (
+      {((isGlobal && selectedIntegrations.length) ||
+        !isValid ||
+        showStripLinkWarning) && (
         <div
           className={clsx(
             'z-[300] hidden rounded-[12px] bg-newBgColorInner group-hover:flex absolute end-0 bottom-[100%] mb-[5px] p-[12px] flex-col',
@@ -290,7 +289,11 @@ export const InformationComponent: FC<{
               )}
             >
               {t('links_will_be_removed_from', 'Links will be removed from')}:{' '}
-              {stripLinkNames.join(', ')}
+              {stripLinkNames.join(', ')}. {' '}
+              {t(
+                'include_links_opt_in',
+                'Turn on Include links in that channel’s settings to keep them. Articles are left as written.'
+              )}
             </div>
           )}
         </div>

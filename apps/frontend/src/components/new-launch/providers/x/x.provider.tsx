@@ -117,6 +117,13 @@ const SettingsComponent = () => {
 
           <div className="mt-5 flex flex-col gap-[10px]">
             <Checkbox
+              label={t(
+                'label_include_links',
+                'Include links (X charges more for a post that contains a URL)'
+              )}
+              {...register('include_links')}
+            />
+            <Checkbox
               label={t('label_made_with_ai', 'Made with AI')}
               {...register('made_with_ai')}
             />

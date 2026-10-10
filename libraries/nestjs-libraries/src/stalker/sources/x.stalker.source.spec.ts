@@ -9,6 +9,8 @@ import {
   X_PLAN_ERROR,
   X_RATE_ERROR,
   XStalkerSource,
+  xStalkerResultLimit,
+  X_STALKER_RESULT_CAP,
 } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
 
 const KEY = 'consumer-key-value';
@@ -17,9 +19,16 @@ const APP_TOKEN = 'app-only-bearer-token';
 const FRESH_TOKEN = 'refreshed-app-bearer';
 const DEDICATED = 'dedicated-bearer-token';
 
-const jsonResponse = (status: number, body: unknown) => ({
+const jsonResponse = (
+  status: number,
+  body: unknown,
+  headers: Record<string, string> = {}
+) => ({
   ok: status >= 200 && status < 300,
   status,
+  headers: {
+    get: (name: string) => headers[name.toLowerCase()] ?? null,
+  },
   text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
 });
 
@@ -66,6 +75,7 @@ describe('XStalkerSource', () => {
     delete process.env.X_STALKER_BEARER_TOKEN;
     delete process.env.X_API_KEY;
     delete process.env.X_API_SECRET;
+    delete process.env.X_STALKER_MAX_RESULTS;
     await resetXAppBearerCache();
     fetchMock.mockReset();
     global.fetch = fetchMock as unknown as typeof fetch;
@@ -136,6 +146,9 @@ describe('XStalkerSource', () => {
 
     expect(tokenCalls()).toHaveLength(0);
     expect(searchCalls()[0][1].headers.Authorization).toBe(`Bearer ${DEDICATED}`);
+    const searchUrl = new URL(String(searchCalls()[0][0]));
+    expect(searchUrl.searchParams.get('max_results')).toBe('100');
+    expect(searchUrl.searchParams.has('next_token')).toBe(false);
     expect(rows[0].externalId).toBe('x-post:99');
     expect(rows[0].authorHandle).toBe('ada');
     assertSecretsStayOutOfLogs();
@@ -150,7 +163,7 @@ describe('XStalkerSource', () => {
 
     const x = source();
     await x.search('crea8one', new Date());
-    await x.search('crea8one', new Date());
+    await x.search('another-word', new Date());
 
     expect(tokenCalls()).toHaveLength(1);
     const [, init] = tokenCalls()[0];
@@ -300,5 +313,90 @@ describe('XStalkerSource', () => {
     expect((error as Error).message).not.toContain(KEY);
     expect((error as Error).message).not.toContain(SECRET);
     assertSecretsStayOutOfLogs();
+  });
+
+  const page = (ids: string[], next?: string) =>
+    jsonResponse(200, {
+      data: ids.map((id) => ({
+        id,
+        text: `hit ${id}`,
+        author_id: '7',
+        public_metrics: { like_count: 1, reply_count: 0 },
+      })),
+      includes: { users: [{ id: '7', name: 'Ada', username: 'ada' }] },
+      meta: next ? { next_token: next } : {},
+    });
+
+  it('follows next_token until the configured limit and then stops', async () => {
+    process.env.X_STALKER_BEARER_TOKEN = DEDICATED;
+    process.env.X_STALKER_MAX_RESULTS = '15';
+    fetchMock
+      .mockResolvedValueOnce(
+        page(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], 'next-page')
+      )
+      .mockResolvedValueOnce(page(['11', '12', '13', '14', '15', '16']));
+
+    const rows = await source().search('crea8one', new Date('2026-10-01T00:00:00.000Z'));
+
+    expect(rows.map((row) => row.postExternalId)).toEqual([
+      '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15',
+    ]);
+    const first = new URL(String(searchCalls()[0][0]));
+    const second = new URL(String(searchCalls()[1][0]));
+    expect(first.searchParams.get('max_results')).toBe('15');
+    expect(first.searchParams.has('next_token')).toBe(false);
+    expect(second.searchParams.get('next_token')).toBe('next-page');
+    expect(second.searchParams.get('max_results')).toBe('10');
+    expect(searchCalls()).toHaveLength(2);
+  });
+
+  it('reuses an identical search for a minute and caps the result limit', async () => {
+    delete process.env.X_STALKER_MAX_RESULTS;
+    expect(xStalkerResultLimit()).toBe(100);
+    process.env.X_STALKER_MAX_RESULTS = '99999';
+    expect(xStalkerResultLimit()).toBe(X_STALKER_RESULT_CAP);
+    process.env.X_STALKER_MAX_RESULTS = '3';
+    expect(xStalkerResultLimit()).toBe(10);
+
+    process.env.X_STALKER_BEARER_TOKEN = DEDICATED;
+    delete process.env.X_STALKER_MAX_RESULTS;
+    const since = new Date('2026-10-01T00:00:00.000Z');
+    fetchMock.mockResolvedValue(searchOk());
+    const x = source();
+    const first = await x.search('crea8one', since);
+    const second = await x.search('crea8one', since);
+    expect(searchCalls()).toHaveLength(1);
+    expect(second).toEqual(first);
+  });
+
+  it('retries a 429 once when reset is soon, and does not wait out a long window', async () => {
+    process.env.X_STALKER_BEARER_TOKEN = DEDICATED;
+    const soon = String(Math.floor(Date.now() / 1000) + 1);
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(
+          429,
+          { detail: 'Rate limit exceeded' },
+          { 'x-rate-limit-reset': soon }
+        )
+      )
+      .mockResolvedValueOnce(searchOk());
+
+    const rows = await source().search('crea8one', new Date());
+    expect(rows).toHaveLength(1);
+    expect(searchCalls()).toHaveLength(2);
+
+    await resetXAppBearerCache();
+    fetchMock.mockReset();
+    const later = String(Math.floor(Date.now() / 1000) + 600);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        429,
+        { detail: 'Rate limit exceeded' },
+        { 'x-rate-limit-reset': later }
+      )
+    );
+    await expect(source().search('crea8one', new Date())).rejects.toThrow(X_RATE_ERROR);
+    expect(searchCalls()).toHaveLength(1);
   });
 });

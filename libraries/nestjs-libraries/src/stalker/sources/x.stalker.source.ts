@@ -1,4 +1,5 @@
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import {
   StalkerSearchTerms,
@@ -22,6 +23,51 @@ export const X_KEYS_FAILED = 'X: could not sign in with the app keys';
 
 const TOKEN_URL = 'https://api.x.com/oauth2/token';
 const DEFAULT_TTL_SEC = 2 * 60 * 60;
+// Recent search max_results is 10–100. Default one full page; never more than
+// two full pages, and never more than 3 requests, so a bad env value cannot
+// page forever. https://docs.x.com/x-api/posts/search/integrate/paginate
+export const X_STALKER_DEFAULT_RESULTS = 100;
+export const X_STALKER_RESULT_CAP = 200;
+export const X_STALKER_MAX_PAGES = 3;
+const X_SEARCH_CACHE_MS = 60 * 1000;
+const X_RATE_LIMIT_WAIT_CAP_MS = 15_000;
+
+export const xStalkerResultLimit = () => {
+  const raw = Number((process.env.X_STALKER_MAX_RESULTS || '').trim());
+  if (!Number.isFinite(raw) || raw <= 0) {
+    return X_STALKER_DEFAULT_RESULTS;
+  }
+  return Math.min(X_STALKER_RESULT_CAP, Math.max(10, Math.floor(raw)));
+};
+
+const rateLimitWaitMs = (resetSeconds?: number | null, now = Date.now()) => {
+  const reset = Number(resetSeconds || 0);
+  if (!reset) {
+    return null;
+  }
+  const wait = reset * 1000 - now;
+  if (wait < 0 || wait > X_RATE_LIMIT_WAIT_CAP_MS) {
+    return null;
+  }
+  return wait;
+};
+
+type SearchPage = {
+  data?: {
+    id: string;
+    text?: string;
+    author_id?: string;
+    public_metrics?: { like_count?: number; reply_count?: number };
+  }[];
+  includes?: { users?: { id: string; name?: string; username?: string }[] };
+  meta?: { next_token?: string };
+};
+
+const searchMemory = new Map<
+  string,
+  { at: number; rows: StalkerMentionDraft[] }
+>();
+const searchInflight = new Map<string, Promise<StalkerMentionDraft[]>>();
 
 type CachedBearer = { token: string; expiresAt: number };
 
@@ -119,6 +165,8 @@ export const formatXFailure = (detail?: string) => {
 
 export const resetXAppBearerCache = async () => {
   memory = null;
+  searchMemory.clear();
+  searchInflight.clear();
   try {
     await ioRedis.del(X_APP_BEARER_REDIS_KEY);
   } catch {
@@ -289,54 +337,78 @@ export class XStalkerSource implements StalkerSourceProvider {
   private async recent(keyword: string, since: Date, token: string) {
     const oldest = Date.now() - 6 * 24 * 60 * 60 * 1000;
     const start = new Date(Math.max(since.getTime(), oldest));
-    const params = new URLSearchParams({
-      query:
-        keyword.includes(' OR ') ||
-        keyword.startsWith('"') ||
-        keyword.startsWith('@')
-          ? keyword
-          : keyword.includes(' ')
-            ? `"${keyword}"`
-            : keyword,
-      max_results: '10',
-      start_time: start.toISOString(),
-      'tweet.fields': 'created_at,author_id,public_metrics',
-      expansions: 'author_id',
-      'user.fields': 'name,username',
-    });
-    const response = await fetch(
-      `https://api.x.com/2/tweets/search/recent?${params.toString()}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!response.ok) {
-      const raw = await readBody(response);
-      throw new XRequestError(xApiFailure(response.status, raw), response.status);
+    const query =
+      keyword.includes(' OR ') ||
+      keyword.startsWith('"') ||
+      keyword.startsWith('@')
+        ? keyword
+        : keyword.includes(' ')
+          ? `"${keyword}"`
+          : keyword;
+    const limit = xStalkerResultLimit();
+    const cacheKey = `${query}|${start.toISOString().slice(0, 16)}|${limit}`;
+    const hit = searchMemory.get(cacheKey);
+    if (hit && Date.now() - hit.at < X_SEARCH_CACHE_MS) {
+      return hit.rows;
     }
-    const raw = await readBody(response);
-    let json: {
-      data?: {
-        id: string;
-        text?: string;
-        author_id?: string;
-        public_metrics?: { like_count?: number; reply_count?: number };
-      }[];
-      includes?: { users?: { id: string; name?: string; username?: string }[] };
-    } = {};
-    try {
-      json = raw ? JSON.parse(raw) : {};
-    } catch {
-      throw new Error(X_DOWN_ERROR);
+    const pending = searchInflight.get(cacheKey);
+    if (pending) {
+      return pending;
     }
-    const users = new Map(
-      (json.includes?.users || []).map((user) => [user.id, user])
-    );
-    return (json.data || [])
-      .filter((tweet) => (tweet.text || '').trim())
-      .map((tweet) => {
+    const run = this.collectRecent(query, keyword, start, token, limit)
+      .then((rows) => {
+        searchMemory.set(cacheKey, { at: Date.now(), rows });
+        return rows;
+      })
+      .finally(() => {
+        searchInflight.delete(cacheKey);
+      });
+    searchInflight.set(cacheKey, run);
+    return run;
+  }
+
+  private async collectRecent(
+    query: string,
+    keyword: string,
+    start: Date,
+    token: string,
+    limit: number
+  ) {
+    const collected: StalkerMentionDraft[] = [];
+    const seen = new Set<string>();
+    let nextToken = '';
+    for (let page = 0; page < X_STALKER_MAX_PAGES && collected.length < limit; page++) {
+      const remaining = limit - collected.length;
+      const pageSize = Math.min(100, Math.max(10, remaining));
+      const params = new URLSearchParams({
+        query,
+        max_results: String(pageSize),
+        start_time: start.toISOString(),
+        'tweet.fields': 'created_at,author_id,public_metrics',
+        expansions: 'author_id',
+        'user.fields': 'name,username',
+      });
+      if (nextToken) {
+        params.set('next_token', nextToken);
+      }
+      const json = await this.recentPage(
+        `https://api.x.com/2/tweets/search/recent?${params.toString()}`,
+        token
+      );
+      const users = new Map(
+        (json.includes?.users || []).map((user) => [user.id, user])
+      );
+      let added = 0;
+      for (const tweet of json.data || []) {
+        if (!(tweet.text || '').trim() || !tweet.id || seen.has(tweet.id)) {
+          continue;
+        }
+        seen.add(tweet.id);
+        added += 1;
         const user = tweet.author_id ? users.get(tweet.author_id) : undefined;
-        return {
+        collected.push({
           externalId: `x-post:${tweet.id}`,
-          source: 'X_POST' as const,
+          source: 'X_POST',
           authorName: user?.name || user?.username || 'Someone',
           authorHandle: user?.username || '',
           text: (tweet.text || '').slice(0, 2000),
@@ -345,7 +417,41 @@ export class XStalkerSource implements StalkerSourceProvider {
           keywordPhrase: keyword,
           likeCount: tweet.public_metrics?.like_count || 0,
           replyCount: tweet.public_metrics?.reply_count || 0,
-        };
-      });
+        });
+        if (collected.length >= limit) {
+          break;
+        }
+      }
+      nextToken = json.meta?.next_token || '';
+      if (!nextToken || added === 0) {
+        break;
+      }
+    }
+    return collected;
+  }
+
+  private async recentPage(url: string, token: string, attempt = 0): Promise<SearchPage> {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.status === 429 && attempt === 0) {
+      const wait = rateLimitWaitMs(
+        Number(response.headers.get('x-rate-limit-reset') || 0)
+      );
+      if (wait !== null) {
+        await timer(wait);
+        return this.recentPage(url, token, attempt + 1);
+      }
+    }
+    if (!response.ok) {
+      const raw = await readBody(response);
+      throw new XRequestError(xApiFailure(response.status, raw), response.status);
+    }
+    const raw = await readBody(response);
+    try {
+      return raw ? (JSON.parse(raw) as SearchPage) : {};
+    } catch {
+      throw new Error(X_DOWN_ERROR);
+    }
   }
 }

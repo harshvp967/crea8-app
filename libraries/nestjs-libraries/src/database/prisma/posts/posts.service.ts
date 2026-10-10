@@ -814,6 +814,11 @@ export class PostsService {
         }
 
         const settings = post.settings || {};
+        const willStrip = this.stripsOutgoingLinks(provider, settings);
+        const plain = (content: string) => {
+          const text = stripHtmlValidation('normal', content || '', true);
+          return willStrip ? stripLinks(text) : text;
+        };
         const media = (post.value || []).map((p) => p.image || []);
 
         // Settings DTO validation — mirrors the client `form.trigger()`.
@@ -845,14 +850,18 @@ export class PostsService {
         const maximumCharacters = provider.maxLength(additionalSettings, settings);
 
         const emptyContent = (post.value || []).some((a) => {
-          const strip = stripHtmlValidation('normal', a.content || '', true);
-          const length = countLength(integration.providerIdentifier, strip);
+          const length = countLength(
+            integration.providerIdentifier,
+            plain(a.content || '')
+          );
           return length === 0 && (a.image || []).length === 0;
         });
 
         const tooLong = (post.value || []).some((a) => {
-          const strip = stripHtmlValidation('normal', a.content || '', true);
-          const counted = countLength(integration.providerIdentifier, strip);
+          const counted = countLength(
+            integration.providerIdentifier,
+            plain(a.content || '')
+          );
           return counted > (maximumCharacters || 1000000);
         });
 
@@ -869,6 +878,26 @@ export class PostsService {
         };
       })
     );
+  }
+
+  // stripLinks() is the channel default. keepsLinks() is the per-post exception
+  // (X articles, or include_links). Providers without keepsLinks stay on the old flag.
+  private stripsOutgoingLinks(
+    provider:
+      | {
+          stripLinks?: () => boolean;
+          keepsLinks?: (settings?: any) => boolean;
+        }
+      | undefined,
+    settings: any
+  ) {
+    if (!provider?.stripLinks?.()) {
+      return false;
+    }
+    if (provider.keepsLinks) {
+      return !provider.keepsLinks(settings);
+    }
+    return true;
   }
 
   /** Returns the first class-validator message (incl. nested children), or ''. */
@@ -931,7 +960,7 @@ export class PostsService {
       const provider = this._integrationManager.getSocialIntegration(
         (post.settings as any)?.__type
       );
-      const removeLinks = !!provider?.stripLinks?.();
+      const removeLinks = this.stripsOutgoingLinks(provider, post.settings);
 
       const messages = (post.value || []).map((p) => p.content);
       // No point shortlinking links on platforms that strip them out anyway

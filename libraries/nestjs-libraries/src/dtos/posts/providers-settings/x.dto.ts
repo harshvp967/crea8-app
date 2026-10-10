@@ -64,6 +64,14 @@ export class XDto {
 
   @IsOptional()
   @IsBoolean()
+  @JSONSchema({
+    description:
+      'When true, URLs in this post are sent to X. Default is false: links are removed before posting because a post that contains a URL costs more to create.',
+  })
+  include_links?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   made_with_ai?: boolean;
 
   @IsOptional()

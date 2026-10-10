@@ -298,7 +298,8 @@ export const RenderAnalytics: FC<{
     return data?.map((p: AnalyticsDataItem) => {
       const value =
         (p?.data.reduce(
-          (acc: number, curr: { total: number }) => acc + curr.total,
+          (acc: number, curr: { total: number }) =>
+            acc + (Number(curr.total) || 0),
           0
         ) || 0) / (p.average ? p.data.length : 1);
       if (p.average) {
