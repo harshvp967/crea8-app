@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import { stkMenu, stkMenuItem } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const Icon = ({ children }: { children: ReactNode }) => (
   <svg
@@ -82,11 +83,13 @@ const links = [
 
 const pill = (active: boolean) =>
   clsx(
-    'inline-flex items-center gap-[6px] whitespace-nowrap rounded-full border px-[10px] py-[7px] text-[13px] font-[600] transition-colors',
+    'inline-flex items-center gap-[6px] whitespace-nowrap rounded-[18px] border px-[12px] min-h-[36px] text-[14px] font-[500] transition-colors',
     active
-      ? 'border-[#00D9FF]/45 bg-[#00D9FF]/10 text-newTextColor'
+      ? 'arc-selected'
       : 'border-transparent text-textItemBlur hover:border-newBorder hover:bg-newBoxHover hover:text-newTextColor'
   );
+
+export const stalkerNavLinks = links;
 
 const chooseVisibleTabs = (
   widths: number[],
@@ -218,13 +221,13 @@ export const StalkerTopNav = ({
       <div className="relative shrink-0" ref={menu}>
         <button
           type="button"
-          className="flex max-w-[128px] items-center gap-[8px] rounded-full border border-newBorder bg-newBgColorInner px-[12px] py-[7px] text-[13px] font-[600] min-[1440px]:max-w-[160px]"
+          className="flex h-[38px] max-w-[160px] items-center gap-[8px] rounded-[16px] border border-newBorder bg-newBgColorInner px-[12px] text-[14px] font-[500] min-[1200px]:max-w-[180px]"
           aria-haspopup="listbox"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
           <span
-            className="h-[10px] w-[10px] shrink-0 rounded-full border border-black/10"
+            className="h-[8px] w-[8px] shrink-0 rounded-full"
             style={{ backgroundColor: project?.color || '#71717a' }}
           />
           {loading && !project ? (
@@ -237,36 +240,37 @@ export const StalkerTopNav = ({
           </span>
         </button>
         {open ? (
-          <div className="absolute start-0 top-[calc(100%+8px)] z-30 w-[260px] overflow-hidden rounded-[16px] border border-newBorder bg-newBgColorInner shadow-[var(--menu-shadow)]">
-            <ul className="max-h-[280px] overflow-auto p-[6px]" role="listbox">
+          <div className={`${stkMenu} absolute start-0 top-[calc(100%+8px)] w-[260px] overflow-hidden`} role="listbox">
+            <p className="px-[11px] pb-[4px] pt-[8px] text-[13px] text-textItemBlur">Projects</p>
+            <ul className="max-h-[280px] overflow-auto">
               {projects.map((item) => {
                 const active = item.id === project?.id;
                 return (
                   <li key={item.id}>
                     <button
                       type="button"
-                      className="flex w-full items-start gap-[10px] rounded-[12px] px-[10px] py-[8px] text-start hover:bg-newBoxHover"
+                      className={stkMenuItem}
                       onClick={() => {
                         setProjectId(item.id);
                         setOpen(false);
                       }}
                     >
                       <span
-                        className="mt-[4px] h-[10px] w-[10px] shrink-0 rounded-full"
+                        className="h-[8px] w-[8px] shrink-0 rounded-full"
                         style={{ backgroundColor: item.color || '#71717a' }}
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-[600]">
+                        <span className="block truncate text-[14px] font-[500]">
                           {item.name}
                         </span>
                         {item.description ? (
-                          <span className="block truncate text-[12px] text-textItemBlur">
+                          <span className="block truncate text-[13px] text-textItemBlur">
                             {item.description}
                           </span>
                         ) : null}
                       </span>
                       {active ? (
-                        <span className="text-[13px] text-[#00A3C4]" aria-label="Active">
+                        <span className="text-[13px] text-textItemBlur" aria-label="Active">
                           ✓
                         </span>
                       ) : null}
@@ -277,7 +281,7 @@ export const StalkerTopNav = ({
             </ul>
             <button
               type="button"
-              className="flex w-full items-center gap-[8px] border-t border-newBorder px-[16px] py-[12px] text-[13px] font-[600] hover:bg-newBoxHover"
+              className={`${stkMenuItem} mt-[4px] border-t border-newTableBorder`}
               onClick={() => {
                 setOpen(false);
                 setShowWizard(true);
@@ -290,7 +294,7 @@ export const StalkerTopNav = ({
       </div>
       <nav
         ref={navRef}
-        className="relative flex min-w-0 flex-1 items-center gap-[2px]"
+        className="desktop-nav relative flex min-w-0 flex-1 items-center gap-[2px]"
         aria-label="Stalker"
       >
         <div
@@ -329,7 +333,7 @@ export const StalkerTopNav = ({
                 <button
                   type="button"
                   aria-label="Add keyword"
-                  className="ms-[2px] flex h-[28px] w-[28px] items-center justify-center rounded-full border border-newBorder text-[16px] text-textItemBlur hover:border-[#00D9FF]/40 hover:text-newTextColor"
+                  className="arc-icon-btn ms-[2px] !h-[38px] !w-[38px] rounded-[14px] border border-newBorder text-[18px]"
                   onClick={() => requestAddKeyword()}
                 >
                   +
@@ -358,7 +362,7 @@ export const StalkerTopNav = ({
             {moreOpen ? (
               <div
                 role="menu"
-                className="absolute end-0 top-[calc(100%+8px)] z-30 w-[180px] rounded-[14px] border border-newBorder bg-newBgColorInner p-[6px] shadow-[var(--menu-shadow)]"
+                className={`${stkMenu} absolute end-0 top-[calc(100%+8px)] w-[200px]`}
               >
                 {links.map((link, index) => {
                   if (visible.includes(index)) {
@@ -371,7 +375,7 @@ export const StalkerTopNav = ({
                       href={href}
                       prefetch={false}
                       role="menuitem"
-                      className="flex items-center gap-[8px] rounded-[10px] px-[10px] py-[8px] text-[13px] font-[600] hover:bg-newBoxHover"
+                      className={stkMenuItem}
                       onClick={() => setMoreOpen(false)}
                     >
                       {link.icon}

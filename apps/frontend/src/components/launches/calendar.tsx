@@ -255,6 +255,42 @@ const usePostActions = (onMutate?: () => void) => {
   return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease };
 };
 
+const PhoneDayStrip = () => {
+  const calendar = useCalendar();
+  const weekStart = newDayjs(calendar.startDate).startOf('isoWeek');
+  const days = Array.from({ length: 7 }, (_, index) => weekStart.add(index, 'day'));
+
+  return (
+    <div className="phone-day-strip">
+      {days.map((day) => {
+        const iso = day.format('YYYY-MM-DD');
+        const selected = iso === calendar.startDate;
+        return (
+          <button
+            key={iso}
+            type="button"
+            className={clsx(selected && 'arc-selected')}
+            onClick={() => {
+              if (selected) {
+                return;
+              }
+              calendar.setFilters({
+                startDate: iso,
+                endDate: iso,
+                display: 'day',
+                customer: calendar.customer,
+              });
+            }}
+          >
+            <span>{day.format('dd')}</span>
+            <span>{day.format('D')}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 export const DayView = () => {
   const calendar = useCalendar();
   const { integrations, posts, startDate } = calendar;
@@ -300,11 +336,13 @@ export const DayView = () => {
   }, [integrations, posts]);
 
   return (
-    <div className="flex flex-col gap-[10px] flex-1 relative">
+    <div className="flex flex-col gap-[8px] flex-1 min-h-0">
+      <PhoneDayStrip />
+      <div className="relative flex-1 min-h-0">
       <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor px-[4px]">
         {options.map((option) => (
           <Fragment key={option[0].time}>
-            <div className="text-center text-[12px] min-h-[21px] text-[#6a6a6a] font-[500] tracking-wide">
+            <div className="text-center text-[14px] min-h-[21px] text-textItemBlur font-[500]">
               {newDayjs()
                 .utc()
                 .startOf('day')
@@ -332,6 +370,7 @@ export const DayView = () => {
             </div>
           </Fragment>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -362,12 +401,12 @@ export const WeekView = () => {
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 relative">
         <div className="grid [grid-template-columns:72px_repeat(7,_minmax(0,_1fr))] gap-[6px] rounded-[16px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor p-[2px]">
-          <div className="z-10 bg-[#181818] border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[14px] sticky top-0"></div>
+          <div className="z-10 bg-newBgColorInner border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[18px] sticky top-0"></div>
           {localizedDays.map((day, index) => (
             <div
               key={day.name}
               className={clsx(
-                'p-2 text-center bg-[#181818] border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[14px] sticky top-0 z-[20]',
+                'p-2 text-center bg-newBgColorInner border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[18px] sticky top-0 z-[20]',
                 day.day === newDayjs().format('L') &&
                   'border-[#00D9FF]/40 ring-1 ring-[#00D9FF]/25'
               )}
@@ -469,7 +508,7 @@ export const MonthView = () => {
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-[20] p-2 bg-[#181818] border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[14px] sticky top-0 text-[13px] font-[500] text-[#8a8a8a]"
+              className="z-[20] p-2 bg-newBgColorInner border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[18px] sticky top-0 text-[14px] font-[500] text-textItemBlur"
             >
               <div>{day}</div>
             </div>

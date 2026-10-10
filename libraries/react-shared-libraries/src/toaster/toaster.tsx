@@ -33,8 +33,7 @@ export const Toaster = () => {
   return (
     <div
       className={clsx(
-        'animate-fadeDown rounded-[8px] gap-[18px] flex items-center overflow-hidden bg-customColor8 p-[16px] min-w-[319px] fixed start-[50%] text-white z-[900] top-[32px] -translate-x-[50%] h-[56px]',
-        toasterType === 'success' ? 'shadow-greenToast' : 'shadow-yellowToast'
+        'animate-fadeDown rounded-[18px] gap-[12px] flex items-center overflow-hidden border border-newBorder bg-newBgColorInner p-[16px] min-w-[280px] max-w-[420px] fixed start-[50%] z-[900] top-[24px] -translate-x-[50%] min-h-[56px]'
       )}
     >
       <div>
@@ -66,48 +65,7 @@ export const Toaster = () => {
           </svg>
         )}
       </div>
-      <div className="flex-1 text-textColor">{toasterText}</div>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="60"
-        height="56"
-        viewBox="0 0 60 56"
-        fill="none"
-        className="absolute top-0 start-0"
-      >
-        <g filter="url(#filter0_f_376_2968)">
-          <ellipse
-            cx="-12"
-            cy="28"
-            rx="28"
-            ry="13"
-            fill={toasterType === 'success' ? '#6CE9A6' : '#FEC84B'}
-          />
-        </g>
-        <defs>
-          <filter
-            id="filter0_f_376_2968"
-            x="-84"
-            y="-29"
-            width="144"
-            height="114"
-            filterUnits="userSpaceOnUse"
-            colorInterpolationFilters="sRGB"
-          >
-            <feFlood floodOpacity="0" result="BackgroundImageFix" />
-            <feBlend
-              mode="normal"
-              in="SourceGraphic"
-              in2="BackgroundImageFix"
-              result="shape"
-            />
-            <feGaussianBlur
-              stdDeviation="22"
-              result="effect1_foregroundBlur_376_2968"
-            />
-          </filter>
-        </defs>
-      </svg>
+      <div className="flex-1 text-[14px] text-textColor">{toasterText}</div>
     </div>
   );
 };

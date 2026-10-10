@@ -48,14 +48,14 @@ export interface SegmentedControlProps {
 }
 
 const sizes = {
-  sm: 'h-8 px-3 text-[13px] gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
-  lg: 'h-12 px-5 text-base gap-2',
+  sm: 'h-9 px-3 text-[14px] gap-1.5',
+  md: 'h-11 px-4 text-[14px] gap-2',
+  lg: 'h-[50px] px-5 text-[16px] gap-2',
 };
 
 const softPill = {
-  background: 'color-mix(in srgb, #00D9FF 18%, var(--new-bgColorInner))',
-  boxShadow: 'inset 0 0 0 1px color-mix(in srgb, #00D9FF 42%, transparent)',
+  background: 'var(--arc-wave), var(--new-bgColorInner)',
+  boxShadow: 'inset 0 0 0 1px var(--arc-selected-border)',
 };
 
 export function SegmentedControl({
@@ -109,14 +109,14 @@ export function SegmentedControl({
       role="radiogroup"
       aria-label={ariaLabel}
       className={clsx(
-        'relative inline-flex items-center rounded-full border border-newBorder bg-newBgColorInner p-1',
+        'relative inline-flex items-center rounded-[18px] border border-newBorder bg-[var(--arc-muted)] p-[3px]',
         className
       )}
     >
       {options.map((option, i) => {
         const active = option.value === selected;
         const itemClass = clsx(
-          'relative inline-flex items-center justify-center whitespace-nowrap rounded-full font-[600] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#00D9FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
+          'relative inline-flex items-center justify-center whitespace-nowrap rounded-[14px] font-[500] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--arc-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
           sizes[size],
           active
             ? 'text-newTextColor'
@@ -128,7 +128,7 @@ export function SegmentedControl({
               <motion.span
                 layoutId={`${id}-pill`}
                 aria-hidden="true"
-                className="absolute inset-0 rounded-full"
+                className="absolute inset-0 rounded-[14px]"
                 style={pillColor ? { background: pillColor } : softPill}
                 transition={
                   reduced ? { duration: 0 } : { type: 'spring', stiffness, damping }

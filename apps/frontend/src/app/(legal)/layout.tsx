@@ -7,7 +7,7 @@ import { crea8oneIcons } from '@gitroom/frontend/components/layout/crea8one.icon
 import { publicPageMetadata } from '@gitroom/frontend/components/layout/site.metadata';
 
 const jakartaSans = Plus_Jakarta_Sans({
-  weight: ['600', '500'],
+  weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
   subsets: ['latin'],
   display: 'swap',

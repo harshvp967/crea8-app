@@ -16,32 +16,32 @@ export const MenuItem: FC<{
     path !== '#' && path.indexOf('http') !== 0 && currentPath.indexOf(path) === 0;
 
   const className = clsx(
-    'transition-colors font-[600] select-none',
+    'transition-colors font-[500] select-none',
     variant === 'horizontal' &&
       clsx(
-        'inline-flex items-center gap-[8px] whitespace-nowrap rounded-full px-[18px] py-[10px] text-[14px] border',
+        'inline-flex items-center gap-[8px] whitespace-nowrap rounded-[18px] px-[14px] min-h-[36px] text-[14px] border',
         isActive
-          ? 'bg-[#00D9FF] text-[#0a0a0a] border-[#00D9FF] shadow-[0_0_0_1px_rgba(0,217,255,0.25)]'
-          : 'bg-[#1a1a1a] text-[#b0b0b0] border-[#2a2a2a] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
+          ? 'arc-selected'
+          : 'bg-transparent text-textItemBlur border-transparent hover:bg-newBoxHover hover:text-newTextColor hover:border-newBorder'
       ),
     variant === 'utility' &&
       clsx(
-        'inline-flex items-center gap-[6px] whitespace-nowrap rounded-full px-[12px] py-[8px] text-[12px] border border-transparent',
+        'inline-flex items-center gap-[6px] whitespace-nowrap rounded-[18px] px-[12px] min-h-[36px] text-[14px] border border-transparent w-full',
         isActive
-          ? 'bg-[#00D9FF]/15 text-[#00D9FF] border-[#00D9FF]/30'
-          : 'text-[#8a8a8a] hover:text-white hover:bg-[#1c1c1c] hover:border-[#2a2a2a]'
+          ? 'arc-selected'
+          : 'text-textItemBlur hover:text-newTextColor hover:bg-newBoxHover hover:border-newBorder'
       ),
     variant === 'sidebar' &&
       clsx(
-        'w-full flex items-center gap-[10px] rounded-full px-[14px] py-[11px] text-[13px] border',
+        'w-full flex items-center gap-[10px] rounded-[18px] px-[14px] min-h-[44px] text-[14px] border',
         isActive
-          ? 'bg-[#00D9FF] text-[#0a0a0a] border-[#00D9FF]'
-          : 'bg-transparent text-[#8a8a8a] border-[#2a2a2a] hover:text-white hover:border-[#3a3a3a] hover:bg-[#1c1c1c]'
+          ? 'arc-selected'
+          : 'bg-transparent text-textItemBlur border-transparent hover:text-newTextColor hover:border-newBorder hover:bg-newBoxHover'
       ),
     variant === 'vertical' &&
       clsx(
-        'group w-full minCustom:h-[54px] custom:h-[44px] py-[8px] px-[6px] minCustom:gap-[4px] custom:gap-[2px] flex flex-col font-[600] items-center justify-center rounded-[12px] hover:text-textItemFocused hover:bg-boxFocused',
-        isActive ? 'text-textItemFocused bg-boxFocused' : 'text-textItemBlur'
+        'group w-full minCustom:h-[54px] custom:h-[44px] py-[8px] px-[6px] minCustom:gap-[4px] custom:gap-[2px] flex flex-col font-[500] items-center justify-center rounded-[18px] hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]',
+        isActive ? 'arc-selected' : 'text-textItemBlur'
       )
   );
 

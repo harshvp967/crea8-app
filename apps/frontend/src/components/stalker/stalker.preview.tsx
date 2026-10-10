@@ -13,6 +13,7 @@ import { StalkerAlerts } from '@gitroom/frontend/components/stalker/stalker.aler
 import { StalkerSettings } from '@gitroom/frontend/components/stalker/stalker.settings';
 import { StalkerApi } from '@gitroom/frontend/components/stalker/stalker.api';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
+import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
 
 const pages: Record<string, ReactNode> = {
   mentions: <StalkerMentions />,
@@ -35,9 +36,9 @@ const Frame = ({ page }: { page: string }) => {
   }, [search]);
 
   return (
-    <div className="flex min-h-screen flex-col gap-[12px] bg-newBgLineColor p-[16px] text-newTextColor">
+    <div className="app-shell flex min-h-screen flex-col gap-[12px] bg-[var(--arc-canvas)] p-[16px] text-newTextColor">
       <Toaster />
-      <header className="flex min-h-[64px] items-center gap-[8px] rounded-[24px] border border-newBorder bg-newBgColorInner px-[12px] py-[8px]">
+      <header className="app-header flex min-h-[64px] items-center gap-[8px] rounded-[26px] border border-newBorder bg-newBgColorInner px-[12px] py-[8px] shadow-[var(--arc-shadow-resting)]">
         <Logo compact />
         <div className="hidden h-[32px] shrink-0 items-center justify-center rounded-full border border-newBorder px-[12px] text-[12px] font-[600] text-textItemBlur sm:flex">
           Schedule | Stalker
@@ -49,9 +50,10 @@ const Frame = ({ page }: { page: string }) => {
           <span className="h-[28px] w-[28px] rounded-full border border-newBorder" />
         </div>
       </header>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] border border-newBorder bg-newBgColorInner">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-newBorder bg-newBgColorInner shadow-[var(--arc-shadow-resting)]">
         <StalkerShell>{pages[page] || null}</StalkerShell>
       </div>
+      <MobileTabBar />
     </div>
   );
 };

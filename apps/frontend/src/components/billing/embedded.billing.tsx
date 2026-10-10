@@ -375,7 +375,7 @@ const AppliedCouponDisplay: FC<{
 
   return (
     <div className="flex flex-col gap-[8px]">
-      <div className="flex items-center gap-[12px] p-[16px] rounded-[12px] border border-[#AA0FA4]/30 bg-[#AA0FA4]/10">
+      <div className="flex items-center gap-[12px] p-[16px] rounded-[18px] border border-[color:var(--arc-selected-border)] bg-[var(--arc-selected)]">
         <div className="flex-1">
           <div className="flex items-center gap-[8px] flex-wrap">
             <svg

@@ -5,6 +5,21 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import {
+  stkClose,
+  stkDialog,
+  stkDialogBody,
+  stkDialogFoot,
+  stkDialogHead,
+  stkField,
+  stkGhost,
+  stkLabel,
+  stkMenu,
+  stkOverlay,
+  stkPrimary,
+  stkSecondary,
+  stkSwatch,
+} from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 export const STALKER_SWATCHES = [
   '#71717a',
@@ -49,8 +64,7 @@ type KeywordDraft = {
 
 type CategoryDraft = { name: string; description: string };
 
-const field =
-  'w-full rounded-[12px] border border-newBorder bg-newBgColorInner px-[12px] py-[10px] text-[14px] text-newTextColor outline-none focus:border-[#00D9FF]/50';
+const field = stkField;
 
 export const StalkerWizard = () => {
   const fetch = useFetch();
@@ -169,51 +183,47 @@ export const StalkerWizard = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-[16px]">
-      <div className="flex max-h-[90vh] w-full max-w-[640px] flex-col overflow-hidden rounded-[20px] border border-newBorder bg-newBgColorInner shadow-[var(--menu-shadow)]">
-        <div className="flex items-center justify-between gap-[12px] px-[20px] pt-[16px]">
-          <ol className="flex items-center gap-[8px] text-[13px] font-[600]">
+    <div className={stkOverlay}>
+      <div className={`${stkDialog} max-h-[90vh] max-w-[620px]`}>
+        <div className={stkDialogHead}>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[18px] font-[600]">Create project</h2>
+          <ol className="mt-[12px] flex flex-wrap items-center gap-[10px] text-[14px] font-[500]">
             {['Project', 'Keywords', 'Categories'].map((label, index) => (
               <li key={label} className="flex items-center gap-[8px]">
                 <span
                   className={clsx(
-                    'flex h-[26px] items-center gap-[6px] rounded-full px-[10px]',
-                    index === step
-                      ? 'bg-newTextColor text-newBgColorInner'
-                      : index < step
-                        ? 'text-newTextColor'
-                        : 'text-textItemBlur'
+                    'flex items-center gap-[8px] whitespace-nowrap',
+                    index === step ? 'text-newTextColor' : 'text-textItemBlur'
                   )}
                 >
                   <span
                     className={clsx(
-                      'flex h-[18px] w-[18px] items-center justify-center rounded-full text-[11px]',
+                      'flex h-[26px] w-[26px] items-center justify-center rounded-full text-[13px]',
                       index === step
-                        ? 'bg-newBgColorInner text-newTextColor'
-                        : 'border border-current'
+                        ? 'border border-[color:var(--arc-selected-border)] bg-[var(--arc-selected)] text-[color:var(--arc-accent-text)]'
+                        : index < step
+                          ? 'border border-newTextColor bg-newTextColor text-newBgColorInner'
+                          : 'border border-newBorder bg-newBgColorInner'
                     )}
                   >
                     {index < step ? '✓' : index + 1}
                   </span>
-                  {label}
+                  <span className="max-[767px]:hidden">{label}</span>
                 </span>
-                {index < 2 ? <span className="text-textItemBlur">—</span> : null}
+                {index < 2 ? <span className="h-[1px] w-[16px] bg-newBorder" /> : null}
               </li>
             ))}
           </ol>
-          <button
-            type="button"
-            className="text-[18px] text-textItemBlur"
-            aria-label="Close"
-            onClick={() => setShowWizard(false)}
-          >
+          </div>
+          <button type="button" className={stkClose} aria-label="Close" onClick={() => setShowWizard(false)}>
             ×
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-auto px-[20px] py-[16px]">
+        <div className={stkDialogBody}>
           {step === 0 ? (
             <div className="flex flex-col gap-[14px]">
-              <label className="flex flex-col gap-[6px] text-[13px] font-[600]">
+              <label className={`${stkLabel} flex flex-col gap-[6px]`}>
                 Name
                 <input
                   className={field}
@@ -222,7 +232,7 @@ export const StalkerWizard = () => {
                   onChange={(event) => setName(event.target.value)}
                 />
               </label>
-              <label className="flex flex-col gap-[6px] text-[13px] font-[600]">
+              <label className={`${stkLabel} flex flex-col gap-[6px]`}>
                 Description
                 <input
                   className={field}
@@ -232,17 +242,14 @@ export const StalkerWizard = () => {
                 />
               </label>
               <div>
-                <p className="mb-[8px] text-[13px] font-[600]">Colour</p>
+                <p className="mb-[8px] text-[14px] font-[500]">Colour</p>
                 <div className="flex flex-wrap gap-[8px]">
                   {STALKER_SWATCHES.map((swatch) => (
                     <button
                       key={swatch}
                       type="button"
                       aria-label={swatch}
-                      className={clsx(
-                        'h-[28px] w-[28px] rounded-full border-2',
-                        color === swatch ? 'border-newTextColor' : 'border-transparent'
-                      )}
+                      className={stkSwatch(color === swatch)}
                       style={{ backgroundColor: swatch }}
                       onClick={() => setColor(swatch)}
                     />
@@ -253,7 +260,7 @@ export const StalkerWizard = () => {
           ) : null}
           {step === 1 ? (
             <div className="flex flex-col gap-[14px]">
-              <article className="rounded-[16px] border border-newBorder p-[14px]">
+              <article className="rounded-[20px] border border-newBorder bg-newBoxHover p-[14px]">
                 <div className="flex items-center gap-[10px]">
                   <span className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-newBoxHover text-[12px] font-[600]">
                     AC
@@ -267,7 +274,7 @@ export const StalkerWizard = () => {
                 </div>
                 <p className="mt-[10px] text-[14px] leading-[1.5]">
                   Just tried{' '}
-                  <span className="rounded-[6px] bg-[#00D9FF]/15 px-[4px]">
+                  <span className="rounded-[6px] bg-[var(--arc-selected)] px-[4px] font-[600]">
                     {preview}
                   </span>{' '}
                   and I&apos;m honestly impressed — the product quality is top-tier.
@@ -279,7 +286,7 @@ export const StalkerWizard = () => {
               </article>
               {keywords.map((keyword, index) => (
                 <div key={index} className="relative">
-                  <label className="mb-[6px] block text-[13px] font-[600]">
+                  <label className={`${stkLabel} mb-[6px]`}>
                     Keyword
                   </label>
                   <div className="flex items-center gap-[8px]">
@@ -299,7 +306,7 @@ export const StalkerWizard = () => {
                     />
                     <button
                       type="button"
-                      className="shrink-0 rounded-full border border-newBorder px-[10px] py-[8px] text-[12px] font-[600]"
+                      className={stkSecondary}
                       onClick={() =>
                         setSourcesOpen((current) => (current === index ? null : index))
                       }
@@ -308,7 +315,7 @@ export const StalkerWizard = () => {
                     </button>
                   </div>
                   {sourcesOpen === index ? (
-                    <div className="absolute end-0 z-10 mt-[6px] w-[240px] rounded-[14px] border border-newBorder bg-newBgColorInner p-[8px] shadow-[var(--menu-shadow)]">
+                    <div className={`${stkMenu} absolute end-0 z-10 mt-[6px] w-[240px]`}>
                       {(
                         [
                           ['youtube', 'YouTube', 'youtube'],
@@ -344,7 +351,7 @@ export const StalkerWizard = () => {
               ))}
               <button
                 type="button"
-                className="self-start text-[13px] font-[600] text-textItemBlur"
+                className={`${stkGhost} self-start`}
                 onClick={() =>
                   setKeywords((current) => [
                     ...current,
@@ -364,12 +371,13 @@ export const StalkerWizard = () => {
           ) : null}
           {step === 2 ? (
             <div className="flex flex-col gap-[14px]">
-              <div className="rounded-[16px] border border-newBorder p-[14px]">
+              <div className="flex items-center gap-[12px] rounded-[18px] border border-newBorder bg-newBoxHover p-[14px]">
+                <span className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-newBorder border-t-[color:var(--arc-accent)]" />
                 <p className="text-[14px] italic text-textItemBlur">
                   “Honestly one of the best tools I&apos;ve used this year. Switched
                   from the competitor and haven&apos;t…”
                 </p>
-                <p className="mt-[8px] text-[12px] text-textItemBlur">AI analyzing…</p>
+                <p className="text-[14px] text-textItemBlur">AI analyzing…</p>
               </div>
               <div>
                 <h2 className="text-[16px] font-[600]">Categories</h2>
@@ -424,7 +432,7 @@ export const StalkerWizard = () => {
               ))}
               <button
                 type="button"
-                className="self-start text-[13px] font-[600]"
+                className={`${stkGhost} self-start`}
                 onClick={() =>
                   setCategories((current) => [
                     ...current,
@@ -437,10 +445,10 @@ export const StalkerWizard = () => {
             </div>
           ) : null}
         </div>
-        <div className="flex items-center justify-between border-t border-newBorder px-[20px] py-[14px]">
+        <div className={stkDialogFoot}>
           <button
             type="button"
-            className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px] font-[600] disabled:opacity-40"
+            className={stkSecondary}
             disabled={step === 0}
             onClick={() => setStep((value) => Math.max(0, value - 1))}
           >
@@ -449,7 +457,7 @@ export const StalkerWizard = () => {
           {step < 2 ? (
             <button
               type="button"
-              className="rounded-full bg-newTextColor px-[16px] py-[8px] text-[13px] font-[600] text-newBgColorInner disabled:opacity-40"
+              className={stkPrimary}
               disabled={step === 0 && name.trim().length < 2}
               onClick={() => setStep((value) => value + 1)}
             >
@@ -458,7 +466,7 @@ export const StalkerWizard = () => {
           ) : (
             <button
               type="button"
-              className="rounded-full bg-newTextColor px-[16px] py-[8px] text-[13px] font-[600] text-newBgColorInner disabled:opacity-40"
+              className={stkPrimary}
               disabled={saving || !categories.some((category) => category.name.trim().length >= 2)}
               onClick={createProject}
             >

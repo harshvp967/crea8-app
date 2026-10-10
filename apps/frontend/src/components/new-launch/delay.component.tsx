@@ -89,7 +89,7 @@ export const DelayComponent: FC<{
         }
         className={clsx(
           'cursor-pointer flex items-center gap-[4px]',
-          currentDelay > 0 && 'bg-[#D82D7E] text-white rounded-full'
+          currentDelay > 0 && 'arc-selected rounded-[14px] px-[6px]'
         )}
       >
         <DelayIcon />
@@ -103,7 +103,7 @@ export const DelayComponent: FC<{
                 key={option.value}
                 className={clsx(
                   'h-[32px] flex items-center justify-center rounded-[4px] cursor-pointer hover:bg-newBgColor text-[13px]',
-                  currentDelay === option.value && 'bg-[#00D9FF] text-[#0a0a0a] hover:bg-[#00D9FF]'
+                  currentDelay === option.value && 'arc-selected'
                 )}
               >
                 {option.label}

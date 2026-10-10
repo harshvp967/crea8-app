@@ -62,7 +62,7 @@ export const Input: FC<
       )}
       <div
         className={clsx(
-          'bg-newBgColorInner h-[42px] border-newTableBorder border rounded-[8px] text-textColor placeholder-textColor flex items-center justify-center',
+          'bg-newBgColorInner h-[44px] border-newBorder border rounded-[18px] text-textColor placeholder-textColor flex items-center justify-center focus-within:border-[color:var(--arc-focus)]',
           className
         )}
       >

@@ -2,6 +2,7 @@ import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.comp
 
 export const dynamic = 'force-dynamic';
 import '../global.scss';
+import '../uiarc.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
 };
 
 const jakartaSans = Plus_Jakarta_Sans({
-  weight: ['600', '500'],
+  weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
   subsets: ['latin'],
   display: 'swap',

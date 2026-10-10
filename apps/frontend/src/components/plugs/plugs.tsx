@@ -133,7 +133,7 @@ export const Plugs = () => {
             </h2>
             <div
               onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
-              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-full w-[28px] h-[28px] flex items-center justify-center cursor-pointer select-none hover:bg-[#00D9FF]/15 hover:text-[#00D9FF] transition-colors"
+              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-textItemBlur bg-transparent rounded-[14px] w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none hover:bg-newBoxHover hover:text-newTextColor transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

@@ -249,7 +249,7 @@ const Threads: FC = () => {
         <div className="mb-[16px] justify-center flex group-[.sidebar]:pb-[15px] shrink-0">
           <Link
             href={`/agents`}
-            className="!text-[#0a0a0a] whitespace-nowrap flex-1 pt-[12px] pb-[12px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-full bg-[#00D9FF] hover:bg-[#00B8D9] transition-colors flex justify-center items-center gap-[8px] outline-none font-[600]"
+            className="!text-[#0A0A0A] whitespace-nowrap flex-1 pt-[12px] pb-[12px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-[18px] bg-btnPrimary hover:brightness-95 flex justify-center items-center gap-[8px] outline-none font-[600]"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -282,7 +282,7 @@ const Threads: FC = () => {
                 'overflow-ellipsis overflow-hidden whitespace-nowrap px-[12px] py-[10px] rounded-[12px] cursor-pointer text-[13px] font-[500] border transition-colors',
                 p.id === id
                   ? 'bg-[#00D9FF]/10 border-[#00D9FF]/35 text-newTextColor'
-                  : 'border-transparent text-[#9a9a9a] hover:bg-[#1a1a1a] hover:text-newTextColor hover:border-[#2a2a2a]'
+                  : 'border-transparent text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor hover:border-newBorder'
               )}
               href={`/agents/${p.id}`}
               key={p.id}

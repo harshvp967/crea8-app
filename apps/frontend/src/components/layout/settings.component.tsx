@@ -34,7 +34,7 @@ import { GlobalSettings } from '@gitroom/frontend/components/settings/global.set
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 
 const SkeletonBar = ({ className }: { className: string }) => (
-  <div className={`animate-pulse rounded-[8px] bg-[#1f1f1f] ${className}`} />
+  <div className={`animate-pulse rounded-[12px] bg-newBoxHover ${className}`} />
 );
 
 export const SettingsPageSkeleton = () => {
@@ -156,8 +156,8 @@ export const SettingsPopup: FC<{
             <div
               key={tabKey}
               className={clsx(
-                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-[12px]',
-                tabKey === tab && 'bg-boxHover'
+                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-[18px] min-h-[44px] px-[8px] text-[14px]',
+                tabKey === tab && 'arc-selected'
               )}
               onClick={() => setTab(tabKey)}
             >

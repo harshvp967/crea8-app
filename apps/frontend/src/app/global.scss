@@ -17,7 +17,7 @@ body {
 }
 
 body * {
-  outline: none !important;
+  outline: none;
 }
 
 .box {
@@ -74,24 +74,30 @@ body * {
 }
 
 .swal2-modal {
-  @apply bg-primary #{!important};
-  @apply border-b-[2px] border-b-sixth;
+  background: var(--new-bgColorInner) !important;
+  border: 1px solid var(--new-border) !important;
+  border-radius: 26px !important;
 }
 
 .swal2-modal * {
-  @apply text-textColor #{!important};
+  color: var(--new-btn-text) !important;
 }
 
 .swal2-icon {
-  @apply text-textColor bg-primary #{!important};
+  color: var(--new-btn-text) !important;
+  background: var(--new-bgColorInner) !important;
 }
 
 .swal2-cancel {
-  @apply text-white #{!important};
+  color: var(--new-btn-text) !important;
+  background: transparent !important;
+  border: 1px solid var(--new-border) !important;
+  border-radius: 18px !important;
 }
 .swal2-confirm {
-  @apply bg-customColor50 #{!important};
-  @apply text-white #{!important};
+  background: #00D9FF !important;
+  color: #0A0A0A !important;
+  border-radius: 18px !important;
 }
 
 .w-md-editor-text {

@@ -325,6 +325,36 @@ export const CalendarWeekProvider: FC<{
     }
   }, [posts]);
 
+  // Phone presents Day view until the user picks a view. A saved calendar-display
+  // cookie or a display query param is left as the user set it, and this does
+  // not write the cookie.
+  useEffect(() => {
+    if (searchParams.get('display')) {
+      return;
+    }
+    if (!window.matchMedia('(max-width: 767px)').matches) {
+      return;
+    }
+    const saved = document.cookie
+      .split('; ')
+      .some((part) => part.startsWith('calendar-display='));
+    if (saved) {
+      return;
+    }
+    const range = getDateRange('day');
+    setFilters((current) => {
+      if (current.display === 'day') {
+        return current;
+      }
+      return {
+        ...current,
+        display: 'day',
+        startDate: range.startDate,
+        endDate: range.endDate,
+      };
+    });
+  }, [searchParams]);
+
   // Combined reload function that handles both calendar and list views
   const reloadCalendarView = useCallback(() => {
     mutateCalendar();

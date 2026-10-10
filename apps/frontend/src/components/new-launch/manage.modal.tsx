@@ -534,17 +534,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   <div
                     onClick={() => setShowSettings(!showSettings)}
                     className={clsx(
-                      'bg-[#00D9FF] rounded-[12px] flex items-center gap-[8px] cursor-pointer p-[12px]',
+                      'arc-selected rounded-[18px] flex items-center gap-[8px] cursor-pointer p-[12px]',
                       showSettings ? '!rounded-b-none' : ''
                     )}
                   >
-                    <div className="flex-1 text-[14px] font-[600] text-white">
+                    <div className="flex-1 text-[14px] font-[500]">
                       {currentIntegrationText}
                     </div>
                     <div>
                       <ChevronDownIcon
                         rotated={showSettings}
-                        className="text-white"
+                        className="text-[color:var(--arc-accent-text)]"
                       />
                     </div>
                   </div>
@@ -569,7 +569,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
           <div className="w-[580px] flex flex-col">
-            <div className="bg-newBgColor h-[65px] rounded-e-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
+            <div className="bg-newBgColor h-[65px] rounded-e-[26px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
               <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
               <div className="cursor-pointer">
                 <CloseIcon onClick={askClose} className="text-[#A3A3A3]" />
@@ -621,7 +621,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   selectedIntegrations.length === 0 || loading || locked
                 }
                 onClick={schedule('draft')}
-                className="relative cursor-pointer disabled:cursor-not-allowed px-[20px] h-[44px] bg-btnSimple justify-center items-center flex rounded-[8px] text-[15px] font-[600]"
+                className="relative cursor-pointer disabled:cursor-not-allowed px-[20px] h-[44px] bg-btnSimple border border-newBorder justify-center items-center flex rounded-[18px] text-[15px] font-[500]"
               >
                 {loading && (
                   <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
@@ -635,7 +635,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
             {addEditSets && (
               <button
-                className="text-[#0a0a0a] text-[15px] font-[600] min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#00D9FF] ps-[20px] pe-[16px]"
+                className="text-[#0A0A0A] text-[15px] font-[500] min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[18px] bg-[#00D9FF] ps-[20px] pe-[16px]"
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
                 }
@@ -651,11 +651,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     selectedIntegrations.length === 0 || loading || locked
                   }
                   onClick={schedule('schedule')}
-                  className="text-[#0a0a0a] relative min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#00D9FF] ps-[20px] pe-[16px]"
+                  className="text-[#0A0A0A] relative min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[18px] bg-[#00D9FF] ps-[20px] pe-[16px]"
                 >
                   {loading && (
                     <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
-                      <div className="animate-spin h-[20px] w-[20px] border-4 border-white border-t-transparent rounded-full" />
+                      <div className="animate-spin h-[20px] w-[20px] border-4 border-[#0A0A0A] border-t-transparent rounded-full" />
                     </div>
                   )}
                   <div
@@ -676,7 +676,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   </div>
                   {!dummy && (
                     <div className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] arrow-change">
-                      <DropdownArrowSmallIcon className="group-hover:rotate-180 text-white" />
+                      <DropdownArrowSmallIcon className="group-hover:rotate-180 text-[#0A0A0A]" />
                     </div>
                   )}
                 </button>
@@ -689,7 +689,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     }
                     className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
                   >
-                    <div className="text-white rounded-[8px] bg-[#D82D7E] h-[44px] w-full flex justify-center items-center post-now">
+                    <div className="text-newTextColor rounded-[16px] border border-newBorder bg-newBgColorInner h-[44px] w-full flex justify-center items-center post-now">
                       {t('post_now', 'Post Now')}
                     </div>
                   </button>

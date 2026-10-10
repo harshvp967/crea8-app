@@ -256,7 +256,7 @@ export const useMenuItem = () => {
   };
 };
 
-const useVisibleMenuItems = (
+export const useVisibleMenuItems = (
   items: MenuItemInterface[],
   options?: { excludeSettings?: boolean }
 ) => {
@@ -297,7 +297,7 @@ export const TopMenu: FC = () => {
 
   return (
     <nav
-      className="flex flex-1 items-center gap-[8px] min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="desktop-nav flex flex-1 items-center gap-[4px] min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       aria-label="Main"
     >
       {visible.map((item) => (
@@ -325,7 +325,7 @@ export const TopMenuUtilities: FC = () => {
   if (!visible.length) return null;
 
   return (
-    <div className="flex items-center gap-[6px] shrink-0 max-w-[32vw] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="desktop-utilities flex flex-col gap-[4px]">
       {visible.map((item) => (
         <MenuItem
           path={item.path}
@@ -360,10 +360,10 @@ export const SettingsMenuItem: FC<{
         title={settings.name}
         aria-label={settings.name}
         className={clsx(
-          'flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors shrink-0 [&_svg]:w-[22px] [&_svg]:h-[22px]',
+          'flex items-center justify-center w-[38px] h-[38px] rounded-[14px] transition-colors shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]',
           isActive
-            ? 'text-[#00D9FF] bg-[#00D9FF]/15'
-            : 'text-textItemBlur hover:text-[#00D9FF] hover:bg-[#1a1a1a]'
+            ? 'arc-selected'
+            : 'text-textItemBlur hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]'
         )}
       >
         {settings.icon}

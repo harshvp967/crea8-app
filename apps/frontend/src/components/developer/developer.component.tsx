@@ -246,7 +246,7 @@ export const DeveloperComponent: FC = () => {
             <button
               type="button"
               onClick={() => setCreating(true)}
-              className="cursor-pointer px-[20px] h-[44px] bg-[#00D9FF] hover:bg-[#00B8D9] transition-colors text-[#0a0a0a] rounded-full text-[15px] font-[600]"
+              className="cursor-pointer px-[20px] h-[44px] bg-btnPrimary hover:brightness-95 text-[#0A0A0A] rounded-[18px] text-[15px] font-[600]"
             >
               {t('create_oauth_app', 'Create OAuth App')}
             </button>
@@ -348,7 +348,7 @@ export const DeveloperComponent: FC = () => {
               <button
                 type="button"
                 onClick={createApp}
-                className="cursor-pointer px-[20px] h-[44px] bg-[#00D9FF] hover:bg-[#00B8D9] transition-colors text-[#0a0a0a] rounded-full text-[15px] font-[600]"
+                className="cursor-pointer px-[20px] h-[44px] bg-btnPrimary hover:brightness-95 text-[#0A0A0A] rounded-[18px] text-[15px] font-[600]"
               >
                 {t('create', 'Create')}
               </button>
@@ -462,7 +462,7 @@ export const DeveloperComponent: FC = () => {
               <button
                 type="button"
                 onClick={updateApp}
-                className="cursor-pointer px-[20px] h-[44px] bg-[#00D9FF] hover:bg-[#00B8D9] transition-colors text-[#0a0a0a] rounded-full text-[15px] font-[600]"
+                className="cursor-pointer px-[20px] h-[44px] bg-btnPrimary hover:brightness-95 text-[#0A0A0A] rounded-[18px] text-[15px] font-[600]"
               >
                 {t('save', 'Save')}
               </button>

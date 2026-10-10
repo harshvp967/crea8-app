@@ -163,7 +163,7 @@ export default function OAuthAuthorizePage() {
           <Logo />
         </div>
 
-        <div className="bg-[#1A1919] rounded-[16px] p-[32px] flex flex-col gap-[24px]">
+        <div className="bg-newBgColorInner border border-newBorder rounded-[26px] p-[32px] flex flex-col gap-[24px]">
           <div className="flex flex-col items-center gap-[16px]">
             {appInfo.app.picture?.path ? (
               <img
@@ -202,14 +202,14 @@ export default function OAuthAuthorizePage() {
             <button
               onClick={() => handleAction('approve')}
               disabled={submitting}
-              className="flex-1 bg-[#00D9FF] hover:bg-[#00B8D9] disabled:opacity-50 text-[#0a0a0a] rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-colors"
+              className="flex-1 bg-btnPrimary hover:brightness-95 disabled:opacity-50 text-[#0A0A0A] rounded-[18px] h-[44px] px-[16px] text-[14px] font-[600]"
             >
               Authorize
             </button>
             <button
               onClick={() => handleAction('deny')}
               disabled={submitting}
-              className="flex-1 bg-[#2A2929] hover:bg-[#3A3939] disabled:opacity-50 text-white rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-colors"
+              className="flex-1 bg-newBgColorInner border border-newBorder hover:brightness-95 disabled:opacity-50 text-newTextColor rounded-[18px] h-[44px] px-[16px] text-[14px] font-[600]"
             >
               Deny
             </button>

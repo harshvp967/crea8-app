@@ -263,8 +263,8 @@ export const MenuComponent: FC<
             'data-tooltip-content': integration.name,
           }
         : {})}
-      className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
+        className={clsx(
+        'flex gap-[10px] items-center min-h-[48px] bg-transparent hover:bg-boxHover group/profile transition-all rounded-[16px] border border-transparent px-[8px]',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -331,11 +331,29 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-          'group-[.sidebar]:hidden flex-1 whitespace-nowrap text-ellipsis overflow-hidden cursor-move',
+          'group-[.sidebar]:hidden flex-1 min-w-0 cursor-move',
           integration.disabled && 'opacity-50'
         )}
       >
-        {integration.name}
+        <div className="whitespace-nowrap text-ellipsis overflow-hidden">
+          {integration.name}
+        </div>
+        {integration.refreshNeeded && (
+          <div className="text-[13px] text-[#F87171] truncate">
+            {t(
+              'channel_disconnected_click_to_reconnect',
+              'Channel disconnected, click to reconnect.'
+            )}
+          </div>
+        )}
+        {integration.disabled && !integration.refreshNeeded && (
+          <div className="text-[13px] text-textItemBlur truncate">
+            {t(
+              'channel_disabled_upgrade_plan',
+              'This channel is disabled, please upgrade your plan to enable it.'
+            )}
+          </div>
+        )}
       </div>
       <Menu
         canChangeProfilePicture={integration.changeProfilePicture}
@@ -364,6 +382,7 @@ export const LaunchesComponent = () => {
   const t = useT();
   const modal = useModals();
   const [reload, setReload] = useState(false);
+  const [channelsOpen, setChannelsOpen] = useState(false);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   const [mode] = useCookie('mode', 'dark');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
@@ -526,13 +545,14 @@ export const LaunchesComponent = () => {
       <CalendarWeekProvider integrations={sortedIntegrations}>
         <div
           className={clsx(
-            'flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[280px]'
+            'channel-rail flex relative flex-col',
+            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[280px]',
+            channelsOpen && 'is-open'
           )}
         >
           <div
             className={clsx(
-              'bg-newBgColorInner border-e border-newBorder p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner border border-newBorder rounded-[26px] p-[18px] flex flex-col gap-[14px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">
@@ -543,7 +563,7 @@ export const LaunchesComponent = () => {
                 onClick={() =>
                   setCollapseMenu(collapseMenu === '1' ? '0' : '1')
                 }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-full w-[28px] h-[28px] flex items-center justify-center cursor-pointer select-none hover:bg-[#00D9FF]/15 hover:text-[#00D9FF] transition-colors"
+                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-textItemBlur bg-transparent border border-transparent rounded-[14px] w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none hover:bg-newBoxHover hover:text-newTextColor transition-colors"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -564,7 +584,7 @@ export const LaunchesComponent = () => {
             </div>
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
-              <div className="flex gap-[8px] group-[.sidebar]:flex-col">
+              <div className="sidebar-create flex gap-[8px] group-[.sidebar]:flex-col">
                 {sortedIntegrations?.length > 0 && <NewPost />}
                 {sortedIntegrations?.length > 0 &&
                   user?.tier?.ai &&
@@ -574,7 +594,7 @@ export const LaunchesComponent = () => {
             <div className="gap-[32px] flex flex-col select-none flex-1">
               {sortedIntegrations.length === 0 && collapseMenu === '0' && (
                 <div className="flex-1 max-h-[500px] justify-center items-center flex">
-                  <div className="flex flex-col gap-[12px] text-center">
+                    <div className="empty-state flex flex-col gap-[12px] text-center">
                     <img
                       src={
                         mode === 'dark'
@@ -621,11 +641,31 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[16px] min-w-0">
+        <div className="calendar-panel bg-newBgColorInner border border-newBorder rounded-[26px] flex-1 flex-col flex p-[16px] gap-[12px] min-w-0">
+          <button
+            type="button"
+            className="channels-trigger"
+            onClick={() => setChannelsOpen(true)}
+          >
+            {t('channels', 'Channels')} · {sortedIntegrations.length}
+          </button>
+          {channelsOpen && (
+            <button
+              type="button"
+              className="channels-scrim"
+              aria-label={t('close', 'Close')}
+              onClick={() => setChannelsOpen(false)}
+            />
+          )}
           <Filters />
-          <div className="flex-1 flex min-h-0 rounded-[16px] border border-newBorder bg-[#0f0f0f]/50 overflow-hidden p-[10px]">
+          <div className="calendar-well flex-1 flex min-h-0 overflow-hidden">
             <Calendar />
           </div>
+          {sortedIntegrations?.length > 0 && (
+            <div className="phone-create">
+              <NewPost presentation="floating" />
+            </div>
+          )}
         </div>
       </CalendarWeekProvider>
     </DNDProvider>
