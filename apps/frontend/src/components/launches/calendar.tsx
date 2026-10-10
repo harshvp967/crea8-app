@@ -423,6 +423,16 @@ export const DayView = () => {
     );
   }, [posts, startDate]);
 
+  const dayHours = useMemo(() => {
+    const occupied = options.map((option) => Math.floor(option[0].time / 60));
+    return Array.from(
+      new Set([
+        ...hours.filter((hour) => hour >= 9 && hour <= 16),
+        ...occupied,
+      ])
+    ).sort((left, right) => left - right);
+  }, [options]);
+
   useLayoutEffect(() => {
     if (!narrow) {
       return;
@@ -487,26 +497,34 @@ export const DayView = () => {
     <div className="flex flex-col gap-[8px] flex-1 min-h-0">
       <PhoneDayStrip />
       <div className="relative flex-1 min-h-0">
-      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor px-[4px]">
-        {options.map((option) => (
-          <Fragment key={option[0].time}>
-            <div className="text-center text-[14px] min-h-[21px] text-textItemBlur font-[500]">
-              {newDayjs()
-                .utc()
-                .startOf('day')
-                .add(option[0].time, 'minute')
-                .local()
-                .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
-            </div>
-            <div
-              key={option[0].time}
-              className="min-h-[60px] rounded-[14px] flex justify-center items-center gap-[10px] mb-[16px]"
-            >
-              {slotRow(option)}
-            </div>
-          </Fragment>
-        ))}
-      </div>
+        <div className="day-scroll absolute start-0 top-0 w-full h-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+          <div className="day-grid">
+            {dayHours.map((hour) => {
+              const rows = options.filter(
+                (option) => Math.floor(option[0].time / 60) === hour
+              );
+              return (
+                <Fragment key={hour}>
+                  <div className="day-time">
+                    {convertTimeFormatBasedOnLocality(hour)}
+                  </div>
+                  <div className="day-cell">
+                    {rows.length
+                      ? rows.map(slotRow)
+                      : (
+                        <CalendarColumn
+                          getDate={currentDay
+                            .startOf('day')
+                            .add(hour, 'hour')
+                            .local()}
+                        />
+                      )}
+                  </div>
+                </Fragment>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
