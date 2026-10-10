@@ -1,15 +1,28 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { STALKER_SWATCHES } from '@gitroom/frontend/components/stalker/stalker.wizard';
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
+import {
+  stkArea,
+  stkBar,
+  stkCard,
+  stkDanger,
+  stkField,
+  stkGhost,
+  stkHead,
+  stkPage,
+  stkPrimary,
+  stkSecondary,
+  stkSub,
+  stkSwatch,
+  stkTitle,
+} from '@gitroom/frontend/components/stalker/stalker.chrome';
 
-const field =
-  'w-full rounded-[12px] border border-newBorder bg-newBgColorInner px-[12px] py-[10px] text-[14px] text-newTextColor outline-none focus:border-[#00D9FF]/50';
+const field = stkField;
 
 type CategoryDraft = { id?: string; name: string; description: string };
 
@@ -122,18 +135,38 @@ export const StalkerSettings = () => {
   };
 
   return (
-    <div className="relative mx-auto flex w-full max-w-[920px] flex-col px-[20px] py-[24px] pb-[96px]">
-      <div className="flex flex-wrap items-center justify-between gap-[12px]">
-        <h1 className="text-[22px] font-[600]">Project settings</h1>
-        <StalkerCheckNow />
+    <div className={`${stkPage} mx-auto w-full max-w-[920px] pb-[96px]`}>
+      <div className={stkHead}>
+        <div>
+          <h1 className={stkTitle}>Project settings</h1>
+          <p className={stkSub}>Manage your project details, categories, and appearance.</p>
+        </div>
+        <div className="flex items-center gap-[8px]">
+          <StalkerCheckNow />
+          {dirty ? null : (
+            <button type="button" className={stkPrimary} disabled onClick={save}>
+              Save changes
+            </button>
+          )}
+        </div>
       </div>
-      <p className="mt-[6px] text-[14px] text-textItemBlur">
-        Manage your project details, categories, and appearance.
-      </p>
-      <section className="mt-[20px] grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+      {dirty ? (
+        <div className={stkBar}>
+          <span className="text-[14px] font-[600]">Unsaved changes</span>
+          <span className="flex gap-[8px]">
+            <button type="button" className={stkSecondary} onClick={() => setDraft(saved)}>
+              Discard
+            </button>
+            <button type="button" className={stkPrimary} disabled={saving} onClick={save}>
+              {saving ? 'Saving…' : 'Save changes'}
+            </button>
+          </span>
+        </div>
+      ) : null}
+      <section className={`${stkCard} stk-set grid gap-[12px] md:grid-cols-[240px_1fr] md:items-center md:gap-[24px]`}>
         <div>
           <h2 className="text-[14px] font-[600]">Name</h2>
-          <p className="mt-[4px] text-[13px] text-textItemBlur">The display name for this project.</p>
+          <p className="mt-[4px] text-[14px] text-textItemBlur">The display name for this project.</p>
         </div>
         <input
           className={field}
@@ -141,21 +174,21 @@ export const StalkerSettings = () => {
           onChange={(event) => setDraft({ ...draft, name: event.target.value })}
         />
       </section>
-      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+      <section className={`${stkCard} stk-set grid gap-[12px] md:grid-cols-[240px_1fr] md:items-center md:gap-[24px]`}>
         <div>
           <h2 className="text-[14px] font-[600]">Description</h2>
-          <p className="mt-[4px] text-[13px] text-textItemBlur">A short summary of what you&apos;re monitoring.</p>
+          <p className="mt-[4px] text-[14px] text-textItemBlur">A short summary of what you&apos;re monitoring.</p>
         </div>
         <textarea
-          className={`${field} min-h-[72px]`}
+          className={stkArea}
           value={draft.description}
           onChange={(event) => setDraft({ ...draft, description: event.target.value })}
         />
       </section>
-      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+      <section className={`${stkCard} stk-set grid gap-[12px] md:grid-cols-[240px_1fr] md:items-center md:gap-[24px]`}>
         <div>
           <h2 className="text-[14px] font-[600]">Colour</h2>
-          <p className="mt-[4px] text-[13px] text-textItemBlur">A visual cue for this project in the bar.</p>
+          <p className="mt-[4px] text-[14px] text-textItemBlur">A visual cue for this project in the bar.</p>
         </div>
         <div className="flex flex-wrap gap-[8px]">
           {STALKER_SWATCHES.map((swatch) => (
@@ -163,20 +196,17 @@ export const StalkerSettings = () => {
               key={swatch}
               type="button"
               aria-label={swatch}
-              className={clsx(
-                'h-[28px] w-[28px] rounded-full border-2',
-                draft.color.toLowerCase() === swatch ? 'border-newTextColor' : 'border-transparent'
-              )}
+              className={stkSwatch(draft.color.toLowerCase() === swatch)}
               style={{ backgroundColor: swatch }}
               onClick={() => setDraft({ ...draft, color: swatch })}
             />
           ))}
         </div>
       </section>
-      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
-        <div>
-          <h2 className="text-[14px] font-[600]">Categories</h2>
-          <p className="mt-[4px] text-[13px] text-textItemBlur">
+      <section className={stkCard}>
+        <div className="mb-[12px]">
+          <h2 className="text-[16px] font-[600]">Categories</h2>
+          <p className="mt-[4px] text-[14px] text-textItemBlur">
             How AI organizes your mentions. Edit, remove, or add your own.
           </p>
         </div>
@@ -229,7 +259,7 @@ export const StalkerSettings = () => {
           ))}
           <button
             type="button"
-            className="self-start text-[13px] font-[600]"
+            className={`${stkSecondary} self-start`}
             onClick={() =>
               setDraft({
                 ...draft,
@@ -241,10 +271,10 @@ export const StalkerSettings = () => {
           </button>
         </div>
       </section>
-      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+      <section className={`${stkCard} stk-set grid gap-[12px] md:grid-cols-[1fr_auto] md:items-center`}>
         <div>
           <h2 className="text-[14px] font-[600]">Public dashboard</h2>
-          <p className="mt-[4px] text-[13px] text-textItemBlur">
+          <p className="mt-[4px] text-[14px] text-textItemBlur">
             A read-only Mentions and Analytics page anyone with the link can open.
           </p>
         </div>
@@ -253,32 +283,26 @@ export const StalkerSettings = () => {
             type="button"
             role="switch"
             aria-checked={draft.publicDashboard}
-            className={`relative h-[24px] w-[42px] rounded-full border ${
-              draft.publicDashboard ? 'border-[#00D9FF]/50 bg-[#00D9FF]/20' : 'border-newBorder'
-            }`}
+            className="stk-switch"
             onClick={() => setDraft({ ...draft, publicDashboard: !draft.publicDashboard })}
           >
-            <span
-              className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-newTextColor transition-all ${
-                draft.publicDashboard ? 'start-[20px]' : 'start-[2px]'
-              }`}
-            />
+            <span />
           </button>
           {sharePath ? (
             <p className="mt-[8px] text-[13px]">
-              <a className="text-[#00A3C4] underline" href={sharePath}>
+              <a className="text-[14px] text-[color:var(--arc-accent-text)] underline" href={sharePath}>
                 {sharePath}
               </a>
             </p>
           ) : draft.publicDashboard ? (
-            <p className="mt-[8px] text-[13px] text-textItemBlur">The public link appears after you save.</p>
+            <p className="mt-[8px] text-[14px] text-textItemBlur">The public link appears after you save.</p>
           ) : null}
         </div>
       </section>
-      <section className="grid gap-[12px] border-t border-newBorder py-[18px] md:grid-cols-[240px_1fr] md:gap-[24px]">
+      <section className={`${stkCard} stk-danger-card stk-set grid gap-[12px] md:grid-cols-[1fr_auto] md:items-center`}>
         <div>
           <h2 className="text-[14px] font-[600]">Delete project</h2>
-          <p className="mt-[4px] text-[13px] text-textItemBlur">
+          <p className="mt-[4px] text-[14px] text-textItemBlur">
             Removes this project, its keywords, mentions, and alerts.
           </p>
         </div>
@@ -286,14 +310,14 @@ export const StalkerSettings = () => {
           <div className="flex flex-wrap items-center gap-[8px]">
             <button
               type="button"
-              className="rounded-full bg-[#eb4747] px-[14px] py-[8px] text-[13px] font-[600] text-white"
+              className={stkDanger}
               onClick={remove}
             >
               Delete this project
             </button>
             <button
               type="button"
-              className="text-[13px] text-textItemBlur"
+              className={stkGhost}
               onClick={() => setConfirmDelete(false)}
             >
               Cancel
@@ -302,35 +326,13 @@ export const StalkerSettings = () => {
         ) : (
           <button
             type="button"
-            className="self-start rounded-full border border-[#eb4747]/50 px-[14px] py-[8px] text-[13px] font-[600] text-[#eb4747]"
+            className={stkDanger}
             onClick={() => setConfirmDelete(true)}
           >
             Delete project
           </button>
         )}
       </section>
-      {dirty ? (
-        <div className="sticky bottom-[12px] mt-[8px] flex items-center justify-between gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner px-[16px] py-[12px] shadow-[var(--menu-shadow)]">
-          <span className="text-[14px] font-[600]">Unsaved changes</span>
-          <span className="flex gap-[8px]">
-            <button
-              type="button"
-              className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px] font-[600]"
-              onClick={() => setDraft(saved)}
-            >
-              Discard
-            </button>
-            <button
-              type="button"
-              className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner disabled:opacity-40"
-              disabled={saving}
-              onClick={save}
-            >
-              {saving ? 'Saving…' : 'Save changes'}
-            </button>
-          </span>
-        </div>
-      ) : null}
     </div>
   );
 };

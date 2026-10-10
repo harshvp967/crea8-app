@@ -45,11 +45,11 @@ export const StalkerThemes = () => {
         {themes.map((theme) => (
           <article
             key={theme.id}
-            className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px] flex flex-col gap-[10px]"
+            className="flex flex-col gap-[10px] rounded-[26px] border border-newBorder bg-newBgColorInner p-[20px] shadow-[var(--arc-shadow-resting)]"
           >
             <div className="flex items-start gap-[12px]">
               <h2 className="text-[18px] font-[600] flex-1">{theme.title}</h2>
-              <span className="text-[13px] text-[#00D9FF] font-[600]">
+              <span className="text-[13px] font-[600] text-[color:var(--arc-accent-text)]">
                 {theme._count?.mentions || 0}
               </span>
             </div>

@@ -20,9 +20,29 @@ import {
   SAMPLE_KEYWORDS,
   SAMPLE_RULES,
 } from '@gitroom/frontend/components/stalker/stalker.sample';
+import {
+  stkCard,
+  stkClose,
+  stkDialog,
+  stkDialogBody,
+  stkDialogFoot,
+  stkDialogHead,
+  stkEmpty,
+  stkField,
+  stkGhost,
+  stkHead,
+  stkIconTile,
+  stkLabel,
+  stkOverlay,
+  stkPage,
+  stkPrimary,
+  stkRow,
+  stkSecondary,
+  stkSub,
+  stkTitle,
+} from '@gitroom/frontend/components/stalker/stalker.chrome';
 
-const field =
-  'w-full rounded-[12px] border border-newBorder bg-newBgColorInner px-[12px] py-[10px] text-[14px] text-newTextColor outline-none focus:border-[#00D9FF]/50';
+const field = stkField;
 
 const ZONES = [
   'UTC',
@@ -183,31 +203,48 @@ export const StalkerAlerts = () => {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[860px] flex-col gap-[18px] px-[20px] py-[24px]">
-      <div>
-        <h1 className="text-[22px] font-[600]">
-          Alerts <span className="text-[14px] font-[500] text-textItemBlur">{active} active</span>
-        </h1>
-        <p className="mt-[6px] text-[14px] text-textItemBlur">
-          Digests and alerts share a limit of {cap} emails per day across your workspace. Resets at midnight UTC.
-        </p>
+    <div className={`${stkPage} mx-auto w-full max-w-[860px]`}>
+      <div className={stkHead}>
+        <div>
+          <h1 className={stkTitle}>Alerts</h1>
+          <p className={stkSub}>
+            {active} active. Digests and alerts share a limit of {cap} emails per day across your workspace. Resets at midnight UTC.
+          </p>
+        </div>
+        <button
+          type="button"
+          className={stkPrimary}
+          onClick={() => {
+            setName('Negative X posts with traction');
+            setFilters(emptyFilters());
+            setCreating(true);
+          }}
+        >
+          + New alert
+        </button>
       </div>
       <section>
         <h2 className="text-[16px] font-[600]">Daily digest</h2>
-        <p className="mt-[4px] text-[13px] text-textItemBlur">A morning summary of the last 24 hours.</p>
+        <p className="mt-[4px] text-[14px] text-textItemBlur">A morning summary of the last 24 hours.</p>
         {digestDismissed ? (
           <button
             type="button"
-            className="mt-[12px] rounded-[16px] border border-dashed border-newBorder px-[16px] py-[18px] text-[14px]"
+            className={`${stkSecondary} mt-[12px]`}
             onClick={() => saveDigest({ digestDismissed: false, digestEnabled: true })}
           >
             Restore daily digest
           </button>
         ) : (
-          <div className="mt-[12px] flex flex-wrap items-center justify-between gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner px-[16px] py-[14px]">
-            <div>
-              <p className="text-[14px] font-[600]">Daily digest</p>
-              <p className="text-[13px] text-textItemBlur">
+          <div className={`${digestEnabled ? 'stk-wave' : ''} mt-[12px] flex flex-wrap items-center justify-between gap-[12px] rounded-[26px] border border-newBorder bg-newBgColorInner px-[16px] py-[14px] shadow-[var(--arc-shadow-resting)]`}>
+            <span className={stkIconTile} aria-hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="M3 7l9 7 9-7" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[16px] font-[600]">Daily digest</p>
+              <p className="text-[14px] text-textItemBlur">
                 Every day at {hourLabel(digestHour)} · {digestTimezone}
                 {email ? ` · ${email}` : ''} · {digestGroupName}
               </p>
@@ -215,32 +252,26 @@ export const StalkerAlerts = () => {
             <div className="flex items-center gap-[8px]">
               <button
                 type="button"
-                role="switch"
-                aria-checked={digestEnabled}
-                aria-label="Daily digest"
-                className={`relative h-[24px] w-[42px] rounded-full border ${
-                  digestEnabled ? 'border-[#00D9FF]/50 bg-[#00D9FF]/20' : 'border-newBorder'
-                }`}
-                onClick={() => saveDigest({ digestEnabled: !digestEnabled })}
-              >
-                <span
-                  className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-newTextColor transition-all ${
-                    digestEnabled ? 'start-[20px]' : 'start-[2px]'
-                  }`}
-                />
-              </button>
-              <button
-                type="button"
+                className={stkSecondary}
                 aria-label="Configure daily digest"
-                className="rounded-full border border-newBorder px-[10px] py-[6px] text-[12px]"
                 onClick={() => setConfigure(true)}
               >
                 Configure
               </button>
               <button
                 type="button"
+                role="switch"
+                aria-checked={digestEnabled}
+                aria-label="Daily digest"
+                className="stk-switch"
+                onClick={() => saveDigest({ digestEnabled: !digestEnabled })}
+              >
+                <span />
+              </button>
+              <button
+                type="button"
                 aria-label="Remove daily digest"
-                className="rounded-full border border-newBorder px-[10px] py-[6px] text-[12px] text-textItemBlur"
+                className={stkGhost}
                 onClick={() => saveDigest({ digestDismissed: true, digestEnabled: false })}
               >
                 Delete
@@ -250,49 +281,47 @@ export const StalkerAlerts = () => {
         )}
       </section>
       <section>
-        <div className="flex items-center justify-between gap-[12px]">
-          <h2 className="text-[16px] font-[600]">Custom alerts</h2>
-          <button
-            type="button"
-            className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner"
-            onClick={() => {
-              setName('Negative X posts with traction');
-              setFilters(emptyFilters());
-              setCreating(true);
-            }}
-          >
-            + New alert
-          </button>
-        </div>
-        <p className="mt-[4px] text-[13px] text-textItemBlur">
+        <h2 className="text-[16px] font-[600]">Custom alerts</h2>
+        <p className="mt-[4px] text-[14px] text-textItemBlur">
           Get an email the moment a mention matches your filter.
         </p>
         {!rules.length ? (
-          <div className="mt-[12px] rounded-[16px] border border-dashed border-newBorder px-[16px] py-[28px] text-center">
-            <p className="text-[14px] font-[600]">No custom alerts yet.</p>
-            <p className="mt-[6px] text-[13px] text-textItemBlur">
-              Fire an email when something specific happens — e.g. a negative X post crossing 10 likes.
-            </p>
+          <div className={`${stkCard} mt-[12px]`}>
+            <div className={stkEmpty}>
+              <span className={stkIconTile} aria-hidden>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M6 16h12l-1.2-2.2A6 6 0 0012 4a6 6 0 00-4.8 9.8L6 16zM10 18a2 2 0 004 0" />
+                </svg>
+              </span>
+              <h3 className="text-[16px] font-[600]">No custom alerts yet.</h3>
+              <p className="max-w-[360px] text-[14px] text-textItemBlur">
+                Fire an email when something specific happens — e.g. a negative X post crossing 10 likes.
+              </p>
+              <button
+                type="button"
+                className={stkSecondary}
+                onClick={() => {
+                  setName('Negative X posts with traction');
+                  setFilters(emptyFilters());
+                  setCreating(true);
+                }}
+              >
+                + New alert
+              </button>
+            </div>
           </div>
         ) : (
           <ul className="mt-[12px] flex flex-col gap-[8px]">
             {rules.map((rule) => (
-              <li
-                key={rule.id}
-                className="flex items-center justify-between gap-[12px] rounded-[16px] border border-newBorder bg-newBgColorInner px-[16px] py-[12px]"
-              >
-                <div>
+              <li key={rule.id} className={stkRow}>
+                <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-[600]">{rule.name}</p>
-                  <p className="text-[12px] text-textItemBlur">
+                  <p className="text-[13px] text-textItemBlur">
                     {summary(rule.filters)}
                     {email ? ` · ${email}` : ''}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="text-[13px] text-textItemBlur"
-                  onClick={() => removeRule(rule.id)}
-                >
+                <button type="button" className={stkGhost} onClick={() => removeRule(rule.id)}>
                   Delete
                 </button>
               </li>
@@ -302,15 +331,19 @@ export const StalkerAlerts = () => {
       </section>
 
       {configure ? (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-auto bg-black/40 p-[24px]">
-          <div className="w-full max-w-[440px] rounded-[20px] border border-newBorder bg-newBgColorInner p-[20px]">
-            <div className="mb-[12px] flex items-center justify-between">
-              <h2 className="text-[18px] font-[600]">Daily digest</h2>
-              <button type="button" aria-label="Close" onClick={() => setConfigure(false)}>
+        <div className={stkOverlay}>
+          <div className={`${stkDialog} max-w-[480px]`}>
+            <div className={stkDialogHead}>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[18px] font-[600]">Daily digest</h2>
+                <p className="mt-[4px] text-[14px] text-textItemBlur">A morning summary of the last 24 hours.</p>
+              </div>
+              <button type="button" aria-label="Close" className={stkClose} onClick={() => setConfigure(false)}>
                 ×
               </button>
             </div>
-            <label className="block text-[13px] font-[600]">
+            <div className={stkDialogBody}>
+            <label className={stkLabel}>
               Keywords
               <select
                 className={`${field} mt-[6px]`}
@@ -324,7 +357,7 @@ export const StalkerAlerts = () => {
                 ))}
               </select>
             </label>
-            <label className="mt-[12px] block text-[13px] font-[600]">
+            <label className={stkLabel}>
               Delivery time
               <select
                 className={`${field} mt-[6px]`}
@@ -338,7 +371,7 @@ export const StalkerAlerts = () => {
                 ))}
               </select>
             </label>
-            <label className="mt-[12px] block text-[13px] font-[600]">
+            <label className={stkLabel}>
               Time zone
               <select
                 className={`${field} mt-[6px]`}
@@ -352,17 +385,25 @@ export const StalkerAlerts = () => {
                 ))}
               </select>
             </label>
-            <div className="mt-[16px] flex justify-end gap-[8px]">
+            </div>
+            <div className={stkDialogFoot}>
               <button
                 type="button"
-                className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px]"
-                onClick={() => setConfigure(false)}
+                className={`${stkGhost} text-[color:var(--arc-danger)]`}
+                onClick={() => {
+                  saveDigest({ digestDismissed: true, digestEnabled: false });
+                  setConfigure(false);
+                }}
               >
+                Remove daily digest
+              </button>
+              <span className="flex-1" />
+              <button type="button" className={stkSecondary} onClick={() => setConfigure(false)}>
                 Cancel
               </button>
               <button
                 type="button"
-                className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner"
+                className={stkPrimary}
                 onClick={() => {
                   saveDigest({ digestHour, digestTimezone, digestGroupName, digestEnabled: true });
                   setConfigure(false);
@@ -376,24 +417,25 @@ export const StalkerAlerts = () => {
       ) : null}
 
       {creating ? (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-auto bg-black/40 p-[24px]">
-          <div className="w-full max-w-[640px] rounded-[20px] border border-newBorder bg-newBgColorInner p-[20px]">
-            <div className="mb-[8px] flex items-start justify-between">
-              <div>
+        <div className={stkOverlay}>
+          <div className={`${stkDialog} max-w-[640px]`}>
+            <div className={stkDialogHead}>
+              <div className="min-w-0 flex-1">
                 <h2 className="text-[18px] font-[600]">New alert</h2>
-                <p className="mt-[4px] text-[13px] text-textItemBlur">
+                <p className="mt-[4px] text-[14px] text-textItemBlur">
                   Email you the moment a mention matches these filters.
                 </p>
               </div>
-              <button type="button" aria-label="Close" onClick={() => setCreating(false)}>
+              <button type="button" aria-label="Close" className={stkClose} onClick={() => setCreating(false)}>
                 ×
               </button>
             </div>
-            <label className="mt-[12px] block text-[13px] font-[600]">
+            <div className={stkDialogBody}>
+            <label className={stkLabel}>
               Name
               <input className={`${field} mt-[6px]`} value={name} onChange={(event) => setName(event.target.value)} />
             </label>
-            <p className="mb-[8px] mt-[14px] text-[13px] font-[600]">Filters</p>
+            <p className="text-[14px] font-[500]">Filters</p>
             <StalkerFilters
               filters={filters}
               onChange={setFilters}
@@ -401,24 +443,21 @@ export const StalkerAlerts = () => {
               categories={categories}
               authors={authors}
             />
-            <label className="mt-[14px] block text-[13px] font-[600]">
+            <label className={stkLabel}>
               Send to
               <input className={`${field} mt-[6px]`} value={email} readOnly />
             </label>
-            <p className="mt-[8px] text-[12px] text-textItemBlur">
+            <p className="text-[13px] text-textItemBlur">
               Alerts are sent to the workspace owner. Digests and alerts share a limit of {cap} emails per day, resetting at midnight UTC.
             </p>
-            <div className="mt-[16px] flex justify-end gap-[8px]">
-              <button
-                type="button"
-                className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px]"
-                onClick={() => setCreating(false)}
-              >
+            </div>
+            <div className={stkDialogFoot}>
+              <button type="button" className={stkSecondary} onClick={() => setCreating(false)}>
                 Cancel
               </button>
               <button
                 type="button"
-                className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner disabled:opacity-40"
+                className={stkPrimary}
                 disabled={saving || name.trim().length < 2}
                 onClick={createRule}
               >

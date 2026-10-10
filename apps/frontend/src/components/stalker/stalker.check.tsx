@@ -7,6 +7,7 @@ import {
   useStalkerProject,
 } from '@gitroom/frontend/components/stalker/stalker.project';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
+import { stkMenu, stkSecondary } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const sourceName = sourceLabel;
 
@@ -83,10 +84,7 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
     <div className="relative shrink-0">
       <button
         type="button"
-        className={clsx(
-          'inline-flex items-center gap-[6px] whitespace-nowrap rounded-full border border-[#00D9FF]/45 bg-[#00D9FF]/10 font-[600] text-newTextColor disabled:opacity-60',
-          compact ? 'px-[10px] py-[7px] text-[13px]' : 'px-[14px] py-[8px] text-[13px]'
-        )}
+        className={clsx(stkSecondary, compact && '!h-[36px] !min-h-[36px] !px-[12px]')}
         disabled={!projectId || showScanning}
         onClick={() => {
           runScan();
@@ -94,14 +92,14 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
       >
         {showScanning ? (
           <span
-            className="h-[12px] w-[12px] animate-spin rounded-full border border-[#00D9FF] border-t-transparent"
+            className="h-[14px] w-[14px] animate-spin rounded-full border border-current border-t-transparent"
             aria-hidden
           />
         ) : null}
         {showScanning ? 'Checking…' : 'Check now'}
       </button>
       {showResult ? (
-        <div className="absolute end-0 top-[calc(100%+8px)] z-30 w-[280px] rounded-[14px] border border-newBorder bg-newBgColorInner p-[12px] text-[13px] shadow-[var(--menu-shadow)]">
+        <div className={`${stkMenu} absolute end-0 top-[calc(100%+8px)] w-[280px] p-[12px] text-[14px]`}>
           {notice ? (
             <div className="mb-[8px] text-textItemBlur">
               <p>
@@ -117,7 +115,7 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
             </div>
           ) : null}
           {notice && !sources.length ? null : topError && !sources.length ? (
-            <p className="text-[#c43b3b]">
+            <p className="text-[color:var(--arc-danger)]">
               <ReconnectText text={topError} />
             </p>
           ) : (
@@ -126,7 +124,7 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
                 <li
                   key={source.id}
                   className={
-                    source.ok ? '' : source.skipped ? 'text-textItemBlur' : 'text-[#c43b3b]'
+                    source.ok ? '' : source.skipped ? 'text-textItemBlur' : 'text-[color:var(--arc-danger)]'
                   }
                 >
                   {source.ok ? (

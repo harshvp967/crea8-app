@@ -84,7 +84,7 @@ export const StalkerShare = ({ token }: { token: string }) => {
         <p className="text-[13px] text-textItemBlur">Read-only · last 30 days · {total} mentions</p>
         <section className="grid gap-[12px] sm:grid-cols-3">
           {(board.analytics?.bySource || []).map((row) => (
-            <div key={row.source} className="rounded-[14px] border border-newBorder bg-newBgColorInner p-[12px]">
+            <div key={row.source} className="rounded-[26px] border border-newBorder bg-newBgColorInner p-[16px] shadow-[var(--arc-shadow-resting)]">
               <p className="text-[12px] text-textItemBlur">{row.source}</p>
               <p className="text-[18px] font-[600]">{row.count}</p>
             </div>
@@ -92,7 +92,7 @@ export const StalkerShare = ({ token }: { token: string }) => {
         </section>
         <ul className="flex flex-col gap-[8px]">
           {(board.mentions || []).map((mention) => (
-            <li key={mention.id} className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[14px]">
+            <li key={mention.id} className="rounded-[20px] border border-newBorder bg-newBgColorInner p-[16px] shadow-[var(--arc-shadow-resting)]">
               <p className="text-[13px] font-[600]">
                 {decodeHtmlEntities(mention.authorName)}{' '}
                 <span className="font-[500] text-textItemBlur">@{normalizeHandle(mention.authorHandle)}</span>
