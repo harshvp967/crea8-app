@@ -33,7 +33,7 @@ export const Toaster = () => {
   return (
     <div
       className={clsx(
-        'animate-fadeDown rounded-[18px] gap-[12px] flex items-center overflow-hidden border border-newBorder bg-newBgColorInner p-[16px] min-w-[280px] max-w-[420px] fixed start-[50%] z-[900] top-[24px] -translate-x-[50%] min-h-[56px]'
+        'app-toast animate-fadeDown rounded-[26px] gap-[12px] flex items-center overflow-hidden border border-newBorder bg-newBgColorInner p-[14px] min-w-[280px] max-w-[min(400px,calc(100vw-32px))] fixed start-[50%] z-[900] top-[24px] -translate-x-[50%] min-h-[56px]'
       )}
     >
       <div>

@@ -77,18 +77,18 @@ export function Login() {
   return (
     <FormProvider {...form}>
       <form
-        className="flex-1 flex"
+        className="auth-form flex-1 flex"
         method="post"
         action="/auth/native-submit"
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="flex flex-col flex-1">
           <div>
-            <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">
+            <h1 className="text-[26px] font-[600] tracking-[-0.02em] text-start">
               {t('sign_in', 'Sign In')}
             </h1>
           </div>
-          <div className="text-[14px] mt-[32px] mb-[12px]">
+          <div className="auth-kicker text-[14px] mt-[20px] mb-[12px]">
             {t('continue_with', 'Continue With')}
           </div>
           <div className="flex flex-col">
@@ -97,7 +97,7 @@ export function Login() {
             ) : !isGeneral ? (
               <GithubProvider />
             ) : (
-              <div className="gap-[8px] flex">
+              <div className="auth-providers gap-[8px] flex flex-col">
                 <GoogleProvider />
                 {!!appleClientId && <AppleProvider />}
                 {!!neynarClientId && <FarcasterProvider />}
@@ -146,28 +146,28 @@ export function Login() {
                   </Link>
                 </div>
               )}
-              <div className="text-center mt-6">
+              <div className="text-center mt-[8px]">
+                <p className="mb-[12px] text-end text-[14px]">
+                  <Link
+                    href="/auth/forgot"
+                    className="cursor-pointer text-[color:var(--arc-accent-text)]"
+                  >
+                    {t('forgot_password', 'Forgot password')}
+                  </Link>
+                </p>
                 <div className="w-full flex">
                   <Button
                     type="submit"
                     className="flex-1 !rounded-[18px] !h-[50px]"
                     loading={loading}
                   >
-                    {t('sign_in_1', 'Sign in')}
+                    {t('sign_in_1', 'Sign In')}
                   </Button>
                 </div>
                 <p className="mt-4 text-sm">
                   {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
-                  <Link href="/auth" className="underline cursor-pointer">
+                  <Link href="/auth" className="cursor-pointer text-[color:var(--arc-accent-text)]">
                     {t('sign_up', 'Sign Up')}
-                  </Link>
-                </p>
-                <p className="mt-4 text-sm">
-                  <Link
-                    href="/auth/forgot"
-                    className="underline hover:font-bold cursor-pointer"
-                  >
-                    {t('forgot_password', 'Forgot password')}
                   </Link>
                 </p>
                 <p className="mt-4 text-sm">

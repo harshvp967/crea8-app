@@ -63,7 +63,7 @@ export const NotificationOpenComponent = () => {
   return (
     <div
       id="notification-popup"
-      className="opacity-0 animate-normalFadeDown mt-[10px] absolute w-[min(420px,calc(100vw-24px))] min-h-[200px] top-[100%] end-0 bg-newBgColorInner text-textColor rounded-[26px] flex flex-col border border-newBorder z-[600] shadow-[var(--menu-shadow)]"
+        className="notify-panel opacity-0 animate-normalFadeDown mt-[10px] absolute w-[min(420px,calc(100vw-24px))] min-h-[200px] top-[100%] end-0 bg-newBgColorInner text-textColor rounded-[26px] flex flex-col border border-newBorder z-[600] shadow-[var(--menu-shadow)]"
     >
       <div
         className="p-[16px] border-b border-newBorder font-[600] text-[16px]"

@@ -80,10 +80,10 @@ updateDayjsLocale();
 
 const convertTimeFormatBasedOnLocality = (time: number) => {
   if (isUSCitizen()) {
-    return `${time === 12 ? 12 : time % 12}:00 ${time >= 12 ? 'PM' : 'AM'}`;
-  } else {
-    return `${time}:00`;
+    const hour = time % 12 === 0 ? 12 : time % 12;
+    return `${hour} ${time >= 12 ? 'PM' : 'AM'}`;
   }
+  return `${String(time).padStart(2, '0')}:00`;
 };
 
 export const hours = Array.from(
@@ -255,6 +255,18 @@ const usePostActions = (onMutate?: () => void) => {
   return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease };
 };
 
+const useNarrowLayout = () => {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    const sync = () => setNarrow(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+  return narrow;
+};
+
 const PhoneDayStrip = () => {
   const calendar = useCalendar();
   const weekStart = newDayjs(calendar.startDate).startOf('isoWeek');
@@ -282,7 +294,7 @@ const PhoneDayStrip = () => {
               });
             }}
           >
-            <span>{day.format('dd')}</span>
+            <span>{day.format('ddd')}</span>
             <span>{day.format('D')}</span>
           </button>
         );
@@ -293,6 +305,7 @@ const PhoneDayStrip = () => {
 
 export const DayView = () => {
   const calendar = useCalendar();
+  const narrow = useNarrowLayout();
   const { integrations, posts, startDate } = calendar;
 
   // Set dayjs locale based on current language
@@ -335,6 +348,59 @@ export const DayView = () => {
     );
   }, [integrations, posts]);
 
+  const slotRow = (option: (typeof options)[number]) => (
+    <CalendarContext.Provider
+      key={option[0].time}
+      value={{
+        ...calendar,
+        integrations: option.flatMap((p) => p.integration),
+      }}
+    >
+      <CalendarColumn
+        getDate={currentDay
+          .startOf('day')
+          .add(option[0].time, 'minute')
+          .local()}
+      />
+    </CalendarContext.Provider>
+  );
+
+  if (narrow) {
+    const occupied = options.map((option) => Math.floor(option[0].time / 60));
+    const hours = Array.from(
+      new Set([...Array.from({ length: 8 }, (_, index) => index + 9), ...occupied])
+    ).sort((left, right) => left - right);
+    return (
+      <div className="flex flex-col gap-[8px] flex-1 min-h-0">
+        <PhoneDayStrip />
+        <div className="phone-day-list flex-1 min-h-0 overflow-auto">
+          {hours.map((hour) => {
+            const rows = options.filter(
+              (option) => Math.floor(option[0].time / 60) === hour
+            );
+            return (
+              <div key={hour} className="phone-slot">
+                <span className="phone-slot-time">
+                  {newDayjs()
+                    .startOf('day')
+                    .add(hour, 'hour')
+                    .format(isUSCitizen() ? 'h A' : 'LT')}
+                </span>
+                <div className="phone-slot-posts">
+                  {rows.length ? (
+                    rows.map(slotRow)
+                  ) : (
+                    <div className="phone-slot-empty" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-[8px] flex-1 min-h-0">
       <PhoneDayStrip />
@@ -354,19 +420,7 @@ export const DayView = () => {
               key={option[0].time}
               className="min-h-[60px] rounded-[14px] flex justify-center items-center gap-[10px] mb-[16px]"
             >
-              <CalendarContext.Provider
-                value={{
-                  ...calendar,
-                  integrations: option.flatMap((p) => p.integration),
-                }}
-              >
-                <CalendarColumn
-                  getDate={currentDay
-                    .startOf('day')
-                    .add(option[0].time, 'minute')
-                    .local()}
-                />
-              </CalendarContext.Provider>
+              {slotRow(option)}
             </div>
           </Fragment>
         ))}
@@ -389,8 +443,8 @@ export const WeekView = () => {
     for (let i = 0; i < 7; i++) {
       const day = weekStart.add(i, 'day');
       days.push({
-        name: day.format('dddd'),
-        day: day.format('L'),
+        name: day.format('ddd'),
+        day: day.format('D'),
         date: day,
       });
     }
@@ -407,7 +461,7 @@ export const WeekView = () => {
               key={day.name}
               className={clsx(
                 'p-2 text-center bg-newBgColorInner border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[18px] sticky top-0 z-[20]',
-                day.day === newDayjs().format('L') &&
+                day.date.isSame(newDayjs(), 'day') &&
                   'border-[#00D9FF]/40 ring-1 ring-[#00D9FF]/25'
               )}
             >
@@ -417,12 +471,12 @@ export const WeekView = () => {
               <div
                 className={clsx(
                   'text-[13px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.day === newDayjs().format('L')
+                  day.date.isSame(newDayjs(), 'day')
                     ? 'text-[#00D9FF]'
                     : 'text-newTextColor'
                 )}
               >
-                {day.day === newDayjs().format('L') && (
+                {day.date.isSame(newDayjs(), 'day') && (
                   <div className="w-[6px] h-[6px] bg-[#00D9FF] rounded-full" />
                 )}
                 {day.day}

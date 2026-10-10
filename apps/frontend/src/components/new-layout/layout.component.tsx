@@ -52,6 +52,21 @@ import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settin
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
 import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
 
+const HeaderAvatar = ({ name }: { name: string }) => {
+  const initials =
+    name
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('') || '•';
+  return (
+    <span className="header-avatar" title={name || undefined} aria-hidden>
+      {initials}
+    </span>
+  );
+};
+
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
@@ -173,14 +188,17 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     ) : (
                       <TopMenu />
                     )}
-                    <div
-                      className="flex items-center text-textItemBlur shrink-0 ms-auto gap-[8px]"
-                    >
+                    <div className="header-tools flex items-center text-textItemBlur shrink-0 ms-auto gap-[8px]">
+                      <HeaderAvatar
+                        name={user?.name || user?.email || ''}
+                      />
                       <OrganizationSelector />
                       <div className="flex items-center justify-center">
                         <ModeComponent />
                       </div>
-                      <SettingsMenuItem variant="header" />
+                      <div className="header-gear">
+                        <SettingsMenuItem variant="header" />
+                      </div>
                       <NotificationComponent />
                       <HeaderOverflow>
                         <StreakComponent />

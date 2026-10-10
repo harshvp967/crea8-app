@@ -220,6 +220,7 @@ export const MenuGroupComponent: FC<
 };
 export const MenuComponent: FC<
   MenuComponentInterface & {
+    variant?: 'row' | 'chip';
     integration: Integration & {
       identifier: string;
       changeProfilePicture: boolean;
@@ -236,6 +237,7 @@ export const MenuComponent: FC<
     update,
     integration,
     collapsed,
+    variant = 'row',
   } = props;
   const user = useUser();
   const t = useT();
@@ -265,6 +267,7 @@ export const MenuComponent: FC<
         : {})}
         className={clsx(
         'flex gap-[10px] items-center min-h-[48px] bg-transparent hover:bg-boxHover group/profile transition-all rounded-[16px] border border-transparent px-[8px]',
+        variant === 'chip' && 'channel-chip',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -331,7 +334,7 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-          'group-[.sidebar]:hidden flex-1 min-w-0 cursor-move',
+          'channel-meta group-[.sidebar]:hidden flex-1 min-w-0 cursor-move',
           integration.disabled && 'opacity-50'
         )}
       >
@@ -355,19 +358,37 @@ export const MenuComponent: FC<
           </div>
         )}
       </div>
-      <Menu
-        canChangeProfilePicture={integration.changeProfilePicture}
-        canChangeNickName={integration.changeNickName}
-        refreshChannel={refreshChannel}
-        mutate={mutate}
-        onChange={update}
-        id={integration.id}
-        canEnable={
-          user?.totalChannels! > totalNonDisabledChannels &&
-          integration.disabled
-        }
-        canDisable={!integration.disabled}
-      />
+      {variant === 'chip' ? (
+        <div className="channel-menu">
+          <Menu
+            canChangeProfilePicture={integration.changeProfilePicture}
+            canChangeNickName={integration.changeNickName}
+            refreshChannel={refreshChannel}
+            mutate={mutate}
+            onChange={update}
+            id={integration.id}
+            canEnable={
+              user?.totalChannels! > totalNonDisabledChannels &&
+              integration.disabled
+            }
+            canDisable={!integration.disabled}
+          />
+        </div>
+      ) : (
+        <Menu
+          canChangeProfilePicture={integration.changeProfilePicture}
+          canChangeNickName={integration.changeNickName}
+          refreshChannel={refreshChannel}
+          mutate={mutate}
+          onChange={update}
+          id={integration.id}
+          canEnable={
+            user?.totalChannels! > totalNonDisabledChannels &&
+            integration.disabled
+          }
+          canDisable={!integration.disabled}
+        />
+      )}
     </div>
   );
 };
@@ -642,13 +663,42 @@ export const LaunchesComponent = () => {
           </div>
         </div>
         <div className="calendar-panel bg-newBgColorInner border border-newBorder rounded-[26px] flex-1 flex-col flex p-[16px] gap-[12px] min-w-0">
-          <button
-            type="button"
-            className="channels-trigger"
-            onClick={() => setChannelsOpen(true)}
-          >
-            {t('channels', 'Channels')} · {sortedIntegrations.length}
-          </button>
+          <div className="channel-strip">
+            <div className="strip-create">
+              {sortedIntegrations?.length > 0 && <NewPost />}
+            </div>
+            <AddProviderButton update={() => update(true)} />
+            {sortedIntegrations.length === 0 ? (
+              <span className="channel-empty-label">
+                {t('no_channels', 'No channels yet')}
+              </span>
+            ) : (
+              <div className="channel-avatars">
+                {sortedIntegrations.map((integration) => (
+                  <MenuComponent
+                    key={integration.id}
+                    variant="chip"
+                    collapsed={false}
+                    integration={integration}
+                    mutate={mutate}
+                    continueIntegration={continueIntegration}
+                    update={update}
+                    refreshChannel={refreshChannel}
+                    totalNonDisabledChannels={totalNonDisabledChannels}
+                  />
+                ))}
+              </div>
+            )}
+            {sortedIntegrations.length > 0 && (
+              <button
+                type="button"
+                className="channels-trigger"
+                onClick={() => setChannelsOpen(true)}
+              >
+                {t('channels', 'Channels')} · {sortedIntegrations.length}
+              </button>
+            )}
+          </div>
           {channelsOpen && (
             <button
               type="button"

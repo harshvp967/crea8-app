@@ -218,7 +218,7 @@ export const StalkerTopNav = ({
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-[10px]">
-      <div className="relative shrink-0" ref={menu}>
+      <div className="stk-project relative shrink-0" ref={menu}>
         <button
           type="button"
           className="flex h-[38px] max-w-[160px] items-center gap-[8px] rounded-[16px] border border-newBorder bg-newBgColorInner px-[12px] text-[14px] font-[500] min-[1200px]:max-w-[180px]"
