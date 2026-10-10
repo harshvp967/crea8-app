@@ -20,19 +20,26 @@ const youtubeClient = (accessToken: string) => {
   });
 };
 
+type YoutubeClient = ReturnType<typeof youtubeClient>;
+
 const youtubeApiKey = () => (process.env.YOUTUBE_STALKER_API_KEY || '').trim();
 
-// Public search.list / commentThreads.list accept an API key, so keyword
-// listening does not need a connected channel when the key is set.
-const youtubeForSearch = (accessToken?: string) => {
+// Pass the key as the `key` query param. google.youtube({ auth: apiKey })
+// sends it as a bearer token and YouTube answers 401 Invalid Credentials.
+const youtubeForSearch = (
+  accessToken?: string
+): { client: YoutubeClient; apiKey: string } | null => {
   const apiKey = youtubeApiKey();
   if (apiKey) {
-    return google.youtube({ version: 'v3', auth: apiKey });
+    return {
+      client: google.youtube({ version: 'v3' }) as YoutubeClient,
+      apiKey,
+    };
   }
   if (!accessToken) {
     return null;
   }
-  return youtubeClient(accessToken);
+  return { client: youtubeClient(accessToken), apiKey: '' };
 };
 
 export const isProviderAuthFailure = (err: unknown) => {
@@ -123,15 +130,32 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
     }
     const drafts: StalkerMentionDraft[] = [];
     const seenComments = new Set<string>();
-    const search = await youtube.search.list({
-      part: ['snippet'],
-      q: keyword,
-      type: ['video'],
-      maxResults: 5,
-      order: 'date',
-      publishedAfter: since.toISOString(),
-      safeSearch: 'moderate',
-    });
+    const key = youtube.apiKey ? { key: youtube.apiKey } : {};
+    let search: { data: { items?: Array<{ id?: { videoId?: string | null } | null; snippet?: { title?: string | null; description?: string | null; channelTitle?: string | null } | null }> | null } };
+    try {
+      search = (await youtube.client.search.list({
+        ...key,
+        part: ['snippet'],
+        q: keyword,
+        type: ['video'],
+        maxResults: 5,
+        order: 'date',
+        publishedAfter: since.toISOString(),
+        safeSearch: 'moderate',
+      })) as typeof search;
+    } catch (err) {
+      if (isProviderAuthFailure(err)) {
+        console.error(
+          youtube.apiKey
+            ? 'Stalker YouTube search rejected YOUTUBE_STALKER_API_KEY'
+            : 'Stalker YouTube search rejected the channel token'
+        );
+        throw new Error(
+          youtube.apiKey ? 'API key was rejected' : 'Invalid credentials'
+        );
+      }
+      throw err;
+    }
 
     for (const video of search.data.items || []) {
       const videoId = video.id?.videoId;
@@ -155,7 +179,8 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
       }
 
       try {
-        const comments = await youtube.commentThreads.list({
+        const comments = await youtube.client.commentThreads.list({
+          ...key,
           part: ['snippet'],
           videoId,
           searchTerms: keyword,
@@ -187,10 +212,10 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
           });
         }
       } catch (err) {
-        if (isProviderAuthFailure(err)) {
-          throw err;
-        }
-        console.error('Stalker YouTube keyword comments failed', err);
+        console.error(
+          'Stalker YouTube keyword comments failed',
+          err instanceof Error ? err.message : 'comments failed'
+        );
       }
     }
 

@@ -7,6 +7,7 @@ module.exports = {
     '^@gitroom/nestjs-libraries/(.*)$': '<rootDir>/src/$1',
     '^@gitroom/helpers/(.*)$': '<rootDir>/../helpers/src/$1',
     '^@gitroom/react/(.*)$': '<rootDir>/../react-shared-libraries/src/$1',
+    '^@gitroom/backend/(.*)$': '<rootDir>/../../apps/backend/src/$1',
   },
   transform: {
     '^.+\\.ts$': [

@@ -27,10 +27,11 @@ import Script from 'next/script';
 import { ChangeDirClient } from '@gitroom/frontend/components/new-layout/change.dir.client';
 import { browserBackendUrl } from '@gitroom/frontend/components/layout/browser.backend.url';
 import { crea8oneIcons } from '@gitroom/frontend/components/layout/crea8one.icons';
+import { appPageMetadata } from '@gitroom/frontend/components/layout/site.metadata';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Crea8one',
+  ...appPageMetadata(),
   icons: crea8oneIcons,
 };
 
@@ -38,6 +39,8 @@ const jakartaSans = Plus_Jakarta_Sans({
   weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
   subsets: ['latin'],
+  display: 'swap',
+  preload: false,
 });
 
 export default async function AppLayout({ children }: { children: ReactNode }) {

@@ -43,6 +43,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`/auth/login-required`, nextUrl.href));
   }
 
+  const publicFile = nextUrl.pathname.replace(/\/+$/, '') || '/';
+  if (
+    publicFile === '/robots.txt' ||
+    publicFile === '/sitemap.xml' ||
+    publicFile === '/manifest.webmanifest' ||
+    publicFile === '/.well-known/security.txt'
+  ) {
+    return topResponse;
+  }
+
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||

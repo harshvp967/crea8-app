@@ -1,11 +1,23 @@
 import {
   IsDefined,
   IsEmail,
+  IsIn,
   IsString,
   MinLength,
   ValidateIf,
 } from 'class-validator';
-import { Provider } from '@prisma/client';
+
+export const AUTH_PROVIDER_NAMES = [
+  'LOCAL',
+  'GITHUB',
+  'GOOGLE',
+  'APPLE',
+  'FARCASTER',
+  'WALLET',
+  'GENERIC',
+] as const;
+
+export type AuthProviderName = (typeof AUTH_PROVIDER_NAMES)[number];
 
 export class LoginUserDto {
   @IsString()
@@ -16,7 +28,8 @@ export class LoginUserDto {
 
   @IsString()
   @IsDefined()
-  provider: Provider;
+  @IsIn(AUTH_PROVIDER_NAMES)
+  provider: AuthProviderName;
 
   @IsString()
   @IsDefined()

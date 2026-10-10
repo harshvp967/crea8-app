@@ -30,6 +30,7 @@ import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { xOAuthCallbackUrl } from '@gitroom/nestjs-libraries/integrations/social/x.oauth.callback';
 
 // GET /2/tweets accepts at most 100 ids per request.
 // https://docs.x.com/x-api/posts/lookup/quickstart
@@ -540,10 +541,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       appSecret: process.env.X_API_SECRET!,
     });
     const { url, oauth_token, oauth_token_secret } =
-      await client.generateAuthLink(
-        (process.env.X_URL || process.env.FRONTEND_URL) +
-          `/integrations/social/x`,
-        {
+      await client.generateAuthLink(xOAuthCallbackUrl(), {
           authAccessType: 'write',
           linkMode: 'authenticate',
           forceLogin: false,

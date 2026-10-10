@@ -11,6 +11,7 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
+import { assertOAuthRedirect } from '@gitroom/helpers/auth/oauth.link';
 
 @Injectable()
 export class AuthService {
@@ -290,7 +291,9 @@ export class AuthService {
 
   oauthLink(provider: string, query?: any) {
     const providerInstance = this._providerManager.getProvider(provider);
-    return providerInstance.generateLink(query);
+    return Promise.resolve(providerInstance.generateLink(query)).then((link) =>
+      assertOAuthRedirect(link)
+    );
   }
 
   async checkExists(

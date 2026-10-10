@@ -31,6 +31,15 @@ export class ConfigurationChecker {
     this.checkIsValidUrl('NEXT_PUBLIC_BACKEND_URL');
     this.checkIsValidUrl('BACKEND_INTERNAL_URL');
     this.checkNonEmpty('STORAGE_PROVIDER', 'Needed to setup storage.');
+    if (
+      (process.env.NODE_ENV === 'production' ||
+        !!process.env.RAILWAY_ENVIRONMENT) &&
+      !this.get('INTEGRATION_TOKEN_KEY')
+    ) {
+      this.issues.push(
+        'INTEGRATION_TOKEN_KEY not set. Required in production so integration tokens are encrypted at rest. Generate it with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))" and set the same value on the backend and the orchestrator.'
+      );
+    }
   }
 
   checkNonEmpty(key: string, description?: string): boolean {

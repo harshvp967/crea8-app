@@ -1,12 +1,16 @@
 import {
   IsDefined,
   IsEmail,
+  IsIn,
   IsString,
   MaxLength,
   MinLength,
   ValidateIf,
 } from 'class-validator';
-import { Provider } from '@prisma/client';
+import {
+  AUTH_PROVIDER_NAMES,
+  type AuthProviderName,
+} from './login.user.dto';
 
 export class CreateOrgUserDto {
   @IsString()
@@ -18,7 +22,8 @@ export class CreateOrgUserDto {
 
   @IsString()
   @IsDefined()
-  provider: Provider;
+  @IsIn(AUTH_PROVIDER_NAMES)
+  provider: AuthProviderName;
 
   @IsString()
   @IsDefined()

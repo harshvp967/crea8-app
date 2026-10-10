@@ -14,8 +14,16 @@ import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/goog
 import { AppleProvider } from '@gitroom/frontend/components/auth/providers/apple.provider';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { FarcasterProvider } from '@gitroom/frontend/components/auth/providers/farcaster.provider';
-import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.provider';
+import dynamic from 'next/dynamic';
+import { WalletUiProvider } from '@gitroom/frontend/components/auth/providers/placeholder/wallet.ui.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+const WalletProvider = dynamic(
+  () => import('@gitroom/frontend/components/auth/providers/wallet.provider'),
+  {
+    ssr: false,
+    loading: () => <WalletUiProvider />,
+  }
+);
 type Inputs = {
   email: string;
   password: string;
@@ -68,7 +76,12 @@ export function Login() {
   };
   return (
     <FormProvider {...form}>
-      <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className="flex-1 flex"
+        method="post"
+        action="/auth/native-submit"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <div className="flex flex-col flex-1">
           <div>
             <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">

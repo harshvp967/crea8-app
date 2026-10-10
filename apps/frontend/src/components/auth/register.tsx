@@ -153,7 +153,12 @@ export function RegisterAfter({
   };
   return (
     <FormProvider {...form}>
-      <form className="flex-1 flex" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className="flex-1 flex"
+        method="post"
+        action="/auth/native-submit"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <div className="flex flex-col flex-1">
           <div>
             <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">
