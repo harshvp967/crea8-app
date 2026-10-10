@@ -598,8 +598,9 @@ export const WeekView = () => {
 export const MonthView = () => {
   const { startDate } = useCalendar();
   const t = useT();
+  const narrow = useNarrowLayout();
 
-  // Use dayjs to get localized day names
+  // Use dayjs to get localized day names. Phone cells are too narrow for full names.
   const localizedDays = useMemo(() => {
     const currentLanguage = i18next.resolvedLanguage || 'en';
     dayjs.locale(currentLanguage);
@@ -607,10 +608,10 @@ export const MonthView = () => {
     const days = [];
     // Starting from Monday (1) to Sunday (7)
     for (let i = 1; i <= 7; i++) {
-      days.push(newDayjs().day(i).format('dddd'));
+      days.push(newDayjs().day(i).format(narrow ? 'ddd' : 'dddd'));
     }
     return days;
-  }, [i18next.resolvedLanguage]);
+  }, [i18next.resolvedLanguage, narrow]);
 
   const calendarDays = useMemo(() => {
     const monthStart = newDayjs(startDate);

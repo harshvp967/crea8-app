@@ -103,18 +103,6 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setAccountOpen(false);
   }, [pathname]);
-  useEffect(() => {
-    if (!accountOpen) {
-      return;
-    }
-    const onPointer = (event: MouseEvent) => {
-      if (!accountRef.current?.contains(event.target as Node)) {
-        setAccountOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onPointer);
-    return () => document.removeEventListener('mousedown', onPointer);
-  }, [accountOpen]);
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, [fetch]);
@@ -228,7 +216,10 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                           pressed={accountOpen}
                           onClick={() => setAccountOpen((value) => !value)}
                         />
-                        <OrganizationSelector menuOpen={accountOpen} />
+                        <OrganizationSelector
+                          menuOpen={accountOpen}
+                          onClose={() => setAccountOpen(false)}
+                        />
                       </div>
                       <div className="flex items-center justify-center">
                         <ModeComponent />

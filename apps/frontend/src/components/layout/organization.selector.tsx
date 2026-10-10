@@ -1,6 +1,7 @@
 'use client';
 
 import React, { FC, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -8,7 +9,8 @@ import clsx from 'clsx';
 export const OrganizationSelector: FC<{
   asOpenSelect?: boolean;
   menuOpen?: boolean;
-}> = ({ asOpenSelect, menuOpen }) => {
+  onClose?: () => void;
+}> = ({ asOpenSelect, menuOpen, onClose }) => {
   const fetch = useFetch();
   const user = useUser();
   const load = useCallback(async () => {
@@ -69,19 +71,13 @@ export const OrganizationSelector: FC<{
               )}
             </div>
           )}
-          {(data?.length > 1 || menuOpen) && (
+          {(data?.length > 1 || asOpenSelect) && !menuOpen && (
             <div
               className={clsx(
                 'org-menu hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
-                asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : '',
-                menuOpen && '!flex'
+                asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : ''
               )}
             >
-              {menuOpen && !!current?.name && !withoutCurrent?.length && (
-                <div className="whitespace-nowrap truncate text-textItemBlur">
-                  {current.name}
-                </div>
-              )}
               {withoutCurrent?.map(
                 (org: {
                   name: string;
@@ -111,6 +107,51 @@ export const OrganizationSelector: FC<{
               )}
             </div>
           )}
+          {menuOpen &&
+            typeof document !== 'undefined' &&
+            createPortal(
+              <>
+                <div
+                  className="sheet-backdrop"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onClose?.();
+                  }}
+                />
+                <div className="org-sheet" role="menu" aria-label="Organization">
+                  {!!current?.name && (
+                    <div className="org-sheet-current">{current.name}</div>
+                  )}
+                  {withoutCurrent?.map(
+                    (org: {
+                      name: string;
+                      id: string;
+                      users: { role: 'SUPERADMIN' | 'ADMIN' | 'USER' }[];
+                    }) => (
+                      <button
+                        key={org?.id}
+                        type="button"
+                        role="menuitem"
+                        onClick={changeOrg(org)}
+                      >
+                        <span className="truncate">{org?.name}</span>
+                        {!!org?.users?.[0]?.role && (
+                          <span className="org-sheet-role">
+                            {org?.users?.[0]?.role === 'SUPERADMIN'
+                              ? 'Super-Admin'
+                              : org?.users?.[0]?.role === 'ADMIN'
+                              ? 'Admin'
+                              : 'User'}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  )}
+                </div>
+              </>,
+              document.body
+            )}
         </div>
       </div>
       {!asOpenSelect && <div className="w-[1px] h-[20px] bg-blockSeparator" />}

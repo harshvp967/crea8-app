@@ -339,13 +339,15 @@ export const Filters = () => {
                 {getDisplayText()}
               </div>
               <div className="cal-range-phone py-[3px] px-[12px] text-[16px] font-[600]">
-                {(() => {
-                  const start = newDayjs(calendar.startDate).startOf('isoWeek');
-                  const end = start.endOf('isoWeek');
-                  return start.month() === end.month()
-                    ? `${start.format('MMM D')} – ${end.format('D, YYYY')}`
-                    : `${start.format('MMM D')} – ${end.format('MMM D, YYYY')}`;
-                })()}
+                {calendar.display === 'month'
+                  ? getDisplayText()
+                  : (() => {
+                      const start = newDayjs(calendar.startDate).startOf('isoWeek');
+                      const end = start.endOf('isoWeek');
+                      return start.month() === end.month()
+                        ? `${start.format('MMM D')} – ${end.format('D, YYYY')}`
+                        : `${start.format('MMM D')} – ${end.format('MMM D, YYYY')}`;
+                    })()}
               </div>
             </div>
             <div

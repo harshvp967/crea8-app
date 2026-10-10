@@ -936,6 +936,76 @@ body :focus-visible {
   border-radius: 18px;
 }
 
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 68;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.org-sheet {
+  position: fixed;
+  z-index: 90;
+  top: calc(64px + env(safe-area-inset-top));
+  right: 12px;
+  left: auto;
+  min-width: 220px;
+  max-width: calc(100vw - 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--new-bgColorInner);
+  border: 1px solid var(--new-border);
+  border-radius: 18px;
+  box-shadow: var(--arc-shadow-floating);
+}
+
+.org-sheet-current {
+  padding: 8px 12px 4px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--new-textItemBlur);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.org-sheet button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--new-btn-text);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+}
+
+.org-sheet button:hover {
+  background: var(--arc-muted);
+}
+
+.org-sheet-role {
+  flex: none;
+  font-size: 12px;
+  color: var(--new-textItemBlur);
+}
+
+.dash-mswitch.is-open {
+  z-index: 80;
+}
+
 .channel-strip,
 .strip-create,
 .cal-range-phone {
@@ -1339,6 +1409,29 @@ body :focus-visible {
     display: none;
   }
 
+  .composer-editor {
+    border-inline-end: 0 !important;
+  }
+
+  .composer-editor .b1.flex:not(.flex-col) {
+    flex-wrap: wrap;
+    height: auto;
+    row-gap: 4px;
+  }
+
+  .composer-editor .editor-toolbar {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .composer-editor .uppyChange {
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
   .composer-preview {
     display: none;
     width: 100% !important;
@@ -1494,6 +1587,20 @@ body :focus-visible {
 
   .cal-range-phone {
     display: block;
+    white-space: nowrap;
+  }
+
+  .month-head {
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 2px;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+
+  .month-head > div {
+    max-width: 100%;
+    overflow: hidden;
     white-space: nowrap;
   }
 
