@@ -7,8 +7,11 @@ dayjs.extend(utc);
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@gitroom/orchestrator/app.module';
+import { assertIntegrationTokenKey } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.token.crypto';
 import * as dns from 'node:dns';
 dns.setDefaultResultOrder('ipv4first');
+
+assertIntegrationTokenKey();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

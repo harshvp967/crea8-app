@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import {
   AuthProvider,
   AuthProviderAbstract,
@@ -23,7 +24,9 @@ export class OauthProvider extends AuthProviderAbstract {
       !POSTIZ_OAUTH_AUTH_URL ||
       !FRONTEND_URL
     ) {
-      throw new Error('POSTIZ_OAUTH environment variables are not set');
+      throw new BadRequestException(
+        'POSTIZ_OAUTH environment variables are not set'
+      );
     }
 
     return {

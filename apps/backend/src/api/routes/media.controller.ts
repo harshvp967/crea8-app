@@ -19,6 +19,7 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { ApiTags } from '@nestjs/swagger';
 import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { mediaPublicUrl } from '@gitroom/nestjs-libraries/upload/media.public.url';
 import { streamUploadOptions } from '@gitroom/nestjs-libraries/upload/multer.stream.engine';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -114,7 +115,7 @@ export class MediaController {
     return this._mediaService.saveFile(
       org.id,
       name,
-      process.env.CLOUDFLARE_BUCKET_URL + '/' + name,
+      mediaPublicUrl(name),
       originalName || undefined
     );
   }
