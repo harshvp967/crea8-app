@@ -53,6 +53,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const toaster = useToaster();
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
+  const [phonePane, setPhonePane] = useState<'editor' | 'preview'>('editor');
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
 
   const { addEditSets, mutate, customClose, dummy } = props;
@@ -475,10 +476,22 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   return (
-    <div className="w-full h-full flex-1 p-[40px] flex relative">
-      <div className="flex flex-1 bg-newBgColorInner rounded-[20px] flex-col">
-        <div className="flex-1 flex">
-          <div className="flex flex-col flex-1 border-e border-newBorder">
+    <div className={clsx('composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview')}>
+      <div className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] flex-col min-h-0">
+        <div className="composer-tabs" role="tablist">
+          <span className="composer-tabs-title">{t('create_post_title', 'Create Post')}</span>
+          <button type="button" role="tab" aria-selected={phonePane === 'editor'} className={phonePane === 'editor' ? 'on' : ''} onClick={() => setPhonePane('editor')}>
+            {t('editor', 'Editor')}
+          </button>
+          <button type="button" role="tab" aria-selected={phonePane === 'preview'} className={phonePane === 'preview' ? 'on' : ''} onClick={() => setPhonePane('preview')}>
+            {t('post_preview', 'Post Preview')}
+          </button>
+          <button type="button" className="composer-close-phone" aria-label={t('close', 'Close')} onClick={askClose}>
+            <CloseIcon className="text-[#A3A3A3]" />
+          </button>
+        </div>
+        <div className="composer-split flex-1 flex min-h-0">
+          <div className="composer-editor flex flex-col flex-1 border-e border-newBorder min-w-0">
             <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center gap-[12px] px-[20px] text-[20px] font-[600]">
               {t('create_post_title', 'Create Post')}
               <CreationMethodBadge
@@ -568,7 +581,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </div>
             </div>
           </div>
-          <div className="w-[580px] flex flex-col">
+          <div className="composer-preview w-[580px] flex flex-col min-w-0">
             <div className="bg-newBgColor h-[65px] rounded-e-[26px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
               <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
               <div className="cursor-pointer">
@@ -585,7 +598,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-newBorder flex items-center">
+        <div className="composer-foot select-none h-[84px] py-[20px] border-t border-newBorder flex items-center">
           <div className="flex-1 flex ps-[20px] gap-[8px]">
             {!dummy && (
               <TagsComponent
@@ -602,7 +615,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
             )}
           </div>
-          <div className="pe-[20px] flex items-center justify-end gap-[8px]">
+          <div className="composer-actions pe-[20px] flex items-center justify-end gap-[8px]">
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -687,7 +700,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     disabled={
                       selectedIntegrations.length === 0 || loading || locked
                     }
-                    className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
+                    className="post-now-tray rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
                   >
                     <div className="text-newTextColor rounded-[16px] border border-newBorder bg-newBgColorInner h-[44px] w-full flex justify-center items-center post-now">
                       {t('post_now', 'Post Now')}

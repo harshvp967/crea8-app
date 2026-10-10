@@ -210,8 +210,9 @@ export const Component: FC<{
               })}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center">
-                <div className="text-[24px] font-[600] flex-1">
+              <div className="arc-grab" aria-hidden />
+              <div className="arc-dialog-head flex items-center">
+                <div className="text-[18px] font-[600] flex-1">
                   {modal.title}
                 </div>
                 {typeof modal.withCloseButton === 'undefined' ||
@@ -242,7 +243,7 @@ export const Component: FC<{
               </div>
               <div
                 className={clsx(
-                  'whitespace-pre-line',
+                  'arc-dialog-body whitespace-pre-line',
                   !!modal.height && !!modal.size && 'flex flex-1 flex-col'
                 )}
               >

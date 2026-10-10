@@ -14,7 +14,7 @@ export const GoogleProvider = () => {
     <button
       type="button"
       onClick={gotoLogin}
-      className="cursor-pointer flex-1 bg-white border border-newBorder h-[50px] rounded-[18px] flex justify-center items-center text-[#0E0E0E] gap-[5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+      className="cursor-pointer w-full flex-1 bg-newBgColorInner border border-newBorder h-[44px] rounded-[18px] flex justify-center items-center text-newTextColor gap-[8px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--arc-focus)]"
     >
       <div>
         <svg

@@ -61,9 +61,15 @@ export const Filters = () => {
 
     switch (calendar.display) {
       case 'day':
-        return startDate.format('dddd (L)');
+        return startDate.format('dddd, MMM D');
       case 'week':
-        return `${startDate.format('L')} - ${endDate.format('L')}`;
+        if (
+          startDate.month() === endDate.month() &&
+          startDate.year() === endDate.year()
+        ) {
+          return `${startDate.format('MMM D')} – ${endDate.format('D, YYYY')}`;
+        }
+        return `${startDate.format('MMM D')} – ${endDate.format('MMM D, YYYY')}`;
       case 'month':
         return startDate.format('MMMM YYYY');
       default:
@@ -304,11 +310,11 @@ export const Filters = () => {
   return (
     <div className="filters-bar text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0">
       {!isListView && (
-          <div className="date-range flex flex-1 min-w-[240px] flex-row items-center gap-[10px]">
-          <div className="border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
+          <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
+          <div className="cal-nav border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
             <div
               onClick={previous}
-              className="cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
+              className="cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -326,14 +332,23 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
+            <div className="cal-range-label min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
+              <div className="cal-range-desktop py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
                 {getDisplayText()}
+              </div>
+              <div className="cal-range-phone py-[3px] px-[12px] text-[16px] font-[600]">
+                {(() => {
+                  const start = newDayjs(calendar.startDate).startOf('isoWeek');
+                  const end = start.endOf('isoWeek');
+                  return start.month() === end.month()
+                    ? `${start.format('MMM D')} – ${end.format('D, YYYY')}`
+                    : `${start.format('MMM D')} – ${end.format('MMM D, YYYY')}`;
+                })()}
               </div>
             </div>
             <div
               onClick={next}
-              className="cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
+              className="cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -352,7 +367,7 @@ export const Filters = () => {
               </svg>
             </div>
           </div>
-          <div className="flex-1 text-[14px] font-[500]">
+          <div className="cal-today flex-1 text-[14px] font-[500]">
             <div className="text-center flex h-[40px]">
               <div
                 onClick={setToday}
@@ -365,7 +380,7 @@ export const Filters = () => {
         </div>
       )}
       {isListView && (
-          <div className="date-range flex flex-1 min-w-[240px] flex-row items-center gap-[10px]">
+          <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
           <div className="border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
             <div
               onClick={previousPage}
@@ -442,15 +457,17 @@ export const Filters = () => {
           <div className="flex-1" />
         </div>
       )}
+      <div className="cal-customer">
       <SelectCustomer
         customer={calendar.customer as string}
         onChange={(customer: string) => setCustomer(customer)}
         integrations={calendar.integrations}
       />
+      </div>
       <SegmentedControl
         aria-label={t('calendar_view', 'Calendar view')}
         size="sm"
-        className="shrink-0"
+        className="cal-view shrink-0"
         value={calendar.display}
         onValueChange={setDisplay}
         options={[
@@ -463,7 +480,7 @@ export const Filters = () => {
           },
         ]}
       />
-      <div className="flex flex-row shrink-0 p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
+      <div className="cal-mode flex flex-row shrink-0 p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
         <div
           onClick={setCalendarView}
           className={clsx(

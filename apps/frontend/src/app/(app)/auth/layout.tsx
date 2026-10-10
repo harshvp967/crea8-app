@@ -17,84 +17,58 @@ export default async function AuthLayout({
   return (
     <MantineWrapper>
       <Toaster />
-      <div className="bg-newBgColor flex flex-1 p-[12px] gap-[12px] min-h-screen w-screen text-textColor">
+      <div className="auth-shell">
         <ReturnUrlComponent />
-        <div className="flex flex-col py-[40px] px-[20px] flex-1 lg:w-[600px] lg:flex-none rounded-[34px] text-textColor p-[12px] bg-newBgColorInner border border-newBorder">
-          <div className="w-full max-w-[440px] mx-auto justify-center gap-[20px] h-full flex flex-col text-textColor">
-            <LogoTextComponent />
-            <div className="flex">{children}</div>
-          </div>
-        </div>
-        <div className="hidden flex-1 flex-col justify-center px-[40px] py-[48px] lg:flex">
-          <div className="mx-auto flex w-full max-w-[520px] flex-col gap-[28px]">
-            <img
-              src="/crea8one-logo-horizontal-color.svg"
-              alt="crea8.one"
-              width={877}
-              height={263}
-              className="h-[48px] w-auto max-w-[220px] object-contain object-left dark:hidden"
-            />
-            <img
-              src="/crea8one-logo-horizontal-color-on-dark.svg"
-              alt=""
-              aria-hidden
-              width={877}
-              height={263}
-              className="hidden h-[48px] w-auto max-w-[220px] object-contain object-left dark:block"
-            />
-            <h2 className="text-[32px] font-[600] leading-[1.25] text-textColor">
+        <aside className="auth-pitch">
+          <LogoTextComponent />
+          <div className="auth-pitch-copy">
+            <h1>
               {t(
                 'auth_panel_headline',
-                'Plan, publish and learn from your audience, in one place.'
+                'Schedule, listen and share from one place.'
               )}
-            </h2>
-            <ul className="flex flex-col gap-[20px]">
-              <li className="flex gap-[14px]">
-                <span className="mt-[8px] h-[8px] w-[8px] shrink-0 rounded-full bg-[#00D9FF]" />
-                <div>
-                  <div className="text-[16px] font-[600] text-[color:var(--arc-accent-text)]">
-                    {t('auth_panel_schedule_title', 'Schedule')}
-                  </div>
-                  <p className="mt-[4px] text-[15px] leading-[1.5] text-textItemBlur">
-                    {t(
-                      'auth_panel_schedule_body',
-                      'Plan and publish to all your social channels from one calendar.'
-                    )}
-                  </p>
-                </div>
+            </h1>
+            <p className="auth-pitch-kicker">
+              {t('auth_panel_kicker', 'Schedule · Stalker')}
+            </p>
+            <ul>
+              <li>
+                <span className="auth-pitch-icon" aria-hidden>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <rect x="3" y="5" width="18" height="16" rx="3" />
+                    <path d="M3 10h18M8 3v4M16 3v4" />
+                  </svg>
+                </span>
+                <span>{t('auth_panel_schedule_body', 'Plan a week of posts in one calendar')}</span>
               </li>
-              <li className="flex gap-[14px]">
-                <span className="mt-[8px] h-[8px] w-[8px] shrink-0 rounded-full bg-[#00D9FF]" />
-                <div>
-                  <div className="text-[16px] font-[600] text-[color:var(--arc-accent-text)]">
-                    {t('auth_panel_insights_title', 'Stalker insights')}
-                  </div>
-                  <p className="mt-[4px] text-[15px] leading-[1.5] text-textItemBlur">
-                    {t(
-                      'auth_panel_insights_body',
-                      'AI turns the comments on your posts into themes and ideas.'
-                    )}
-                  </p>
-                </div>
+              <li>
+                <span className="auth-pitch-icon" aria-hidden>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <circle cx="12" cy="12" r="8" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </span>
+                <span>{t('auth_panel_insights_body', 'Every mention of your brand in one feed')}</span>
               </li>
-              <li className="flex gap-[14px]">
-                <span className="mt-[8px] h-[8px] w-[8px] shrink-0 rounded-full bg-[#00D9FF]" />
-                <div>
-                  <div className="text-[16px] font-[600] text-[color:var(--arc-accent-text)]">
-                    {t('auth_panel_draft_title', 'Idea to draft')}
-                  </div>
-                  <p className="mt-[4px] text-[15px] leading-[1.5] text-textItemBlur">
-                    {t(
-                      'auth_panel_draft_body',
-                      'Turn an insight into a ready-to-edit post in one click.'
-                    )}
-                  </p>
-                </div>
+              <li>
+                <span className="auth-pitch-icon" aria-hidden>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+                  </svg>
+                </span>
+                <span>{t('auth_panel_draft_body', 'Turn an insight into a ready-to-edit post')}</span>
               </li>
             </ul>
           </div>
-        </div>
+          <div className="auth-pitch-foot">crea8.one</div>
+        </aside>
+        <main className="auth-main">
+          <div className="auth-logo-mobile">
+            <LogoTextComponent />
+          </div>
+          <div className="auth-card">{children}</div>
+        </main>
       </div>
     </MantineWrapper>
   );
-}
+};
