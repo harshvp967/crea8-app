@@ -92,7 +92,7 @@ export const AddProviderButton: FC<{
   return (
     <div className="flex group-[.sidebar]:block gap-[8px]">
       <button
-        className="flex-1 group-[.sidebar]:w-[100%] group-[.sidebar]:flex-none text-[color:var(--arc-accent-text)] bg-transparent border border-[color:var(--arc-selected-border)] h-[44px] pt-[12px] pb-[14px] ps-[16px] pe-[20px] justify-center items-center flex rounded-[18px] gap-[8px] hover:bg-[var(--arc-selected)] transition-colors cursor-pointer"
+        className="flex-1 group-[.sidebar]:w-[100%] group-[.sidebar]:flex-none text-newTextColor bg-newBgColorInner border border-newBorder shadow-[var(--arc-shadow-resting)] h-[44px] pt-[12px] pb-[14px] ps-[16px] pe-[20px] justify-center items-center flex rounded-[18px] gap-[8px] hover:bg-newBoxHover transition-colors cursor-pointer"
         onClick={add}
       >
         <div>
@@ -123,7 +123,7 @@ export const AddProviderButton: FC<{
           'invite_link',
           'Send Invite Link to a customer to add channel'
         )}
-        className="group-[.sidebar]:hidden min-h-[44px] min-w-[44px] bg-transparent text-[color:var(--arc-accent-text)] border border-[color:var(--arc-selected-border)] justify-center items-center flex rounded-[18px] cursor-pointer hover:bg-[var(--arc-selected)] transition-colors"
+        className="group-[.sidebar]:hidden min-h-[44px] min-w-[44px] bg-newBgColorInner text-textItemBlur border border-newBorder shadow-[var(--arc-shadow-resting)] justify-center items-center flex rounded-[18px] cursor-pointer hover:text-newTextColor hover:bg-newBoxHover transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

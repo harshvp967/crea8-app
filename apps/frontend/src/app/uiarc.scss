@@ -18,9 +18,9 @@
 
 body {
   font-family: 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif;
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: -0.01em;
-  line-height: 1.4;
+  line-height: 1.45;
   background: var(--arc-canvas, var(--new-bgColor)) !important;
   color: var(--new-btn-text);
 }
@@ -42,40 +42,47 @@ body :focus-visible {
   outline-offset: 2px;
 }
 
-@keyframes arc-wave {
-  0% {
-    background-color: var(--arc-selected);
-  }
-  50% {
-    background-color: color-mix(in srgb, var(--arc-accent) 28%, transparent);
-  }
-  100% {
-    background-color: var(--arc-selected);
-  }
-}
-
 .arc-selected {
-  color: var(--arc-accent-text);
-  background-color: var(--arc-selected);
+  color: var(--new-btn-text);
+  background-color: transparent;
+  background-image: var(--arc-wave);
   border-color: var(--arc-selected-border);
-  box-shadow: inset 0 0 0 1px var(--arc-selected-border);
-  animation: arc-wave 2.8s ease-in-out infinite;
+  box-shadow: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .arc-selected {
-    animation: none;
-  }
+.desktop-nav a,
+.desktop-nav button {
+  height: 38px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 15px;
+  gap: 7px;
+  font-size: 14px;
+}
+
+.desktop-nav a > div:first-child,
+.desktop-nav button > div:first-child {
+  display: none;
+}
+
+.desktop-nav a.arc-selected::before,
+.desktop-nav button.arc-selected::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--arc-accent);
+  flex: none;
 }
 
 .arc-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 14px;
   border: 1px solid transparent;
   color: var(--new-textItemBlur);
   background: transparent;
@@ -147,10 +154,11 @@ body :focus-visible {
 }
 
 .mantine-Modal-modal,
-.mantine-Paper-root.mantine-Modal-modal {
-  background: var(--new-bgColorInner) !important;
+.mantine-Paper-root.mantine-Modal-modal,
+.arc-dialog {
+  background: var(--arc-raised, var(--new-bgColorInner)) !important;
   border: 1px solid var(--new-border);
-  border-radius: var(--arc-radius-panel) !important;
+  border-radius: var(--arc-radius-surface) !important;
   box-shadow: var(--arc-shadow-floating);
 }
 
@@ -246,22 +254,42 @@ body :focus-visible {
   }
 }
 
+.app-header {
+  box-shadow: var(--arc-shadow-resting);
+}
+
+.app-logo a,
+.app-logo svg,
+.app-logo img {
+  height: 24px;
+}
+
+.calendar-panel,
+.channel-rail > div {
+  border-radius: var(--arc-radius-panel);
+  box-shadow: var(--arc-shadow-resting);
+}
+
 @media (max-width: 767px) {
   .app-shell {
-    padding: 8px 8px 84px;
-    gap: 8px;
+    padding: 0 0 88px;
+    gap: 0;
   }
 
   .app-header {
-    min-height: 56px;
-    border-radius: var(--arc-radius-panel);
-    padding: 8px 10px;
+    min-height: 60px;
+    height: 60px;
+    border-radius: 0;
+    border-width: 0 0 1px 0;
+    padding: 0 12px;
+    box-shadow: none;
   }
 
   .app-logo img,
+  .app-logo svg,
   .app-logo span {
-    height: 32px !important;
-    max-width: 132px !important;
+    height: 22px !important;
+    max-width: 148px !important;
   }
 
   .desktop-nav,
@@ -272,6 +300,13 @@ body :focus-visible {
   .app-main {
     flex-direction: column;
     overflow: auto;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .mobile-tabbar a,
+  .mobile-tabbar button {
+    font-size: 13px;
   }
 
   .channel-rail {
@@ -321,7 +356,8 @@ body :focus-visible {
   }
 
   .phone-day-strip button.arc-selected {
-    color: var(--arc-accent-text);
+    color: var(--new-btn-text);
+    background-image: var(--arc-wave-v), linear-gradient(var(--new-bgColorInner), var(--new-bgColorInner));
   }
 
   .phone-create {
@@ -354,17 +390,23 @@ body :focus-visible {
     display: flex;
     position: fixed;
     z-index: 70;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
     height: 64px;
     align-items: stretch;
-    gap: 2px;
-    padding: 4px;
-    background: var(--new-bgColorInner);
+    gap: 4px;
+    padding: 6px;
+    background: var(--arc-raised, var(--new-bgColorInner));
     border: 1px solid var(--new-border);
-    border-radius: var(--arc-radius-panel);
-    box-shadow: var(--arc-shadow-floating);
+    border-radius: 24px;
+    box-shadow: var(--arc-shadow-raised, 0 8px 22px rgba(0, 0, 0, 0.28));
+  }
+
+  .mobile-tabbar a.arc-selected,
+  .mobile-tabbar button.arc-selected {
+    background-image: var(--arc-wave-v), linear-gradient(var(--new-bgColorInner), var(--new-bgColorInner));
+    color: var(--new-btn-text);
   }
 
   .mobile-tabbar a,
@@ -378,7 +420,7 @@ body :focus-visible {
     align-items: center;
     justify-content: center;
     gap: 2px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--new-textItemBlur);
     background: transparent;
@@ -420,6 +462,21 @@ body :focus-visible {
     border: 1px solid var(--new-border);
     border-radius: var(--arc-radius-panel);
     box-shadow: var(--arc-shadow-floating);
+  }
+
+  .arc-dialog-wrap {
+    align-items: flex-end;
+    padding: 0 !important;
+  }
+
+  .arc-dialog {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin-top: auto;
+    border-radius: 30px 30px 0 0 !important;
+    border-bottom: 0;
+    max-height: 90vh;
   }
 
   .filters-bar {

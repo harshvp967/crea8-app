@@ -268,7 +268,7 @@ export const StalkerTopNav = ({
                         ) : null}
                       </span>
                       {active ? (
-                        <span className="text-[13px] text-[#00A3C4]" aria-label="Active">
+                        <span className="text-[13px] text-[color:var(--arc-accent)]" aria-label="Active">
                           ✓
                         </span>
                       ) : null}
@@ -331,7 +331,7 @@ export const StalkerTopNav = ({
                 <button
                   type="button"
                   aria-label="Add keyword"
-                  className="ms-[2px] flex h-[28px] w-[28px] items-center justify-center rounded-full border border-newBorder text-[16px] text-textItemBlur hover:border-[#00D9FF]/40 hover:text-newTextColor"
+                  className="ms-[2px] flex h-[28px] w-[28px] items-center justify-center rounded-[14px] border border-newBorder text-[16px] text-textItemBlur hover:border-[color:var(--arc-selected-border)] hover:text-newTextColor"
                   onClick={() => requestAddKeyword()}
                 >
                   +

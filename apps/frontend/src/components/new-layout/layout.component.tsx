@@ -159,18 +159,13 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <AnnouncementBanner />
                   <Support />
                   <header
-                    className={clsx(
-                      'app-header flex items-center min-h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder py-[8px] shrink-0',
-                      pathname?.startsWith('/stalker')
-                        ? 'gap-[8px] px-[12px]'
-                        : 'gap-[12px] px-[16px]'
-                    )}
+                    className="app-header flex items-center min-h-[64px] h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder gap-[8px] ps-[18px] pe-[12px] shrink-0"
                   >
                     <span className="app-logo">
                       <Logo compact={!!pathname?.startsWith('/stalker')} />
                     </span>
-                    <div className="w-[1px] self-stretch my-[8px] bg-blockSeparator hidden sm:block shrink-0" />
                     <DashboardSwitcher />
+                    <div className="navsep w-[1px] h-[24px] bg-blockSeparator hidden sm:block shrink-0" />
                     {pathname?.startsWith('/stalker') ? (
                       <StalkerTopNav />
                     ) : (
@@ -194,8 +189,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       </HeaderOverflow>
                     </div>
                   </header>
-                  <div className="flex-1 bg-newBgLineColor rounded-[34px] overflow-hidden flex flex-col min-h-0 border border-newBorder blurMe">
-                    <div className="app-main flex flex-1 gap-[1px] min-h-0 overflow-hidden">
+                  <div className="app-stage flex-1 overflow-hidden flex flex-col min-h-0 blurMe">
+                    <div className="app-main flex flex-1 gap-[12px] min-h-0 overflow-hidden">
                       {children}
                     </div>
                   </div>

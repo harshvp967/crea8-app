@@ -356,7 +356,7 @@ export const Filters = () => {
             <div className="text-center flex h-[40px]">
               <div
                 onClick={setToday}
-                className="hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] py-[3px] px-[16px] flex justify-center items-center rounded-full transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newBorder text-textItemBlur"
+                className="hover:text-newTextColor hover:bg-newBoxHover h-[36px] px-[12px] flex justify-center items-center rounded-[18px] transition-all cursor-pointer text-[14px] font-[500] bg-newBgColorInner border border-newBorder text-textItemBlur shadow-[var(--arc-shadow-resting)]"
               >
                 {t('today', 'Today')}
               </div>
@@ -423,13 +423,13 @@ export const Filters = () => {
               </svg>
             </div>
           </div>
-          <div className="flex flex-row p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-newBgColorInner">
+          <div className="flex flex-row p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
             {listStateOptions.map((option) => (
               <div
                 key={option.value}
                 onClick={setListStateFilter(option.value)}
                 className={clsx(
-                  'pt-[6px] pb-[5px] cursor-pointer min-w-[80px] px-[12px] text-center rounded-full transition-colors',
+                  'h-[30px] cursor-pointer min-w-[80px] px-[12px] flex items-center justify-center text-center rounded-[14px] transition-colors',
                   calendar.listState === option.value
                     ? 'arc-selected'
                     : 'text-textItemBlur hover:text-newTextColor'
@@ -463,11 +463,11 @@ export const Filters = () => {
           },
         ]}
       />
-      <div className="flex flex-row shrink-0 p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-newBgColorInner">
+      <div className="flex flex-row shrink-0 p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
         <div
           onClick={setCalendarView}
           className={clsx(
-            'pt-[6px] pb-[5px] cursor-pointer flex justify-center items-center w-[36px] text-center rounded-full transition-colors',
+            'h-[30px] cursor-pointer flex justify-center items-center w-[36px] text-center rounded-[14px] transition-colors',
             !isListView
               ? 'arc-selected'
               : 'text-textItemBlur hover:text-newTextColor'
@@ -493,7 +493,7 @@ export const Filters = () => {
         <div
           onClick={setList}
           className={clsx(
-            'pt-[6px] pb-[5px] flex justify-center items-center cursor-pointer w-[36px] text-center rounded-full transition-colors',
+            'h-[30px] flex justify-center items-center cursor-pointer w-[36px] text-center rounded-[14px] transition-colors',
             isListView
               ? 'arc-selected'
               : 'text-textItemBlur hover:text-newTextColor'

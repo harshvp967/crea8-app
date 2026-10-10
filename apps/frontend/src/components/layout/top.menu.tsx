@@ -360,7 +360,7 @@ export const SettingsMenuItem: FC<{
         title={settings.name}
         aria-label={settings.name}
         className={clsx(
-          'flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors shrink-0 [&_svg]:w-[22px] [&_svg]:h-[22px]',
+          'flex items-center justify-center w-[38px] h-[38px] rounded-[14px] transition-colors shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]',
           isActive
             ? 'arc-selected'
             : 'text-textItemBlur hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]'

@@ -14,8 +14,8 @@ export const Logo = ({ compact = false }: { compact?: boolean }) => {
       <Crea8oneWordmark
         className={
           compact
-            ? 'h-[40px] w-auto max-w-[148px]'
-            : 'h-[52px] w-auto max-w-[220px]'
+            ? 'h-[24px] w-auto max-w-[148px]'
+            : 'h-[24px] w-auto max-w-[168px]'
         }
       />
     </Link>

@@ -263,9 +263,8 @@ export const MenuComponent: FC<
             'data-tooltip-content': integration.name,
           }
         : {})}
-      className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-[18px] border border-transparent px-[8px] py-[6px]',
-        integration.refreshNeeded && 'border-[#0091AD]/40',
+        className={clsx(
+        'flex gap-[10px] items-center min-h-[48px] bg-transparent hover:bg-boxHover group/profile transition-all rounded-[16px] border border-transparent px-[8px]',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -533,7 +532,7 @@ export const LaunchesComponent = () => {
         >
           <div
             className={clsx(
-              'bg-newBgColorInner border-e border-newBorder p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner border border-newBorder rounded-[26px] p-[18px] flex flex-col gap-[14px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">
@@ -544,7 +543,7 @@ export const LaunchesComponent = () => {
                 onClick={() =>
                   setCollapseMenu(collapseMenu === '1' ? '0' : '1')
                 }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-full w-[28px] h-[28px] flex items-center justify-center cursor-pointer select-none hover:bg-[#00D9FF]/15 hover:text-[#00D9FF] transition-colors"
+                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-textItemBlur bg-transparent border border-transparent rounded-[14px] w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none hover:bg-newBoxHover hover:text-newTextColor transition-colors"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -622,9 +621,9 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[16px] min-w-0">
+        <div className="calendar-panel bg-newBgColorInner border border-newBorder rounded-[26px] flex-1 flex-col flex p-[16px] gap-[12px] min-w-0">
           <Filters />
-          <div className="calendar-well flex-1 flex min-h-0 rounded-[26px] border border-newBorder bg-newBgColor overflow-hidden p-[10px]">
+          <div className="calendar-well flex-1 flex min-h-0 overflow-hidden">
             <Calendar />
           </div>
           {sortedIntegrations?.length > 0 && (

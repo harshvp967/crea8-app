@@ -171,7 +171,7 @@ export const Component: FC<{
         onClick={closeModalFunction}
         style={{ zIndex }}
         className={clsx(
-          'fixed flex left-0 top-0 min-w-full min-h-full bg-popup transition-all animate-fadeIn overflow-y-auto text-newTextColor',
+          'arc-dialog-wrap fixed flex left-0 top-0 min-w-full min-h-full bg-popup transition-all animate-fadeIn overflow-y-auto text-newTextColor',
           !modal.fullScreen && 'pb-[50px]'
         )}
       >
@@ -197,7 +197,7 @@ export const Component: FC<{
             <div
               className={clsx(
                 !modal.removeLayout && 'gap-[40px] p-[32px]',
-                'bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[26px] border border-newBorder relative',
+                'arc-dialog bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[34px] border border-newBorder relative',
                 modal.size ? '' : 'min-w-[600px]',
                 modal.fullScreen && 'h-full'
               )}

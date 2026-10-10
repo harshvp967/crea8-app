@@ -49,8 +49,8 @@ export const Button: FC<
         (props.disabled || loading) && 'opacity-50 pointer-events-none',
         `${
           secondary
-            ? 'bg-transparent text-textColor border border-newBorder'
-            : 'bg-forth text-[#0A0A0A] border border-transparent'
+            ? 'bg-newBgColorInner text-textColor border border-newBorder shadow-[var(--arc-shadow-resting)]'
+            : 'bg-forth text-[#0A0A0A] border border-transparent font-[600]'
         } px-[16px] h-[44px] rounded-[18px] font-[500] text-[14px] cursor-pointer items-center justify-center flex relative`,
         props?.className
       )}

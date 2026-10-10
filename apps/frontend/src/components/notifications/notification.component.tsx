@@ -123,7 +123,7 @@ const NotificationComponent = () => {
   }, [show, data]);
   const ref = useClickAway<HTMLDivElement>(() => setShow(false));
   return (
-    <div className="relative cursor-pointer select-none flex items-center justify-center w-[36px] h-[36px] rounded-full transition-colors text-textItemBlur hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]" ref={ref}>
+    <div className="relative cursor-pointer select-none flex items-center justify-center w-[38px] h-[38px] rounded-[14px] transition-colors text-textItemBlur hover:text-newTextColor hover:bg-[var(--arc-selected)]" ref={ref}>
       <div onClick={changeShow}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
