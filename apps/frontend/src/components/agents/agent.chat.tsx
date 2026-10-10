@@ -10,13 +10,15 @@ import React, {
   useState,
 } from 'react';
 import {
-  AssistantMessage,
   AssistantMessageProps,
   CopilotChat,
   CopilotKitCSSProperties,
   InputProps,
+  Markdown,
   UserMessageProps,
+  useChatContext,
 } from '@copilotkit/react-ui';
+import { copyToClipboard } from '@copilotkit/shared';
 import { Input } from '@gitroom/frontend/components/agents/agent.input';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import {
@@ -281,25 +283,127 @@ const DraftCard: FC<{ draft: DraftPreview }> = ({ draft }) => {
 };
 
 const AgentAssistantMessage: FC<AssistantMessageProps> = (props) => {
-  const raw = props.message?.content || '';
-  const { prose, drafts } = splitDrafts(typeof raw === 'string' ? raw : '');
-  if (!drafts.length || !props.message) {
-    return <AssistantMessage {...props} />;
-  }
-  const message = Object.assign(
-    Object.create(Object.getPrototypeOf(props.message)),
-    props.message,
-    { content: prose }
-  );
+  const { icons, labels } = useChatContext();
+  const [copied, setCopied] = useState(false);
+  const {
+    message,
+    isLoading,
+    onRegenerate,
+    onCopy,
+    onThumbsUp,
+    onThumbsDown,
+    isCurrentMessage,
+    feedback,
+    markdownTagRenderers,
+  } = props;
+  const raw = message?.content || '';
+  const text = typeof raw === 'string' ? raw : '';
+  const { prose, drafts } = splitDrafts(text);
+  const uiMessage = message as
+    | (NonNullable<typeof message> & {
+        generativeUI?: () => React.ReactNode;
+        generativeUIPosition?: string;
+      })
+    | undefined;
+  const subComponent = uiMessage?.generativeUI?.() ?? props.subComponent;
+  const subComponentPosition = uiMessage?.generativeUIPosition ?? 'after';
+  const renderBefore = Boolean(subComponent) && subComponentPosition === 'before';
+  const renderAfter = Boolean(subComponent) && subComponentPosition !== 'before';
+
+  const handleCopy = async () => {
+    if (!text) {
+      return;
+    }
+    const success = await copyToClipboard(text);
+    if (success) {
+      setCopied(true);
+      onCopy?.(text);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <div className="agent-assistant-with-draft">
-      <AssistantMessage {...props} message={message} />
-      <div className="agent-draft-list">
-        {drafts.map((draft, index) => (
-          <DraftCard key={`${draft.title}-${index}`} draft={draft} />
-        ))}
-      </div>
-    </div>
+    <>
+      {renderBefore ? (
+        <div style={{ marginBottom: '0.5rem' }}>{subComponent}</div>
+      ) : null}
+      {(prose || drafts.length > 0) && (
+        <div className="agent-assistant-block">
+          <div className="copilotKitMessage copilotKitAssistantMessage">
+            {prose ? (
+              <Markdown content={prose} components={markdownTagRenderers} />
+            ) : null}
+            {drafts.map((draft, index) => (
+              <DraftCard key={`${draft.title}-${index}`} draft={draft} />
+            ))}
+          </div>
+          {prose && !isLoading ? (
+            <div
+              className={`agent-message-actions${
+                isCurrentMessage ? ' currentMessage' : ''
+              }`}
+            >
+              <button
+                type="button"
+                className="copilotKitMessageControlButton"
+                onClick={() => onRegenerate?.()}
+                aria-label={labels.regenerateResponse}
+                title={labels.regenerateResponse}
+              >
+                {icons.regenerateIcon}
+              </button>
+              <button
+                type="button"
+                className="copilotKitMessageControlButton"
+                onClick={handleCopy}
+                aria-label={labels.copyToClipboard}
+                title={labels.copyToClipboard}
+              >
+                {copied ? (
+                  <span style={{ fontSize: '10px', fontWeight: 'bold' }}>✓</span>
+                ) : (
+                  icons.copyIcon
+                )}
+              </button>
+              {onThumbsUp && message ? (
+                <button
+                  type="button"
+                  className={`copilotKitMessageControlButton${
+                    feedback === 'thumbsUp' ? ' active' : ''
+                  }`}
+                  onClick={() => onThumbsUp(message, feedback !== 'thumbsUp')}
+                  aria-label={labels.thumbsUp}
+                  title={labels.thumbsUp}
+                >
+                  {icons.thumbsUpIcon}
+                </button>
+              ) : null}
+              {onThumbsDown && message ? (
+                <button
+                  type="button"
+                  className={`copilotKitMessageControlButton${
+                    feedback === 'thumbsDown' ? ' active' : ''
+                  }`}
+                  onClick={() =>
+                    onThumbsDown(message, feedback !== 'thumbsDown')
+                  }
+                  aria-label={labels.thumbsDown}
+                  title={labels.thumbsDown}
+                >
+                  {icons.thumbsDownIcon}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      )}
+      {renderAfter ? (
+        <div style={{ marginBottom: '0.5rem' }}>{subComponent}</div>
+      ) : null}
+      {isLoading ? (
+        <span data-testid="copilot-loading-cursor">{icons.activityIcon}</span>
+      ) : null}
+    </>
   );
 };
 

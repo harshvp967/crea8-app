@@ -2778,30 +2778,44 @@ body :focus-visible {
   display: block !important;
 }
 
-.agent-assistant-with-draft {
+.agent-assistant-block {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: flex-start;
   width: 100%;
   max-width: min(100%, 720px);
   margin-bottom: 8px;
 }
 
-.agent-assistant-with-draft .copilotKitAssistantMessage {
+.agent-assistant-block .copilotKitAssistantMessage {
   width: 100%;
   max-width: 100% !important;
   margin-bottom: 0 !important;
-  border-bottom-right-radius: 8px !important;
-  border-bottom-left-radius: 8px !important;
 }
 
-.agent-draft-list {
-  width: 100%;
-  padding: 0 14px 14px;
-  background: var(--arc-muted);
-  border: 1px solid var(--new-border);
-  border-top: 0;
-  border-radius: 0 0 20px 20px;
+.agent .agent-message-actions {
+  position: static !important;
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 0 !important;
+  padding: 0 2px !important;
+  opacity: 1 !important;
+  background: transparent !important;
+}
+
+.agent .agent-message-actions .copilotKitMessageControlButton {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  padding: 0 !important;
+  color: var(--new-textItemBlur) !important;
+  background: transparent !important;
+}
+
+.agent .agent-message-actions .copilotKitMessageControlButton svg {
+  width: 14px;
+  height: 14px;
 }
 
 .agent-draft-card {
@@ -2809,6 +2823,7 @@ body :focus-visible {
   align-items: center;
   gap: 12px;
   min-height: 56px;
+  margin-top: 12px;
   padding: 8px 10px 8px 8px;
   background: var(--new-bgColorInner);
   border: 1px solid var(--new-border);
@@ -2864,25 +2879,13 @@ body :focus-visible {
   font-weight: 500;
 }
 
-@media (max-width: 1199px) {
+@media (min-width: 1024px) and (max-width: 1199px) {
   .agent-threads {
     width: 240px;
   }
 }
 
-@media (max-width: 767px) {
-  .app-main:has(.agent-workspace) {
-    overflow: hidden;
-    padding: 0;
-    gap: 0;
-  }
-
-  .agent-workspace {
-    height: 100%;
-    border: 0;
-    border-radius: 0;
-  }
-
+@media (max-width: 1023px) {
   .agent-threads {
     display: none;
   }
@@ -2891,7 +2894,7 @@ body :focus-visible {
     position: fixed;
     z-index: 81;
     top: 0;
-    bottom: calc(88px + env(safe-area-inset-bottom));
+    bottom: 0;
     left: 0;
     display: block;
     width: min(320px, 86vw);
@@ -2904,14 +2907,42 @@ body :focus-visible {
 
   .agent-history {
     display: inline-flex;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-main:has(.agent-workspace) {
+    overflow: hidden !important;
+    padding: 10px 12px 8px !important;
+    gap: 0 !important;
+  }
+
+  .agent-workspace {
+    height: 100%;
+    border: 1px solid var(--new-border);
+    border-radius: 26px;
+    overflow: hidden;
+  }
+
+  .agent-threads.is-open {
+    bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
   .agent-titlebar {
-    padding: 14px 12px 4px;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 14px 4px;
   }
 
   .agent-titlebar h1 {
+    overflow: visible;
     font-size: 20px;
+    line-height: 1.2;
+    text-overflow: unset;
+    white-space: normal;
   }
 
   .agent-channels-sheet {

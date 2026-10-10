@@ -45,9 +45,33 @@ export const Input = ({
 
   const isInProgress = inProgress;
   const buttonIcon =
-    isInProgress && !hideStopButton
-      ? context.icons.stopIcon
-      : context.icons.sendIcon;
+    isInProgress && !hideStopButton ? (
+      context.icons.stopIcon
+    ) : (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M21.5 3.5 10.9 14.1"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M21.5 3.5 14.7 21.2 10.9 14.1 3.8 10.3 21.5 3.5Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
 
   const { interrupt } = useCopilotChatInternal();
   const canSend = useMemo(() => {
