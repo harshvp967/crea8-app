@@ -20,6 +20,14 @@ import {
 } from '@gitroom/frontend/components/stalker/stalker.sample';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import { decodeHtmlEntities } from '@gitroom/helpers/utils/stalker.text';
+import {
+  stkCard,
+  stkEmpty,
+  stkHead,
+  stkPage,
+  stkSecondary,
+  stkTitle,
+} from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 
 const Card = ({
@@ -31,10 +39,10 @@ const Card = ({
   extra?: string;
   children: ReactNode;
 }) => (
-  <section className="rounded-[16px] border border-newBorder bg-newBgColorInner p-[16px]">
+  <section className={stkCard}>
     <div className="mb-[12px] flex items-baseline justify-between gap-[8px]">
-      <h2 className="text-[15px] font-[600]">{title}</h2>
-      {extra ? <span className="text-[12px] text-textItemBlur">{extra}</span> : null}
+      <h2 className="text-[16px] font-[600]">{title}</h2>
+      {extra ? <span className="text-[13px] text-textItemBlur">{extra}</span> : null}
     </div>
     {children}
   </section>
@@ -87,8 +95,10 @@ export const StalkerAnalytics = () => {
   }, [heatmap]);
 
   return (
-    <div className="flex flex-col gap-[16px] p-[16px] md:p-[24px]">
-      <h1 className="text-[28px] font-[600]">Analytics</h1>
+    <div className={stkPage}>
+      <div className={stkHead}>
+        <h1 className={stkTitle}>Analytics</h1>
+      </div>
       <StalkerFilters
         filters={filters}
         onChange={setFilters}
@@ -101,28 +111,29 @@ export const StalkerAnalytics = () => {
         // "0 / day" looked like real data.
         analytics.isLoading || analytics.isValidating || analytics.data === undefined ? (
           <div className="flex flex-col gap-[12px]" aria-busy="true">
-            <div className="h-[240px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
-            <div className="grid gap-[12px] lg:grid-cols-2">
-              <div className="h-[160px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
-              <div className="h-[160px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+            <div className="stk-skel h-[240px] animate-pulse" />
+            <div className="grid gap-[16px] lg:grid-cols-3">
+              <div className="stk-skel h-[160px] animate-pulse" />
+              <div className="stk-skel h-[160px] animate-pulse" />
+              <div className="stk-skel h-[160px] animate-pulse" />
             </div>
           </div>
         ) : (
           <Card title="Analytics">
-            <p className="text-[13px] text-textItemBlur">
-              Couldn&apos;t load analytics.{' '}
-              <button type="button" className="underline" onClick={() => analytics.mutate()}>
+            <div className={stkEmpty}>
+              <h3 className="text-[16px] font-[600]">Couldn&apos;t load analytics.</h3>
+              <button type="button" className={stkSecondary} onClick={() => analytics.mutate()}>
                 Try again
               </button>
-            </p>
+            </div>
           </Card>
         )
       ) : (
       <>
       <Card title="Mentions over time" extra={`${avg} / day`}>
-        <div className="mb-[8px] flex justify-end gap-[12px] text-[12px]">
-          <span className="text-[#1c8f5a]">● Positive</span>
-          <span className="text-[#c43b3b]">● Negative</span>
+        <div className="mb-[8px] flex justify-end gap-[12px] text-[13px]">
+          <span className="text-[color:var(--arc-success)]">● Positive</span>
+          <span className="text-[color:var(--arc-danger)]">● Negative</span>
           <span className="text-textItemBlur">● Neutral</span>
         </div>
         <div className="flex h-[180px] items-end gap-[3px]">
@@ -131,8 +142,8 @@ export const StalkerAnalytics = () => {
             const height = `${Math.max(2, Math.round((sum / max) * 160))}px`;
             return (
               <div key={row.date} className="flex flex-1 flex-col justify-end" title={`${row.date}: ${sum}`} style={{ height }}>
-                <div className="bg-[#c43b3b]/70" style={{ height: sum ? `${(row.negative / sum) * 100}%` : 0 }} />
-                <div className="bg-[#1c8f5a]/70" style={{ height: sum ? `${(row.positive / sum) * 100}%` : 0 }} />
+                <div className="bg-[color:var(--arc-danger)] opacity-70" style={{ height: sum ? `${(row.negative / sum) * 100}%` : 0 }} />
+                <div className="bg-[color:var(--arc-success)] opacity-70" style={{ height: sum ? `${(row.positive / sum) * 100}%` : 0 }} />
                 <div className="bg-newBorder" style={{ height: sum ? `${(row.neutral / sum) * 100}%` : '100%' }} />
               </div>
             );
@@ -148,14 +159,14 @@ export const StalkerAnalytics = () => {
           aria-label="Chart range"
         />
       </Card>
-      <div className="grid gap-[12px] lg:grid-cols-2">
+      <div className="grid gap-[16px] lg:grid-cols-3">
         <Card title="Accounts mentioning you most" extra={`${accounts.length} accounts`}>
           {!accounts.length ? (
-            <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
+            <p className="text-[14px] text-textItemBlur">No mentions in this view.</p>
           ) : (
             <ul className="flex flex-col gap-[8px]">
               {accounts.map((row: { authorName: string; count: number }) => (
-                <li key={row.authorName} className="flex items-center justify-between text-[13px]">
+                <li key={row.authorName} className="flex items-center justify-between text-[14px]">
                   <span className="truncate">{decodeHtmlEntities(row.authorName)}</span>
                   <span className="text-textItemBlur">{row.count}</span>
                 </li>
@@ -165,13 +176,13 @@ export const StalkerAnalytics = () => {
         </Card>
         <Card title="Top supporters">
           {!supporters.length ? (
-            <p className="text-[13px] text-textItemBlur">No supporters yet</p>
+            <p className="text-[14px] text-textItemBlur">No supporters yet</p>
           ) : (
             <ul className="flex flex-col gap-[8px]">
               {supporters.map((row: { authorName: string; count: number }) => (
-                <li key={row.authorName} className="flex justify-between text-[13px]">
+                <li key={row.authorName} className="flex justify-between text-[14px]">
                   <span>{decodeHtmlEntities(row.authorName)}</span>
-                  <span className="text-[#1c8f5a]">{row.count}</span>
+                  <span className="text-[color:var(--arc-success)]">{row.count}</span>
                 </li>
               ))}
             </ul>
@@ -179,13 +190,13 @@ export const StalkerAnalytics = () => {
         </Card>
         <Card title="Top critics">
           {!critics.length ? (
-            <p className="text-[13px] text-textItemBlur">No critics yet</p>
+            <p className="text-[14px] text-textItemBlur">No critics yet</p>
           ) : (
             <ul className="flex flex-col gap-[8px]">
               {critics.map((row: { authorName: string; count: number }) => (
-                <li key={row.authorName} className="flex justify-between text-[13px]">
+                <li key={row.authorName} className="flex justify-between text-[14px]">
                   <span>{decodeHtmlEntities(row.authorName)}</span>
-                  <span className="text-[#c43b3b]">{row.count}</span>
+                  <span className="text-[color:var(--arc-danger)]">{row.count}</span>
                 </li>
               ))}
             </ul>
@@ -193,11 +204,11 @@ export const StalkerAnalytics = () => {
         </Card>
         <Card title="Why people mention you">
           {!categories.some((row: { count: number; name: string }) => row.name !== 'Uncategorized' && row.count) ? (
-            <p className="text-[13px] text-textItemBlur">No categorized mentions</p>
+            <p className="text-[14px] text-textItemBlur">No categorized mentions</p>
           ) : (
             <ul className="flex flex-col gap-[8px]">
               {categories.map((row: { name: string; count: number }) => (
-                <li key={row.name} className="flex justify-between text-[13px]">
+                <li key={row.name} className="flex justify-between gap-[12px] text-[14px]">
                   <span>{row.name}</span>
                   <span className="text-textItemBlur">{row.count}</span>
                 </li>
@@ -207,14 +218,19 @@ export const StalkerAnalytics = () => {
         </Card>
         <Card title="Where people mention you">
           {!sources.length ? (
-            <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
+            <p className="text-[14px] text-textItemBlur">No mentions in this view.</p>
           ) : (
             <ul className="flex flex-col gap-[8px]">
               {sources.map((row: { source: string; count: number }) => (
-                <li key={row.source} className="flex justify-between text-[13px]">
-                  <span>{sourceLabel(row.source)}</span>
-                  <span className="text-textItemBlur">
-                    {total ? `${Math.round((row.count / total) * 100)}%` : '0%'}
+                <li key={row.source} className="flex flex-col gap-[4px] text-[14px]">
+                  <span className="flex items-center justify-between gap-[8px]">
+                    <span>{sourceLabel(row.source)}</span>
+                    <span className="text-[13px] text-textItemBlur">
+                      {total ? `${Math.round((row.count / total) * 100)}%` : '0%'}
+                    </span>
+                  </span>
+                  <span className="stk-hb">
+                    <i style={{ width: total ? `${Math.round((row.count / total) * 100)}%` : '0%' }} />
                   </span>
                 </li>
               ))}
@@ -223,10 +239,10 @@ export const StalkerAnalytics = () => {
         </Card>
         <Card title="When people mention you">
           {!peak ? (
-            <p className="text-[13px] text-textItemBlur">No mentions in this view.</p>
+            <p className="text-[14px] text-textItemBlur">No mentions in this view.</p>
           ) : (
             <div className="overflow-x-auto">
-              <div className="grid grid-cols-[32px_repeat(12,minmax(16px,1fr))] gap-[3px] text-[10px] text-textItemBlur">
+              <div className="stk-heat text-[13px] text-textItemBlur">
                 <span />
                 {Array.from({ length: 12 }, (_, hour) => (
                   <span key={hour} className="text-center">{hour === 0 ? '12a' : hour}</span>
@@ -257,7 +273,7 @@ export const StalkerAnalytics = () => {
       </div>
       <Card title="Keywords">
         {!keywords.length ? (
-          <p className="text-[13px] text-textItemBlur">No keywords yet.</p>
+          <p className="text-[14px] text-textItemBlur">No keywords yet.</p>
         ) : (
           <ul className="flex flex-col gap-[8px]">
             {keywords.map((keyword: { id?: string; phrase: string }) => {
@@ -267,7 +283,7 @@ export const StalkerAnalytics = () => {
                     (!!keyword.id && row.keywordId === keyword.id) || row.phrase === keyword.phrase
                 )?.count || 0;
               return (
-                <li key={keyword.id || keyword.phrase} className="flex justify-between text-[13px]">
+                <li key={keyword.id || keyword.phrase} className="flex justify-between text-[14px]">
                   <span>{keyword.phrase}</span>
                   <span className="text-textItemBlur">{count}</span>
                 </li>

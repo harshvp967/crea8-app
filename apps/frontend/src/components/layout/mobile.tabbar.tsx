@@ -8,7 +8,7 @@ import { useMenuItem, useVisibleMenuItems } from '@gitroom/frontend/components/l
 import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.nav';
 
 export const MobileTabBar = () => {
-  const pathname = usePathname() || '';
+  const pathname = (usePathname() || '').replace(/^\/stalker-preview/, '/stalker');
   const stalker = pathname.startsWith('/stalker');
   const { firstMenu, secondMenu } = useMenuItem();
   const primary = useVisibleMenuItems(firstMenu);

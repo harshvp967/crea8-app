@@ -4,6 +4,15 @@ import { ReactNode, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
+import {
+  stkChip,
+  stkChipOn,
+  stkField,
+  stkGhost,
+  stkMenuItem,
+  stkPopover,
+  stkPrimary,
+} from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 export type MentionFilters = {
   preset: string;
@@ -168,13 +177,7 @@ export const viewToFilters = (raw: Record<string, string | undefined>): MentionF
 export const filtersActive = (filters: MentionFilters, baseline: MentionFilters) =>
   JSON.stringify(filters) !== JSON.stringify(baseline);
 
-const chipClass = (on: boolean) =>
-  clsx(
-    'inline-flex items-center gap-[6px] rounded-full border px-[12px] py-[6px] text-[13px] font-[600]',
-    on
-      ? 'border-[#00D9FF]/40 bg-[#00D9FF]/10 text-newTextColor'
-      : 'border-dashed border-newBorder text-textItemBlur hover:text-newTextColor'
-  );
+const chipClass = (on: boolean) => (on ? stkChipOn : stkChip);
 
 const monthGrid = (cursor: Date) => {
   const year = cursor.getFullYear();
@@ -265,7 +268,7 @@ export const StalkerFilters = ({
   });
 
   return (
-    <div className="flex flex-wrap items-center gap-[8px]">
+    <div className="stk-filters flex flex-wrap items-center gap-[8px]">
       <div className="relative">
         <button type="button" className={chipClass(!!dateLabel())} onClick={() => {
           setDraft(filters);
@@ -274,7 +277,7 @@ export const StalkerFilters = ({
           {label('date', 'Date', dateLabel())}
         </button>
         {open === 'date' ? (
-          <div className="absolute start-0 z-20 mt-[8px] w-[min(720px,calc(100vw-48px))] rounded-[16px] border border-newBorder bg-newBgColorInner p-[12px] shadow-[var(--menu-shadow)]">
+          <div className={`${stkPopover} w-[min(720px,calc(100vw-32px))]`}>
             <div className="grid gap-[12px] md:grid-cols-[180px_1fr]">
               <div className="flex flex-col">
                 {PRESETS.map(([id, text]) => (
@@ -282,8 +285,8 @@ export const StalkerFilters = ({
                     key={id}
                     type="button"
                     className={clsx(
-                      'rounded-[8px] px-[8px] py-[6px] text-start text-[13px]',
-                      draft.preset === id ? 'bg-[#00D9FF]/10' : 'hover:bg-newBoxHover'
+                      stkMenuItem,
+                      draft.preset === id && 'bg-newBoxHover'
                     )}
                     onClick={() => setDraft({ ...draft, preset: id, start: '', end: '' })}
                   >
@@ -293,10 +296,10 @@ export const StalkerFilters = ({
               </div>
               <div>
                 <div className="mb-[8px] flex gap-[8px]">
-                  <input className="w-full rounded-[10px] border border-newBorder px-[8px] py-[6px] text-[12px]" placeholder="MM / DD / YYYY" value={draft.start} onChange={(event) => setDraft({ ...draft, preset: 'custom', start: event.target.value })} />
-                  <input className="w-full rounded-[10px] border border-newBorder px-[8px] py-[6px] text-[12px]" placeholder="MM / DD / YYYY" value={draft.end} onChange={(event) => setDraft({ ...draft, preset: 'custom', end: event.target.value })} />
+                  <input className={stkField} placeholder="MM / DD / YYYY" value={draft.start} onChange={(event) => setDraft({ ...draft, preset: 'custom', start: event.target.value })} />
+                  <input className={stkField} placeholder="MM / DD / YYYY" value={draft.end} onChange={(event) => setDraft({ ...draft, preset: 'custom', end: event.target.value })} />
                 </div>
-                <div className="mb-[8px] flex items-center justify-between text-[13px] font-[600]">
+                <div className="mb-[8px] flex items-center justify-between text-[14px] font-[600]">
                   <button type="button" aria-label="Previous month" onClick={() => setCursor((value) => new Date(value.getFullYear(), value.getMonth() - 1, 1))}>‹</button>
                   <span>
                     {months[0].toLocaleString(undefined, { month: 'long', year: 'numeric' })}
@@ -308,12 +311,12 @@ export const StalkerFilters = ({
                 <div className="grid grid-cols-2 gap-[12px]">
                   {months.map((month) => (
                     <div key={month.toISOString()}>
-                      <div className="grid grid-cols-7 text-center text-[11px] text-textItemBlur">
+                      <div className="grid grid-cols-7 text-center text-[13px] text-textItemBlur">
                         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
                           <span key={day}>{day}</span>
                         ))}
                       </div>
-                      <div className="grid grid-cols-7 text-center text-[12px]">
+                      <div className="grid grid-cols-7 text-center text-[14px]">
                         {monthGrid(month).map((date) => {
                           const value = iso(date);
                           const outside = date.getMonth() !== month.getMonth();
@@ -323,9 +326,9 @@ export const StalkerFilters = ({
                               key={value + month.getMonth()}
                               type="button"
                               className={clsx(
-                                'mx-auto my-[2px] h-[28px] w-[28px] rounded-full',
+                                'mx-auto my-[2px] flex h-[36px] w-[36px] items-center justify-center rounded-[12px]',
                                 outside && 'text-textItemBlur/50',
-                                selected && 'border border-[#00D9FF]/60 bg-[#00D9FF]/10'
+                                selected && 'bg-forth font-[600] text-[#0A0A0A]'
                               )}
                               onClick={() => {
                                 if (!draft.start || (draft.start && draft.end)) {
@@ -349,8 +352,8 @@ export const StalkerFilters = ({
                   ))}
                 </div>
                 <div className="mt-[8px] flex justify-end gap-[8px]">
-                  <button type="button" className="text-[13px] text-textItemBlur" onClick={() => setDraft({ ...draft, preset: '', start: '', end: '' })}>Clear</button>
-                  <button type="button" className="rounded-full bg-newTextColor px-[12px] py-[6px] text-[13px] font-[600] text-newBgColorInner" onClick={applyDate}>Apply</button>
+                  <button type="button" className={stkGhost} onClick={() => setDraft({ ...draft, preset: '', start: '', end: '' })}>Clear</button>
+                  <button type="button" className={stkPrimary} onClick={applyDate}>Apply</button>
                 </div>
               </div>
             </div>
@@ -364,7 +367,7 @@ export const StalkerFilters = ({
         onToggle={() => setOpen(open === 'source' ? null : 'source')}
       >
         {['X', 'REDDIT', 'YOUTUBE', 'LINKEDIN'].map((source) => (
-          <div key={source} className="flex items-center justify-between gap-[12px] px-[8px] py-[6px] text-[13px]">
+          <div key={source} className="flex items-center justify-between gap-[12px] px-[8px] py-[8px] text-[14px]">
             <label className="flex items-center gap-[8px]">
               <input
                 type="checkbox"
@@ -381,7 +384,7 @@ export const StalkerFilters = ({
             </label>
             {source !== 'REDDIT' ? (
               <input
-                className="w-[88px] rounded-[8px] border border-newBorder px-[6px] py-[4px] text-[12px]"
+                className="h-[36px] w-[120px] rounded-[14px] border border-newBorder bg-newBgColorInner px-[10px] text-[14px]"
                 placeholder="+ Engagement"
                 value={filters.engagement[source] || ''}
                 onChange={(event) =>
@@ -402,7 +405,7 @@ export const StalkerFilters = ({
         onToggle={() => setOpen(open === 'from' ? null : 'from')}
       >
         <input
-          className="mb-[8px] w-full rounded-[10px] border border-newBorder px-[8px] py-[6px] text-[13px]"
+          className={`${stkField} mb-[8px]`}
           placeholder="Name or @handle"
           value={authorQuery}
           onChange={(event) => setAuthorQuery(event.target.value)}
@@ -412,21 +415,21 @@ export const StalkerFilters = ({
             <li key={`${author.authorHandle}-${author.source}`}>
               <button
                 type="button"
-                className="flex w-full items-center gap-[8px] rounded-[8px] px-[6px] py-[6px] text-start hover:bg-newBoxHover"
+                className={stkMenuItem}
                 onClick={() => {
                   onChange({ ...filters, from: author.authorHandle || author.authorName });
                   setOpen(null);
                 }}
               >
-                <span className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-newBoxHover text-[10px] font-[600]">
+                <span className="flex h-[28px] w-[28px] items-center justify-center rounded-full border border-newBorder bg-newBoxHover text-[13px] font-[600]">
                   {author.authorName.slice(0, 1).toUpperCase()}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px]">{author.authorName}</span>
-                  <span className="block truncate text-[11px] text-textItemBlur">{author.authorHandle ? `@${author.authorHandle}` : ''}</span>
+                  <span className="block truncate text-[14px]">{author.authorName}</span>
+                  <span className="block truncate text-[13px] text-textItemBlur">{author.authorHandle ? `@${author.authorHandle}` : ''}</span>
                 </span>
                 <SourceIcon source={author.source} />
-                <span className="text-[12px] text-textItemBlur">{author.count}</span>
+                <span className="text-[13px] text-textItemBlur">{author.count}</span>
               </button>
             </li>
           ))}
@@ -438,20 +441,20 @@ export const StalkerFilters = ({
         open={open === 'keywords'}
         onToggle={() => setOpen(open === 'keywords' ? null : 'keywords')}
       >
-        <p className="px-[8px] py-[4px] text-[12px] text-textItemBlur">
+        <p className="px-[8px] py-[4px] text-[13px] text-textItemBlur">
           All keywords · {keywords.length} tracked
         </p>
         {Object.entries(grouped).map(([name, rows]) => (
           <div key={name} className="mt-[6px]">
-            <p className="px-[8px] text-[12px] font-[600]">{name}</p>
+            <p className="px-[8px] text-[13px] font-[500] text-textItemBlur">{name}</p>
             {rows.map((keyword) => (
-              <div key={keyword.id} className="flex items-center justify-between px-[8px] py-[4px] text-[13px]">
+              <div key={keyword.id} className="flex items-center justify-between px-[8px] py-[4px] text-[14px]">
                 <button type="button" onClick={() => onChange({ ...filters, keywordId: keyword.id })}>
                   {keyword.phrase}
                 </button>
                 <button
                   type="button"
-                  className="text-[12px] text-[#00A3C4]"
+                  className="text-[13px] text-[color:var(--arc-accent-text)]"
                   onClick={() => {
                     onChange({ ...filters, keywordId: keyword.id });
                     setOpen(null);
@@ -478,7 +481,7 @@ export const StalkerFilters = ({
           <button
             key={category.id}
             type="button"
-            className="block w-full rounded-[8px] px-[8px] py-[6px] text-start text-[13px] hover:bg-newBoxHover"
+            className={stkMenuItem}
             onClick={() => {
               onChange({ ...filters, categoryId: category.id });
               setOpen(null);
@@ -489,7 +492,7 @@ export const StalkerFilters = ({
         ))}
         <button
           type="button"
-          className="block w-full rounded-[8px] px-[8px] py-[6px] text-start text-[13px] hover:bg-newBoxHover"
+          className={stkMenuItem}
           onClick={() => {
             onChange({ ...filters, categoryId: 'none' });
             setOpen(null);
@@ -497,7 +500,7 @@ export const StalkerFilters = ({
         >
           Uncategorized
         </button>
-        <a href="/stalker/settings" className="block px-[8px] py-[6px] text-[13px] text-[#00A3C4]">
+        <a href="/stalker/settings" className={`${stkMenuItem} text-[color:var(--arc-accent-text)]`}>
           + Manage categories
         </a>
       </FilterMenu>
@@ -511,7 +514,7 @@ export const StalkerFilters = ({
           <button
             key={sentiment}
             type="button"
-            className="block w-full rounded-[8px] px-[8px] py-[6px] text-start text-[13px] hover:bg-newBoxHover"
+            className={stkMenuItem}
             onClick={() => {
               onChange({ ...filters, sentiment });
               setOpen(null);
@@ -535,7 +538,7 @@ export const StalkerFilters = ({
           <button
             key={value}
             type="button"
-            className="block w-full rounded-[8px] px-[8px] py-[6px] text-start text-[13px] hover:bg-newBoxHover"
+            className={stkMenuItem}
             onClick={() => {
               onChange({ ...filters, status: value });
               setOpen(null);
@@ -567,7 +570,7 @@ const FilterMenu = ({
       {label || `+ ${title}`}
     </button>
     {open ? (
-      <div className="absolute start-0 z-20 mt-[8px] w-[280px] rounded-[16px] border border-newBorder bg-newBgColorInner p-[8px] shadow-[var(--menu-shadow)]">
+      <div className={`${stkPopover} w-[280px]`}>
         {children}
       </div>
     ) : null}

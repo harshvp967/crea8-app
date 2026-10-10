@@ -16,9 +16,34 @@ import {
   SAMPLE_GROUPS,
   SAMPLE_KEYWORDS,
 } from '@gitroom/frontend/components/stalker/stalker.sample';
+import {
+  stkBadge,
+  stkBadgeBad,
+  stkClose,
+  stkDanger,
+  stkDialog,
+  stkDialogBody,
+  stkDialogFoot,
+  stkDialogHead,
+  stkEmpty,
+  stkField,
+  stkGhost,
+  stkGroup,
+  stkHead,
+  stkIconTile,
+  stkLabel,
+  stkMenu,
+  stkMenuItem,
+  stkOverlay,
+  stkPage,
+  stkPrimary,
+  stkRow,
+  stkSecondary,
+  stkSub,
+  stkTitle,
+} from '@gitroom/frontend/components/stalker/stalker.chrome';
 
-const field =
-  'w-full rounded-[12px] border border-newBorder bg-newBgColorInner px-[12px] py-[10px] text-[14px] text-newTextColor outline-none focus:border-[#00D9FF]/50';
+const field = stkField;
 
 const SOURCES = [
   { id: 'x', label: sourceLabel('x'), key: 'listenX' as const, icon: 'X' },
@@ -95,21 +120,21 @@ const Spark = ({ values }: { values: number[] }) => {
 };
 
 const PreviewPost = ({ phrase }: { phrase: string }) => (
-  <article className="rounded-[16px] border border-newBorder p-[14px]">
+  <article className="rounded-[20px] border border-newBorder bg-newBoxHover p-[14px]">
     <div className="flex items-center gap-[10px]">
       <span className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-newBoxHover text-[12px] font-[600]">
         AC
       </span>
       <div>
         <p className="text-[14px] font-[600]">
-          Alex Chen <span className="text-[#477eeb]">✓</span>
+          Alex Chen <span className="text-[color:var(--arc-accent-text)]">✓</span>
         </p>
         <p className="text-[12px] text-textItemBlur">@alexchen</p>
       </div>
     </div>
     <p className="mt-[10px] text-[14px] leading-[1.5]">
       Just tried{' '}
-      <span className="rounded-[6px] bg-[#00D9FF]/15 px-[4px]">
+      <span className="rounded-[6px] bg-[var(--arc-selected)] px-[4px] font-[600]">
         {phrase || 'your keyword'}
       </span>{' '}
       and I&apos;m honestly impressed — the product quality is top-tier. Who else has tried it?
@@ -378,28 +403,18 @@ export const StalkerKeywords = () => {
   const ordered = [...groups].sort((left, right) => (left.position || 0) - (right.position || 0));
 
   return (
-    <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-[16px] px-[20px] py-[24px]">
-      <div className="flex flex-wrap items-center justify-between gap-[12px]">
-        <h1 className="text-[22px] font-[600]">
-          Keywords{' '}
-          <span className="text-[14px] font-[500] text-textItemBlur">
-            {keywords.length} active in this project
-          </span>
-        </h1>
-        <div className="flex items-center gap-[8px]">
-          <button
-            type="button"
-            className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px] font-[600]"
-            onClick={() => setGroupsOpen(true)}
-          >
+    <div className={`${stkPage} mx-auto w-full max-w-[1080px]`}>
+      <div className={stkHead}>
+        <div>
+          <h1 className={stkTitle}>Keywords</h1>
+          <p className={stkSub}>{keywords.length} active in this project</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-[8px]">
+          <button type="button" className={stkSecondary} onClick={() => setGroupsOpen(true)}>
             Manage groups
           </button>
           <StalkerCheckNow />
-          <button
-            type="button"
-            className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner"
-            onClick={() => openAdd(presetGroup)}
-          >
+          <button type="button" className={stkPrimary} onClick={() => openAdd(presetGroup)}>
             + Add keyword
           </button>
         </div>
@@ -410,45 +425,36 @@ export const StalkerKeywords = () => {
             keyword.groupId === group.id || keyword.group?.id === group.id || keyword.group?.name === group.name
         );
         return (
-          <section
-            key={group.id}
-            className="overflow-hidden rounded-[16px] border border-newBorder bg-newBgColorInner"
-          >
-            <div className="flex items-center justify-between px-[16px] py-[12px]">
-              <h2 className="text-[15px] font-[600]">{group.name}</h2>
-              <button
-                type="button"
-                className="text-[13px] font-[600] text-textItemBlur"
-                onClick={() => openAdd(group.id)}
-              >
+          <section key={group.id} className="flex flex-col gap-[8px]">
+            <div className="flex items-center justify-between">
+              <h2 className={stkGroup}>{group.name}</h2>
+              <button type="button" className={stkGhost} onClick={() => openAdd(group.id)}>
                 + Add keyword
               </button>
             </div>
             {rows.length ? (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-[13px]">
-                  <thead className="text-[11px] uppercase tracking-[0.04em] text-textItemBlur">
-                    <tr className="border-t border-newBorder">
-                      <th className="px-[16px] py-[8px] font-[600]">Keyword</th>
-                      <th className="px-[12px] py-[8px] font-[600]">Sources</th>
-                      <th className="px-[12px] py-[8px] font-[600]">Mentions (30d)</th>
-                      <th className="px-[12px] py-[8px] font-[600]">Last scan</th>
-                      <th className="px-[12px] py-[8px]" />
+              <div className="stk-table-wrap overflow-x-auto">
+                <table className="stk-table min-w-[720px] text-left">
+                  <thead>
+                    <tr>
+                      <th>Keyword</th>
+                      <th>Sources</th>
+                      <th>Mentions (30d)</th>
+                      <th>Last scan</th>
+                      <th />
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((keyword) => (
-                      <tr key={keyword.id} className="border-t border-newBorder">
-                        <td className="px-[16px] py-[12px] font-[600]">
+                      <tr key={keyword.id}>
+                        <td data-label="Keyword" className="font-[600]">
                           {keyword.phrase}
                           {keyword.paused ? (
-                            <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[11px] font-[500] text-textItemBlur">
-                              <span className="rounded-full border border-dashed border-newBorder px-[8px] py-[1px]">
-                                Paused
-                              </span>
+                            <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[13px] font-[500] text-textItemBlur">
+                              <span className={stkBadge}>Paused</span>
                               <button
                                 type="button"
-                                className="font-[600] text-newTextColor underline decoration-[#00D9FF]/60 underline-offset-[3px]"
+                                className="font-[600] text-[color:var(--arc-accent-text)] underline underline-offset-[3px]"
                                 onClick={() => resumeKeyword(keyword)}
                               >
                                 Resume
@@ -456,7 +462,7 @@ export const StalkerKeywords = () => {
                             </span>
                           ) : null}
                         </td>
-                        <td className="px-[12px] py-[12px]">
+                        <td data-label="Sources">
                           <span className="inline-flex items-center gap-[6px]">
                             {SOURCES.map((source) =>
                               keyword[source.key] ? (
@@ -468,7 +474,7 @@ export const StalkerKeywords = () => {
                             <button
                               type="button"
                               aria-label="Change sources"
-                              className="rounded-full border border-newBorder px-[6px] text-[11px] text-textItemBlur"
+                              className="flex h-[28px] w-[28px] items-center justify-center rounded-[10px] border border-newBorder text-[13px] text-textItemBlur"
                               onClick={() =>
                                 setRowMenu((current) =>
                                   current === `src-${keyword.id}` ? null : `src-${keyword.id}`
@@ -491,13 +497,13 @@ export const StalkerKeywords = () => {
                             </button>
                           </span>
                           {rowMenu === `src-${keyword.id}` ? (
-                            <div className="mt-[6px] w-[220px] rounded-[12px] border border-newBorder bg-newBgColorInner p-[6px] shadow-[var(--menu-shadow)]">
+                            <div className={`${stkMenu} mt-[6px] w-[240px]`}>
                               {SOURCES.map((source) => {
                                 const locked = !!note(source.id) && !keyword[source.key];
                                 return (
                                   <label
                                     key={source.id}
-                                    className="flex items-center justify-between gap-[8px] px-[8px] py-[6px]"
+                                    className={`${stkMenuItem} justify-between`}
                                   >
                                     <span className="flex items-center gap-[8px]">
                                       <input
@@ -517,7 +523,7 @@ export const StalkerKeywords = () => {
                                       {source.label}
                                     </span>
                                     {note(source.id) ? (
-                                      <span className="text-[11px] text-textItemBlur">{note(source.id)}</span>
+                                      <span className="text-[13px] text-textItemBlur">{note(source.id)}</span>
                                     ) : null}
                                   </label>
                                 );
@@ -525,8 +531,8 @@ export const StalkerKeywords = () => {
                             </div>
                           ) : null}
                           {rowMenu === `ex-${keyword.id}` ? (
-                            <div className="mt-[6px] w-[240px] rounded-[12px] border border-newBorder bg-newBgColorInner p-[8px]">
-                              <p className="mb-[6px] text-[12px] font-[600]">Exclude accounts</p>
+                            <div className={`${stkMenu} mt-[6px] w-[260px] p-[12px]`}>
+                              <p className="mb-[6px] text-[14px] font-[500]">Exclude accounts</p>
                               <input
                                 className={field}
                                 placeholder="@handle"
@@ -538,39 +544,42 @@ export const StalkerKeywords = () => {
                             </div>
                           ) : null}
                         </td>
-                        <td className="px-[12px] py-[12px]">
+                        <td data-label="Mentions (30d)">
                           <span className="inline-flex items-center gap-[8px]">
                             <Spark values={keyword.sparkline || []} />
                             <span>{keyword.mentions30d || 0}</span>
                           </span>
                         </td>
-                        <td className="px-[12px] py-[12px] text-textItemBlur">
+                        <td data-label="Last scan" className="text-textItemBlur">
                           {scanning || keyword.scanning || previewScan === 'running' ? (
-                            <span className="text-[#00A3C4]">Scanning…</span>
+                            <span className="inline-flex items-center gap-[8px] text-[color:var(--arc-accent-text)]">
+                              <span className="h-[14px] w-[14px] animate-spin rounded-full border border-current border-t-transparent" />
+                              Scanning…
+                            </span>
                           ) : (
                             <span>Last scan: {ago(keyword.lastScan)}</span>
                           )}
                           {keyword.lastError && !(scanning || keyword.scanning || previewScan === 'running') ? (
                             <span
                               title={keyword.lastError}
-                              className="mt-[4px] block max-w-[240px] truncate rounded-full border border-[#c43b3b] px-[8px] py-[2px] text-[11px] text-[#c43b3b]"
+                              className={`${stkBadgeBad} mt-[4px] max-w-[240px]`}
                             >
                               <ReconnectText text={keyword.lastError} />
                             </span>
                           ) : null}
                           {scanning || keyword.scanning || previewScan === 'running' ? null : (
-                            <span className="mt-[4px] block text-[11px]">
+                            <span className="mt-[4px] block text-[13px]">
                               {keyword.paused
                                 ? 'Paused — no sources'
                                 : nextScanLabel(keyword.nextScanAt)}
                             </span>
                           )}
                         </td>
-                        <td className="px-[12px] py-[12px] text-end">
+                        <td className="text-end">
                           <button
                             type="button"
                             aria-label="Keyword actions"
-                            className="text-textItemBlur"
+                            className="arc-icon-btn !h-[36px] !w-[36px] rounded-[14px] border border-newBorder"
                             onClick={() =>
                               setRowMenu((current) => (current === keyword.id ? null : keyword.id))
                             }
@@ -578,11 +587,11 @@ export const StalkerKeywords = () => {
                             ···
                           </button>
                           {rowMenu === keyword.id ? (
-                            <div className="mt-[6px] inline-flex flex-col items-stretch rounded-[12px] border border-newBorder bg-newBgColorInner p-[6px] text-start shadow-[var(--menu-shadow)]">
-                              <label className="px-[8px] py-[4px] text-[12px] text-textItemBlur">
+                            <div className={`${stkMenu} mt-[6px] inline-flex w-[220px] flex-col items-stretch text-start`}>
+                              <label className="px-[11px] py-[6px] text-[13px] text-textItemBlur">
                                 Group
                                 <select
-                                  className="mt-[4px] w-full rounded-[8px] border border-newBorder bg-newBgColorInner px-[8px] py-[6px] text-[13px] text-newTextColor"
+                                  className={`${field} mt-[4px]`}
                                   value={keyword.groupId || keyword.group?.id || ''}
                                   onChange={(event) => {
                                     patchKeyword(keyword, { groupId: event.target.value });
@@ -598,7 +607,7 @@ export const StalkerKeywords = () => {
                               </label>
                               <button
                                 type="button"
-                                className="rounded-[8px] px-[8px] py-[6px] text-start text-[13px] text-[#eb4747]"
+                                className={`${stkMenuItem} text-[color:var(--arc-danger)]`}
                                 onClick={() => {
                                   setConfirmDelete(keyword);
                                   setRowMenu(null);
@@ -615,29 +624,35 @@ export const StalkerKeywords = () => {
                 </table>
               </div>
             ) : (
-              <p className="border-t border-newBorder px-[16px] py-[28px] text-center text-[13px] text-textItemBlur">
-                No keywords in this group yet.
-              </p>
+              <div className={stkEmpty}>
+                <span className={stkIconTile} aria-hidden>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M5 9h6M5 15h10" />
+                  </svg>
+                </span>
+                <h3 className="text-[16px] font-[600]">No keywords in this group yet.</h3>
+              </div>
             )}
           </section>
         );
       })}
 
       {addOpen ? (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-auto bg-black/40 p-[24px]">
-          <div className="w-full max-w-[520px] rounded-[20px] border border-newBorder bg-newBgColorInner p-[20px] shadow-[var(--menu-shadow)]">
-            <div className="mb-[8px] flex items-start justify-between">
-              <div>
+        <div className={stkOverlay}>
+          <div className={`${stkDialog} max-w-[560px]`}>
+            <div className={stkDialogHead}>
+              <div className="min-w-0 flex-1">
                 <h2 className="text-[18px] font-[600]">Add keyword</h2>
-                <p className="mt-[4px] text-[13px] text-textItemBlur">
+                <p className="mt-[4px] text-[14px] text-textItemBlur">
                   Keywords are matched against posts on the sources you select.
                 </p>
               </div>
-              <button type="button" aria-label="Close" onClick={() => setAddOpen(false)}>
+              <button type="button" aria-label="Close" className={stkClose} onClick={() => setAddOpen(false)}>
                 ×
               </button>
             </div>
-            <label className="mt-[12px] block text-[13px] font-[600]">
+            <div className={stkDialogBody}>
+            <label className={stkLabel}>
               Keyword
               <div className="mt-[6px] flex items-center gap-[8px]">
                 <input
@@ -648,7 +663,7 @@ export const StalkerKeywords = () => {
                 />
                 <button
                   type="button"
-                  className="shrink-0 rounded-full border border-newBorder px-[10px] py-[8px] text-[12px]"
+                  className={stkSecondary}
                   onClick={() => {
                     setSourcesMenu((value) => !value);
                     setFiltersMenu(false);
@@ -659,7 +674,7 @@ export const StalkerKeywords = () => {
                 <button
                   type="button"
                   aria-label="Filters"
-                  className="shrink-0 rounded-full border border-newBorder px-[10px] py-[8px] text-[12px]"
+                  className={`${stkSecondary} !w-[44px] !px-0`}
                   onClick={() => {
                     setFiltersMenu((value) => !value);
                     setSourcesMenu(false);
@@ -670,14 +685,14 @@ export const StalkerKeywords = () => {
               </div>
             </label>
             {sourcesMenu ? (
-              <div className="mt-[8px] rounded-[12px] border border-newBorder p-[8px]">
+              <div className="rounded-[18px] border border-newBorder p-[8px]">
                 {SOURCES.map((source) => {
                   const locked = !!note(source.id);
                   const key = source.id as keyof typeof sourcesOn;
                   return (
                     <label
                       key={source.id}
-                      className="flex items-center justify-between px-[8px] py-[6px] text-[13px]"
+                      className={`${stkRow} border-0 bg-transparent px-[8px]`}
                     >
                       <span className="flex items-center gap-[8px]">
                         <input
@@ -690,16 +705,16 @@ export const StalkerKeywords = () => {
                         />
                         {source.label}
                       </span>
-                      {locked ? <span className="text-[11px] text-textItemBlur">{note(source.id)}</span> : null}
+                      {locked ? <span className={stkBadge}>{note(source.id)}</span> : null}
                     </label>
                   );
                 })}
               </div>
             ) : null}
             {filtersMenu ? (
-              <div className="mt-[8px] rounded-[12px] border border-newBorder p-[10px]">
-                <p className="mb-[6px] text-[13px] font-[600]">Filters</p>
-                <p className="mb-[6px] text-[12px] text-textItemBlur">Exclude accounts</p>
+              <div className="rounded-[18px] border border-newBorder p-[12px]">
+                <p className="mb-[6px] text-[14px] font-[500]">Filters</p>
+                <p className="mb-[6px] text-[13px] text-textItemBlur">Exclude accounts</p>
                 <input
                   className={field}
                   placeholder="@handle"
@@ -708,7 +723,7 @@ export const StalkerKeywords = () => {
                 />
               </div>
             ) : null}
-            <label className="mt-[12px] block text-[13px] font-[600]">
+            <label className={stkLabel}>
               Group
               <select
                 className={`${field} mt-[6px]`}
@@ -726,13 +741,17 @@ export const StalkerKeywords = () => {
               </select>
             </label>
             <div className="mt-[14px]">
-              <p className="mb-[6px] text-[11px] uppercase tracking-[0.04em] text-textItemBlur">Preview</p>
+              <p className="mb-[6px] text-[14px] font-[500]">Preview</p>
               <PreviewPost phrase={phrase.trim()} />
             </div>
-            <div className="mt-[14px] flex justify-end">
+            </div>
+            <div className={stkDialogFoot}>
+              <button type="button" className={stkSecondary} onClick={() => setAddOpen(false)}>
+                Close
+              </button>
               <button
                 type="button"
-                className="rounded-full bg-newTextColor px-[14px] py-[8px] text-[13px] font-[600] text-newBgColorInner disabled:opacity-40"
+                className={stkPrimary}
                 disabled={saving || phrase.trim().length < 2 || !resolvedGroup}
                 onClick={addKeyword}
               >
@@ -747,27 +766,26 @@ export const StalkerKeywords = () => {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-[24px]"
+          className={`${stkOverlay} z-50`}
         >
-          <div className="mt-[10vh] w-full max-w-[420px] rounded-[20px] border border-newBorder bg-newBgColorInner p-[20px]">
-            <h2 className="text-[18px] font-[600]">Delete “{confirmDelete.phrase}”?</h2>
-            <p className="mt-[8px] text-[13px] text-textItemBlur">
-              Stalker stops tracking it and removes the mentions it found. Adding the same phrase
-              later starts a fresh keyword.
-            </p>
-            <div className="mt-[16px] flex justify-end gap-[8px]">
-              <button
-                type="button"
-                className="rounded-full border border-newBorder px-[14px] py-[8px] text-[13px] font-[600]"
-                onClick={() => setConfirmDelete(null)}
-              >
+          <div className={`${stkDialog} max-w-[460px]`}>
+            <div className={`${stkDialogHead} border-b-0 pb-[8px]`}>
+              <span className="stk-ic-bad flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[16px] border" aria-hidden>
+                !
+              </span>
+              <div>
+                <h2 className="text-[18px] font-[600]">Delete “{confirmDelete.phrase}”?</h2>
+                <p className="mt-[4px] text-[14px] text-textItemBlur">
+                  Stalker stops tracking it and removes the mentions it found. Adding the same phrase
+                  later starts a fresh keyword.
+                </p>
+              </div>
+            </div>
+            <div className={stkDialogFoot}>
+              <button type="button" className={stkSecondary} onClick={() => setConfirmDelete(null)}>
                 Cancel
               </button>
-              <button
-                type="button"
-                className="rounded-full bg-[#eb4747] px-[14px] py-[8px] text-[13px] font-[600] text-white"
-                onClick={() => removeKeyword(confirmDelete.id)}
-              >
+              <button type="button" className={stkDanger} onClick={() => removeKeyword(confirmDelete.id)}>
                 Delete keyword
               </button>
             </div>
@@ -776,14 +794,15 @@ export const StalkerKeywords = () => {
       ) : null}
 
       {groupsOpen ? (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-auto bg-black/40 p-[24px]">
-          <div className="w-full max-w-[440px] rounded-[20px] border border-newBorder bg-newBgColorInner p-[20px]">
-            <div className="mb-[12px] flex items-center justify-between">
-              <h2 className="text-[18px] font-[600]">Manage groups</h2>
-              <button type="button" aria-label="Close" onClick={() => setGroupsOpen(false)}>
+        <div className={stkOverlay}>
+          <div className={`${stkDialog} max-w-[480px]`}>
+            <div className={stkDialogHead}>
+              <h2 className="flex-1 text-[18px] font-[600]">Manage groups</h2>
+              <button type="button" aria-label="Close" className={stkClose} onClick={() => setGroupsOpen(false)}>
                 ×
               </button>
             </div>
+            <div className={stkDialogBody}>
             <ul className="flex flex-col gap-[8px]">
               {groups.map((group) => {
                 const count = keywords.filter(
@@ -793,7 +812,7 @@ export const StalkerKeywords = () => {
                 return (
                   <li
                     key={group.id}
-                    className="flex items-center justify-between rounded-[12px] border border-newBorder px-[12px] py-[8px] text-[14px]"
+                    className={stkRow}
                   >
                     <span>
                       {group.name}{' '}
@@ -804,7 +823,7 @@ export const StalkerKeywords = () => {
                     {locked ? null : (
                       <button
                         type="button"
-                        className="text-[12px] text-textItemBlur"
+                        className={stkGhost}
                         onClick={() => removeGroup(group)}
                       >
                         Remove
@@ -823,10 +842,16 @@ export const StalkerKeywords = () => {
               />
               <button
                 type="button"
-                className="shrink-0 rounded-full border border-newBorder px-[12px] text-[13px] font-[600]"
+                className={stkSecondary}
                 onClick={addGroup}
               >
                 Add group
+              </button>
+            </div>
+            </div>
+            <div className={stkDialogFoot}>
+              <button type="button" className={stkSecondary} onClick={() => setGroupsOpen(false)}>
+                Close
               </button>
             </div>
           </div>

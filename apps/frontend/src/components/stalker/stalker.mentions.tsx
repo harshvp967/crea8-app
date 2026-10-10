@@ -29,6 +29,28 @@ import {
   SAMPLE_MENTIONS,
   SAMPLE_VIEWS,
 } from '@gitroom/frontend/components/stalker/stalker.sample';
+import {
+  stkBadge,
+  stkBadgeAcc,
+  stkBadgeBad,
+  stkBadgeOk,
+  stkBar,
+  stkCardTight,
+  stkEmpty,
+  stkField,
+  stkGhost,
+  stkGroup,
+  stkHead,
+  stkIconTile,
+  stkMenu,
+  stkMenuItem,
+  stkPage,
+  stkChipOn,
+  stkPrimary,
+  stkSecondary,
+  stkTint,
+  stkTitle,
+} from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 type Mention = {
   id: string;
@@ -61,18 +83,16 @@ const dayKey = (iso?: string) => {
 };
 
 const dayHeading = (iso?: string) => {
-  if (!iso) return 'EARLIER';
+  if (!iso) return 'Earlier';
   const date = new Date(iso);
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const day = new Date(date);
   day.setHours(0, 0, 0, 0);
   const diff = start.getTime() - day.getTime();
-  if (diff === 0) return 'TODAY';
-  if (diff === 86400000) return 'YESTERDAY';
-  return date
-    .toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
-    .toUpperCase();
+  if (diff === 0) return 'Today';
+  if (diff === 86400000) return 'Yesterday';
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 };
 
 const relativeTime = (iso?: string) => {
@@ -107,7 +127,7 @@ const highlight = (text: string, phrase?: string) => {
         ? `https://x.com/hashtag/${part.link.slice(1)}`
         : part.link;
       return (
-        <a key={index} href={href} className="text-[#00A3C4] underline" target="_blank" rel="noreferrer">
+        <a key={index} href={href} className="text-[color:var(--arc-accent-text)] underline" target="_blank" rel="noreferrer">
           {part.link}
         </a>
       );
@@ -118,7 +138,7 @@ const highlight = (text: string, phrase?: string) => {
     return (
       <span key={index}>
         {part.slice(0, at)}
-        <span className="rounded-[6px] bg-[#00D9FF]/15 px-[4px]">
+        <span className="rounded-[6px] bg-[var(--arc-selected)] px-[4px] font-[600]">
           {part.slice(at, at + needle.length)}
         </span>
         {part.slice(at + needle.length)}
@@ -294,10 +314,14 @@ export const StalkerMentions = () => {
   };
 
   return (
-    <div className="relative flex min-h-full flex-col gap-[16px] p-[16px] md:p-[24px]">
-      <div className="flex flex-wrap items-center justify-between gap-[12px]">
-        <h1 className="text-[28px] font-[600]">Mentions</h1>
-        <StalkerCheckNow />
+    <div className={stkPage}>
+      <div className={stkHead}>
+        <div>
+          <h1 className={stkTitle}>Mentions</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-[8px]">
+          <StalkerCheckNow />
+        </div>
       </div>
       {views.length ? (
         <div className="flex flex-wrap gap-[8px]">
@@ -305,7 +329,7 @@ export const StalkerMentions = () => {
             <button
               key={view.id}
               type="button"
-              className="rounded-full border border-newBorder px-[12px] py-[6px] text-[12px] font-[600]"
+              className={stkChipOn}
               onClick={() => setFilters(viewToFilters(view.filters || {}))}
             >
               {view.name}
@@ -320,26 +344,14 @@ export const StalkerMentions = () => {
         categories={project?.categories || []}
         authors={authors}
       />
-      <div className="flex flex-wrap items-center gap-[10px] text-[13px]">
+      <div className="flex flex-wrap items-center gap-[10px] text-[14px]">
         <button
           type="button"
-          role="switch"
-          aria-checked={!!filters.offTopic}
-          className="inline-flex items-center gap-[8px] text-textItemBlur hover:text-newTextColor"
+          className="inline-flex min-h-[44px] items-center gap-[8px] text-[14px] text-textItemBlur"
           onClick={() => setFilters({ ...filters, offTopic: !filters.offTopic })}
         >
-          <span
-            className={clsx(
-              'relative inline-flex h-[18px] w-[32px] items-center rounded-full border transition-colors',
-              filters.offTopic ? 'border-[#00D9FF]/60 bg-[#00D9FF]/15' : 'border-newBorder bg-newBoxHover'
-            )}
-          >
-            <span
-              className={clsx(
-                'absolute h-[12px] w-[12px] rounded-full bg-newTextColor transition-all',
-                filters.offTopic ? 'start-[16px]' : 'start-[2px]'
-              )}
-            />
+          <span className="stk-switch" role="switch" aria-checked={!!filters.offTopic} aria-label="Show off-topic">
+            <span />
           </span>
           Show off-topic
           {!filters.offTopic && hiddenOffTopic ? ` (${hiddenOffTopic})` : ''}
@@ -347,32 +359,47 @@ export const StalkerMentions = () => {
       </div>
       {mentionsQuery.isLoading && !mentions.length ? (
         <div className="flex flex-col gap-[12px]" aria-hidden>
-          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
-          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
-          <div className="h-[96px] animate-pulse rounded-[16px] border border-newBorder bg-newBoxHover" />
+          <div className="stk-skel h-[96px] animate-pulse" />
+          <div className="stk-skel h-[96px] animate-pulse" />
+          <div className="stk-skel h-[96px] animate-pulse" />
         </div>
       ) : null}
       {!mentionsQuery.isLoading && !mentions.length ? (
         hiddenOffTopic && !filters.offTopic ? (
-          <p className="text-[14px] text-textItemBlur">
-            {hiddenOffTopic} mention{hiddenOffTopic === 1 ? '' : 's'} hidden as off-topic ·{' '}
+          <div className={stkEmpty}>
+            <span className={stkIconTile} aria-hidden>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M5 6h14M5 12h14M5 18h9" />
+              </svg>
+            </span>
+            <h2 className="text-[16px] font-[600]">
+              {hiddenOffTopic} mention{hiddenOffTopic === 1 ? '' : 's'} hidden as off-topic
+            </h2>
             <button
               type="button"
-              className="font-[600] text-newTextColor underline decoration-[#00D9FF]/60 underline-offset-[3px]"
+              className={stkSecondary}
               onClick={() => setFilters({ ...filters, offTopic: true })}
             >
               Show them
             </button>
-          </p>
+          </div>
         ) : (
-          <p className="text-[14px] text-textItemBlur">
-            No mentions yet. Stalker is listening for mentions of {project?.name || 'this project'}.
-          </p>
+          <div className={stkEmpty}>
+            <span className={stkIconTile} aria-hidden>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M5 6h14M5 12h14M5 18h9" />
+              </svg>
+            </span>
+            <h2 className="text-[16px] font-[600]">No mentions yet.</h2>
+            <p className="max-w-[360px] text-[14px] text-textItemBlur">
+              Stalker is listening for mentions of {project?.name || 'this project'}.
+            </p>
+          </div>
         )
       ) : null}
       {groups.map(([key, rows]) => (
         <section key={key} className="flex flex-col gap-[12px]">
-          <p className="text-[12px] font-[600] tracking-wide text-textItemBlur">
+          <p className={stkGroup}>
             {dayHeading(rows[0]?.createdAt)} · {rows.length} mention{rows.length === 1 ? '' : 's'}
           </p>
           <Timeline rows={rows} />
@@ -380,10 +407,10 @@ export const StalkerMentions = () => {
             const long = mention.text.length > 280;
             const text = expanded === mention.id || !long ? mention.text : `${mention.text.slice(0, 280)}…`;
             return (
-              <article key={mention.id} className="rounded-[16px] border border-newBorder p-[14px]">
-                <div className="flex gap-[12px]">
+              <article key={mention.id} className={stkCardTight}>
+                <div className="stk-mention flex gap-[12px]">
                   <div className="relative">
-                    <span className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-newBoxHover text-[12px] font-[600]">
+                    <span className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-newBorder bg-newBoxHover text-[13px] font-[600]">
                       {initials(mention.authorName)}
                     </span>
                     <span className="absolute -bottom-[2px] -end-[2px] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-newBgColorInner">
@@ -410,7 +437,7 @@ export const StalkerMentions = () => {
                           @{mention.authorHandle}
                         </a>
                       ) : null}
-                      <span className="text-[12px] text-textItemBlur" title={exactTime(mention.createdAt)}>
+                      <span className="text-[13px] text-textItemBlur" title={exactTime(mention.createdAt)}>
                         {relativeTime(mention.createdAt)}
                       </span>
                     </div>
@@ -426,49 +453,41 @@ export const StalkerMentions = () => {
                         {expanded === mention.id ? 'See less' : 'See more'}
                       </button>
                     ) : null}
-                    <p className="mt-[8px] flex gap-[12px] text-[12px] text-textItemBlur">
+                    <p className="mt-[8px] flex gap-[12px] text-[13px] text-textItemBlur">
                       <span>{mention.replyCount || 0} replies</span>
                       <span>{mention.likeCount || 0} likes</span>
                     </p>
                     <div className="mt-[8px] flex flex-wrap gap-[6px]">
                       {mention.categoryDef?.name ? (
-                        <span className="rounded-full border border-newBorder px-[8px] py-[2px] text-[12px]">
-                          {mention.categoryDef.name}
-                        </span>
+                        <span className={stkBadgeAcc}>{mention.categoryDef.name}</span>
+                      ) : null}
+                      {mention.keyword?.phrase ? (
+                        <span className={stkBadge}>{mention.keyword.phrase}</span>
                       ) : null}
                       {mention.sentiment && mention.sentiment !== 'NEUTRAL' ? (
-                        <span
-                          className={clsx(
-                            'rounded-full px-[8px] py-[2px] text-[12px]',
-                            mention.sentiment === 'POSITIVE'
-                              ? 'bg-[#3DDC97]/15 text-[#1c8f5a]'
-                              : 'bg-[#FF6B6B]/15 text-[#c43b3b]'
-                          )}
-                        >
+                        <span className={mention.sentiment === 'POSITIVE' ? stkBadgeOk : stkBadgeBad}>
                           {mention.sentiment === 'POSITIVE' ? 'Positive' : 'Negative'}
                         </span>
+                      ) : mention.sentiment === 'NEUTRAL' ? (
+                        <span className={stkBadge}>Neutral</span>
                       ) : null}
                       {mention.relevant === false ? (
-                        <span className="rounded-full border border-dashed border-newBorder px-[8px] py-[2px] text-[12px] text-textItemBlur">
-                          Off-topic
-                        </span>
+                        <span className={stkBadge}>Off-topic</span>
                       ) : null}
                       {statusLabel(mention.status) ? (
-                        <span className="rounded-full border border-newBorder px-[8px] py-[2px] text-[12px]">
-                          {statusLabel(mention.status)}
-                        </span>
+                        <span className={stkBadge}>{statusLabel(mention.status)}</span>
                       ) : null}
                     </div>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-[6px] text-[13px]">
+                  <div className="stk-mention-actions flex shrink-0 flex-col items-end gap-[6px] text-[14px]">
                     {mention.url ? (
-                      <a href={mention.url} target="_blank" rel="noreferrer" className="text-textItemBlur hover:text-newTextColor">
+                      <a href={mention.url} target="_blank" rel="noreferrer" className={stkGhost}>
                         Open
                       </a>
                     ) : null}
                     <button
                       type="button"
-                      className="text-textItemBlur hover:text-newTextColor"
+                        className={stkGhost}
                       onClick={async () => {
                         if (!mention.url) return;
                         await navigator.clipboard.writeText(mention.url);
@@ -480,7 +499,7 @@ export const StalkerMentions = () => {
                     {mention.relevant === false ? (
                       <button
                         type="button"
-                        className="font-[600] text-newTextColor hover:underline"
+                        className={stkTint}
                         onClick={() => setRelevant(mention.id, true)}
                       >
                         Mark relevant
@@ -489,20 +508,20 @@ export const StalkerMentions = () => {
                     <div className="relative">
                       <button
                         type="button"
-                        className="text-textItemBlur hover:text-newTextColor"
+                        className={stkGhost}
                         onClick={() => setMarking(marking === mention.id ? null : mention.id)}
                       >
                         Mark as…
                       </button>
                       {marking === mention.id ? (
-                        <div className="absolute end-0 z-10 mt-[4px] w-[140px] rounded-[12px] border border-newBorder bg-newBgColorInner p-[6px] shadow-[var(--menu-shadow)]">
-                          <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start" onClick={() => setStatus(mention.id, 'DONE')}>Done</button>
-                          <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start" onClick={() => setStatus(mention.id, 'FOLLOW_UP')}>Follow up</button>
-                          <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start text-[#c43b3b]" onClick={() => setStatus(mention.id, 'IGNORED')}>Irrelevant</button>
+                        <div className={`${stkMenu} absolute end-0 mt-[4px] w-[200px]`}>
+                          <button type="button" className={stkMenuItem} onClick={() => setStatus(mention.id, 'DONE')}>Done</button>
+                          <button type="button" className={stkMenuItem} onClick={() => setStatus(mention.id, 'FOLLOW_UP')}>Follow up</button>
+                          <button type="button" className={`${stkMenuItem} text-[color:var(--arc-danger)]`} onClick={() => setStatus(mention.id, 'IGNORED')}>Irrelevant</button>
                           {mention.relevant === false ? (
-                            <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start" onClick={() => setRelevant(mention.id, true)}>Relevant</button>
+                            <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, true)}>Relevant</button>
                           ) : (
-                            <button type="button" className="block w-full rounded-[8px] px-[8px] py-[6px] text-start" onClick={() => setRelevant(mention.id, false)}>Off-topic</button>
+                            <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, false)}>Off-topic</button>
                           )}
                         </div>
                       ) : null}
@@ -517,7 +536,7 @@ export const StalkerMentions = () => {
       {page?.nextCursor && !sample ? (
         <button
           type="button"
-          className="self-center rounded-full border border-newBorder px-[14px] py-[8px] text-[13px] font-[600]"
+          className={`${stkSecondary} self-center`}
           onClick={async () => {
             const response = await fetch(
               `/stalker/mentions?projectId=${projectId}&${search}&cursor=${page.nextCursor}`
@@ -530,21 +549,21 @@ export const StalkerMentions = () => {
         </button>
       ) : null}
       {dirty && !barHidden ? (
-        <div className="sticky bottom-[12px] flex flex-wrap items-center justify-between gap-[8px] rounded-[14px] border border-newBorder bg-newBgColorInner px-[14px] py-[10px] shadow-[var(--menu-shadow)]">
-          <p className="text-[13px]">Save these filters as a view</p>
-          <div className="flex items-center gap-[8px]">
+        <div className={stkBar}>
+          <p className="text-[14px] font-[500]">Save these filters as a view</p>
+          <div className="flex flex-wrap items-center gap-[8px]">
             {naming ? (
               <input
-                className="rounded-[10px] border border-newBorder px-[8px] py-[6px] text-[13px]"
+                className={`${stkField} w-[200px]`}
                 placeholder="View name"
                 value={viewName}
                 onChange={(event) => setViewName(event.target.value)}
               />
             ) : null}
-            <button type="button" className="rounded-full bg-newTextColor px-[12px] py-[6px] text-[13px] font-[600] text-newBgColorInner" onClick={() => (naming ? saveView() : setNaming(true))}>
-              Save as view
+            <button type="button" className={naming ? stkPrimary : stkSecondary} onClick={() => (naming ? saveView() : setNaming(true))}>
+              {naming ? 'Save' : 'Save as view'}
             </button>
-            <button type="button" className="text-[13px] text-textItemBlur" onClick={() => setBarHidden(true)}>
+            <button type="button" className={stkGhost} onClick={() => setBarHidden(true)}>
               Dismiss
             </button>
           </div>
@@ -589,7 +608,7 @@ const Timeline = ({ rows }: { rows: Mention[] }) => {
   const sameDay = rows[0]?.createdAt && dayKey(rows[0].createdAt) === dayKey(new Date().toISOString());
   return (
     <div className="relative px-[8px] py-[28px]">
-      <div className="flex justify-between text-[11px] text-textItemBlur">
+      <div className="flex justify-between text-[13px] text-textItemBlur">
         {['12am', '6am', '12pm', '6pm', '11pm'].map((label) => (
           <span key={label}>{label}</span>
         ))}
@@ -615,7 +634,7 @@ const Timeline = ({ rows }: { rows: Mention[] }) => {
                   key={mention.id}
                   style={{ zIndex: shown.length - index }}
                   className={clsx(
-                    'relative flex h-[22px] w-[22px] items-center justify-center rounded-full bg-newBoxHover text-[9px] font-[600] ring-2 ring-newBgColorInner',
+                    'relative flex h-[26px] w-[26px] items-center justify-center rounded-full border border-newBorder bg-newBoxHover text-[13px] font-[600] ring-2 ring-newBgColorInner',
                     index ? '-ms-[4px]' : ''
                   )}
                 >
@@ -623,7 +642,7 @@ const Timeline = ({ rows }: { rows: Mention[] }) => {
                 </span>
               ))}
               {cluster.rows.length > 3 ? (
-                <span className="ms-[6px] whitespace-nowrap text-[11px] text-textItemBlur">
+                <span className="ms-[6px] whitespace-nowrap text-[13px] text-textItemBlur">
                   +{cluster.rows.length - 3}
                 </span>
               ) : null}
@@ -631,7 +650,7 @@ const Timeline = ({ rows }: { rows: Mention[] }) => {
           );
         })}
         {sameDay ? (
-          <span className="absolute -top-[18px] text-[11px] font-[600] text-[#00A3C4]" style={{ left: `${nowLeft}%` }}>
+          <span className="absolute -top-[18px] text-[13px] font-[600] text-[color:var(--arc-accent-text)]" style={{ left: `${nowLeft}%` }}>
             Now
           </span>
         ) : null}
