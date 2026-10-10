@@ -82,11 +82,13 @@ const links = [
 
 const pill = (active: boolean) =>
   clsx(
-    'inline-flex items-center gap-[6px] whitespace-nowrap rounded-full border px-[10px] py-[7px] text-[13px] font-[600] transition-colors',
+    'inline-flex items-center gap-[6px] whitespace-nowrap rounded-[18px] border px-[12px] min-h-[36px] text-[14px] font-[500] transition-colors',
     active
-      ? 'border-[#00D9FF]/45 bg-[#00D9FF]/10 text-newTextColor'
+      ? 'arc-selected'
       : 'border-transparent text-textItemBlur hover:border-newBorder hover:bg-newBoxHover hover:text-newTextColor'
   );
+
+export const stalkerNavLinks = links;
 
 const chooseVisibleTabs = (
   widths: number[],
@@ -290,7 +292,7 @@ export const StalkerTopNav = ({
       </div>
       <nav
         ref={navRef}
-        className="relative flex min-w-0 flex-1 items-center gap-[2px]"
+        className="desktop-nav relative flex min-w-0 flex-1 items-center gap-[2px]"
         aria-label="Stalker"
       >
         <div

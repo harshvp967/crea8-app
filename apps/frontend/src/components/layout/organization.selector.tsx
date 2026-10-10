@@ -51,7 +51,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
           {!asOpenSelect && (
             <div className="flex items-center gap-[6px]">
               <svg
-                className={user?.tier.current === 'FREE' ? 'animate-bounce drop-shadow-glow': ''}
+                className={user?.tier.current === 'FREE' ? 'animate-bounce': ''}
                 width="24"
                 height="24"
                 viewBox="0 0 26 26"
@@ -64,7 +64,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                 />
               </svg>
               {!!current?.name && (
-                <div className="max-w-[240px] truncate">{current?.name}</div>
+                <div className="org-name max-w-[240px] truncate">{current?.name}</div>
               )}
             </div>
           )}

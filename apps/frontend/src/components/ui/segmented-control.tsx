@@ -48,9 +48,9 @@ export interface SegmentedControlProps {
 }
 
 const sizes = {
-  sm: 'h-8 px-3 text-[13px] gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
-  lg: 'h-12 px-5 text-base gap-2',
+  sm: 'h-9 px-3 text-[14px] gap-1.5',
+  md: 'h-11 px-4 text-[14px] gap-2',
+  lg: 'h-[50px] px-5 text-[16px] gap-2',
 };
 
 const softPill = {
@@ -116,10 +116,10 @@ export function SegmentedControl({
       {options.map((option, i) => {
         const active = option.value === selected;
         const itemClass = clsx(
-          'relative inline-flex items-center justify-center whitespace-nowrap rounded-full font-[600] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#00D9FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
+          'relative inline-flex items-center justify-center whitespace-nowrap rounded-full font-[500] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--arc-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
           sizes[size],
           active
-            ? 'text-newTextColor'
+            ? 'text-[color:var(--arc-accent-text)]'
             : 'text-textItemBlur hover:text-newTextColor'
         );
         const inner = (
