@@ -226,7 +226,7 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
       <div className="flex justify-end pt-[24px] mt-[8px]">
         <button
           onClick={onNext}
-          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all shadow-lg shadow-[#00D9FF]/25 hover:shadow-[#00D9FF]/40"
+          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:brightness-95 text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all "
         >
           {sortedIntegrations.length > 0
             ? t('continue', 'Continue')
@@ -434,7 +434,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         </div>
       </div>
       <a
-        className="cursor-pointer px-[24px] h-[44px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] transition-colors rounded-full text-[14px] font-[600] flex items-center gap-[8px] shrink-0"
+        className="cursor-pointer px-[24px] h-[44px] bg-[#00D9FF] hover:brightness-95 text-[#0a0a0a] transition-colors rounded-full text-[14px] font-[600] flex items-center gap-[8px] shrink-0"
         href={connector.href}
         target="_blank"
       >
@@ -617,7 +617,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         </div>
         <button
           onClick={onNext}
-          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all shadow-lg shadow-[#00D9FF]/25 hover:shadow-[#00D9FF]/40"
+          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:brightness-95 text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all "
         >
           {t('continue_skip', 'Continue / Skip')}
           <svg
@@ -699,7 +699,7 @@ const OnboardingStep3: FC<{ onBack: () => void; onFinish: () => void }> = ({
         </button>
         <button
           onClick={onFinish}
-          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:bg-[#00B8D9] text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all shadow-lg shadow-[#00D9FF]/25 hover:shadow-[#00D9FF]/40"
+          className="group flex items-center gap-[12px] bg-[#00D9FF] hover:brightness-95 text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all "
         >
           {t('get_started', 'Get Started')}
           <svg

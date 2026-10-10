@@ -209,7 +209,7 @@ const PanelMessage: FC<{
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="inline-flex items-center gap-[6px] px-[16px] py-[8px] text-[14px] font-medium text-[#0a0a0a] bg-[#00D9FF] hover:bg-[#00B8D9] rounded-[8px] transition-colors"
+          className="inline-flex items-center gap-[6px] px-[16px] h-[44px] text-[14px] font-[600] text-[#0A0A0A] bg-btnPrimary hover:brightness-95 rounded-[18px]"
         >
           {actionLabel}
         </button>

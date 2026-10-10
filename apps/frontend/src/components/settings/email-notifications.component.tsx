@@ -99,10 +99,10 @@ const EmailNotificationsComponent = () => {
   if (isLoading) {
     return (
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[16px] p-[24px] flex flex-col gap-[16px]">
-        <div className="h-[18px] w-[180px] animate-pulse rounded-[8px] bg-[#1f1f1f]" />
-        <div className="h-[44px] w-full animate-pulse rounded-[8px] bg-[#1f1f1f]" />
-        <div className="h-[44px] w-full animate-pulse rounded-[8px] bg-[#1f1f1f]" />
-        <div className="h-[44px] w-[70%] animate-pulse rounded-[8px] bg-[#1f1f1f]" />
+        <div className="h-[18px] w-[180px] animate-pulse rounded-[8px] bg-newBoxHover" />
+        <div className="h-[44px] w-full animate-pulse rounded-[8px] bg-newBoxHover" />
+        <div className="h-[44px] w-full animate-pulse rounded-[8px] bg-newBoxHover" />
+        <div className="h-[44px] w-[70%] animate-pulse rounded-[8px] bg-newBoxHover" />
       </div>
     );
   }

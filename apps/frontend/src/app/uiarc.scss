@@ -207,8 +207,39 @@ body :focus-visible {
 
 .phone-day-strip,
 .phone-create,
-.mobile-tabbar {
+.mobile-tabbar,
+.channels-trigger,
+.channels-scrim {
   display: none;
+}
+
+/* Leftover brand colors from before the Arc pass. Presentation only. */
+.blur-\[120px\] {
+  display: none !important;
+}
+
+.bg-\[\#1f1f1f\],
+.bg-\[\#1F1F1F\] {
+  background: var(--arc-muted) !important;
+}
+
+.bg-\[\#D82D7E\] {
+  background: var(--new-bgColorInner) !important;
+  color: var(--new-btn-text) !important;
+  border: 1px solid var(--new-border);
+  border-radius: 18px;
+}
+
+.bg-\[\#D82D7E\] svg path {
+  stroke: currentColor;
+}
+
+[class*='shadow-[#00D9FF]'] {
+  box-shadow: none !important;
+}
+
+.rounded-full.bg-\[\#00D9FF\] {
+  border-radius: 18px;
 }
 
 .agent .copilotKitInput {
@@ -310,17 +341,51 @@ body :focus-visible {
   }
 
   .channel-rail {
-    width: 100% !important;
-    height: auto;
-    max-height: 240px;
-    flex: none;
-    position: relative;
+    display: none;
   }
 
-  .channel-rail > div {
+  .channel-rail.is-open {
+    display: flex;
+    position: fixed;
+    z-index: 80;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: auto !important;
+    height: auto;
+    max-height: 78vh;
+  }
+
+  .channel-rail.is-open > div {
     position: relative !important;
     height: auto;
-    max-height: 240px;
+    max-height: 78vh;
+    border-radius: 30px 30px 0 0;
+  }
+
+  .channels-trigger {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 18px;
+    border: 1px solid var(--new-border);
+    background: var(--new-bgColorInner);
+    color: var(--new-btn-text);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .channels-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 75;
+    background: var(--popup-color);
+    border: 0;
+    padding: 0;
   }
 
   .calendar-well {

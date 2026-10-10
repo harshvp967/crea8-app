@@ -122,7 +122,7 @@ export const Pagination: FC<{
     <ul className="flex flex-row items-center gap-1 justify-center mt-[15px]">
       <li className={clsx(current === 0 && 'opacity-20 pointer-events-none')}>
         <div
-          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 ps-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth hover:text-[#0a0a0a]"
+          className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-[14px] text-[14px] font-[500] h-10 px-4 py-2 gap-1 ps-2.5 text-textItemBlur hover:text-newTextColor border border-newBorder bg-newBgColorInner"
           aria-label="Go to previous page"
           onClick={() => setPage(current - 1)}
         >
@@ -141,10 +141,10 @@ export const Pagination: FC<{
               aria-current="page"
               onClick={() => setPage(item - 1)}
               className={clsx(
-                'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:bg-forth h-10 w-10 hover:text-[#0a0a0a] border-newBorder',
+                'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[14px] text-[14px] font-[500] border h-10 w-10 border-newBorder',
                 current === item - 1
-                  ? 'bg-forth !text-[#0a0a0a]'
-                  : 'text-textColor hover:text-white'
+                  ? 'arc-selected text-newTextColor'
+                  : 'text-textItemBlur hover:text-newTextColor bg-newBgColorInner'
               )}
             >
               {item}
@@ -158,7 +158,7 @@ export const Pagination: FC<{
         )}
       >
         <a
-          className="text-textColor hover:text-white group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 pe-2.5 text-gray-400 border-[#1F1F1F] hover:bg-forth hover:text-[#0a0a0a]"
+          className="text-textItemBlur hover:text-newTextColor group cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-[14px] text-[14px] font-[500] h-10 px-4 py-2 gap-1 pe-2.5 border border-newBorder bg-newBgColorInner"
           aria-label="Go to next page"
           onClick={() => setPage(current + 1)}
         >
@@ -610,7 +610,7 @@ export const MediaBox: FC<{
           <div className="flex justify-end mt-[32px] gap-[8px]">
             <button
               onClick={() => modals.closeCurrent()}
-              className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px]"
+              className="cursor-pointer h-[44px] px-[20px] items-center justify-center border border-newBorder bg-newBgColorInner text-newTextColor flex rounded-[18px] font-[600]"
             >
               {t('cancel', 'Cancel')}
             </button>
@@ -618,7 +618,7 @@ export const MediaBox: FC<{
               <button
                 onClick={standalone ? () => {} : addMedia}
                 disabled={selected.length === 0}
-                className="cursor-pointer text-[#0a0a0a] disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-[#00D9FF] flex rounded-[10px]"
+                className="cursor-pointer text-[#0A0A0A] disabled:opacity-80 disabled:cursor-not-allowed h-[44px] px-[20px] items-center justify-center bg-btnPrimary hover:brightness-95 flex rounded-[18px] font-[600]"
               >
                 {t('add_selected_media', 'Add selected media')}
               </button>

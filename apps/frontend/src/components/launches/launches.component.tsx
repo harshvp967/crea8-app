@@ -331,11 +331,29 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-          'group-[.sidebar]:hidden flex-1 whitespace-nowrap text-ellipsis overflow-hidden cursor-move',
+          'group-[.sidebar]:hidden flex-1 min-w-0 cursor-move',
           integration.disabled && 'opacity-50'
         )}
       >
-        {integration.name}
+        <div className="whitespace-nowrap text-ellipsis overflow-hidden">
+          {integration.name}
+        </div>
+        {integration.refreshNeeded && (
+          <div className="text-[13px] text-[#F87171] truncate">
+            {t(
+              'channel_disconnected_click_to_reconnect',
+              'Channel disconnected, click to reconnect.'
+            )}
+          </div>
+        )}
+        {integration.disabled && !integration.refreshNeeded && (
+          <div className="text-[13px] text-textItemBlur truncate">
+            {t(
+              'channel_disabled_upgrade_plan',
+              'This channel is disabled, please upgrade your plan to enable it.'
+            )}
+          </div>
+        )}
       </div>
       <Menu
         canChangeProfilePicture={integration.changeProfilePicture}
@@ -364,6 +382,7 @@ export const LaunchesComponent = () => {
   const t = useT();
   const modal = useModals();
   const [reload, setReload] = useState(false);
+  const [channelsOpen, setChannelsOpen] = useState(false);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   const [mode] = useCookie('mode', 'dark');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
@@ -527,7 +546,8 @@ export const LaunchesComponent = () => {
         <div
           className={clsx(
             'channel-rail flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[280px]'
+            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[280px]',
+            channelsOpen && 'is-open'
           )}
         >
           <div
@@ -622,6 +642,21 @@ export const LaunchesComponent = () => {
           </div>
         </div>
         <div className="calendar-panel bg-newBgColorInner border border-newBorder rounded-[26px] flex-1 flex-col flex p-[16px] gap-[12px] min-w-0">
+          <button
+            type="button"
+            className="channels-trigger"
+            onClick={() => setChannelsOpen(true)}
+          >
+            {t('channels', 'Channels')} · {sortedIntegrations.length}
+          </button>
+          {channelsOpen && (
+            <button
+              type="button"
+              className="channels-scrim"
+              aria-label={t('close', 'Close')}
+              onClick={() => setChannelsOpen(false)}
+            />
+          )}
           <Filters />
           <div className="calendar-well flex-1 flex min-h-0 overflow-hidden">
             <Calendar />

@@ -254,7 +254,7 @@ export const FirstBillingComponent = () => {
                   onClick={() => setPeriod('YEARLY')}
                 >
                   <div>{t('billing_yearly', 'Yearly')}</div>
-                  <div className="bg-[#AA0FA4] text-[white] px-[8px] rounded-[4px] mobile:hidden">
+                  <div className="bg-[var(--arc-selected)] text-[color:var(--arc-accent-text)] border border-[color:var(--arc-selected-border)] px-[8px] rounded-[999px] mobile:hidden">
                     {t('billing_20_percent_off', '20% Off')}
                   </div>
                 </div>

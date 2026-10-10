@@ -34,7 +34,7 @@ import { GlobalSettings } from '@gitroom/frontend/components/settings/global.set
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 
 const SkeletonBar = ({ className }: { className: string }) => (
-  <div className={`animate-pulse rounded-[8px] bg-[#1f1f1f] ${className}`} />
+  <div className={`animate-pulse rounded-[12px] bg-newBoxHover ${className}`} />
 );
 
 export const SettingsPageSkeleton = () => {
