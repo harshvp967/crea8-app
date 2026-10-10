@@ -191,6 +191,9 @@ export interface SocialProvider
   refreshWait?: boolean;
   convertToJPEG?: boolean;
   stripLinks?: () => boolean;
+  // When stripLinks() is on, a post can still keep its URLs (X articles, or an
+  // explicit per-post opt-in). Missing means "follow stripLinks()".
+  keepsLinks?: (settings?: any) => boolean;
   refreshCron?: boolean;
   dto?: any;
   maxLength: (additionalSettings?: any, settings?: any) => number;

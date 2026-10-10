@@ -383,9 +383,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             body: JSON.stringify({
               messages: allValues
                 // platforms that remove links won't keep shortlinks either
-                .filter(
-                  (p: any) => !integrationById(p.id)?.integration?.stripLinks
-                )
+                .filter((p: any) => {
+                  const integration = integrationById(p.id)?.integration;
+                  if (!integration?.stripLinks) {
+                    return true;
+                  }
+                  const settings = p.settings || {};
+                  return (
+                    settings.post_type === 'article' ||
+                    settings.include_links === true
+                  );
+                })
                 .flatMap((p: any) => p.values.flatMap((a: any) => a.content)),
             }),
           })

@@ -31,6 +31,100 @@ import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
+// GET /2/tweets accepts at most 100 ids per request.
+// https://docs.x.com/x-api/posts/lookup/quickstart
+export const X_POST_LOOKUP_BATCH = 100;
+// Don't park a publish or analytics activity on a 15-minute window.
+const X_RATE_LIMIT_WAIT_CAP_MS = 15_000;
+const X_METRIC_CACHE_MS = 5 * 60 * 1000;
+const X_MENTION_CACHE_MS = 60 * 1000;
+
+type CachedValue<T> = { at: number; value: T };
+
+const tweetMetricCache = new Map<string, CachedValue<Record<string, number>>>();
+const analyticsCache = new Map<string, CachedValue<AnalyticsData[]>>();
+const mentionCache = new Map<
+  string,
+  CachedValue<{ id: string; image: string; label: string }[]>
+>();
+
+export const resetXReadCache = () => {
+  tweetMetricCache.clear();
+  analyticsCache.clear();
+  mentionCache.clear();
+};
+
+export const chunkIds = <T>(ids: T[], size = X_POST_LOOKUP_BATCH): T[][] => {
+  const unique: T[] = [];
+  const seen = new Set<T>();
+  for (const id of ids) {
+    if (id === undefined || id === null || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    unique.push(id);
+  }
+  const step = Math.max(1, size);
+  const chunks: T[][] = [];
+  for (let i = 0; i < unique.length; i += step) {
+    chunks.push(unique.slice(i, i + step));
+  }
+  return chunks;
+};
+
+// x-rate-limit-reset is a unix timestamp in seconds.
+// https://docs.x.com/x-api/fundamentals/rate-limits
+export const xRateLimitWaitMs = (
+  resetSeconds?: number | null,
+  now = Date.now(),
+  capMs = X_RATE_LIMIT_WAIT_CAP_MS
+) => {
+  const reset = Number(resetSeconds || 0);
+  if (!reset) {
+    return null;
+  }
+  const wait = reset * 1000 - now;
+  if (wait < 0 || wait > capMs) {
+    return null;
+  }
+  return wait;
+};
+
+// 0 when the earlier half has no posts: there is no baseline to turn into a percent.
+export const xMetricChange = (earlier: number, later: number) => {
+  if (!earlier) {
+    return 0;
+  }
+  return Math.round(((later - earlier) / earlier) * 100);
+};
+
+export type XLinkSettings = {
+  include_links?: boolean;
+  post_type?: string;
+};
+
+// Articles keep links. A regular post keeps them only when include_links is set.
+export const xKeepsLinks = (
+  stripByDefault: boolean,
+  settings?: XLinkSettings | null
+) => {
+  if (!stripByDefault) {
+    return true;
+  }
+  if (settings?.post_type === 'article') {
+    return true;
+  }
+  return settings?.include_links === true;
+};
+
+const readCache = <T>(cache: Map<string, CachedValue<T>>, key: string, ttl: number) => {
+  const hit = cache.get(key);
+  if (!hit || Date.now() - hit.at > ttl) {
+    return undefined;
+  }
+  return hit.value;
+};
+
 // Travels through the workflow history between postPending, checkPostStatus
 // and finalizePost - keep it small JSON (media ids and the tweet content).
 type XPendingData = {
@@ -48,6 +142,7 @@ type XPendingData = {
     post_type?: 'post' | 'article';
     article_title?: string;
     article_status?: 'draft' | 'published';
+    include_links?: boolean;
   };
   mediaIds: string[];
   // Article cover selected in the settings, uploaded separately from the post
@@ -64,18 +159,82 @@ type XPendingData = {
 };
 
 @Rules(
-  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments, it can also be published as a long-form article (draft or published) when post_type is set to article ${
-    process.env.STRIP_LINKS_FROM_X_POSTS
-      ? 'do not add links, they will be stripped from the post'
-      : ''
-  }`
+  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments, it can also be published as a long-form article (draft or published) when post_type is set to article. Do not add links to a regular post unless include_links is true: URLs are removed before posting because X charges more for a post that contains a URL. Articles keep their links.`
 )
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];
-  stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;
+  // Default on. STRIP_LINKS_FROM_X_POSTS=false restores the old "keep every link" behavior.
+  // https://docs.x.com/x-api/getting-started/pricing — Post: Create $0.015, Post: Create (with URL) $0.200
+  stripLinks = () => {
+    const flag = (process.env.STRIP_LINKS_FROM_X_POSTS || '')
+      .trim()
+      .toLowerCase();
+    if (flag === 'false' || flag === '0' || flag === 'no') {
+      return false;
+    }
+    return true;
+  };
+
+  keepsLinks(settings?: XLinkSettings | null) {
+    return xKeepsLinks(this.stripLinks(), settings);
+  }
+
+  private outboundTweet(text: string, settings?: XLinkSettings | null) {
+    if (this.keepsLinks(settings)) {
+      return text;
+    }
+    return removeLinks(text);
+  }
+
+  private async withXRateLimit<T>(fn: () => Promise<T>, attempt = 0): Promise<T> {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const status = Number(err?.code || err?.status || err?.response?.status || 0);
+      const rateLimited = status === 429 || !!err?.rateLimitError;
+      const wait = xRateLimitWaitMs(Number(err?.rateLimit?.reset || 0));
+      if (!rateLimited || attempt >= 1 || wait === null) {
+        throw err;
+      }
+      await timer(wait);
+      return this.withXRateLimit(fn, attempt + 1);
+    }
+  }
+
+  // public_metrics.like_count is the post's like total. liking_users is capped
+  // at 100 users and bills a Like read per user returned.
+  // https://docs.x.com/x-api/posts/likes/introduction
+  // https://docs.x.com/x-api/fundamentals/metrics
+  private async likeCount(client: TwitterApi, id: string) {
+    const cached = readCache(tweetMetricCache, id, X_METRIC_CACHE_MS);
+    if (cached) {
+      return Number(cached.like_count || 0);
+    }
+    const tweet = await this.withXRateLimit(() =>
+      client.v2.singleTweet(id, {
+        'tweet.fields': ['public_metrics'],
+      })
+    );
+    const metrics = (tweet?.data?.public_metrics || {}) as Record<string, number>;
+    tweetMetricCache.set(id, { at: Date.now(), value: metrics });
+    return Number(metrics.like_count || 0);
+  }
+
+  private async lookupPosts(client: TwitterApi, ids: string[]) {
+    const found: TweetV2[] = [];
+    for (const batch of chunkIds(ids, X_POST_LOOKUP_BATCH)) {
+      const data = await this.withXRateLimit(() =>
+        client.v2.tweets(batch, {
+          'tweet.fields': ['public_metrics', 'created_at'],
+        })
+      );
+      found.push(...(data?.data || []));
+    }
+    return found;
+  }
   // X rate limits are per user (300 posts / 3 hours), not per app, so the cap
   // only needs to keep bursts polite. With the pending flow the slot is held
   // for actual API work only (processing waits live in workflow timers), so a
@@ -268,10 +427,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: accessSecretSplit,
     });
 
-    if (
-      (await client.v2.tweetLikedBy(id)).meta.result_count >=
-      +fields.likesAmount
-    ) {
+    if ((await this.likeCount(client, id)) >= +fields.likesAmount) {
       await timer(2000);
       await client.v2.retweet(integration.internalId, id);
       return true;
@@ -352,15 +508,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: accessSecretSplit,
     });
 
-    if (
-      (await client.v2.tweetLikedBy(id)).meta.result_count >=
-      +fields.likesAmount
-    ) {
+    if ((await this.likeCount(client, id)) >= +fields.likesAmount) {
       await timer(2000);
 
       const plugText = stripHtmlValidation('normal', fields.post, true);
       await client.v2.tweet({
-        text: this.stripLinks() ? removeLinks(plugText) : plugText,
+        text: this.outboundTweet(plugText),
         reply: { in_reply_to_tweet_id: id },
       });
       return true;
@@ -643,7 +796,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       return await func();
     } catch (err: any) {
       if (totalRetries <= 2 && (err?.code === 429 || err?.rateLimitError)) {
-        await timer(5000 * (totalRetries + 1));
+        const wait = xRateLimitWaitMs(Number(err?.rateLimit?.reset || 0));
+        await timer(wait ?? 5000 * (totalRetries + 1));
         return this.uploadWithRateLimitRetry(func, totalRetries + 1);
       }
 
@@ -760,6 +914,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       article_title?: string;
       article_status?: 'draft' | 'published';
       article_cover?: { id: string; path: string };
+      include_links?: boolean;
     }>[],
     integration: Integration
   ): Promise<PostResponse[]> {
@@ -811,6 +966,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
             post_type: firstPost?.settings?.post_type,
             article_title: firstPost?.settings?.article_title,
             article_status: firstPost?.settings?.article_status,
+            include_links: firstPost?.settings?.include_links,
           },
           mediaIds: (media[firstPost.id] || []).filter((f) => f),
           ...(coverMediaId ? { coverMediaId } : {}),
@@ -1208,9 +1364,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
             community_id: settings.community?.split('/').pop() || '',
           }
         : {}),
-      text: this.stripLinks()
-        ? removeLinks(pendingData.message)
-        : pendingData.message,
+      text: this.outboundTweet(pendingData.message, settings),
       ...(mediaIds.length ? { media: { media_ids: mediaIds } } : {}),
       made_with_ai: this.assetBoolean(settings.made_with_ai),
       paid_partnership: this.assetBoolean(settings.paid_partnership),
@@ -1330,6 +1484,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       thread_finisher: string;
       made_with_ai?: boolean;
       paid_partnership?: boolean;
+      include_links?: boolean;
+      post_type?: 'post' | 'article';
     }>[],
     integration: Integration
   ): Promise<PostResponse[]> {
@@ -1349,7 +1505,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const tweetUrl = 'https://api.x.com/2/tweets';
     const tweetBody = {
-      text: this.stripLinks() ? removeLinks(commentText) : commentText,
+      text: this.outboundTweet(commentText, commentPost?.settings),
       ...(media_ids.length ? { media: { media_ids } } : {}),
       reply: { in_reply_to_tweet_id: replyToId },
       made_with_ai: this.assetBoolean(commentPost?.settings?.made_with_ai),
@@ -1427,18 +1583,19 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     token = '',
     pages = 0
   ): Promise<TweetV2[]> => {
-    const tweets = await client.v2.userTimeline(id, {
-      'tweet.fields': ['id'],
-      'user.fields': [],
-      'poll.fields': [],
-      'place.fields': [],
-      'media.fields': [],
-      exclude: ['replies', 'retweets'],
-      start_time: since,
-      end_time: until,
-      max_results: 100,
-      ...(token ? { pagination_token: token } : {}),
-    });
+    const tweets = await this.withXRateLimit(() =>
+      client.v2.userTimeline(id, {
+        // Metrics come back on the timeline, so analytics does not look the
+        // posts up a second time. Empty user/poll/place/media fields used to
+        // be sent and are not needed.
+        'tweet.fields': ['id', 'created_at', 'public_metrics'],
+        exclude: ['replies', 'retweets'],
+        start_time: since,
+        end_time: until,
+        max_results: 100,
+        ...(token ? { pagination_token: token } : {}),
+      })
+    );
 
     const list = tweets.data.data || [];
 
@@ -1468,6 +1625,11 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const until = dayjs().endOf('day');
     const since = dayjs().subtract(date > 100 ? 100 : date, 'day');
+    const cacheKey = `${id}:${since.format('YYYY-MM-DD')}:${until.format('YYYY-MM-DD')}`;
+    const cached = readCache(analyticsCache, cacheKey, X_METRIC_CACHE_MS);
+    if (cached) {
+      return cached;
+    }
 
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({
@@ -1478,7 +1640,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
 
     try {
-      const tweets = uniqBy(
+      const loaded = uniqBy(
         await this.loadAllTweets(
           client,
           id,
@@ -1488,59 +1650,64 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         (p) => p.id
       );
 
-      if (tweets.length === 0) {
+      if (loaded.length === 0) {
+        analyticsCache.set(cacheKey, { at: Date.now(), value: [] });
         return [];
       }
 
-      const data = await client.v2.tweets(
-        tweets.map((p) => p.id),
-        {
-          'tweet.fields': ['public_metrics'],
+      // Timeline rows already include public_metrics. Only ids that came back
+      // without metrics are looked up, in batches of 100.
+      const missing = loaded.filter((tweet) => !tweet.public_metrics).map((tweet) => tweet.id);
+      const lookedUp = missing.length
+        ? await this.lookupPosts(client, missing)
+        : [];
+      const byId = new Map(lookedUp.map((tweet) => [tweet.id, tweet]));
+      const tweets = loaded.map((tweet) => byId.get(tweet.id) || tweet);
+
+      const halfMs = since.valueOf() + (until.valueOf() - since.valueOf()) / 2;
+      const metricKeys = [
+        'impression_count',
+        'bookmark_count',
+        'like_count',
+        'quote_count',
+        'reply_count',
+        'retweet_count',
+      ] as const;
+      const earlier: Record<(typeof metricKeys)[number], number> = {
+        impression_count: 0,
+        bookmark_count: 0,
+        like_count: 0,
+        quote_count: 0,
+        reply_count: 0,
+        retweet_count: 0,
+      };
+      const later = { ...earlier };
+
+      for (const tweet of tweets) {
+        const metrics = (tweet.public_metrics || {}) as Record<string, number>;
+        const created = tweet.created_at ? dayjs(tweet.created_at).valueOf() : halfMs;
+        const bucket = created < halfMs ? earlier : later;
+        for (const key of metricKeys) {
+          bucket[key] += Number(metrics[key] || 0);
         }
-      );
+      }
 
-      const metrics = data.data.reduce(
-        (all, current) => {
-          all.impression_count =
-            (all.impression_count || 0) +
-            +current.public_metrics.impression_count;
-          all.bookmark_count =
-            (all.bookmark_count || 0) + +current.public_metrics.bookmark_count;
-          all.like_count =
-            (all.like_count || 0) + +current.public_metrics.like_count;
-          all.quote_count =
-            (all.quote_count || 0) + +current.public_metrics.quote_count;
-          all.reply_count =
-            (all.reply_count || 0) + +current.public_metrics.reply_count;
-          all.retweet_count =
-            (all.retweet_count || 0) + +current.public_metrics.retweet_count;
-
-          return all;
-        },
-        {
-          impression_count: 0,
-          bookmark_count: 0,
-          like_count: 0,
-          quote_count: 0,
-          reply_count: 0,
-          retweet_count: 0,
-        }
-      );
-
-      return Object.entries(metrics).map(([key, value]) => ({
+      const result = metricKeys.map((key) => ({
         label: key.replace('_count', '').replace('_', ' ').toUpperCase(),
-        percentageChange: 5,
+        percentageChange: xMetricChange(earlier[key], later[key]),
         data: [
           {
-            total: String(0),
-            date: since.format('YYYY-MM-DD'),
+            total: String(earlier[key]),
+            date: dayjs(halfMs).format('YYYY-MM-DD'),
           },
           {
-            total: String(value),
+            total: String(later[key]),
             date: until.format('YYYY-MM-DD'),
           },
         ],
       }));
+      analyticsCache.set(cacheKey, { at: Date.now(), value: result });
+      return result;
     } catch (err) {
       console.log(err);
       throw new Error('X analytics is unavailable for this account');
@@ -1568,10 +1735,20 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     });
 
     try {
-      // Fetch the specific tweet with public metrics
-      const tweet = await client.v2.singleTweet(postId, {
-        'tweet.fields': ['public_metrics', 'created_at'],
-      });
+      const cachedMetrics = readCache(tweetMetricCache, postId, X_METRIC_CACHE_MS);
+      const tweet = cachedMetrics
+        ? { data: { public_metrics: cachedMetrics } }
+        : await this.withXRateLimit(() =>
+            client.v2.singleTweet(postId, {
+              'tweet.fields': ['public_metrics'],
+            })
+          );
+      if (!cachedMetrics && tweet?.data?.public_metrics) {
+        tweetMetricCache.set(postId, {
+          at: Date.now(),
+          value: tweet.data.public_metrics as Record<string, number>,
+        });
+      }
 
       if (!tweet?.data?.public_metrics) {
         return [];
@@ -1646,22 +1823,36 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       accessSecret: accessSecretSplit,
     });
 
+    const mentionKey = (d.query || '').trim().toLowerCase();
+    const cachedMention = mentionKey
+      ? readCache(mentionCache, mentionKey, X_MENTION_CACHE_MS)
+      : undefined;
+    if (cachedMention) {
+      return cachedMention;
+    }
+
     try {
-      const data = await client.v2.userByUsername(d.query, {
-        'user.fields': ['username', 'name', 'profile_image_url'],
-      });
+      const data = await this.withXRateLimit(() =>
+        client.v2.userByUsername(d.query, {
+          'user.fields': ['username', 'name', 'profile_image_url'],
+        })
+      );
 
       if (!data?.data?.username) {
         return [];
       }
 
-      return [
+      const mentions = [
         {
           id: data.data.username,
           image: data.data.profile_image_url,
           label: data.data.name,
         },
       ];
+      if (mentionKey) {
+        mentionCache.set(mentionKey, { at: Date.now(), value: mentions });
+      }
+      return mentions;
     } catch (err) {
       console.log(err);
     }
