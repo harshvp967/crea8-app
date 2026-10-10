@@ -356,11 +356,11 @@ export const Menu: FC<{
           ref={menuRef}
           onClick={(e) => e.stopPropagation()}
           style={{ left: show.x, top: show.y }}
-          className="fixed p-[12px] bg-newBgColorInner shadow-menu flex flex-col gap-[8px] z-[100] rounded-[26px] border border-newBorder text-nowrap"
+          className="channel-menu-pop fixed p-[8px] bg-newBgColorInner shadow-menu flex flex-col gap-[2px] z-[100] rounded-[22px] border border-newBorder text-nowrap"
         >
           {canDisable && !findIntegration?.refreshNeeded && (
             <div
-              className="flex gap-[12px] items-center py-[8px] px-[10px]"
+              className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={createPost(findIntegration!)}
             >
               <div>
@@ -383,7 +383,7 @@ export const Menu: FC<{
             </div>
           )}
           <div
-            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
             onClick={copyChannelId(findIntegration)}
           >
             <div>
@@ -414,7 +414,7 @@ export const Menu: FC<{
             findIntegration?.refreshNeeded &&
             !findIntegration.customFields && (
               <div
-                className="flex gap-[12px] items-center py-[8px] px-[10px]"
+                className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
                 onClick={refreshChannel(findIntegration!)}
               >
                 <div>
@@ -438,7 +438,7 @@ export const Menu: FC<{
             )}
           {!!findIntegration?.isCustomFields && (
             <div
-              className="flex gap-[12px] items-center py-[8px] px-[10px]"
+              className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={updateCredentials}
             >
               <div>
@@ -462,7 +462,7 @@ export const Menu: FC<{
           )}
           {findIntegration?.additionalSettings !== '[]' && (
             <div
-              className="flex gap-[12px] items-center py-[8px] px-[10px]"
+              className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={additionalSettings}
             >
               <div>
@@ -486,7 +486,7 @@ export const Menu: FC<{
           )}
           {(canChangeProfilePicture || canChangeNickName) && (
             <div
-              className="flex gap-[12px] items-center py-[8px] px-[10px]"
+              className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={changeBotPicture}
             >
               <div>
@@ -515,7 +515,7 @@ export const Menu: FC<{
             </div>
           )}
           <div
-            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
             onClick={addToCustomer}
           >
             <div>
@@ -537,7 +537,7 @@ export const Menu: FC<{
             </div>
           </div>
           <div
-            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
             onClick={editTimeTable}
           >
             <div>
@@ -560,7 +560,7 @@ export const Menu: FC<{
           </div>
           {canEnable && (
             <div
-              className="flex gap-[12px] items-center py-[8px] px-[10px]"
+              className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={enableChannel}
             >
               <div>
@@ -585,7 +585,7 @@ export const Menu: FC<{
 
           {canDisable && (
             <div
-              className="flex gap-[12px] items-center py-[8px] px-[10px]"
+              className="channel-menu-item flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={disableChannel}
             >
               <div>
@@ -609,7 +609,7 @@ export const Menu: FC<{
           )}
 
           <div
-            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            className="channel-menu-item is-danger flex gap-[12px] items-center py-[8px] px-[10px]"
             onClick={deleteChannel}
           >
             <div>

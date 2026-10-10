@@ -381,7 +381,7 @@ export const ContinueIntegration: FC<{
   // Success state for non-logged users without returnURL
   if (successState) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
+      <div className="channel-return flex flex-1 items-center justify-center relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
@@ -420,7 +420,7 @@ export const ContinueIntegration: FC<{
   // Show the two-step selection UI
   if (twoStepState && Provider) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
+      <div className="channel-return flex flex-1 items-center justify-center relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
@@ -478,7 +478,7 @@ export const ContinueIntegration: FC<{
 
   if (error) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
+      <div className="channel-return flex flex-1 items-center justify-center relative overflow-hidden">
         {/* Background gradient decoration */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
@@ -520,7 +520,7 @@ export const ContinueIntegration: FC<{
 
   // Loading state
   return (
-    <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
+    <div className="channel-return flex flex-1 items-center justify-center relative overflow-hidden">
       {/* Background gradient decoration */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
