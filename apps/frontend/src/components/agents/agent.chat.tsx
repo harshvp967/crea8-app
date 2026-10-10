@@ -10,6 +10,8 @@ import React, {
   useState,
 } from 'react';
 import {
+  AssistantMessage,
+  AssistantMessageProps,
   CopilotChat,
   CopilotKitCSSProperties,
   InputProps,
@@ -63,21 +65,22 @@ export const AgentChat: FC = () => {
       <div
         style={
           {
-            '--copilot-kit-primary-color': '#00D9FF',
-            '--copilot-kit-contrast-color': '#0a0a0a',
+            '--copilot-kit-primary-color': 'var(--arc-accent)',
+            '--copilot-kit-contrast-color': 'var(--arc-ink)',
             '--copilot-kit-background-color': 'transparent',
-            '--copilot-kit-input-background-color': '#1a1a1a',
-            '--copilot-kit-secondary-color': '#141414',
-            '--copilot-kit-secondary-contrast-color': '#ffffff',
-            '--copilot-kit-separator-color': '#2a2a2a',
-            '--copilot-kit-muted-color': '#6a6a6a',
+            '--copilot-kit-input-background-color': 'transparent',
+            '--copilot-kit-secondary-color': 'transparent',
+            '--copilot-kit-secondary-contrast-color': 'var(--new-btn-text)',
+            '--copilot-kit-separator-color': 'var(--new-border)',
+            '--copilot-kit-muted-color': 'var(--new-textItemBlur)',
           } as CopilotKitCSSProperties
         }
-        className="trz agent bg-newBgColorInner flex flex-col gap-[15px] transition-all flex-1 items-center relative min-w-0"
+        className="trz agent bg-newBgColorInner flex flex-col transition-all flex-1 items-stretch relative min-w-0 h-full w-full"
       >
-        <div className="absolute left-0 w-full h-full pb-[12px] px-[4px]">
+        <div className="absolute inset-0">
           <CopilotChat
             className="w-full h-full agent-chat-shell"
+            AssistantMessage={AgentAssistantMessage}
             labels={{
               title: t('your_assistant', 'Crea8one AI Agent'),
               initial: t('agent_welcome_message', `Hello, I'm your Crea8one AI Agent 👋🏻.
@@ -187,24 +190,136 @@ const Message: FC<UserMessageProps> = (props) => {
   }, [props.message?.content]);
   return (
     <div
-      className="copilotKitMessage copilotKitUserMessage min-w-[300px] max-w-[min(80%,720px)]"
+      className="copilotKitMessage copilotKitUserMessage"
       dangerouslySetInnerHTML={{ __html: convertContentToImagesAndVideo }}
     />
   );
 };
+
+type DraftPreview = {
+  title: string;
+  platform: string;
+  picture: string;
+};
+
+const splitDrafts = (text: string) => {
+  const drafts: DraftPreview[] = [];
+  const prose = text
+    .replace(/\[--draft--\]([\s\S]*?)\[--draft--\]/g, (_match, json) => {
+      const draft = parseDraft(json);
+      if (draft) {
+        drafts.push(draft);
+      }
+      return '';
+    })
+    .trim();
+  return { prose, drafts };
+};
+
+const parseDraft = (json: string): DraftPreview | null => {
+  try {
+    const value = JSON.parse(json);
+    const title = typeof value?.title === 'string' ? value.title.trim() : '';
+    if (!title) {
+      return null;
+    }
+    const platform =
+      typeof value?.platform === 'string' && /^[a-z0-9_-]+$/i.test(value.platform)
+        ? value.platform
+        : '';
+    return {
+      title,
+      platform,
+      picture: safePicture(value?.picture),
+    };
+  } catch {
+    return null;
+  }
+};
+
+const safePicture = (picture: unknown) => {
+  if (typeof picture !== 'string') {
+    return '';
+  }
+  if (picture.startsWith('/icons/')) {
+    return picture;
+  }
+  try {
+    const url = new URL(picture);
+    if (url.protocol === 'https:' || url.protocol === 'http:') {
+      return picture;
+    }
+  } catch {
+    return '';
+  }
+  return '';
+};
+
+const DraftCard: FC<{ draft: DraftPreview }> = ({ draft }) => {
+  const t = useT();
+  const avatar =
+    draft.picture ||
+    (draft.platform ? `/icons/platforms/${draft.platform}.png` : '');
+  return (
+    <div className="agent-draft-card">
+      {avatar ? (
+        <span className="agent-draft-avatar">
+          <img className="avatar" src={avatar} alt="" />
+          {draft.platform ? (
+            <img
+              className="badge"
+              src={`/icons/platforms/${draft.platform}.png`}
+              alt=""
+            />
+          ) : null}
+        </span>
+      ) : null}
+      <span className="agent-draft-title">{draft.title}</span>
+      <span className="agent-draft-pill">{t('draft', 'Draft')}</span>
+    </div>
+  );
+};
+
+const AgentAssistantMessage: FC<AssistantMessageProps> = (props) => {
+  const raw = props.message?.content || '';
+  const { prose, drafts } = splitDrafts(typeof raw === 'string' ? raw : '');
+  if (!drafts.length || !props.message) {
+    return <AssistantMessage {...props} />;
+  }
+  const message = Object.assign(
+    Object.create(Object.getPrototypeOf(props.message)),
+    props.message,
+    { content: prose }
+  );
+  return (
+    <div className="agent-assistant-with-draft">
+      <AssistantMessage {...props} message={message} />
+      <div className="agent-draft-list">
+        {drafts.map((draft, index) => (
+          <DraftCard key={`${draft.title}-${index}`} draft={draft} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const NewInput: FC<InputProps> = (props) => {
   const [media, setMedia] = useState([] as { path: string; id: string }[]);
   const [value, setValue] = useState('');
+  const [tools, setTools] = useState(false);
   const { properties } = useContext(PropertiesContext);
   return (
     <>
-      <MediaPortal
-        value={value}
-        media={media}
-        setMedia={(e) => setMedia(e.target.value)}
-      />
+      <div className={tools ? 'agent-media is-open' : 'agent-media'}>
+        <MediaPortal
+          value={value}
+          media={media}
+          setMedia={(e) => setMedia(e.target.value)}
+        />
+      </div>
       <Input
         {...props}
+        onAttach={() => setTools((open) => !open)}
         onChange={setValue}
         onSend={(text) => {
           const send = props.onSend(
