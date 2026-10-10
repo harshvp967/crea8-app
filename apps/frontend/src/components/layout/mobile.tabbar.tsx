@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -14,6 +14,24 @@ export const MobileTabBar = () => {
   const primary = useVisibleMenuItems(firstMenu);
   const extra = useVisibleMenuItems(secondMenu);
   const [more, setMore] = useState(false);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMore(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!more) {
+      return;
+    }
+    const onPointer = (event: MouseEvent) => {
+      if (!barRef.current?.contains(event.target as Node)) {
+        setMore(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointer);
+    return () => document.removeEventListener('mousedown', onPointer);
+  }, [more]);
 
   const asItem = (item: {
     name?: string;
@@ -36,7 +54,7 @@ export const MobileTabBar = () => {
   const active = (path: string) => path !== '#' && pathname.indexOf(path) === 0;
 
   return (
-    <>
+    <div ref={barRef} className="contents">
       {more ? (
         <div className="mobile-sheet" role="menu">
           {overflow.map((item) => {
@@ -97,6 +115,6 @@ export const MobileTabBar = () => {
           <span>More</span>
         </button>
       </nav>
-    </>
+    </div>
   );
 };

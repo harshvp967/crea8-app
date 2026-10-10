@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, useCallback, useEffect } from 'react';
+import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
@@ -52,7 +52,15 @@ import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settin
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
 import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
 
-const HeaderAvatar = ({ name }: { name: string }) => {
+const HeaderAvatar = ({
+  name,
+  pressed,
+  onClick,
+}: {
+  name: string;
+  pressed: boolean;
+  onClick: () => void;
+}) => {
   const initials =
     name
       .split(/[\s@._-]+/)
@@ -61,9 +69,17 @@ const HeaderAvatar = ({ name }: { name: string }) => {
       .map((part) => part.charAt(0).toUpperCase())
       .join('') || '•';
   return (
-    <span className="header-avatar" title={name || undefined} aria-hidden>
+    <button
+      type="button"
+      className="header-avatar"
+      title={name || undefined}
+      aria-label={name ? `${name} account` : 'Account'}
+      aria-haspopup="menu"
+      aria-expanded={pressed}
+      onClick={onClick}
+    >
       {initials}
-    </span>
+    </button>
   );
 };
 
@@ -82,6 +98,23 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    setAccountOpen(false);
+  }, [pathname]);
+  useEffect(() => {
+    if (!accountOpen) {
+      return;
+    }
+    const onPointer = (event: MouseEvent) => {
+      if (!accountRef.current?.contains(event.target as Node)) {
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointer);
+    return () => document.removeEventListener('mousedown', onPointer);
+  }, [accountOpen]);
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, [fetch]);
@@ -189,10 +222,14 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <TopMenu />
                     )}
                     <div className="header-tools flex items-center text-textItemBlur shrink-0 ms-auto gap-[8px]">
-                      <HeaderAvatar
-                        name={user?.name || user?.email || ''}
-                      />
-                      <OrganizationSelector />
+                      <div className="header-account relative flex items-center" ref={accountRef}>
+                        <HeaderAvatar
+                          name={user?.name || user?.email || ''}
+                          pressed={accountOpen}
+                          onClick={() => setAccountOpen((value) => !value)}
+                        />
+                        <OrganizationSelector menuOpen={accountOpen} />
+                      </div>
                       <div className="flex items-center justify-center">
                         <ModeComponent />
                       </div>

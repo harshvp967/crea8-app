@@ -4,6 +4,7 @@ import React, {
   FC,
   MouseEventHandler,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -90,6 +91,18 @@ export const Menu: FC<{
         }
       }
     }
+  }, [show]);
+  useEffect(() => {
+    if (!show) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShow(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [show]);
   const findIntegration: any = useMemo(() => {
     return integrations.find((integration) => integration.id === id);

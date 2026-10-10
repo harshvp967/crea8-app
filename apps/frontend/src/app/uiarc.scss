@@ -205,6 +205,7 @@ body :focus-visible {
   padding: 32px 24px;
 }
 
+.phone-week,
 .phone-day-strip,
 .phone-create,
 .mobile-tabbar,
@@ -393,9 +394,9 @@ body :focus-visible {
     padding: 8px;
   }
 
-  .phone-day-strip {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+  .phone-week {
+    display: flex;
+    align-items: stretch;
     gap: 4px;
     margin-bottom: 8px;
     position: sticky;
@@ -403,6 +404,27 @@ body :focus-visible {
     z-index: 5;
     background: var(--new-bgColorInner);
     padding-bottom: 8px;
+  }
+
+  .phone-week-arrow {
+    flex: none;
+    width: 32px;
+    min-height: 44px;
+    border-radius: 14px;
+    border: 1px solid var(--new-border);
+    background: var(--new-bgColorInner);
+    color: var(--new-textItemBlur);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .phone-day-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
   }
 
   .phone-day-strip button {
@@ -896,6 +918,7 @@ body :focus-visible {
   display: none;
   width: 28px;
   height: 28px;
+  padding: 0;
   border-radius: 50%;
   align-items: center;
   justify-content: center;
@@ -905,6 +928,12 @@ body :focus-visible {
   font-size: 11px;
   font-weight: 600;
   flex: none;
+  cursor: pointer;
+}
+
+.org-menu {
+  z-index: 90;
+  border-radius: 18px;
 }
 
 .channel-strip,
@@ -1110,6 +1139,18 @@ body :focus-visible {
 
   .header-avatar {
     display: inline-flex;
+  }
+
+  .header-account .org-menu {
+    position: fixed;
+    top: calc(60px + env(safe-area-inset-top));
+    right: 12px;
+    left: auto;
+    z-index: 90;
+    max-width: calc(100vw - 24px);
+    background: var(--new-bgColorInner);
+    border: 1px solid var(--new-border);
+    border-radius: 18px;
   }
 
   .org-glyph,
@@ -1373,6 +1414,11 @@ body :focus-visible {
     max-width: calc(100vw - 24px);
   }
 
+  body.overflow-hidden .support-fab,
+  body.overflow-hidden .copilotKitButton {
+    display: none !important;
+  }
+
   .mobile-sheet {
     left: 12px;
     right: 12px;
@@ -1428,7 +1474,12 @@ body :focus-visible {
   }
 
   .cal-nav-arrow {
-    display: none;
+    display: flex;
+    flex: none;
+    width: 36px;
+    min-width: 36px;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .cal-range-label {
@@ -1446,16 +1497,29 @@ body :focus-visible {
     white-space: nowrap;
   }
 
-  .cal-view,
   .cal-mode,
   .cal-customer {
     display: none !important;
   }
 
+  .cal-view {
+    display: flex !important;
+    order: 3;
+    flex: 1 0 100%;
+    width: 100%;
+  }
+
+  .cal-view > button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
   .filters-bar {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 10px;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .channel-strip > .flex {
@@ -1466,9 +1530,31 @@ body :focus-visible {
     min-width: 0 !important;
   }
 
+  .calendar-panel {
+    height: calc(100dvh - 60px - 96px - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 60px - 96px - env(safe-area-inset-bottom));
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .calendar-well {
+    overflow: hidden;
+    min-height: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
   .phone-day-list {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
   }
 
   .phone-slot {
@@ -2013,6 +2099,7 @@ body :focus-visible {
   .app-main {
     padding: 0 !important;
     gap: 0 !important;
+    overflow: hidden !important;
   }
 
   .calendar-panel {
@@ -2033,8 +2120,25 @@ body :focus-visible {
     flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
+    overflow-y: hidden;
     gap: 8px;
     padding: 2px 0;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .channel-strip > .flex {
+    position: relative;
+    z-index: 4;
+    flex: none;
+  }
+
+  .channel-strip > .flex > button {
+    position: relative;
+    z-index: 4;
+    touch-action: manipulation;
+    flex: 0 0 auto;
   }
 
   .channel-chip {
@@ -2073,6 +2177,10 @@ body :focus-visible {
 
   .phone-slot .grayscale {
     display: none;
+  }
+
+  .phone-slot .col-calendar:hover:before {
+    content: none;
   }
 
   .phone-create {

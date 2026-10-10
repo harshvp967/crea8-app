@@ -92,8 +92,13 @@ export const AddProviderButton: FC<{
   return (
     <div className="flex group-[.sidebar]:block gap-[8px]">
       <button
-        className="flex-1 group-[.sidebar]:w-[100%] group-[.sidebar]:flex-none text-newTextColor bg-newBgColorInner border border-newBorder shadow-[var(--arc-shadow-resting)] h-[44px] pt-[12px] pb-[14px] ps-[16px] pe-[20px] justify-center items-center flex rounded-[18px] gap-[8px] hover:bg-newBoxHover transition-colors cursor-pointer"
-        onClick={add}
+        type="button"
+        data-action="add-channel"
+        className="channel-add flex-1 group-[.sidebar]:w-[100%] group-[.sidebar]:flex-none text-newTextColor bg-newBgColorInner border border-newBorder shadow-[var(--arc-shadow-resting)] h-[44px] pt-[12px] pb-[14px] ps-[16px] pe-[20px] justify-center items-center flex rounded-[18px] gap-[8px] hover:bg-newBoxHover transition-colors cursor-pointer"
+        onClick={(event) => {
+          event.stopPropagation();
+          add();
+        }}
       >
         <div>
           <svg
@@ -117,13 +122,18 @@ export const AddProviderButton: FC<{
         </div>
       </button>
       <button
-        onClick={invite}
+        type="button"
+        data-action="invite-link"
+        onClick={(event) => {
+          event.stopPropagation();
+          invite();
+        }}
         data-tooltip-id="tooltip"
         data-tooltip-content={t(
           'invite_link',
           'Send Invite Link to a customer to add channel'
         )}
-        className="group-[.sidebar]:hidden min-h-[44px] min-w-[44px] bg-newBgColorInner text-textItemBlur border border-newBorder shadow-[var(--arc-shadow-resting)] justify-center items-center flex rounded-[18px] cursor-pointer hover:text-newTextColor hover:bg-newBoxHover transition-colors"
+        className="channel-invite group-[.sidebar]:hidden min-h-[44px] min-w-[44px] bg-newBgColorInner text-textItemBlur border border-newBorder shadow-[var(--arc-shadow-resting)] justify-center items-center flex rounded-[18px] cursor-pointer hover:text-newTextColor hover:bg-newBoxHover transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -724,7 +734,10 @@ export const AddProviderComponent: FC<{
   );
 
   return (
-    <div className="w-full flex flex-col gap-[20px] rounded-[4px] relative]">
+    <div
+      className="w-full flex flex-col gap-[20px] rounded-[4px] relative]"
+      data-invite={props.invite ? 'true' : 'false'}
+    >
       <div className="flex flex-col">
         <div
           className={clsx(

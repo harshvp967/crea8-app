@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -272,34 +273,77 @@ const PhoneDayStrip = () => {
   const calendar = useCalendar();
   const weekStart = newDayjs(calendar.startDate).startOf('isoWeek');
   const days = Array.from({ length: 7 }, (_, index) => weekStart.add(index, 'day'));
+  const shiftWeek = (direction: number) => {
+    const nextDay = newDayjs(calendar.startDate).add(direction, 'week');
+    calendar.setFilters({
+      startDate: nextDay.format('YYYY-MM-DD'),
+      endDate: nextDay.format('YYYY-MM-DD'),
+      display: 'day',
+      customer: calendar.customer,
+    });
+  };
 
   return (
-    <div className="phone-day-strip">
-      {days.map((day) => {
-        const iso = day.format('YYYY-MM-DD');
-        const selected = iso === calendar.startDate;
-        return (
-          <button
-            key={iso}
-            type="button"
-            className={clsx(selected && 'arc-selected')}
-            onClick={() => {
-              if (selected) {
-                return;
-              }
-              calendar.setFilters({
-                startDate: iso,
-                endDate: iso,
-                display: 'day',
-                customer: calendar.customer,
-              });
-            }}
-          >
-            <span>{day.format('ddd')}</span>
-            <span>{day.format('D')}</span>
-          </button>
-        );
-      })}
+    <div className="phone-week">
+      <button
+        type="button"
+        className="phone-week-arrow"
+        aria-label="Previous week"
+        onClick={() => shiftWeek(-1)}
+      >
+        <svg width="8" height="12" viewBox="0 0 8 12" fill="none" aria-hidden>
+          <path
+            d="M6.5 11L1.5 6L6.5 1"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      <div className="phone-day-strip">
+        {days.map((day) => {
+          const iso = day.format('YYYY-MM-DD');
+          const selected = iso === calendar.startDate;
+          return (
+            <button
+              key={iso}
+              type="button"
+              className={clsx(selected && 'arc-selected')}
+              onClick={() => {
+                if (selected) {
+                  return;
+                }
+                calendar.setFilters({
+                  startDate: iso,
+                  endDate: iso,
+                  display: 'day',
+                  customer: calendar.customer,
+                });
+              }}
+            >
+              <span>{day.format('ddd')}</span>
+              <span>{day.format('D')}</span>
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        className="phone-week-arrow"
+        aria-label="Next week"
+        onClick={() => shiftWeek(1)}
+      >
+        <svg width="8" height="12" viewBox="0 0 8 12" fill="none" aria-hidden>
+          <path
+            d="M1.5 11L6.5 6L1.5 1"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
     </div>
   );
 };
@@ -307,6 +351,7 @@ const PhoneDayStrip = () => {
 export const DayView = () => {
   const calendar = useCalendar();
   const narrow = useNarrowLayout();
+  const listRef = useRef<HTMLDivElement>(null);
   const { integrations, posts, startDate } = calendar;
 
   // Set dayjs locale based on current language
@@ -366,24 +411,48 @@ export const DayView = () => {
     </CalendarContext.Provider>
   );
 
-  if (narrow) {
-    const occupied = posts.map((post) =>
-      dayjs.utc(post.publishDate).local().hour()
+  const scrollHour = useMemo(() => {
+    if (newDayjs(startDate).isSame(newDayjs(), 'day')) {
+      return newDayjs().hour();
+    }
+    if (!posts.length) {
+      return 0;
+    }
+    return Math.min(
+      ...posts.map((post) => dayjs.utc(post.publishDate).local().hour())
     );
-    // Mock working window is 9 AM–2 PM. Hours that already have posts stay visible.
-    const hours = Array.from(
-      new Set([...Array.from({ length: 6 }, (_, index) => index + 9), ...occupied])
-    ).sort((left, right) => left - right);
+  }, [posts, startDate]);
+
+  useLayoutEffect(() => {
+    if (!narrow) {
+      return;
+    }
+    const root = listRef.current;
+    const target = root?.querySelector(
+      `[data-hour="${scrollHour}"]`
+    ) as HTMLElement | null;
+    if (!root || !target) {
+      return;
+    }
+    const top =
+      target.getBoundingClientRect().top -
+      root.getBoundingClientRect().top +
+      root.scrollTop;
+    root.scrollTop = top;
+  }, [narrow, scrollHour, startDate]);
+
+  if (narrow) {
+    const hours = Array.from({ length: 24 }, (_, hour) => hour);
     return (
       <div className="flex flex-col gap-[8px] flex-1 min-h-0">
         <PhoneDayStrip />
-        <div className="phone-day-list flex-1 min-h-0 overflow-auto">
+        <div ref={listRef} className="phone-day-list flex-1 min-h-0">
           {hours.map((hour) => {
             const rows = options.filter(
               (option) => Math.floor(option[0].time / 60) === hour
             );
             return (
-              <div key={hour} className="phone-slot">
+              <div key={hour} className="phone-slot" data-hour={hour}>
                 <span className="phone-slot-time">
                   {newDayjs()
                     .startOf('day')
@@ -394,7 +463,16 @@ export const DayView = () => {
                   {rows.length ? (
                     rows.map(slotRow)
                   ) : (
-                    <div className="phone-slot-empty" />
+                    <CalendarContext.Provider
+                      value={{
+                        ...calendar,
+                        integrations,
+                      }}
+                    >
+                      <CalendarColumn
+                        getDate={currentDay.startOf('day').add(hour, 'hour').local()}
+                      />
+                    </CalendarContext.Provider>
                   )}
                 </div>
               </div>
@@ -677,61 +755,8 @@ export const ListView = () => {
   );
 };
 
-// Phone always paints Day view. The saved calendar-display cookie and the URL
-// display param stay as the user set them; this only chooses which tree renders.
-const PhoneDayCalendar = () => {
-  const calendar = useCalendar();
-  const today = newDayjs().format('YYYY-MM-DD');
-  const inRange = today >= calendar.startDate && today <= calendar.endDate;
-  const [picked, setPicked] = useState<string | null>(null);
-  const selected = picked || (inRange ? today : calendar.startDate);
-  const posts = useMemo(
-    () =>
-      calendar.posts.filter(
-        (post) =>
-          dayjs.utc(post.publishDate).local().format('YYYY-MM-DD') === selected
-      ),
-    [calendar.posts, selected]
-  );
-  const setFilters = useCallback(
-    (next: {
-      startDate: string;
-      endDate: string;
-      display: 'week' | 'month' | 'day' | 'list';
-      customer: string | null;
-    }) => {
-      const inside =
-        next.startDate >= calendar.startDate && next.startDate <= calendar.endDate;
-      if (next.display === 'day' && inside && calendar.display !== 'day') {
-        setPicked(next.startDate);
-        return;
-      }
-      calendar.setFilters(next);
-    },
-    [calendar]
-  );
-  return (
-    <CalendarContext.Provider
-      value={{
-        ...calendar,
-        posts,
-        startDate: selected,
-        endDate: selected,
-        display: 'day',
-        setFilters,
-      }}
-    >
-      <DayView />
-    </CalendarContext.Provider>
-  );
-};
-
 export const Calendar = () => {
   const { display } = useCalendar();
-  const narrow = useNarrowLayout();
-  if (narrow && display !== 'list') {
-    return <PhoneDayCalendar />;
-  }
   return (
     <>
       {display === 'list' ? (
