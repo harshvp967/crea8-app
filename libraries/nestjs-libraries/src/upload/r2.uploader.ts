@@ -15,6 +15,7 @@ import crypto from 'crypto';
 import path from 'path';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { mediaPublicUrl } from '@gitroom/nestjs-libraries/upload/media.public.url';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fileTypeFromBuffer } = require('file-type');
 
@@ -50,7 +51,6 @@ const {
   CLOUDFLARE_ACCESS_KEY,
   CLOUDFLARE_SECRET_ACCESS_KEY,
   CLOUDFLARE_BUCKETNAME,
-  CLOUDFLARE_BUCKET_URL,
 } = process.env;
 
 const R2 = new S3Client({
@@ -112,7 +112,7 @@ export async function simpleUpload(
   const command = new PutObjectCommand({ ...params });
   await R2.send(command);
 
-  return CLOUDFLARE_BUCKET_URL + '/' + randomFilename;
+  return mediaPublicUrl(randomFilename);
 }
 
 export async function createMultipartUpload(req: Request, res: Response) {
@@ -250,10 +250,9 @@ export async function completeMultipartUpload(req: Request, res: Response) {
         .json({ message: 'File contents do not match declared type.' });
     }
 
-    response.Location =
-      process.env.CLOUDFLARE_BUCKET_URL +
-      '/' +
-      response?.Location?.split('/').at(-1);
+    response.Location = mediaPublicUrl(
+      response?.Location?.split('/').at(-1) || ''
+    );
     return response;
   } catch (err) {
     console.log('Error', err);

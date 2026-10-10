@@ -4,11 +4,12 @@ import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/databa
 import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
 import { RefreshTokens } from './tasks/refresh.tokens';
 import { ConfigurationTask } from './tasks/configuration';
+import { EncryptIntegrationTokens } from './tasks/encrypt.integration.tokens';
 
 @Module({
   imports: [ExternalCommandModule, DatabaseModule, getTemporalModule(false)],
   controllers: [],
-  providers: [RefreshTokens, ConfigurationTask],
+  providers: [RefreshTokens, ConfigurationTask, EncryptIntegrationTokens],
   get exports() {
     return [...this.imports, ...this.providers];
   },

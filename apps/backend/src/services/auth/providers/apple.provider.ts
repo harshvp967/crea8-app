@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { decode, sign, verify } from 'jsonwebtoken';
 import { createPublicKey } from 'crypto';
 import {
@@ -15,7 +16,7 @@ const getConfig = () => {
     !APPLE_KEY_ID ||
     !APPLE_PRIVATE_KEY
   ) {
-    throw new Error('APPLE environment variables are not set');
+    throw new BadRequestException('APPLE environment variables are not set');
   }
 
   return {

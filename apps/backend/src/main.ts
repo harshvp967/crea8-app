@@ -1,6 +1,10 @@
 import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
 initializeSentry('backend', true);
 import compression from 'compression';
+import helmet from 'helmet';
+import { assertIntegrationTokenKey } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.token.crypto';
+
+assertIntegrationTokenKey();
 
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 import { json } from 'express';
@@ -54,6 +58,30 @@ async function start() {
   });
 
   await startMcp(app);
+
+  const server = app.getHttpAdapter().getInstance();
+  server.disable('x-powered-by');
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      hsts: {
+        maxAge: 63072000,
+        includeSubDomains: true,
+      },
+      frameguard: { action: 'sameorigin' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      noSniff: true,
+    })
+  );
+  app.use((_req: unknown, res: { setHeader: (name: string, value: string) => void }, next: () => void) => {
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), payment=(self)'
+    );
+    next();
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

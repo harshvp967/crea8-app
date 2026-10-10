@@ -54,6 +54,8 @@ const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500', '700'],
   style: ['normal', 'italic'],
   subsets: ['latin'],
+  display: 'swap',
+  preload: false,
 });
 
 export const LayoutComponent = ({ children }: { children: ReactNode }) => {

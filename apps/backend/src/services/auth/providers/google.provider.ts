@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { google } from 'googleapis';
 import {
   AuthProvider,
@@ -17,6 +18,9 @@ const makeClient = (redirectUri: string) =>
 @AuthProvider({ provider: 'GOOGLE' })
 export class GoogleProvider extends AuthProviderAbstract {
   generateLink(query?: { redirect_uri?: string; state?: string }) {
+    if (!process.env.YOUTUBE_CLIENT_ID || !process.env.YOUTUBE_CLIENT_SECRET) {
+      throw new BadRequestException('Google login is not configured');
+    }
     const redirectUri = query?.redirect_uri || defaultRedirect();
     return makeClient(redirectUri).generateAuthUrl({
       access_type: 'online',

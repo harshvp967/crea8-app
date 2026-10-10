@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import {
   AuthProvider,
   AuthProviderAbstract,
@@ -6,9 +7,11 @@ import {
 @AuthProvider({ provider: 'GITHUB' })
 export class GithubProvider extends AuthProviderAbstract {
   generateLink(query?: { state?: string }): string {
-    return `https://github.com/login/oauth/authorize?client_id=${
-      process.env.GITHUB_CLIENT_ID
-    }&scope=user:email&state=${
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    if (!clientId || !process.env.GITHUB_CLIENT_SECRET) {
+      throw new BadRequestException('GitHub login is not configured');
+    }
+    return `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email&state=${
       query?.state || 'login'
     }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/settings`
