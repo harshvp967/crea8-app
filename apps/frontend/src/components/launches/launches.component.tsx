@@ -250,7 +250,7 @@ export const MenuComponent: FC<
   return (
     <div
       // @ts-ignore
-      ref={dragPreview}
+      ref={variant === 'chip' ? undefined : dragPreview}
       {...(integration.refreshNeeded && {
         onClick: refreshChannel(integration),
         'data-tooltip-id': 'tooltip',
@@ -321,7 +321,7 @@ export const MenuComponent: FC<
       </div>
       <div
         // @ts-ignore
-        ref={drag}
+        ref={variant === 'chip' ? undefined : drag}
         {...(integration.disabled &&
         totalNonDisabledChannels === user?.totalChannels
           ? {
@@ -673,7 +673,20 @@ export const LaunchesComponent = () => {
                 {t('no_channels', 'No channels yet')}
               </span>
             ) : (
-              <div className="channel-avatars">
+              <div
+                className="channel-avatars"
+                onWheel={(event) => {
+                  const node = event.currentTarget;
+                  if (node.scrollWidth <= node.clientWidth) {
+                    return;
+                  }
+                  const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+                  if (!horizontal && !event.shiftKey) {
+                    return;
+                  }
+                  node.scrollLeft += horizontal ? event.deltaX : event.deltaY;
+                }}
+              >
                 {sortedIntegrations.map((integration) => (
                   <MenuComponent
                     key={integration.id}

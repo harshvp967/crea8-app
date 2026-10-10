@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -31,6 +31,19 @@ export const DashboardSwitcher = () => {
   const pathname = usePathname() || '';
   const { stalkerEnabled } = useVariables();
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onPointer = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointer);
+    return () => document.removeEventListener('mousedown', onPointer);
+  }, [open]);
   if (!stalkerEnabled) {
     return null;
   }
@@ -40,7 +53,7 @@ export const DashboardSwitcher = () => {
 
   return (
     <>
-      <div className="dash-mswitch">
+      <div className="dash-mswitch" ref={menuRef}>
         <button
           type="button"
           className="dash-mswitch-btn"

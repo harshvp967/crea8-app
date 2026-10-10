@@ -5,9 +5,10 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import clsx from 'clsx';
-export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
-  asOpenSelect,
-}) => {
+export const OrganizationSelector: FC<{
+  asOpenSelect?: boolean;
+  menuOpen?: boolean;
+}> = ({ asOpenSelect, menuOpen }) => {
   const fetch = useFetch();
   const user = useUser();
   const load = useCallback(async () => {
@@ -38,7 +39,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
     },
     []
   );
-  if (isLoading || (!isLoading && data?.length === 1)) {
+  if (isLoading || (!menuOpen && !asOpenSelect && data?.length === 1)) {
     return null;
   }
   return (
@@ -68,13 +69,19 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
               )}
             </div>
           )}
-          {data?.length > 1 && (
+          {(data?.length > 1 || menuOpen) && (
             <div
               className={clsx(
-                'hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
+                'org-menu hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
                 asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : '',
+                menuOpen && '!flex'
               )}
             >
+              {menuOpen && !!current?.name && !withoutCurrent?.length && (
+                <div className="whitespace-nowrap truncate text-textItemBlur">
+                  {current.name}
+                </div>
+              )}
               {withoutCurrent?.map(
                 (org: {
                   name: string;

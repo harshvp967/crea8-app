@@ -314,6 +314,8 @@ export const Filters = () => {
           <div className="cal-nav border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
             <div
               onClick={previous}
+              role="button"
+              aria-label="Previous"
               className="cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
             >
               <svg
@@ -348,6 +350,8 @@ export const Filters = () => {
             </div>
             <div
               onClick={next}
+              role="button"
+              aria-label="Next"
               className="cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
             >
               <svg

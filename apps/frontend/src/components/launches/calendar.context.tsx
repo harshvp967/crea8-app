@@ -8,7 +8,9 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import dayjs from 'dayjs';
@@ -325,25 +327,29 @@ export const CalendarWeekProvider: FC<{
     }
   }, [posts]);
 
-  // Phone presents Day view until the user picks a view. A saved calendar-display
-  // cookie or a display query param is left as the user set it, and this does
-  // not write the cookie.
-  useEffect(() => {
-    if (searchParams.get('display')) {
+  // Phone opens on Day. A display query param is an explicit choice and wins.
+  // This writes filters in memory only, so opening the page does not change
+  // the calendar-display cookie desktop reads. Later navigation goes through
+  // setFiltersWrapper, the same handler desktop uses.
+  const phoneDefaulted = useRef(false);
+  useLayoutEffect(() => {
+    if (phoneDefaulted.current) {
       return;
     }
     if (!window.matchMedia('(max-width: 767px)').matches) {
       return;
     }
-    const saved = document.cookie
-      .split('; ')
-      .some((part) => part.startsWith('calendar-display='));
-    if (saved) {
+    phoneDefaulted.current = true;
+    if (searchParams.get('display')) {
       return;
     }
     const range = getDateRange('day');
     setFilters((current) => {
-      if (current.display === 'day') {
+      if (
+        current.display === 'day' &&
+        current.startDate === range.startDate &&
+        current.endDate === range.endDate
+      ) {
         return current;
       }
       return {
