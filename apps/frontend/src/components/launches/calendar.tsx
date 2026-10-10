@@ -6,6 +6,7 @@ import React, {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from 'react';
@@ -257,7 +258,7 @@ const usePostActions = (onMutate?: () => void) => {
 
 const useNarrowLayout = () => {
   const [narrow, setNarrow] = useState(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const media = window.matchMedia('(max-width: 767px)');
     const sync = () => setNarrow(media.matches);
     sync();
@@ -366,9 +367,12 @@ export const DayView = () => {
   );
 
   if (narrow) {
-    const occupied = options.map((option) => Math.floor(option[0].time / 60));
+    const occupied = posts.map((post) =>
+      dayjs.utc(post.publishDate).local().hour()
+    );
+    // Mock working window is 9 AM–2 PM. Hours that already have posts stay visible.
     const hours = Array.from(
-      new Set([...Array.from({ length: 8 }, (_, index) => index + 9), ...occupied])
+      new Set([...Array.from({ length: 6 }, (_, index) => index + 9), ...occupied])
     ).sort((left, right) => left - right);
     return (
       <div className="flex flex-col gap-[8px] flex-1 min-h-0">
@@ -430,8 +434,19 @@ export const DayView = () => {
   );
 };
 export const WeekView = () => {
-  const { startDate, endDate } = useCalendar();
+  const { startDate, posts } = useCalendar();
   const t = useT();
+  const visibleHours = useMemo(() => {
+    const occupied = (posts || []).map((post) =>
+      dayjs.utc(post.publishDate).local().hour()
+    );
+    return Array.from(
+      new Set([
+        ...hours.filter((hour) => hour >= 9 && hour <= 16),
+        ...occupied,
+      ])
+    ).sort((left, right) => left - right);
+  }, [posts]);
 
   // Use dayjs to get localized day names
   const localizedDays = useMemo(() => {
@@ -454,50 +469,46 @@ export const WeekView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 relative">
-        <div className="grid [grid-template-columns:72px_repeat(7,_minmax(0,_1fr))] gap-[6px] rounded-[16px] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor p-[2px]">
-          <div className="z-10 bg-newBgColorInner border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[18px] sticky top-0"></div>
-          {localizedDays.map((day, index) => (
+        <div className="week-grid grid [grid-template-columns:64px_repeat(7,minmax(0,1fr))] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+          <div className="week-corner sticky top-0 z-10" />
+          {localizedDays.map((day) => (
             <div
               key={day.name}
               className={clsx(
-                'p-2 text-center bg-newBgColorInner border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[18px] sticky top-0 z-[20]',
-                day.date.isSame(newDayjs(), 'day') &&
-                  'border-[#00D9FF]/40 ring-1 ring-[#00D9FF]/25'
+                'week-head sticky top-0 z-[20]',
+                day.date.isSame(newDayjs(), 'day') && 'is-today'
               )}
             >
-              <div className="text-[12px] font-[500] text-[#8a8a8a] tracking-wide uppercase">
+              <div className="week-dow text-[13px] font-[500] text-textItemBlur">
                 {day.name}
               </div>
               <div
                 className={clsx(
-                  'text-[13px] font-[600] flex items-center justify-center gap-[6px]',
-                  day.date.isSame(newDayjs(), 'day')
-                    ? 'text-[#00D9FF]'
-                    : 'text-newTextColor'
+                  'week-num text-[14px] font-[600]',
+                  day.date.isSame(newDayjs(), 'day') && 'is-today'
                 )}
               >
-                {day.date.isSame(newDayjs(), 'day') && (
-                  <div className="w-[6px] h-[6px] bg-[#00D9FF] rounded-full" />
-                )}
                 {day.day}
               </div>
             </div>
           ))}
-          {hours.map((hour) => (
+          {visibleHours.map((hour) => (
             <Fragment key={hour}>
-              <div className="p-2 pe-2 text-center items-center justify-center flex text-[12px] text-[#6a6a6a] font-[500]">
+              <div className="week-time">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
-              {localizedDays.map((day, indexDay) => (
-                <Fragment
+              {localizedDays.map((day) => (
+                <div
                   key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
+                  className={clsx(
+                    'week-cell',
+                    day.date.isSame(newDayjs(), 'day') && 'is-today'
+                  )}
                 >
-                  <div className="relative">
-                    <CalendarColumn
-                      getDate={day.date.hour(hour).startOf('hour')}
-                    />
-                  </div>
-                </Fragment>
+                  <CalendarColumn
+                    getDate={day.date.hour(hour).startOf('hour')}
+                  />
+                </div>
               ))}
             </Fragment>
           ))}
@@ -558,11 +569,11 @@ export const MonthView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 grid-rows-[56px_auto] gap-[6px] rounded-[16px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary p-[2px]">
+        <div className="month-grid grid grid-cols-7 absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
           {localizedDays.map((day) => (
             <div
               key={day}
-              className="z-[20] p-2 bg-newBgColorInner border border-newBorder flex justify-center items-center flex-col h-[56px] rounded-[18px] sticky top-0 text-[14px] font-[500] text-textItemBlur"
+              className="month-head z-[20] sticky top-0 text-[14px] font-[500] text-textItemBlur"
             >
               <div>{day}</div>
             </div>
@@ -571,7 +582,7 @@ export const MonthView = () => {
             <div
               key={index}
               className={clsx(
-                'text-center items-center justify-center flex rounded-[14px]',
+                'month-cell text-center items-center justify-center flex',
                 date.label !== 'current-month' && 'opacity-40'
               )}
             >
@@ -666,8 +677,61 @@ export const ListView = () => {
   );
 };
 
+// Phone always paints Day view. The saved calendar-display cookie and the URL
+// display param stay as the user set them; this only chooses which tree renders.
+const PhoneDayCalendar = () => {
+  const calendar = useCalendar();
+  const today = newDayjs().format('YYYY-MM-DD');
+  const inRange = today >= calendar.startDate && today <= calendar.endDate;
+  const [picked, setPicked] = useState<string | null>(null);
+  const selected = picked || (inRange ? today : calendar.startDate);
+  const posts = useMemo(
+    () =>
+      calendar.posts.filter(
+        (post) =>
+          dayjs.utc(post.publishDate).local().format('YYYY-MM-DD') === selected
+      ),
+    [calendar.posts, selected]
+  );
+  const setFilters = useCallback(
+    (next: {
+      startDate: string;
+      endDate: string;
+      display: 'week' | 'month' | 'day' | 'list';
+      customer: string | null;
+    }) => {
+      const inside =
+        next.startDate >= calendar.startDate && next.startDate <= calendar.endDate;
+      if (next.display === 'day' && inside && calendar.display !== 'day') {
+        setPicked(next.startDate);
+        return;
+      }
+      calendar.setFilters(next);
+    },
+    [calendar]
+  );
+  return (
+    <CalendarContext.Provider
+      value={{
+        ...calendar,
+        posts,
+        startDate: selected,
+        endDate: selected,
+        display: 'day',
+        setFilters,
+      }}
+    >
+      <DayView />
+    </CalendarContext.Provider>
+  );
+};
+
 export const Calendar = () => {
   const { display } = useCalendar();
+  const narrow = useNarrowLayout();
+  if (narrow && display !== 'list') {
+    return <PhoneDayCalendar />;
+  }
   return (
     <>
       {display === 'list' ? (
@@ -798,6 +862,7 @@ export const CalendarColumn: FC<{
                     <div className="flex-1 flex">
                       <Button
                         type="button"
+                        secondary
                         className="flex-1"
                         onClick={() => {
                           modal.closeAll();
@@ -937,12 +1002,15 @@ export const CalendarColumn: FC<{
   return (
     <div
       className={clsx(
-        'flex flex-col w-full min-h-full relative rounded-[12px] transition-colors',
+        'cal-col flex flex-col w-full min-h-full relative transition-colors',
+        display === 'week' || display === 'month' ? 'cal-col-week' : 'rounded-[12px]',
         isBeforeNow && 'repeated-strip',
         loading && 'animate-pulse',
-        isBeforeNow
-          ? 'cursor-not-allowed opacity-70'
-          : 'border border-[#2a2a2a]/80 bg-[#121212]/40 hover:border-[#3a3a3a] hover:bg-[#161616]/80'
+        display !== 'week' &&
+          display !== 'month' &&
+          (isBeforeNow
+            ? 'cursor-not-allowed opacity-70'
+            : 'border border-[#2a2a2a]/80 bg-[#121212]/40 hover:border-[#3a3a3a] hover:bg-[#161616]/80')
       )}
       ref={drop as any}
     >
@@ -1135,6 +1203,7 @@ const CalendarItem: FC<{
     user?.impersonate &&
     post.creationMethod &&
     post.creationMethod !== 'UNKNOWN';
+  const [actionsOpen, setActionsOpen] = useState(false);
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
@@ -1157,8 +1226,10 @@ const CalendarItem: FC<{
       // @ts-ignore
       ref={dragRef}
       className={clsx(
-        'w-full flex h-full flex-1 flex-col group',
+        'cal-post w-full flex h-full flex-1 flex-col group',
         'relative',
+        actionsOpen && 'is-open',
+        state === 'DRAFT' && 'is-draft',
         state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
       )}
       style={{
@@ -1182,15 +1253,7 @@ const CalendarItem: FC<{
           />
         </div>
       )}
-      <div
-        className={clsx(
-          'text-[11px] text-[#0a0a0a] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary',
-          post?.tags?.[0]?.tag?.color ? 'text-white' : 'text-[#0a0a0a]'
-        )}
-        style={{
-          backgroundColor: post?.tags?.[0]?.tag?.color,
-        }}
-      >
+      <div className="cal-post-bar">
         <div
           className={clsx(
             post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : '',
@@ -1200,98 +1263,75 @@ const CalendarItem: FC<{
           {post.tags.map((p) => p.tag.name).join(', ')}
         </div>
         {copyDebugJson && (
-          <div
-            className={clsx(
-              'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-            )}
-            onClick={copyDebugJson}
-          >
+          <div className="cal-post-action" onClick={copyDebugJson}>
             <CopyDebug />
+            <span>{t('copy_debug_json', 'Copy Debug JSON')}</span>
           </div>
         )}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={duplicatePost}
-        >
+        <div className="cal-post-action" onClick={duplicatePost}>
           <Duplicate />
+          <span>{t('duplicate_post', 'Duplicate Post')}</span>
         </div>
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={preview}
-        >
+        <div className="cal-post-action" onClick={preview}>
           <Preview />
+          <span>{t('preview_post', 'Preview Post')}</span>
         </div>{' '}
         {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
           <></>
         ) : post.releaseId === 'missing' && missingRelease ? (
-          <div
-            className={clsx(
-              'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-            )}
-            onClick={missingRelease}
-          >
+          <div className="cal-post-action" onClick={missingRelease}>
             <Statistics />
+            <span>{t('post_statistics', 'Post Statistics')}</span>
           </div>
         ) : post.releaseId !== 'missing' ? (
-          <div
-            className={clsx(
-              'hidden group-hover:block hover:underline cursor-pointer',
-              post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-            )}
-            onClick={statistics}
-          >
+          <div className="cal-post-action" onClick={statistics}>
             <Statistics />
+            <span>{t('post_statistics', 'Post Statistics')}</span>
           </div>
         ) : (
           <></>
         )}{' '}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
-          )}
-          onClick={deletePost}
-        >
+        <div className="cal-post-action is-danger" onClick={deletePost}>
           <DeletePost />
+          <span>{t('delete_post', 'Delete Post')}</span>
         </div>
       </div>
       <div
         onClick={editPost}
-        className={clsx(
-          'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
-          'relative',
-          isBeforeNow && '!grayscale'
-        )}
+        className="cal-post-body gap-[6px] w-full flex h-full flex-1 p-[6px] text-[13px] relative"
       >
-        <div className={clsx('relative min-w-[20px]')}>
+        <div className="cal-post-icon relative min-w-[20px]">
           <img
-            className="w-[20px] h-[20px] rounded-[8px]"
+            className="cal-post-avatar w-[20px] h-[20px] rounded-[6px]"
             src={post.integration.picture! || '/no-picture.jpg'}
+            alt=""
           />
           <img
-            className="w-[12px] h-[12px] rounded-[8px] absolute z-10 top-[10px] end-0 border border-fifth"
+            className="cal-post-mark"
             src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+            alt=""
           />
         </div>
-        <div className="w-full flex-1 flex flex-col min-h-[40px]">
-          <div className="text-start">
-            {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
+        <div className="w-full flex-1 min-w-0">
+          <div className="w-full text-ellipsis break-words line-clamp-2 text-start leading-[1.3]">
+            {state === 'DRAFT' ? (
+              <span className="text-textItemBlur">{t('draft', 'Draft')}: </span>
+            ) : null}
+            {stripHtmlValidation('none', post.content, false, true, false) ||
+              t('no_content', 'no content')}
           </div>
-            <div className="w-full relative">
-              <div className="absolute top-0 start-0 w-full text-ellipsis break-words line-clamp-1 text-start">
-                {stripHtmlValidation('none', post.content, false, true, false) ||
-                  t('no_content', 'no content')}
-              </div>
-            </div>
         </div>
+        <button
+          type="button"
+          className="cal-post-more"
+          aria-label={t('post', 'Post')}
+          onClick={(event) => {
+            event.stopPropagation();
+            setActionsOpen((open) => !open);
+          }}
+        >
+          ···
+        </button>
         {showTime && (
           <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
             {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}

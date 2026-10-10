@@ -20,7 +20,7 @@ export const HeaderOverflow = ({ children }: { children: ReactNode }) => {
   }, [open]);
 
   return (
-    <div className="relative shrink-0" ref={ref}>
+    <div className="header-overflow relative shrink-0" ref={ref}>
       <button
         type="button"
         className="arc-icon-btn"

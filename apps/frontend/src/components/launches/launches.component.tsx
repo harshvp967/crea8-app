@@ -687,16 +687,14 @@ export const LaunchesComponent = () => {
                     totalNonDisabledChannels={totalNonDisabledChannels}
                   />
                 ))}
+                <button
+                  type="button"
+                  className="channels-trigger"
+                  onClick={() => setChannelsOpen(true)}
+                >
+                  {t('channels', 'Channels')} · {sortedIntegrations.length}
+                </button>
               </div>
-            )}
-            {sortedIntegrations.length > 0 && (
-              <button
-                type="button"
-                className="channels-trigger"
-                onClick={() => setChannelsOpen(true)}
-              >
-                {t('channels', 'Channels')} · {sortedIntegrations.length}
-              </button>
             )}
           </div>
           {channelsOpen && (
