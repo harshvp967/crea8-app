@@ -11,9 +11,10 @@ export const GoogleProvider = () => {
     window.location.href = link;
   }, []);
   return (
-    <div
+    <button
+      type="button"
       onClick={gotoLogin}
-      className={`cursor-pointer flex-1 bg-white h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[5px]`}
+      className="cursor-pointer flex-1 bg-white h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
     >
       <div>
         <svg
@@ -43,6 +44,6 @@ export const GoogleProvider = () => {
       <div className="block text-[14px]">
         {t('google', 'Continue with Google')}
       </div>
-    </div>
+    </button>
   );
 };

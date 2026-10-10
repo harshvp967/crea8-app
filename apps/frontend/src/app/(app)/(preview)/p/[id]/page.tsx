@@ -12,12 +12,85 @@ import { CopyClient } from '@gitroom/frontend/components/preview/copy.client';
 import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 import { RenderPreviewDateClient } from '@gitroom/frontend/components/preview/render.preview.date.client';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
+import {
+  SITE_IMAGE,
+  SITE_NAME,
+} from '@gitroom/frontend/components/layout/site.metadata';
 
 dayjs.extend(utc);
-export const metadata: Metadata = {
-  title: `Crea8one Preview`,
-  description: '',
-};
+
+async function loadPublicPost(id: string) {
+  try {
+    const response = await internalFetch(`/public/posts/${id}`);
+    if (!response.ok) {
+      return null;
+    }
+    const post = await response.json();
+    if (!Array.isArray(post) || !post.length) {
+      return null;
+    }
+    return post;
+  } catch {
+    return null;
+  }
+}
+
+function plainText(value: unknown) {
+  return String(value || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 200);
+}
+
+function shareImage(post: { image?: string }) {
+  try {
+    const images = JSON.parse(post.image || '[]');
+    const path = images.find(
+      (item: { path?: string }) =>
+        typeof item?.path === 'string' && item.path.startsWith('https://')
+    )?.path;
+    return path || SITE_IMAGE;
+  } catch {
+    return SITE_IMAGE;
+  }
+}
+
+export async function generateMetadata(props: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await props.params;
+  const post = await loadPublicPost(id);
+  if (!post) {
+    return {
+      title: 'Post not found',
+      robots: { index: false, follow: false },
+    };
+  }
+  const title = plainText(post[0].content).slice(0, 70) || `${SITE_NAME} post`;
+  const description =
+    plainText(post[0].content) || `A post shared from ${SITE_NAME}`;
+  const image = shareImage(post[0]);
+  return {
+    title,
+    description,
+    robots: { index: true, follow: true },
+    openGraph: {
+      title,
+      description,
+      siteName: SITE_NAME,
+      type: 'article',
+      images: [{ url: image, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
+
 export default async function Auth(
   props: {
     params: Promise<{
@@ -35,9 +108,9 @@ export default async function Auth(
     id
   } = params;
 
-  const post = await (await internalFetch(`/public/posts/${id}`)).json();
+  const post = await loadPublicPost(id);
   const t = await getT();
-  if (!post.length) {
+  if (!post) {
     return (
       <div className="text-white fixed start-0 top-0 w-full h-full flex justify-center items-center text-[20px]">
         {t('post_not_found', 'Post not found')}

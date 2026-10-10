@@ -1,4 +1,5 @@
-import DOMPurify from 'isomorphic-dompurify';
+import createDOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom';
 
 const ALLOWED_TAGS = [
   'p',
@@ -23,6 +24,11 @@ const ALLOWED_ATTR = [
   'data-mention-label',
 ];
 
+// isomorphic-dompurify pulls jsdom 29, whose html-encoding-sniffer require()s
+// the ESM-only @exodus/bytes package. Next then 500s on /p/[id]. This uses the
+// repo's CommonJS jsdom 22 with DOMPurify directly.
+const DOMPurify = createDOMPurify(new JSDOM('').window);
+
 export const sanitizePostContent = (value: unknown): string => {
   if (typeof value !== 'string' || !value) {
     return '';
@@ -31,6 +37,6 @@ export const sanitizePostContent = (value: unknown): string => {
   return DOMPurify.sanitize(value, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
-    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|\/|#)/i,
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|\/(?!\/)|#)/i,
   });
 };
