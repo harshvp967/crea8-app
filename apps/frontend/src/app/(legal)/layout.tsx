@@ -6,7 +6,7 @@ import '../global.scss';
 import { crea8oneIcons } from '@gitroom/frontend/components/layout/crea8one.icons';
 
 const jakartaSans = Plus_Jakarta_Sans({
-  weight: ['600', '500'],
+  weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
   subsets: ['latin'],
 });

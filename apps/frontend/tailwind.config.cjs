@@ -122,7 +122,7 @@ module.exports = {
         loginBg: 'url(/auth/bg-login.png)',
       },
       fontFamily: {
-        sans: ['Helvetica Neue'],
+        sans: ['Plus Jakarta Sans', 'Helvetica Neue', 'sans-serif'],
       },
       animation: {
         fade: 'fadeOut 0.5s ease-in-out',
@@ -145,11 +145,7 @@ module.exports = {
         previewShadow: 'var(--preview-box-shadow)',
       },
       dropShadow: {
-        glow: [
-          '0 0 6px rgba(250,204,21,0.6)',
-          '0 0 12px rgba(250,204,21,0.5)',
-          '0 0 24px rgba(250,204,21,0.4)',
-        ],
+        glow: 'none',
       },
       // that is actual animation
       keyframes: (theme) => ({

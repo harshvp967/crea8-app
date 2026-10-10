@@ -57,7 +57,7 @@ export const Select: FC<
         ref={ref}
         {...(disableForm ? {} : form.register(props.name, extraForm))}
         className={clsx(
-          'h-[42px] bg-newBgColorInner px-[16px] outline-none border-newTableBorder border rounded-[8px] text-[14px]',
+          'h-[44px] bg-newBgColorInner px-[16px] outline-none border-newBorder border rounded-[18px] text-[14px] text-textColor focus:border-[color:var(--arc-focus)]',
           className
         )}
         {...rest}

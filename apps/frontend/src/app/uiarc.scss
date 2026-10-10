@@ -1,0 +1,439 @@
+/* Shared presentation for the crea8.one shell.
+   Radii 18 / 26 / 34, control heights 36 / 44 / 50.
+   Accent is a soft tint with a hairline. One solid cyan button uses --arc-ink. */
+
+:root {
+  --arc-radius-control: 18px;
+  --arc-radius-panel: 26px;
+  --arc-radius-surface: 34px;
+  --arc-h-sm: 36px;
+  --arc-h-md: 44px;
+  --arc-h-lg: 50px;
+  --arc-shadow-floating: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.light {
+  --arc-shadow-floating: 0 16px 40px rgba(14, 14, 14, 0.08);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  background: var(--arc-canvas, var(--new-bgColor)) !important;
+  color: var(--new-btn-text);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+body * {
+  outline: none;
+}
+
+body :focus-visible {
+  outline: 2px solid var(--arc-focus);
+  outline-offset: 2px;
+}
+
+@keyframes arc-wave {
+  0% {
+    background-color: var(--arc-selected);
+  }
+  50% {
+    background-color: color-mix(in srgb, var(--arc-accent) 28%, transparent);
+  }
+  100% {
+    background-color: var(--arc-selected);
+  }
+}
+
+.arc-selected {
+  color: var(--arc-accent-text);
+  background-color: var(--arc-selected);
+  border-color: var(--arc-selected-border);
+  box-shadow: inset 0 0 0 1px var(--arc-selected-border);
+  animation: arc-wave 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arc-selected {
+    animation: none;
+  }
+}
+
+.arc-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--new-textItemBlur);
+  background: transparent;
+  cursor: pointer;
+}
+
+.arc-icon-btn:hover {
+  color: var(--arc-accent-text);
+  background: var(--arc-selected);
+  border-color: var(--arc-selected-border);
+}
+
+.arc-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 80;
+  min-width: 240px;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--new-bgColorInner);
+  border: 1px solid var(--new-border);
+  border-radius: var(--arc-radius-panel);
+  box-shadow: var(--arc-shadow-floating);
+}
+
+.arc-menu-label {
+  padding: 4px 8px 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--new-textItemBlur);
+}
+
+.table1 thead {
+  background: var(--new-table-header);
+  border-bottom: 1px solid var(--new-table-border);
+  height: 44px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--new-table-text);
+}
+
+.table1 tbody tr:hover {
+  background: var(--arc-selected);
+}
+
+.swal2-modal {
+  background: var(--new-bgColorInner) !important;
+  border: 1px solid var(--new-border) !important;
+  border-radius: var(--arc-radius-panel) !important;
+  box-shadow: var(--arc-shadow-floating) !important;
+}
+
+.swal2-confirm {
+  background: var(--arc-accent) !important;
+  color: var(--arc-ink) !important;
+  border-radius: var(--arc-radius-control) !important;
+  font-weight: 500 !important;
+}
+
+.swal2-cancel {
+  background: transparent !important;
+  color: var(--new-btn-text) !important;
+  border: 1px solid var(--new-border) !important;
+  border-radius: var(--arc-radius-control) !important;
+}
+
+.mantine-Modal-modal,
+.mantine-Paper-root.mantine-Modal-modal {
+  background: var(--new-bgColorInner) !important;
+  border: 1px solid var(--new-border);
+  border-radius: var(--arc-radius-panel) !important;
+  box-shadow: var(--arc-shadow-floating);
+}
+
+.mantine-Overlay-root {
+  background: var(--popup-color) !important;
+  backdrop-filter: none;
+}
+
+.dropdown-menu {
+  border: 1px solid var(--new-border);
+  border-radius: var(--arc-radius-panel);
+  box-shadow: var(--arc-shadow-floating);
+}
+
+.dropdown-menu button:hover,
+.dropdown-menu button:hover.is-selected {
+  background: var(--arc-selected);
+  color: var(--arc-accent-text);
+}
+
+.react-tags {
+  height: var(--arc-h-md);
+  border-radius: var(--arc-radius-control);
+  border-color: var(--new-border);
+  background: var(--new-bgColorInner);
+}
+
+.react-tags.is-active {
+  border-color: var(--arc-focus);
+  box-shadow: inset 0 0 0 1px var(--arc-focus);
+}
+
+.react-tags__tag {
+  border-radius: 999px;
+  background: var(--arc-selected);
+  color: var(--arc-accent-text);
+  border: 1px solid var(--arc-selected-border);
+}
+
+.empty-state {
+  border: 1px solid var(--new-border);
+  border-radius: var(--arc-radius-surface);
+  background: var(--new-bgColorInner);
+  padding: 32px 24px;
+}
+
+.phone-day-strip,
+.phone-create,
+.mobile-tabbar {
+  display: none;
+}
+
+.agent .copilotKitInput {
+  background-color: var(--new-bgColorInner) !important;
+  border: 1px solid var(--new-border) !important;
+  border-radius: var(--arc-radius-control) !important;
+  box-shadow: none !important;
+}
+
+.agent .copilotKitInput:focus-within {
+  border-color: var(--arc-focus) !important;
+  box-shadow: inset 0 0 0 1px var(--arc-focus) !important;
+}
+
+.agent .copilotKitInput > textarea {
+  color: var(--new-btn-text) !important;
+  font-size: 15px !important;
+}
+
+.agent .copilotKitInput > textarea::placeholder {
+  color: var(--new-textItemBlur) !important;
+}
+
+.agent .copilotKitInputControlButton:not([disabled]):hover {
+  color: var(--arc-accent-text) !important;
+}
+
+@media (max-width: 1199px) {
+  .app-shell {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .app-header {
+    gap: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: var(--arc-radius-panel);
+  }
+
+  .org-name {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell {
+    padding: 8px 8px 84px;
+    gap: 8px;
+  }
+
+  .app-header {
+    min-height: 56px;
+    border-radius: var(--arc-radius-panel);
+    padding: 8px 10px;
+  }
+
+  .app-logo img,
+  .app-logo span {
+    height: 32px !important;
+    max-width: 132px !important;
+  }
+
+  .desktop-nav,
+  .desktop-utilities {
+    display: none !important;
+  }
+
+  .app-main {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .channel-rail {
+    width: 100% !important;
+    height: auto;
+    max-height: 240px;
+    flex: none;
+    position: relative;
+  }
+
+  .channel-rail > div {
+    position: relative !important;
+    height: auto;
+    max-height: 240px;
+  }
+
+  .calendar-well {
+    border-radius: var(--arc-radius-control);
+    padding: 8px;
+  }
+
+  .phone-day-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--new-bgColorInner);
+    padding-bottom: 8px;
+  }
+
+  .phone-day-strip button {
+    min-height: 44px;
+    border-radius: 14px;
+    border: 1px solid var(--new-border);
+    background: transparent;
+    color: var(--new-textItemBlur);
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .phone-day-strip button.arc-selected {
+    color: var(--arc-accent-text);
+  }
+
+  .phone-create {
+    display: block;
+    position: fixed;
+    z-index: 60;
+    right: 16px;
+    bottom: 84px;
+  }
+
+  .phone-create button {
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    border-radius: 18px;
+    padding: 0;
+    box-shadow: var(--arc-shadow-floating);
+  }
+
+  .phone-create button > div {
+    display: none;
+  }
+
+  .sidebar-create {
+    display: none;
+  }
+
+  .mobile-tabbar {
+    display: flex;
+    position: fixed;
+    z-index: 70;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    height: 64px;
+    align-items: stretch;
+    gap: 2px;
+    padding: 4px;
+    background: var(--new-bgColorInner);
+    border: 1px solid var(--new-border);
+    border-radius: var(--arc-radius-panel);
+    box-shadow: var(--arc-shadow-floating);
+  }
+
+  .mobile-tabbar a,
+  .mobile-tabbar button {
+    flex: 1;
+    min-height: 44px;
+    min-width: 44px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--new-textItemBlur);
+    background: transparent;
+    border: 1px solid transparent;
+  }
+
+  .mobile-tabbar svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .mobile-sheet a,
+  .mobile-sheet button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--new-btn-text);
+    text-align: start;
+  }
+
+  .mobile-sheet {
+    position: fixed;
+    z-index: 75;
+    left: 8px;
+    right: 8px;
+    bottom: 80px;
+    max-height: min(70vh, 480px);
+    overflow: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--new-bgColorInner);
+    border: 1px solid var(--new-border);
+    border-radius: var(--arc-radius-panel);
+    box-shadow: var(--arc-shadow-floating);
+  }
+
+  .filters-bar {
+    gap: 8px;
+  }
+
+  .filters-bar .date-range {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-sheet {
+    display: none !important;
+  }
+}
