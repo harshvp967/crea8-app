@@ -4,19 +4,18 @@ import { ReactNode } from 'react';
 import clsx from 'clsx';
 import '../global.scss';
 import { crea8oneIcons } from '@gitroom/frontend/components/layout/crea8one.icons';
+import { publicPageMetadata } from '@gitroom/frontend/components/layout/site.metadata';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500'],
   style: ['normal', 'italic'],
   subsets: ['latin'],
+  display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {
-  title: 'Crea8one',
-  robots: {
-    index: false,
-    follow: false,
-  },
+  ...publicPageMetadata(),
   icons: crea8oneIcons,
 };
 
