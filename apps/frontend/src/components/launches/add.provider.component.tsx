@@ -70,16 +70,19 @@ const InviteLinkModal: FC<{
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
   const modal = useModals();
   const fetch = useFetch();
+  const t = useT();
   return useCallback(async () => {
     const data = await (await fetch('/integrations')).json();
     modal.openModal({
-      title: 'Add Channel',
+      title: invite
+        ? t('invite_link_title', 'Invite link')
+        : 'Add Channel',
       withCloseButton: true,
       children: (
         <AddProviderComponent invite={!!invite} update={update} {...data} />
       ),
     });
-  }, []);
+  }, [fetch, invite, modal, t, update]);
 };
 export const AddProviderButton: FC<{
   update?: () => void;
@@ -738,6 +741,14 @@ export const AddProviderComponent: FC<{
       className="w-full flex flex-col gap-[20px] rounded-[4px] relative]"
       data-invite={props.invite ? 'true' : 'false'}
     >
+      {props.invite ? (
+        <p className="invite-purpose text-[13px] leading-[1.45] text-textItemBlur">
+          {t(
+            'invite_link',
+            'Send Invite Link to a customer to add channel'
+          )}
+        </p>
+      ) : null}
       <div className="flex flex-col">
         <div
           className={clsx(

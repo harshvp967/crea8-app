@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import clsx from 'clsx';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import {
@@ -31,19 +32,9 @@ export const DashboardSwitcher = () => {
   const pathname = usePathname() || '';
   const { stalkerEnabled } = useVariables();
   const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onPointer = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onPointer);
-    return () => document.removeEventListener('mousedown', onPointer);
-  }, [open]);
+    setOpen(false);
+  }, [pathname]);
   if (!stalkerEnabled) {
     return null;
   }
@@ -53,7 +44,17 @@ export const DashboardSwitcher = () => {
 
   return (
     <>
-      <div className="dash-mswitch" ref={menuRef}>
+      {open ? (
+        <div
+          className="sheet-backdrop"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setOpen(false);
+          }}
+        />
+      ) : null}
+      <div className={clsx('dash-mswitch', open && 'is-open')}>
         <button
           type="button"
           className="dash-mswitch-btn"
