@@ -302,13 +302,13 @@ export const Filters = () => {
   }, [calendar]);
 
   return (
-    <div className="text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0">
+    <div className="filters-bar text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0">
       {!isListView && (
-        <div className="flex flex-1 min-w-[240px] flex-row items-center gap-[10px]">
-          <div className="border h-[40px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-full overflow-hidden">
+          <div className="date-range flex flex-1 min-w-[240px] flex-row items-center gap-[10px]">
+          <div className="border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
             <div
               onClick={previous}
-              className="cursor-pointer text-[#b0b0b0] rtl:rotate-180 px-[12px] bg-[#1a1a1a] h-full flex items-center justify-center hover:text-[#0a0a0a] hover:bg-[#00D9FF] transition-colors"
+              className="cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -326,14 +326,14 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="min-w-[200px] text-center bg-[#1a1a1a] h-full flex items-center justify-center">
+            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
                 {getDisplayText()}
               </div>
             </div>
             <div
               onClick={next}
-              className="cursor-pointer text-[#b0b0b0] rtl:rotate-180 px-[12px] bg-[#1a1a1a] h-full flex items-center justify-center hover:text-[#0a0a0a] hover:bg-[#00D9FF] transition-colors"
+              className="cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -356,7 +356,7 @@ export const Filters = () => {
             <div className="text-center flex h-[40px]">
               <div
                 onClick={setToday}
-                className="hover:text-[#0a0a0a] hover:bg-[#00D9FF] py-[3px] px-[16px] flex justify-center items-center rounded-full transition-all cursor-pointer text-[14px] bg-[#1a1a1a] border border-newBorder text-[#b0b0b0]"
+                className="hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] py-[3px] px-[16px] flex justify-center items-center rounded-full transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newBorder text-textItemBlur"
               >
                 {t('today', 'Today')}
               </div>
@@ -365,14 +365,14 @@ export const Filters = () => {
         </div>
       )}
       {isListView && (
-        <div className="flex flex-1 min-w-[240px] flex-row items-center gap-[10px]">
-          <div className="border h-[40px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-full overflow-hidden">
+          <div className="date-range flex flex-1 min-w-[240px] flex-row items-center gap-[10px]">
+          <div className="border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
             <div
               onClick={previousPage}
               className={clsx(
-                'text-[#b0b0b0] rtl:rotate-180 px-[12px] bg-[#1a1a1a] h-full flex items-center justify-center transition-colors',
+                'text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center transition-colors',
                 calendar.listPage > 0
-                  ? 'cursor-pointer hover:text-[#0a0a0a] hover:bg-[#00D9FF]'
+                  ? 'cursor-pointer hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]'
                   : 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -392,7 +392,7 @@ export const Filters = () => {
                 />
               </svg>
             </div>
-            <div className="min-w-[200px] text-center bg-[#1a1a1a] h-full flex items-center justify-center">
+            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
                 {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
               </div>
@@ -400,9 +400,9 @@ export const Filters = () => {
             <div
               onClick={nextPage}
               className={clsx(
-                'text-[#b0b0b0] rtl:rotate-180 px-[12px] bg-[#1a1a1a] h-full flex items-center justify-center transition-colors',
+                'text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center transition-colors',
                 calendar.listPage < calendar.listTotalPages - 1
-                  ? 'cursor-pointer hover:text-[#0a0a0a] hover:bg-[#00D9FF]'
+                  ? 'cursor-pointer hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]'
                   : 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -423,7 +423,7 @@ export const Filters = () => {
               </svg>
             </div>
           </div>
-          <div className="flex flex-row p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">
+          <div className="flex flex-row p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-newBgColorInner">
             {listStateOptions.map((option) => (
               <div
                 key={option.value}
@@ -431,8 +431,8 @@ export const Filters = () => {
                 className={clsx(
                   'pt-[6px] pb-[5px] cursor-pointer min-w-[80px] px-[12px] text-center rounded-full transition-colors',
                   calendar.listState === option.value
-                    ? 'text-[#0a0a0a] bg-[#00D9FF]'
-                    : 'text-[#8a8a8a] hover:text-white'
+                    ? 'arc-selected'
+                    : 'text-textItemBlur hover:text-newTextColor'
                 )}
               >
                 {option.label}
@@ -463,14 +463,14 @@ export const Filters = () => {
           },
         ]}
       />
-      <div className="flex flex-row shrink-0 p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-[#1a1a1a]">
+      <div className="flex flex-row shrink-0 p-[4px] border border-newBorder rounded-full text-[14px] font-[500] bg-newBgColorInner">
         <div
           onClick={setCalendarView}
           className={clsx(
             'pt-[6px] pb-[5px] cursor-pointer flex justify-center items-center w-[36px] text-center rounded-full transition-colors',
             !isListView
-              ? 'text-[#0a0a0a] bg-[#00D9FF]'
-              : 'text-[#8a8a8a] hover:text-white'
+              ? 'arc-selected'
+              : 'text-textItemBlur hover:text-newTextColor'
           )}
         >
           {/*calendar*/}
@@ -495,8 +495,8 @@ export const Filters = () => {
           className={clsx(
             'pt-[6px] pb-[5px] flex justify-center items-center cursor-pointer w-[36px] text-center rounded-full transition-colors',
             isListView
-              ? 'text-[#0a0a0a] bg-[#00D9FF]'
-              : 'text-[#8a8a8a] hover:text-white'
+              ? 'arc-selected'
+              : 'text-textItemBlur hover:text-newTextColor'
           )}
         >
           {/*list*/}

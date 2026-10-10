@@ -434,9 +434,7 @@ export function ChartLine({
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                filter={
-                  p.s.color === theme.accent ? `url(#${uid}-glow)` : undefined
-                }
+                filter={undefined}
                 initial={
                   still ? false : { d: p.line, pathLength: 0, opacity: 0 }
                 }

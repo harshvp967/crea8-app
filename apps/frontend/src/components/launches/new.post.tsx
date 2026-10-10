@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import clsx from 'clsx';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import dayjs from 'dayjs';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
@@ -8,7 +9,7 @@ import { SetSelectionModal } from '@gitroom/frontend/components/launches/calenda
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 
-export const NewPost = () => {
+export const NewPost = ({ presentation = 'inline' }: { presentation?: 'inline' | 'floating' }) => {
   const fetch = useFetch();
   const modal = useModals();
   const { integrations, reloadCalendarView, sets } = useCalendar();
@@ -77,7 +78,10 @@ export const NewPost = () => {
   return (
     <button
       onClick={createAPost}
-      className="text-[#0a0a0a] flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-md bg-btnPrimary flex justify-center items-center gap-[5px] outline-none"
+      className={clsx(
+        'text-[#0A0A0A] flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-[18px] bg-btnPrimary flex justify-center items-center gap-[5px] outline-none',
+        presentation === 'floating' && 'phone-create-btn'
+      )}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -89,7 +93,7 @@ export const NewPost = () => {
       >
         <path
           d="M10.5001 4.16699V15.8337M4.66675 10.0003H16.3334"
-          stroke="white"
+          stroke="#0A0A0A"
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"

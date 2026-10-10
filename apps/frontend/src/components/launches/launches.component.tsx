@@ -264,7 +264,8 @@ export const MenuComponent: FC<
           }
         : {})}
       className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
+        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-[18px] border border-transparent px-[8px] py-[6px]',
+        integration.refreshNeeded && 'border-[#0091AD]/40',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -526,7 +527,7 @@ export const LaunchesComponent = () => {
       <CalendarWeekProvider integrations={sortedIntegrations}>
         <div
           className={clsx(
-            'flex relative flex-col',
+            'channel-rail flex relative flex-col',
             collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[280px]'
           )}
         >
@@ -564,7 +565,7 @@ export const LaunchesComponent = () => {
             </div>
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
-              <div className="flex gap-[8px] group-[.sidebar]:flex-col">
+              <div className="sidebar-create flex gap-[8px] group-[.sidebar]:flex-col">
                 {sortedIntegrations?.length > 0 && <NewPost />}
                 {sortedIntegrations?.length > 0 &&
                   user?.tier?.ai &&
@@ -574,7 +575,7 @@ export const LaunchesComponent = () => {
             <div className="gap-[32px] flex flex-col select-none flex-1">
               {sortedIntegrations.length === 0 && collapseMenu === '0' && (
                 <div className="flex-1 max-h-[500px] justify-center items-center flex">
-                  <div className="flex flex-col gap-[12px] text-center">
+                    <div className="empty-state flex flex-col gap-[12px] text-center">
                     <img
                       src={
                         mode === 'dark'
@@ -623,9 +624,14 @@ export const LaunchesComponent = () => {
         </div>
         <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[16px] min-w-0">
           <Filters />
-          <div className="flex-1 flex min-h-0 rounded-[16px] border border-newBorder bg-[#0f0f0f]/50 overflow-hidden p-[10px]">
+          <div className="calendar-well flex-1 flex min-h-0 rounded-[26px] border border-newBorder bg-newBgColor overflow-hidden p-[10px]">
             <Calendar />
           </div>
+          {sortedIntegrations?.length > 0 && (
+            <div className="phone-create">
+              <NewPost presentation="floating" />
+            </div>
+          )}
         </div>
       </CalendarWeekProvider>
     </DNDProvider>

@@ -156,8 +156,8 @@ export const SettingsPopup: FC<{
             <div
               key={tabKey}
               className={clsx(
-                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-[12px]',
-                tabKey === tab && 'bg-boxHover'
+                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-[18px] min-h-[44px] px-[8px] text-[14px]',
+                tabKey === tab && 'arc-selected'
               )}
               onClick={() => setTab(tabKey)}
             >
