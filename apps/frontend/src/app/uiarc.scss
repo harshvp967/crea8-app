@@ -6269,8 +6269,14 @@ body :focus-visible {
 .stk-kw-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px;
+  gap: 2px;
+  padding: 10px 14px 12px;
+}
+
+.stk-kw-line {
+  margin: 0;
+  line-height: 1.25;
+  font-size: 14px;
 }
 
 .stk-kw-row + .stk-kw-row {
@@ -6338,13 +6344,46 @@ body :focus-visible {
   justify-content: center;
 }
 
+.stk-kw-groups {
+  white-space: nowrap;
+}
+
+.stk-kw-groups-label {
+  line-height: 1;
+}
+
 .stk-kw-menu {
   position: absolute;
   z-index: 40;
   top: calc(100% + 6px);
   right: 0;
-  width: 220px;
+  width: 248px;
   text-align: start;
+}
+
+.stk-kw-menu-title {
+  margin: 4px 11px 2px;
+  color: var(--new-textItemBlur);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stk-kw-move {
+  justify-content: flex-start;
+}
+
+.stk-kw-move-select {
+  max-width: 108px;
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.stk-kw-delete {
+  color: var(--arc-danger);
 }
 
 @media (max-width: 767px) {
@@ -6354,6 +6393,24 @@ body :focus-visible {
     min-width: 44px;
     padding-left: 0;
     padding-right: 0;
+  }
+
+  .stk-kw-groups-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .stk-kw-menu-title {
+    margin: 0 8px 8px;
+    text-align: center;
+    font-size: 14px;
   }
 
   .stk-kw-menu {

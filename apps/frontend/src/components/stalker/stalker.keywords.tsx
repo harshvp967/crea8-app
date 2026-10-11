@@ -116,6 +116,37 @@ const mentionCount = (keyword: Keyword) => {
   return '—';
 };
 
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+  </svg>
+);
+
+const FolderIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M3 7h6l2 2h10v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" strokeLinejoin="round" />
+  </svg>
+);
+
+const PauseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <rect x="6" y="5" width="3.5" height="14" rx="1" />
+    <rect x="14.5" y="5" width="3.5" height="14" rx="1" />
+  </svg>
+);
+
+const PlayIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M8 5.5v13l11-6.5z" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const PreviewPost = ({ phrase }: { phrase: string }) => (
   <article className="rounded-[20px] border border-newBorder bg-newBoxHover p-[14px]">
     <div className="flex items-center gap-[10px]">
@@ -417,18 +448,21 @@ export const StalkerKeywords = () => {
         onClick={() => setRowMenu(null)}
       />
       <div className={`${stkMenu} stk-kw-menu`} role="menu">
+        <p className="stk-kw-menu-title">Keyword actions</p>
         <button
           type="button"
           className={stkMenuItem}
           onClick={() => (keyword.paused ? resumeKeyword(keyword) : pauseKeyword(keyword))}
         >
+          {keyword.paused ? <PlayIcon /> : <PauseIcon />}
           {keyword.paused ? 'Resume' : 'Pause'}
         </button>
-        <label className={`${stkMenuItem} justify-between gap-[8px]`}>
+        <label className={`${stkMenuItem} stk-kw-move`}>
+          <FolderIcon />
           <span>Move to group</span>
           <select
             aria-label={`Move ${keyword.phrase} to group`}
-            className="max-w-[120px] bg-transparent text-[14px] text-newTextColor outline-none"
+            className="stk-kw-move-select"
             value={keyword.groupId || keyword.group?.id || ''}
             onChange={(event) => {
               patchKeyword(keyword, { groupId: event.target.value });
@@ -442,14 +476,16 @@ export const StalkerKeywords = () => {
             ))}
           </select>
         </label>
+        <div className="stk-menu-rule" />
         <button
           type="button"
-          className={`${stkMenuItem} text-[color:var(--arc-danger)]`}
+          className={`${stkMenuItem} stk-kw-delete`}
           onClick={() => {
             setConfirmDelete(keyword);
             setRowMenu(null);
           }}
         >
+          <TrashIcon />
           Delete
         </button>
       </div>
@@ -567,17 +603,21 @@ export const StalkerKeywords = () => {
           ) : null}
         </div>
         <div className="flex shrink-0 flex-nowrap items-center gap-[8px]">
-          <button type="button" className={`${stkSecondary} stk-kw-groups`} onClick={() => setGroupsOpen(true)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <path d="M3 7h6l2 2h10v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-            </svg>
-            <span className="max-md:sr-only">Manage groups</span>
+          <button
+            type="button"
+            className={`${stkSecondary} stk-kw-groups`}
+            aria-label="Manage groups"
+            onClick={() => setGroupsOpen(true)}
+          >
+            <FolderIcon />
+            <span className="stk-kw-groups-label">Manage groups</span>
           </button>
           <span className="hidden md:inline-flex">
             <StalkerCheckNow iconOnly />
           </span>
           <button type="button" className={stkPrimary} onClick={() => openAdd(presetGroup)}>
-            + Add keyword
+            <PlusIcon />
+            Add keyword
           </button>
         </div>
       </div>
@@ -607,7 +647,8 @@ export const StalkerKeywords = () => {
               Add a keyword and Stalker will watch for mentions.
             </p>
             <button type="button" className={stkPrimary} onClick={() => openAdd()}>
-              + Add keyword
+              <PlusIcon />
+              Add keyword
             </button>
           </div>
         </section>
@@ -625,7 +666,7 @@ export const StalkerKeywords = () => {
               <div className="stk-kw-group md:hidden">
                 {rows.map((keyword) => (
                   <div key={keyword.id} className="stk-kw-row">
-                    <div className="flex items-start justify-between gap-[8px]">
+                    <div className="flex items-center justify-between gap-[8px]">
                       <p className="text-[16px] font-[600]">
                         {keyword.phrase}
                         {keyword.paused ? (
@@ -655,15 +696,15 @@ export const StalkerKeywords = () => {
                         {rowMenu === keyword.id ? <KeywordMenu keyword={keyword} /> : null}
                       </span>
                     </div>
-                    <p className="flex flex-wrap items-center gap-[8px] text-[14px] text-textItemBlur">
+                    <p className="stk-kw-line flex flex-wrap items-center gap-[8px] text-textItemBlur">
                       <span>Sources</span>
                       <SourceControls keyword={keyword} />
                     </p>
                     <SourceEditors keyword={keyword} />
-                    <p className="text-[14px] text-textItemBlur">
+                    <p className="stk-kw-line text-textItemBlur">
                       Mentions (30d) · {mentionCount(keyword)}
                     </p>
-                    <p className="text-[14px]">
+                    <p className="stk-kw-line">
                       <span className="text-textItemBlur">Last scan · </span>
                       <ScanStatus keyword={keyword} />
                     </p>
