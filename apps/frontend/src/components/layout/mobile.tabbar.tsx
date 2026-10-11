@@ -32,7 +32,11 @@ export const MobileTabBar = () => {
     onClick: item.onClick,
   });
 
-  const tabs = (stalker ? stalkerNavLinks.slice(0, 4) : primary.slice(0, 4)).map(asItem);
+  const tabs = stalker
+    ? stalkerNavLinks
+        .slice(0, 4)
+        .map((item) => asItem({ ...item, icon: item.tabIcon || item.icon }))
+    : primary.slice(0, 4).map(asItem);
   const overflow = (stalker ? stalkerNavLinks.slice(4) : [...primary.slice(4), ...extra]).map(
     asItem
   );

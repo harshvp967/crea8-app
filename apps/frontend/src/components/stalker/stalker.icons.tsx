@@ -1,3 +1,27 @@
+const PLATFORM_LOGO: Record<string, string> = {
+  X: '/icons/platforms/x.png',
+  REDDIT: '/icons/platforms/reddit.png',
+  YOUTUBE: '/icons/platforms/youtube.png',
+  LINKEDIN: '/icons/platforms/linkedin.png',
+  INSTAGRAM: '/icons/platforms/instagram.png',
+  FACEBOOK: '/icons/platforms/facebook.png',
+  TIKTOK: '/icons/platforms/tiktok.png',
+  THREADS: '/icons/platforms/threads.png',
+  BLUESKY: '/icons/platforms/bluesky.png',
+  MASTODON: '/icons/platforms/mastodon.png',
+  DISCORD: '/icons/platforms/discord.png',
+  TELEGRAM: '/icons/platforms/telegram.png',
+  PINTEREST: '/icons/platforms/pinterest.png',
+  SLACK: '/icons/platforms/slack.png',
+  MEDIUM: '/icons/platforms/medium.png',
+};
+
+/** Brand mark for a known mention source. Empty when the platform is not one we ship a logo for. */
+export const platformLogo = (source?: string) => {
+  const key = (source || '').split('_')[0].trim().toUpperCase();
+  return PLATFORM_LOGO[key] || '';
+};
+
 export const SourceIcon = ({
   source,
   className = 'h-[14px] w-[14px]',
@@ -5,6 +29,10 @@ export const SourceIcon = ({
   source: string;
   className?: string;
 }) => {
+  const logo = platformLogo(source);
+  if (logo) {
+    return <img src={logo} alt="" className={`${className} stk-plogo`} />;
+  }
   const common = {
     className,
     viewBox: '0 0 24 24',

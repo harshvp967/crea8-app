@@ -653,6 +653,7 @@ export const StalkerFilters = ({
         icon="plus"
         label={engagementOn ? 'Engagement' : ''}
         title="Engagement"
+        chipClassName="stk-engage"
         open={open === 'engagement'}
         onToggle={() => setOpen(open === 'engagement' ? null : 'engagement')}
       >
@@ -686,6 +687,7 @@ const FilterMenu = ({
   icon,
   label,
   title,
+  chipClassName,
   open,
   onToggle,
   children,
@@ -693,12 +695,13 @@ const FilterMenu = ({
   icon: string;
   label: string;
   title: string;
+  chipClassName?: string;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
 }) => (
   <div className="relative min-w-0">
-    <button type="button" className={clsx(chipClass(!!label || open), 'stk-fchip')} onClick={onToggle}>
+    <button type="button" className={clsx(chipClass(!!label || open), 'stk-fchip', chipClassName)} onClick={onToggle}>
       <ChipIcon name={icon} />
       <span className="min-w-0 flex-1 truncate text-start">{label || title}</span>
       {icon === 'plus' ? null : <ChipIcon name="down" />}

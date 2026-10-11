@@ -11,7 +11,9 @@ import {
   useStalkerViews,
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
-import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { platformLogo, SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { StalkerProjectMenu } from '@gitroom/frontend/components/stalker/stalker.nav';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import { authorUrl, cleanMention, sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
@@ -180,6 +182,8 @@ export const StalkerMentions = () => {
   const toaster = useToaster();
   const { project, projectId, sample } = useStalkerProject();
   const [filters, setFilters] = useState<MentionFilters>(emptyFilters());
+  const [feedView, setFeedView] = useState<'feed' | 'timeline'>('feed');
+  const [projectsOpen, setProjectsOpen] = useState(false);
   const [viewName, setViewName] = useState('');
   const [naming, setNaming] = useState(false);
   const [marking, setMarking] = useState<string | null>(null);
@@ -348,9 +352,32 @@ export const StalkerMentions = () => {
       <div className={stkHead}>
         <div className="min-w-0">
           <h1 className={stkTitle}>Mentions</h1>
-          {project?.name ? <p className={stkSub}>{project.name}</p> : null}
+          {project?.name ? <p className={`${stkSub} hidden md:block`}>{project.name}</p> : null}
+          {project?.name ? (
+            <button
+              type="button"
+              className="stk-project-sub md:hidden"
+              aria-haspopup="listbox"
+              aria-expanded={projectsOpen}
+              onClick={() => setProjectsOpen(true)}
+            >
+              <span className="stk-pdot" style={{ backgroundColor: project.color || '#71717a' }} />
+              <span className="truncate">{project.name}</span>
+              <span aria-hidden>▾</span>
+            </button>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-[8px]">
+          <SegmentedControl
+            aria-label="Mentions view"
+            size="sm"
+            value={feedView}
+            onValueChange={(value) => setFeedView(value === 'timeline' ? 'timeline' : 'feed')}
+            options={[
+              { value: 'feed', label: 'Feed' },
+              { value: 'timeline', label: 'Timeline' },
+            ]}
+          />
           <StalkerCheckNow />
           <div className="relative">
             <button
@@ -398,6 +425,19 @@ export const StalkerMentions = () => {
           </div>
         </div>
       </div>
+      {projectsOpen ? (
+        <>
+          <button
+            type="button"
+            className="stk-sheet-backdrop"
+            aria-label="Close"
+            onClick={() => setProjectsOpen(false)}
+          />
+          <div className={`${stkMenu} stk-project-sheet`} role="listbox">
+            <StalkerProjectMenu onPick={() => setProjectsOpen(false)} />
+          </div>
+        </>
+      ) : null}
       {views.length ? (
         <div className="flex flex-wrap gap-[8px]">
           {views.map((view: { id: string; name: string; filters: Record<string, string> }) => (
@@ -489,7 +529,7 @@ export const StalkerMentions = () => {
       {groups.map(([key, rows]) => (
         <section key={key} className="stk-day-group">
           <p className={stkGroup}>{key}</p>
-          <Timeline rows={rows} />
+          {feedView === 'timeline' ? <Timeline rows={rows} /> : null}
           {rows.map((mention) => {
             const long = mention.text.length > 280;
             const text = expanded === mention.id || !long ? mention.text : `${mention.text.slice(0, 280)}…`;
@@ -498,11 +538,16 @@ export const StalkerMentions = () => {
             const follow = mention.status === 'FOLLOW_UP';
             const done = mention.status === 'DONE' || mention.status === 'REPLIED';
             const ignored = mention.status === 'IGNORED';
+            const logo = platformLogo(mention.source);
             return (
               <article key={mention.id} className={`${stkCardTight} stk-mcard`}>
                 <div className="stk-mhead">
-                  <span className="stk-msrc">
-                    <SourceIcon source={mention.source || ''} className="h-[16px] w-[16px]" />
+                  <span className={clsx('stk-msrc', logo && 'is-logo')}>
+                    {logo ? (
+                      <img src={logo} alt="" />
+                    ) : (
+                      <SourceIcon source={mention.source || ''} className="h-[16px] w-[16px]" />
+                    )}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="stk-mwho">
