@@ -6,7 +6,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useClickOutside } from '@mantine/hooks';
 import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import clsx from 'clsx';
-import { RepeatIcon, DropdownArrowIcon } from '@gitroom/frontend/components/ui/icons';
+import { RepeatIcon, DropdownArrowIcon, CheckmarkIcon, CloseIcon } from '@gitroom/frontend/components/ui/icons';
 const getList = (t: (key: string, fallback: string) => string) => [
   {
     value: 1,
@@ -76,20 +76,20 @@ export const RepeatComponent: FC<{
     <div
       ref={ref}
       className={clsx(
-        'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
-        isOpen ? 'border-[#00D9FF]' : 'border-newTextColor/10',
+        'po-repeat border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
+        isOpen ? 'border-[#00D9FF] bg-[#00D9FF]/10' : 'border-newTextColor/10',
       )}
     >
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="px-[16px] justify-center flex gap-[8px] items-center h-full select-none flex-1"
+        className="px-[16px] justify-center flex gap-[8px] items-center h-full select-none flex-1 min-w-0"
       >
         <div className="cursor-pointer">
           <RepeatIcon />
         </div>
-        <div className="cursor-pointer">
+        <div className="cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis">
           {repeat
-            ? `${t('repeat_post_every_label', 'Repeat Post Every')} ${everyLabel}`
+            ? everyLabel
             : t('repeat_post_every', 'Repeat Post Every...')}
         </div>
         <div className="cursor-pointer">
@@ -97,19 +97,32 @@ export const RepeatComponent: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="z-[300] absolute start-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
-          {list.map((p) => (
-            <div
-              onClick={() => {
-                props.onChange(Number(p.value));
-                setIsOpen(false);
-              }}
-              key={p.label}
-              className="h-[40px] py-[8px] px-[20px] -mx-[12px] hover:bg-newBgColor"
-            >
-              {p.label}
-            </div>
-          ))}
+        <div className="po-repeat-menu z-[300] absolute start-0 bottom-[calc(100%+8px)] flex flex-col">
+          <div className="po-menu-title">
+            {t('repeat_post_every_label', 'Repeat Post Every')}
+          </div>
+          {list.map((p) => {
+            const selected = p.value != null && p.value === repeat;
+            const isCancel = p.value == null;
+            return (
+              <div
+                onClick={() => {
+                  props.onChange(Number(p.value));
+                  setIsOpen(false);
+                }}
+                key={p.label}
+                className={clsx(
+                  'po-menu-row',
+                  selected && 'is-on',
+                  isCancel && 'is-cancel'
+                )}
+              >
+                {isCancel && <CloseIcon className="text-textItemBlur" />}
+                <span className="min-w-0 flex-1">{p.label}</span>
+                {selected && <CheckmarkIcon className="text-[#00D9FF]" />}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

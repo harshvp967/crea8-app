@@ -38,6 +38,8 @@ import {
   CloseIcon,
   TrashIcon,
   DropdownArrowSmallIcon,
+  CalendarIcon,
+  CheckmarkIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
@@ -54,6 +56,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
   const [phonePane, setPhonePane] = useState<'editor' | 'preview'>('editor');
+  const [issue, setIssue] = useState<{ title: string; body: string } | null>(null);
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
 
   const { addEditSets, mutate, customClose, dummy } = props;
@@ -258,6 +261,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }
 
       setLoading(true);
+      setIssue(null);
 
       // Pull the local values to build the payload, but rely on the server
       // (`/posts/valid`) for the actual validation — checkValidity now lives
@@ -324,13 +328,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         if (type !== 'draft') {
           for (const item of checkAllValid) {
             if (item.valid === false) {
-              toaster.show(
-                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
-                  item.settingsError ||
-                  t('please_fix_your_settings', 'Please fix your settings')
-                }`,
-                'warning'
-              );
+              const message = `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                item.settingsError ||
+                t('please_fix_your_settings', 'Please fix your settings')
+              }`;
+              toaster.show(message, 'warning');
+              setIssue({
+                title: t('please_fix_your_settings', 'Please fix your settings'),
+                body: message,
+              });
               focus(item.id, 'fix');
               setLoading(false);
               setShowSettings(true);
@@ -338,12 +344,14 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             }
 
             if (item.errors !== true) {
-              toaster.show(
-                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
-                  item.errors
-                }`,
-                'warning'
-              );
+              const message = `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                item.errors
+              }`;
+              toaster.show(message, 'warning');
+              setIssue({
+                title: t('please_fix_your_settings', 'Please fix your settings'),
+                body: message,
+              });
               focus(item.id, 'preview');
               setLoading(false);
               setShowSettings(false);
@@ -351,13 +359,22 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             }
 
             if (item.tooLong) {
-              toaster.show(
-                `${item.name} (${item.identifier}) ${t(
-                  'post_is_too_long',
-                  'post is too long, please fix it'
-                )}`,
-                'warning'
-              );
+              const channel = capitalize(item.identifier.split('-')[0]);
+              const message = `${item.name} (${item.identifier}) ${t(
+                'post_is_too_long',
+                'post is too long, please fix it'
+              )}`;
+              toaster.show(message, 'warning');
+              setIssue({
+                title: t('post_is_too_long', 'post is too long, please fix it'),
+                body: item.maximumCharacters
+                  ? t(
+                      'channel_allows_characters',
+                      '{{channel}} allows up to {{count}} characters. Shorten the text or customize it for {{channel}}.',
+                      { channel, count: item.maximumCharacters }
+                    )
+                  : message,
+              });
               focus(item.id, 'preview');
               setLoading(false);
               return;
@@ -518,6 +535,22 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   </div>
                   <div className="flex flex-1 gap-[6px] flex-col">
                     <div>{!existingData.integration && <SelectCurrent />}</div>
+                    {issue && (
+                      <div className="po-valid" role="alert">
+                        <div className="po-valid-copy">
+                          <div className="po-valid-title">{issue.title}</div>
+                          <div className="po-valid-body">{issue.body}</div>
+                        </div>
+                        <button
+                          type="button"
+                          className="po-valid-close"
+                          aria-label={t('close', 'Close')}
+                          onClick={() => setIssue(null)}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    )}
                     <div className="flex-1 flex">
                       {!hide && <EditorWrapper totalPosts={1} value="" />}
                     </div>
@@ -687,17 +720,29 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 </button>
 
                 {!dummy && (
-                  <button
-                    onClick={schedule('now')}
-                    disabled={
-                      selectedIntegrations.length === 0 || loading || locked
-                    }
-                    className="post-now-tray rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
-                  >
-                    <div className="text-newTextColor rounded-[16px] border border-newBorder bg-newBgColorInner h-[44px] w-full flex justify-center items-center post-now">
-                      {t('post_now', 'Post Now')}
-                    </div>
-                  </button>
+                  <div className="post-now-tray po-post-menu hidden group-hover:flex">
+                    <button
+                      type="button"
+                      disabled={
+                        selectedIntegrations.length === 0 || loading || locked
+                      }
+                      onClick={schedule('schedule')}
+                    >
+                      <CalendarIcon />
+                      <span>{t('add_to_calendar', 'Add to calendar')}</span>
+                      <CheckmarkIcon className="text-[#00D9FF]" />
+                    </button>
+                    <button
+                      type="button"
+                      className="is-now"
+                      disabled={
+                        selectedIntegrations.length === 0 || loading || locked
+                      }
+                      onClick={schedule('now')}
+                    >
+                      <span>{t('post_now', 'Post Now')}</span>
+                    </button>
+                  </div>
                 )}
               </div>
             )}
