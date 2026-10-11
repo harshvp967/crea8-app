@@ -6112,7 +6112,7 @@ body :focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  margin: -6px 0 10px;
+  margin: 0 0 12px;
   color: var(--new-textItemBlur);
   font-size: 13px;
   font-weight: 500;
@@ -6142,7 +6142,7 @@ body :focus-visible {
 
 .stk-chart {
   position: relative;
-  height: 200px;
+  height: 212px;
 }
 
 @media (min-width: 768px) {
@@ -6204,7 +6204,9 @@ body :focus-visible {
 
 .stk-heat-cell {
   display: block;
-  height: 14px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
   border-radius: 4px;
   border: 1px solid var(--new-border);
 }
@@ -6212,4 +6214,16 @@ body :focus-visible {
 .stk-heat > span {
   font-size: 11px;
   line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .stk-analytics .stk-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .stk-analytics .stk-filters::-webkit-scrollbar {
+    display: none;
+  }
 }

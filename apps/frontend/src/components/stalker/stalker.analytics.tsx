@@ -199,6 +199,7 @@ const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
       options: {
         maintainAspectRatio: false,
         responsive: true,
+        layout: { padding: { left: 0, right: 4, top: 8, bottom: 0 } },
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
@@ -235,6 +236,7 @@ const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
           },
           y: {
             beginAtZero: true,
+            position: 'right',
             border: { display: false },
             grid: { color: grid },
             ticks: {
@@ -350,7 +352,7 @@ export const StalkerAnalytics = () => {
   }, []);
 
   return (
-    <div className={stkPage}>
+    <div className={`${stkPage} stk-analytics`}>
       <div className={stkHead}>
         <div className="min-w-0">
           <h1 className={stkTitle}>Analytics</h1>
