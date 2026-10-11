@@ -614,7 +614,9 @@ export const MediaBox: FC<{
                 {[...new Array(12)].map((_, i) => (
                   <div className="media-tile" key={i}>
                     <div className="media-thumb media-skel" />
-                    <div className="media-skel-line" />
+                    <div className="media-caption">
+                      <div className="media-skel-line" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -642,13 +644,16 @@ export const MediaBox: FC<{
                   );
                   const label = media.originalName || media.name || '';
                   return (
-                    <div className="media-tile" key={media.id}>
+                    <div
+                      className={clsx(
+                        'media-tile',
+                        !!selected.find((p: any) => p.id === media.id) &&
+                          'is-selected'
+                      )}
+                      key={media.id}
+                    >
                       <div
-                        className={clsx(
-                          'media-thumb',
-                          !!selected.find((p: any) => p.id === media.id) &&
-                            'is-selected'
-                        )}
+                        className="media-thumb"
                         onClick={addRemoveSelected(media)}
                       >
                         {!!selected.find((p: any) => p.id === media.id) && (
@@ -657,19 +662,31 @@ export const MediaBox: FC<{
                               1}
                           </div>
                         )}
-                        <button
-                          type="button"
-                          className="media-zoom"
-                          onClick={maximize(media)}
-                          aria-label={t('preview', 'Preview')}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden>
-                            <path
-                              d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
-                              fill="currentColor"
-                            />
-                          </svg>
-                        </button>
+                        <div className="media-actions">
+                          <button
+                            type="button"
+                            className="media-zoom"
+                            onClick={maximize(media)}
+                            aria-label={t('preview', 'Preview')}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
+                              <path
+                                d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            className="media-remove"
+                            onClick={deleteImage(media)}
+                            aria-label={t('delete', 'Delete')}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                              <path d="M4 7h16M9.5 7V5.5h5V7M8 7l.8 12h6.4L16 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                        </div>
                         {kind === 'image' ? (
                           <img
                             className="media-img"
@@ -677,13 +694,19 @@ export const MediaBox: FC<{
                             alt=""
                           />
                         ) : (
-                          <span className="media-kind" aria-hidden>
+                          <span
+                            className={clsx(
+                              'media-kind',
+                              kind === 'video' && 'is-video'
+                            )}
+                            aria-hidden
+                          >
                             {kind === 'video' ? (
-                              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M9 7.5v9l8-4.5-8-4.5z" />
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 7.2v9.6l8.2-4.8L9 7.2z" />
                               </svg>
                             ) : (
-                              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                                 <path d="M7 3.5h7l5 5V20a1.5 1.5 0 0 1-1.5 1.5h-10.5A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5z" />
                                 <path d="M14 3.5V9h5" />
                               </svg>
@@ -697,11 +720,13 @@ export const MediaBox: FC<{
                         </span>
                         <button
                           type="button"
-                          className="media-remove"
+                          className="media-foot-delete"
                           onClick={deleteImage(media)}
                           aria-label={t('delete', 'Delete')}
                         >
-                          <DeleteCircleIcon size={16} />
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                            <path d="M4 7h16M9.5 7V5.5h5V7M8 7l.8 12h6.4L16 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
                         </button>
                       </div>
                     </div>
