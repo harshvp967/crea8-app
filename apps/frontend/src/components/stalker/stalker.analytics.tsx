@@ -152,13 +152,26 @@ const cssColor = (name: string, fallback: string) => {
   return value || fallback;
 };
 
+const dayTotal = (row: DayRow) => row.positive + row.negative + row.neutral;
+
+const chartIsEmpty = (rows: DayRow[]) => !rows.length || rows.every((row) => dayTotal(row) === 0);
+
+const ChartMark = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path d="M4 19V5M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M7 15l4-5 3 3 5-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
   const ref = useRef<HTMLCanvasElement>(null);
+  const empty = chartIsEmpty(rows);
   const signature = rows
     .map((row) => `${row.date}:${row.positive}:${row.negative}:${row.neutral}`)
     .join('|');
 
   useEffect(() => {
+    if (empty) return;
     const canvas = ref.current;
     if (!canvas) return;
     const context = canvas.getContext('2d');
@@ -171,15 +184,20 @@ const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
     const text = cssColor('--new-textItemBlur', '#71717A');
     const ink = cssColor('--new-btn-text', mode === 'light' ? '#18181B' : '#F4F4F5');
     const raised = cssColor('--arc-raised', mode === 'light' ? '#FFFFFF' : '#161618');
+    const labels = rows.map((row) => {
+      const date = new Date(`${row.date}T00:00:00`);
+      return Number.isNaN(date.getTime())
+        ? row.date
+        : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const last = Math.max(0, labels.length - 1);
+    const marked = new Set(
+      [0, Math.round(last / 3), Math.round((last * 2) / 3), last].filter((index) => index >= 0)
+    );
     const chart = new DrawChart(canvas, {
       type: 'line',
       data: {
-        labels: rows.map((row) => {
-          const date = new Date(`${row.date}T00:00:00`);
-          return Number.isNaN(date.getTime())
-            ? row.date
-            : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }),
+        labels,
         datasets: [
           {
             label: 'Mentions',
@@ -229,9 +247,11 @@ const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
             border: { display: false },
             ticks: {
               color: text,
-              maxTicksLimit: 6,
+              autoSkip: false,
               maxRotation: 0,
+              minRotation: 0,
               font: { family: 'Plus Jakarta Sans', size: 12 },
+              callback: (_value, index) => (marked.has(index) ? labels[index] : ''),
             },
           },
           y: {
@@ -250,7 +270,18 @@ const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
       },
     });
     return () => chart.destroy();
-  }, [signature, mode, rows]);
+  }, [empty, signature, mode, rows]);
+
+  if (empty) {
+    return (
+      <div className="stk-chart-empty">
+        <span className="stk-empty-mark">
+          <ChartMark />
+        </span>
+        <p>No mentions in this view.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="stk-chart">
@@ -458,7 +489,7 @@ export const StalkerAnalytics = () => {
             </Card>
             <Card title="Why people mention you">
               {!categories.length ? (
-                <p className="text-[14px] text-textItemBlur">No mentions in this view.</p>
+                <p className="text-[14px] text-textItemBlur">No categorized mentions</p>
               ) : (
                 <ul className="flex flex-col gap-[12px]">
                   {categories.map((row) => {

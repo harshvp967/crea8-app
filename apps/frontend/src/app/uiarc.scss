@@ -6157,6 +6157,29 @@ body :focus-visible {
   height: 100%;
 }
 
+.stk-chart-empty {
+  display: flex;
+  min-height: 212px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--new-textItemBlur);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.stk-chart-empty p {
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .stk-chart-empty {
+    min-height: 228px;
+  }
+}
+
 .stk-bar-row {
   display: flex;
   flex-direction: column;
