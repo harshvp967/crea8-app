@@ -58,12 +58,6 @@ const ZONES = [
   'Australia/Sydney',
 ];
 
-const hourLabel = (hour: number) => {
-  const suffix = hour >= 12 ? 'PM' : 'AM';
-  const value = hour % 12 || 12;
-  return `${value}:00 ${suffix}`;
-};
-
 const digestClock = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
 const PlusIcon = () => (
@@ -386,11 +380,11 @@ export const StalkerAlerts = () => {
       )}
 
       {configure ? (
-        <div className={stkOverlay}>
+        <div className={`${stkOverlay} stk-digest-overlay`}>
           <div className={`${stkDialog} max-w-[480px]`}>
             <div className={stkDialogHead}>
               <div className="min-w-0 flex-1">
-                <h2 className="text-[18px] font-[600]">Daily digest</h2>
+                <h2 className="text-[18px] font-[600]">Configure daily digest</h2>
                 <p className="mt-[4px] text-[14px] text-textItemBlur">A morning summary of the last 24 hours.</p>
               </div>
               <button type="button" aria-label="Close" className={stkClose} onClick={() => setConfigure(false)}>
@@ -398,6 +392,46 @@ export const StalkerAlerts = () => {
               </button>
             </div>
             <div className={stkDialogBody}>
+            <label className={stkLabel}>
+              Time
+              <span className="stk-digest-field">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <circle cx="12" cy="12" r="8" />
+                  <path d="M12 8v5l3 2" strokeLinecap="round" />
+                </svg>
+                <select
+                  className={field}
+                  value={digestHour}
+                  onChange={(event) => setDigestHour(Number(event.target.value))}
+                >
+                  {Array.from({ length: 24 }, (_, hour) => (
+                    <option key={hour} value={hour}>
+                      {digestClock(hour)}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </label>
+            <label className={stkLabel}>
+              Timezone
+              <span className="stk-digest-field">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9s1.3-6.2 3.8-9z" />
+                </svg>
+                <select
+                  className={field}
+                  value={digestTimezone}
+                  onChange={(event) => setDigestTimezone(event.target.value)}
+                >
+                  {zones.map((zone) => (
+                    <option key={zone} value={zone}>
+                      {zone}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </label>
             <label className={stkLabel}>
               Keywords
               <select
@@ -412,53 +446,26 @@ export const StalkerAlerts = () => {
                 ))}
               </select>
             </label>
-            <label className={stkLabel}>
-              Delivery time
-              <select
-                className={`${field} mt-[6px]`}
-                value={digestHour}
-                onChange={(event) => setDigestHour(Number(event.target.value))}
-              >
-                {Array.from({ length: 24 }, (_, hour) => (
-                  <option key={hour} value={hour}>
-                    {hourLabel(hour)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={stkLabel}>
-              Time zone
-              <select
-                className={`${field} mt-[6px]`}
-                value={digestTimezone}
-                onChange={(event) => setDigestTimezone(event.target.value)}
-              >
-                {zones.map((zone) => (
-                  <option key={zone} value={zone}>
-                    {zone}
-                  </option>
-                ))}
-              </select>
-            </label>
             </div>
-            <div className={`${stkDialogFoot} stk-al-foot`}>
+            <div className={`${stkDialogFoot} stk-digest-foot`}>
               <button
                 type="button"
-                className={`${stkGhost} stk-al-remove text-[color:var(--arc-danger)]`}
+                className={`${stkGhost} stk-digest-remove text-[color:var(--arc-danger)]`}
                 onClick={() => {
                   saveDigest({ digestDismissed: true, digestEnabled: false });
                   setConfigure(false);
                 }}
               >
-                Remove daily digest
+                <span className="stk-digest-remove-long">Remove daily digest</span>
+                <span className="stk-digest-remove-short">Remove</span>
               </button>
               <span className="flex-1" />
-              <button type="button" className={stkSecondary} onClick={() => setConfigure(false)}>
-                Cancel
+              <button type="button" className={`${stkSecondary} stk-digest-close`} onClick={() => setConfigure(false)}>
+                Close
               </button>
               <button
                 type="button"
-                className={stkPrimary}
+                className={`${stkPrimary} stk-digest-save`}
                 onClick={() => {
                   saveDigest({ digestHour, digestTimezone, digestGroupName, digestEnabled: true });
                   setConfigure(false);
