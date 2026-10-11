@@ -2,20 +2,17 @@
 
 import useSWR from 'swr';
 import { useCallback, useMemo, useState } from 'react';
-import { capitalize, orderBy } from 'lodash';
+import { orderBy } from 'lodash';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { PlugsContext } from '@gitroom/frontend/components/plugs/plugs.context';
 import { Plug } from '@gitroom/frontend/components/plugs/plug';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import useCookie from 'react-use-cookie';
-import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 export const Plugs = () => {
   const fetch = useFetch();
@@ -52,8 +49,7 @@ export const Plugs = () => {
     fallbackData: [],
   });
 
-  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
-
+  const [sheet, setSheet] = useState(false);
   const t = useT();
 
   const sortedIntegrations = useMemo(() => {
@@ -84,147 +80,134 @@ export const Plugs = () => {
     };
   }, [currentIntegration, plugList]);
 
+  const pickChannel = (integration: (typeof sortedIntegrations)[number], index: number) => {
+    if (integration.refreshNeeded) {
+      toaster.show(
+        'Please refresh the integration from the calendar',
+        'warning'
+      );
+      return;
+    }
+    setRefresh(true);
+    setTimeout(() => {
+      setRefresh(false);
+    }, 10);
+    setCurrent(index);
+    setSheet(false);
+  };
+
+  const channelMark = (integration: (typeof sortedIntegrations)[number]) => (
+    <span
+      className={clsx(
+        'analytics-channel-mark',
+        integration.disabled && 'is-disabled'
+      )}
+    >
+      {(integration.inBetweenSteps || integration.refreshNeeded) && (
+        <span className="analytics-channel-warn">!</span>
+      )}
+      <ImageWithFallback
+        fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
+        src={integration.picture}
+        className="avatar"
+        alt={integration.identifier}
+        width={36}
+        height={36}
+      />
+      <SafeImage
+        src={`/icons/platforms/${integration.identifier}.png`}
+        className="badge"
+        alt=""
+        width={14}
+        height={14}
+      />
+    </span>
+  );
+
+  const channelButtons = () =>
+    sortedIntegrations.map((integration, index) => (
+      <button
+        type="button"
+        key={integration.id}
+        onClick={() => pickChannel(integration, index)}
+        className={clsx(
+          'analytics-channel',
+          currentIntegration?.id === integration.id && 'is-selected',
+          integration.disabled && 'is-disabled'
+        )}
+      >
+        {channelMark(integration)}
+        <span className="analytics-channel-name">{integration.name}</span>
+      </button>
+    ));
+
   if (isLoading || plugLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
-        <LoadingComponent />
+      <div className="plugs-screen">
+        <div className="plugs-main plugs-state">
+          <LoadingComponent />
+        </div>
       </div>
     );
   }
 
   if (!sortedIntegrations.length && !isLoading) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
-        <div>
-          <img src="/peoplemarketplace.svg" />
+      <div className="plugs-screen">
+        <div className="plugs-main plugs-state">
+          <img src="/peoplemarketplace.svg" alt="" />
+          <h1>
+            {t(
+              'there_are_not_plugs_matching_your_channels',
+              'There are not plugs matching your channels'
+            )}
+          </h1>
+          <p>
+            {t(
+              'you_have_to_add_x_linkedin_page_threads_or_bluesky',
+              'You have to add: X, LinkedIn Page, Threads or Bluesky'
+            )}
+          </p>
+          <Button onClick={() => router.push('/launches')}>
+            {t(
+              'go_to_the_calendar_to_add_channels',
+              'Go to the calendar to add channels'
+            )}
+          </Button>
         </div>
-        <div className="text-[48px]">
-          {t(
-            'there_are_not_plugs_matching_your_channels',
-            'There are not plugs matching your channels'
-          )}
-          <br />
-          {t(
-            'you_have_to_add_x_linkedin_page_threads_or_bluesky',
-            'You have to add: X, LinkedIn Page, Threads or Bluesky'
-          )}
-        </div>
-        <Button onClick={() => router.push('/launches')}>
-          {t(
-            'go_to_the_calendar_to_add_channels',
-            'Go to the calendar to add channels'
-          )}
-        </Button>
       </div>
     );
   }
+
+  const platformLabel = currentIntegration.identifier
+    .split('-')
+    .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
   return (
-    <>
-      <div
-        className={clsx(
-          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
-        )}
-      >
-        <div className="flex gap-[12px] flex-col">
-          <div className="flex items-center">
-            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
-              {t('channels')}
-            </h2>
-            <div
-              onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
-              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-textItemBlur bg-transparent rounded-[14px] w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none hover:bg-newBoxHover hover:text-newTextColor transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="7"
-                height="13"
-                viewBox="0 0 7 13"
-                fill="none"
-              >
-                <path
-                  d="M6 11.5L1 6.5L6 1.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
-          {sortedIntegrations.map((integration, index) => (
-            <div
-              key={integration.id}
-              onClick={() => {
-                if (integration.refreshNeeded) {
-                  toaster.show(
-                    'Please refresh the integration from the calendar',
-                    'warning'
-                  );
-                  return;
-                }
-                setRefresh(true);
-                setTimeout(() => {
-                  setRefresh(false);
-                }, 10);
-                setCurrent(index);
-              }}
-              className={clsx(
-                'flex gap-[8px] items-center justify-center group/profile hover:bg-boxHover rounded-e-[8px]',
-                currentIntegration.id !== integration.id &&
-                  'opacity-20 hover:opacity-100 cursor-pointer'
-              )}
-            >
-              <div
-                className={clsx(
-                  'relative rounded-full flex justify-center items-center gap-[8px]',
-                  integration.disabled && 'opacity-50'
-                )}
-              >
-                {(integration.inBetweenSteps || integration.refreshNeeded) && (
-                  <div className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
-                      !
-                    </div>
-                    <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
-                  </div>
-                )}
-                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
-                  <SVGLine />
-                </div>
-                <ImageWithFallback
-                  fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
-                  src={integration.picture}
-                  className="rounded-[8px]"
-                  alt={integration.identifier}
-                  width={36}
-                  height={36}
-                />
-                <SafeImage
-                  src={`/icons/platforms/${integration.identifier}.png`}
-                  className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
-                  alt={integration.identifier}
-                  width={18.41}
-                  height={18.41}
-                />
-              </div>
-              <div
-                className={clsx(
-                  'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden',
-                  integration.disabled && 'opacity-50'
-                )}
-              >
-                {integration.name}
-              </div>
-            </div>
-          ))}
+    <div className="plugs-screen">
+      <div className="analytics-channels plugs-channels">
+        <h2>{t('channels', 'Channels')}</h2>
+        <div className="analytics-channel-list">{channelButtons()}</div>
+      </div>
+      <div className="plugs-main">
+        <div className="plugs-head">
+          <h1>{t('plugs', 'Plugs')}</h1>
+          <button
+            type="button"
+            className="plugs-sub"
+            onClick={() => setSheet((open) => !open)}
+          >
+            {currentIntegration.name} on {platformLabel}
+          </button>
+          {sheet && <div className="plugs-sheet">{channelButtons()}</div>}
+        </div>
+        <div className="plugs-scroll">
+          <PlugsContext.Provider value={currentIntegrationPlug}>
+            <Plug />
+          </PlugsContext.Provider>
         </div>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
-        <PlugsContext.Provider value={currentIntegrationPlug}>
-          <Plug />
-        </PlugsContext.Provider>
-      </div>
-    </>
+    </div>
   );
 };
