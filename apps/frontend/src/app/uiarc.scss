@@ -1379,6 +1379,7 @@ body :focus-visible {
   }
 
   .composer-frame {
+    border: 0 !important;
     border-radius: 0 !important;
     min-height: 0;
     height: 100%;
@@ -7889,30 +7890,126 @@ body.composer-open .app-toast.is-warning {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  #social-content .flex-1.flex > .relative {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .po-editor-card {
+    border: 1px solid var(--new-border);
+    border-radius: 16px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .po-editor-foot:has(.po-delay) .po-attach .maxMedia\:hidden,
+  .po-editor-foot:has(.po-delay) .po-attach .iconBreak\:hidden {
+    display: none !important;
+  }
+
   .composer .po-attach .maxMedia\:hidden {
     display: block !important;
   }
 
-  .po-attach {
-    flex-wrap: wrap;
+  .po-editor-foot .po-attach.b1.flex {
+    flex-wrap: nowrap;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .po-editor-foot:has(.po-delay) .po-attach {
+    padding-left: 8px;
+    padding-right: 4px;
+    gap: 4px;
+  }
+
+  .po-editor-foot:has(.po-delay) .po-attach > .text-newColColor {
+    display: none;
+  }
+
+  .po-editor-foot:has(.po-delay) .po-attach .b2 {
+    gap: 2px;
     min-width: 0;
   }
 
   .po-editor-foot {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: flex-end;
   }
 
   .po-editor-foot > .b1 {
-    width: 100% !important;
-    flex-basis: 100%;
+    width: auto !important;
+    flex: 1 1 0;
     min-width: 0;
   }
 
   .po-card-extra {
-    width: 100%;
+    width: auto;
+    flex: none;
     justify-content: flex-end;
-    border-top: 1px solid var(--new-border);
+    border-top: 0;
+    white-space: nowrap;
     box-sizing: border-box;
+    align-self: center;
+  }
+
+  .arc-dialog.po-media-modal {
+    padding: 8px 16px 16px !important;
+    gap: 12px !important;
+  }
+
+  .po-media-modal .arc-dialog-head {
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .po-media-modal .mantine-Modal-close {
+    position: static !important;
+    top: auto !important;
+    inset-inline-end: auto !important;
+    width: 32px;
+    height: 32px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--new-border);
+    border-radius: 12px;
+    background: var(--arc-muted, var(--new-bgColor));
+    color: #a3a3a3;
+  }
+
+  .po-media-modal .po-library {
+    padding: 0 !important;
+  }
+
+  .po-media-modal .po-library-foot {
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .po-media-modal .po-library-foot > div {
+    flex: none;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  .po-media-modal .po-library-foot button {
+    height: 52px !important;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .po-media-modal .po-library-foot button:first-of-type {
+    flex: none;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .po-media-modal .po-library-foot button:last-of-type:not(:first-of-type) {
+    flex: 1 1 auto;
   }
 
   .po-card-extra .flex.flex-col {
