@@ -14,14 +14,14 @@ import { useCallback } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
   display: 'day' | 'week' | 'month' | 'list',
   referenceDate?: string
 ) {
-  const date = referenceDate ? newDayjs(referenceDate) : newDayjs();
+  const date = referenceDate ? displayDayjs(referenceDate) : displayDayjs();
 
   switch (display) {
     case 'day':
@@ -57,8 +57,8 @@ export const Filters = () => {
 
   // Calculate display date range text
   const getDisplayText = () => {
-    const startDate = newDayjs(calendar.startDate);
-    const endDate = newDayjs(calendar.endDate);
+    const startDate = displayDayjs(calendar.startDate);
+    const endDate = displayDayjs(calendar.endDate);
 
     switch (calendar.display) {
       case 'day':
@@ -79,7 +79,7 @@ export const Filters = () => {
   };
 
   const setToday = useCallback(() => {
-    const today = newDayjs();
+    const today = displayDayjs();
     const currentRange = getDateRange(
       calendar.display as 'day' | 'week' | 'month'
     );
@@ -208,7 +208,7 @@ export const Filters = () => {
   );
 
   const next = useCallback(() => {
-    const currentStart = newDayjs(calendar.startDate);
+    const currentStart = displayDayjs(calendar.startDate);
     let nextStart: dayjs.Dayjs;
 
     switch (calendar.display) {
@@ -238,7 +238,7 @@ export const Filters = () => {
   }, [calendar]);
 
   const previous = useCallback(() => {
-    const currentStart = newDayjs(calendar.startDate);
+    const currentStart = displayDayjs(calendar.startDate);
     let prevStart: dayjs.Dayjs;
 
     switch (calendar.display) {
@@ -349,7 +349,7 @@ export const Filters = () => {
                 {calendar.display === 'month'
                   ? getDisplayText()
                   : (() => {
-                      const start = newDayjs(calendar.startDate).startOf('isoWeek');
+                      const start = displayDayjs(calendar.startDate).startOf('isoWeek');
                       const end = start.endOf('isoWeek');
                       return start.month() === end.month()
                         ? `${start.format('MMM D')} – ${end.format('D, YYYY')}`

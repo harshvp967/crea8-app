@@ -22,7 +22,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
 extend(isoWeek);
@@ -31,8 +31,8 @@ extend(weekOfYear);
 export type ListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
 
 export const CalendarContext = createContext({
-  startDate: newDayjs().startOf('isoWeek').format('YYYY-MM-DD'),
-  endDate: newDayjs().endOf('isoWeek').format('YYYY-MM-DD'),
+  startDate: displayDayjs().startOf('isoWeek').format('YYYY-MM-DD'),
+  endDate: displayDayjs().endOf('isoWeek').format('YYYY-MM-DD'),
   customer: null as string | null,
   loading: true,
   sets: [] as { name: string; id: string; content: string[] }[],
@@ -113,7 +113,7 @@ export interface Integrations {
 
 // Helper function to get start and end dates based on display type
 function getDateRange(display: string, referenceDate?: string) {
-  const date = referenceDate ? newDayjs(referenceDate) : newDayjs();
+  const date = referenceDate ? displayDayjs(referenceDate) : displayDayjs();
 
   switch (display) {
     case 'day':
@@ -175,6 +175,26 @@ export const CalendarWeekProvider: FC<{
     display,
   });
 
+  useEffect(() => {
+    if (searchParams.get('startDate') && searchParams.get('endDate')) {
+      return;
+    }
+    const range = getDateRange(filters.display);
+    setFilters((current) => {
+      if (
+        current.startDate === range.startDate &&
+        current.endDate === range.endDate
+      ) {
+        return current;
+      }
+      return {
+        ...current,
+        startDate: range.startDate,
+        endDate: range.endDate,
+      };
+    });
+  }, []);
+
   const params = useMemo(() => {
     return new URLSearchParams({
       display: filters.display,
@@ -189,8 +209,8 @@ export const CalendarWeekProvider: FC<{
     const modifiedParams = new URLSearchParams({
       display: filters.display,
       customer: filters?.customer?.toString() || '',
-      startDate: newDayjs(filters.startDate).startOf('day').utc().format(),
-      endDate: newDayjs(filters.endDate).endOf('day').utc().format(),
+      startDate: displayDayjs(filters.startDate).startOf('day').utc().format(),
+      endDate: displayDayjs(filters.endDate).endOf('day').utc().format(),
     }).toString();
 
     const data = await (await fetch(`/posts?${modifiedParams}`)).json();
