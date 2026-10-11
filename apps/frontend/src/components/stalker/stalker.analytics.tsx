@@ -39,8 +39,7 @@ type CountRow = { authorName: string; count: number };
 type SourceRow = { source: string; count: number };
 type CategoryRow = { name: string; count: number };
 type KeywordCount = { keywordId?: string; phrase: string; count: number };
-type AuthorRow = { authorName: string; authorHandle?: string; source?: string; count: number };
-type KeywordRow = { id?: string; phrase: string; group?: { name?: string } | null };
+type PersonAuthor = { authorName: string; authorHandle?: string; source?: string; count: number };
 
 const RANGES = [
   { value: '7d', label: '7d' },
@@ -118,7 +117,7 @@ const Card = ({
   </section>
 );
 
-const People = ({ rows, authors }: { rows: CountRow[]; authors: AuthorRow[] }) => {
+const People = ({ rows, authors }: { rows: CountRow[]; authors: PersonAuthor[] }) => {
   if (!rows.length) {
     return <p className="text-[14px] text-textItemBlur">No mentions in this view.</p>;
   }
@@ -302,15 +301,19 @@ export const StalkerAnalytics = () => {
         .sort((left: SourceRow, right: SourceRow) => right.count - left.count),
     [data]
   );
-  const keywords = (
-    sample ? SAMPLE_KEYWORDS : Array.isArray(keywordsQuery.data) ? keywordsQuery.data : []
-  ) as KeywordRow[];
+  const keywords = sample
+    ? SAMPLE_KEYWORDS
+    : Array.isArray(keywordsQuery.data)
+      ? keywordsQuery.data
+      : [];
   const keywordCounts = (
     Array.isArray(data?.byKeyword) ? data.byKeyword : []
   ) as KeywordCount[];
-  const authors = (
-    sample ? SAMPLE_AUTHORS : Array.isArray(authorsQuery.data) ? authorsQuery.data : []
-  ) as AuthorRow[];
+  const authors = sample
+    ? SAMPLE_AUTHORS
+    : Array.isArray(authorsQuery.data)
+      ? authorsQuery.data
+      : [];
   const heatmap = useMemo(
     () => (Array.isArray(data?.heatmap) ? (data.heatmap as number[][]) : []),
     [data]
