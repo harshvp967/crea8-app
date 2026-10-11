@@ -297,7 +297,7 @@ export const StalkerAlerts = () => {
               Restore daily digest
             </button>
           ) : (
-            <section className={`stk-al-digest ${digestEnabled ? 'stk-wave' : ''}`}>
+            <section className="stk-al-digest">
               <span className="stk-al-mail" aria-hidden>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -368,7 +368,7 @@ export const StalkerAlerts = () => {
                         <button
                           type="button"
                           aria-label={`Delete ${rule.name}`}
-                          className="stk-al-icon"
+                          className="stk-al-icon stk-al-delete"
                           onClick={() => removeRule(rule.id)}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -441,10 +441,10 @@ export const StalkerAlerts = () => {
               </select>
             </label>
             </div>
-            <div className={stkDialogFoot}>
+            <div className={`${stkDialogFoot} stk-al-foot`}>
               <button
                 type="button"
-                className={`${stkGhost} text-[color:var(--arc-danger)]`}
+                className={`${stkGhost} stk-al-remove text-[color:var(--arc-danger)]`}
                 onClick={() => {
                   saveDigest({ digestDismissed: true, digestEnabled: false });
                   setConfigure(false);
@@ -506,7 +506,7 @@ export const StalkerAlerts = () => {
               Alerts are sent to the workspace owner. Digests and alerts share a limit of {cap} emails per day, resetting at midnight UTC.
             </p>
             </div>
-            <div className={stkDialogFoot}>
+            <div className={`${stkDialogFoot} stk-al-foot`}>
               <button type="button" className={stkSecondary} onClick={() => setCreating(false)}>
                 Close
               </button>

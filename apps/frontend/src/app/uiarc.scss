@@ -6461,8 +6461,11 @@ body :focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid var(--new-border);
-  background: var(--new-bgColorInner);
+  padding: 16px;
+  border: 1px solid var(--arc-selected-border);
+  border-radius: 26px;
+  background-color: var(--new-bgColorInner);
+  background-image: var(--arc-wave);
 }
 
 .stk-al-config {
@@ -6523,11 +6526,6 @@ body :focus-visible {
   grid-column: 2;
   grid-row: 1 / span 3;
   justify-self: end;
-}
-
-.stk-al-digest {
-  padding: 16px;
-  border-radius: 26px;
 }
 
 .stk-al-card {
@@ -6619,5 +6617,36 @@ body :focus-visible {
   .stk-al-card > .stk-al-icon {
     grid-column: 3;
     grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 767px) {
+  .stk-al-card > .stk-al-delete {
+    width: 36px;
+    height: 36px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--new-textItemBlur);
+  }
+
+  .stk-al-foot {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .stk-al-foot > span {
+    display: none;
+  }
+
+  .stk-al-foot > button {
+    width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .stk-al-foot > .stk-al-remove {
+    grid-column: 1 / -1;
   }
 }
