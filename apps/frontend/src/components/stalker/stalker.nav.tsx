@@ -122,15 +122,15 @@ export const StalkerProjectMenu = ({ onPick }: { onPick?: () => void }) => {
   const { projects, project, setProjectId, setShowWizard } = useStalkerProject();
   return (
     <>
-      <p className="px-[11px] pb-[4px] pt-[8px] text-[13px] text-textItemBlur">Projects</p>
-      <ul className="max-h-[280px] overflow-auto">
+      <p className="stk-proj-label">Projects</p>
+      <ul className="stk-proj-list">
         {projects.map((item) => {
           const active = item.id === project?.id;
           return (
             <li key={item.id}>
               <button
                 type="button"
-                className={stkMenuItem}
+                className={`${stkMenuItem} stk-proj-item`}
                 onClick={() => {
                   setProjectId(item.id);
                   onPick?.();
@@ -140,18 +140,20 @@ export const StalkerProjectMenu = ({ onPick }: { onPick?: () => void }) => {
                   className="h-[8px] w-[8px] shrink-0 rounded-full"
                   style={{ backgroundColor: item.color || '#71717a' }}
                 />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-[500]">{item.name}</span>
-                  {item.description ? (
-                    <span className="block truncate text-[13px] text-textItemBlur">
-                      {item.description}
-                    </span>
-                  ) : null}
-                </span>
+                <span className="stk-proj-name">{item.name}</span>
                 {active ? (
-                  <span className="text-[13px] text-textItemBlur" aria-label="Active">
-                    ✓
-                  </span>
+                  <svg
+                    className="stk-proj-check"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    aria-label="Active"
+                  >
+                    <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 ) : null}
               </button>
             </li>
@@ -160,13 +162,14 @@ export const StalkerProjectMenu = ({ onPick }: { onPick?: () => void }) => {
       </ul>
       <button
         type="button"
-        className={`${stkMenuItem} mt-[4px] border-t border-newTableBorder`}
+        className={`${stkMenuItem} stk-proj-create`}
         onClick={() => {
           onPick?.();
           setShowWizard(true);
         }}
       >
-        <span className="text-textItemBlur">+</span> New project
+        <span aria-hidden>+</span>
+        Create project
       </button>
     </>
   );
@@ -313,7 +316,7 @@ export const StalkerTopNav = ({
           </span>
         </button>
         {open ? (
-          <div className={`${stkMenu} absolute start-0 top-[calc(100%+8px)] w-[260px] overflow-hidden`} role="listbox">
+          <div className={`${stkMenu} stk-proj-menu absolute start-0 top-[calc(100%+8px)] overflow-hidden`} role="listbox">
             <StalkerProjectMenu onPick={() => setOpen(false)} />
           </div>
         ) : null}

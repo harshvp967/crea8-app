@@ -8,11 +8,17 @@ import { STALKER_SWATCHES } from '@gitroom/frontend/components/stalker/stalker.w
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import {
   stkCard,
+  stkClose,
   stkDanger,
+  stkDialog,
+  stkDialogBody,
+  stkDialogFoot,
+  stkDialogHead,
   stkField,
   stkGhost,
   stkMenu,
   stkMenuItem,
+  stkOverlay,
   stkPage,
   stkPrimary,
   stkSecondary,
@@ -372,21 +378,47 @@ export const StalkerSettings = () => {
           <h2>Delete project</h2>
           <p>Removes this project, its keywords, mentions, and alerts.</p>
         </div>
-        {confirmDelete ? (
-          <div className="stk-set-confirm">
-            <button type="button" className={stkDanger} onClick={remove}>
-              Delete this project
-            </button>
-            <button type="button" className={stkGhost} onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button type="button" className={`${stkDanger} stk-set-delete`} onClick={() => setConfirmDelete(true)}>
-            Delete project
-          </button>
-        )}
+        <button type="button" className={`${stkDanger} stk-set-delete`} onClick={() => setConfirmDelete(true)}>
+          Delete project
+        </button>
       </section>
+      {confirmDelete ? (
+        <div
+          className={`${stkOverlay} stk-del-overlay`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="stk-del-title"
+        >
+          <div className={`${stkDialog} stk-del max-w-[440px]`}>
+            <div className={stkDialogHead}>
+              <h2 id="stk-del-title" className="min-w-0 flex-1 text-[18px] font-[600]">
+                Delete project?
+              </h2>
+              <button
+                type="button"
+                className={stkClose}
+                aria-label="Close"
+                onClick={() => setConfirmDelete(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={stkDialogBody}>
+              <p className="text-[14px] leading-[1.45] text-textItemBlur">
+                “{project.name}” with all keywords, alerts and mentions will be removed.
+              </p>
+            </div>
+            <div className={`${stkDialogFoot} stk-del-foot`}>
+              <button type="button" className={stkSecondary} onClick={() => setConfirmDelete(false)}>
+                No, cancel
+              </button>
+              <button type="button" className={stkDanger} onClick={remove}>
+                Yes, delete it
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
