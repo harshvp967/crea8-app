@@ -11,10 +11,13 @@ import {
   useStalkerViews,
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
-import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { platformLogo, SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { StalkerProjectMenu } from '@gitroom/frontend/components/stalker/stalker.nav';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
-import { authorUrl, cleanMention } from '@gitroom/frontend/components/stalker/stalker.labels';
+import { authorUrl, cleanMention, sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
+  describeFilters,
   emptyFilters,
   filtersActive,
   filtersToSearch,
@@ -32,9 +35,6 @@ import {
 import {
   stkBadge,
   stkBadgeAcc,
-  stkBadgeBad,
-  stkBadgeOk,
-  stkBar,
   stkCardTight,
   stkEmpty,
   stkField,
@@ -48,8 +48,10 @@ import {
   stkChipOn,
   stkPrimary,
   stkSecondary,
+  stkSub,
   stkTint,
   stkTitle,
+  stkPopover,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 type Mention = {
@@ -95,15 +97,30 @@ const dayHeading = (iso?: string) => {
   return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 };
 
-const relativeTime = (iso?: string) => {
+const compactAge = (iso?: string) => {
   if (!iso) return '';
-  const date = new Date(iso);
-  const minutes = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
   if (minutes < 1) return 'now';
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `today at ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (hours < 24) return `${hours}h`;
+  const days = Math.max(1, Math.round(hours / 24));
+  return `${days}d`;
+};
+
+const whoLabel = (mention: Mention) => {
+  const name = mention.authorName || '';
+  if (name.startsWith('@') || name.startsWith('u/')) return name;
+  const source = mention.source || '';
+  if ((source === 'X' || source.startsWith('X_')) && mention.authorHandle) {
+    return mention.authorHandle.startsWith('@') ? mention.authorHandle : `@${mention.authorHandle}`;
+  }
+  return name || (mention.authorHandle ? `@${mention.authorHandle}` : 'Someone');
+};
+
+const groupLabel = (iso?: string) => {
+  const heading = dayHeading(iso);
+  return heading === 'Today' || heading === 'Yesterday' ? heading : 'Earlier';
 };
 
 const exactTime = (iso?: string) =>
@@ -147,19 +164,26 @@ const highlight = (text: string, phrase?: string) => {
   });
 };
 
-const statusLabel = (status?: string) => {
-  if (status === 'DONE' || status === 'REPLIED') return 'Done';
-  if (status === 'FOLLOW_UP') return 'Follow up';
-  if (status === 'IGNORED') return 'Irrelevant';
+const sentimentText = (sentiment?: string) => {
+  if (sentiment === 'POSITIVE') return 'Positive';
+  if (sentiment === 'NEGATIVE') return 'Negative';
+  if (sentiment === 'NEUTRAL') return 'Neutral';
   return '';
 };
+
+const LineIcon = ({ d }: { d: string }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d={d} />
+  </svg>
+);
 
 export const StalkerMentions = () => {
   const fetch = useFetch();
   const toaster = useToaster();
   const { project, projectId, sample } = useStalkerProject();
   const [filters, setFilters] = useState<MentionFilters>(emptyFilters());
-  const [barHidden, setBarHidden] = useState(false);
+  const [feedView, setFeedView] = useState<'feed' | 'timeline'>('feed');
+  const [projectsOpen, setProjectsOpen] = useState(false);
   const [viewName, setViewName] = useState('');
   const [naming, setNaming] = useState(false);
   const [marking, setMarking] = useState<string | null>(null);
@@ -199,7 +223,6 @@ export const StalkerMentions = () => {
   if (loadedKey !== queryKey) {
     setLoadedKey(queryKey);
     setExtra([]);
-    setBarHidden(false);
   }
 
   const groups = useMemo(() => {
@@ -239,11 +262,24 @@ export const StalkerMentions = () => {
       : mentions;
     const bag = new Map<string, Mention[]>();
     for (const mention of rows) {
-      const key = dayKey(mention.createdAt);
+      const key = groupLabel(mention.createdAt);
       bag.set(key, [...(bag.get(key) || []), mention]);
     }
-    return [...bag.entries()];
+    return ['Today', 'Yesterday', 'Earlier']
+      .filter((key) => bag.has(key))
+      .map((key) => [key, bag.get(key) || []] as const);
   }, [mentions, sample, filters]);
+
+  useEffect(() => {
+    if (!marking) return;
+    const close = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('[data-mention-menu]')) return;
+      setMarking(null);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [marking]);
 
   const setStatus = async (id: string, status: string) => {
     setMarking(null);
@@ -291,7 +327,6 @@ export const StalkerMentions = () => {
     if (sample) {
       toaster.show('View saved');
       setNaming(false);
-      setBarHidden(true);
       return;
     }
     const response = await fetch('/stalker/views', {
@@ -309,20 +344,100 @@ export const StalkerMentions = () => {
     viewsQuery.mutate();
     setNaming(false);
     setViewName('');
-    setBarHidden(true);
     toaster.show('View saved');
   };
 
   return (
     <div className={stkPage}>
       <div className={stkHead}>
-        <div>
+        <div className="min-w-0">
           <h1 className={stkTitle}>Mentions</h1>
+          {project?.name ? <p className={`${stkSub} hidden md:block`}>{project.name}</p> : null}
+          {project?.name ? (
+            <button
+              type="button"
+              className="stk-project-sub md:hidden"
+              aria-haspopup="listbox"
+              aria-expanded={projectsOpen}
+              onClick={() => setProjectsOpen(true)}
+            >
+              <span className="stk-pdot" style={{ backgroundColor: project.color || '#71717a' }} />
+              <span className="truncate">{project.name}</span>
+              <span aria-hidden>▾</span>
+            </button>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-[8px]">
+          <SegmentedControl
+            aria-label="Mentions view"
+            size="sm"
+            value={feedView}
+            onValueChange={(value) => setFeedView(value === 'timeline' ? 'timeline' : 'feed')}
+            options={[
+              { value: 'feed', label: 'Feed' },
+              { value: 'timeline', label: 'Timeline' },
+            ]}
+          />
           <StalkerCheckNow />
+          <div className="relative">
+            <button
+              type="button"
+              className={`${stkSecondary} stk-save-btn`}
+              aria-expanded={naming}
+              onClick={() => setNaming((value) => !value)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M3 7h6l2 2h10v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+              </svg>
+              <span className="stk-save-label">Save these filters as a view</span>
+            </button>
+            {naming ? (
+              <>
+                <button type="button" className="stk-sheet-backdrop" aria-label="Close" onClick={() => setNaming(false)} />
+                <div className={`${stkPopover} stk-save-pop`}>
+                  <p className="text-[14px] font-[600]">Save these filters as a view</p>
+                  <input
+                    className={stkField}
+                    placeholder="View name"
+                    value={viewName}
+                    autoFocus
+                    onChange={(event) => setViewName(event.target.value)}
+                  />
+                  <p className="text-[13px] text-textItemBlur">{describeFilters(filters, keywords)}</p>
+                  <div className="flex justify-end gap-[8px]">
+                    <button
+                      type="button"
+                      className={stkGhost}
+                      onClick={() => {
+                        setViewName('');
+                        setNaming(false);
+                      }}
+                    >
+                      Clear
+                    </button>
+                    <button type="button" className={`${stkPrimary} stk-sm-btn`} onClick={saveView}>
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
+      {projectsOpen ? (
+        <>
+          <button
+            type="button"
+            className="stk-sheet-backdrop"
+            aria-label="Close"
+            onClick={() => setProjectsOpen(false)}
+          />
+          <div className={`${stkMenu} stk-project-sheet`} role="listbox">
+            <StalkerProjectMenu onPick={() => setProjectsOpen(false)} />
+          </div>
+        </>
+      ) : null}
       {views.length ? (
         <div className="flex flex-wrap gap-[8px]">
           {views.map((view: { id: string; name: string; filters: Record<string, string> }) => (
@@ -359,9 +474,16 @@ export const StalkerMentions = () => {
       </div>
       {mentionsQuery.isLoading && !mentions.length ? (
         <div className="flex flex-col gap-[12px]" aria-hidden>
-          <div className="stk-skel h-[96px] animate-pulse" />
-          <div className="stk-skel h-[96px] animate-pulse" />
-          <div className="stk-skel h-[96px] animate-pulse" />
+          {[0, 1, 2].map((row) => (
+            <div key={row} className={`${stkCardTight} flex flex-col gap-[12px]`}>
+              <div className="flex items-center gap-[12px]">
+                <span className="stk-skel h-[28px] w-[28px] animate-pulse" />
+                <span className="stk-skel h-[14px] w-[160px] animate-pulse" />
+              </div>
+              <span className="stk-skel h-[14px] w-full animate-pulse" />
+              <span className="stk-skel h-[14px] w-[70%] animate-pulse" />
+            </div>
+          ))}
         </div>
       ) : null}
       {!mentionsQuery.isLoading && !mentions.length ? (
@@ -383,13 +505,20 @@ export const StalkerMentions = () => {
               Show them
             </button>
           </div>
+        ) : dirty ? (
+          <div className="stk-empty-view">
+            <span className="stk-empty-mark" aria-hidden>@</span>
+            <h2 className="text-[16px] font-[600]">No mentions in this view.</h2>
+            <p className="max-w-[360px] text-[14px] text-textItemBlur">
+              Try a wider date range or clear a filter.
+            </p>
+            <button type="button" className={`${stkSecondary} mt-[6px]`} onClick={() => setFilters(emptyFilters())}>
+              Clear
+            </button>
+          </div>
         ) : (
-          <div className={stkEmpty}>
-            <span className={stkIconTile} aria-hidden>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M5 6h14M5 12h14M5 18h9" />
-              </svg>
-            </span>
+          <div className="stk-empty-view">
+            <span className="stk-empty-mark" aria-hidden>@</span>
             <h2 className="text-[16px] font-[600]">No mentions yet.</h2>
             <p className="max-w-[360px] text-[14px] text-textItemBlur">
               Stalker is listening for mentions of {project?.name || 'this project'}.
@@ -398,132 +527,150 @@ export const StalkerMentions = () => {
         )
       ) : null}
       {groups.map(([key, rows]) => (
-        <section key={key} className="flex flex-col gap-[12px]">
-          <p className={stkGroup}>
-            {dayHeading(rows[0]?.createdAt)} · {rows.length} mention{rows.length === 1 ? '' : 's'}
-          </p>
-          <Timeline rows={rows} />
+        <section key={key} className="stk-day-group">
+          <p className={stkGroup}>{key}</p>
+          {feedView === 'timeline' ? <Timeline rows={rows} /> : null}
           {rows.map((mention) => {
             const long = mention.text.length > 280;
             const text = expanded === mention.id || !long ? mention.text : `${mention.text.slice(0, 280)}…`;
+            const profile = authorUrl(mention.source || '', mention.authorHandle || '', mention.url || '');
+            const sentiment = sentimentText(mention.sentiment);
+            const follow = mention.status === 'FOLLOW_UP';
+            const done = mention.status === 'DONE' || mention.status === 'REPLIED';
+            const ignored = mention.status === 'IGNORED';
+            const logo = platformLogo(mention.source);
             return (
-              <article key={mention.id} className={stkCardTight}>
-                <div className="stk-mention flex gap-[12px]">
-                  <div className="relative">
-                    <span className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-newBorder bg-newBoxHover text-[13px] font-[600]">
-                      {initials(mention.authorName)}
-                    </span>
-                    <span className="absolute -bottom-[2px] -end-[2px] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-newBgColorInner">
-                      <SourceIcon source={mention.source || ''} />
-                    </span>
-                  </div>
+              <article key={mention.id} className={`${stkCardTight} stk-mcard`}>
+                <div className="stk-mhead">
+                  <span className={clsx('stk-msrc', logo && 'is-logo')}>
+                    {logo ? (
+                      <img src={logo} alt="" />
+                    ) : (
+                      <SourceIcon source={mention.source || ''} className="h-[16px] w-[16px]" />
+                    )}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-[6px]">
-                      <a
-                        className="truncate text-[14px] font-[600]"
-                        href={authorUrl(mention.source || '', mention.authorHandle || '', mention.url || '')}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {mention.authorName}
+                    <div className="stk-mwho">
+                      <a className="truncate" href={profile} target="_blank" rel="noreferrer">
+                        {whoLabel(mention)}
                       </a>
-                      {mention.authorHandle ? (
-                        <a
-                          className="text-[13px] text-textItemBlur"
-                          href={authorUrl(mention.source || '', mention.authorHandle, mention.url || '')}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          @{mention.authorHandle}
-                        </a>
-                      ) : null}
-                      <span className="text-[13px] text-textItemBlur" title={exactTime(mention.createdAt)}>
-                        {relativeTime(mention.createdAt)}
+                      <span className="stk-mmeta" title={exactTime(mention.createdAt)}>
+                        {sourceLabel(mention.source || '')}
+                        {compactAge(mention.createdAt) ? ` · ${compactAge(mention.createdAt)}` : ''}
                       </span>
                     </div>
-                    <p className="mt-[6px] text-[14px] leading-[1.5]">
-                      {highlight(text, mention.keyword?.phrase)}
-                    </p>
-                    {long ? (
-                      <button
-                        type="button"
-                        className="mt-[4px] text-[13px] text-textItemBlur"
-                        onClick={() => setExpanded(expanded === mention.id ? null : mention.id)}
-                      >
-                        {expanded === mention.id ? 'See less' : 'See more'}
-                      </button>
-                    ) : null}
-                    <p className="mt-[8px] flex gap-[12px] text-[13px] text-textItemBlur">
-                      <span>{mention.replyCount || 0} replies</span>
-                      <span>{mention.likeCount || 0} likes</span>
-                    </p>
-                    <div className="mt-[8px] flex flex-wrap gap-[6px]">
-                      {mention.categoryDef?.name ? (
-                        <span className={stkBadgeAcc}>{mention.categoryDef.name}</span>
-                      ) : null}
-                      {mention.keyword?.phrase ? (
-                        <span className={stkBadge}>{mention.keyword.phrase}</span>
-                      ) : null}
-                      {mention.sentiment && mention.sentiment !== 'NEUTRAL' ? (
-                        <span className={mention.sentiment === 'POSITIVE' ? stkBadgeOk : stkBadgeBad}>
-                          {mention.sentiment === 'POSITIVE' ? 'Positive' : 'Negative'}
-                        </span>
-                      ) : mention.sentiment === 'NEUTRAL' ? (
-                        <span className={stkBadge}>Neutral</span>
-                      ) : null}
-                      {mention.relevant === false ? (
-                        <span className={stkBadge}>Off-topic</span>
-                      ) : null}
-                      {statusLabel(mention.status) ? (
-                        <span className={stkBadge}>{statusLabel(mention.status)}</span>
-                      ) : null}
-                    </div>
                   </div>
-                  <div className="stk-mention-actions flex shrink-0 flex-col items-end gap-[6px] text-[14px]">
-                    {mention.url ? (
-                      <a href={mention.url} target="_blank" rel="noreferrer" className={stkGhost}>
-                        Open
-                      </a>
+                  {sentiment ? (
+                    <span
+                      className={clsx(
+                        'stk-sent',
+                        mention.sentiment === 'POSITIVE' && 'is-ok',
+                        mention.sentiment === 'NEGATIVE' && 'is-bad'
+                      )}
+                    >
+                      <i />
+                      {sentiment}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="stk-mtext">{highlight(text)}</p>
+                <div className="stk-mfoot">
+                  <div className="stk-mtags">
+                    {mention.categoryDef?.name ? (
+                      <span className={stkBadgeAcc}>{mention.categoryDef.name}</span>
                     ) : null}
+                    {mention.keyword?.phrase ? <span className={stkBadge}>{mention.keyword.phrase}</span> : null}
+                    {mention.relevant === false ? <span className={stkBadge}>Off-topic</span> : null}
+                  </div>
+                  <div className="stk-mention-actions">
                     <button
                       type="button"
-                        className={stkGhost}
-                      onClick={async () => {
-                        if (!mention.url) return;
-                        await navigator.clipboard.writeText(mention.url);
-                        toaster.show('Link copied');
-                      }}
+                      className={clsx(follow ? stkTint : stkGhost, 'stk-act')}
+                      onClick={() => setStatus(mention.id, 'FOLLOW_UP')}
                     >
-                      Copy link
+                      <LineIcon d="M5 21V4h9l-1 4 1 4H5" />
+                      <span>Follow up</span>
                     </button>
-                    {mention.relevant === false ? (
+                    <button
+                      type="button"
+                      className={clsx(done ? stkTint : stkGhost, 'stk-act')}
+                      onClick={() => setStatus(mention.id, 'DONE')}
+                    >
+                      <LineIcon d="M5 12.5l4.2 4.2L19 7" />
+                      <span>Done</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={clsx(ignored ? stkTint : stkGhost, 'stk-act')}
+                      onClick={() => setStatus(mention.id, 'IGNORED')}
+                    >
+                      <LineIcon d="M7 7l10 10M17 7L7 17" />
+                      <span>Irrelevant</span>
+                    </button>
+                    <div className="relative" data-mention-menu>
                       <button
                         type="button"
-                        className={stkTint}
-                        onClick={() => setRelevant(mention.id, true)}
-                      >
-                        Mark relevant
-                      </button>
-                    ) : null}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        className={stkGhost}
+                        className={`${stkGhost} stk-act stk-more`}
+                        aria-label="Mention actions"
+                        aria-expanded={marking === mention.id}
                         onClick={() => setMarking(marking === mention.id ? null : mention.id)}
                       >
-                        Mark as…
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <circle cx="6" cy="12" r="1.4" />
+                        <circle cx="12" cy="12" r="1.4" />
+                        <circle cx="18" cy="12" r="1.4" />
+                      </svg>
                       </button>
                       {marking === mention.id ? (
-                        <div className={`${stkMenu} absolute end-0 mt-[4px] w-[200px]`}>
-                          <button type="button" className={stkMenuItem} onClick={() => setStatus(mention.id, 'DONE')}>Done</button>
-                          <button type="button" className={stkMenuItem} onClick={() => setStatus(mention.id, 'FOLLOW_UP')}>Follow up</button>
-                          <button type="button" className={`${stkMenuItem} text-[color:var(--arc-danger)]`} onClick={() => setStatus(mention.id, 'IGNORED')}>Irrelevant</button>
-                          {mention.relevant === false ? (
-                            <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, true)}>Relevant</button>
-                          ) : (
-                            <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, false)}>Off-topic</button>
-                          )}
-                        </div>
+                        <>
+                          <button
+                            type="button"
+                            className="stk-sheet-backdrop"
+                            aria-label="Close"
+                            onClick={() => setMarking(null)}
+                          />
+                          <div className={`${stkMenu} stk-mention-menu`} role="menu">
+                            <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, true)}>
+                              <LineIcon d="M5 12.5l4.2 4.2L19 7" />
+                              Relevant
+                            </button>
+                            <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, false)}>
+                              <LineIcon d="M7 7l10 10M17 7L7 17" />
+                              Off-topic
+                            </button>
+                            <div className="stk-menu-rule" />
+                            <button
+                              type="button"
+                              className={stkMenuItem}
+                              onClick={async () => {
+                                if (!mention.url) return;
+                                await navigator.clipboard.writeText(mention.url);
+                                toaster.show('Link copied');
+                                setMarking(null);
+                              }}
+                            >
+                              <LineIcon d="M8 8h9a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2v-9a2 2 0 012-2zM7 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v1" />
+                              Copy link
+                            </button>
+                            <button
+                              type="button"
+                              className={stkMenuItem}
+                              onClick={() => {
+                                setExpanded(expanded === mention.id ? null : mention.id);
+                                setMarking(null);
+                              }}
+                            >
+                              <LineIcon d="M5 12h14M13 6l6 6-6 6" />
+                              {expanded === mention.id ? 'See less' : 'See more'}
+                            </button>
+                            {mention.url ? (
+                              <a href={mention.url} target="_blank" rel="noreferrer" className={stkMenuItem}>
+                                <LineIcon d="M14 5h5v5M19 5l-9 9M10 5H6a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1v-4" />
+                                Open
+                              </a>
+                            ) : null}
+                          </div>
+                        </>
                       ) : null}
                     </div>
                   </div>
@@ -547,27 +694,6 @@ export const StalkerMentions = () => {
         >
           Load more
         </button>
-      ) : null}
-      {dirty && !barHidden ? (
-        <div className={stkBar}>
-          <p className="text-[14px] font-[500]">Save these filters as a view</p>
-          <div className="flex flex-wrap items-center gap-[8px]">
-            {naming ? (
-              <input
-                className={`${stkField} w-[200px]`}
-                placeholder="View name"
-                value={viewName}
-                onChange={(event) => setViewName(event.target.value)}
-              />
-            ) : null}
-            <button type="button" className={naming ? stkPrimary : stkSecondary} onClick={() => (naming ? saveView() : setNaming(true))}>
-              {naming ? 'Save' : 'Save as view'}
-            </button>
-            <button type="button" className={stkGhost} onClick={() => setBarHidden(true)}>
-              Dismiss
-            </button>
-          </div>
-        </div>
       ) : null}
     </div>
   );
@@ -607,7 +733,7 @@ const Timeline = ({ rows }: { rows: Mention[] }) => {
   const nowLeft = ((now.getHours() * 60 + now.getMinutes()) / (24 * 60)) * 100;
   const sameDay = rows[0]?.createdAt && dayKey(rows[0].createdAt) === dayKey(new Date().toISOString());
   return (
-    <div className="relative px-[8px] py-[28px]">
+    <div className="stk-timeline relative px-[8px] py-[28px]">
       <div className="flex justify-between text-[13px] text-textItemBlur">
         {['12am', '6am', '12pm', '6pm', '11pm'].map((label) => (
           <span key={label}>{label}</span>
