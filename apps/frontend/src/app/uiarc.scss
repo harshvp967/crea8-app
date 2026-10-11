@@ -6687,16 +6687,14 @@ body :focus-visible {
 }
 
 .stk-api-soon {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 16px;
-  padding: 24px;
+  width: 100%;
+  margin-top: 40px;
+  padding: 0 24px 24px;
   text-align: center;
-  pointer-events: none;
 }
 
 .stk-api-soon p {
