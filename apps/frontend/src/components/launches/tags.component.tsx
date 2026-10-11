@@ -57,7 +57,7 @@ export const TagsComponentInner: FC<{
       name: string;
     };
   }) => void;
-}> = ({ initial, onChange, name, mutate, allTags: data }) => {
+}> = ({ initial, onChange, name, mutate, allTags: data, label }) => {
   const t = useT();
   const fetch = useFetch();
   const [isOpen, setIsOpen] = useState(false);
@@ -174,7 +174,7 @@ export const TagsComponentInner: FC<{
         </div>
         <div className="cursor-pointer flex gap-[4px]">
           {tagValue.length === 0 ? (
-            t('add_new_tag', 'Add New Tag')
+            label
           ) : (
             <>
               <div

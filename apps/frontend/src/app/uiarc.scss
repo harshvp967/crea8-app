@@ -1379,6 +1379,7 @@ body :focus-visible {
   }
 
   .composer-frame {
+    border: 0 !important;
     border-radius: 0 !important;
     min-height: 0;
     height: 100%;
@@ -1387,39 +1388,55 @@ body :focus-visible {
   .composer-tabs {
     display: flex;
     align-items: center;
-    gap: 6px;
-    min-height: 60px;
-    padding: 0 12px;
+    gap: 8px;
+    min-height: 56px;
+    padding: 8px 16px;
     border-bottom: 1px solid var(--new-border);
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .composer-tabs-title {
     font-size: 16px;
     font-weight: 600;
-    margin-right: 4px;
     white-space: nowrap;
+    min-width: 0;
+  }
+
+  .composer-seg {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 3px;
+    border: 1px solid var(--new-border);
+    border-radius: 999px;
+    background: var(--new-bgColor);
   }
 
   .composer-tabs button[role='tab'] {
-    height: 34px;
-    padding: 0 12px;
-    border-radius: 14px;
-    border: 1px solid transparent;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 0;
     color: var(--new-textItemBlur);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     background: transparent;
+    white-space: nowrap;
   }
 
   .composer-tabs button.on {
     background-image: var(--arc-wave), linear-gradient(var(--new-bgColorInner), var(--new-bgColorInner));
-    border-color: var(--arc-selected-border);
     color: var(--new-btn-text);
+    box-shadow: inset 0 0 0 1px var(--arc-selected-border);
   }
 
   .composer-close-phone {
     display: flex;
-    margin-left: auto;
+    flex: none;
     width: 32px;
     height: 32px;
     align-items: center;
@@ -7461,5 +7478,639 @@ body :focus-visible {
 
   .stk-proj-menu {
     width: auto;
+  }
+}
+
+/* Post composer, part 1. Presentation only. */
+body.composer-open .copilotKitButton,
+body.composer-open .copilotKitWindow,
+.composer .copilotKitButton,
+.composer .copilotKitWindow {
+  display: none !important;
+}
+
+.po-pick {
+  width: 44px;
+  height: 44px;
+  flex: none;
+}
+
+.po-platform {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  bottom: -1px;
+  inset-inline-end: -1px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--new-bgColorInner);
+}
+
+.po-pick-check {
+  position: absolute;
+  top: -3px;
+  inset-inline-end: -3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #00d9ff;
+  color: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 12;
+  box-shadow: 0 0 0 2px var(--new-bgColorInner);
+}
+
+.po-global-on {
+  background: color-mix(in srgb, var(--arc-accent) 14%, transparent);
+}
+
+.po-chip-remove {
+  position: absolute;
+  top: -5px;
+  inset-inline-start: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid var(--new-border);
+  background: var(--new-bgColorInner);
+  color: var(--new-textItemBlur);
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+.po-specific {
+  min-height: 40px;
+  padding: 0 4px;
+}
+
+.po-attach-label {
+  display: none;
+}
+
+.composer .po-attach-label {
+  display: flex;
+}
+
+.composer .sortable-container > div {
+  width: 64px !important;
+  height: 48px !important;
+}
+
+.po-editor-card {
+  border: 1px solid var(--new-border);
+  border-radius: 18px;
+  background: var(--new-bgColorInner);
+  overflow: visible;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.po-editor-tools {
+  min-height: 44px;
+  border-bottom: 1px solid var(--new-border);
+}
+
+.composer-editor .editor-toolbar > div,
+.composer-editor .b2 .cursor-pointer {
+  height: 34px;
+  border-radius: 12px;
+}
+
+.composer .group.rounded-\[6px\] {
+  height: 28px;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+}
+
+.composer {
+  padding: 16px !important;
+}
+
+.composer-frame {
+  border-radius: 26px;
+  border: 1px solid var(--new-border);
+}
+
+.arc-dialog.po-set-modal,
+.arc-dialog.po-sure-modal,
+.arc-dialog.po-media-modal {
+  border-radius: 26px !important;
+  border: 1px solid var(--new-border);
+  background: var(--new-bgColorInner);
+  position: fixed !important;
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
+.arc-dialog.po-set-modal {
+  width: min(520px, calc(100vw - 32px)) !important;
+  height: auto !important;
+  max-height: calc(100vh - 80px) !important;
+}
+
+.arc-dialog.po-sure-modal {
+  width: min(520px, calc(100vw - 32px)) !important;
+  height: auto !important;
+  max-height: calc(100vh - 80px) !important;
+}
+
+.arc-dialog.po-media-modal {
+  width: min(980px, calc(100vw - 64px)) !important;
+  height: min(680px, calc(100vh - 80px)) !important;
+  max-height: calc(100vh - 80px) !important;
+}
+
+.po-library {
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 16px 16px;
+  box-sizing: border-box;
+}
+
+.po-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.po-media-card {
+  min-width: 0;
+  border: 1px solid var(--new-border);
+  border-radius: 16px;
+  background: var(--new-bgColor);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.po-media-card.is-selected {
+  border-color: #00d9ff;
+  box-shadow: inset 0 0 0 1px #00d9ff;
+}
+
+.po-media-thumb {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--arc-muted, var(--new-bgColor));
+  overflow: hidden;
+}
+
+.po-media-thumb .po-media-img,
+.po-media-thumb video,
+.po-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.po-media-img.is-broken {
+  display: none;
+}
+
+.po-media-ph {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--new-textItemBlur);
+  background: var(--arc-muted, #1c1c1c);
+}
+
+.po-media-thumb:has(.is-broken) .po-media-ph,
+.po-media-thumb:not(:has(img)):not(:has(video)) .po-media-ph {
+  display: flex;
+}
+
+.po-media-check {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  z-index: 3;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #00d9ff;
+  color: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.po-media-zoom {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 3;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+}
+
+.po-media-card:hover .po-media-zoom {
+  display: flex;
+}
+
+.po-file-name {
+  padding: 8px 10px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-editor-foot {
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.po-editor-foot > .b1 {
+  flex: 1 1 240px;
+  min-width: 0;
+  width: auto !important;
+  max-width: 100%;
+}
+
+.po-card-extra .flex.flex-col {
+  flex-direction: row;
+  padding-top: 0;
+  gap: 2px;
+}
+
+.po-upload-btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+body.composer-open .app-toast.is-warning {
+  top: auto;
+  bottom: 96px;
+  left: 36px;
+  right: auto;
+  max-width: min(420px, 46vw);
+  transform: none;
+}
+
+.composer-grab {
+  display: none;
+}
+
+.po-preview-empty {
+  padding-top: 8px;
+}
+
+@media (max-width: 767px) {
+  .composer {
+    padding: 0 !important;
+  }
+
+  .mantine-Modal-modal:has(.composer) {
+    top: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  .arc-dialog.po-set-modal,
+  .arc-dialog.po-sure-modal,
+  .arc-dialog.po-media-modal {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 92vh !important;
+    transform: none !important;
+    border-radius: 30px 30px 0 0 !important;
+  }
+
+  .composer .post-now-tray {
+    display: none !important;
+    position: absolute !important;
+    width: auto !important;
+    left: auto !important;
+    padding: 12px !important;
+    background: var(--new-bgColorInner) !important;
+  }
+
+  .composer .group:hover .post-now-tray {
+    display: flex !important;
+  }
+
+  .composer,
+  .composer-frame,
+  .composer-split,
+  .composer-editor,
+  .composer-preview,
+  .po-editor-card,
+  .po-editor-shell,
+  .po-attach,
+  .b1 {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #social-content {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  #social-content .flex.w-full,
+  #social-content .po-picks,
+  #social-content .innerComponent {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .po-current {
+    position: static !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .po-current-spacer {
+    display: none;
+  }
+
+  .po-global-label {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  .po-global.po-global-on {
+    width: 44px;
+    min-width: 44px;
+    padding: 0 !important;
+    border-radius: 999px;
+  }
+
+  .po-picks,
+  .po-current-row {
+    max-width: 100%;
+  }
+
+  .po-media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #social-content .flex-1.flex > .relative {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .po-editor-card {
+    border: 1px solid var(--new-border);
+    border-radius: 16px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .po-editor-foot:has(.po-delay) .po-attach .maxMedia\:hidden,
+  .po-editor-foot:has(.po-delay) .po-attach .iconBreak\:hidden {
+    display: none !important;
+  }
+
+  .composer .po-attach .maxMedia\:hidden {
+    display: block !important;
+  }
+
+  .po-editor-foot .po-attach.b1.flex {
+    flex-wrap: nowrap;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .po-editor-foot:has(.po-delay) .po-attach {
+    padding-left: 8px;
+    padding-right: 4px;
+    gap: 4px;
+  }
+
+  .po-editor-foot:has(.po-delay) .po-attach > .text-newColColor {
+    display: none;
+  }
+
+  .po-editor-foot:has(.po-delay) .po-attach .b2 {
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .po-editor-foot {
+    flex-wrap: nowrap;
+    align-items: flex-end;
+  }
+
+  .po-editor-foot > .b1 {
+    width: auto !important;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .po-card-extra {
+    width: auto;
+    flex: none;
+    justify-content: flex-end;
+    border-top: 0;
+    white-space: nowrap;
+    box-sizing: border-box;
+    align-self: center;
+  }
+
+  .arc-dialog.po-media-modal {
+    padding: 8px 16px 16px !important;
+    gap: 12px !important;
+  }
+
+  .po-media-modal .arc-dialog-head {
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .po-media-modal .mantine-Modal-close {
+    position: static !important;
+    top: auto !important;
+    inset-inline-end: auto !important;
+    width: 32px;
+    height: 32px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--new-border);
+    border-radius: 12px;
+    background: var(--arc-muted, var(--new-bgColor));
+    color: #a3a3a3;
+  }
+
+  .po-media-modal .po-library {
+    padding: 0 !important;
+  }
+
+  .po-media-modal .po-library-foot {
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .po-media-modal .po-library-foot > div {
+    flex: none;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  .po-media-modal .po-library-foot button {
+    height: 52px !important;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .po-media-modal .po-library-foot button:first-of-type {
+    flex: none;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .po-media-modal .po-library-foot button:last-of-type:not(:first-of-type) {
+    flex: 1 1 auto;
+  }
+
+  .po-card-extra .flex.flex-col {
+    flex-direction: row;
+    padding-top: 0;
+    gap: 2px;
+  }
+
+  #wrapper-settings {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  body.composer-open .app-toast.is-warning {
+    top: calc(64px + env(safe-area-inset-top)) !important;
+    bottom: auto !important;
+    left: 16px !important;
+    right: 16px !important;
+    max-width: none !important;
+  }
+
+  .composer-grab {
+    display: block;
+    margin-top: 8px;
+  }
+
+  .composer-foot {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    align-items: stretch;
+    height: auto !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px 16px !important;
+  }
+
+  .composer-foot > .flex-1,
+  .composer-actions {
+    display: contents !important;
+    width: auto;
+    padding: 0 !important;
+  }
+
+  .composer-foot .border.rounded-\[8px\],
+  .composer-actions > button,
+  .composer-foot .group,
+  .composer-foot .group > button {
+    min-width: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 !important;
+    white-space: nowrap;
+  }
+
+  .composer-actions > .rounded-\[8px\] {
+    font-size: 12px !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    gap: 4px !important;
+    justify-content: flex-start;
+  }
+
+  .composer-actions > .rounded-\[8px\] > div:first-child {
+    flex: none;
+    overflow: visible;
+    min-width: auto;
+  }
+
+  .composer-actions > .rounded-\[8px\] > div:nth-child(2) {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+    min-width: 0;
+  }
+
+  .composer-foot .group {
+    grid-column: 1 / -1;
+  }
+
+  .composer-foot > .flex-1 .border.rounded-\[8px\] > div {
+    min-width: 0;
+    width: 100%;
+    padding-left: 10px !important;
+    padding-right: 8px !important;
+    overflow: hidden;
+  }
+
+  .composer-foot > .flex-1 .border.rounded-\[8px\] > div > div:nth-child(2) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .composer-actions .btnSub,
+  .composer-actions > button,
+  .composer-foot .group > button {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

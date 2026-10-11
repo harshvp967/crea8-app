@@ -88,11 +88,14 @@ export const DelayComponent: FC<{
             : `${t('delay_comment_by', 'Comment delayed by')} ${getCurrentDelayLabel()}`
         }
         className={clsx(
-          'cursor-pointer flex items-center gap-[4px]',
+          'po-delay cursor-pointer flex items-center gap-[6px]',
           currentDelay > 0 && 'arc-selected rounded-[14px] px-[6px]'
         )}
       >
         <DelayIcon />
+        <span className="text-[13px] font-[500] whitespace-nowrap">
+          {t('delay_comment', 'Delay comment')}
+        </span>
       </div>
       {isOpen && (
         <div className="z-[300] absolute end-0 top-[100%] w-[200px] bg-newBgColorInner p-[8px] menu-shadow translate-y-[10px] flex flex-col rounded-[8px]">

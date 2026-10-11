@@ -28,7 +28,7 @@ export const NewPost = ({ presentation = 'inline' }: { presentation?: 'inline' |
             withCloseButton: false,
             onClose: () => resolve('exit'),
             classNames: {
-              modal: 'text-textColor',
+              modal: 'po-set-modal text-textColor',
             },
             children: (
               <SetSelectionModal

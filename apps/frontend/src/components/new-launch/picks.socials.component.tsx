@@ -32,7 +32,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
     <div className={clsx('flex', locked && 'opacity-50 pointer-events-none')}>
       <div className="flex flex-1">
         <div className="innerComponent flex-1 flex">
-          <div className="flex flex-wrap gap-[12px] flex-1">
+          <div className="po-picks flex flex-wrap gap-[10px] flex-1">
             {integrations
               .filter((f) => {
                 if (exising.integration) {
@@ -57,43 +57,52 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                       addOrRemoveSelectedIntegration(integration, {});
                     }}
                     className={clsx(
-                      'cursor-pointer border-[2px] relative rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                      'po-pick cursor-pointer border relative rounded-full flex justify-center items-center bg-newBgColorInner transition-all duration-500',
                       selectedIntegrations.findIndex(
                         (p) => p.integration.id === integration.id
                       ) === -1
-                        ? 'grayscale border-transparent'
-                        : 'border-[#622FF6]'
+                        ? 'border-newBorder'
+                        : 'is-on border-[#00D9FF]'
                     )}
                   >
                     <ImageWithFallback
                       fallbackSrc="/no-picture.jpg"
                       src={integration.picture || '/no-picture.jpg'}
-                      className={clsx(
-                        'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
-                        selectedIntegrations.findIndex(
-                          (p) => p.integration.id === integration.id
-                        ) === -1
-                          ? 'border-transparent'
-                          : 'border-[#000]'
-                      )}
+                      className="rounded-full transition-all w-[40px] h-[40px] min-w-[40px] min-h-[40px] object-cover"
                       alt={integration.identifier}
-                      width={42}
-                      height={42}
+                      width={40}
+                      height={40}
                     />
                     {integration.identifier === 'youtube' ? (
                       <img
                         src="/icons/platforms/youtube.svg"
-                        className="absolute z-10 bottom-0 -end-[5px] min-w-[16px]"
-                        width={16}
+                        className="po-platform absolute z-10"
+                        width={14}
+                        height={14}
                       />
                     ) : (
                       <SafeImage
                         src={`/icons/platforms/${integration.identifier}.png`}
-                        className="rounded-[4px] absolute z-10 bottom-0 -end-[5px] min-w-[16px] min-h-[16px]"
+                        className="po-platform rounded-[4px] absolute z-10"
                         alt={integration.identifier}
-                        width={16}
-                        height={16}
+                        width={14}
+                        height={14}
                       />
+                    )}
+                    {selectedIntegrations.findIndex(
+                      (p) => p.integration.id === integration.id
+                    ) !== -1 && (
+                      <span className="po-pick-check" aria-hidden>
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                          <path
+                            d="M2.2 6.2 4.7 8.8 9.8 3.2"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
                     )}
                   </div>
                 </div>

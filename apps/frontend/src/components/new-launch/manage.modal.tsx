@@ -98,6 +98,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     }
   }, [hide]);
 
+  useEffect(() => {
+    document.body.classList.add('composer-open');
+    return () => {
+      document.body.classList.remove('composer-open');
+    };
+  }, []);
+
   const currentIntegrationText = useMemo(() => {
     if (current === 'global') {
       return (
@@ -110,24 +117,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       );
     }
 
-    const currentIntegration = integrations.find((p) => p.id === current)!;
-
     return (
-      <div className="flex items-center gap-[10px]">
-        <div className="relative">
-          <img
-            src={`/icons/platforms/${currentIntegration.identifier}.png`}
-            className="w-[20px] h-[20px] rounded-[4px]"
-            alt={currentIntegration.identifier}
-          />
-          <SettingsIcon
-            size={15}
-            className="text-white absolute -end-[5px] -bottom-[5px]"
-          />
-        </div>
-        <div>
-          {currentIntegration.name} {t('channel_settings', 'Settings')}
-        </div>
+      <div className="flex items-center gap-[8px]">
+        <SettingsIcon size={16} className="text-textItemBlur" />
+        <div>{t('settings', 'Settings')}</div>
       </div>
     );
   }, [current]);
@@ -478,14 +471,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   return (
     <div className={clsx('composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview')}>
       <div className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] flex-col min-h-0">
+        <div className="arc-grab composer-grab" aria-hidden />
         <div className="composer-tabs" role="tablist">
           <span className="composer-tabs-title">{t('create_post_title', 'Create Post')}</span>
-          <button type="button" role="tab" aria-selected={phonePane === 'editor'} className={phonePane === 'editor' ? 'on' : ''} onClick={() => setPhonePane('editor')}>
-            {t('editor', 'Editor')}
-          </button>
-          <button type="button" role="tab" aria-selected={phonePane === 'preview'} className={phonePane === 'preview' ? 'on' : ''} onClick={() => setPhonePane('preview')}>
-            {t('post_preview', 'Post Preview')}
-          </button>
+          <div className="composer-seg">
+            <button type="button" role="tab" aria-selected={phonePane === 'editor'} className={phonePane === 'editor' ? 'on' : ''} onClick={() => setPhonePane('editor')}>
+              {t('editor', 'Editor')}
+            </button>
+            <button type="button" role="tab" aria-selected={phonePane === 'preview'} className={phonePane === 'preview' ? 'on' : ''} onClick={() => setPhonePane('preview')}>
+              {t('post_preview', 'Post Preview')}
+            </button>
+          </div>
           <button type="button" className="composer-close-phone" aria-label={t('close', 'Close')} onClick={askClose}>
             <CloseIcon className="text-[#A3A3A3]" />
           </button>
@@ -501,7 +497,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
               <div
-                className={clsx('flex-1 relative', showSettings && 'hidden')}
+                className="flex-1 relative min-w-0"
               >
                 <div
                   id="social-content"
@@ -538,39 +534,35 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <div
                 id="wrapper-settings"
                 className={clsx(
-                  'pb-[20px] px-[20px] select-none',
-                  showSettings && 'flex-1 flex pt-[20px]',
+                  'px-[20px] pb-[16px] select-none min-w-0',
                   current === 'global' && 'hidden'
                 )}
               >
-                <div className="flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden bg-newSettings">
+                <div className="po-settings flex flex-col rounded-[18px] border border-newBorder overflow-hidden bg-newBgColorInner">
                   <div
                     onClick={() => setShowSettings(!showSettings)}
-                    className={clsx(
-                      'arc-selected rounded-[18px] flex items-center gap-[8px] cursor-pointer p-[12px]',
-                      showSettings ? '!rounded-b-none' : ''
-                    )}
+                    className="flex items-center gap-[8px] cursor-pointer px-[14px] py-[12px]"
                   >
-                    <div className="flex-1 text-[14px] font-[500]">
+                    <div className="flex-1 text-[14px] font-[600] min-w-0">
                       {currentIntegrationText}
                     </div>
                     <div>
                       <ChevronDownIcon
                         rotated={showSettings}
-                        className="text-[color:var(--arc-accent-text)]"
+                        className="text-textItemBlur"
                       />
                     </div>
                   </div>
                   <div
                     className={clsx(
-                      !showSettings ? 'hidden' : 'flex-1',
-                      'text-[14px] text-textColor font-[500] relative'
+                      !showSettings && 'hidden',
+                      'text-[14px] text-textColor font-[500] border-t border-newBorder'
                     )}
                   >
-                    <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
+                    <div className="max-h-[280px] overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
                       <div
                         id="social-settings"
-                        className="flex flex-col gap-[20px] bg-newBgColor"
+                        className="flex flex-col gap-[20px]"
                       />
                     </div>
                   </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, RefObject, useCallback, useEffect, useState } from 'react';
 import {
   SelectedIntegrations,
   useLaunchStore,
@@ -51,6 +51,7 @@ export function useHasScroll(ref: RefObject<HTMLElement | null>): boolean {
 }
 
 export const SelectCurrent: FC = () => {
+  const t = useT();
   const modals = useDecisionModal();
   const {
     selectedIntegrations,
@@ -69,9 +70,6 @@ export const SelectCurrent: FC = () => {
       setHide: state.setHide,
     }))
   );
-
-  const contentRef = useRef<HTMLDivElement>(null);
-  const hasScroll = useHasScroll(contentRef);
 
   const removeSocial = useCallback(
     (sIntegration: Integrations) => async (e: any) => {
@@ -92,13 +90,16 @@ export const SelectCurrent: FC = () => {
     []
   );
 
+  if (!selectedIntegrations.length) {
+    return null;
+  }
+
   return (
     <>
-      <div className="select-none left-0 absolute w-full z-[100] px-[20px]">
+      <div className="po-current select-none left-0 absolute w-full z-[100] px-[20px]">
         <div
-          ref={contentRef}
           className={clsx(
-            'flex gap-[6px] w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            'po-current-row flex gap-[8px] w-full flex-wrap',
             locked && 'opacity-50 pointer-events-none'
           )}
         >
@@ -107,16 +108,28 @@ export const SelectCurrent: FC = () => {
               setHide(true);
               setCurrent('global');
             }}
+            aria-label={t(
+              'you_are_in_global_editing_mode',
+              'You are in global editing mode'
+            )}
+            data-tooltip-id="tooltip"
+            data-tooltip-content={t(
+              'you_are_in_global_editing_mode',
+              'You are in global editing mode'
+            )}
             className={clsx(
-              'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] justify-center items-center bg-newBgLineColor',
+              'po-global cursor-pointer flex gap-[8px] h-[44px] justify-center items-center bg-newBgColorInner',
               current !== 'global'
-                ? 'text-[#A3A3A3]'
-                : 'border border-[#00D9FF] text-[#00D9FF]'
+                ? 'text-[#A3A3A3] rounded-full w-[44px] border border-newBorder'
+                : 'po-global-on rounded-[18px] px-[12px] border border-[#00D9FF] text-[#00D9FF]'
             )}
           >
-            <div>
-              <GlobalIcon />
-            </div>
+            <GlobalIcon />
+            {current === 'global' && (
+              <span className="po-global-label text-[13px] font-[600] whitespace-nowrap">
+                {t('you_are_in_global_editing_mode', 'You are in global editing mode')}
+              </span>
+            )}
           </div>
           {selectedIntegrations.map(({ integration }) => (
             <div
@@ -126,17 +139,18 @@ export const SelectCurrent: FC = () => {
               }}
               key={integration.id}
               className={clsx(
-                'border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[8px] items-center bg-newBgLineColor justify-center',
+                'po-selected border cursor-pointer relative flex gap-[8px] w-[44px] h-[44px] rounded-full items-center bg-newBgColorInner justify-center',
                 current === integration.id
                   ? 'border-[#00D9FF] text-[#00D9FF]'
-                  : 'border-transparent'
+                  : 'border-newBorder'
               )}
             >
               <div
                 onClick={removeSocial(integration)}
-                className="absolute justify-center items-center flex w-[8px] h-[8px] -top-[1px] -start-[3px] bg-red-500 rounded-full text-white text-[8px]"
+                className="po-chip-remove"
+                aria-label={t('remove', 'Remove')}
               >
-                X
+                <span aria-hidden>×</span>
               </div>
               <IsGlobal id={integration.id} />
               <div
@@ -150,10 +164,10 @@ export const SelectCurrent: FC = () => {
               >
                 <SafeImage
                   src={integration.picture || '/no-picture.jpg'}
-                  className="rounded-full min-w-[26px]"
+                  className="rounded-full w-[36px] h-[36px] min-w-[36px] object-cover"
                   alt={integration.identifier}
-                  width={26}
-                  height={26}
+                  width={36}
+                  height={36}
                   onError={(e) => {
                     e.currentTarget.src = '/no-picture.jpg';
                     e.currentTarget.srcset = '/no-picture.jpg';
@@ -179,7 +193,7 @@ export const SelectCurrent: FC = () => {
           ))}
         </div>
       </div>
-      <div className={clsx(hasScroll ? 'h-[55px]' : 'h-[40px]')} />
+      <div className="po-current-spacer h-[44px]" />
     </>
   );
 };
