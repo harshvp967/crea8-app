@@ -885,6 +885,7 @@ export const MultiMediaComponent: FC<{
     value,
     allData,
     dummy,
+    label,
     toolBar,
     information,
     mediaNotAvailable,
@@ -1037,9 +1038,14 @@ export const MultiMediaComponent: FC<{
             </ReactSortable>
           )}
         </div>
-        <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+        <div className="po-attach flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
           {!mediaNotAvailable && (
             <div className="flex py-[10px] b2 items-center gap-[4px]">
+              {!!label && (
+                <div className="po-attach-label items-center text-[13px] font-[500] text-textItemBlur whitespace-nowrap pe-[4px]">
+                  {label}
+                </div>
+              )}
               <div
                 onClick={showModal}
                 className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"

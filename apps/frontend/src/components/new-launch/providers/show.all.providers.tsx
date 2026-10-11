@@ -232,11 +232,16 @@ export const ShowAllProviders = forwardRef((props, ref) => {
           }}
         >
           {global?.[0]?.content?.length === 0 ? (
-            <div>
-              {t(
-                'start_writing_your_post',
-                'Start writing your post for a preview'
-              )}
+            <div className="po-preview-empty text-[14px] font-[500] text-textItemBlur">
+              {selectedIntegrations.length
+                ? t(
+                    'start_writing_your_post',
+                    'Start writing your post for a preview'
+                  )
+                : t(
+                    'select_channels_to_preview',
+                    'Select channels to see how the post looks on each one.'
+                  )}
             </div>
           ) : (
             <div className="border border-borderPreview rounded-[12px] shadow-previewShadow">

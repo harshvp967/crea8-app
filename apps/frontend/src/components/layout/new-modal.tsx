@@ -198,6 +198,7 @@ export const Component: FC<{
               className={clsx(
                 !modal.removeLayout && 'gap-[40px] p-[32px]',
                 'arc-dialog bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[34px] border border-newBorder relative',
+                modal.classNames?.modal,
                 modal.size ? '' : 'min-w-[600px]',
                 modal.fullScreen && 'h-full'
               )}

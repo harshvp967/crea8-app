@@ -93,6 +93,10 @@ export const SelectCurrent: FC = () => {
     []
   );
 
+  if (!selectedIntegrations.length) {
+    return null;
+  }
+
   return (
     <>
       <div className="select-none left-0 absolute w-full z-[100] px-[20px]">

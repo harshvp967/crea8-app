@@ -360,10 +360,9 @@ export const EditorWrapper: FC<{
   return (
     <div
       className={clsx(
-        'relative flex-col gap-[20px] flex-1',
+        'relative flex-col gap-[16px]',
         (items.length === 1 || !canEdit || !comments) && 'flex',
-        ((!canEdit && !isCreateSet) || !comments) &&
-          'bg-newSettings rounded-[12px]'
+        ((!canEdit && !isCreateSet) || !comments) && 'bg-transparent'
       )}
     >
       {isCreateSet && current !== 'global' && (
@@ -437,15 +436,13 @@ export const EditorWrapper: FC<{
       {items.map((g, index) => (
         <div
           key={g.id}
-          className={clsx(
-            'relative flex flex-col gap-[20px] flex-1 bg-newSettings',
-            index === 0 && 'rounded-t-[12px]',
-            (index === items.length - 1 || !comments) && 'rounded-b-[12px]',
-            !canEdit && !isCreateSet && 'blur-s',
-            ((!canEdit && index > 0) || (!comments && index > 0)) && 'hidden'
-          )}
-        >
-          <div className="flex gap-[5px] flex-1 w-full">
+        className={clsx(
+          'po-editor-card relative flex flex-col gap-[12px] bg-newSettings',
+          !canEdit && !isCreateSet && 'blur-s',
+          ((!canEdit && index > 0) || (!comments && index > 0)) && 'hidden'
+        )}
+      >
+          <div className="flex gap-[5px] w-full">
             <div className="flex-1 flex w-full">
               {index > 0 && (
                 <div className="flex justify-center pl-[12px] text-newSep">
@@ -689,17 +686,21 @@ export const Editor: FC<{
     return null;
   }
 
+  const focusEditor = () => {
+    if (editorRef?.current?.editor?.isFocused) {
+      return;
+    }
+    editorRef?.current?.editor?.commands?.focus('end');
+  };
+
   return (
-    <div className="flex flex-col gap-[20px] flex-1">
+    <div className="flex flex-col gap-[12px]">
       <div
-        className={clsx(
-          'relative flex-1 px-[12px] pt-[12px] pb-[12px] flex flex-col',
-          num > 0 && '!rounded-bs-[0]'
-        )}
+        className="po-editor-shell relative flex flex-col"
         id={id}
       >
-        <div className="relative cursor-text flex flex-1 flex-col">
-          <div {...getRootProps()} className="flex flex-1 flex-col">
+        <div className="relative cursor-text flex flex-col">
+          <div {...getRootProps()} className="flex flex-col">
             <div
               className={clsx(
                 'absolute left-0 top-0 w-full h-full bg-black/70 z-[300] transition-all items-center justify-center flex text-white text-sm',
@@ -708,7 +709,76 @@ export const Editor: FC<{
             >
               {t('drop_files_here_to_upload', 'Drop your files here to upload')}
             </div>
-            <div className="px-[10px] pt-[10px] bg-newBgColorInner rounded-t-[6px] relative z-[99]">
+            <div className="po-editor-tools flex items-center gap-[8px] px-[10px] bg-newBgColorInner relative z-[99]">
+              <div className="editor-toolbar flex gap-[5px]">
+                <SignatureBox editor={editorRef?.current?.editor} />
+                {editorType !== 'none' && (
+                  <>
+                    <UText
+                      editor={editorRef?.current?.editor}
+                      currentValue={props.value!}
+                    />
+                    <BoldText
+                      editor={editorRef?.current?.editor}
+                      currentValue={props.value!}
+                    />
+                  </>
+                )}
+                {(editorType === 'markdown' || editorType === 'html') &&
+                  identifier !== 'telegram' && (
+                    <>
+                      <AComponent
+                        editor={editorRef?.current?.editor}
+                        currentValue={props.value!}
+                      />
+                      <Bullets
+                        editor={editorRef?.current?.editor}
+                        currentValue={props.value!}
+                      />
+                      <HeadingComponent
+                        editor={editorRef?.current?.editor}
+                        currentValue={props.value!}
+                      />
+                    </>
+                  )}
+                <div
+                  data-tooltip-id="tooltip"
+                  data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
+                  className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+                  onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
+                >
+                  <EmojiIcon />
+                </div>
+                <div className="relative">
+                  <div className="absolute z-[500] top-[40px] -start-[50px]">
+                    <EmojiPicker
+                      height={400}
+                      theme={
+                        (localStorage.getItem('mode') as Theme) || Theme.DARK
+                      }
+                      onEmojiClick={(e) => {
+                        addText(e.emoji);
+                        setEmojiPickerOpen(false);
+                      }}
+                      open={emojiPickerOpen}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="ms-auto">
+                <InformationComponent
+                  isPicture={pictures?.length > 0}
+                  chars={chars}
+                  totalChars={valueWithoutHtml.length}
+                  totalAllowedChars={props.totalChars}
+                  text={valueWithoutHtml}
+                />
+              </div>
+            </div>
+            <div
+              className="px-[12px] pt-[8px] pb-[8px] bg-newBgColorInner relative z-[99] min-h-[64px]"
+              onClick={focusEditor}
+            >
               <OnlyEditor
                 value={props.value}
                 editorType={editorType}
@@ -717,17 +787,8 @@ export const Editor: FC<{
                 ref={editorRef}
               />
             </div>
-            <div
-              className="bg-newBgColorInner flex-1"
-              onClick={() => {
-                if (editorRef?.current?.editor?.isFocused) {
-                  return;
-                }
-                editorRef?.current?.editor?.commands?.focus('end');
-              }}
-            />
-            <div className="w-full pointer-events-none">
-              <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
+            <div className="w-full pointer-events-none relative">
+              <div className="w-full h-[46px] overflow-hidden absolute left-0 bottom-0 bg-newBgColorInner uppyChange">
                 <Dashboard
                   height={46}
                   uppy={uppy}
@@ -741,16 +802,7 @@ export const Editor: FC<{
                 />
               </div>
             </div>
-            <div
-              className="w-full h-[46px] bg-newBgColorInner cursor-text"
-              onClick={() => {
-                if (editorRef?.current?.editor?.isFocused) {
-                  return;
-                }
-                editorRef?.current?.editor?.commands?.focus('end');
-              }}
-            />
-            <div className="flex bg-newBgColorInner rounded-b-[6px] cursor-default">
+            <div className="flex bg-newBgColorInner cursor-default">
               {setImages && (
                 <MultiMediaComponent
                   mediaNotAvailable={num > 0 && comments === 'no-media'}
@@ -761,80 +813,6 @@ export const Editor: FC<{
                   value={props.pictures}
                   dummy={dummy}
                   name="image"
-                  information={
-                    <InformationComponent
-                      isPicture={pictures?.length > 0}
-                      chars={chars}
-                      totalChars={valueWithoutHtml.length}
-                      totalAllowedChars={props.totalChars}
-                      text={valueWithoutHtml}
-                    />
-                  }
-                  toolBar={
-                    <div className="editor-toolbar flex gap-[5px]">
-                      <SignatureBox editor={editorRef?.current?.editor} />
-                      {editorType !== 'none' && (
-                        <>
-                          <UText
-                            editor={editorRef?.current?.editor}
-                            currentValue={props.value!}
-                          />
-                          <BoldText
-                            editor={editorRef?.current?.editor}
-                            currentValue={props.value!}
-                          />
-                        </>
-                      )}
-                      {(editorType === 'markdown' || editorType === 'html') &&
-                        identifier !== 'telegram' && (
-                          <>
-                            <AComponent
-                              editor={editorRef?.current?.editor}
-                              currentValue={props.value!}
-                            />
-                            <Bullets
-                              editor={editorRef?.current?.editor}
-                              currentValue={props.value!}
-                            />
-                            <HeadingComponent
-                              editor={editorRef?.current?.editor}
-                              currentValue={props.value!}
-                            />
-                          </>
-                        )}
-                      <div
-                        data-tooltip-id="tooltip"
-                        data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
-                        className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
-                        onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
-                      >
-                        <EmojiIcon />
-                      </div>
-                      <div className="relative">
-                        <div
-                          className={clsx(
-                            'absolute z-[500] -start-[50px]',
-                            num === 0 && allValues?.length > 1
-                              ? 'top-[35px]'
-                              : 'bottom-[35px]'
-                          )}
-                        >
-                          <EmojiPicker
-                            height={400}
-                            theme={
-                              (localStorage.getItem('mode') as Theme) ||
-                              Theme.DARK
-                            }
-                            onEmojiClick={(e) => {
-                              addText(e.emoji);
-                              setEmojiPickerOpen(false);
-                            }}
-                            open={emojiPickerOpen}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  }
                   onChange={(value) => {
                     setImages(value.target.value);
                   }}
@@ -843,10 +821,10 @@ export const Editor: FC<{
                 />
               )}
             </div>
-            <div>{childButton}</div>
           </div>
         </div>
       </div>
+      {childButton}
     </div>
   );
 };
