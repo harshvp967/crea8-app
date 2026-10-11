@@ -83,7 +83,7 @@ const links = [
 
 const pill = (active: boolean) =>
   clsx(
-    'inline-flex items-center gap-[6px] whitespace-nowrap rounded-[18px] border px-[12px] min-h-[36px] text-[14px] font-[500] transition-colors',
+    'stk-pill inline-flex items-center gap-[6px] whitespace-nowrap rounded-[18px] border px-[12px] min-h-[36px] text-[14px] font-[500] transition-colors',
     active
       ? 'arc-selected'
       : 'border-transparent text-textItemBlur hover:border-newBorder hover:bg-newBoxHover hover:text-newTextColor'

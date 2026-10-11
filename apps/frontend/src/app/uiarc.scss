@@ -778,9 +778,9 @@ body :focus-visible {
   }
 
   .stk-filters {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: visible;
   }
 
   .stk-mention {
@@ -865,13 +865,29 @@ body :focus-visible {
 
   .stk-pop {
     position: fixed;
-    left: 12px;
-    right: 12px;
+    z-index: 85;
+    left: 0;
+    right: 0;
     top: auto;
-    bottom: 84px;
+    bottom: 0;
     width: auto !important;
-    max-height: 70vh;
+    max-height: 88vh;
     overflow: auto;
+    margin: 0;
+    border-radius: 30px 30px 0 0;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .stk-pop::before,
+  .stk-mention-menu::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 0 auto 12px;
+    border-radius: 9px;
+    background: var(--new-border);
+    flex: none;
   }
 }
 
@@ -5500,5 +5516,393 @@ body :focus-visible {
 
   .billing-footer > button {
     width: 100%;
+  }
+}
+
+/* At 1440 the Stalker tabs need a few pixels to show Settings instead of More. */
+@media (min-width: 1440px) {
+  .stk-pill {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+}
+
+/* Mentions feed. Presentation only — the hour timeline stays mounted and is hidden so the feed matches the mentions mock. */
+.stk-timeline {
+  display: none;
+}
+
+.stk-fchip svg {
+  flex: none;
+}
+
+.stk-sheet-backdrop {
+  display: none;
+}
+
+.stk-date-pop {
+  width: min(560px, calc(100vw - 48px));
+}
+
+.stk-date-layout {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.stk-date-presets {
+  display: flex;
+  flex-direction: column;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.stk-date-presets button.is-on {
+  background: var(--arc-selected);
+  color: var(--arc-accent-text);
+}
+
+.stk-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stk-cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+}
+
+.stk-cal-dow {
+  margin-bottom: 4px;
+  color: var(--new-textItemBlur);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.stk-day {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--new-btn-text);
+  font-size: 14px;
+}
+
+.stk-day.is-out {
+  color: var(--new-textItemBlur);
+  opacity: 0.4;
+}
+
+.stk-day.is-range {
+  background: var(--arc-selected);
+}
+
+.stk-day.is-edge {
+  background: var(--arc-selected);
+  box-shadow: inset 0 0 0 1px var(--arc-selected-border);
+  color: var(--arc-accent-text);
+  font-weight: 600;
+}
+
+.stk-date-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stk-date-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stk-box {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--new-border);
+  border-radius: 6px;
+  background: transparent;
+}
+
+.stk-box.is-on {
+  border-color: var(--arc-selected-border);
+  background: var(--arc-selected);
+  box-shadow: inset 0 0 0 1px var(--arc-selected-border);
+}
+
+.stk-box.is-on::after {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 4px;
+  margin: 4px auto 0;
+  border-left: 2px solid var(--arc-accent-text);
+  border-bottom: 2px solid var(--arc-accent-text);
+  transform: rotate(-45deg);
+}
+
+.stk-save-btn .stk-save-label {
+  white-space: nowrap;
+}
+
+.stk-save-pop {
+  right: 0;
+  left: auto;
+  display: flex;
+  width: 320px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stk-day-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stk-mcard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stk-mhead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.stk-msrc {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--new-border);
+  border-radius: 8px;
+  background: var(--arc-muted);
+  color: var(--new-btn-text);
+}
+
+.stk-mwho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stk-mwho a {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stk-mmeta {
+  color: var(--new-textItemBlur);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.stk-sent {
+  display: inline-flex;
+  height: 26px;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 0 10px;
+  border: 1px solid var(--new-border);
+  border-radius: 999px;
+  background: var(--new-bgColorInner);
+  color: var(--new-textItemBlur);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.stk-sent i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.stk-sent.is-ok {
+  border-color: color-mix(in srgb, var(--arc-success) 32%, transparent);
+  background: color-mix(in srgb, var(--arc-success) 10%, transparent);
+  color: var(--arc-success);
+}
+
+.stk-sent.is-bad {
+  border-color: color-mix(in srgb, var(--arc-danger) 36%, transparent);
+  background: color-mix(in srgb, var(--arc-danger) 10%, transparent);
+  color: var(--arc-danger);
+}
+
+.stk-mtext {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.stk-mfoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.stk-mtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stk-mcard .stk-mention-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.stk-menu-rule {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--new-border);
+}
+
+.stk-mention-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 220px;
+}
+
+.stk-empty-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.stk-empty-mark {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  border: 1px solid var(--new-border);
+  border-radius: 14px;
+  color: var(--new-textItemBlur);
+  font-weight: 600;
+}
+
+.stk-sm-btn {
+  height: 36px;
+  min-height: 36px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+@media (max-width: 767px) {
+  .stk-sheet-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 80;
+    inset: 0;
+    border: 0;
+    background: var(--popup-color);
+  }
+
+  .stk-fchip {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .stk-save-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .stk-save-btn {
+    width: 44px;
+    padding: 0;
+  }
+
+  .stk-date-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stk-date-presets {
+    flex-direction: row;
+    max-height: none;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .stk-date-presets button {
+    width: auto;
+    flex: none;
+    border: 1px solid var(--new-border);
+    border-radius: 14px;
+    white-space: nowrap;
+  }
+
+  .stk-mfoot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stk-mcard .stk-mention-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+
+  .stk-mcard .stk-act {
+    height: auto;
+    min-height: 52px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 4px;
+    font-size: 13px;
+  }
+
+  .stk-mcard .stk-more {
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .stk-mention-menu {
+    position: fixed;
+    z-index: 85;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    margin: 0;
+    border-radius: 30px 30px 0 0;
+    padding: 8px 12px calc(16px + env(safe-area-inset-bottom));
   }
 }
