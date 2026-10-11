@@ -423,15 +423,7 @@ export const DayView = () => {
     );
   }, [posts, startDate]);
 
-  const dayHours = useMemo(() => {
-    const occupied = options.map((option) => Math.floor(option[0].time / 60));
-    return Array.from(
-      new Set([
-        ...hours.filter((hour) => hour >= 9 && hour <= 16),
-        ...occupied,
-      ])
-    ).sort((left, right) => left - right);
-  }, [options]);
+  const dayHours = hours;
 
   useLayoutEffect(() => {
     if (!narrow) {
@@ -530,19 +522,8 @@ export const DayView = () => {
   );
 };
 export const WeekView = () => {
-  const { startDate, posts } = useCalendar();
-  const t = useT();
-  const visibleHours = useMemo(() => {
-    const occupied = (posts || []).map((post) =>
-      dayjs.utc(post.publishDate).local().hour()
-    );
-    return Array.from(
-      new Set([
-        ...hours.filter((hour) => hour >= 9 && hour <= 16),
-        ...occupied,
-      ])
-    ).sort((left, right) => left - right);
-  }, [posts]);
+  const { startDate } = useCalendar();
+  const visibleHours = hours;
 
   // Use dayjs to get localized day names
   const localizedDays = useMemo(() => {
@@ -969,6 +950,9 @@ export const CalendarColumn: FC<{
   }), [posts]);
 
   const addModal = useCallback(async () => {
+    if (isBeforeNow) {
+      return;
+    }
     const set: any = !sets.length
       ? undefined
       : await new Promise((resolve) => {
@@ -1040,7 +1024,7 @@ export const CalendarColumn: FC<{
       ),
       size: '80%',
     });
-  }, [integrations, getDate, sets, signature]);
+  }, [integrations, getDate, sets, signature, isBeforeNow]);
 
   const addProvider = useAddProvider();
   return (
@@ -1048,7 +1032,7 @@ export const CalendarColumn: FC<{
       className={clsx(
         'cal-col flex flex-col w-full min-h-full relative transition-colors',
         display === 'week' || display === 'month' ? 'cal-col-week' : 'rounded-[12px]',
-        isBeforeNow && 'repeated-strip',
+        isBeforeNow && 'is-past repeated-strip',
         loading && 'animate-pulse',
         display !== 'week' &&
           display !== 'month' &&

@@ -2010,6 +2010,31 @@ body :focus-visible {
   display: none;
 }
 
+.day-cell:has(.cal-col.is-past),
+.week-cell:has(.cal-col.is-past),
+.month-cell:has(.cal-col.is-past),
+.phone-slot:has(.cal-col.is-past) {
+  background: color-mix(in srgb, var(--new-textItemBlur) 12%, var(--new-bgColor)) !important;
+  cursor: not-allowed;
+}
+
+.cal-col.is-past,
+.cal-col.is-past .col-calendar {
+  cursor: not-allowed;
+}
+
+.cal-col.is-past .cal-post,
+.cal-col.is-past .cal-post-body,
+.cal-col.is-past .cal-post-more,
+.cal-col.is-past .cal-post-action {
+  cursor: pointer;
+}
+
+.cal-col.is-past .col-calendar:hover:before,
+.phone-slot:has(.cal-col.is-past) .col-calendar:hover:before {
+  content: none !important;
+}
+
 .cal-col-week {
   border: 0 !important;
   background: transparent !important;
