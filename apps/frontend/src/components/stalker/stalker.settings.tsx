@@ -9,10 +9,14 @@ import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.ch
 import {
   stkCard,
   stkDanger,
+  stkDialog,
+  stkDialogFoot,
+  stkDialogHead,
   stkField,
   stkGhost,
   stkMenu,
   stkMenuItem,
+  stkOverlay,
   stkPage,
   stkPrimary,
   stkSecondary,
@@ -372,21 +376,46 @@ export const StalkerSettings = () => {
           <h2>Delete project</h2>
           <p>Removes this project, its keywords, mentions, and alerts.</p>
         </div>
-        {confirmDelete ? (
-          <div className="stk-set-confirm">
-            <button type="button" className={stkDanger} onClick={remove}>
-              Delete this project
-            </button>
-            <button type="button" className={stkGhost} onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button type="button" className={`${stkDanger} stk-set-delete`} onClick={() => setConfirmDelete(true)}>
-            Delete project
-          </button>
-        )}
+        <button type="button" className={`${stkDanger} stk-set-delete`} onClick={() => setConfirmDelete(true)}>
+          Delete project
+        </button>
       </section>
+      {confirmDelete ? (
+        <div
+          className={`${stkOverlay} stk-del-overlay`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="stk-del-title"
+        >
+          <div className={`${stkDialog} stk-del max-w-[440px]`}>
+            <div className={`${stkDialogHead} stk-del-head`}>
+              <span className="stk-ic-bad stk-del-mark" aria-hidden>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M12 4.2L21 19.2H3L12 4.2z" strokeLinejoin="round" />
+                  <path d="M12 10v4.2" strokeLinecap="round" />
+                  <circle cx="12" cy="16.6" r="0.8" fill="currentColor" stroke="none" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <h2 id="stk-del-title" className="text-[18px] font-[600]">
+                  Delete project?
+                </h2>
+                <p className="mt-[4px] text-[14px] leading-[1.45] text-textItemBlur">
+                  “{project.name}” with all keywords, alerts and mentions will be removed.
+                </p>
+              </div>
+            </div>
+            <div className={`${stkDialogFoot} stk-del-foot`}>
+              <button type="button" className={stkSecondary} onClick={() => setConfirmDelete(false)}>
+                No, cancel
+              </button>
+              <button type="button" className={stkDanger} onClick={remove}>
+                Yes, delete it
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

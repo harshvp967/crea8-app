@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import {
   stkClose,
   stkDialog,
@@ -14,11 +15,9 @@ import {
   stkField,
   stkGhost,
   stkLabel,
-  stkMenu,
   stkOverlay,
   stkPrimary,
   stkSecondary,
-  stkSwatch,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 export const STALKER_SWATCHES = [
@@ -66,6 +65,34 @@ type CategoryDraft = { name: string; description: string };
 
 const field = stkField;
 
+const CATEGORY_DOT: Record<string, string> = {
+  Praise: '#4ade80',
+  Complaint: '#fb923c',
+  'Bug report': '#f87171',
+  'Feature request': '#38bdf8',
+};
+
+const categoryDot = (name: string) => CATEGORY_DOT[name] || '#71717a';
+
+const SOURCES = [
+  ['x', 'X', 'x', 'X'],
+  ['reddit', 'Reddit', 'reddit', 'REDDIT'],
+  ['youtube', 'YouTube', 'youtube', 'YOUTUBE'],
+  ['linkedin', 'LinkedIn', 'linkedin', 'LINKEDIN'],
+] as const;
+
+const Arrow = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+    <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const StepCheck = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
+    <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const StalkerWizard = () => {
   const fetch = useFetch();
   const toaster = useToaster();
@@ -78,7 +105,7 @@ export const StalkerWizard = () => {
   const [keywords, setKeywords] = useState<KeywordDraft[]>([
     { phrase: '', youtube: true, reddit: false, x: false, linkedin: false },
   ]);
-  const [sourcesOpen, setSourcesOpen] = useState<number | null>(null);
+  const [sourcesOpen, setSourcesOpen] = useState<number | null>(0);
   const [categories, setCategories] = useState<CategoryDraft[]>(DEFAULT_CATEGORIES);
   const [saving, setSaving] = useState(false);
   const [seeded, setSeeded] = useState(false);
@@ -97,11 +124,6 @@ export const StalkerWizard = () => {
       )
     );
   }
-
-  const preview =
-    keywords.find((keyword) => keyword.phrase.trim())?.phrase.trim() ||
-    name.trim() ||
-    'your keyword';
 
   const note = (id: string) => {
     const source = sourceById.get(id);
@@ -183,73 +205,74 @@ export const StalkerWizard = () => {
   };
 
   return (
-    <div className={stkOverlay}>
-      <div className={`${stkDialog} max-h-[90vh] max-w-[620px]`}>
+    <div className={`${stkOverlay} stk-wiz-overlay`} role="dialog" aria-modal="true" aria-labelledby="stk-wiz-title">
+      <div className={`${stkDialog} stk-wiz max-h-[90vh] max-w-[560px]`}>
         <div className={stkDialogHead}>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[18px] font-[600]">Create project</h2>
-          <ol className="mt-[12px] flex flex-wrap items-center gap-[10px] text-[14px] font-[500]">
-            {['Project', 'Keywords', 'Categories'].map((label, index) => (
-              <li key={label} className="flex items-center gap-[8px]">
-                <span
-                  className={clsx(
-                    'flex items-center gap-[8px] whitespace-nowrap',
-                    index === step ? 'text-newTextColor' : 'text-textItemBlur'
-                  )}
-                >
+            <h2 id="stk-wiz-title" className="text-[18px] font-[600]">
+              Create project
+            </h2>
+            <ol className="stk-wiz-steps">
+              {['Project', 'Keywords', 'Categories'].map((label, index) => (
+                <li key={label} className="stk-wiz-stepwrap">
                   <span
                     className={clsx(
-                      'flex h-[26px] w-[26px] items-center justify-center rounded-full text-[13px]',
-                      index === step
-                        ? 'border border-[color:var(--arc-selected-border)] bg-[var(--arc-selected)] text-[color:var(--arc-accent-text)]'
-                        : index < step
-                          ? 'border border-newTextColor bg-newTextColor text-newBgColorInner'
-                          : 'border border-newBorder bg-newBgColorInner'
+                      'stk-wiz-step',
+                      index === step && 'is-on',
+                      index < step && 'is-done'
                     )}
                   >
-                    {index < step ? '✓' : index + 1}
+                    <span className="stk-wiz-num">
+                      <span className="stk-wiz-num-value">{index + 1}</span>
+                      {index < step ? (
+                        <span className="stk-wiz-num-check">
+                          <StepCheck />
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="stk-wiz-label">{label}</span>
                   </span>
-                  <span className="max-[767px]:hidden">{label}</span>
-                </span>
-                {index < 2 ? <span className="h-[1px] w-[16px] bg-newBorder" /> : null}
-              </li>
-            ))}
-          </ol>
+                  {index < 2 ? <span className="stk-wiz-line" /> : null}
+                </li>
+              ))}
+            </ol>
           </div>
           <button type="button" className={stkClose} aria-label="Close" onClick={() => setShowWizard(false)}>
             ×
           </button>
         </div>
-        <div className={stkDialogBody}>
+        <div className={`${stkDialogBody} stk-wiz-body`}>
           {step === 0 ? (
             <div className="flex flex-col gap-[14px]">
               <label className={`${stkLabel} flex flex-col gap-[6px]`}>
-                Name
+                What are you monitoring?
                 <input
                   className={field}
                   placeholder="My product"
                   value={name}
+                  autoFocus
                   onChange={(event) => setName(event.target.value)}
                 />
               </label>
               <label className={`${stkLabel} flex flex-col gap-[6px]`}>
-                Description
+                Description (optional)
                 <input
                   className={field}
-                  placeholder="What are you monitoring?"
+                  placeholder="A short summary of what you're monitoring."
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                 />
               </label>
               <div>
                 <p className="mb-[8px] text-[14px] font-[500]">Colour</p>
-                <div className="flex flex-wrap gap-[8px]">
+                <div className="stk-set-swatches">
                   {STALKER_SWATCHES.map((swatch) => (
                     <button
                       key={swatch}
                       type="button"
                       aria-label={swatch}
-                      className={stkSwatch(color === swatch)}
+                      aria-pressed={color === swatch}
+                      className="stk-set-swatch"
                       style={{ backgroundColor: swatch }}
                       onClick={() => setColor(swatch)}
                     />
@@ -260,36 +283,10 @@ export const StalkerWizard = () => {
           ) : null}
           {step === 1 ? (
             <div className="flex flex-col gap-[14px]">
-              <article className="rounded-[20px] border border-newBorder bg-newBoxHover p-[14px]">
-                <div className="flex items-center gap-[10px]">
-                  <span className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-newBoxHover text-[12px] font-[600]">
-                    AC
-                  </span>
-                  <div>
-                    <p className="text-[14px] font-[600]">
-                      Alex Chen <span className="text-[#477eeb]">✓</span>
-                    </p>
-                    <p className="text-[12px] text-textItemBlur">@alexchen</p>
-                  </div>
-                </div>
-                <p className="mt-[10px] text-[14px] leading-[1.5]">
-                  Just tried{' '}
-                  <span className="rounded-[6px] bg-[var(--arc-selected)] px-[4px] font-[600]">
-                    {preview}
-                  </span>{' '}
-                  and I&apos;m honestly impressed — the product quality is top-tier.
-                  Who else has tried it?
-                </p>
-                <p className="mt-[8px] text-[12px] text-textItemBlur">
-                  8:38 PM · Apr 17, 2026 · 1.2M Views
-                </p>
-              </article>
               {keywords.map((keyword, index) => (
-                <div key={index} className="relative">
-                  <label className={`${stkLabel} mb-[6px]`}>
-                    Keyword
-                  </label>
-                  <div className="flex items-center gap-[8px]">
+                <div key={index}>
+                  <label className={`${stkLabel} mb-[6px] block`}>Keyword</label>
+                  <div className="stk-wiz-keyword">
                     <input
                       className={field}
                       placeholder="Your brand, product, or phrase"
@@ -306,7 +303,8 @@ export const StalkerWizard = () => {
                     />
                     <button
                       type="button"
-                      className={stkSecondary}
+                      className={`${stkSecondary} stk-wiz-sources-btn`}
+                      aria-expanded={sourcesOpen === index}
                       onClick={() =>
                         setSourcesOpen((current) => (current === index ? null : index))
                       }
@@ -315,43 +313,39 @@ export const StalkerWizard = () => {
                     </button>
                   </div>
                   {sourcesOpen === index ? (
-                    <div className={`${stkMenu} absolute end-0 z-10 mt-[6px] w-[240px]`}>
-                      {(
-                        [
-                          ['youtube', 'YouTube', 'youtube'],
-                          ['x', 'X', 'x'],
-                          ['reddit', 'Reddit', 'reddit'],
-                          ['linkedin', 'LinkedIn', 'linkedin'],
-                        ] as const
-                      ).map(([id, label, key]) => {
+                    <ul className="stk-wiz-sources">
+                      {SOURCES.map(([id, label, key, icon]) => {
                         const locked = !!note(id);
                         return (
-                          <label
-                            key={id}
-                            className="flex items-center justify-between gap-[8px] rounded-[10px] px-[8px] py-[8px] text-[13px]"
-                          >
-                            <span className="flex items-center gap-[8px]">
-                              <input
-                                type="checkbox"
-                                checked={!!keyword[key]}
-                                disabled={locked}
-                                onChange={() => toggleSource(index, key)}
-                              />
-                              {label}
+                          <li key={id} className="stk-wiz-source">
+                            <span className="stk-wiz-source-main">
+                              <SourceIcon source={icon} className="h-[16px] w-[16px]" />
+                              <span className="stk-wiz-source-name">{label}</span>
                             </span>
-                            {locked ? (
-                              <span className="text-[11px] text-textItemBlur">{note(id)}</span>
-                            ) : null}
-                          </label>
+                            <span className="stk-wiz-source-end">
+                              {locked ? <span className="stk-wiz-pill">{note(id)}</span> : null}
+                              <button
+                                type="button"
+                                role="switch"
+                                className="stk-switch"
+                                aria-label={label}
+                                aria-checked={!!keyword[key]}
+                                disabled={locked}
+                                onClick={() => toggleSource(index, key)}
+                              >
+                                <span />
+                              </button>
+                            </span>
+                          </li>
                         );
                       })}
-                    </div>
+                    </ul>
                   ) : null}
                 </div>
               ))}
               <button
                 type="button"
-                className={`${stkGhost} self-start`}
+                className={`${stkGhost} stk-wiz-add self-start`}
                 onClick={() =>
                   setKeywords((current) => [
                     ...current,
@@ -370,41 +364,52 @@ export const StalkerWizard = () => {
             </div>
           ) : null}
           {step === 2 ? (
-            <div className="flex flex-col gap-[14px]">
-              <div className="flex items-center gap-[12px] rounded-[18px] border border-newBorder bg-newBoxHover p-[14px]">
-                <span className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-newBorder border-t-[color:var(--arc-accent)]" />
-                <p className="text-[14px] italic text-textItemBlur">
-                  “Honestly one of the best tools I&apos;ve used this year. Switched
-                  from the competitor and haven&apos;t…”
-                </p>
-                <p className="text-[14px] text-textItemBlur">AI analyzing…</p>
-              </div>
-              <div>
-                <h2 className="text-[16px] font-[600]">Categories</h2>
-                <p className="mt-[4px] text-[13px] text-textItemBlur">
-                  AI sorts every mention into a category. The more detail you add to
-                  each description, the more accurate the categorization.
-                </p>
-              </div>
-              {categories.map((category, index) => (
-                <div key={index} className="flex flex-col gap-[6px]">
-                  <div className="flex items-center gap-[8px]">
-                    <input
-                      className={field}
-                      value={category.name}
-                      onChange={(event) =>
-                        setCategories((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? { ...item, name: event.target.value }
-                              : item
-                          )
-                        )
-                      }
+            <div className="flex flex-col gap-[10px]">
+              <p className="stk-wiz-analyze">
+                <span className="stk-wiz-spin" aria-hidden />
+                AI analyzing…
+              </p>
+              <ul className="stk-wiz-cats">
+                {categories.map((category, index) => (
+                  <li key={index} className="stk-wiz-cat">
+                    <span
+                      className="stk-set-cdot"
+                      style={{ backgroundColor: categoryDot(category.name) }}
+                      aria-hidden
                     />
+                    <div className="stk-wiz-cat-fields">
+                      <input
+                        className="stk-wiz-cname"
+                        aria-label="Category name"
+                        value={category.name}
+                        onChange={(event) =>
+                          setCategories((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, name: event.target.value }
+                                : item
+                            )
+                          )
+                        }
+                      />
+                      <input
+                        className="stk-wiz-cdesc"
+                        aria-label="Category description"
+                        value={category.description}
+                        onChange={(event) =>
+                          setCategories((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, description: event.target.value }
+                                : item
+                            )
+                          )
+                        }
+                      />
+                    </div>
                     <button
                       type="button"
-                      className="text-textItemBlur"
+                      className="stk-wiz-remove"
                       aria-label={`Remove ${category.name}`}
                       onClick={() =>
                         setCategories((current) =>
@@ -414,25 +419,12 @@ export const StalkerWizard = () => {
                     >
                       ×
                     </button>
-                  </div>
-                  <input
-                    className={field}
-                    value={category.description}
-                    onChange={(event) =>
-                      setCategories((current) =>
-                        current.map((item, itemIndex) =>
-                          itemIndex === index
-                            ? { ...item, description: event.target.value }
-                            : item
-                        )
-                      )
-                    }
-                  />
-                </div>
-              ))}
+                  </li>
+                ))}
+              </ul>
               <button
                 type="button"
-                className={`${stkGhost} self-start`}
+                className={`${stkGhost} stk-wiz-add self-start`}
                 onClick={() =>
                   setCategories((current) => [
                     ...current,
@@ -440,19 +432,20 @@ export const StalkerWizard = () => {
                   ])
                 }
               >
-                + Add category
+                + New category
               </button>
             </div>
           ) : null}
         </div>
-        <div className={stkDialogFoot}>
+        <div className={`${stkDialogFoot} stk-wiz-foot`}>
           <button
             type="button"
             className={stkSecondary}
-            disabled={step === 0}
-            onClick={() => setStep((value) => Math.max(0, value - 1))}
+            onClick={() =>
+              step === 0 ? setShowWizard(false) : setStep((value) => Math.max(0, value - 1))
+            }
           >
-            Back
+            {step === 0 ? 'Close' : 'Back'}
           </button>
           {step < 2 ? (
             <button
@@ -461,7 +454,8 @@ export const StalkerWizard = () => {
               disabled={step === 0 && name.trim().length < 2}
               onClick={() => setStep((value) => value + 1)}
             >
-              Continue
+              Next
+              <Arrow />
             </button>
           ) : (
             <button
