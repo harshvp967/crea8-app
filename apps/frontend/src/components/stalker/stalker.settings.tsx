@@ -17,7 +17,6 @@ import {
   stkPrimary,
   stkSecondary,
   stkSub,
-  stkSwatch,
   stkTitle,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
@@ -86,6 +85,10 @@ export const StalkerSettings = () => {
   }
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  const colorKey = draft.color.toLowerCase();
+  const swatches = STALKER_SWATCHES.some((swatch) => swatch.toLowerCase() === colorKey)
+    ? STALKER_SWATCHES
+    : [colorKey, ...STALKER_SWATCHES];
   const sharePath =
     project.publicDashboard && project.publicToken ? `/share/${project.publicToken}` : '';
 
@@ -178,7 +181,11 @@ export const StalkerSettings = () => {
       {dirty ? (
         <div className="stk-set-dirtybar">
           <p className="stk-set-dirty-label">
-            <span className="stk-set-dot" aria-hidden />
+            <svg className="stk-set-info" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5" strokeLinecap="round" />
+              <circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none" />
+            </svg>
             Unsaved changes
           </p>
           <div className="stk-set-actions">
@@ -220,12 +227,13 @@ export const StalkerSettings = () => {
           <p>Colour</p>
           <span>A visual cue for this project in the bar.</span>
           <div className="stk-set-swatches">
-            {STALKER_SWATCHES.map((swatch) => (
+            {swatches.map((swatch) => (
               <button
                 key={swatch}
                 type="button"
                 aria-label={swatch}
-                className={`${stkSwatch(draft.color.toLowerCase() === swatch)} stk-set-swatch`}
+                aria-pressed={colorKey === swatch.toLowerCase()}
+                className="stk-set-swatch"
                 style={{ backgroundColor: swatch }}
                 onClick={() => setDraft({ ...draft, color: swatch })}
               />

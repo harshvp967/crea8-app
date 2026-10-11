@@ -465,7 +465,7 @@ export const StalkerAlerts = () => {
               </button>
               <button
                 type="button"
-                className={stkPrimary}
+                className={`${stkPrimary} stk-digest-save`}
                 onClick={() => {
                   saveDigest({ digestHour, digestTimezone, digestGroupName, digestEnabled: true });
                   setConfigure(false);
