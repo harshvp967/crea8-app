@@ -5,7 +5,7 @@ import { useClickOutside } from '@mantine/hooks';
 import { Button } from '@gitroom/react/form/button';
 import { isUSCitizen } from './isuscitizen.utils';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { displayDayjs, displayNow, isPastCalendarDay } from '@gitroom/frontend/components/layout/set.timezone';
 import { CalendarIcon } from '@gitroom/frontend/components/ui/icons';
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
@@ -23,15 +23,26 @@ export const DatePicker: FC<{
   });
   const changeDate = useCallback(
     (type: 'date' | 'time') => (day: Date) => {
+      const picked = dayjs(day);
+      const current = displayDayjs(date);
       onChange(
-        newDayjs(
+        displayDayjs(
           type === 'time'
-            ? date.format('YYYY-MM-DD') + ' ' + newDayjs(day).format('HH:mm:ss')
-            : newDayjs(day).format('YYYY-MM-DD') + ' ' + date.format('HH:mm:ss')
+            ? current.format('YYYY-MM-DD') + ' ' + picked.format('HH:mm:ss')
+            : picked.format('YYYY-MM-DD') + ' ' + current.format('HH:mm:ss')
         )
       );
     },
     [date]
+  );
+  const wall = displayDayjs(date);
+  const pickerValue = new Date(
+    wall.year(),
+    wall.month(),
+    wall.date(),
+    wall.hour(),
+    wall.minute(),
+    wall.second()
   );
   return (
     <div
@@ -43,7 +54,7 @@ export const DatePicker: FC<{
         <CalendarIcon />
       </div>
       <div className="cursor-pointer">
-        {date.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}
+        {wall.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}
       </div>
       {open && (
         <div
@@ -52,16 +63,23 @@ export const DatePicker: FC<{
         >
           <Calendar
             onChange={changeDate('date')}
-            value={date.toDate()}
-            dayClassName={(date, modifiers) => {
+            value={pickerValue}
+            excludeDate={(day) => isPastCalendarDay(day, displayNow())}
+            dayClassName={(cell, modifiers) => {
+              if (modifiers.selected) {
+                return '!text-[#0a0a0a] !bg-seventh !outline-none';
+              }
+              if (
+                dayjs(cell).format('YYYY-MM-DD') ===
+                displayNow().format('YYYY-MM-DD')
+              ) {
+                return '!text-[#00D9FF]';
+              }
               if (modifiers.weekend) {
                 return '!text-customColor28';
               }
               if (modifiers.outside) {
                 return '!text-gray';
-              }
-              if (modifiers.selected) {
-                return '!text-[#0a0a0a] !bg-seventh !outline-none';
               }
               return '!text-textColor';
             }}
@@ -79,7 +97,7 @@ export const DatePicker: FC<{
               input:
                 'bg-sixth h-[40px] border border-tableBorder text-textColor rounded-[4px] outline-none',
             }}
-            defaultValue={date.toDate()}
+            defaultValue={pickerValue}
           />
           <Button className="mt-[12px]" onClick={changeShow}>
             {t('close', 'Close')}
