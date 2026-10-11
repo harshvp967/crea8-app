@@ -9,6 +9,8 @@ import {
   useStalkerRules,
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import { StalkerProjectMenu } from '@gitroom/frontend/components/stalker/stalker.nav';
+import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
   emptyFilters,
   filtersToView,
@@ -30,13 +32,12 @@ import {
   stkEmpty,
   stkField,
   stkGhost,
-  stkHead,
   stkIconTile,
   stkLabel,
+  stkMenu,
   stkOverlay,
   stkPage,
   stkPrimary,
-  stkRow,
   stkSecondary,
   stkSub,
   stkTitle,
@@ -63,6 +64,14 @@ const hourLabel = (hour: number) => {
   return `${value}:00 ${suffix}`;
 };
 
+const digestClock = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
+
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+  </svg>
+);
+
 type Rule = {
   id: string;
   name: string;
@@ -70,15 +79,17 @@ type Rule = {
   filters?: Record<string, string>;
 };
 
-const summary = (filters?: Record<string, string>) => {
+const ruleMeta = (filters?: Record<string, string>) => {
   if (!filters) return '';
-  const parts = [
-    filters.sources,
-    filters.sentiment,
-    filters.from ? `from ${filters.from}` : '',
-    filters.engagement ? `engagement ${filters.engagement}` : '',
-  ].filter(Boolean);
-  return parts.join(' · ');
+  const sources = (filters.sources || '')
+    .split(',')
+    .filter(Boolean)
+    .map((source) => sourceLabel(source))
+    .join(', ');
+  const sentiment = filters.sentiment
+    ? `${filters.sentiment[0]}${filters.sentiment.slice(1).toLowerCase()}`
+    : '';
+  return [sources, sentiment].filter(Boolean).join(' · ');
 };
 
 export const StalkerAlerts = () => {
@@ -89,16 +100,17 @@ export const StalkerAlerts = () => {
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
   const authorsQuery = useStalkerAuthors(sample ? null : projectId);
   const [localRules, setLocalRules] = useState<Rule[]>(SAMPLE_RULES);
-  const [digestEnabled, setDigestEnabled] = useState(true);
-  const [digestDismissed, setDigestDismissed] = useState(false);
-  const [digestHour, setDigestHour] = useState(8);
-  const [digestTimezone, setDigestTimezone] = useState('UTC');
-  const [digestGroupName, setDigestGroupName] = useState('My brand');
+  const [digestEnabled, setDigestEnabled] = useState(project ? project.digestEnabled !== false : true);
+  const [digestDismissed, setDigestDismissed] = useState(!!project?.digestDismissed);
+  const [digestHour, setDigestHour] = useState(typeof project?.digestHour === 'number' ? project.digestHour : 8);
+  const [digestTimezone, setDigestTimezone] = useState(project?.digestTimezone || 'UTC');
+  const [digestGroupName, setDigestGroupName] = useState(project?.digestGroupName || 'My brand');
   const [configure, setConfigure] = useState(false);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('Negative X posts with traction');
   const [filters, setFilters] = useState<MentionFilters>(emptyFilters());
   const [saving, setSaving] = useState(false);
+  const [projectsOpen, setProjectsOpen] = useState(false);
 
   const digestSignature = [
     project?.id || '',
@@ -136,7 +148,6 @@ export const StalkerAlerts = () => {
   const categories = project?.categories || [];
   const email = project?.alertEmail || status?.ownerEmail || '';
   const cap = status?.emailCap || 3;
-  const active = (digestEnabled && !digestDismissed ? 1 : 0) + rules.filter((rule) => rule.enabled !== false).length;
   const zones = useMemo(
     () => (ZONES.includes(digestTimezone) ? ZONES : [digestTimezone, ...ZONES]),
     [digestTimezone]
@@ -174,7 +185,7 @@ export const StalkerAlerts = () => {
         { id: `rule-${Date.now()}`, name: clean, enabled: true, filters: body.filters },
       ]);
       setCreating(false);
-      toaster.show('Alert created');
+      toaster.show(`Alert created. ${clean} is on.`);
       return;
     }
     setSaving(true);
@@ -190,7 +201,7 @@ export const StalkerAlerts = () => {
     setCreating(false);
     setFilters(emptyFilters());
     rulesQuery.mutate();
-    toaster.show('Alert created');
+    toaster.show(`Alert created. ${clean} is on.`);
   };
 
   const removeRule = async (id: string) => {
@@ -202,61 +213,123 @@ export const StalkerAlerts = () => {
     rulesQuery.mutate();
   };
 
+  const openNew = () => {
+    setName('Negative X posts with traction');
+    setFilters(emptyFilters());
+    setCreating(true);
+  };
+
+  const keywordLine = (rule: Rule) => {
+    const id = rule.filters?.keywordId;
+    if (!id) return 'All keywords';
+    const keyword = keywords.find((item: { id: string; phrase: string; group?: { name?: string } | null }) => item.id === id);
+    return keyword?.group?.name || keyword?.phrase || 'All keywords';
+  };
+
+  const bare = digestDismissed && !rules.length;
+
   return (
-    <div className={`${stkPage} mx-auto w-full max-w-[860px]`}>
-      <div className={stkHead}>
-        <div>
+    <div className={`${stkPage} stk-alerts`}>
+      <div className="stk-al-head">
+        <div className="min-w-0">
           <h1 className={stkTitle}>Alerts</h1>
-          <p className={stkSub}>
-            {active} active. Digests and alerts share a limit of {cap} emails per day across your workspace. Resets at midnight UTC.
-          </p>
+          {project?.name ? <p className={`${stkSub} hidden md:block`}>{project.name}</p> : null}
+          {project?.name ? (
+            <button
+              type="button"
+              className="stk-project-sub"
+              aria-haspopup="listbox"
+              aria-expanded={projectsOpen}
+              onClick={() => setProjectsOpen(true)}
+            >
+              <span className="stk-pdot" style={{ backgroundColor: project.color || '#71717a' }} />
+              <span className="truncate">{project.name}</span>
+              <span aria-hidden>▾</span>
+            </button>
+          ) : null}
         </div>
-        <button
-          type="button"
-          className={stkPrimary}
-          onClick={() => {
-            setName('Negative X posts with traction');
-            setFilters(emptyFilters());
-            setCreating(true);
-          }}
-        >
-          + New alert
-        </button>
+        {bare ? null : (
+          <button type="button" className={`${stkPrimary} stk-al-new`} onClick={openNew}>
+            <PlusIcon />
+            New alert
+          </button>
+        )}
       </div>
-      <section>
-        <h2 className="text-[16px] font-[600]">Daily digest</h2>
-        <p className="mt-[4px] text-[14px] text-textItemBlur">A morning summary of the last 24 hours.</p>
-        {digestDismissed ? (
+      {projectsOpen ? (
+        <>
           <button
             type="button"
-            className={`${stkSecondary} mt-[12px]`}
-            onClick={() => saveDigest({ digestDismissed: false, digestEnabled: true })}
-          >
-            Restore daily digest
-          </button>
-        ) : (
-          <div className={`${digestEnabled ? 'stk-wave' : ''} mt-[12px] flex flex-wrap items-center justify-between gap-[12px] rounded-[26px] border border-newBorder bg-newBgColorInner px-[16px] py-[14px] shadow-[var(--arc-shadow-resting)]`}>
+            className="stk-sheet-backdrop"
+            aria-label="Close"
+            onClick={() => setProjectsOpen(false)}
+          />
+          <div className={`${stkMenu} stk-project-sheet`} role="listbox">
+            <StalkerProjectMenu onPick={() => setProjectsOpen(false)} />
+          </div>
+        </>
+      ) : null}
+      {bare ? (
+        <section className={`${stkCard} stk-al-empty`}>
+          <div className={stkEmpty}>
             <span className={stkIconTile} aria-hidden>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <rect x="3" y="5" width="18" height="14" rx="2" />
-                <path d="M3 7l9 7 9-7" />
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M6 16h12l-1.2-2.2A6 6 0 0012 4a6 6 0 00-4.8 9.8L6 16zM10 19a2 2 0 004 0" />
               </svg>
             </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[16px] font-[600]">Daily digest</p>
-              <p className="text-[14px] text-textItemBlur">
-                Every day at {hourLabel(digestHour)} · {digestTimezone}
-                {email ? ` · ${email}` : ''} · {digestGroupName}
-              </p>
-            </div>
-            <div className="flex items-center gap-[8px]">
+            <h3 className="text-[16px] font-[600]">No alerts yet.</h3>
+            <p className="max-w-[360px] text-[14px] text-textItemBlur">
+              Create an alert and Stalker will email you when a mention matches.
+            </p>
+            <button type="button" className={`${stkPrimary} stk-al-new`} onClick={openNew}>
+              <PlusIcon />
+              New alert
+            </button>
+          </div>
+        </section>
+      ) : (
+        <>
+          {digestDismissed ? (
+            <button
+              type="button"
+              className={stkSecondary}
+              onClick={() => saveDigest({ digestDismissed: false, digestEnabled: true })}
+            >
+              Restore daily digest
+            </button>
+          ) : (
+            <section className="stk-al-digest">
+              <span className="stk-al-mail" aria-hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="M3 7l9 7 9-7" />
+                </svg>
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[16px] font-[600]">Daily digest</p>
+                <p className="text-[14px] leading-[1.35] text-textItemBlur">
+                  A morning summary of the last 24 hours.
+                </p>
+                <p className="text-[14px] text-textItemBlur">
+                  {digestClock(digestHour)} · {digestTimezone}
+                </p>
+              </div>
               <button
                 type="button"
-                className={stkSecondary}
+                className={`${stkSecondary} stk-al-config`}
+                onClick={() => setConfigure(true)}
+              >
+                Configure daily digest
+              </button>
+              <button
+                type="button"
+                className="stk-al-icon"
                 aria-label="Configure daily digest"
                 onClick={() => setConfigure(true)}
               >
-                Configure
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" />
+                </svg>
               </button>
               <button
                 type="button"
@@ -268,67 +341,49 @@ export const StalkerAlerts = () => {
               >
                 <span />
               </button>
-              <button
-                type="button"
-                aria-label="Remove daily digest"
-                className={stkGhost}
-                onClick={() => saveDigest({ digestDismissed: true, digestEnabled: false })}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
-      <section>
-        <h2 className="text-[16px] font-[600]">Custom alerts</h2>
-        <p className="mt-[4px] text-[14px] text-textItemBlur">
-          Get an email the moment a mention matches your filter.
-        </p>
-        {!rules.length ? (
-          <div className={`${stkCard} mt-[12px]`}>
-            <div className={stkEmpty}>
-              <span className={stkIconTile} aria-hidden>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M6 16h12l-1.2-2.2A6 6 0 0012 4a6 6 0 00-4.8 9.8L6 16zM10 18a2 2 0 004 0" />
-                </svg>
-              </span>
-              <h3 className="text-[16px] font-[600]">No custom alerts yet.</h3>
-              <p className="max-w-[360px] text-[14px] text-textItemBlur">
-                Fire an email when something specific happens — e.g. a negative X post crossing 10 likes.
-              </p>
-              <button
-                type="button"
-                className={stkSecondary}
-                onClick={() => {
-                  setName('Negative X posts with traction');
-                  setFilters(emptyFilters());
-                  setCreating(true);
-                }}
-              >
-                + New alert
-              </button>
-            </div>
-          </div>
-        ) : (
-          <ul className="mt-[12px] flex flex-col gap-[8px]">
-            {rules.map((rule) => (
-              <li key={rule.id} className={stkRow}>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-[600]">{rule.name}</p>
-                  <p className="text-[13px] text-textItemBlur">
-                    {summary(rule.filters)}
-                    {email ? ` · ${email}` : ''}
-                  </p>
+            </section>
+          )}
+          <section className="stk-al-list">
+            <h2 className="text-[16px] font-[600]">Custom alerts</h2>
+            {!rules.length ? (
+              <p className="text-[14px] text-textItemBlur">No custom alerts yet.</p>
+            ) : (
+              <div className="stk-al-board">
+                <div className="stk-al-cols" aria-hidden="true">
+                  <span>Alert</span>
+                  <span>Keywords</span>
+                  <span />
                 </div>
-                <button type="button" className={stkGhost} onClick={() => removeRule(rule.id)}>
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                <ul>
+                  {rules.map((rule) => {
+                    const meta = ruleMeta(rule.filters);
+                    return (
+                      <li key={rule.id} className="stk-al-card">
+                        <p className="stk-al-name">{rule.name}</p>
+                        <p className="stk-al-kw">
+                          <span className="stk-al-kw-label">Keywords · </span>
+                          {keywordLine(rule)}
+                        </p>
+                        {meta ? <p className="stk-al-meta">{meta}</p> : null}
+                        <button
+                          type="button"
+                          aria-label={`Delete ${rule.name}`}
+                          className="stk-al-icon stk-al-delete"
+                          onClick={() => removeRule(rule.id)}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                            <path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </section>
+        </>
+      )}
 
       {configure ? (
         <div className={stkOverlay}>
@@ -386,10 +441,10 @@ export const StalkerAlerts = () => {
               </select>
             </label>
             </div>
-            <div className={stkDialogFoot}>
+            <div className={`${stkDialogFoot} stk-al-foot`}>
               <button
                 type="button"
-                className={`${stkGhost} text-[color:var(--arc-danger)]`}
+                className={`${stkGhost} stk-al-remove text-[color:var(--arc-danger)]`}
                 onClick={() => {
                   saveDigest({ digestDismissed: true, digestEnabled: false });
                   setConfigure(false);
@@ -451,17 +506,18 @@ export const StalkerAlerts = () => {
               Alerts are sent to the workspace owner. Digests and alerts share a limit of {cap} emails per day, resetting at midnight UTC.
             </p>
             </div>
-            <div className={stkDialogFoot}>
+            <div className={`${stkDialogFoot} stk-al-foot`}>
               <button type="button" className={stkSecondary} onClick={() => setCreating(false)}>
-                Cancel
+                Close
               </button>
               <button
                 type="button"
-                className={stkPrimary}
+                className={`${stkPrimary} stk-al-new`}
                 disabled={saving || name.trim().length < 2}
                 onClick={createRule}
               >
-                Create alert
+                <PlusIcon />
+                New alert
               </button>
             </div>
           </div>
