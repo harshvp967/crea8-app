@@ -56,7 +56,13 @@ export const scanCounts = (source: StalkerScanSource, duplicates = 0) => {
   return parts.join(' · ');
 };
 
-export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
+export const StalkerCheckNow = ({
+  compact = false,
+  iconOnly = false,
+}: {
+  compact?: boolean;
+  iconOnly?: boolean;
+}) => {
   const { projectId, scanning, scanResult, runScan, previewScan } = useStalkerProject();
   const preview = previewScan;
   const previewError =
@@ -84,7 +90,12 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
     <div className="relative shrink-0">
       <button
         type="button"
-        className={clsx(stkSecondary, compact && '!h-[36px] !min-h-[36px] !px-[12px]')}
+        aria-label="Check now"
+        className={clsx(
+          stkSecondary,
+          compact && '!h-[36px] !min-h-[36px] !px-[12px]',
+          iconOnly && 'stk-kw-check'
+        )}
         disabled={!projectId || showScanning}
         onClick={() => {
           runScan();
@@ -95,8 +106,13 @@ export const StalkerCheckNow = ({ compact = false }: { compact?: boolean }) => {
             className="h-[14px] w-[14px] animate-spin rounded-full border border-current border-t-transparent"
             aria-hidden
           />
+        ) : iconOnly ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 8v5l3 2" strokeLinecap="round" />
+          </svg>
         ) : null}
-        {showScanning ? 'Checking…' : 'Check now'}
+        {iconOnly ? null : showScanning ? 'Checking…' : 'Check now'}
       </button>
       {showResult ? (
         <div className={`${stkMenu} absolute end-0 top-[calc(100%+8px)] w-[280px] p-[12px] text-[14px]`}>

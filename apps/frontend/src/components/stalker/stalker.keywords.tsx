@@ -9,6 +9,7 @@ import {
   useStalkerKeywords,
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import { StalkerProjectMenu } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import { ReconnectText, StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
@@ -29,7 +30,6 @@ import {
   stkField,
   stkGhost,
   stkGroup,
-  stkHead,
   stkIconTile,
   stkLabel,
   stkMenu,
@@ -41,6 +41,7 @@ import {
   stkSecondary,
   stkSub,
   stkTitle,
+  stkCard,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const field = stkField;
@@ -100,24 +101,51 @@ const nextScanLabel = (iso?: string | null) => {
   return `Next scan in ${Math.round(hours / 24)}d`;
 };
 
-const Spark = ({ values }: { values: number[] }) => {
-  const series = values.length ? values : [0];
-  const max = Math.max(1, ...series);
-  const width = 72;
-  const height = 22;
-  const points = series
-    .map((value, index) => {
-      const x = (index / Math.max(1, series.length - 1)) * width;
-      const y = height - (value / max) * (height - 2) - 1;
-      return `${x},${y}`;
-    })
-    .join(' ');
-  return (
-    <svg width={width} height={height} aria-hidden className="text-textItemBlur">
-      <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={points} />
-    </svg>
-  );
+const scanLine = (keyword: Keyword, busy: boolean) => {
+  if (busy) return { spinning: true, text: 'Scanning...' };
+  if (keyword.lastScan) return { spinning: false, text: ago(keyword.lastScan) };
+  if (!keyword.paused && keyword.nextScanAt) {
+    return { spinning: false, text: nextScanLabel(keyword.nextScanAt) };
+  }
+  return { spinning: false, text: 'Not yet' };
 };
+
+const mentionCount = (keyword: Keyword) => {
+  if (keyword.mentions30d) return String(keyword.mentions30d);
+  if (keyword.lastScan) return '0';
+  return '—';
+};
+
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+  </svg>
+);
+
+const FolderIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M3 7h6l2 2h10v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" strokeLinejoin="round" />
+  </svg>
+);
+
+const PauseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <rect x="6" y="5" width="3.5" height="14" rx="1" />
+    <rect x="14.5" y="5" width="3.5" height="14" rx="1" />
+  </svg>
+);
+
+const PlayIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M8 5.5v13l11-6.5z" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 const PreviewPost = ({ phrase }: { phrase: string }) => (
   <article className="rounded-[20px] border border-newBorder bg-newBoxHover p-[14px]">
@@ -148,7 +176,7 @@ const PreviewPost = ({ phrase }: { phrase: string }) => (
 export const StalkerKeywords = () => {
   const fetch = useFetch();
   const toaster = useToaster();
-  const { projectId, sample, status, addKeywordSignal, scanning, watchScan, previewScan } =
+  const { project, projectId, sample, status, addKeywordSignal, scanning, watchScan, previewScan } =
     useStalkerProject();
   const groupsQuery = useStalkerGroups(sample ? null : projectId);
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
@@ -172,6 +200,7 @@ export const StalkerKeywords = () => {
   const [groupName, setGroupName] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Keyword | null>(null);
+  const [projectsOpen, setProjectsOpen] = useState(false);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const { mutate: mutateKeys } = useSWRConfig();
 
@@ -251,7 +280,7 @@ export const StalkerKeywords = () => {
         },
       ]);
       setAddOpen(false);
-      toaster.show('Keyword added');
+      toaster.show('Keyword added. Scanning mentions now');
       return;
     }
     setSaving(true);
@@ -277,7 +306,7 @@ export const StalkerKeywords = () => {
     }
     setAddOpen(false);
     refresh();
-    toaster.show('Scanning now…');
+    toaster.show('Keyword added. Scanning mentions now');
     watchScan();
   };
 
@@ -345,9 +374,14 @@ export const StalkerKeywords = () => {
       toaster.show('Could not delete that keyword. Try again', 'warning');
       return;
     }
-    toaster.show('Keyword deleted');
+    toaster.show('Keyword deleted. Removed from your keywords');
     await revalidateFeeds();
     setHiddenIds((current) => current.filter((item) => item !== id));
+  };
+
+  const pauseKeyword = (keyword: Keyword) => {
+    patchKeyword(keyword, { youtube: false, reddit: false, x: false, linkedin: false });
+    setRowMenu(null);
   };
 
   const resumeKeyword = (keyword: Keyword) => {
@@ -402,43 +436,287 @@ export const StalkerKeywords = () => {
 
   const ordered = [...groups].sort((left, right) => (left.position || 0) - (right.position || 0));
 
-  return (
-    <div className={`${stkPage} mx-auto w-full max-w-[1080px]`}>
-      <div className={stkHead}>
-        <div>
-          <h1 className={stkTitle}>Keywords</h1>
-          <p className={stkSub}>{keywords.length} active in this project</p>
+  const busyFor = (keyword: Keyword) =>
+    scanning || !!keyword.scanning || previewScan === 'running';
+
+  const KeywordMenu = ({ keyword }: { keyword: Keyword }) => (
+    <>
+      <button
+        type="button"
+        className="stk-sheet-backdrop md:hidden"
+        aria-label="Close"
+        onClick={() => setRowMenu(null)}
+      />
+      <div className={`${stkMenu} stk-kw-menu`} role="menu">
+        <p className="stk-kw-menu-title">Keyword actions</p>
+        <button
+          type="button"
+          className={stkMenuItem}
+          onClick={() => (keyword.paused ? resumeKeyword(keyword) : pauseKeyword(keyword))}
+        >
+          {keyword.paused ? <PlayIcon /> : <PauseIcon />}
+          {keyword.paused ? 'Resume' : 'Pause'}
+        </button>
+        <label className={`${stkMenuItem} stk-kw-move`}>
+          <FolderIcon />
+          <span>Move to group</span>
+          <select
+            aria-label={`Move ${keyword.phrase} to group`}
+            className="stk-kw-move-select"
+            value={keyword.groupId || keyword.group?.id || ''}
+            onChange={(event) => {
+              patchKeyword(keyword, { groupId: event.target.value });
+              setRowMenu(null);
+            }}
+          >
+            {groups.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="stk-menu-rule" />
+        <button
+          type="button"
+          className={`${stkMenuItem} stk-kw-delete`}
+          onClick={() => {
+            setConfirmDelete(keyword);
+            setRowMenu(null);
+          }}
+        >
+          <TrashIcon />
+          Delete
+        </button>
+      </div>
+    </>
+  );
+
+  const SourceControls = ({ keyword }: { keyword: Keyword }) => {
+    const active = SOURCES.filter((source) => keyword[source.key]);
+    return (
+      <button
+        type="button"
+        aria-label="Change sources"
+        className="stk-kw-sources"
+        onClick={() =>
+          setRowMenu((current) => (current === `src-${keyword.id}` ? null : `src-${keyword.id}`))
+        }
+      >
+        {active.length ? (
+          active.map((source) => (
+            <span key={source.id} title={source.label} className="text-newTextColor">
+              <SourceIcon source={source.icon} className="h-[16px] w-[16px]" />
+            </span>
+          ))
+        ) : (
+          <span className="text-[13px] text-textItemBlur">Sources</span>
+        )}
+      </button>
+    );
+  };
+
+  const SourceEditors = ({ keyword }: { keyword: Keyword }) =>
+    rowMenu === `src-${keyword.id}` ? (
+      <div className={`${stkMenu} stk-kw-sources-menu mt-[6px] w-[240px]`}>
+        {SOURCES.map((source) => {
+          const locked = !!note(source.id) && !keyword[source.key];
+          return (
+            <label key={source.id} className={`${stkMenuItem} justify-between`}>
+              <span className="flex items-center gap-[8px]">
+                <input
+                  type="checkbox"
+                  checked={keyword[source.key]}
+                  disabled={locked}
+                  onChange={() =>
+                    patchKeyword(keyword, {
+                      youtube: keyword.listenYoutube,
+                      reddit: keyword.listenReddit,
+                      x: keyword.listenX,
+                      linkedin: keyword.listenLinkedin,
+                      [source.id]: !keyword[source.key],
+                    })
+                  }
+                />
+                {source.label}
+              </span>
+              {note(source.id) ? (
+                <span className="text-[13px] text-textItemBlur">{note(source.id)}</span>
+              ) : null}
+            </label>
+          );
+        })}
+        <div className="px-[11px] py-[8px]">
+          <p className="mb-[6px] text-[14px] font-[500]">Exclude accounts</p>
+          <input
+            className={field}
+            placeholder="@handle"
+            defaultValue={keyword.excludeAccounts || ''}
+            onBlur={(event) => patchKeyword(keyword, { excludeAccounts: event.target.value })}
+          />
         </div>
-        <div className="flex flex-wrap items-center gap-[8px]">
-          <button type="button" className={stkSecondary} onClick={() => setGroupsOpen(true)}>
-            Manage groups
+      </div>
+    ) : null;
+
+  const ScanStatus = ({ keyword }: { keyword: Keyword }) => {
+    const line = scanLine(keyword, busyFor(keyword));
+    return (
+      <span className={line.spinning ? 'inline-flex items-center gap-[8px] text-[color:var(--arc-accent-text)]' : 'text-textItemBlur'}>
+        {line.spinning ? (
+          <span className="h-[14px] w-[14px] animate-spin rounded-full border border-current border-t-transparent" />
+        ) : null}
+        {line.text}
+        {keyword.lastError && !line.spinning ? (
+          <span title={keyword.lastError} className={`${stkBadgeBad} ms-[8px] max-w-[240px]`}>
+            <ReconnectText text={keyword.lastError} />
+          </span>
+        ) : null}
+      </span>
+    );
+  };
+
+  const filled = ordered.filter((group) =>
+    keywords.some(
+      (keyword) =>
+        keyword.groupId === group.id || keyword.group?.id === group.id || keyword.group?.name === group.name
+    )
+  );
+
+  return (
+    <div className={`${stkPage} stk-keywords`}>
+      <div className="stk-kw-head">
+        <div className="min-w-0">
+          <h1 className={stkTitle}>Keywords</h1>
+          {project?.name ? <p className={`${stkSub} hidden md:block`}>{project.name}</p> : null}
+          {project?.name ? (
+            <button
+              type="button"
+              className="stk-project-sub"
+              aria-haspopup="listbox"
+              aria-expanded={projectsOpen}
+              onClick={() => setProjectsOpen(true)}
+            >
+              <span className="stk-pdot" style={{ backgroundColor: project.color || '#71717a' }} />
+              <span className="truncate">{project.name}</span>
+              <span aria-hidden>▾</span>
+            </button>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 flex-nowrap items-center gap-[8px]">
+          <button
+            type="button"
+            className={`${stkSecondary} stk-kw-groups`}
+            aria-label="Manage groups"
+            onClick={() => setGroupsOpen(true)}
+          >
+            <FolderIcon />
+            <span className="stk-kw-groups-label">Manage groups</span>
           </button>
-          <StalkerCheckNow />
+          <span className="hidden md:inline-flex">
+            <StalkerCheckNow iconOnly />
+          </span>
           <button type="button" className={stkPrimary} onClick={() => openAdd(presetGroup)}>
-            + Add keyword
+            <PlusIcon />
+            Add keyword
           </button>
         </div>
       </div>
-      {ordered.map((group) => {
-        const rows = keywords.filter(
-          (keyword) =>
-            keyword.groupId === group.id || keyword.group?.id === group.id || keyword.group?.name === group.name
-        );
-        return (
-          <section key={group.id} className="flex flex-col gap-[8px]">
-            <div className="flex items-center justify-between">
+      {projectsOpen ? (
+        <>
+          <button
+            type="button"
+            className="stk-sheet-backdrop"
+            aria-label="Close"
+            onClick={() => setProjectsOpen(false)}
+          />
+          <div className={`${stkMenu} stk-project-sheet`} role="listbox">
+            <StalkerProjectMenu onPick={() => setProjectsOpen(false)} />
+          </div>
+        </>
+      ) : null}
+      {!keywords.length ? (
+        <section className={`${stkCard} stk-kw-empty`}>
+          <div className={stkEmpty}>
+            <span className={stkIconTile} aria-hidden>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M4 7h10M4 12h14M4 17h8" strokeLinecap="round" />
+              </svg>
+            </span>
+            <h3 className="text-[16px] font-[600]">No keywords yet.</h3>
+            <p className="max-w-[360px] text-[14px] text-textItemBlur">
+              Add a keyword and Stalker will watch for mentions.
+            </p>
+            <button type="button" className={stkPrimary} onClick={() => openAdd()}>
+              <PlusIcon />
+              Add keyword
+            </button>
+          </div>
+        </section>
+      ) : (
+        filled.map((group) => {
+          const rows = keywords.filter(
+            (keyword) =>
+              keyword.groupId === group.id ||
+              keyword.group?.id === group.id ||
+              keyword.group?.name === group.name
+          );
+          return (
+            <section key={group.id} className="flex flex-col gap-[8px]">
               <h2 className={stkGroup}>{group.name}</h2>
-              <button type="button" className={stkGhost} onClick={() => openAdd(group.id)}>
-                + Add keyword
-              </button>
-            </div>
-            {rows.length ? (
-              <div className="stk-table-wrap overflow-x-auto">
-                <table className="stk-table min-w-[720px] text-left">
+              <div className="stk-kw-group md:hidden">
+                {rows.map((keyword) => (
+                  <div key={keyword.id} className="stk-kw-row">
+                    <div className="flex items-center justify-between gap-[8px]">
+                      <p className="text-[16px] font-[600]">
+                        {keyword.phrase}
+                        {keyword.paused ? (
+                          <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[13px] font-[500]">
+                            <span className={stkBadge}>Paused</span>
+                            <button
+                              type="button"
+                              className="font-[600] text-[color:var(--arc-accent-text)] underline underline-offset-[3px]"
+                              onClick={() => resumeKeyword(keyword)}
+                            >
+                              Resume
+                            </button>
+                          </span>
+                        ) : null}
+                      </p>
+                      <span className="relative">
+                        <button
+                          type="button"
+                          aria-label="Keyword actions"
+                          className="arc-icon-btn stk-kw-more"
+                          onClick={() =>
+                            setRowMenu((current) => (current === keyword.id ? null : keyword.id))
+                          }
+                        >
+                          ···
+                        </button>
+                        {rowMenu === keyword.id ? <KeywordMenu keyword={keyword} /> : null}
+                      </span>
+                    </div>
+                    <p className="stk-kw-line flex flex-wrap items-center gap-[8px] text-textItemBlur">
+                      <span>Sources</span>
+                      <SourceControls keyword={keyword} />
+                    </p>
+                    <SourceEditors keyword={keyword} />
+                    <p className="stk-kw-line text-textItemBlur">
+                      Mentions (30d) · {mentionCount(keyword)}
+                    </p>
+                    <p className="stk-kw-line">
+                      <span className="text-textItemBlur">Last scan · </span>
+                      <ScanStatus keyword={keyword} />
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="stk-table-wrap hidden md:block">
+                <table className="stk-table w-full text-left">
                   <thead>
                     <tr>
                       <th>Keyword</th>
-                      <th>Sources</th>
+                      <th className="text-center">Sources</th>
                       <th>Mentions (30d)</th>
                       <th>Last scan</th>
                       <th />
@@ -447,7 +725,7 @@ export const StalkerKeywords = () => {
                   <tbody>
                     {rows.map((keyword) => (
                       <tr key={keyword.id}>
-                        <td data-label="Keyword" className="font-[600]">
+                        <td className="font-[600]">
                           {keyword.phrase}
                           {keyword.paused ? (
                             <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[13px] font-[500] text-textItemBlur">
@@ -462,180 +740,36 @@ export const StalkerKeywords = () => {
                             </span>
                           ) : null}
                         </td>
-                        <td data-label="Sources">
-                          <span className="inline-flex items-center gap-[6px]">
-                            {SOURCES.map((source) =>
-                              keyword[source.key] ? (
-                                <span key={source.id} title={source.label} className="text-newTextColor">
-                                  <SourceIcon source={source.icon} />
-                                </span>
-                              ) : null
-                            )}
-                            <button
-                              type="button"
-                              aria-label="Change sources"
-                              className="flex h-[28px] w-[28px] items-center justify-center rounded-[10px] border border-newBorder text-[13px] text-textItemBlur"
-                              onClick={() =>
-                                setRowMenu((current) =>
-                                  current === `src-${keyword.id}` ? null : `src-${keyword.id}`
-                                )
-                              }
-                            >
-                              ▾
-                            </button>
-                            <button
-                              type="button"
-                              aria-label="Exclude accounts"
-                              className="text-textItemBlur"
-                              onClick={() =>
-                                setRowMenu((current) =>
-                                  current === `ex-${keyword.id}` ? null : `ex-${keyword.id}`
-                                )
-                              }
-                            >
-                              ▽
-                            </button>
-                          </span>
-                          {rowMenu === `src-${keyword.id}` ? (
-                            <div className={`${stkMenu} mt-[6px] w-[240px]`}>
-                              {SOURCES.map((source) => {
-                                const locked = !!note(source.id) && !keyword[source.key];
-                                return (
-                                  <label
-                                    key={source.id}
-                                    className={`${stkMenuItem} justify-between`}
-                                  >
-                                    <span className="flex items-center gap-[8px]">
-                                      <input
-                                        type="checkbox"
-                                        checked={keyword[source.key]}
-                                        disabled={locked}
-                                        onChange={() =>
-                                          patchKeyword(keyword, {
-                                            youtube: keyword.listenYoutube,
-                                            reddit: keyword.listenReddit,
-                                            x: keyword.listenX,
-                                            linkedin: keyword.listenLinkedin,
-                                            [source.id]: !keyword[source.key],
-                                          })
-                                        }
-                                      />
-                                      {source.label}
-                                    </span>
-                                    {note(source.id) ? (
-                                      <span className="text-[13px] text-textItemBlur">{note(source.id)}</span>
-                                    ) : null}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          ) : null}
-                          {rowMenu === `ex-${keyword.id}` ? (
-                            <div className={`${stkMenu} mt-[6px] w-[260px] p-[12px]`}>
-                              <p className="mb-[6px] text-[14px] font-[500]">Exclude accounts</p>
-                              <input
-                                className={field}
-                                placeholder="@handle"
-                                defaultValue={keyword.excludeAccounts || ''}
-                                onBlur={(event) =>
-                                  patchKeyword(keyword, { excludeAccounts: event.target.value })
-                                }
-                              />
-                            </div>
-                          ) : null}
+                        <td className="text-center">
+                          <SourceControls keyword={keyword} />
+                          <SourceEditors keyword={keyword} />
                         </td>
-                        <td data-label="Mentions (30d)">
-                          <span className="inline-flex items-center gap-[8px]">
-                            <Spark values={keyword.sparkline || []} />
-                            <span>{keyword.mentions30d || 0}</span>
-                          </span>
+                        <td>{mentionCount(keyword)}</td>
+                        <td>
+                          <ScanStatus keyword={keyword} />
                         </td>
-                        <td data-label="Last scan" className="text-textItemBlur">
-                          {scanning || keyword.scanning || previewScan === 'running' ? (
-                            <span className="inline-flex items-center gap-[8px] text-[color:var(--arc-accent-text)]">
-                              <span className="h-[14px] w-[14px] animate-spin rounded-full border border-current border-t-transparent" />
-                              Scanning…
-                            </span>
-                          ) : (
-                            <span>Last scan: {ago(keyword.lastScan)}</span>
-                          )}
-                          {keyword.lastError && !(scanning || keyword.scanning || previewScan === 'running') ? (
-                            <span
-                              title={keyword.lastError}
-                              className={`${stkBadgeBad} mt-[4px] max-w-[240px]`}
-                            >
-                              <ReconnectText text={keyword.lastError} />
-                            </span>
-                          ) : null}
-                          {scanning || keyword.scanning || previewScan === 'running' ? null : (
-                            <span className="mt-[4px] block text-[13px]">
-                              {keyword.paused
-                                ? 'Paused — no sources'
-                                : nextScanLabel(keyword.nextScanAt)}
-                            </span>
-                          )}
-                        </td>
-                        <td className="text-end">
+                        <td className="relative text-end">
                           <button
                             type="button"
                             aria-label="Keyword actions"
-                            className="arc-icon-btn !h-[36px] !w-[36px] rounded-[14px] border border-newBorder"
+                            className="arc-icon-btn stk-kw-more"
                             onClick={() =>
                               setRowMenu((current) => (current === keyword.id ? null : keyword.id))
                             }
                           >
                             ···
                           </button>
-                          {rowMenu === keyword.id ? (
-                            <div className={`${stkMenu} mt-[6px] inline-flex w-[220px] flex-col items-stretch text-start`}>
-                              <label className="px-[11px] py-[6px] text-[13px] text-textItemBlur">
-                                Group
-                                <select
-                                  className={`${field} mt-[4px]`}
-                                  value={keyword.groupId || keyword.group?.id || ''}
-                                  onChange={(event) => {
-                                    patchKeyword(keyword, { groupId: event.target.value });
-                                    setRowMenu(null);
-                                  }}
-                                >
-                                  {groups.map((item) => (
-                                    <option key={item.id} value={item.id}>
-                                      {item.name}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                              <button
-                                type="button"
-                                className={`${stkMenuItem} text-[color:var(--arc-danger)]`}
-                                onClick={() => {
-                                  setConfirmDelete(keyword);
-                                  setRowMenu(null);
-                                }}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          ) : null}
+                          {rowMenu === keyword.id ? <KeywordMenu keyword={keyword} /> : null}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            ) : (
-              <div className={stkEmpty}>
-                <span className={stkIconTile} aria-hidden>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M5 9h6M5 15h10" />
-                  </svg>
-                </span>
-                <h3 className="text-[16px] font-[600]">No keywords in this group yet.</h3>
-              </div>
-            )}
-          </section>
-        );
-      })}
+            </section>
+          );
+        })
+      )}
 
       {addOpen ? (
         <div className={stkOverlay}>
