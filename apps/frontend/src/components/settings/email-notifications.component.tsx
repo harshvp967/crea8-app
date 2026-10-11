@@ -98,26 +98,20 @@ const EmailNotificationsComponent = () => {
 
   if (isLoading) {
     return (
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[16px] p-[24px] flex flex-col gap-[16px]">
+      <div className="settings-row">
         <div className="h-[18px] w-[180px] animate-pulse rounded-[8px] bg-newBoxHover" />
-        <div className="h-[44px] w-full animate-pulse rounded-[8px] bg-newBoxHover" />
-        <div className="h-[44px] w-full animate-pulse rounded-[8px] bg-newBoxHover" />
-        <div className="h-[44px] w-[70%] animate-pulse rounded-[8px] bg-newBoxHover" />
       </div>
     );
   }
 
   return (
-    <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[16px] p-[24px] flex flex-col gap-[24px]">
-      <div className="mt-[4px]">
-        {t('email_notifications', 'Email Notifications')}
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <div className="text-[14px]">
+    <>
+      <div className="settings-row">
+        <div className="settings-row-copy">
+          <div className="settings-row-title">
             {t('success_emails', 'Success Emails')}
           </div>
-          <div className="text-[12px] text-customColor18">
+          <div className="settings-row-sub">
             {t(
               'success_emails_description',
               'Receive email notifications when posts are published successfully'
@@ -130,12 +124,12 @@ const EmailNotificationsComponent = () => {
           fill={true}
         />
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <div className="text-[14px]">
+      <div className="settings-row">
+        <div className="settings-row-copy">
+          <div className="settings-row-title">
             {t('failure_emails', 'Failure Emails')}
           </div>
-          <div className="text-[12px] text-customColor18">
+          <div className="settings-row-sub">
             {t(
               'failure_emails_description',
               'Receive email notifications when posts fail to publish'
@@ -148,12 +142,12 @@ const EmailNotificationsComponent = () => {
           fill={true}
         />
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <div className="text-[14px]">
+      <div className="settings-row">
+        <div className="settings-row-copy">
+          <div className="settings-row-title">
             {t('streak_emails', 'Streak Reminder Emails')}
           </div>
-          <div className="text-[12px] text-customColor18">
+          <div className="settings-row-sub">
             {t(
               'streak_emails_description',
               'Receive email reminders when your posting streak is about to end'
@@ -166,7 +160,7 @@ const EmailNotificationsComponent = () => {
           fill={true}
         />
       </div>
-    </div>
+    </>
   );
 };
 

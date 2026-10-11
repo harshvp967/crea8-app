@@ -265,7 +265,7 @@ export const CopyButton = ({
         copy(text);
         toaster.show(`${label} copied to clipboard`, 'success');
       }}
-      className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
+      className="settings-tool"
     >
       <svg
         width="14"
@@ -317,7 +317,7 @@ const McpSection = ({
         );
 
   return (
-    <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
+    <div className="settings-card">
       <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
         <div>
           <div className="text-[15px] font-[600]">
@@ -405,7 +405,7 @@ const McpSection = ({
               <button
                 type="button"
                 onClick={() => setRevealed(!revealed)}
-                className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
+                className="settings-tool"
               >
                 <svg
                   width="14"
@@ -481,7 +481,7 @@ const PublicApiContent = () => {
   const mcpBase = mcpUrl || backendUrl;
 
   return (
-    <div className="flex flex-col gap-[40px]">
+    <div className="settings-stack">
       <div className="text-[14px] text-textColor leading-[1.7]">
         {t(
           'api_auth_note_line1',
@@ -503,7 +503,7 @@ const PublicApiContent = () => {
           'and you will receive a pos_ prefixed token that works with the API and MCP — just like an API Key.'
         )}
       </div>
-      <div className="bg-newBgColorInnerInner rounded-[12px] border border-newBorder overflow-hidden">
+      <div className="settings-card">
         <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
           <div>
             <div className="text-[15px] font-[600]">
@@ -511,8 +511,8 @@ const PublicApiContent = () => {
             </div>
             <div className="text-[13px] text-customColor18 mt-[2px]">
               {t(
-                'use_postiz_api_to_integrate_with_your_tools',
-                'Use the Crea8one API to integrate with your tools.'
+                'api_auth_note_line1',
+                'Use your API Key to automate your own account.'
               )}
             </div>
           </div>
@@ -536,7 +536,7 @@ const PublicApiContent = () => {
             <button
               type="button"
               onClick={() => setReveal(!reveal)}
-              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
+              className="settings-tool"
             >
               <svg
                 width="14"
@@ -567,7 +567,7 @@ const PublicApiContent = () => {
             <button
               type="button"
               onClick={rotateKey}
-              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
+              className="settings-tool settings-danger"
             >
               <svg
                 width="14"
@@ -584,39 +584,29 @@ const PublicApiContent = () => {
               </svg>
               {t('rotate_key', 'Rotate Key')}
             </button>
-            <button
-              type="button"
-              data-tooltip-id="tooltip"
-              data-tooltip-content={t(
-                'payload_wizard_description',
-                'Building a POST request to /posts can be complex. Use the wizard to schedule a post with the UI, then copy the generated payload.'
-              )}
-              onClick={() =>
-                window.open(`${frontEndUrl}/modal/dark/all`, '_blank')
-              }
-              className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              {t('open_wizard', 'Open Wizard')}
-            </button>
           </div>
         </div>
       </div>
 
       <McpSection user={user} mcpBase={mcpBase} />
+
+      <div className="settings-wizard-row">
+        <p>
+          {t(
+            'payload_wizard_description',
+            'Building a POST request to /posts can be complex. Use the wizard to schedule a post with the UI, then copy the generated payload.'
+          )}
+        </p>
+        <button
+          type="button"
+          onClick={() =>
+            window.open(`${frontEndUrl}/modal/dark/all`, '_blank')
+          }
+          className="settings-wizard"
+        >
+          {t('open_wizard', 'Open Wizard')}
+        </button>
+      </div>
     </div>
   );
 };
@@ -641,29 +631,32 @@ export const PublicComponent = () => {
   }, [organizations, user?.orgId]);
 
   return (
-    <div className="flex flex-col gap-[20px]">
-      <h3 className="text-[20px]">
-        {t('developers', 'Developers')}
-        {currentOrg?.name ? ` - ${currentOrg.name}` : ''}
-      </h3>
-      <div className="flex gap-[6px]">
-        {(['api', 'developer'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            className={clsx(
-              'cursor-pointer px-[20px] h-[44px] text-[15px] font-[600] rounded-full transition-colors',
-              subTab === tab
-                ? 'bg-[#00D9FF] text-[#0a0a0a] border border-[#00D9FF]'
-                : 'bg-transparent border border-[#00D9FF]/45 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-[#0a0a0a] hover:border-[#00D9FF]'
+    <div className="settings-section">
+      <div className="settings-head">
+        <div>
+          <h1>
+            {t('developers', 'Developers')}
+            {currentOrg?.name ? ` - ${currentOrg.name}` : ''}
+          </h1>
+          <p>
+            {t(
+              'use_postiz_api_to_integrate_with_your_tools',
+              'Use the Crea8one API to integrate with your tools.'
             )}
-            onClick={() => setSubTab(tab)}
-          >
-            {tab === 'api'
-              ? t('access', 'Access')
-              : t('apps', 'Apps')}
-          </button>
-        ))}
+          </p>
+        </div>
+        <div className="settings-seg">
+          {(['api', 'developer'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              className={clsx(subTab === tab && 'is-on')}
+              onClick={() => setSubTab(tab)}
+            >
+              {tab === 'api' ? t('access', 'Access') : t('apps', 'Apps')}
+            </button>
+          ))}
+        </div>
       </div>
       {subTab === 'api' && <PublicApiContent />}
       {subTab === 'developer' && <DeveloperComponent />}

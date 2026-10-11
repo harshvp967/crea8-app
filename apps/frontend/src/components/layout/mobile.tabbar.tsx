@@ -38,6 +38,7 @@ export const MobileTabBar = () => {
   );
 
   const active = (path: string) => path !== '#' && pathname.indexOf(path) === 0;
+  const moreActive = !tabs.some((item) => active(item.path));
 
   return (
     <div className="contents">
@@ -98,8 +99,9 @@ export const MobileTabBar = () => {
         ))}
         <button
           type="button"
-          className={clsx(more && 'arc-selected')}
+          className={clsx((more || moreActive) && 'arc-selected')}
           aria-expanded={more}
+          aria-current={moreActive ? 'page' : undefined}
           aria-label="More"
           onClick={() => setMore((value) => !value)}
         >

@@ -166,47 +166,35 @@ export const Sets: FC = () => {
   const t = useT();
 
   return (
-    <div className="flex flex-col">
-      <h3 className="text-[20px]">Sets ({data?.length || 0})</h3>
-      <div className="text-customColor18 mt-[4px]">
-        Manage your content sets for easy reuse across posts.
-      </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[2fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('name', 'Name')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.name}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addSet(p)}>{t('edit', 'Edit')}</Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteSet(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addSet()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
-              Add a set
-            </Button>
-          </div>
+    <div className="settings-section">
+      <div className="settings-head">
+        <div>
+          <h1>Sets ({data?.length || 0})</h1>
+          <p>Manage your content sets for easy reuse across posts.</p>
         </div>
+        <Button onClick={addSet()}>+ Add a set</Button>
       </div>
+      {!!data?.length && (
+        <div className="settings-list">
+          <div className="settings-cols cols-set">
+            <span>{t('name', 'Name')}</span>
+            <span />
+          </div>
+          {data.map((p: any) => (
+            <article key={p.id} className="settings-item cols-set">
+              <b>{p.name}</b>
+              <div className="settings-item-actions">
+                <Button secondary className="settings-mini" onClick={addSet(p)}>
+                  {t('edit', 'Edit')}
+                </Button>
+                <Button secondary className="settings-mini settings-danger" onClick={deleteSet(p)}>
+                  {t('delete', 'Delete')}
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

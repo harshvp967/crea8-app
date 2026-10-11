@@ -59,23 +59,28 @@ export const ApprovedAppsComponent: FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-[20px]">
-      <div className="flex flex-col">
-        <h3 className="text-[20px]">
-          {t('approved_apps', 'Approved Apps')}
-        </h3>
-        <div className="text-customColor18 mt-[4px]">
-          {t(
-            'apps_you_have_authorized',
-            'Applications you have authorized to access your Crea8one account.'
-          )}
+    <div className="settings-section">
+      <div className="settings-head">
+        <div>
+          <h1>{t('approved_apps', 'Approved Apps')}</h1>
+          <p>
+            {t(
+              'apps_you_have_authorized',
+              'Applications you have authorized to access your Crea8one account.'
+            )}
+          </p>
         </div>
       </div>
 
-      <div className="bg-sixth border-fifth border rounded-[16px] p-[24px]">
+      <div className="settings-list">
         {!apps?.length ? (
-          <div className="text-customColor18">
-            {t('no_approved_apps', 'No approved apps yet.')}
+          <div className="settings-empty">
+            <span className="settings-empty-mark" aria-hidden>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M12 3l7 3v6c0 4.2-2.8 7.4-7 8.5C7.8 19.4 5 16.2 5 12V6l7-3z" />
+              </svg>
+            </span>
+            <h2>{t('no_approved_apps', 'No approved apps yet.')}</h2>
           </div>
         ) : (
           <div className="flex flex-col gap-[16px]">
@@ -111,7 +116,7 @@ export const ApprovedAppsComponent: FC = () => {
                     </div>
                   </div>
                 </div>
-                <Button onClick={revokeApp(app)}>
+                <Button secondary className="settings-danger" onClick={revokeApp(app)}>
                   {t('revoke', 'Revoke')}
                 </Button>
               </div>
