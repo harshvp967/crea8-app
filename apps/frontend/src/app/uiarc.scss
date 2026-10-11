@@ -4101,7 +4101,8 @@ body :focus-visible {
 }
 
 /* Plug settings sheet. Presentation only. */
-.arc-dialog:has(.plugs-form) .mantine-Modal-close {
+.arc-dialog:has(.plugs-form) .mantine-Modal-close,
+.arc-dialog:has(.integrations-form) .mantine-Modal-close {
   position: static;
   display: inline-flex;
   align-items: center;
@@ -4116,12 +4117,14 @@ body :focus-visible {
   color: var(--new-textItemBlur);
 }
 
-.arc-dialog:has(.plugs-form) .arc-dialog-head {
+.arc-dialog:has(.plugs-form) .arc-dialog-head,
+.arc-dialog:has(.integrations-form) .arc-dialog-head {
   gap: 12px;
 }
 
 @media (min-width: 768px) {
-  .arc-dialog:has(.plugs-form) {
+  .arc-dialog:has(.plugs-form),
+  .arc-dialog:has(.integrations-form) {
     background: var(--arc-raised, var(--new-bgColorInner)) !important;
     background-image: none !important;
   }
@@ -4132,7 +4135,8 @@ body :focus-visible {
     display: none !important;
   }
 
-  .arc-dialog:has(.plugs-form) {
+  .arc-dialog:has(.plugs-form),
+  .arc-dialog:has(.integrations-form) {
     z-index: 1;
     display: flex !important;
     flex-direction: column;
@@ -4145,12 +4149,14 @@ body :focus-visible {
     box-shadow: var(--arc-shadow-floating);
   }
 
-  .arc-dialog:has(.plugs-form) .arc-dialog-head {
+  .arc-dialog:has(.plugs-form) .arc-dialog-head,
+  .arc-dialog:has(.integrations-form) .arc-dialog-head {
     position: static;
     background: transparent;
   }
 
-  .arc-dialog:has(.plugs-form) .arc-dialog-body {
+  .arc-dialog:has(.plugs-form) .arc-dialog-body,
+  .arc-dialog:has(.integrations-form) .arc-dialog-body {
     max-height: none;
     overflow: visible;
   }
@@ -4164,7 +4170,250 @@ body :focus-visible {
     background: var(--arc-raised, var(--new-bgColorInner));
   }
 
-  .arc-dialog:has(.plugs-form) button[type='submit'] {
+  .arc-dialog:has(.plugs-form) button[type='submit'],
+  .arc-dialog:has(.integrations-form) button[type='submit'] {
     width: 100%;
+  }
+
+  .arc-dialog:has(.integrations-form) .integrations-submit {
+    position: sticky;
+    bottom: 0;
+    margin-top: 8px;
+    padding-top: 12px;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--arc-raised, var(--new-bgColorInner));
+  }
+}
+
+/* Integrations tab. Presentation only. */
+.integrations-screen {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.integrations-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  gap: 20px;
+  padding: 24px;
+  overflow: hidden;
+  background: var(--new-bgColorInner);
+  border: 1px solid var(--new-border);
+  border-radius: var(--arc-radius-panel);
+  box-shadow: var(--arc-shadow-resting);
+}
+
+.integrations-head h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.integrations-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.integrations-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--new-border);
+  border-radius: var(--arc-radius-panel);
+  background: var(--new-bgColorInner);
+}
+
+.integrations-card.is-on {
+  border-color: var(--arc-selected-border);
+  background-color: var(--new-bgColorInner);
+  background-image: var(--arc-wave),
+    linear-gradient(var(--new-bgColorInner), var(--new-bgColorInner));
+}
+
+.integrations-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.integrations-card-head h3 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.integrations-card p {
+  margin: 0;
+  color: var(--new-textItemBlur);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.integrations-mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--arc-muted);
+}
+
+.integrations-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+.integrations-letter {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.integrations-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--arc-success) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--arc-success) 10%, transparent);
+  color: var(--arc-success);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.integrations-badge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.integrations-menu {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--new-textItemBlur);
+}
+
+.integrations-menu-pop {
+  color: var(--arc-danger);
+}
+
+.integrations-card .integrations-add {
+  height: 36px !important;
+  padding: 0 14px !important;
+  align-self: flex-start;
+}
+
+.integrations-add-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.integrations-state,
+.integrations-empty {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.integrations-empty {
+  display: flex;
+  min-height: 240px;
+}
+
+.integrations-empty h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.integrations-form {
+  min-width: 0;
+}
+
+@media (max-width: 1199px) {
+  .app-shell:has(.integrations-screen) {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app-main:has(.integrations-screen) {
+    overflow: hidden;
+  }
+
+  .integrations-main {
+    height: 100%;
+    padding: 20px;
+  }
+
+  .integrations-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell:has(.integrations-screen) {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+
+  .app-main:has(.integrations-screen) {
+    padding: 12px 12px 0 !important;
+    overflow: hidden !important;
+  }
+
+  .integrations-main {
+    padding: 16px;
+    gap: 20px;
+    border-radius: 22px;
+  }
+
+  .integrations-head h1 {
+    font-size: 22px;
+  }
+
+  .integrations-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
 }
