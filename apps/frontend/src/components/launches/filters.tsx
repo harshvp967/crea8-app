@@ -4,6 +4,7 @@ import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launc
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import {
   DayCalendarIcon,
+  ListCalendarIcon,
   MonthCalendarIcon,
   WeekCalendarIcon,
 } from '@gitroom/frontend/components/ui/icons';
@@ -172,8 +173,9 @@ export const Filters = () => {
       if (next === 'day') setDay();
       else if (next === 'week') setWeek();
       else if (next === 'month') setMonth();
+      else if (next === 'list') setList();
     },
-    [setDay, setWeek, setMonth]
+    [setDay, setWeek, setMonth, setList]
   );
 
   const setCalendarView = useCallback(() => {
@@ -308,7 +310,12 @@ export const Filters = () => {
   }, [calendar]);
 
   return (
-    <div className="filters-bar text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0">
+    <div
+      className={clsx(
+        'filters-bar text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0',
+        isListView && 'is-list-mode'
+      )}
+    >
       {!isListView && (
           <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
           <div className="cal-nav border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
@@ -387,7 +394,7 @@ export const Filters = () => {
       )}
       {isListView && (
           <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
-          <div className="border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
+          <div className="cal-list-pager border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
             <div
               onClick={previousPage}
               className={clsx(
@@ -444,7 +451,7 @@ export const Filters = () => {
               </svg>
             </div>
           </div>
-          <div className="flex flex-row p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
+          <div className="cal-list-states flex flex-row p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
             {listStateOptions.map((option) => (
               <div
                 key={option.value}
@@ -484,6 +491,7 @@ export const Filters = () => {
             label: t('month', 'Month'),
             icon: <MonthCalendarIcon />,
           },
+          { value: 'list', label: t('list', 'List'), icon: <ListCalendarIcon /> },
         ]}
       />
       <div className="cal-mode flex flex-row shrink-0 p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
