@@ -3977,9 +3977,13 @@ body :focus-visible {
   width: 44px !important;
   height: 26px !important;
   padding: 3px !important;
-  border-color: var(--new-border) !important;
+  border-color: transparent !important;
   border-radius: 999px !important;
-  background: var(--arc-muted) !important;
+  background: #34343a !important;
+}
+
+.light .plugs-toggle > div {
+  background: #dadadf !important;
 }
 
 .plugs-card.is-on .plugs-toggle > div {
@@ -3990,7 +3994,12 @@ body :focus-visible {
 .plugs-toggle > div > div > div {
   width: 18px !important;
   height: 18px !important;
-  background: var(--new-btn-text) !important;
+  background: #f4f4f5 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.light .plugs-toggle > div > div > div {
+  background: #fff !important;
 }
 
 .plugs-card.is-on .plugs-toggle > div > div > div {
@@ -4099,5 +4108,74 @@ body :focus-visible {
   .plugs-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
+  }
+}
+
+/* Plug settings sheet. Presentation only. */
+.arc-dialog:has(.plugs-form) .mantine-Modal-close {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 12px;
+  flex: none;
+  border: 1px solid var(--new-border);
+  border-radius: 12px;
+  background: var(--arc-muted);
+  color: var(--new-textItemBlur);
+}
+
+.arc-dialog:has(.plugs-form) .arc-dialog-head {
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .arc-dialog:has(.plugs-form) {
+    background: var(--arc-raised, var(--new-bgColorInner)) !important;
+    background-image: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  body:has(.arc-dialog-wrap) .mobile-tabbar {
+    display: none !important;
+  }
+
+  .arc-dialog:has(.plugs-form) {
+    z-index: 1;
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px !important;
+    padding: 8px 20px calc(20px + env(safe-area-inset-bottom)) !important;
+    background-color: var(--arc-raised, var(--new-bgColorInner)) !important;
+    background-image: none !important;
+    border: 1px solid var(--new-border) !important;
+    border-bottom: 0 !important;
+    box-shadow: var(--arc-shadow-floating);
+  }
+
+  .arc-dialog:has(.plugs-form) .arc-dialog-head {
+    position: static;
+    background: transparent;
+  }
+
+  .arc-dialog:has(.plugs-form) .arc-dialog-body {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .arc-dialog:has(.plugs-form) .plugs-form .mt-\[20px\] {
+    position: sticky;
+    bottom: 0;
+    margin-top: 16px;
+    padding-top: 12px;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--arc-raised, var(--new-bgColorInner));
+  }
+
+  .arc-dialog:has(.plugs-form) button[type='submit'] {
+    width: 100%;
   }
 }

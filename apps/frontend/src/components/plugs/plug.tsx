@@ -264,7 +264,6 @@ export const Plug = () => {
         plugFunction: string;
       }) => {
         modals.openModal({
-          withCloseButton: false,
           onClose() {
             mutate();
           },
