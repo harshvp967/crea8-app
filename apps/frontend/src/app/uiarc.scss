@@ -2299,6 +2299,13 @@ body :focus-visible {
   line-height: 1;
 }
 
+@media (max-width: 767px) {
+  .cal-list > div {
+    height: auto;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}
+
 .channel-strip > .flex {
   flex: 0 0 auto !important;
   width: auto !important;
