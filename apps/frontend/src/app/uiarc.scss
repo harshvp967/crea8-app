@@ -4573,21 +4573,38 @@ body :focus-visible {
 
 .settings-control {
   flex: none;
-  width: 160px;
+  width: auto;
+  max-width: min(100%, 240px);
 }
 
 .settings-control select {
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
+  appearance: none;
+  padding-inline-end: 36px;
+  border-radius: 999px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'><path d='M4 6.2 8 10l4-3.8' stroke='%23B9B9C0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  cursor: pointer;
+}
+
+.light .settings-control select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'><path d='M4 6.2 8 10l4-3.8' stroke='%2346464D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
 }
 
 .settings-danger-card {
-  border-color: color-mix(in srgb, var(--arc-danger) 45%, var(--new-border));
+  border-color: color-mix(in srgb, var(--arc-danger) 62%, var(--new-border));
 }
 
 .settings-danger {
+  flex: none;
   color: var(--arc-danger) !important;
   background: transparent !important;
-  border-color: color-mix(in srgb, var(--arc-danger) 36%, var(--new-border)) !important;
+  border-color: color-mix(in srgb, var(--arc-danger) 55%, var(--new-border)) !important;
+  box-shadow: none !important;
+  white-space: nowrap;
 }
 
 .settings-cols,
@@ -4884,6 +4901,28 @@ body :focus-visible {
   gap: 12px;
 }
 
+.arc-dialog:has(.settings-form) button[type='submit'] {
+  background: #00d9ff !important;
+  background-color: #00d9ff !important;
+  color: #0a0a0a !important;
+  border-color: transparent !important;
+  opacity: 1 !important;
+}
+
+.settings-form .flex:not(.flex-col):has(> button) > button {
+  opacity: 1 !important;
+}
+
+.settings-form .flex:not(.flex-col):has(> button[type='submit']) > button:not([type='submit']) {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--new-btn-text) !important;
+  border: 1px solid var(--new-border) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  font-weight: 500;
+}
+
 .settings-form .mantine-Modal-close {
   display: none !important;
 }
@@ -4963,13 +5002,57 @@ body :focus-visible {
   }
 
   .settings-row,
-  .settings-danger-card,
   .settings-wizard-row {
     flex-wrap: wrap;
   }
 
+  .settings-danger-card {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .settings-danger-card .settings-row-sub {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .settings-control {
+    flex: 1 0 100%;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .settings-control select {
+    width: fit-content;
+  }
+
+  .settings-form .flex:not(.flex-col):has(> button):not(:has(> button[type='submit'])) > button {
+    width: 100% !important;
+    background: #00d9ff !important;
+    background-color: #00d9ff !important;
+    color: #0a0a0a !important;
+    border-color: transparent !important;
+  }
+
+  .settings-form .flex:not(.flex-col):has(> button[type='submit']) {
+    flex-wrap: nowrap;
+    align-items: stretch;
     width: 100%;
+  }
+
+  .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button {
+    flex: 1 1 0;
+    width: auto !important;
+    min-width: 0;
+    white-space: nowrap;
+    padding-inline: 12px;
+  }
+
+  .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button > div {
+    flex: none;
+    white-space: nowrap;
   }
 
   .settings-cols {
@@ -5030,5 +5113,9 @@ body :focus-visible {
 
   .arc-dialog:has(.settings-form) button[type='submit'] {
     width: 100%;
+  }
+
+  .arc-dialog:has(.settings-form) .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button[type='submit'] {
+    width: auto !important;
   }
 }

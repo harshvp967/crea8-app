@@ -37,7 +37,7 @@ const MetricComponent = () => {
         <div className="settings-row-title">Date Metrics</div>
       </div>
       <div className="settings-control">
-      <Select name="metric" disableForm={true} label="" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
+      <Select name="metric" disableForm={true} hideErrors={true} label="" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
         {dateMetrics.map((metric) => (
           <option
             key={metric.value}
