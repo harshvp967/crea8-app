@@ -2,8 +2,8 @@ import { FC, useCallback, useMemo } from 'react';
 import { Integration } from '@prisma/client';
 import useSWR from 'swr';
 import dayjs from 'dayjs';
+import useCookie from 'react-use-cookie';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
 import { ChartLine } from '@gitroom/frontend/components/analytics/chart-line';
 import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -81,23 +81,13 @@ const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
 
   return (
     <div
-      className={`flex items-center gap-[4px] text-[13px] font-medium ${
-        isPositive ? 'text-[#32d583]' : 'text-[#f97066]'
+      className={`analytics-stat-delta ${
+        isPositive ? 'is-up' : 'is-down'
       }`}
     >
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 12 12"
-        fill="none"
-        className={isPositive ? '' : 'rotate-180'}
-      >
-        <path d="M6 2.5L10 7.5H2L6 2.5Z" fill="currentColor" />
-      </svg>
-      <span>
-        {displayValue}
-        {average ? 'pp' : '%'}
-      </span>
+      {isPositive ? '+' : '−'}
+      {displayValue}
+      {average ? 'pp' : '%'}
     </div>
   );
 };
@@ -105,79 +95,15 @@ const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
 const AnalyticsCard: FC<{
   item: AnalyticsDataItem;
   total: string | number;
-  index: number;
-}> = ({ item, total, index }) => {
-  const colorVariants = ['purple', 'green', 'blue'] as const;
-  const color = colorVariants[index % colorVariants.length];
-
-  const hasDataPoints = item.data.length >= 1;
+}> = ({ item, total }) => {
 
   return (
-    <div className="group relative">
-      <div
-        className={`
-          flex flex-col h-full
-          bg-newTableHeader
-          border border-newTableBorder
-          rounded-[12px]
-          overflow-hidden
-          transition-all duration-200
-          hover:border-[#00D9FF]/50
-        `}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[8px]">
-          <div className="flex items-center gap-[10px]">
-            <div
-              className="w-[8px] h-[8px] rounded-full"
-              style={{
-                backgroundColor: 'rgba(0, 217, 255, 0.22)',
-                boxShadow: '0 0 0 1.5px #00D9FF',
-              }}
-            />
-            <span className="text-[15px] font-medium text-newTableText">
-              {item.label}
-            </span>
-          </div>
-          {item.percentageChange !== undefined && (
-            <TrendIndicator
-              value={item.percentageChange}
-              average={item.average}
-            />
-          )}
-        </div>
-
-        {/* Content */}
-        {hasDataPoints ? (
-          <>
-            {/* Chart */}
-            <div className="flex-1 px-[12px] py-[8px]">
-              <div className="h-[120px] relative">
-                <ChartSocial
-                  data={item.data}
-                  color={color}
-                  label={item.label}
-                  key={`chart-${index}`}
-                />
-              </div>
-            </div>
-
-            {/* Value */}
-            <div className="px-[16px] pb-[14px]">
-              <div className="text-[36px] leading-[42px] font-semibold tracking-tight">
-                {total}
-              </div>
-            </div>
-          </>
-        ) : (
-          /* Single value display */
-          <div className="flex-1 flex flex-col items-center justify-center py-[32px] px-[16px]">
-            <div className="text-[48px] leading-[56px] font-semibold tracking-tight">
-              {total}
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="analytics-stat">
+      <span className="analytics-stat-label">{item.label}</span>
+      <div className="analytics-stat-value">{total}</div>
+      {item.percentageChange !== undefined && (
+        <TrendIndicator value={item.percentageChange} average={item.average} />
+      )}
     </div>
   );
 };
@@ -188,29 +114,10 @@ const PanelMessage: FC<{
   onAction?: () => void;
 }> = ({ title, actionLabel, onAction }) => {
   return (
-    <div className="col-span-full flex flex-col items-center justify-center py-[48px] px-[24px] bg-newTableHeader border border-newTableBorder rounded-[12px]">
-      <div className="w-[48px] h-[48px] mb-[16px] rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="text-[#00D9FF]"
-        >
-          <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          <path d="M12 8v4l2 2" />
-        </svg>
-      </div>
-      <p className="text-[15px] text-newTableText text-center mb-[12px] max-w-[420px]">
-        {title}
-      </p>
+    <div className="analytics-note">
+      <p>{title}</p>
       {actionLabel && onAction && (
-        <button
-          onClick={onAction}
-          className="inline-flex items-center gap-[6px] px-[16px] h-[44px] text-[14px] font-[600] text-[#0A0A0A] bg-btnPrimary hover:brightness-95 rounded-[18px]"
-        >
+        <button type="button" onClick={onAction}>
           {actionLabel}
         </button>
       )}
@@ -293,6 +200,7 @@ export const RenderAnalytics: FC<{
   );
 
   const t = useT();
+  const [mode] = useCookie('mode', 'dark');
 
   const totals = useMemo(() => {
     return data?.map((p: AnalyticsDataItem) => {
@@ -318,7 +226,7 @@ export const RenderAnalytics: FC<{
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-[48px]">
+      <div className="analytics-state">
         <ScheduleLoading />
       </div>
     );
@@ -326,46 +234,24 @@ export const RenderAnalytics: FC<{
 
   if (error) {
     return (
-      <div className="grid grid-cols-1 gap-[16px]">
-        <PanelMessage
-          title={
-            error instanceof Error
-              ? error.message
-              : t(
-                  'analytics_channel_error',
-                  'Could not load analytics for this channel.'
-                )
-          }
-          actionLabel={t('try_again', 'Try again')}
-          onAction={() => mutate()}
-        />
-      </div>
+      <PanelMessage
+        title={
+          error instanceof Error
+            ? error.message
+            : t(
+                'analytics_channel_error',
+                'Could not load analytics for this channel.'
+              )
+        }
+        actionLabel={t('try_again', 'Try again')}
+        onAction={() => mutate()}
+      />
     );
   }
 
   return (
-    <div className="flex flex-col gap-[16px]">
-      {overview && (
-        <ChartLine
-          surface="dark"
-          accent="#00D9FF"
-          radius={12}
-          icon={null}
-          title={overview.title}
-          description={t('last_n_days', `Last ${date} days`)}
-          data={overview.rows}
-          index="date"
-          series={overview.series}
-          fill="gradient"
-          height={220}
-          strokeWidth={2.5}
-          showLegend={overview.series.length > 1}
-          showPoints="last"
-          animate
-          valueFormat="compact"
-        />
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+    <div className="analytics-body">
+      <div className="analytics-stats">
         {data?.length === 0 && (
           <PanelMessage
             title={t(
@@ -389,10 +275,40 @@ export const RenderAnalytics: FC<{
             key={`analytics-${index}`}
             item={item}
             total={totals[index]}
-            index={index}
           />
         ))}
       </div>
+      {overview && (
+        <ChartLine
+          className="analytics-chart"
+          surface={mode === 'light' ? 'light' : 'dark'}
+          accent="#00D9FF"
+          radius={20}
+          icon={null}
+          title={overview.title}
+          description={t('last_n_days', `Last ${date} days`)}
+          data={overview.rows}
+          index="date"
+          series={overview.series.map((item, index) => ({
+            ...item,
+            texture: 'solid' as const,
+            color:
+              index === 0
+                ? '#00D9FF'
+                : mode === 'light'
+                ? '#B4B4BC'
+                : '#8B8B93',
+          }))}
+          fill="gradient"
+          height={220}
+          strokeWidth={2}
+          showLegend={overview.series.length > 1}
+          showPoints="none"
+          total="none"
+          animate
+          valueFormat="compact"
+        />
+      )}
     </div>
   );
 };

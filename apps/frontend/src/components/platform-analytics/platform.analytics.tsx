@@ -8,14 +8,11 @@ import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { RenderAnalytics } from '@gitroom/frontend/components/platform-analytics/render.analytics';
-import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import useCookie from 'react-use-cookie';
-import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
 const allowedIntegrations = [
   'facebook',
@@ -39,7 +36,6 @@ export const PlatformAnalytics = () => {
   const [current, setCurrent] = useState(0);
   const [key, setKey] = useState(7);
   const [refresh, setRefresh] = useState(false);
-  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   const toaster = useToaster();
   const load = useCallback(async () => {
     const controller = new AbortController();
@@ -158,16 +154,61 @@ export const PlatformAnalytics = () => {
     return options[0]?.key;
   }, [key, currentIntegration]);
 
+  const pickChannel = (integration: (typeof sortedIntegrations)[number], index: number) => {
+    if (integration.refreshNeeded) {
+      toaster.show(
+        'Please refresh the integration from the calendar',
+        'warning'
+      );
+      return;
+    }
+    setRefresh(true);
+    setTimeout(() => {
+      setRefresh(false);
+    }, 10);
+    setCurrent(index);
+  };
+
+  const channelMark = (integration: (typeof sortedIntegrations)[number]) => (
+    <span
+      className={clsx(
+        'analytics-channel-mark',
+        integration.disabled && 'is-disabled'
+      )}
+    >
+      {(integration.inBetweenSteps || integration.refreshNeeded) && (
+        <span className="analytics-channel-warn">!</span>
+      )}
+      <ImageWithFallback
+        fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
+        src={integration.picture}
+        className="avatar"
+        alt={integration.identifier}
+        width={36}
+        height={36}
+      />
+      <SafeImage
+        src={`/icons/platforms/${integration.identifier}.png`}
+        className="badge"
+        alt=""
+        width={14}
+        height={14}
+      />
+    </span>
+  );
+
   if (error) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
-        <div className="text-[24px] max-w-[640px]">
-          {error instanceof Error
-            ? error.message
-            : t(
-                'analytics_load_error',
-                'Could not load analytics. Refresh the page and try again.'
-              )}
+      <div className="analytics-screen">
+        <div className="analytics-main analytics-state">
+          <p>
+            {error instanceof Error
+              ? error.message
+              : t(
+                  'analytics_load_error',
+                  'Could not load analytics. Refresh the page and try again.'
+                )}
+          </p>
         </div>
       </div>
     );
@@ -175,168 +216,118 @@ export const PlatformAnalytics = () => {
 
   if (isLoading || !data) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
-        <ScheduleLoading />
+      <div className="analytics-screen">
+        <div className="analytics-main analytics-state">
+          <ScheduleLoading />
+        </div>
       </div>
     );
   }
 
   if (!sortedIntegrations.length) {
     return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all flex-1 justify-center items-center text-center">
-        <div>
-          <img src="/peoplemarketplace.svg" />
+      <div className="analytics-screen">
+        <div className="analytics-main analytics-state">
+          <img src="/peoplemarketplace.svg" alt="" />
+          <h1>
+            {t('can_t_show_analytics_yet', "Can't show analytics yet")}
+          </h1>
+          <p>
+            {t(
+              'you_have_to_add_social_media_channels',
+              'You have to add Social Media channels'
+            )}
+          </p>
+          <p className="analytics-support">
+            {t('supported', 'Supported:')}{' '}
+            {allowedIntegrations.map((p) => capitalize(p)).join(', ')}. Bluesky
+            and Mastodon do not provide account analytics here.
+          </p>
+          <Button onClick={() => router.push('/launches')}>
+            {t(
+              'go_to_the_calendar_to_add_channels',
+              'Go to the calendar to add channels'
+            )}
+          </Button>
         </div>
-        <div className="text-[48px]">
-          {t('can_t_show_analytics_yet', "Can't show analytics yet")}
-          <br />
-          {t(
-            'you_have_to_add_social_media_channels',
-            'You have to add Social Media channels'
-          )}
-        </div>
-        <div className="text-[20px] max-w-[720px]">
-          {t('supported', 'Supported:')}{' '}
-          {allowedIntegrations.map((p) => capitalize(p)).join(', ')}. Bluesky
-          and Mastodon do not provide account analytics here.
-        </div>
-        <Button onClick={() => router.push('/launches')}>
-          {t(
-            'go_to_the_calendar_to_add_channels',
-            'Go to the calendar to add channels'
-          )}
-        </Button>
       </div>
     );
   }
+
+  if (!currentIntegration) {
+    return null;
+  }
+
+  const platformLabel = currentIntegration.identifier
+    .split('-')
+    .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
   return (
-    <>
-      <div
-        className={clsx(
-          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
-        )}
-      >
-        <div className="flex gap-[12px] flex-col">
-          <div className="flex items-center">
-            <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500]">
-              {t('channels')}
-            </h2>
-            <div
-              onClick={() => setCollapseMenu(collapseMenu === '1' ? '0' : '1')}
-              className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-full w-[28px] h-[28px] flex items-center justify-center cursor-pointer select-none hover:bg-[#00D9FF]/15 hover:text-[#00D9FF] transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="7"
-                height="13"
-                viewBox="0 0 7 13"
-                fill="none"
-              >
-                <path
-                  d="M6 11.5L1 6.5L6 1.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
+    <div className="analytics-screen">
+      <div className="analytics-channels">
+        <h2>{t('channels')}</h2>
+        <div className="analytics-channel-list">
           {sortedIntegrations.map((integration, index) => (
-            <div
+            <button
+              type="button"
               key={integration.id}
-              onClick={() => {
-                if (integration.refreshNeeded) {
-                  toaster.show(
-                    'Please refresh the integration from the calendar',
-                    'warning'
-                  );
-                  return;
-                }
-                setRefresh(true);
-                setTimeout(() => {
-                  setRefresh(false);
-                }, 10);
-                setCurrent(index);
-              }}
+              onClick={() => pickChannel(integration, index)}
               className={clsx(
-                'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-e-[8px]',
-                currentIntegration.id !== integration.id &&
-                  'opacity-20 hover:opacity-100 cursor-pointer'
+                'analytics-channel',
+                currentIntegration.id === integration.id && 'is-selected',
+                integration.disabled && 'is-disabled'
               )}
             >
-              <div
-                className={clsx(
-                  'relative rounded-full flex justify-center items-center gap-[6px]',
-                  integration.disabled && 'opacity-50'
-                )}
-              >
-                {(integration.inBetweenSteps || integration.refreshNeeded) && (
-                  <div className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                    <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
-                      !
-                    </div>
-                    <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
-                  </div>
-                )}
-                <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
-                  <SVGLine />
-                </div>
-                <ImageWithFallback
-                  fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
-                  src={integration.picture}
-                  className="rounded-[8px]"
-                  alt={integration.identifier}
-                  width={36}
-                  height={36}
-                />
-                <SafeImage
-                  src={`/icons/platforms/${integration.identifier}.png`}
-                  className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
-                  alt={integration.identifier}
-                  width={18.41}
-                  height={18.41}
-                />
-              </div>
-              <div
-                className={clsx(
-                  'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden',
-                  integration.disabled && 'opacity-50'
-                )}
-              >
-                {integration.name}
-              </div>
-            </div>
+              {channelMark(integration)}
+              <span className="analytics-channel-name">{integration.name}</span>
+            </button>
           ))}
         </div>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
-        {!!options.length && (
-          <div className="flex-1 flex flex-col gap-[14px]">
-            <div className="max-w-[200px]">
-              <Select
-                label=""
-                name="date"
-                disableForm={true}
-                hideErrors={true}
-                onChange={(e) => setKey(+e.target.value)}
-              >
+      <div className="analytics-main">
+        <div className="analytics-head">
+          <h1>{t('analytics', 'Analytics')}</h1>
+          <div className="analytics-head-row">
+            <p className="analytics-sub">
+              {currentIntegration.name} · {platformLabel}
+            </p>
+            {!!options.length && (
+              <div className="analytics-range" role="group">
                 {options.map((option) => (
-                  <option key={option.key} value={option.key}>
+                  <button
+                    type="button"
+                    key={option.key}
+                    className={keys === option.key ? 'is-selected' : ''}
+                    onClick={() => setKey(option.key)}
+                  >
                     {option.value}
-                  </option>
+                  </button>
                 ))}
-              </Select>
-            </div>
-            <div className="flex-1">
-              {!!keys && !!currentIntegration && !refresh && (
-                <RenderAnalytics integration={currentIntegration} date={keys} />
-              )}
-            </div>
+              </div>
+            )}
           </div>
+        </div>
+        <div className="analytics-strip">
+          {sortedIntegrations.map((integration, index) => (
+            <button
+              type="button"
+              key={integration.id}
+              aria-label={integration.name}
+              onClick={() => pickChannel(integration, index)}
+              className={clsx(
+                currentIntegration.id === integration.id && 'is-selected',
+                integration.disabled && 'is-disabled'
+              )}
+            >
+              {channelMark(integration)}
+            </button>
+          ))}
+        </div>
+        {!!keys && !!currentIntegration && !refresh && (
+          <RenderAnalytics integration={currentIntegration} date={keys} />
         )}
       </div>
-    </>
+    </div>
   );
 };
