@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, RefObject, useCallback, useEffect, useState } from 'react';
 import {
   SelectedIntegrations,
   useLaunchStore,
@@ -71,9 +71,6 @@ export const SelectCurrent: FC = () => {
     }))
   );
 
-  const contentRef = useRef<HTMLDivElement>(null);
-  const hasScroll = useHasScroll(contentRef);
-
   const removeSocial = useCallback(
     (sIntegration: Integrations) => async (e: any) => {
       e.stopPropagation();
@@ -99,11 +96,10 @@ export const SelectCurrent: FC = () => {
 
   return (
     <>
-      <div className="select-none left-0 absolute w-full z-[100] px-[20px]">
+      <div className="po-current select-none left-0 absolute w-full z-[100] px-[20px]">
         <div
-          ref={contentRef}
           className={clsx(
-            'flex gap-[6px] w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            'po-current-row flex gap-[8px] w-full flex-wrap',
             locked && 'opacity-50 pointer-events-none'
           )}
         >
@@ -112,16 +108,25 @@ export const SelectCurrent: FC = () => {
               setHide(true);
               setCurrent('global');
             }}
+            aria-label={t(
+              'you_are_in_global_editing_mode',
+              'You are in global editing mode'
+            )}
+            data-tooltip-id="tooltip"
+            data-tooltip-content={t(
+              'you_are_in_global_editing_mode',
+              'You are in global editing mode'
+            )}
             className={clsx(
-              'po-global cursor-pointer flex gap-[8px] h-[40px] justify-center items-center bg-newBgColorInner',
+              'po-global cursor-pointer flex gap-[8px] h-[44px] justify-center items-center bg-newBgColorInner',
               current !== 'global'
-                ? 'text-[#A3A3A3] rounded-[14px] w-[40px] border border-newBorder'
+                ? 'text-[#A3A3A3] rounded-full w-[44px] border border-newBorder'
                 : 'po-global-on rounded-[18px] px-[12px] border border-[#00D9FF] text-[#00D9FF]'
             )}
           >
             <GlobalIcon />
             {current === 'global' && (
-              <span className="text-[13px] font-[600] whitespace-nowrap">
+              <span className="po-global-label text-[13px] font-[600] whitespace-nowrap">
                 {t('you_are_in_global_editing_mode', 'You are in global editing mode')}
               </span>
             )}
@@ -134,7 +139,7 @@ export const SelectCurrent: FC = () => {
               }}
               key={integration.id}
               className={clsx(
-                'po-selected border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[14px] items-center bg-newBgColorInner justify-center',
+                'po-selected border cursor-pointer relative flex gap-[8px] w-[44px] h-[44px] rounded-full items-center bg-newBgColorInner justify-center',
                 current === integration.id
                   ? 'border-[#00D9FF] text-[#00D9FF]'
                   : 'border-newBorder'
@@ -142,9 +147,10 @@ export const SelectCurrent: FC = () => {
             >
               <div
                 onClick={removeSocial(integration)}
-                className="absolute justify-center items-center flex w-[8px] h-[8px] -top-[1px] -start-[3px] bg-red-500 rounded-full text-white text-[8px]"
+                className="po-chip-remove"
+                aria-label={t('remove', 'Remove')}
               >
-                X
+                <span aria-hidden>×</span>
               </div>
               <IsGlobal id={integration.id} />
               <div
@@ -158,10 +164,10 @@ export const SelectCurrent: FC = () => {
               >
                 <SafeImage
                   src={integration.picture || '/no-picture.jpg'}
-                  className="rounded-full min-w-[26px]"
+                  className="rounded-full w-[36px] h-[36px] min-w-[36px] object-cover"
                   alt={integration.identifier}
-                  width={26}
-                  height={26}
+                  width={36}
+                  height={36}
                   onError={(e) => {
                     e.currentTarget.src = '/no-picture.jpg';
                     e.currentTarget.srcset = '/no-picture.jpg';
@@ -187,7 +193,7 @@ export const SelectCurrent: FC = () => {
           ))}
         </div>
       </div>
-      <div className={clsx(hasScroll ? 'h-[55px]' : 'h-[40px]')} />
+      <div className="po-current-spacer h-[44px]" />
     </>
   );
 };

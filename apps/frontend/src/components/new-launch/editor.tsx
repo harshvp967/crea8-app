@@ -60,11 +60,9 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { InformationComponent } from '@gitroom/frontend/components/launches/information.component';
 import {
   LockIcon,
-  ConnectionLineIcon,
   ResetIcon,
   TrashIcon,
   EmojiIcon,
-  DelayIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { DelayComponent } from '@gitroom/frontend/components/new-launch/delay.component';
 
@@ -436,65 +434,45 @@ export const EditorWrapper: FC<{
       {items.map((g, index) => (
         <div
           key={g.id}
-        className={clsx(
-          'po-editor-card relative flex flex-col gap-[12px] bg-newSettings',
-          !canEdit && !isCreateSet && 'blur-s',
-          ((!canEdit && index > 0) || (!comments && index > 0)) && 'hidden'
-        )}
-      >
-          <div className="flex gap-[5px] w-full">
-            <div className="flex-1 flex w-full">
-              {index > 0 && (
-                <div className="flex justify-center pl-[12px] text-newSep">
-                  <ConnectionLineIcon />
-                </div>
-              )}
-              <Editor
-                comments={comments}
-                editorType={editor}
-                allValues={items}
-                onChange={changeValue(index)}
-                key={index}
-                num={index}
-                totalPosts={global.length}
-                value={g.content}
-                pictures={g.media}
-                setImages={changeImages(index)}
-                autoComplete={canEdit}
-                validateChars={true}
-                identifier={internalFromAll?.identifier || 'global'}
-                totalChars={totalChars}
-                appendImages={appendImages(index)}
-                dummy={dummy}
-                selectedIntegration={selectedIntegration}
-                chars={chars}
-                childButton={
-                  <>
-                    {(canEdit && items.length - 1 === index) || !comments ? (
-                      <div className="flex items-center">
-                        <div className="flex-1">
-                          {comments && (
-                            <AddPostButton
-                              num={index}
-                              onClick={addValue(index)}
-                              postComment={postComment}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    ) : null}
-                  </>
-                }
-              />
-            </div>
-            {comments && (
-              <div className="flex flex-col items-center gap-[10px] pe-[12px]">
-                <UpDownArrow
-                  isUp={index !== 0}
-                  isDown={index !== items.length - 1}
-                  onChange={changeOrder(index)}
-                />
-                {items.length > 1 && (
+          className={clsx(
+            'po-editor-card relative flex flex-col min-w-0 w-full',
+            !canEdit && !isCreateSet && 'blur-s',
+            ((!canEdit && index > 0) || (!comments && index > 0)) && 'hidden'
+          )}
+        >
+          <Editor
+            comments={comments}
+            editorType={editor}
+            allValues={items}
+            onChange={changeValue(index)}
+            key={index}
+            num={index}
+            totalPosts={global.length}
+            value={g.content}
+            pictures={g.media}
+            setImages={changeImages(index)}
+            autoComplete={canEdit}
+            validateChars={true}
+            identifier={internalFromAll?.identifier || 'global'}
+            totalChars={totalChars}
+            appendImages={appendImages(index)}
+            dummy={dummy}
+            selectedIntegration={selectedIntegration}
+            chars={chars}
+            footerExtra={
+              comments && items.length > 1 ? (
+                <div className="flex items-center gap-[10px]">
+                  {index > 0 && (
+                    <DelayComponent
+                      currentIndex={index}
+                      currentDelay={g.delay}
+                    />
+                  )}
+                  <UpDownArrow
+                    isUp={index !== 0}
+                    isDown={index !== items.length - 1}
+                    onChange={changeOrder(index)}
+                  />
                   <TrashIcon
                     onClick={deletePost(index)}
                     data-tooltip-id="tooltip"
@@ -504,15 +482,19 @@ export const EditorWrapper: FC<{
                     )}
                     className="cursor-pointer text-[#FF3F3F]"
                   />
-                )}
-                {index > 0 && (
-                  <DelayComponent currentIndex={index} currentDelay={g.delay} />
-                )}
-              </div>
-            )}
-          </div>
+                </div>
+              ) : null
+            }
+          />
         </div>
       ))}
+      {canEdit && !!comments && items.length > 0 && (
+        <AddPostButton
+          num={items.length - 1}
+          onClick={addValue(items.length - 1)}
+          postComment={postComment}
+        />
+      )}
     </div>
   );
 };
@@ -536,6 +518,7 @@ export const Editor: FC<{
   dummy: boolean;
   chars: Record<string, number>;
   childButton?: React.ReactNode;
+  footerExtra?: React.ReactNode;
 }> = (props) => {
   const {
     editorType = 'normal',
@@ -548,6 +531,7 @@ export const Editor: FC<{
     dummy,
     chars,
     childButton,
+    footerExtra,
     comments,
   } = props;
   const [id] = useState(makeId(10));
@@ -710,15 +694,14 @@ export const Editor: FC<{
               {t('drop_files_here_to_upload', 'Drop your files here to upload')}
             </div>
             <div className="po-editor-tools flex items-center gap-[8px] px-[10px] bg-newBgColorInner relative z-[99]">
-              <div className="editor-toolbar flex gap-[5px]">
-                <SignatureBox editor={editorRef?.current?.editor} />
+              <div className="editor-toolbar flex gap-[5px] min-w-0 flex-wrap">
                 {editorType !== 'none' && (
                   <>
-                    <UText
+                    <BoldText
                       editor={editorRef?.current?.editor}
                       currentValue={props.value!}
                     />
-                    <BoldText
+                    <UText
                       editor={editorRef?.current?.editor}
                       currentValue={props.value!}
                     />
@@ -727,7 +710,7 @@ export const Editor: FC<{
                 {(editorType === 'markdown' || editorType === 'html') &&
                   identifier !== 'telegram' && (
                     <>
-                      <AComponent
+                      <HeadingComponent
                         editor={editorRef?.current?.editor}
                         currentValue={props.value!}
                       />
@@ -735,7 +718,7 @@ export const Editor: FC<{
                         editor={editorRef?.current?.editor}
                         currentValue={props.value!}
                       />
-                      <HeadingComponent
+                      <AComponent
                         editor={editorRef?.current?.editor}
                         currentValue={props.value!}
                       />
@@ -749,6 +732,7 @@ export const Editor: FC<{
                 >
                   <EmojiIcon />
                 </div>
+                <SignatureBox editor={editorRef?.current?.editor} />
                 <div className="relative">
                   <div className="absolute z-[500] top-[40px] -start-[50px]">
                     <EmojiPicker
@@ -802,13 +786,13 @@ export const Editor: FC<{
                 />
               </div>
             </div>
-            <div className="flex bg-newBgColorInner cursor-default">
+            <div className="po-editor-foot flex items-end bg-newBgColorInner cursor-default">
               {setImages && (
                 <MultiMediaComponent
                   mediaNotAvailable={num > 0 && comments === 'no-media'}
                   allData={allValues}
                   text={valueWithoutHtml}
-                  label={t('attachments', 'Attachments')}
+                  label=""
                   description=""
                   value={props.pictures}
                   dummy={dummy}
@@ -819,6 +803,11 @@ export const Editor: FC<{
                   onOpen={() => {}}
                   onClose={() => {}}
                 />
+              )}
+              {footerExtra && (
+                <div className="po-card-extra flex items-center gap-[10px] px-[12px] min-h-[40px]">
+                  {footerExtra}
+                </div>
               )}
             </div>
           </div>

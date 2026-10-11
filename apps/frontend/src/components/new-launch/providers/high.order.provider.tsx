@@ -21,8 +21,6 @@ import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import SafeImage from '@gitroom/react/helpers/safe.image';
-
 class Empty {
   @IsOptional()
   empty: string;
@@ -288,31 +286,7 @@ export const withProvider = function <T extends object>(params: {
               ))}
             {(SettingsComponent || !!data?.internalPlugs?.length) &&
               createPortal(
-                <div data-id={props.id} className={isGlobal ? 'bg-newSettings pb-[12px] px-[12px]' : 'hidden bg-newSettings px-[12px] pb-[12px]'}>
-                  {isGlobal && (
-                    <style>{`#wrapper-settings {display: flex !important} #social-empty {display: block !important;}`}</style>
-                  )}
-                  {isGlobal && (
-                    <div className="flex py-[20px] items-center gap-[15px]">
-                      <div className="relative">
-                        <SafeImage
-                          alt={selectedIntegration?.integration.name!}
-                          width={42}
-                          height={42}
-                          className="min-w-[42px] min-h-[42px] w-[42px] h-[42px] rounded-full"
-                          src={selectedIntegration?.integration.picture}
-                        />
-                        <SafeImage
-                          alt={selectedIntegration?.integration.identifier}
-                          width={16}
-                          height={16}
-                          className="rounded-[16px] min-w-[16px] min-h-[16px] w-[16px] h-[16px] absolute bottom-0 end-0"
-                          src={`/icons/platforms/${selectedIntegration?.integration.identifier}.png`}
-                        />
-                      </div>
-                      <div className="text-[20px]">{selectedIntegration?.integration.name}</div>
-                    </div>
-                  )}
+                <div data-id={props.id} className="hidden px-[12px] pb-[12px]">
                   <SettingsComponent />
                   {!!data?.internalPlugs?.length && !dummy && (
                     <InternalChannels plugs={data?.internalPlugs} />

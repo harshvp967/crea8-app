@@ -420,7 +420,7 @@ export const MediaBox: FC<{
           'relative cursor-pointer flex gap-[8px] h-[44px] px-[16px] justify-center items-center font-[600] text-[14px]',
           standalone
             ? 'media-upload'
-            : 'changeColor bg-transparent border border-[#00D9FF] text-[#00D9FF] rounded-full hover:bg-[#00D9FF]/10 transition-colors'
+            : 'po-upload-btn bg-transparent border border-newBorder text-textColor rounded-[18px] hover:bg-newBgColor transition-colors'
         )}
       >
         {loading ? (
@@ -512,7 +512,8 @@ export const MediaBox: FC<{
         <div
           className={clsx(
             'w-full pointer-events-none relative mt-[5px] mb-[5px]',
-            standalone && 'media-progress'
+            standalone && 'media-progress',
+            !standalone && !loading && 'hidden'
           )}
         >
           <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
@@ -532,7 +533,7 @@ export const MediaBox: FC<{
         </div>
         <div
           className={clsx(
-            standalone ? 'media-scroller' : 'flex-1 relative',
+            standalone ? 'media-scroller' : 'flex-1 min-h-0 flex flex-col',
             !standalone &&
               libraryEmpty &&
               'bg-newTextColor/[0.02] rounded-[12px]'
@@ -541,7 +542,7 @@ export const MediaBox: FC<{
           <div
             className={clsx(
               !standalone &&
-                'absolute -left-[3px] -top-[3px] withp3 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner',
+                'po-library-scroll flex-1 min-h-0 overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner',
               !standalone &&
                 libraryEmpty &&
                 'flex justify-center items-center gap-[20px] flex-col'
@@ -625,18 +626,16 @@ export const MediaBox: FC<{
               </div>
             )}
             {isLoading && !standalone && (
-              <>
-                {[...new Array(16)].map((_, i) => (
-                  <div
-                    className={clsx(
-                      'px-[3px] py-[3px] float-left rounded-[6px] cursor-pointer w8-max aspect-square'
-                    )}
-                    key={i}
-                  >
-                    <div className="w-full h-full bg-newSep rounded-[6px] animate-pulse" />
+              <div className="po-media-grid">
+                {[...new Array(6)].map((_, i) => (
+                  <div className="po-media-card" key={i}>
+                    <div className="po-media-thumb bg-newSep animate-pulse" />
+                    <div className="po-file-name">
+                      <span className="inline-block h-[10px] w-[70%] rounded bg-newSep" />
+                    </div>
                   </div>
                 ))}
-              </>
+              </div>
             )}
             {standalone && !isLoading && (
               <div className="media-grid">
@@ -737,70 +736,80 @@ export const MediaBox: FC<{
                 })}
               </div>
             )}
-            {!standalone &&
-              visibleMedia.map((media: any) => (
-                <div
-                  className={clsx(
-                    'group px-[3px] py-[3px] float-left rounded-[6px] w8-max aspect-square',
-                    !standalone && 'cursor-pointer'
-                  )}
-                  key={media.id}
-                >
-                  <div
-                    className={clsx(
-                      'w-full h-full rounded-[6px] border-[4px] relative',
-                      !!selected.find((p) => p.id === media.id)
-                        ? 'border-[#00D9FF]'
-                        : 'border-transparent'
-                    )}
-                    onClick={addRemoveSelected(media)}
-                  >
-                    {!!selected.find((p: any) => p.id === media.id) ? (
-                      <div className="text-[#0a0a0a] flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#00D9FF] absolute -bottom-[10px] -end-[10px]">
-                        {selected.findIndex((z: any) => z.id === media.id) + 1}
-                      </div>
-                    ) : (
-                      <DeleteCircleIcon
-                        className="cursor-pointer hidden z-[100] group-hover:block absolute -top-[5px] -end-[5px]"
-                        onClick={deleteImage(media)}
-                      />
-                    )}
-                    <div className="absolute bottom-[10px] end-[10px] z-[100]">{media.originalName}</div>
-                    <div className="w-full h-full rounded-[6px] overflow-hidden relative">
-                      <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
-                        <div
-                          onClick={maximize(media)}
-                          className="cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all"
-                        >
-                          <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
-                              fill="#F1F5F9"
-                            />
+            {!standalone && !isLoading && (
+              <div className="po-media-grid">
+                {visibleMedia.map((media: any) => {
+                  const fileLabel = media.originalName || media.name || '';
+                  const picked = !!selected.find((p: any) => p.id === media.id);
+                  return (
+                    <div
+                      className={clsx(
+                        'po-media-card group',
+                        picked && 'is-selected'
+                      )}
+                      key={media.id}
+                      onClick={addRemoveSelected(media)}
+                    >
+                      <div className="po-media-thumb">
+                        {picked ? (
+                          <div className="po-media-check" aria-hidden>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path
+                                d="M2.2 6.2 4.7 8.8 9.8 3.2"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </div>
+                        ) : (
+                          <DeleteCircleIcon
+                            className="cursor-pointer hidden z-[100] group-hover:block absolute top-[8px] end-[8px]"
+                            onClick={deleteImage(media)}
+                          />
+                        )}
+                        <div className="po-media-ph" aria-hidden>
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                            <rect x="3.5" y="5" width="17" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                            <circle cx="9" cy="10" r="1.3" fill="currentColor" />
+                            <path d="M4 16.5 8.2 12l3.3 3 2.8-2.2L20 16.5" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
                           </svg>
                         </div>
+                        <button
+                          type="button"
+                          className="po-media-zoom"
+                          onClick={maximize(media)}
+                          aria-label={t('preview', 'Preview')}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                            <path
+                              d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                        </button>
+                        {hasExtension(media.path, 'mp4') ? (
+                          <VideoFrame url={mediaDirectory.set(media.path)} />
+                        ) : (
+                          <img
+                            className="po-media-img"
+                            src={mediaDirectory.set(media.path)}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.classList.add('is-broken');
+                            }}
+                          />
+                        )}
                       </div>
-                      {hasExtension(media.path, 'mp4') ? (
-                        <VideoFrame url={mediaDirectory.set(media.path)} />
-                      ) : (
-                        <img
-                          width="100%"
-                          height="100%"
-                          className="w-full h-full object-cover"
-                          src={mediaDirectory.set(media.path)}
-                          alt="media"
-                        />
-                      )}
+                      <div className="po-file-name" title={fileLabel}>
+                        {fileLabel}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
         {(data?.pages || 0) > 1 && (
@@ -864,6 +873,7 @@ export const MultiMediaComponent: FC<{
   onClose?: () => void;
   toolBar?: React.ReactNode;
   information?: React.ReactNode;
+  extra?: React.ReactNode;
   onChange: (event: {
     target: {
       name: string;
@@ -888,6 +898,7 @@ export const MultiMediaComponent: FC<{
     label,
     toolBar,
     information,
+    extra,
     mediaNotAvailable,
   } = props;
   const user = useUser();
@@ -1096,6 +1107,11 @@ export const MultiMediaComponent: FC<{
           {information && (
             <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
               {information}
+            </div>
+          )}
+          {extra && (
+            <div className="po-card-extra ms-auto flex items-center gap-[10px] py-[8px]">
+              {extra}
             </div>
           )}
         </div>
