@@ -133,9 +133,9 @@ export const PlugPop: FC<{
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(submit)}>
+      <form className="plugs-form" onSubmit={form.handleSubmit(submit)}>
         <div className="relative mx-auto">
-          <div className="my-[20px]">{plug.description}</div>
+          <div className="plugs-modal-copy">{plug.description}</div>
           <div>
             {plug.fields.map((field) => (
               <div key={field.name}>
@@ -145,7 +145,6 @@ export const PlugPop: FC<{
                   <Input
                     name={field.name}
                     label={field.description}
-                    className="w-full mt-[8px] p-[8px] border border-tableBorder rounded-md text-black"
                     placeholder={field.placeholder}
                     type={field.type}
                   />
@@ -194,27 +193,54 @@ export const PlugItem: FC<{
     },
     [activated]
   );
+  const saved = useMemo(() => {
+    if (!data?.data) {
+      return {} as Record<string, string>;
+    }
+    try {
+      return JSON.parse(data.data).reduce(
+        (acc: Record<string, string>, current: { name: string; value: string }) => {
+          acc[current.name] = current.value;
+          return acc;
+        },
+        {}
+      );
+    } catch {
+      return {} as Record<string, string>;
+    }
+  }, [data?.data]);
+  const t = useT();
   return (
     <div
       onClick={() => addPlug(data)}
       key={plug.title}
-      className="w-full h-[300px] rounded-[8px] bg-newTableHeader hover:bg-newTableBorder"
+      className={clsx('plugs-card', activated && 'is-on')}
     >
-      <div key={plug.title} className="p-[16px] h-full flex flex-col flex-1">
-        <div className="flex">
-          <div className="text-[20px] mb-[8px] flex-1">{plug.title}</div>
-          {!!data && (
-            <div onClick={(e) => e.stopPropagation()}>
-              <Slider
-                value={activated ? 'on' : 'off'}
-                onChange={changeActivated}
-                fill={true}
-              />
-            </div>
-          )}
-        </div>
-        <div className="flex-1">{plug.description}</div>
-        <Button>{!data ? 'Set Plug' : 'Edit Plug'}</Button>
+      <div className="plugs-card-head">
+        <h3>{plug.title}</h3>
+        {!!data && (
+          <div className="plugs-toggle" onClick={(e) => e.stopPropagation()}>
+            <Slider
+              value={activated ? 'on' : 'off'}
+              onChange={changeActivated}
+              fill={true}
+            />
+          </div>
+        )}
+      </div>
+      <p>{plug.description}</p>
+      {plug.fields
+        .filter((field) => field.type !== 'richtext')
+        .map((field) => (
+          <div className="plugs-value" key={field.name}>
+            <span>{field.placeholder}</span>
+            <div>{saved[field.name] || ''}</div>
+          </div>
+        ))}
+      <div>
+        <Button className="plugs-edit" secondary>
+          {!data ? t('set_plug', 'Set Plug') : t('edit_plug', 'Edit Plug')}
+        </Button>
       </div>
     </div>
   );
@@ -259,11 +285,30 @@ export const Plug = () => {
       },
     [data]
   );
+  const t = useT();
   if (isLoading) {
     return null;
   }
+  if (!plug?.plugs?.length || !plug.plugs.some((item) => item.title)) {
+    return (
+      <div className="plugs-empty">
+        <h2>
+          {t(
+            'there_are_not_plugs_matching_your_channels',
+            'There are not plugs matching your channels'
+          )}
+        </h2>
+        <p>
+          {t(
+            'you_have_to_add_x_linkedin_page_threads_or_bluesky',
+            'You have to add: X, LinkedIn Page, Threads or Bluesky'
+          )}
+        </p>
+      </div>
+    );
+  }
   return (
-    <div className="grid grid-cols-3 gap-[30px]">
+    <div className="plugs-grid">
       {plug.plugs.map((p) => (
         <PlugItem
           key={p.title + '-' + plug.providerId}
