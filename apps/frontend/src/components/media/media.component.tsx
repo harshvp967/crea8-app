@@ -202,6 +202,21 @@ export const showMediaBox = (
 };
 const CHUNK_SIZE = 1024 * 1024;
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
+const libraryImageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg'];
+
+function libraryKind(path: string, name = '') {
+  const pathKnown =
+    hasExtension(path, 'mp4') ||
+    libraryImageExt.some((ext) => hasExtension(path, ext));
+  const labeled = pathKnown ? path : name || path;
+  if (hasExtension(labeled, 'mp4')) {
+    return 'video';
+  }
+  if (libraryImageExt.some((ext) => hasExtension(labeled, ext))) {
+    return 'image';
+  }
+  return 'file';
+}
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
   standalone?: boolean;
@@ -401,54 +416,102 @@ export const MediaBox: FC<{
       <button
         disabled={loading}
         onClick={() => uploaderRef?.current?.click()}
-        className="relative cursor-pointer bg-transparent border border-[#00D9FF] text-[#00D9FF] changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-full font-[600] text-[14px] hover:bg-[#00D9FF]/10 transition-colors"
+        className={clsx(
+          'relative cursor-pointer flex gap-[8px] h-[44px] px-[16px] justify-center items-center font-[600] text-[14px]',
+          standalone
+            ? 'media-upload'
+            : 'changeColor bg-transparent border border-[#00D9FF] text-[#00D9FF] rounded-full hover:bg-[#00D9FF]/10 transition-colors'
+        )}
       >
         {loading ? (
           <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
             <div className="animate-spin h-[20px] w-[20px] border-4 border-[#00D9FF] border-t-transparent rounded-full" />
           </div>
+        ) : standalone ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M12 16V4M12 4l-4 4M12 4l4 4M5 20h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         ) : (
           <PlusIcon size={14} />
         )}
         <div className={loading ? 'invisible' : undefined}>{t('upload', 'Upload')}</div>
       </button>
     );
-  }, [t, loading]);
+  }, [t, loading, standalone]);
+
+  const visibleMedia = (data?.results || []).filter((f: any) => {
+    if (type === 'video') {
+      return hasExtension(f.path, 'mp4');
+    }
+    if (type === 'image') {
+      return !hasExtension(f.path, 'mp4');
+    }
+    return true;
+  });
+  const libraryEmpty = !isLoading && !data?.results?.length;
 
   return (
-    <DropFiles disabled={loading} className="flex flex-col flex-1" onDrop={dragAndDrop}>
-      <div className="flex flex-col flex-1">
+    <DropFiles
+      disabled={loading}
+      className={clsx('flex flex-col flex-1 min-h-0', standalone && 'media-library-body')}
+      onDrop={dragAndDrop}
+    >
+      <div className={clsx('flex flex-col flex-1 min-h-0', standalone && 'media-stack')}>
+        <input
+          type="file"
+          ref={uploaderRef}
+          onChange={addToUpload}
+          className="hidden"
+          multiple={true}
+        />
+        {standalone ? (
+          <div className="media-head">
+            <h1>{t('media_library', 'Media Library')}</h1>
+            <div className="media-tools">
+              <label className="media-search">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M16 16.5L20 20.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t('search_media_by_name', 'Search by file name')}
+                />
+              </label>
+              {btn}
+              <ThirdPartyMediaLibrary onImported={() => mutate()} />
+            </div>
+          </div>
+        ) : (
+          <div
+            className={clsx(
+              'flex items-center gap-[12px]',
+              libraryEmpty && !debouncedSearch && 'hidden'
+            )}
+          >
+            <div className="flex-1">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('search_media_by_name', 'Search by file name')}
+                className="w-full h-[44px] px-[16px] rounded-full bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#00D9FF]"
+              />
+            </div>
+            <div className="flex gap-[8px]">
+              {btn}
+              <ThirdPartyMediaLibrary onImported={() => mutate()} />
+            </div>
+          </div>
+        )}
         <div
           className={clsx(
-            'flex items-center gap-[12px]',
-            !isLoading &&
-              !data?.results?.length &&
-              !debouncedSearch &&
-              'hidden'
+            'w-full pointer-events-none relative mt-[5px] mb-[5px]',
+            standalone && 'media-progress'
           )}
         >
-          <div className="flex-1">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('search_media_by_name', 'Search by file name')}
-              className="w-full h-[44px] px-[16px] rounded-full bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#00D9FF]"
-            />
-          </div>
-          <input
-            type="file"
-            ref={uploaderRef}
-            onChange={addToUpload}
-            className="hidden"
-            multiple={true}
-          />
-          <div className="flex gap-[8px]">
-            {btn}
-            <ThirdPartyMediaLibrary onImported={() => mutate()} />
-          </div>
-        </div>
-        <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
           <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
             <Dashboard
               height={46}
@@ -466,21 +529,55 @@ export const MediaBox: FC<{
         </div>
         <div
           className={clsx(
-            'flex-1 relative',
-            !isLoading &&
-              !data?.results?.length &&
+            standalone ? 'media-scroller' : 'flex-1 relative',
+            !standalone &&
+              libraryEmpty &&
               'bg-newTextColor/[0.02] rounded-[12px]'
           )}
         >
           <div
             className={clsx(
-              'absolute -left-[3px] -top-[3px] withp3 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner',
-              !isLoading &&
-                !data?.results?.length &&
+              !standalone &&
+                'absolute -left-[3px] -top-[3px] withp3 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner',
+              !standalone &&
+                libraryEmpty &&
                 'flex justify-center items-center gap-[20px] flex-col'
             )}
           >
-            {!isLoading && !data?.results?.length && (
+            {libraryEmpty && (
+              standalone ? (
+                debouncedSearch ? (
+                  <div className="media-empty-note">
+                    <p>
+                      {t(
+                        'no_media_match_search',
+                        'No media matches your search'
+                      )}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="media-drop">
+                    <NoMediaIcon />
+                    <h2>
+                      {t(
+                        'you_dont_have_any_media_yet',
+                        "You don't have any media yet"
+                      )}
+                    </h2>
+                    <p>
+                      {t(
+                        'select_or_upload_pictures_max_1gb',
+                        'Select or upload pictures (maximum 1 GB per upload).'
+                      )}
+                      <br />
+                      {t(
+                        'you_can_drag_drop_pictures',
+                        'You can also drag & drop pictures.'
+                      )}
+                    </p>
+                  </div>
+                )
+              ) : (
               <>
                 <NoMediaIcon />
                 <div className="text-[20px] font-[600]">
@@ -510,8 +607,19 @@ export const MediaBox: FC<{
                   <ThirdPartyMediaLibrary onImported={() => mutate()} />
                 </div>
               </>
+              )
             )}
-            {isLoading && (
+            {isLoading && standalone && (
+              <div className="media-grid" aria-hidden>
+                {[...new Array(12)].map((_, i) => (
+                  <div className="media-tile" key={i}>
+                    <div className="media-thumb media-skel" />
+                    <div className="media-skel-line" />
+                  </div>
+                ))}
+              </div>
+            )}
+            {isLoading && !standalone && (
               <>
                 {[...new Array(16)].map((_, i) => (
                   <div
@@ -525,16 +633,84 @@ export const MediaBox: FC<{
                 ))}
               </>
             )}
-            {data?.results
-              ?.filter((f: any) => {
-                if (type === 'video') {
-                  return hasExtension(f.path, 'mp4');
-                } else if (type === 'image') {
-                  return !hasExtension(f.path, 'mp4');
-                }
-                return true;
-              })
-              .map((media: any) => (
+            {standalone && !isLoading && (
+              <div className="media-grid">
+                {visibleMedia.map((media: any) => {
+                  const kind = libraryKind(
+                    media.path,
+                    media.originalName || media.name || ''
+                  );
+                  const label = media.originalName || media.name || '';
+                  return (
+                    <div className="media-tile" key={media.id}>
+                      <div
+                        className={clsx(
+                          'media-thumb',
+                          !!selected.find((p: any) => p.id === media.id) &&
+                            'is-selected'
+                        )}
+                        onClick={addRemoveSelected(media)}
+                      >
+                        {!!selected.find((p: any) => p.id === media.id) && (
+                          <div className="media-pick">
+                            {selected.findIndex((z: any) => z.id === media.id) +
+                              1}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          className="media-zoom"
+                          onClick={maximize(media)}
+                          aria-label={t('preview', 'Preview')}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden>
+                            <path
+                              d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                        </button>
+                        {kind === 'image' ? (
+                          <img
+                            className="media-img"
+                            src={mediaDirectory.set(media.path)}
+                            alt=""
+                          />
+                        ) : (
+                          <span className="media-kind" aria-hidden>
+                            {kind === 'video' ? (
+                              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 7.5v9l8-4.5-8-4.5z" />
+                              </svg>
+                            ) : (
+                              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                                <path d="M7 3.5h7l5 5V20a1.5 1.5 0 0 1-1.5 1.5h-10.5A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5z" />
+                                <path d="M14 3.5V9h5" />
+                              </svg>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      <div className="media-caption">
+                        <span className="media-name" title={label}>
+                          {label}
+                        </span>
+                        <button
+                          type="button"
+                          className="media-remove"
+                          onClick={deleteImage(media)}
+                          aria-label={t('delete', 'Delete')}
+                        >
+                          <DeleteCircleIcon size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {!standalone &&
+              visibleMedia.map((media: any) => (
                 <div
                   className={clsx(
                     'group px-[3px] py-[3px] float-left rounded-[6px] w8-max aspect-square',
@@ -600,11 +776,13 @@ export const MediaBox: FC<{
           </div>
         </div>
         {(data?.pages || 0) > 1 && (
-          <Pagination
-            current={page}
-            totalPages={data?.pages}
-            setPage={setPage}
-          />
+          <div className={standalone ? 'media-pages' : undefined}>
+            <Pagination
+              current={page}
+              totalPages={data?.pages}
+              setPage={setPage}
+            />
+          </div>
         )}
         {!standalone && (
           <div className="flex justify-end mt-[32px] gap-[8px]">
