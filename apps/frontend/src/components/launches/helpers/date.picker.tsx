@@ -66,22 +66,25 @@ export const DatePicker: FC<{
           <Calendar
             onChange={changeDate('date')}
             value={pickerValue}
+            hideOutsideDates
+            allowLevelChange={false}
+            weekendDays={[]}
             excludeDate={(day) => isPastCalendarDay(day, displayNow())}
             dayClassName={(cell, modifiers) => {
+              if (modifiers.outside) {
+                return 'po-day-out';
+              }
               if (modifiers.selected) {
                 return 'po-day-on';
+              }
+              if (modifiers.disabled) {
+                return 'po-day-past';
               }
               if (
                 dayjs(cell).format('YYYY-MM-DD') ===
                 displayNow().format('YYYY-MM-DD')
               ) {
                 return 'po-day-today';
-              }
-              if (modifiers.disabled) {
-                return 'po-day-past';
-              }
-              if (modifiers.outside) {
-                return 'po-day-out';
               }
               return 'po-day';
             }}

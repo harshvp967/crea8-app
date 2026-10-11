@@ -174,19 +174,16 @@ export const TagsComponentInner: FC<{
         <div className="cursor-pointer">
           <TagIcon />
         </div>
-        <div className="cursor-pointer flex gap-[4px]">
+        <div className="cursor-pointer flex gap-[6px] items-center min-w-0">
           {tagValue.length === 0 ? (
             label
           ) : (
             <>
-              <div
-                className="h-full flex justify-center items-center px-[8px] rounded-[4px]"
-                style={{ backgroundColor: tagValue[0].color }}
-              >
-                <span className="text-shadow-tags text-[#fff]">
-                  {tagValue[0].name}
-                </span>
-              </div>
+              <span
+                className="po-tag-dot"
+                style={{ background: tagValue[0].color }}
+              />
+              <span className="whitespace-nowrap">{tagValue[0].name}</span>
               {tagValue.length > 1 ? <span>+{tagValue.length - 1}</span> : null}
             </>
           )}

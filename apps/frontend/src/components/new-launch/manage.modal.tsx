@@ -332,7 +332,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 item.settingsError ||
                 t('please_fix_your_settings', 'Please fix your settings')
               }`;
-              toaster.show(message, 'warning');
+              toaster.show(message, 'error');
               setIssue({
                 title: t('please_fix_your_settings', 'Please fix your settings'),
                 body: message,
@@ -347,7 +347,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               const message = `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
                 item.errors
               }`;
-              toaster.show(message, 'warning');
+              toaster.show(message, 'error');
               setIssue({
                 title: t('please_fix_your_settings', 'Please fix your settings'),
                 body: message,
@@ -364,7 +364,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 'post_is_too_long',
                 'post is too long, please fix it'
               )}`;
-              toaster.show(message, 'warning');
+              toaster.show(message, 'error');
               setIssue({
                 title: t('post_is_too_long', 'post is too long, please fix it'),
                 body: item.maximumCharacters
@@ -486,7 +486,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   return (
-    <div className={clsx('composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview')}>
+    <div className={clsx('composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview', issue && 'composer-invalid')}>
       <div className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] flex-col min-h-0">
         <div className="arc-grab composer-grab" aria-hidden />
         <div className="composer-tabs" role="tablist">
@@ -538,17 +538,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     {issue && (
                       <div className="po-valid" role="alert">
                         <div className="po-valid-copy">
-                          <div className="po-valid-title">{issue.title}</div>
+                          <div className="po-valid-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                              <path d="M12 3.5 21.5 20.5H2.5L12 3.5Z" stroke="#F04438" strokeWidth="1.6" strokeLinejoin="round" />
+                              <path d="M12 10v4.5" stroke="#F04438" strokeWidth="1.6" strokeLinecap="round" />
+                              <circle cx="12" cy="17.2" r="0.8" fill="#F04438" />
+                            </svg>
+                            <span>{issue.title}</span>
+                          </div>
                           <div className="po-valid-body">{issue.body}</div>
                         </div>
-                        <button
-                          type="button"
-                          className="po-valid-close"
-                          aria-label={t('close', 'Close')}
-                          onClick={() => setIssue(null)}
-                        >
-                          <CloseIcon />
-                        </button>
                       </div>
                     )}
                     <div className="flex-1 flex">
@@ -683,25 +682,20 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             {!addEditSets && (
-              <div className="group cursor-pointer relative">
+              <div className="group po-split cursor-pointer relative">
                 <button
                   disabled={
                     selectedIntegrations.length === 0 || loading || locked
                   }
                   onClick={schedule('schedule')}
-                  className="text-[#0A0A0A] relative min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[18px] bg-[#00D9FF] ps-[20px] pe-[16px]"
+                  className="po-split-main text-[#0A0A0A] relative btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none flex justify-center items-center"
                 >
                   {loading && (
                     <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
                       <div className="animate-spin h-[20px] w-[20px] border-4 border-[#0A0A0A] border-t-transparent rounded-full" />
                     </div>
                   )}
-                  <div
-                    className={clsx(
-                      'text-[15px] font-[600]',
-                      loading && 'invisible'
-                    )}
-                  >
+                  <span className={clsx(loading && 'invisible')}>
                     {selectedIntegrations.length === 0
                       ? t('check_circles_above', 'Check the circles above')
                       : dummy
@@ -711,13 +705,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       : existingData?.posts?.[0]?.state === 'DRAFT'
                       ? t('schedule', 'Schedule')
                       : t('update', 'Update')}
-                  </div>
-                  {!dummy && (
-                    <div className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] arrow-change">
-                      <DropdownArrowSmallIcon className="group-hover:rotate-180 text-[#0A0A0A]" />
-                    </div>
-                  )}
+                  </span>
                 </button>
+                {!dummy && (
+                  <button type="button" className="po-split-chevron" aria-label={t('post_now', 'Post Now')}>
+                    <DropdownArrowSmallIcon className="group-hover:rotate-180 text-[#0A0A0A]" />
+                  </button>
+                )}
 
                 {!dummy && (
                   <div className="post-now-tray po-post-menu hidden group-hover:flex">
@@ -730,16 +724,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     >
                       <CalendarIcon />
                       <span>{t('add_to_calendar', 'Add to calendar')}</span>
-                      <CheckmarkIcon className="text-[#00D9FF]" />
+                      <CheckmarkIcon />
                     </button>
                     <button
                       type="button"
-                      className="is-now"
                       disabled={
                         selectedIntegrations.length === 0 || loading || locked
                       }
                       onClick={schedule('now')}
                     >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M21 3 10.5 13.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                        <path d="M21 3 14.5 21l-4-7.5L3 9.5 21 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                      </svg>
                       <span>{t('post_now', 'Post Now')}</span>
                     </button>
                   </div>

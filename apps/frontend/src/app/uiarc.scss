@@ -7808,19 +7808,32 @@ body.composer-open .copilotKitWindow,
   opacity: 0 !important;
 }
 
-.po-date-pop .po-day-on {
-  background: #00d9ff !important;
-  color: #0a0a0a !important;
-  border-radius: 999px;
+.po-date-pop [class*='calendarHeaderLevelIcon'] {
+  display: none !important;
 }
 
-.po-date-pop .po-day-today {
-  color: #00d9ff !important;
+.po-date-pop .po-day,
+.po-date-pop .po-day-today,
+.po-date-pop [data-weekend] {
+  color: var(--new-textColor) !important;
+  background: transparent !important;
 }
 
 .po-date-pop .po-day-past,
-.po-date-pop .po-day-out {
+.po-date-pop button:disabled:not(.po-day-on) {
   color: var(--new-textItemBlur) !important;
+  background: transparent !important;
+}
+
+.po-date-pop .po-day-out {
+  visibility: hidden !important;
+  pointer-events: none;
+}
+
+.po-date-pop .po-day-on {
+  background: #00d9ff !important;
+  color: #0a0a0a !important;
+  border-radius: 8px !important;
 }
 
 .po-post-menu {
@@ -7854,23 +7867,90 @@ body.composer-open .copilotKitWindow,
   text-align: start;
 }
 
-.po-post-menu button.is-now {
-  background: rgba(0, 217, 255, 0.12);
+.po-post-menu button:hover {
+  background: var(--new-bgColor);
+}
+
+.po-split {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  min-width: 180px;
+  background: transparent;
+  position: relative;
+}
+
+.po-split-main,
+.po-split-chevron {
+  border: 0;
+  background: #00d9ff;
+  color: #0a0a0a;
+  height: 44px;
+  cursor: pointer;
+}
+
+.po-split-main {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 18px 0 0 18px;
+}
+
+.po-split-main:only-child {
+  border-radius: 18px;
+}
+
+.po-split-chevron {
+  width: 40px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid rgba(10, 10, 10, 0.18);
+  border-radius: 0 18px 18px 0;
 }
 
 .po-valid {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  border: 1px solid var(--new-border);
+  border: 1px solid rgba(240, 68, 56, 0.55);
   border-radius: 16px;
-  background: var(--new-bgColor);
+  background: rgba(240, 68, 56, 0.12);
   padding: 12px 14px;
 }
 
+.composer-invalid .po-editor-card {
+  border-color: #f04438;
+}
+
 .po-valid-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 600;
+  color: var(--new-textColor);
+}
+
+.app-toast.is-error {
+  color: var(--new-textColor);
+}
+
+.app-toast.is-error .app-toast-close {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  background: transparent;
+  color: var(--new-textItemBlur);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: none;
 }
 
 .po-valid-body {
@@ -8113,14 +8193,22 @@ body.composer-open .app-toast.is-warning {
   .composer .post-now-tray {
     display: none !important;
     position: absolute !important;
-    width: 230px !important;
-    max-width: calc(100vw - 32px);
+    left: 0 !important;
     right: 0 !important;
-    left: auto !important;
-    bottom: calc(100% + 104px) !important;
+    width: auto !important;
+    max-width: none;
+    bottom: calc(100% + 8px) !important;
     padding: 8px !important;
     background: var(--new-bgColorInner) !important;
     flex-direction: column;
+  }
+
+  .composer-foot {
+    position: relative;
+  }
+
+  .composer-foot .po-split {
+    position: static !important;
   }
 
   .po-date-pop,
@@ -8379,15 +8467,16 @@ body.composer-open .app-toast.is-warning {
   }
 
   .composer-foot {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
-    align-items: stretch;
     height: auto !important;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     padding: 12px 16px 16px !important;
+    position: relative;
   }
 
   .composer-foot > .flex-1,
@@ -8397,15 +8486,50 @@ body.composer-open .app-toast.is-warning {
     padding: 0 !important;
   }
 
+  .composer-foot .po-tags,
+  .composer-foot .po-repeat {
+    width: auto !important;
+    max-width: calc(100% - 8px);
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
+
+  .composer-foot .po-repeat {
+    margin-right: auto !important;
+  }
+
+  .composer-foot .po-date-chip {
+    flex: 1 0 auto !important;
+    width: auto !important;
+    min-width: max-content;
+    margin-left: 0 !important;
+  }
+
   .composer-foot .border.rounded-\[8px\],
   .composer-actions > button,
   .composer-foot .group,
+  .composer-foot .po-split,
   .composer-foot .group > button {
     min-width: 0 !important;
-    width: 100%;
-    max-width: 100%;
     margin: 0 !important;
     white-space: nowrap;
+  }
+
+  .composer-foot .po-split {
+    flex: 1 0 100%;
+    width: 100% !important;
+  }
+
+  .composer-foot .po-split-chevron {
+    flex: 0 0 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+  }
+
+  .composer-foot .po-split-main {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
   }
 
   .composer-actions > .rounded-\[8px\] {
