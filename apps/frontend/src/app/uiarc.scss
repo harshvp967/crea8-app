@@ -6651,12 +6651,17 @@ body :focus-visible {
   }
 }
 
+.stk-panel:has(.stk-api) > main {
+  position: relative;
+}
+
 .stk-api {
+  position: absolute;
+  inset: 0;
   display: flex;
-  flex: 1;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
   min-height: 0;
   padding: 0;
   gap: 0;
@@ -6668,11 +6673,6 @@ body :focus-visible {
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
-  border: 1px solid var(--new-border);
-  border-radius: 26px;
-  background: var(--new-bgColorInner);
-  box-shadow: var(--arc-shadow-resting);
 }
 
 .stk-api-title {
@@ -6718,12 +6718,23 @@ body :focus-visible {
   color: inherit;
 }
 
+.app-main:has(.stk-api) > * {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+}
+
 @media (max-width: 767px) {
-  .stk-api {
-    padding: 12px 12px 8px;
+  .app-shell:has(.stk-api) {
+    background: var(--arc-canvas);
   }
 
-  .stk-api-panel {
+  .stk-panel:has(.stk-api) {
+    align-self: flex-start;
+    width: calc(100% - 24px);
+    margin: 12px 12px 8px;
     border-radius: 22px;
   }
 
