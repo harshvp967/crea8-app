@@ -88,29 +88,27 @@ const DeleteAccountComponent: FC<{ isLink?: boolean }> = ({ isLink }) => {
   }
 
   return (
-    <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[16px] p-[24px] flex flex-col gap-[24px]">
+    <div className="settings-danger-card">
       {loadingOverlay}
-      <div className="mt-[4px]">{t('delete_account', 'Delete Account')}</div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <div className="text-[14px]">
-            {t('delete_your_account', 'Delete your account')}
-          </div>
-          <div className="text-[12px] text-textItemBlur">
-            {t(
-              'delete_account_description',
-              'Your account, organizations and channels will be deleted permanently'
-            )}
-          </div>
-        </div>
-        <Button
-          className="!bg-red-800 !text-white"
-          loading={loading}
-          onClick={deleteAccount}
-        >
+      <div className="settings-row-copy">
+        <div className="settings-row-title">
           {t('delete_account', 'Delete Account')}
-        </Button>
+        </div>
+        <div className="settings-row-sub">
+          {t(
+            'delete_account_description',
+            'Your account, organizations and channels will be deleted permanently'
+          )}
+        </div>
       </div>
+      <Button
+        secondary
+        className="settings-danger"
+        loading={loading}
+        onClick={deleteAccount}
+      >
+        {t('delete_account', 'Delete Account')}
+      </Button>
     </div>
   );
 };
