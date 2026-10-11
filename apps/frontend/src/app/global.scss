@@ -725,7 +725,7 @@ html[dir='rtl'] [dir='ltr'] {
 
 .agent {
   .copilotKitInputContainer {
-    padding: 0 24px 8px !important;
+    padding: 0 20px 16px !important;
     background: transparent !important;
   }
 
@@ -733,36 +733,35 @@ html[dir='rtl'] [dir='ltr'] {
     width: 100% !important;
     max-width: 860px !important;
     margin: 0 auto !important;
-    background-color: #1a1a1a !important;
-    border: 1px solid #2a2a2a !important;
-    border-radius: 20px !important;
-    padding: 14px 16px !important;
-    min-height: 84px !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background-color: transparent !important;
+    border: 1px solid var(--new-border) !important;
+    border-radius: 999px !important;
+    padding: 6px 6px 6px 8px !important;
+    min-height: 52px !important;
+    box-shadow: none !important;
   }
 
   .copilotKitInput:focus-within {
-    border-color: rgba(0, 217, 255, 0.55) !important;
-    box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.25), 0 8px 24px rgba(0, 0, 0, 0.25);
+    border-color: var(--new-border) !important;
+    box-shadow: none !important;
   }
 
   .copilotKitInput > textarea {
-    color: #ffffff !important;
-    font-size: 0.9375rem !important;
-    line-height: 1.55 !important;
+    color: var(--new-btn-text) !important;
+    font-size: 15px !important;
+    line-height: 1.45 !important;
+    font-family: inherit !important;
+    background: transparent !important;
+    min-height: 24px !important;
+    padding: 8px 4px !important;
   }
 
   .copilotKitInput > textarea::placeholder {
-    color: #6a6a6a !important;
-  }
-
-  .copilotKitInputControlButton:not([disabled]) {
-    color: #00d9ff !important;
-  }
-
-  .copilotKitInputControlButton:not([disabled]):hover {
-    color: #5cebff !important;
+    color: var(--new-textItemBlur) !important;
   }
 
   .copilotKitMessages {
@@ -773,49 +772,50 @@ html[dir='rtl'] [dir='ltr'] {
     max-width: 860px;
     margin: 0 auto;
     width: 100%;
-    padding: 28px 24px 16px !important;
+    padding: 8px 20px 16px !important;
   }
 
   .copilotKitMessage.copilotKitUserMessage {
-    background: #00d9ff !important;
-    color: #0a0a0a !important;
-    border-radius: 16px 16px 4px 16px !important;
+    background: var(--arc-selected) !important;
+    color: var(--new-btn-text) !important;
+    border: 1px solid var(--arc-selected-border) !important;
+    border-radius: 20px !important;
+    box-shadow: none !important;
     font-weight: 500;
+    margin-left: auto;
+    max-width: min(85%, 640px);
+    width: fit-content;
   }
 
   .copilotKitMessage.copilotKitAssistantMessage {
-    background: #161616 !important;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px 16px 16px 4px !important;
-    padding: 14px 16px !important;
+    background: var(--arc-muted) !important;
+    border: 1px solid var(--new-border);
+    border-radius: 20px !important;
+    padding: 16px 18px !important;
     max-width: min(100%, 720px);
-    color: #e8e8e8 !important;
+    color: var(--new-btn-text) !important;
+    box-shadow: none !important;
+    font-weight: 500;
   }
 
   .copilotKitMessageControlButton {
-    color: #8a8a8a !important;
+    color: var(--new-textItemBlur) !important;
   }
 
   .copilotKitMessageControlButton:hover {
-    color: #00d9ff !important;
+    color: var(--arc-accent-text) !important;
   }
 
-  /* Welcome / single-message presentation */
   .copilotKitMessagesContainer > .copilotKitMessage:only-child {
-    background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%) !important;
-    border: 1px solid #2a2a2a !important;
+    background: var(--arc-muted) !important;
+    border: 1px solid var(--new-border) !important;
     border-radius: 20px !important;
-    padding: 24px 28px !important;
-    margin: 24px auto !important;
-    max-width: min(100%, 640px);
-    line-height: 1.65;
-    white-space: pre-wrap;
-    color: #e8e8e8 !important;
-  }
-
-  .copilotKitInputControlButton[disabled] {
-    color: #4a4a4a !important;
-    opacity: 0.5;
+    padding: 16px 18px !important;
+    margin: 8px 0 16px !important;
+    max-width: min(100%, 720px);
+    line-height: 1.6;
+    color: var(--new-btn-text) !important;
+    box-shadow: none !important;
   }
 
   .poweredBy {
@@ -870,11 +870,6 @@ html[dir='rtl'] [dir='ltr'] {
     .copilotKitMessagesContainer {
       padding-left: 12px !important;
       padding-right: 12px !important;
-    }
-
-    .copilotKitInput {
-      border-radius: 16px !important;
-      min-height: 72px !important;
     }
   }
 }
