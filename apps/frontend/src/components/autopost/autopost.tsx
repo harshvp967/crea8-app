@@ -31,6 +31,7 @@ export const Autopost: FC = () => {
       modal.openModal({
         title: data ? t('edit_autopost', 'Edit Autopost') : t('add_autopost_title', 'Add Autopost'),
         withCloseButton: true,
+        size: '500px',
         children: <AddOrEditWebhook data={data} reload={mutate} />,
       });
     },
@@ -69,62 +70,55 @@ export const Autopost: FC = () => {
     [mutate]
   );
   return (
-    <div className="flex flex-col">
-      <h3 className="text-[20px]">{t('autopost', 'Autopost')}</h3>
-      <div className="text-customColor18 mt-[4px]">
-        {t(
-          'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
-          'Autopost can automatically posts your RSS new items to social media'
-        )}
-      </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
-        <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div className="grid grid-cols-[1fr,1fr,1fr,1fr,1fr] w-full gap-y-[10px]">
-              <div>{t('title', 'Title')}</div>
-              <div>{t('url', 'URL')}</div>
-              <div>{t('edit', 'Edit')}</div>
-              <div>{t('delete', 'Delete')}</div>
-              <div>{t('active', 'Active')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="flex flex-col justify-center">{p.title}</div>
-                  <div className="flex flex-col justify-center">{p.url}</div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={addWebhook(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <div>
-                      <Button onClick={deleteHook(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <Slider
-                      value={p.active ? 'on' : 'off'}
-                      onChange={changeActive(p)}
-                      fill={true}
-                    />
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addWebhook()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
-              {t('add_an_autopost', 'Add an autopost')}
-            </Button>
-          </div>
+    <div className="settings-section">
+      <div className="settings-head">
+        <div>
+          <h1>{t('autopost', 'Autopost')}</h1>
+          <p>
+            {t(
+              'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
+              'Autopost can automatically posts your RSS new items to social media'
+            )}
+          </p>
         </div>
+        <Button onClick={addWebhook()}>
+          + {t('add_an_autopost', 'Add an autopost')}
+        </Button>
       </div>
+      {!!data?.length && (
+        <div className="settings-list">
+          <div className="settings-cols cols-auto">
+            <span>{t('title', 'Title')}</span>
+            <span>{t('url', 'URL')}</span>
+            <span>{t('active', 'Active')}</span>
+            <span />
+          </div>
+          {data.map((p: any) => (
+            <article key={p.id} className="settings-item cols-auto">
+              <b>{p.title}</b>
+              <span className="settings-muted" data-label={t('url', 'URL')}>
+                {p.url}
+              </span>
+              <div className="settings-active">
+                <span className="settings-muted">{t('active', 'Active')}</span>
+                <Slider
+                  value={p.active ? 'on' : 'off'}
+                  onChange={changeActive(p)}
+                  fill={true}
+                />
+              </div>
+              <div className="settings-item-actions">
+                <Button secondary className="settings-mini" onClick={addWebhook(p)}>
+                  {t('edit', 'Edit')}
+                </Button>
+                <Button secondary className="settings-mini settings-danger" onClick={deleteHook(p)}>
+                  {t('delete', 'Delete')}
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -295,7 +289,7 @@ export const AddOrEditWebhook: FC<{
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(callBack)}>
+      <form className="settings-form" onSubmit={form.handleSubmit(callBack)}>
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] border border-customColor6 pt-0">
           <div>
             <Input

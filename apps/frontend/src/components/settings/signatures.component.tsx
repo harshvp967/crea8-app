@@ -29,6 +29,7 @@ export const SignaturesComponent: FC<{
       modal.openModal({
         title: data ? 'Edit Signature' : 'Add Signature',
         withCloseButton: true,
+        size: '500px',
         children: <AddOrRemoveSignature data={data} reload={mutate} />,
       });
     },
@@ -59,78 +60,54 @@ export const SignaturesComponent: FC<{
   const t = useT();
 
   return (
-    <div className="flex flex-col">
-      <h3 className="text-[20px]">{t('signatures', 'Signatures')}</h3>
-      <div className="text-customColor18 mt-[4px]">
-        {t(
-          'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',
-          'You can add signatures to your account to be used in your posts.'
-        )}
-      </div>
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[16px] p-[24px] flex gap-[24px]">
-        <div className="flex flex-col w-full">
-          {!!data?.length && (
-            <div
-              className={`grid ${
-                !!appendSignature
-                  ? 'grid-cols-[1fr,1fr,1fr,1fr,1fr]'
-                  : 'grid-cols-[1fr,1fr,1fr,1fr]'
-              } w-full gap-y-[10px]`}
-            >
-              <div>{t('content', 'Content')}</div>
-              <div className="text-center">{t('auto_add', 'Auto Add?')}</div>
-              {!!appendSignature && (
-                <div className="text-center">{t('actions', 'Actions')}</div>
-              )}
-              <div className="text-center">{t('edit', 'Edit')}</div>
-              <div className="text-center">{t('delete', 'Delete')}</div>
-              {data?.map((p: any) => (
-                <Fragment key={p.id}>
-                  <div className="relative flex-1 me-[20px] overflow-x-hidden">
-                    <div className="absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%] text-ellipsis">
-                      {p.content.slice(0, 15) + '...'}
-                    </div>
-                  </div>
-                  <div className="flex flex-col justify-center relative me-[20px]">
-                    <div className="text-center w-full absolute start-0 line-clamp-1 top-[50%] -translate-y-[50%]">
-                      {p.autoAdd ? 'Yes' : 'No'}
-                    </div>
-                  </div>
-                  {!!appendSignature && (
-                    <div className="flex justify-center">
-                      <Button onClick={() => appendSignature(p.content)}>
-                        {t('use_signature', 'Use Signature')}
-                      </Button>
-                    </div>
-                  )}
-                  <div className="flex justify-center">
-                    <div>
-                      <Button onClick={addSignature(p)}>
-                        {t('edit', 'Edit')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex justify-center">
-                    <div>
-                      <Button onClick={deleteSignature(p)}>
-                        {t('delete', 'Delete')}
-                      </Button>
-                    </div>
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-          <div>
-            <Button
-              onClick={addSignature()}
-              className={clsx((data?.length || 0) > 0 && 'my-[16px]')}
-            >
-              {t('add_a_signature', 'Add a signature')}
-            </Button>
-          </div>
+    <div className="settings-section">
+      <div className="settings-head">
+        <div>
+          <h1>{t('signatures', 'Signatures')}</h1>
+          <p>
+            {t(
+              'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',
+              'You can add signatures to your account to be used in your posts.'
+            )}
+          </p>
         </div>
+        <Button onClick={addSignature()}>
+          + {t('add_a_signature', 'Add a signature')}
+        </Button>
       </div>
+      {!!data?.length && (
+        <div className="settings-list">
+          <div className="settings-cols cols-sig">
+            <span>{t('content', 'Content')}</span>
+            <span>{t('auto_add', 'Auto Add?')}</span>
+            <span>{t('actions', 'Actions')}</span>
+          </div>
+          {data.map((p: any) => (
+            <article key={p.id} className="settings-item cols-sig">
+              <b className="settings-ellipsis">{p.content}</b>
+              <span
+                className={clsx('settings-pill', p.autoAdd && 'is-on')}
+                data-label={t('auto_add', 'Auto Add?')}
+              >
+                {p.autoAdd ? t('yes', 'Yes') : t('no', 'No')}
+              </span>
+              <div className="settings-item-actions" data-label={t('actions', 'Actions')}>
+                {!!appendSignature && (
+                  <Button secondary className="settings-mini" onClick={() => appendSignature(p.content)}>
+                    {t('use_signature', 'Use Signature')}
+                  </Button>
+                )}
+                <Button secondary className="settings-mini" onClick={addSignature(p)}>
+                  {t('edit', 'Edit')}
+                </Button>
+                <Button secondary className="settings-mini settings-danger" onClick={deleteSignature(p)}>
+                  {t('delete', 'Delete')}
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -177,7 +154,7 @@ const AddOrRemoveSignature: FC<{
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(callBack)}>
+      <form className="settings-form" onSubmit={form.handleSubmit(callBack)}>
         <div className="relative flex gap-[20px] flex-col flex-1 rounded-[4px] pt-0">
           <button
             className="outline-none absolute end-[20px] top-[15px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"

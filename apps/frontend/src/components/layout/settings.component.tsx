@@ -29,7 +29,6 @@ import { Sets } from '@gitroom/frontend/components/sets/sets';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 
@@ -148,51 +147,40 @@ export const SettingsPopup: FC<{
     loadProfile();
   }, []);
 
+  const sectionButton = (tabKey: string, label: string) => (
+    <button
+      key={tabKey}
+      type="button"
+      className={clsx('settings-tab', tabKey === tab && 'is-on')}
+      onClick={() => setTab(tabKey)}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <div className="settings-shell flex min-h-0 w-full flex-1">
-      <div className="settings-nav bg-newBgColorInner p-[20px] flex flex-col transition-all w-[260px]">
-        <div className="settings-tabs flex flex-1 flex-col gap-[15px]">
-          {list.map(({ tab: tabKey, label }) => (
-            <div
-              key={tabKey}
-              className={clsx(
-                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-[18px] min-h-[44px] px-[8px] text-[14px]',
-                tabKey === tab && 'arc-selected'
-              )}
-              onClick={() => setTab(tabKey)}
-            >
-              <div
-                className={clsx(
-                  'h-full w-[4px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity',
-                  tabKey === tab && 'opacity-100'
-                )}
-              >
-                <SVGLine />
-              </div>
-              {label}
-            </div>
-          ))}
+    <div className="settings-screen">
+      <aside className="settings-nav">
+        <h2>{t('settings', 'Settings')}</h2>
+        <div className="settings-tabs">
+          {list.map(({ tab: tabKey, label }) => sectionButton(tabKey, label))}
         </div>
-        <div>
-          {showLogout && (
-            <div className="mt-4">
-              <LogoutComponent />
-            </div>
-          )}
+        {showLogout && (
+          <div className="settings-nav-foot">
+            <LogoutComponent />
+          </div>
+        )}
+      </aside>
+      <div className="settings-main">
+        <div className="settings-settabs">
+          {list.map(({ tab: tabKey, label }) => sectionButton(tabKey, label))}
         </div>
-      </div>
-      <div className="settings-detail bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px] min-w-0">
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(submit)}>
+          <form className="settings-form-page" onSubmit={form.handleSubmit(submit)}>
             {!!getRef && (
               <button type="submit" className="hidden" ref={getRef}></button>
             )}
-            <div
-              className={clsx(
-                'w-full mx-auto gap-[24px] flex flex-col relative',
-                !getRef && 'rounded-[4px]'
-              )}
-            >
+            <div className="settings-detail">
               {tab === 'global_settings' && (
                 <div>
                   <GlobalSettings />

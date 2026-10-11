@@ -65,31 +65,26 @@ const ShortlinkPreferenceComponent = () => {
 
   if (isLoading) {
     return (
-      <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[16px] p-[24px] flex flex-col gap-[16px]">
+      <div className="settings-row">
         <div className="h-[18px] w-[160px] animate-pulse rounded-[8px] bg-newBoxHover" />
-        <div className="h-[44px] w-full animate-pulse rounded-[8px] bg-newBoxHover" />
       </div>
     );
   }
 
   return (
-    <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[16px] p-[24px] flex flex-col gap-[24px]">
-      <div className="mt-[4px]">
-        {t('shortlink_settings', 'Shortlink Settings')}
-      </div>
-      <div className="flex items-center justify-between gap-[24px]">
-        <div className="flex flex-col flex-1">
-          <div className="text-[14px]">
+    <div className="settings-row">
+        <div className="settings-row-copy">
+          <div className="settings-row-title">
             {t('shortlink_preference', 'Shortlink Preference')}
           </div>
-          <div className="text-[12px] text-customColor18">
+          <div className="settings-row-sub">
             {t(
               'shortlink_preference_description',
               'Control how URLs in your posts are handled. Shortlinks provide click statistics.'
             )}
           </div>
         </div>
-        <div className="w-[200px]">
+        <div className="settings-control">
           <Select
             name="shortlink"
             label=""
@@ -109,7 +104,6 @@ const ShortlinkPreferenceComponent = () => {
             </option>
           </Select>
         </div>
-      </div>
     </div>
   );
 };
