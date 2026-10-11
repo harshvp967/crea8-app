@@ -2963,3 +2963,443 @@ body :focus-visible {
     border-radius: 26px;
   }
 }
+
+/* Analytics tab. Presentation only. */
+.analytics-screen {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  gap: 12px;
+}
+
+.analytics-channels,
+.analytics-main {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: var(--new-bgColorInner);
+  border: 1px solid var(--new-border);
+  border-radius: var(--arc-radius-panel);
+  box-shadow: var(--arc-shadow-resting);
+}
+
+.analytics-channels {
+  flex: none;
+  width: 260px;
+  padding: 24px;
+}
+
+.analytics-channels h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.analytics-channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.analytics-channel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 8px 0 6px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--new-btn-text);
+  text-align: start;
+  cursor: pointer;
+}
+
+.analytics-channel:hover,
+.analytics-channel.is-selected {
+  background: var(--arc-selected);
+  border-color: var(--arc-selected-border);
+}
+
+.analytics-channel.is-disabled,
+.analytics-strip button.is-disabled {
+  opacity: 0.5;
+}
+
+.analytics-channel-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analytics-channel-mark {
+  position: relative;
+  display: block;
+  width: 36px;
+  height: 36px;
+  flex: none;
+}
+
+.analytics-channel-mark .avatar {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--new-border);
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.analytics-channel-mark .badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--new-border);
+  border-radius: 4px;
+  background: var(--new-bgColorInner);
+}
+
+.analytics-channel-warn {
+  position: absolute;
+  z-index: 2;
+  top: -4px;
+  left: -4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #f97066;
+  color: #fff;
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.analytics-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+
+.analytics-head h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.analytics-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.analytics-sub {
+  min-width: 0;
+  margin: 0;
+  color: var(--new-textItemBlur);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.analytics-range {
+  display: inline-flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 2px;
+  max-width: 100%;
+  padding: 3px;
+  border: 1px solid var(--new-border);
+  border-radius: var(--arc-radius-control);
+  background: var(--arc-muted);
+}
+
+.analytics-range button {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--new-table-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.analytics-range button.is-selected {
+  border-color: var(--arc-selected-border);
+  background-image: var(--arc-wave),
+    linear-gradient(var(--new-bgColorInner), var(--new-bgColorInner));
+  background-color: var(--new-bgColorInner);
+  box-shadow: var(--arc-shadow-resting);
+  color: var(--new-btn-text);
+}
+
+.analytics-strip {
+  display: none;
+  flex: none;
+  align-items: center;
+  min-height: 40px;
+}
+
+.analytics-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.analytics-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.analytics-stat,
+.analytics-note,
+.analytics-chart {
+  border: 1px solid var(--new-border) !important;
+  border-radius: var(--arc-radius-panel) !important;
+  background: var(--new-bgColorInner) !important;
+  box-shadow: var(--arc-shadow-resting) !important;
+}
+
+.analytics-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 0;
+  padding: 20px;
+}
+
+.analytics-stat-label {
+  color: var(--new-textItemBlur);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.analytics-stat-value {
+  margin-top: 6px;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.analytics-stat-delta {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.analytics-stat-delta.is-up {
+  color: var(--arc-success);
+}
+
+.analytics-stat-delta.is-down {
+  color: var(--arc-danger);
+}
+
+.analytics-chart {
+  padding: 20px !important;
+}
+
+.analytics-chart .mb-5 {
+  margin-bottom: 14px !important;
+}
+
+.analytics-chart .mb-5 p:first-child {
+  color: var(--new-btn-text) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em;
+}
+
+.analytics-chart .mb-5 p:last-child {
+  margin-top: 2px !important;
+  font-size: 13px !important;
+}
+
+.analytics-chart svg line {
+  stroke: #232327 !important;
+  stroke-dasharray: none !important;
+}
+
+.light .analytics-chart svg line {
+  stroke: #eeeef0 !important;
+}
+
+.analytics-chart svg pattern rect {
+  fill-opacity: 0.1 !important;
+}
+
+.analytics-note {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+}
+
+.analytics-note p {
+  margin: 0;
+  color: var(--new-btn-text);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.analytics-note button,
+.analytics-state button {
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--arc-accent);
+  color: var(--arc-ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.analytics-state {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 240px;
+  padding: 24px;
+  text-align: center;
+}
+
+.analytics-state h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.analytics-state p,
+.analytics-support {
+  max-width: 560px;
+  margin: 0;
+  color: var(--new-textItemBlur);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.analytics-state img {
+  width: 72px;
+  height: auto;
+}
+
+@media (max-width: 1199px) {
+  .analytics-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-channels {
+    display: none;
+  }
+
+  .analytics-screen {
+    gap: 0;
+  }
+
+  .analytics-main {
+    padding: 20px;
+  }
+
+  .analytics-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .analytics-strip button {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .analytics-strip button.is-selected {
+    border-color: var(--arc-selected-border);
+    background: var(--arc-selected);
+  }
+
+  .analytics-strip .analytics-channel-mark,
+  .analytics-strip .analytics-channel-mark .avatar {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell:has(.analytics-screen) {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+
+  .app-main:has(.analytics-screen) {
+    padding: 12px 12px 0 !important;
+    overflow: hidden !important;
+  }
+
+  .analytics-main {
+    height: 100%;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .analytics-head h1 {
+    font-size: 22px;
+  }
+
+  .analytics-head-row {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .analytics-range button {
+    padding: 0 10px;
+  }
+
+  .analytics-stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .analytics-stat {
+    padding: 14px 16px;
+  }
+
+  .analytics-body {
+    gap: 12px;
+  }
+}
