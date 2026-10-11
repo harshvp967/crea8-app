@@ -721,14 +721,14 @@ export const ListView = () => {
   }
 
   return (
-    <div className="flex flex-col gap-[10px] flex-1 relative">
+    <div className="cal-list flex flex-col gap-[10px] flex-1 relative">
       <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
         {groupedPosts.map(([dateKey, datePosts]) => (
           <Fragment key={dateKey}>
-            <div className="text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]">
+            <div className="cal-list-day text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]">
               {newDayjs(dateKey).format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
             </div>
-            <div className="flex flex-col gap-[10px] mb-[20px] px-[10px]">
+            <div className="cal-list-group flex flex-col gap-[10px] mb-[20px] px-[10px]">
               {datePosts.map((post) => (
                 <CalendarItem
                   key={post.id}
@@ -1190,6 +1190,13 @@ export const CalendarColumn: FC<{
     </div>
   );
 });
+function listStatusClass(state: State) {
+  if (state === 'DRAFT') return 'is-draft';
+  if (state === 'ERROR') return 'is-error';
+  if (state === 'PUBLISHED') return 'is-published';
+  return 'is-scheduled';
+}
+
 const CalendarItem: FC<{
   date: dayjs.Dayjs;
   isBeforeNow: boolean;
@@ -1341,14 +1348,32 @@ const CalendarItem: FC<{
           />
         </div>
         <div className="w-full flex-1 min-w-0">
-          <div className="w-full text-ellipsis break-words line-clamp-2 text-start leading-[1.3]">
+            <div className="w-full text-ellipsis break-words line-clamp-2 text-start leading-[1.3]">
             {state === 'DRAFT' ? (
-              <span className="text-textItemBlur">{t('draft', 'Draft')}: </span>
+              <span className="cal-draft-prefix text-textItemBlur">{t('draft', 'Draft')}: </span>
             ) : null}
             {stripHtmlValidation('none', post.content, false, true, false) ||
               t('no_content', 'no content')}
           </div>
+          {showTime && (
+            <div className="cal-list-when">
+              {newDayjs(post.publishDate)
+                .local()
+                .format(isUSCitizen() ? 'ddd, MMM D · h:mm A' : 'ddd, D MMM · HH:mm')}
+            </div>
+          )}
         </div>
+        {showTime && (
+          <span className={clsx('cal-list-status', listStatusClass(state))}>
+            {state === 'DRAFT'
+              ? t('draft', 'Draft')
+              : state === 'ERROR'
+              ? t('error', 'Error')
+              : state === 'PUBLISHED'
+              ? t('published', 'Published')
+              : t('scheduled', 'Scheduled')}
+          </span>
+        )}
         <button
           type="button"
           className="cal-post-more"
@@ -1360,11 +1385,6 @@ const CalendarItem: FC<{
         >
           ···
         </button>
-        {showTime && (
-          <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
-            {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
-          </div>
-        )}
       </div>
     </div>
   );

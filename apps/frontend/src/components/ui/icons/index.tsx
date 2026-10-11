@@ -298,6 +298,30 @@ export const MonthCalendarIcon: FC<IconProps> = (props) => (
   </CalendarShell>
 );
 
+export const ListCalendarIcon: FC<IconProps> = ({
+  size = 16,
+  className,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    {...props}
+  >
+    <path
+      d="M6.2 4.1h7.3M6.2 8h7.3M6.2 11.9h7.3M3.15 4.1h.01M3.15 8h.01M3.15 11.9h.01"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export const StalkerIcon: FC<IconProps> = ({
   size = 16,
   className,
