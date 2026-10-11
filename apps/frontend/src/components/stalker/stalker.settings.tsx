@@ -7,13 +7,12 @@ import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.
 import { STALKER_SWATCHES } from '@gitroom/frontend/components/stalker/stalker.wizard';
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import {
-  stkArea,
-  stkBar,
   stkCard,
   stkDanger,
   stkField,
   stkGhost,
-  stkHead,
+  stkMenu,
+  stkMenuItem,
   stkPage,
   stkPrimary,
   stkSecondary,
@@ -34,12 +33,20 @@ type Draft = {
   categories: CategoryDraft[];
 };
 
-const icons: Record<string, string> = {
-  Praise: '♡',
-  'Bug report': '⚙',
-  'Feature request': '✦',
-  Complaint: '!',
+const CATEGORY_DOT: Record<string, string> = {
+  Praise: '#4ade80',
+  Complaint: '#fb923c',
+  'Bug report': '#f87171',
+  'Feature request': '#38bdf8',
 };
+
+const categoryDot = (name: string) => CATEGORY_DOT[name] || '#71717a';
+
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+  </svg>
+);
 
 export const StalkerSettings = () => {
   const fetch = useFetch();
@@ -63,11 +70,15 @@ export const StalkerSettings = () => {
   const [draft, setDraft] = useState<Draft | null>(saved);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [menuIndex, setMenuIndex] = useState<number | null>(null);
+  const [editing, setEditing] = useState<number | null>(null);
   const [savedKeySeen, setSavedKeySeen] = useState(savedKey);
   if (savedKeySeen !== savedKey) {
     setSavedKeySeen(savedKey);
     setDraft(saved);
     setConfirmDelete(false);
+    setMenuIndex(null);
+    setEditing(null);
   }
 
   if (!project || !draft) {
@@ -77,6 +88,15 @@ export const StalkerSettings = () => {
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const sharePath =
     project.publicDashboard && project.publicToken ? `/share/${project.publicToken}` : '';
+
+  const updateCategory = (index: number, patch: Partial<CategoryDraft>) => {
+    setDraft({
+      ...draft,
+      categories: draft.categories.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item
+      ),
+    });
+  };
 
   const save = async () => {
     if (draft.name.trim().length < 2) {
@@ -135,200 +155,211 @@ export const StalkerSettings = () => {
   };
 
   return (
-    <div className={`${stkPage} mx-auto w-full max-w-[920px] pb-[96px]`}>
-      <div className={stkHead}>
-        <div>
+    <div className={`${stkPage} stk-settings`}>
+      <div className="stk-set-head">
+        <div className="min-w-0">
           <h1 className={stkTitle}>Project settings</h1>
-          <p className={stkSub}>Manage your project details, categories, and appearance.</p>
+          {project.name ? <p className={stkSub}>{project.name}</p> : null}
         </div>
-        <div className="flex items-center gap-[8px]">
-          <StalkerCheckNow />
-          {dirty ? null : (
-            <button type="button" className={stkPrimary} disabled onClick={save}>
-              Save changes
-            </button>
-          )}
-        </div>
-      </div>
-      {dirty ? (
-        <div className={stkBar}>
-          <span className="text-[14px] font-[600]">Unsaved changes</span>
-          <span className="flex gap-[8px]">
-            <button type="button" className={stkSecondary} onClick={() => setDraft(saved)}>
+        <div className="stk-set-actions">
+          <span className="stk-set-check">
+            <StalkerCheckNow iconOnly />
+          </span>
+          {dirty ? (
+            <button type="button" className={`${stkGhost} stk-set-discard`} onClick={() => setDraft(saved)}>
               Discard
             </button>
-            <button type="button" className={stkPrimary} disabled={saving} onClick={save}>
-              {saving ? 'Saving…' : 'Save changes'}
-            </button>
-          </span>
-        </div>
-      ) : null}
-      <section className={`${stkCard} stk-set grid gap-[12px] md:grid-cols-[240px_1fr] md:items-center md:gap-[24px]`}>
-        <div>
-          <h2 className="text-[14px] font-[600]">Name</h2>
-          <p className="mt-[4px] text-[14px] text-textItemBlur">The display name for this project.</p>
-        </div>
-        <input
-          className={field}
-          value={draft.name}
-          onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-        />
-      </section>
-      <section className={`${stkCard} stk-set grid gap-[12px] md:grid-cols-[240px_1fr] md:items-center md:gap-[24px]`}>
-        <div>
-          <h2 className="text-[14px] font-[600]">Description</h2>
-          <p className="mt-[4px] text-[14px] text-textItemBlur">A short summary of what you&apos;re monitoring.</p>
-        </div>
-        <textarea
-          className={stkArea}
-          value={draft.description}
-          onChange={(event) => setDraft({ ...draft, description: event.target.value })}
-        />
-      </section>
-      <section className={`${stkCard} stk-set grid gap-[12px] md:grid-cols-[240px_1fr] md:items-center md:gap-[24px]`}>
-        <div>
-          <h2 className="text-[14px] font-[600]">Colour</h2>
-          <p className="mt-[4px] text-[14px] text-textItemBlur">A visual cue for this project in the bar.</p>
-        </div>
-        <div className="flex flex-wrap gap-[8px]">
-          {STALKER_SWATCHES.map((swatch) => (
-            <button
-              key={swatch}
-              type="button"
-              aria-label={swatch}
-              className={stkSwatch(draft.color.toLowerCase() === swatch)}
-              style={{ backgroundColor: swatch }}
-              onClick={() => setDraft({ ...draft, color: swatch })}
-            />
-          ))}
-        </div>
-      </section>
-      <section className={stkCard}>
-        <div className="mb-[12px]">
-          <h2 className="text-[16px] font-[600]">Categories</h2>
-          <p className="mt-[4px] text-[14px] text-textItemBlur">
-            How AI organizes your mentions. Edit, remove, or add your own.
-          </p>
-        </div>
-        <div className="flex flex-col gap-[10px]">
-          {draft.categories.map((category, index) => (
-            <div key={category.id || index} className="flex flex-col gap-[6px]">
-              <div className="flex items-center gap-[8px]">
-                <span className="w-[18px] text-center text-[14px] text-textItemBlur">
-                  {icons[category.name] || '•'}
-                </span>
-                <input
-                  className={field}
-                  value={category.name}
-                  onChange={(event) =>
-                    setDraft({
-                      ...draft,
-                      categories: draft.categories.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, name: event.target.value } : item
-                      ),
-                    })
-                  }
-                />
-                <button
-                  type="button"
-                  aria-label={`Remove ${category.name}`}
-                  className="text-textItemBlur"
-                  onClick={() =>
-                    setDraft({
-                      ...draft,
-                      categories: draft.categories.filter((_, itemIndex) => itemIndex !== index),
-                    })
-                  }
-                >
-                  ×
-                </button>
-              </div>
-              <input
-                className={`${field} ms-[26px]`}
-                value={category.description}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    categories: draft.categories.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, description: event.target.value } : item
-                    ),
-                  })
-                }
-              />
-            </div>
-          ))}
+          ) : null}
           <button
             type="button"
-            className={`${stkSecondary} self-start`}
-            onClick={() =>
+            className={`${stkPrimary} stk-set-save`}
+            disabled={!dirty || saving}
+            onClick={save}
+          >
+            {dirty ? <span className="stk-set-dot" aria-hidden /> : null}
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
+      </div>
+
+      <section className={`${stkCard} stk-set-card`}>
+        <label className="stk-set-label">
+          Name
+          <span>The display name for this project.</span>
+          <input
+            className={field}
+            value={draft.name}
+            onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+          />
+        </label>
+        <label className="stk-set-label">
+          Description
+          <span>A short summary of what you&apos;re monitoring.</span>
+          <input
+            className={field}
+            value={draft.description}
+            onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+          />
+        </label>
+        <div className="stk-set-label">
+          <p>Colour</p>
+          <span>A visual cue for this project in the bar.</span>
+          <div className="stk-set-swatches">
+            {STALKER_SWATCHES.map((swatch) => (
+              <button
+                key={swatch}
+                type="button"
+                aria-label={swatch}
+                className={`${stkSwatch(draft.color.toLowerCase() === swatch)} stk-set-swatch`}
+                style={{ backgroundColor: swatch }}
+                onClick={() => setDraft({ ...draft, color: swatch })}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={`${stkCard} stk-set-card`}>
+        <div className="stk-set-cathead">
+          <h2>Categories</h2>
+          <button
+            type="button"
+            className={`${stkSecondary} stk-set-new`}
+            onClick={() => {
+              const next = draft.categories.length;
               setDraft({
                 ...draft,
                 categories: [...draft.categories, { name: 'New category', description: '' }],
-              })
-            }
+              });
+              setEditing(next);
+              setMenuIndex(null);
+            }}
           >
-            + Add category
+            <PlusIcon />
+            New category
           </button>
         </div>
+        <ul className="stk-set-cats">
+          {draft.categories.map((category, index) => (
+            <li key={category.id || index} className="stk-set-cat">
+              {editing === index ? (
+                <div className="stk-set-edit">
+                  <input
+                    className={field}
+                    aria-label="Category name"
+                    value={category.name}
+                    onChange={(event) => updateCategory(index, { name: event.target.value })}
+                  />
+                  <input
+                    className={field}
+                    aria-label="Category description"
+                    value={category.description}
+                    onChange={(event) => updateCategory(index, { description: event.target.value })}
+                  />
+                </div>
+              ) : (
+                <>
+                  <span className="stk-set-cdot" style={{ backgroundColor: categoryDot(category.name) }} aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="stk-set-cname">{category.name}</p>
+                    {category.description ? <p className="stk-set-cdesc">{category.description}</p> : null}
+                  </div>
+                </>
+              )}
+              <div className="relative">
+                <button
+                  type="button"
+                  className="stk-set-more"
+                  aria-label={`Actions for ${category.name || 'category'}`}
+                  aria-expanded={menuIndex === index}
+                  onClick={() => setMenuIndex(menuIndex === index ? null : index)}
+                >
+                  ···
+                </button>
+                {menuIndex === index ? (
+                  <>
+                    <button
+                      type="button"
+                      className="stk-sheet-backdrop md:hidden"
+                      aria-label="Close"
+                      onClick={() => setMenuIndex(null)}
+                    />
+                    <div className={`${stkMenu} stk-set-menu`} role="menu">
+                      <p className="stk-set-menu-title">Category actions</p>
+                      <button
+                        type="button"
+                        className={stkMenuItem}
+                        onClick={() => {
+                          setEditing(index);
+                          setMenuIndex(null);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <div className="stk-menu-rule" />
+                      <button
+                        type="button"
+                        className={`${stkMenuItem} stk-set-remove`}
+                        onClick={() => {
+                          setDraft({
+                            ...draft,
+                            categories: draft.categories.filter((_, itemIndex) => itemIndex !== index),
+                          });
+                          setMenuIndex(null);
+                          if (editing === index) setEditing(null);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
-      <section className={`${stkCard} stk-set grid gap-[12px] md:grid-cols-[1fr_auto] md:items-center`}>
-        <div>
-          <h2 className="text-[14px] font-[600]">Public dashboard</h2>
-          <p className="mt-[4px] text-[14px] text-textItemBlur">
-            A read-only Mentions and Analytics page anyone with the link can open.
-          </p>
-        </div>
-        <div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={draft.publicDashboard}
-            className="stk-switch"
-            onClick={() => setDraft({ ...draft, publicDashboard: !draft.publicDashboard })}
-          >
-            <span />
-          </button>
+
+      <section className={`${stkCard} stk-set-card stk-set-row`}>
+        <div className="min-w-0">
+          <h2>Public dashboard</h2>
+          <p>A read-only Mentions and Analytics page anyone with the link can open.</p>
           {sharePath ? (
-            <p className="mt-[8px] text-[13px]">
-              <a className="text-[14px] text-[color:var(--arc-accent-text)] underline" href={sharePath}>
-                {sharePath}
-              </a>
+            <p className="stk-set-share">
+              <a href={sharePath}>{sharePath}</a>
             </p>
           ) : draft.publicDashboard ? (
-            <p className="mt-[8px] text-[14px] text-textItemBlur">The public link appears after you save.</p>
+            <p className="stk-set-note">The public link appears after you save.</p>
           ) : null}
         </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={draft.publicDashboard}
+          aria-label="Public dashboard"
+          className="stk-switch"
+          onClick={() => setDraft({ ...draft, publicDashboard: !draft.publicDashboard })}
+        >
+          <span />
+        </button>
       </section>
-      <section className={`${stkCard} stk-danger-card stk-set grid gap-[12px] md:grid-cols-[1fr_auto] md:items-center`}>
-        <div>
-          <h2 className="text-[14px] font-[600]">Delete project</h2>
-          <p className="mt-[4px] text-[14px] text-textItemBlur">
-            Removes this project, its keywords, mentions, and alerts.
-          </p>
+
+      <section className={`${stkCard} stk-danger-card stk-set-card stk-set-row`}>
+        <div className="min-w-0">
+          <h2>Delete project</h2>
+          <p>Removes this project, its keywords, mentions, and alerts.</p>
         </div>
         {confirmDelete ? (
-          <div className="flex flex-wrap items-center gap-[8px]">
-            <button
-              type="button"
-              className={stkDanger}
-              onClick={remove}
-            >
+          <div className="stk-set-confirm">
+            <button type="button" className={stkDanger} onClick={remove}>
               Delete this project
             </button>
-            <button
-              type="button"
-              className={stkGhost}
-              onClick={() => setConfirmDelete(false)}
-            >
+            <button type="button" className={stkGhost} onClick={() => setConfirmDelete(false)}>
               Cancel
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            className={stkDanger}
-            onClick={() => setConfirmDelete(true)}
-          >
+          <button type="button" className={`${stkDanger} stk-set-delete`} onClick={() => setConfirmDelete(true)}>
             Delete project
           </button>
         )}
