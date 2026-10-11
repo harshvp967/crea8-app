@@ -58,7 +58,12 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  displayDayjs,
+  displayNow,
+  getTimezone,
+  isPastHour,
+} from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 
 // Extend dayjs with necessary plugins
@@ -121,7 +126,7 @@ const usePostActions = (onMutate?: () => void) => {
         : (await (await fetch('/posts/find-slot')).json()).date;
       const publishDate = dayjs
         .utc(date || data.posts[0].publishDate)
-        .local();
+        .tz(getTimezone());
       const ExistingData = !isDuplicate
         ? ExistingDataContextProvider
         : Fragment;
@@ -271,10 +276,10 @@ const useNarrowLayout = () => {
 
 const PhoneDayStrip = () => {
   const calendar = useCalendar();
-  const weekStart = newDayjs(calendar.startDate).startOf('isoWeek');
+  const weekStart = displayDayjs(calendar.startDate).startOf('isoWeek');
   const days = Array.from({ length: 7 }, (_, index) => weekStart.add(index, 'day'));
   const shiftWeek = (direction: number) => {
-    const nextDay = newDayjs(calendar.startDate).add(direction, 'week');
+    const nextDay = displayDayjs(calendar.startDate).add(direction, 'week');
     calendar.setFilters({
       startDate: nextDay.format('YYYY-MM-DD'),
       endDate: nextDay.format('YYYY-MM-DD'),
@@ -358,33 +363,42 @@ export const DayView = () => {
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale(currentLanguage);
 
-  const currentDay = dayjs.utc(startDate);
+  const currentDay = displayDayjs(startDate);
 
   const options = useMemo(() => {
-    const createdPosts = posts.map((post) => ({
-      integration: [integrations.find((i) => i.id === post.integration.id)!],
-      image: post?.integration?.picture || '',
-      identifier: post?.integration?.providerIdentifier || '',
-      id: post?.integration?.id || '',
-      name: post?.integration?.name || '',
-      time: dayjs
-        .utc(post.publishDate)
-        .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
-    }));
+    const zone = getTimezone();
+    const createdPosts = posts.map((post) => {
+      const zoned = dayjs.utc(post.publishDate).tz(zone);
+      return {
+        integration: [integrations.find((i) => i.id === post.integration.id)!],
+        image: post?.integration?.picture || '',
+        identifier: post?.integration?.providerIdentifier || '',
+        id: post?.integration?.id || '',
+        name: post?.integration?.name || '',
+        time: zoned.diff(zoned.startOf('day'), 'minute'),
+      };
+    });
     return sortBy(
       Object.values(
         groupBy(
           [
             ...createdPosts,
             ...integrations.flatMap((p) =>
-              p.time.flatMap((t) => ({
-                integration: p,
-                identifier: p?.identifier,
-                name: p?.name,
-                id: p?.id,
-                image: p?.picture,
-                time: t?.time,
-              }))
+              p.time.flatMap((t) => {
+                const zoned = dayjs
+                  .utc(startDate)
+                  .startOf('day')
+                  .add(t?.time || 0, 'minute')
+                  .tz(zone);
+                return {
+                  integration: p,
+                  identifier: p?.identifier,
+                  name: p?.name,
+                  id: p?.id,
+                  image: p?.picture,
+                  time: zoned.diff(zoned.startOf('day'), 'minute'),
+                };
+              })
             ),
           ],
           (p: any) => p.time
@@ -392,7 +406,7 @@ export const DayView = () => {
       ),
       (p) => p[0].time
     );
-  }, [integrations, posts]);
+  }, [integrations, posts, startDate]);
 
   const slotRow = (option: (typeof options)[number]) => (
     <CalendarContext.Provider
@@ -403,23 +417,21 @@ export const DayView = () => {
       }}
     >
       <CalendarColumn
-        getDate={currentDay
-          .startOf('day')
-          .add(option[0].time, 'minute')
-          .local()}
+        getDate={currentDay.startOf('day').add(option[0].time, 'minute')}
       />
     </CalendarContext.Provider>
   );
 
   const scrollHour = useMemo(() => {
-    if (newDayjs(startDate).isSame(newDayjs(), 'day')) {
-      return newDayjs().hour();
+    const zone = getTimezone();
+    if (displayDayjs(startDate).format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD')) {
+      return displayNow().hour();
     }
     if (!posts.length) {
       return 0;
     }
     return Math.min(
-      ...posts.map((post) => dayjs.utc(post.publishDate).local().hour())
+      ...posts.map((post) => dayjs.utc(post.publishDate).tz(zone).hour())
     );
   }, [posts, startDate]);
 
@@ -456,7 +468,7 @@ export const DayView = () => {
             return (
               <div key={hour} className="phone-slot" data-hour={hour}>
                 <span className="phone-slot-time">
-                  {newDayjs()
+                  {currentDay
                     .startOf('day')
                     .add(hour, 'hour')
                     .format(isUSCitizen() ? 'h A' : 'LT')}
@@ -472,7 +484,7 @@ export const DayView = () => {
                       }}
                     >
                       <CalendarColumn
-                        getDate={currentDay.startOf('day').add(hour, 'hour').local()}
+                        getDate={currentDay.startOf('day').add(hour, 'hour')}
                       />
                     </CalendarContext.Provider>
                   )}
@@ -505,10 +517,7 @@ export const DayView = () => {
                       ? rows.map(slotRow)
                       : (
                         <CalendarColumn
-                          getDate={currentDay
-                            .startOf('day')
-                            .add(hour, 'hour')
-                            .local()}
+                          getDate={currentDay.startOf('day').add(hour, 'hour')}
                         />
                       )}
                   </div>
@@ -531,7 +540,7 @@ export const WeekView = () => {
     dayjs.locale(currentLanguage);
 
     const days = [];
-    const weekStart = newDayjs(startDate);
+    const weekStart = displayDayjs(startDate);
     for (let i = 0; i < 7; i++) {
       const day = weekStart.add(i, 'day');
       days.push({
@@ -553,7 +562,7 @@ export const WeekView = () => {
               key={day.name}
               className={clsx(
                 'week-head sticky top-0 z-[20]',
-                day.date.isSame(newDayjs(), 'day') && 'is-today'
+                day.date.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD') && 'is-today'
               )}
             >
               <div className="week-dow text-[13px] font-[500] text-textItemBlur">
@@ -562,7 +571,7 @@ export const WeekView = () => {
               <div
                 className={clsx(
                   'week-num text-[14px] font-[600]',
-                  day.date.isSame(newDayjs(), 'day') && 'is-today'
+                  day.date.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD') && 'is-today'
                 )}
               >
                 {day.day}
@@ -579,7 +588,7 @@ export const WeekView = () => {
                   key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
                   className={clsx(
                     'week-cell',
-                    day.date.isSame(newDayjs(), 'day') && 'is-today'
+                    day.date.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD') && 'is-today'
                   )}
                 >
                   <CalendarColumn
@@ -607,17 +616,19 @@ export const MonthView = () => {
     const days = [];
     // Starting from Monday (1) to Sunday (7)
     for (let i = 1; i <= 7; i++) {
-      days.push(newDayjs().day(i).format(narrow ? 'ddd' : 'dddd'));
+      days.push(displayNow().day(i).format(narrow ? 'ddd' : 'dddd'));
     }
     return days;
   }, [i18next.resolvedLanguage, narrow]);
 
   const calendarDays = useMemo(() => {
-    const monthStart = newDayjs(startDate);
+    const monthStart = displayDayjs(startDate);
     const currentMonth = monthStart.month();
     const currentYear = monthStart.year();
 
-    const startOfMonth = newDayjs(new Date(currentYear, currentMonth, 1));
+    const startOfMonth = displayDayjs(
+      `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`
+    );
 
     // Calculate the day offset for Monday (isoWeekday() returns 1 for Monday)
     const startDayOfWeek = startOfMonth.isoWeekday(); // 1 for Monday, 7 for Sunday
@@ -665,7 +676,7 @@ export const MonthView = () => {
               )}
             >
               <CalendarColumn
-                getDate={newDayjs(date.day).endOf('day')}
+                getDate={date.day.endOf('day')}
                 randomHour={true}
               />
             </div>
@@ -695,7 +706,7 @@ export const ListView = () => {
   const groupedPosts = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     listPosts.forEach((post) => {
-      const dateKey = newDayjs(post.publishDate).local().format('YYYY-MM-DD');
+      const dateKey = dayjs.utc(post.publishDate).tz(getTimezone()).format('YYYY-MM-DD');
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
@@ -726,7 +737,7 @@ export const ListView = () => {
         {groupedPosts.map(([dateKey, datePosts]) => (
           <Fragment key={dateKey}>
             <div className="cal-list-day text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]">
-              {newDayjs(dateKey).format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
+              {displayDayjs(dateKey).format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
             </div>
             <div className="cal-list-group flex flex-col gap-[10px] mb-[20px] px-[10px]">
               {datePosts.map((post) => (
@@ -734,7 +745,7 @@ export const ListView = () => {
                   key={post.id}
                   display="day"
                   isBeforeNow={false}
-                  date={newDayjs(post.publishDate)}
+                  date={dayjs.utc(post.publishDate).tz(getTimezone())}
                   state={post.state}
                   statistics={openStatistics(post.id)}
                   missingRelease={openMissingRelease(post.id)}
@@ -797,7 +808,7 @@ export const CalendarColumn: FC<{
   const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
-      const pList = dayjs.utc(post.publishDate).local();
+      const pList = dayjs.utc(post.publishDate).tz(getTimezone());
       const check =
         display === 'day'
           ? pList.format('YYYY-MM-DD HH:mm') ===
@@ -824,10 +835,7 @@ export const CalendarColumn: FC<{
   }, [postList, showAll]);
 
   const isBeforeNow = useMemo(() => {
-    const originalUtc = getDate.startOf('hour');
-    return originalUtc
-      .startOf('hour')
-      .isBefore(newDayjs().startOf('hour').utc());
+    return isPastHour(getDate, displayNow());
   }, [getDate, num]);
 
   const { start, stop } = useInterval(
@@ -1014,8 +1022,8 @@ export const CalendarColumn: FC<{
             randomHour
               ? getDate.hour(Math.floor(Math.random() * 24))
               : getDate.format('YYYY-MM-DDTHH:mm:ss') ===
-                newDayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
-              ? newDayjs().add(10, 'minute')
+                displayNow().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
+              ? displayNow().add(10, 'minute')
               : getDate
           }
           {...(set?.content ? { set: JSON.parse(set.content) } : {})}
@@ -1046,7 +1054,7 @@ export const CalendarColumn: FC<{
         <div
           className={clsx(
             'pt-[8px] pb-[2px] text-[13px] font-[600]',
-            getDate.format('YYYY-MM-DD') === newDayjs().format('YYYY-MM-DD')
+            getDate.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD')
               ? 'text-[#00D9FF]'
               : 'text-[#c0c0c0]'
           )}
@@ -1357,8 +1365,9 @@ const CalendarItem: FC<{
           </div>
           {showTime && (
             <div className="cal-list-when">
-              {newDayjs(post.publishDate)
-                .local()
+              {dayjs
+                .utc(post.publishDate)
+                .tz(getTimezone())
                 .format(isUSCitizen() ? 'ddd, MMM D · h:mm A' : 'ddd, D MMM · HH:mm')}
             </div>
           )}
