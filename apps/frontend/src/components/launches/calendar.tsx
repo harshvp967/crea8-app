@@ -962,6 +962,7 @@ export const CalendarColumn: FC<{
             askClose: false,
             closeOnEscape: true,
             withCloseButton: true,
+            classNames: { modal: 'po-set-modal' },
             onClose: () => resolve('exit'),
             children: (
               <SetSelectionModal
@@ -1546,21 +1547,21 @@ export const SetSelectionModal: FC<{
   const t = useT();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="text-lg font-medium">
+    <div className="po-sets flex flex-col gap-[12px]">
+      <div className="text-[15px] font-[500] text-textItemBlur">
         {t('choose_set_or_continue', 'Choose a set or continue without one')}
       </div>
 
-      <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+      <div className="flex flex-col gap-[8px] max-h-[360px] overflow-y-auto">
         {sets.map((set) => (
           <div
             key={set.id}
             onClick={() => onSelect(set)}
-            className="p-3 border border-tableBorder rounded-lg cursor-pointer hover:transition-colors"
+            className="po-set-card p-[14px] border border-newBorder rounded-[18px] cursor-pointer bg-newBgColorInner"
           >
-            <div className="font-medium">{set.name}</div>
+            <div className="font-[600] text-[15px]">{set.name}</div>
             {set.description && (
-              <div className="text-sm text-gray-400 mt-1">
+              <div className="text-[13px] text-textItemBlur mt-[4px]">
                 {set.description}
               </div>
             )}
@@ -1568,14 +1569,13 @@ export const SetSelectionModal: FC<{
         ))}
       </div>
 
-      <div className="flex gap-2 pt-2 border-t border-tableBorder">
-        <button
-          onClick={onContinueWithoutSet}
-          className="flex-1 px-4 py-2 text-textColor rounded-lg hover:transition-colors"
-        >
-          {t('continue_without_set', 'Continue without set')}
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onContinueWithoutSet}
+        className="h-[44px] px-[16px] rounded-[18px] border border-newBorder bg-newBgColorInner text-[14px] font-[600]"
+      >
+        {t('continue_without_set', 'Continue without set')}
+      </button>
     </div>
   );
 };

@@ -51,6 +51,7 @@ export function useHasScroll(ref: RefObject<HTMLElement | null>): boolean {
 }
 
 export const SelectCurrent: FC = () => {
+  const t = useT();
   const modals = useDecisionModal();
   const {
     selectedIntegrations,
@@ -108,15 +109,18 @@ export const SelectCurrent: FC = () => {
               setCurrent('global');
             }}
             className={clsx(
-              'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] justify-center items-center bg-newBgLineColor',
+              'po-global cursor-pointer flex gap-[8px] h-[40px] justify-center items-center bg-newBgColorInner',
               current !== 'global'
-                ? 'text-[#A3A3A3]'
-                : 'border border-[#00D9FF] text-[#00D9FF]'
+                ? 'text-[#A3A3A3] rounded-[14px] w-[40px] border border-newBorder'
+                : 'po-global-on rounded-[18px] px-[12px] border border-[#00D9FF] text-[#00D9FF]'
             )}
           >
-            <div>
-              <GlobalIcon />
-            </div>
+            <GlobalIcon />
+            {current === 'global' && (
+              <span className="text-[13px] font-[600] whitespace-nowrap">
+                {t('you_are_in_global_editing_mode', 'You are in global editing mode')}
+              </span>
+            )}
           </div>
           {selectedIntegrations.map(({ integration }) => (
             <div
@@ -126,10 +130,10 @@ export const SelectCurrent: FC = () => {
               }}
               key={integration.id}
               className={clsx(
-                'border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[8px] items-center bg-newBgLineColor justify-center',
+                'po-selected border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[14px] items-center bg-newBgColorInner justify-center',
                 current === integration.id
                   ? 'border-[#00D9FF] text-[#00D9FF]'
-                  : 'border-transparent'
+                  : 'border-newBorder'
               )}
             >
               <div

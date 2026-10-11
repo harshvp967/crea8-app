@@ -98,6 +98,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     }
   }, [hide]);
 
+  useEffect(() => {
+    document.body.classList.add('composer-open');
+    return () => {
+      document.body.classList.remove('composer-open');
+    };
+  }, []);
+
   const currentIntegrationText = useMemo(() => {
     if (current === 'global') {
       return (
@@ -478,6 +485,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   return (
     <div className={clsx('composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview')}>
       <div className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] flex-col min-h-0">
+        <div className="arc-grab composer-grab" aria-hidden />
         <div className="composer-tabs" role="tablist">
           <span className="composer-tabs-title">{t('create_post_title', 'Create Post')}</span>
           <button type="button" role="tab" aria-selected={phonePane === 'editor'} className={phonePane === 'editor' ? 'on' : ''} onClick={() => setPhonePane('editor')}>

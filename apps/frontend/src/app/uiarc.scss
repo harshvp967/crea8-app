@@ -7463,3 +7463,137 @@ body :focus-visible {
     width: auto;
   }
 }
+
+/* Post composer, part 1. Presentation only. */
+body.composer-open .copilotKitButton,
+body.composer-open .copilotKitWindow,
+.composer .copilotKitButton,
+.composer .copilotKitWindow {
+  display: none !important;
+}
+
+.po-pick {
+  width: 48px;
+  height: 48px;
+}
+
+.po-global-on {
+  background: color-mix(in srgb, var(--arc-accent) 14%, transparent);
+}
+
+.po-specific {
+  min-height: 40px;
+}
+
+.composer-editor .editor-toolbar > div,
+.composer-editor .b2 .cursor-pointer {
+  height: 34px;
+  border-radius: 12px;
+}
+
+.composer .group.rounded-\[6px\] {
+  height: 28px;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+}
+
+.composer {
+  padding: 16px !important;
+}
+
+.composer-frame {
+  border-radius: 26px;
+  border: 1px solid var(--new-border);
+}
+
+.po-media-modal .withp3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 12px;
+}
+
+.po-media-modal .w8-max {
+  float: none !important;
+  width: 168px;
+  height: auto;
+  aspect-ratio: auto;
+}
+
+.po-media-modal .w8-max > div {
+  aspect-ratio: 4 / 3;
+  height: 126px;
+  border-width: 2px;
+  border-radius: 16px;
+}
+
+.po-media-modal .w8-max .absolute.bottom-\[10px\] {
+  position: static;
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.composer-open .app-toast.is-warning {
+  top: auto;
+  bottom: 108px;
+  left: auto;
+  right: 28px;
+  transform: none;
+}
+
+.composer-grab {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mantine-Modal-modal:has(.composer) {
+    top: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  .composer-grab {
+    display: block;
+    margin-top: 8px;
+  }
+
+  .composer-foot {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto !important;
+  }
+
+  .composer-foot > .flex-1 {
+    width: 100%;
+    padding-right: 12px;
+  }
+
+  .composer-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  .composer-actions > button,
+  .composer-actions .group {
+    min-width: 0;
+  }
+
+  .composer-actions .group {
+    grid-column: 1 / -1;
+  }
+
+  .composer-actions .btnSub,
+  .composer-actions > button {
+    width: 100%;
+    white-space: nowrap;
+  }
+}

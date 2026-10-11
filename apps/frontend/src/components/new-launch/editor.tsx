@@ -415,6 +415,25 @@ export const EditorWrapper: FC<{
           <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
         </>
       )}
+      {!!internal && !existingData?.integration && (
+        <div
+          className="po-specific flex items-center gap-[16px] cursor-pointer select-none"
+          onClick={goBackToGlobal}
+        >
+          <div className="flex gap-[6px] items-center">
+            <ResetIcon />
+            <div className="text-[13px] font-[600]">
+              {t('back_to_global', 'Back to global')}
+            </div>
+          </div>
+          <div className="flex gap-[6px] items-center text-[#00D9FF]">
+            <div className="w-[8px] h-[8px] rounded-full bg-[#00D9FF]" />
+            <div className="text-[14px] font-[600]">
+              {t('editing_a_specific_network', 'Editing a Specific Network')}
+            </div>
+          </div>
+        </div>
+      )}
       {items.map((g, index) => (
         <div
           key={g.id}
@@ -465,30 +484,6 @@ export const EditorWrapper: FC<{
                             />
                           )}
                         </div>
-                        {!!internal && !existingData?.integration && (
-                          <div
-                            className="mt-[12px] flex gap-[20px] items-center cursor-pointer select-none"
-                            onClick={goBackToGlobal}
-                          >
-                            <div className="flex gap-[6px] items-center">
-                              <div className="w-[8px] h-[8px] rounded-full bg-[#00D9FF]" />
-                              <div className="text-[14px] font-[600]">
-                                {t(
-                                  'editing_a_specific_network',
-                                  'Editing a Specific Network'
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex gap-[6px] items-center">
-                              <div>
-                                <ResetIcon />
-                              </div>
-                              <div className="text-[13px] font-[600]">
-                                {t('back_to_global', 'Back to global')}
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ) : null}
                   </>

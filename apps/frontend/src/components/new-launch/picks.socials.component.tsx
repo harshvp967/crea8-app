@@ -32,7 +32,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
     <div className={clsx('flex', locked && 'opacity-50 pointer-events-none')}>
       <div className="flex flex-1">
         <div className="innerComponent flex-1 flex">
-          <div className="flex flex-wrap gap-[12px] flex-1">
+          <div className="po-picks flex flex-wrap gap-[10px] flex-1">
             {integrations
               .filter((f) => {
                 if (exising.integration) {
@@ -57,25 +57,18 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                       addOrRemoveSelectedIntegration(integration, {});
                     }}
                     className={clsx(
-                      'cursor-pointer border-[2px] relative rounded-full flex justify-center items-center bg-fifth filter transition-all duration-500',
+                      'po-pick cursor-pointer border relative rounded-[14px] flex justify-center items-center bg-newBgColorInner filter transition-all duration-500',
                       selectedIntegrations.findIndex(
                         (p) => p.integration.id === integration.id
                       ) === -1
-                        ? 'grayscale border-transparent'
-                        : 'border-[#622FF6]'
+                        ? 'grayscale border-newBorder'
+                        : 'border-[#00D9FF]'
                     )}
                   >
                     <ImageWithFallback
                       fallbackSrc="/no-picture.jpg"
                       src={integration.picture || '/no-picture.jpg'}
-                      className={clsx(
-                        'rounded-full transition-all min-w-[42px] border-[1.5px] min-h-[42px]',
-                        selectedIntegrations.findIndex(
-                          (p) => p.integration.id === integration.id
-                        ) === -1
-                          ? 'border-transparent'
-                          : 'border-[#000]'
-                      )}
+                      className="rounded-[12px] transition-all min-w-[42px] min-h-[42px] border border-transparent"
                       alt={integration.identifier}
                       width={42}
                       height={42}

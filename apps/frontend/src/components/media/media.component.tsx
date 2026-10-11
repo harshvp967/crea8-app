@@ -453,7 +453,10 @@ export const MediaBox: FC<{
   return (
     <DropFiles
       disabled={loading}
-      className={clsx('flex flex-col flex-1 min-h-0', standalone && 'media-library-body')}
+      className={clsx(
+        'flex flex-col flex-1 min-h-0',
+        standalone ? 'media-library-body' : 'po-library'
+      )}
       onDrop={dragAndDrop}
     >
       <div className={clsx('flex flex-col flex-1 min-h-0', standalone && 'media-stack')}>
@@ -810,7 +813,12 @@ export const MediaBox: FC<{
           </div>
         )}
         {!standalone && (
-          <div className="flex justify-end mt-[32px] gap-[8px]">
+          <div className="po-library-foot flex justify-end mt-[16px] gap-[8px] items-center">
+            {selected.length > 0 && (
+              <div className="me-auto text-[13px] font-[500] text-textItemBlur">
+                {selected.length} selected
+              </div>
+            )}
             <button
               onClick={() => modals.closeCurrent()}
               className="cursor-pointer h-[44px] px-[20px] items-center justify-center border border-newBorder bg-newBgColorInner text-newTextColor flex rounded-[18px] font-[600]"
@@ -924,6 +932,7 @@ export const MultiMediaComponent: FC<{
       fullScreen: true,
       size: 'calc(100% - 80px)',
       height: 'calc(100% - 80px)',
+      classNames: { modal: 'po-media-modal' },
       children: (close) => (
         <MediaBox setMedia={changeMedia} closeModal={close} />
       ),

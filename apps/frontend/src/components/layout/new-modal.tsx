@@ -410,6 +410,7 @@ export const useDecisionModal = () => {
         modals.openModal({
           title,
           askClose: false,
+          classNames: { modal: 'po-sure-modal' },
           onClose: () => res(false),
           children: (
             <DecisionModal
