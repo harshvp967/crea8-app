@@ -165,22 +165,37 @@ export const StalkerSettings = () => {
           <span className="stk-set-check">
             <StalkerCheckNow iconOnly />
           </span>
-          {dirty ? (
-            <button type="button" className={`${stkGhost} stk-set-discard`} onClick={() => setDraft(saved)}>
-              Discard
-            </button>
-          ) : null}
           <button
             type="button"
             className={`${stkPrimary} stk-set-save`}
             disabled={!dirty || saving}
             onClick={save}
           >
-            {dirty ? <span className="stk-set-dot" aria-hidden /> : null}
             {saving ? 'Saving…' : 'Save changes'}
           </button>
         </div>
       </div>
+      {dirty ? (
+        <div className="stk-set-dirtybar">
+          <p className="stk-set-dirty-label">
+            <span className="stk-set-dot" aria-hidden />
+            Unsaved changes
+          </p>
+          <div className="stk-set-actions">
+            <button type="button" className={`${stkGhost} stk-set-discard`} onClick={() => setDraft(saved)}>
+              Discard
+            </button>
+            <button
+              type="button"
+              className={`${stkPrimary} stk-set-save stk-set-save-bar`}
+              disabled={saving}
+              onClick={save}
+            >
+              {saving ? 'Saving…' : 'Save changes'}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <section className={`${stkCard} stk-set-card`}>
         <label className="stk-set-label">

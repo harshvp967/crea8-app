@@ -380,7 +380,7 @@ export const StalkerAlerts = () => {
       )}
 
       {configure ? (
-        <div className={stkOverlay}>
+        <div className={`${stkOverlay} stk-digest-overlay`}>
           <div className={`${stkDialog} max-w-[480px]`}>
             <div className={stkDialogHead}>
               <div className="min-w-0 flex-1">
