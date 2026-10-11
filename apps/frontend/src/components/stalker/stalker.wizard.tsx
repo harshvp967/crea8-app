@@ -222,7 +222,14 @@ export const StalkerWizard = () => {
                       index < step && 'is-done'
                     )}
                   >
-                    <span className="stk-wiz-num">{index < step ? <StepCheck /> : index + 1}</span>
+                    <span className="stk-wiz-num">
+                      <span className="stk-wiz-num-value">{index + 1}</span>
+                      {index < step ? (
+                        <span className="stk-wiz-num-check">
+                          <StepCheck />
+                        </span>
+                      ) : null}
+                    </span>
                     <span className="stk-wiz-label">{label}</span>
                   </span>
                   {index < 2 ? <span className="stk-wiz-line" /> : null}
@@ -310,18 +317,25 @@ export const StalkerWizard = () => {
                       {SOURCES.map(([id, label, key, icon]) => {
                         const locked = !!note(id);
                         return (
-                          <li key={id}>
-                            <label className="stk-wiz-source">
-                              <input
-                                type="checkbox"
-                                checked={!!keyword[key]}
-                                disabled={locked}
-                                onChange={() => toggleSource(index, key)}
-                              />
+                          <li key={id} className="stk-wiz-source">
+                            <span className="stk-wiz-source-main">
                               <SourceIcon source={icon} className="h-[16px] w-[16px]" />
                               <span className="stk-wiz-source-name">{label}</span>
-                              {locked ? <span className="stk-wiz-note">{note(id)}</span> : null}
-                            </label>
+                            </span>
+                            <span className="stk-wiz-source-end">
+                              {locked ? <span className="stk-wiz-pill">{note(id)}</span> : null}
+                              <button
+                                type="button"
+                                role="switch"
+                                className="stk-switch"
+                                aria-label={label}
+                                aria-checked={!!keyword[key]}
+                                disabled={locked}
+                                onClick={() => toggleSource(index, key)}
+                              >
+                                <span />
+                              </button>
+                            </span>
                           </li>
                         );
                       })}

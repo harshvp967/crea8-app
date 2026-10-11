@@ -8,10 +8,8 @@ import { STALKER_SWATCHES } from '@gitroom/frontend/components/stalker/stalker.w
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import {
   stkCard,
-  stkClose,
   stkDanger,
   stkDialog,
-  stkDialogBody,
   stkDialogFoot,
   stkDialogHead,
   stkField,
@@ -390,23 +388,22 @@ export const StalkerSettings = () => {
           aria-labelledby="stk-del-title"
         >
           <div className={`${stkDialog} stk-del max-w-[440px]`}>
-            <div className={stkDialogHead}>
-              <h2 id="stk-del-title" className="min-w-0 flex-1 text-[18px] font-[600]">
-                Delete project?
-              </h2>
-              <button
-                type="button"
-                className={stkClose}
-                aria-label="Close"
-                onClick={() => setConfirmDelete(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className={stkDialogBody}>
-              <p className="text-[14px] leading-[1.45] text-textItemBlur">
-                “{project.name}” with all keywords, alerts and mentions will be removed.
-              </p>
+            <div className={`${stkDialogHead} stk-del-head`}>
+              <span className="stk-ic-bad stk-del-mark" aria-hidden>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M12 4.2L21 19.2H3L12 4.2z" strokeLinejoin="round" />
+                  <path d="M12 10v4.2" strokeLinecap="round" />
+                  <circle cx="12" cy="16.6" r="0.8" fill="currentColor" stroke="none" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <h2 id="stk-del-title" className="text-[18px] font-[600]">
+                  Delete project?
+                </h2>
+                <p className="mt-[4px] text-[14px] leading-[1.45] text-textItemBlur">
+                  “{project.name}” with all keywords, alerts and mentions will be removed.
+                </p>
+              </div>
             </div>
             <div className={`${stkDialogFoot} stk-del-foot`}>
               <button type="button" className={stkSecondary} onClick={() => setConfirmDelete(false)}>
