@@ -35,6 +35,7 @@ import {
   embedProblem,
   fillDays,
   firstImage,
+  hasCustomDomainAddon,
   imagePathProblem,
   isPaidPlan,
   isValidTimeZone,
@@ -386,14 +387,14 @@ export class LinkService {
 
   async connectDomain(org: PlanOrg, domain: string) {
     const record = await this.ensure(org);
-    if (!this._cloudflare.configured()) {
-      return { available: false, page: await this.toEditor(record) };
-    }
-    if (!isPaidPlan(record.organization.subscription)) {
+    if (!hasCustomDomainAddon(record.organization)) {
       throw new HttpException(
-        { message: 'Custom domains are on a paid plan', upgrade: true },
+        { message: 'Custom domains are a separate add-on', upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
       );
+    }
+    if (!this._cloudflare.configured()) {
+      return { available: false, page: await this.toEditor(record) };
     }
     const hostname = domain.trim().toLowerCase().replace(/\.$/, '');
     const problem = domainProblem(hostname);
@@ -1069,6 +1070,7 @@ export class LinkService {
     const clicks = await this._repository.clickCounts(record.id);
     const byBlock = new Map(clicks.filter((row) => row.blockId).map((row) => [row.blockId, row._count._all]));
     const paid = isPaidPlan(record.organization.subscription);
+    const customDomainAddon = hasCustomDomainAddon(record.organization);
     const hostname = record.customDomain || '';
     return {
       id: record.id,
@@ -1103,6 +1105,7 @@ export class LinkService {
           })
         : [],
       paid,
+      customDomainAddon,
       publicOrigin: publicOrigin(),
       publicUrl: pageUrl(record.slug, hostname, record.domainStatus),
       capture: {

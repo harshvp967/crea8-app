@@ -25,6 +25,7 @@ export const LINK_SOCIALS = [
 export const LINK_RANGES = ['7d', '30d', '90d', '12m'] as const;
 
 const RESERVED = new Set([
+  'about',
   'admin',
   'agents',
   'analytics',
@@ -37,7 +38,10 @@ const RESERVED = new Set([
   'bio-host',
   'blog',
   'calendar',
+  'careers',
+  'changelog',
   'confirm',
+  'contact',
   'copilot',
   'dashboard',
   'data-deletion',
@@ -45,7 +49,9 @@ const RESERVED = new Set([
   'domain',
   'editor',
   'err',
+  'faq',
   'favicon.ico',
+  'features',
   'help',
   'home',
   'index',
@@ -67,15 +73,19 @@ const RESERVED = new Set([
   'p',
   'plugs',
   'postiz',
+  'press',
   'pricing',
   'privacy',
   'provider',
   'public',
+  'refund-policy',
+  'register',
   'robots.txt',
   'settings',
   'share',
-  'sitemap.xml',
+  'signin',
   'signup',
+  'sitemap.xml',
   'stalker',
   'stalker-preview',
   'static',
@@ -220,6 +230,10 @@ export function isPaidPlan(subscription?: LinkPlan) {
     return true;
   }
   return plan.month_price > 0;
+}
+
+export function hasCustomDomainAddon(org?: { customDomainAddon?: boolean | null } | null) {
+  return org?.customDomainAddon === true;
 }
 
 export function showBadge(hideBadge: boolean, paid: boolean) {

@@ -156,6 +156,7 @@ export const LinkEditorScreen = () => {
   return (
     <LinkSplit
       previewOpen={preview}
+      onPreviewClose={() => setPreview(false)}
       preview={
         <LinkPreview
           onCopy={() => {
@@ -167,17 +168,17 @@ export const LinkEditorScreen = () => {
         </LinkPreview>
       }
     >
-      <div className="flex flex-col gap-[12px] pb-[24px]">
-        <div className="flex flex-wrap items-start justify-between gap-[12px]">
-          <div>
+      <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
+        <div className="flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-[22px] font-[600]">Editor</h1>
-            <p className="text-[14px] text-textItemBlur">
+            <p className="truncate text-[14px] text-textItemBlur">
               {data.publicOrigin.replace(/^https?:\/\//, '')}/{data.slug}
             </p>
           </div>
-          <div className="flex items-center gap-[8px]">
-            <button type="button" className={`${linkSecondary} xl:hidden`} onClick={() => setPreview((value) => !value)}>
-              Preview
+          <div className="flex flex-wrap items-center justify-center gap-[8px] sm:justify-end">
+            <button type="button" className={`${linkSecondary} min-[1200px]:hidden`} onClick={() => setPreview((value) => !value)}>
+              {preview ? 'Close preview' : 'Preview'}
             </button>
             <div className="relative">
               <button type="button" className={linkSecondary} onClick={() => setAddOpen((value) => !value)}>
@@ -294,7 +295,9 @@ export const LinkEditorScreen = () => {
           data.blocks.map((block) => (
             <article
               key={block.id}
-              className="flex items-center gap-[10px] rounded-[18px] border border-newBorder px-[12px] py-[12px]"
+              className={`lib-editor-row flex items-center gap-[10px] rounded-[18px] border border-newBorder px-[12px] py-[12px]${
+                block.type === 'FEATURED_POST' ? ' is-feature' : ''
+              }`}
               draggable
               onDragStart={(event) => event.dataTransfer.setData('text/plain', block.id)}
               onDragOver={(event) => event.preventDefault()}
@@ -307,7 +310,7 @@ export const LinkEditorScreen = () => {
                 ⋮⋮
               </span>
               {block.type === 'FEATURED_POST' ? (
-                <div className="h-[42px] w-[42px] overflow-hidden rounded-[10px] bg-newBgLineColor">
+                <div className="h-[42px] w-[42px] shrink-0 overflow-hidden rounded-[10px] bg-newBgLineColor">
                   {block.post?.image ? <img src={block.post.image} alt="" className="h-full w-full object-cover" /> : null}
                 </div>
               ) : null}
@@ -350,14 +353,14 @@ export const LinkEditorScreen = () => {
                 ) : null}
               </div>
               {block.type === 'LINK' ? (
-                <span className="hidden text-[13px] text-textItemBlur sm:inline">
+                <span className="lib-editor-meta shrink-0 text-[13px] text-textItemBlur">
                   {block.clicks.toLocaleString('en-US')} clicks
                 </span>
               ) : null}
               {block.type === 'FEATURED_POST' ? (
                 <button
                   type="button"
-                  className={linkSecondary}
+                  className={`${linkSecondary} lib-editor-wide`}
                   onClick={() => {
                     setPostId(block.postId || '');
                     setModal({ kind: 'post', block });
@@ -366,13 +369,15 @@ export const LinkEditorScreen = () => {
                   Change post
                 </button>
               ) : (
-                <LinkToggle
-                  checked={block.enabled}
-                  label={block.enabled ? 'Hide block' : 'Show block'}
-                  onChange={(enabled) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled })}
-                />
+                <span className="lib-editor-meta shrink-0">
+                  <LinkToggle
+                    checked={block.enabled}
+                    label={block.enabled ? 'Hide block' : 'Show block'}
+                    onChange={(enabled) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled })}
+                  />
+                </span>
               )}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button type="button" className="px-[6px] text-[18px]" aria-label="Block actions" onClick={() => setMenu(menu === block.id ? '' : block.id)}>
                   …
                 </button>

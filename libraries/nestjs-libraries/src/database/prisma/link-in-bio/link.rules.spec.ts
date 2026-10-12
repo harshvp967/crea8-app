@@ -13,6 +13,7 @@ import {
   fillDays,
   formatRate,
   isPaidPlan,
+  hasCustomDomainAddon,
   leadsToCsv,
   lockProblem,
   mapHostnameStatus,
@@ -45,6 +46,14 @@ describe('link-in-bio slug and domain rules', () => {
     expect(slugProblem('link')).toMatch(/reserved/);
     expect(slugProblem('bio-host')).toMatch(/reserved/);
     expect(slugProblem('robots.txt')).toMatch(/reserved/);
+    expect(slugProblem('pricing')).toMatch(/reserved/);
+    expect(slugProblem('privacy')).toMatch(/reserved/);
+    expect(slugProblem('terms')).toMatch(/reserved/);
+    expect(slugProblem('refund-policy')).toMatch(/reserved/);
+    expect(slugProblem('about')).toMatch(/reserved/);
+    expect(slugProblem('contact')).toMatch(/reserved/);
+    expect(slugProblem('features')).toMatch(/reserved/);
+    expect(slugProblem('blog')).toMatch(/reserved/);
     expect(slugProblem('ab')).toMatch(/3 to 30/);
     expect(slugProblem('1abc')).toMatch(/letter/);
     expect(slugProblem('my..page')).toMatch(/dot or underscore/);
@@ -87,6 +96,14 @@ describe('link-in-bio plan gate and schedule', () => {
     expect(showBadge(true, false)).toBe(true);
     expect(showBadge(true, true)).toBe(false);
     expect(showBadge(false, true)).toBe(true);
+  });
+
+  it('treats a custom domain as an organization add-on, separate from the plan', () => {
+    expect(hasCustomDomainAddon(null)).toBe(false);
+    expect(hasCustomDomainAddon({})).toBe(false);
+    expect(hasCustomDomainAddon({ customDomainAddon: false })).toBe(false);
+    expect(hasCustomDomainAddon({ customDomainAddon: true })).toBe(true);
+    expect(isPaidPlan({ subscriptionTier: 'PRO' })).toBe(true);
   });
 
   it('hides a link before it starts and after it ends, and keeps it in the editor', () => {

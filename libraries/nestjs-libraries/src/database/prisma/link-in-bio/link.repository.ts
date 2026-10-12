@@ -23,6 +23,7 @@ const pageInclude = {
     select: {
       name: true,
       deletedAt: true,
+      customDomainAddon: true,
       subscription: {
         select: {
           subscriptionTier: true,

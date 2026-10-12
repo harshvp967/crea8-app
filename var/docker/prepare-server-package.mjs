@@ -185,7 +185,6 @@ for (const name of extraRuntime) external.add(name);
 
 const buildToolNames = new Set([
   'typescript',
-  'prisma',
   '@nestjs/cli',
   '@nestjs/schematics',
   'cross-env',
@@ -211,6 +210,11 @@ for (const name of [...external].sort()) {
   }
   dependencies[name] = spec;
 }
+
+// Not imported by the Nest apps, so the scan above does not see it. The
+// backend entrypoint runs `prisma db push` before listen. It has to survive
+// `pnpm prune --prod`.
+dependencies.prisma = specifierFor('prisma');
 
 const devDependencies = {};
 for (const name of buildToolNames) {

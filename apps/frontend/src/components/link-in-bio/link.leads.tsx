@@ -60,7 +60,7 @@ export const LinkLeadsScreen = () => {
   };
 
   return (
-    <div className="flex flex-col gap-[16px] overflow-y-auto pb-[24px]">
+    <div className="flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
       <div className="flex flex-wrap items-start justify-between gap-[12px]">
         <div>
           <h1 className="text-[22px] font-[600]">Leads</h1>
@@ -96,7 +96,7 @@ export const LinkLeadsScreen = () => {
           })}
         </div>
         <input
-          className="h-[40px] w-full max-w-[260px] rounded-[14px] border border-newBorder bg-transparent px-[12px] text-[14px]"
+          className="h-[40px] w-full min-w-0 rounded-[14px] border border-newBorder bg-transparent px-[12px] text-[14px] sm:max-w-[260px]"
           placeholder="Search emails"
           value={input}
           onChange={(event) => setInput(event.target.value)}
@@ -108,7 +108,8 @@ export const LinkLeadsScreen = () => {
       {isLoading || !data ? (
         <p className="text-[14px] text-textItemBlur">Loading leads…</p>
       ) : data.leads.length ? (
-        <div className="overflow-hidden rounded-[20px] border border-newBorder">
+        <div className="min-w-0 overflow-hidden rounded-[20px] border border-newBorder">
+          <div className="lib-table-wrap">
           <table className="lib-table">
             <thead>
               <tr>
@@ -139,6 +140,7 @@ export const LinkLeadsScreen = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-[8px] py-[64px] text-center">
@@ -156,8 +158,8 @@ export const LinkLeadsScreen = () => {
       )}
 
       {capture && counts?.all === 0 ? (
-        <section className="flex items-center justify-between gap-[12px] rounded-[20px] border border-newBorder px-[16px] py-[14px]">
-          <div>
+        <section className="flex flex-wrap items-center justify-between gap-[12px] rounded-[20px] border border-newBorder px-[16px] py-[14px]">
+          <div className="min-w-0">
             <strong className="text-[14px]">Email capture</strong>
             <p className="text-[13px] text-textItemBlur">Collecting · {capture.position === 0 ? 'Above links' : 'Below links'}</p>
           </div>

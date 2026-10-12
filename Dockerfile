@@ -8,9 +8,11 @@
 # command those package.json scripts already exec.
 #
 # No environment values are baked in. Railway injects service variables at
-# runtime. Prisma db push is not part of either service's start script (it
-# only runs from the all-in-one `pm2-run` script), so the containers do not
-# migrate on boot.
+# runtime. The backend image runs `prisma db push` (no --accept-data-loss,
+# no --force-reset) before it listens, so missing tables and columns are
+# created and a push that would drop data fails the boot. The orchestrator
+# does not migrate. The all-in-one `pm2-run` script still uses
+# `prisma db push --accept-data-loss` for local development only.
 
 # syntax=docker/dockerfile:1.7
 
@@ -74,6 +76,8 @@ FROM runtime-base AS backend
 
 COPY --from=build /app/apps/backend/dist ./apps/backend/dist
 COPY --from=build /app/apps/backend/package.json ./apps/backend/package.json
+COPY --from=build /app/libraries/nestjs-libraries/src/database/prisma/schema.prisma ./libraries/nestjs-libraries/src/database/prisma/schema.prisma
+COPY var/docker/backend-start.sh ./var/docker/backend-start.sh
 # These requires must return and the process must exit. Importing
 # @sentry/profiling-node at module scope used to freeze Node 22 here with
 # no further output. timeout -k sends SIGKILL if a native require ignores
@@ -86,7 +90,8 @@ EXPOSE 3000
 # Same node invocation as apps/backend/package.json "start", without
 # `dotenv -e ../../.env`. That wrapper is for local dev; a missing .env file
 # makes dotenv-cli exit, and Railway already injects service variables.
-CMD ["node", "--experimental-require-module", "dist/apps/backend/src/main.js"]
+# backend-start.sh applies the schema first, then execs this process.
+CMD ["sh", "/app/var/docker/backend-start.sh"]
 
 FROM runtime-base AS orchestrator
 
