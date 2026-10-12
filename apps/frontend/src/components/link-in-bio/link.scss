@@ -58,9 +58,10 @@
 }
 
 .lib-segment button.is-on {
-  background: var(--new-bgColorInner);
+  background-color: var(--new-bgColorInner);
+  background-image: var(--arc-wave);
   color: rgb(var(--new-textColor));
-  box-shadow: var(--arc-shadow-resting);
+  box-shadow: inset 0 0 0 1px var(--arc-selected-border);
 }
 
 .lib-reset-phone {
