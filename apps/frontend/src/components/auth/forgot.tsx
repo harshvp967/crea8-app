@@ -39,17 +39,18 @@ export function Forgot() {
     <div className="flex flex-1 flex-col">
       <FormProvider {...form}>
         <form
+          className="auth-form"
           method="post"
           action="/auth/native-submit"
           onSubmit={form.handleSubmit(onSubmit)}
         >
+          {!state ? (
+            <>
           <div>
-            <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
+            <h1 className="text-[26px] font-[600] tracking-[-0.02em] text-start mb-4">
               {t('forgot_password_1', 'Forgot Password')}
             </h1>
           </div>
-          {!state ? (
-            <>
               <div className="space-y-4 text-textColor">
                 <Input
                   label="Email"
@@ -57,11 +58,12 @@ export function Forgot() {
                   {...form.register('email')}
                   type="email"
                   placeholder={t('email_address', 'Email Address')}
+                  className="cc-input"
                 />
               </div>
               <div className="text-center mt-6">
                 <div className="w-full flex">
-                  <Button type="submit" className="flex-1 !h-[50px] !rounded-[18px]" loading={loading}>
+                  <Button type="submit" className="auth-submit flex-1 !h-[50px] !rounded-[18px]" loading={loading}>
                     {t(
                       'send_password_reset_email',
                       'Send Password Reset Email'
@@ -76,19 +78,22 @@ export function Forgot() {
               </div>
             </>
           ) : (
-            <>
-              <div className="text-start mt-6">
+            <div className="auth-status is-mail">
+              <h1 className="text-[26px] font-[600] tracking-[-0.02em]">
+                {t('forgot_password_1', 'Forgot Password')}
+              </h1>
+              <p>
                 {t(
                   'we_have_send_you_an_email_with_a_link_to_reset_your_password',
                   'We have send you an email with a link to reset your password.'
                 )}
-              </div>
+              </p>
               <p className="mt-4 text-sm">
-                <Link href="/auth/login" className="underline cursor-pointer">
+                <Link href="/auth/login" className="cursor-pointer">
                   {t('go_back_to_login', 'Go back to login')}
                 </Link>
               </p>
-            </>
+            </div>
           )}
         </form>
       </FormProvider>

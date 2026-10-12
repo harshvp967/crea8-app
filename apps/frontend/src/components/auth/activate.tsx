@@ -66,14 +66,16 @@ export function Activate() {
     }
   };
 
+  const emailError = form.formState.errors.email?.message as string | undefined;
   return (
-    <div className="flex flex-col flex-1">
+    <div className="auth-activate flex flex-col flex-1">
+      <div className="auth-mark is-mail" aria-hidden />
       <div>
-        <h1 className="text-3xl font-bold text-start mb-4 cursor-pointer">
+        <h1 className="text-[26px] font-[600] tracking-[-0.02em] text-start mb-4">
           {t('activate_your_account', 'Activate your account')}
         </h1>
       </div>
-      <div className="text-textColor">
+      <div className="auth-copy text-textColor">
         {t('thank_you_for_registering', 'Thank you for registering!')}
         <br />
         {t(
@@ -82,10 +84,15 @@ export function Activate() {
         )}
       </div>
 
-      <div className="mt-8 border-t border-fifth pt-6">
-        <h2 className="text-lg font-semibold mb-4">
+      <div className="auth-resend mt-8">
+        <h2 className="text-[14px] font-[600] mb-4">
           {t('didnt_receive_email', "Didn't receive the email?")}
         </h2>
+        {emailError ? (
+          <div className="auth-alert" role="alert">
+            {emailError}
+          </div>
+        ) : null}
         {status === 'sent' ? (
           <div className="flex flex-col gap-4">
             <div className="text-green-400">
@@ -101,7 +108,8 @@ export function Activate() {
             ) : (
               <Button
                 onClick={resetToForm}
-                className="!rounded-[18px] !h-[50px]"
+                secondary
+                className="auth-submit !rounded-[18px] !h-[50px] w-full"
               >
                 {t('send_again', 'Send Again')}
               </Button>
@@ -116,7 +124,7 @@ export function Activate() {
               )}
             </div>
             <Link href="/auth/login">
-              <Button className="!rounded-[18px] !h-[50px] w-full">
+              <Button className="auth-submit !rounded-[18px] !h-[50px] w-full">
                 {t('go_to_login', 'Go to Login')}
               </Button>
             </Link>
@@ -130,10 +138,13 @@ export function Activate() {
                 {...form.register('email', { required: true })}
                 type="email"
                 placeholder={t('email_address', 'Email Address')}
+                className="cc-input"
+                removeError={!!emailError}
               />
               <Button
                 type="submit"
-                className="!rounded-[18px] !h-[50px]"
+                secondary
+                className="auth-submit !rounded-[18px] !h-[50px]"
                 loading={loading}
                 disabled={cooldown > 0}
               >

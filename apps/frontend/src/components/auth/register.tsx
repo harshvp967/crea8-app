@@ -154,18 +154,19 @@ export function RegisterAfter({
   return (
     <FormProvider {...form}>
       <form
-        className="flex-1 flex"
+        className="auth-form flex-1 flex"
         method="post"
         action="/auth/native-submit"
+        noValidate
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="flex flex-col flex-1">
           <div>
-            <h1 className="text-[40px] font-[500] -tracking-[0.8px] text-start cursor-pointer">
+            <h1 className="text-[26px] font-[600] tracking-[-0.02em] text-start">
               {t('sign_up', 'Sign Up')}
             </h1>
           </div>
-          <div className="text-[14px] mt-[32px] mb-[12px]">
+          <div className="auth-kicker text-[14px] mt-[20px] mb-[12px]">
             {t('continue_with', 'Continue With')}
           </div>
           <div className="flex flex-col text-[14px]">
@@ -173,7 +174,7 @@ export function RegisterAfter({
               (!isGeneral ? (
                 <GithubProvider />
               ) : (
-                <div className="gap-[8px] flex">
+                <div className="auth-providers gap-[8px] flex flex-col">
                   {genericOauth && isGeneral ? (
                     <OauthProvider />
                   ) : (
@@ -185,7 +186,7 @@ export function RegisterAfter({
                 </div>
               ))}
             {!isAfterProvider && (
-              <div className="h-[20px] mb-[24px] mt-[24px] relative">
+              <div className="auth-or h-[20px] mb-[24px] mt-[24px] relative">
                 <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
                 <div
                   className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
@@ -204,6 +205,7 @@ export function RegisterAfter({
                       {...form.register('email')}
                       type="email"
                       placeholder={t('email_address', 'Email Address')}
+                      className="cc-input"
                     />
                     <Input
                       label="Password"
@@ -212,6 +214,7 @@ export function RegisterAfter({
                       autoComplete="off"
                       type="password"
                       placeholder={t('label_password', 'Password')}
+                      className="cc-input"
                     />
                   </>
                 )}
@@ -222,9 +225,10 @@ export function RegisterAfter({
                   autoComplete="off"
                   type="text"
                   placeholder={t('label_company', 'Company')}
+                  className="cc-input"
                 />
               </div>
-              <div className={clsx('text-[12px]')}>
+              <div className={clsx('auth-terms text-[12px]')}>
                 {t(
                   'by_registering_you_agree_to_our',
                   'By registering you agree to our'
@@ -250,7 +254,7 @@ export function RegisterAfter({
                 <div className="w-full flex">
                   <Button
                     type="submit"
-                    className="flex-1 !rounded-[18px] !h-[50px]"
+                    className="auth-submit flex-1 !rounded-[18px] !h-[50px]"
                     loading={loading}
                   >
                     {t('create_account', 'Create Account')}
