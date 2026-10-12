@@ -1,23 +1,26 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useMenuItem, useVisibleMenuItems } from '@gitroom/frontend/components/layout/top.menu';
 import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.nav';
+import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
 
 export const MobileTabBar = () => {
   const pathname = (usePathname() || '').replace(/^\/stalker-preview/, '/stalker');
   const stalker = pathname.startsWith('/stalker');
+  const link = pathname === '/link' || pathname.startsWith('/link/');
   const { firstMenu, secondMenu } = useMenuItem();
   const primary = useVisibleMenuItems(firstMenu);
   const extra = useVisibleMenuItems(secondMenu);
   const [more, setMore] = useState(false);
-
-  useEffect(() => {
+  const [seenPath, setSeenPath] = useState(pathname);
+  if (seenPath !== pathname) {
+    setSeenPath(pathname);
     setMore(false);
-  }, [pathname]);
+  }
 
   const asItem = (item: {
     name?: string;
@@ -32,16 +35,19 @@ export const MobileTabBar = () => {
     onClick: item.onClick,
   });
 
-  const tabs = stalker
+  const tabs = link
+    ? linkNavLinks.slice(0, 4).map(asItem)
+    : stalker
     ? stalkerNavLinks
         .slice(0, 4)
         .map((item) => asItem({ ...item, icon: item.tabIcon || item.icon }))
     : primary.slice(0, 4).map(asItem);
-  const overflow = (stalker ? stalkerNavLinks.slice(4) : [...primary.slice(4), ...extra]).map(
-    asItem
-  );
+  const overflow = (
+    link ? linkNavLinks.slice(4) : stalker ? stalkerNavLinks.slice(4) : [...primary.slice(4), ...extra]
+  ).map(asItem);
 
-  const active = (path: string) => path !== '#' && pathname.indexOf(path) === 0;
+  const active = (path: string) =>
+    path === '/link' ? pathname === '/link' : path !== '#' && pathname.indexOf(path) === 0;
   const moreActive = !tabs.some((item) => active(item.path));
 
   return (

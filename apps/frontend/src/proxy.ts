@@ -10,6 +10,64 @@ import {
 } from '@gitroom/react/translation/i18n.config';
 acceptLanguage.languages(languages);
 
+const APP_HOSTS = new Set(['localhost', '127.0.0.1', 'crea8.one', 'www.crea8.one', 'app.crea8.one']);
+const APP_SECTIONS = new Set([
+  'admin',
+  'agents',
+  'analytics',
+  'auth',
+  'billing',
+  'err',
+  'icons',
+  'integrations',
+  'launches',
+  'link',
+  'media',
+  'modal',
+  'oauth',
+  'plugs',
+  'settings',
+  'stalker',
+  'stalker-preview',
+  'third-party',
+  'uploads',
+]);
+
+function configuredHosts() {
+  const hosts = new Set<string>();
+  for (const value of [process.env.FRONTEND_URL, process.env.MAIN_URL, process.env.NEXT_PUBLIC_BACKEND_URL]) {
+    if (!value) {
+      continue;
+    }
+    try {
+      hosts.add(new URL(value).hostname.toLowerCase());
+    } catch {
+      continue;
+    }
+  }
+  return hosts;
+}
+
+function isAppHost(host: string) {
+  const hostname = host.split(':')[0].trim().toLowerCase();
+  if (!hostname || APP_HOSTS.has(hostname) || configuredHosts().has(hostname)) {
+    return true;
+  }
+  return hostname.endsWith('.vercel.app') || hostname.endsWith('.crea8.one');
+}
+
+function publicBioPath(pathname: string) {
+  const path = pathname.replace(/\/+$/, '') || '/';
+  if (path === '/bio-host' || path.startsWith('/subscribe/confirm/')) {
+    return true;
+  }
+  const slug = path.slice(1);
+  if (!slug || slug.includes('/') || slug.includes('.')) {
+    return false;
+  }
+  return !APP_SECTIONS.has(slug);
+}
+
 // This function can be marked `async` if using `await` inside
 export async function proxy(request: NextRequest) {
   const nextUrl = request.nextUrl;
@@ -37,6 +95,17 @@ export async function proxy(request: NextRequest) {
 
   if (lng) {
     topResponse.headers.set(cookieName, lng);
+  }
+
+  const requestHost = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '').split(',')[0].trim();
+  if ((nextUrl.pathname === '/' || nextUrl.pathname === '') && !isAppHost(requestHost)) {
+    const rewriteUrl = nextUrl.clone();
+    rewriteUrl.pathname = '/bio-host';
+    return NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } });
+  }
+
+  if (publicBioPath(nextUrl.pathname)) {
+    return topResponse;
   }
 
   if (nextUrl.pathname.startsWith('/modal/') && !authCookie) {
