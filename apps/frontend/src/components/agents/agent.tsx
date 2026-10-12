@@ -14,6 +14,7 @@ import clsx from 'clsx';
 import useSWR from 'swr';
 import { orderBy } from 'lodash';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -292,37 +293,11 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
         aria-label={t('conversations', 'Conversations')}
         onClick={onHistory}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
-          fill="none"
-        >
-          <path
-            d="M3 4.5h12M3 9h12M3 13.5h8"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
+        <HugeIcon name="menu" size={18} />
       </button>
       <h1>{title}</h1>
       <button type="button" className="agent-channels-pill" onClick={onChannels}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-        >
-          <path
-            d="M6 7.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5ZM11.25 7a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5ZM2.75 13.25v-.75A2.75 2.75 0 0 1 5.5 9.75h1a2.75 2.75 0 0 1 2.75 2.75v.75M9.5 9.9a2.5 2.5 0 0 1 3.75 2.16v1.19"
-            stroke="currentColor"
-            strokeWidth="1.3"
-            strokeLinecap="round"
-          />
-        </svg>
+        <HugeIcon name="users" size={16} />
         <span>
           {t('channels', 'Channels')} · {count}
         </span>
@@ -344,21 +319,7 @@ const Threads: FC<{ onPick: () => void }> = ({ onPick }) => {
           onClick={onPick}
           className="agent-new-chat whitespace-nowrap flex w-full min-h-[44px] rounded-[18px] items-center gap-[8px] px-[14px] outline-none font-[600]"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 21 20"
-            fill="none"
-          >
-            <path
-              d="M10.5001 4.16699V15.8337M4.66675 10.0003H16.3334"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <HugeIcon name="plus" size={18} />
           <span className="text-[15px]">
             {t('start_a_new_chat', 'Start a new chat')}
           </span>

@@ -7,6 +7,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 const postUrlEmitter = new EventEmitter();
 
 export const MediaSettingsLayout = () => {
@@ -429,21 +430,7 @@ export const MediaComponentInner: FC<{
                     onClick={() => setIsEditingThumbnail(false)}
                     className="text-textColor hover:text-white transition-colors flex items-center space-x-2"
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M19 12H5M12 19L5 12L12 5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <HugeIcon name="chevron-left" size={16} />
                     <span>Back</span>
                   </button>
                 </div>

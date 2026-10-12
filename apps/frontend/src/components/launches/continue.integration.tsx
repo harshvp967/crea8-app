@@ -12,6 +12,7 @@ import { IntegrationContext } from '@gitroom/frontend/components/launches/helper
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 interface TwoStepState {
   integrationId: string;
@@ -384,9 +385,7 @@ export const ContinueIntegration: FC<{
     return (
       <ReturnFrame>
         <span className="cc-mark is-ok" aria-hidden>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M7 12.5 10.2 16 17 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <HugeIcon name="check" size={24} />
         </span>
         <h1>{t('channel_connected', 'Channel Connected!')}</h1>
         <p>
@@ -450,9 +449,7 @@ export const ContinueIntegration: FC<{
     return (
       <ReturnFrame>
         <span className="cc-mark is-bad" aria-hidden>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
+          <HugeIcon name="close" size={24} />
         </span>
         <h1>{t('could_not_add_provider', 'Could not add provider')}</h1>
         <p>
