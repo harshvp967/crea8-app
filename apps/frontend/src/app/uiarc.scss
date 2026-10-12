@@ -9610,4 +9610,8 @@ body.composer-open .po-assist .copilotKitWindow.open,
   .cc-return-card h1 {
     font-size: 24px;
   }
+
+  .arc-dialog-wrap:has(~ .arc-dialog-wrap) .arc-dialog {
+    visibility: hidden;
+  }
 }
