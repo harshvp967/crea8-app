@@ -11,6 +11,7 @@ import { continueProviderList } from '@gitroom/frontend/components/new-launch/pr
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 
 interface TwoStepState {
   integrationId: string;
@@ -381,66 +382,35 @@ export const ContinueIntegration: FC<{
   // Success state for non-logged users without returnURL
   if (successState) {
     return (
-      <div className="channel-return flex flex-1 items-center justify-center relative overflow-hidden">
-        {/* Background gradient decoration */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
-        </div>
-
-        <div className="relative z-10 text-center">
-          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-green-500/20 flex items-center justify-center">
-            <svg
-              className="w-[40px] h-[40px] text-green-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="text-[28px] font-semibold mb-[12px]">
-            {t('channel_connected', 'Channel Connected!')}
-          </div>
-          <div className="text-[16px] text-gray-400 max-w-[400px]">
-            {successState.message ||
-              t(
-                'channel_connected_description',
-                `Your ${providerDisplayName} channel has been successfully connected. You can close this window now.`
-              )}
-          </div>
-        </div>
-      </div>
+      <ReturnFrame>
+        <span className="cc-mark is-ok" aria-hidden>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M7 12.5 10.2 16 17 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+        <h1>{t('channel_connected', 'Channel Connected!')}</h1>
+        <p>
+          {successState.message ||
+            t(
+              'channel_connected_description',
+              `Your ${providerDisplayName} channel has been successfully connected. You can close this window now.`
+            )}
+        </p>
+      </ReturnFrame>
     );
   }
 
   // Show the two-step selection UI
   if (twoStepState && Provider) {
     return (
-      <div className="channel-return flex flex-1 items-center justify-center relative overflow-hidden">
-        {/* Background gradient decoration */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 w-full max-w-[550px] mx-auto px-[20px]">
-          <div className="bg-newBgColorInner border border-newBorder rounded-[26px] p-[32px] flex flex-col gap-[24px]">
-            <div className="flex flex-col gap-[8px] text-center">
-              <h1 className="text-[24px] font-semibold">
-                {t('configure_your_channel', 'Configure Your Channel')}
-              </h1>
-              <p className="text-[14px] text-gray-400">
-                {t(
-                  'select_the_page_or_account',
-                  `Select the ${providerDisplayName} page or account you want to connect.`
-                )}
-              </p>
-            </div>
+      <ReturnFrame wide>
+        <h1>{t('configure_your_channel', 'Configure Your Channel')}</h1>
+        <p>
+          {t(
+            'select_the_page_or_account',
+            `Select the ${providerDisplayName} page or account you want to connect.`
+          )}
+        </p>
 
             <IntegrationContext.Provider
               value={{
@@ -470,75 +440,57 @@ export const ContinueIntegration: FC<{
                 isSaving={isSaving}
               />
             </IntegrationContext.Provider>
-          </div>
-        </div>
-      </div>
+      </ReturnFrame>
     );
   }
 
   if (error) {
+    const returning =
+      logged && (!errorMessage || errorMessage === 'Could not add provider');
     return (
-      <div className="channel-return flex flex-1 items-center justify-center relative overflow-hidden">
-        {/* Background gradient decoration */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
-        </div>
-
-        <div className="relative z-10 text-center">
-          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-red-500/20 flex items-center justify-center">
-            <svg
-              className="w-[40px] h-[40px] text-red-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="text-[28px] font-semibold mb-[12px]">
-            {t('could_not_add_provider', 'Could not add provider')}
-          </div>
-          <div className="text-[16px] text-gray-400 max-w-[520px]">
-            {errorMessage ||
-              t(
-                'you_are_being_redirected_back',
-                'An error occurred. Please try again.'
-              )}
-          </div>
-          {logged &&
-            (!errorMessage || errorMessage === 'Could not add provider') && (
-              <Redirect url="/launches" delay={3000} />
+      <ReturnFrame>
+        <span className="cc-mark is-bad" aria-hidden>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </span>
+        <h1>{t('could_not_add_provider', 'Could not add provider')}</h1>
+        <p>
+          {errorMessage ||
+            t(
+              'you_are_being_redirected_back',
+              'An error occurred. Please try again.'
             )}
-        </div>
-      </div>
+        </p>
+        {returning && (
+          <p className="cc-return-note">
+            {t('returning_to_calendar', 'Returning to the calendar in 3 seconds')}
+          </p>
+        )}
+        {returning && <Redirect url="/launches" delay={3000} />}
+      </ReturnFrame>
     );
   }
 
-  // Loading state
   return (
-    <div className="channel-return flex flex-1 items-center justify-center relative overflow-hidden">
-      {/* Background gradient decoration */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
-      </div>
-
-      <div className="relative z-10 text-center">
-        <div className="text-[28px] font-semibold mb-[12px]">
-          {t('adding_channel', 'Adding Channel')}
-        </div>
-        <div className="text-[16px] text-gray-400">
-          {t('please_wait', 'Please wait while we connect your account...')}
-        </div>
-        {/* Loading spinner */}
-        <div className="mt-[32px] flex justify-center">
-          <div className="w-[48px] h-[48px] border-[3px] border-[#00D9FF] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    </div>
+    <ReturnFrame>
+      <div className="cc-spin" />
+      <h1>{t('adding_channel', 'Adding Channel')}</h1>
+      <p>{t('please_wait', 'Please wait while we connect your account...')}</p>
+    </ReturnFrame>
   );
 };
+
+const ReturnFrame: FC<{ children: React.ReactNode; wide?: boolean }> = ({
+  children,
+  wide,
+}) => (
+  <div className="channel-return">
+    <div className="cc-return-logo">
+      <Logo />
+    </div>
+    <div className={wide ? 'cc-return-card is-wide' : 'cc-return-card'}>
+      {children}
+    </div>
+  </div>
+);

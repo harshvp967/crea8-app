@@ -45,8 +45,8 @@ const InviteLinkModal: FC<{
   }, [url]);
 
   return (
-    <div className="flex flex-col gap-[12px] pt-[8px]">
-      <p className="text-[14px] text-textColor/80">
+    <div className="cc-invite flex flex-col gap-[16px]">
+      <p className="cc-copy">
         {t(
           'invite_link_manual_copy',
           'Copy this link and send it to your customer. It expires in 1 hour.'
@@ -56,13 +56,15 @@ const InviteLinkModal: FC<{
         readOnly
         value={url}
         onFocus={(e) => e.currentTarget.select()}
-        className="w-full bg-newTableHeader border border-tableBorder rounded-[8px] px-[12px] py-[10px] text-[13px] text-textColor"
+        className="cc-field"
       />
-      <Button type="button" onClick={onCopy}>
-        {copied
-          ? t('copied', 'Copied')
-          : t('copy_link', 'Copy link')}
-      </Button>
+      <div className="cc-actions">
+        <Button type="button" className="cc-primary" onClick={onCopy}>
+          {copied
+            ? t('copied', 'Copied')
+            : t('copy_link', 'Copy link')}
+        </Button>
+      </div>
     </div>
   );
 };
@@ -78,6 +80,10 @@ export const useAddProvider = (update?: () => void, invite?: boolean) => {
         ? t('invite_link_title', 'Invite link')
         : 'Add Channel',
       withCloseButton: true,
+      size: '820px',
+      classNames: {
+        modal: 'cc-picker-modal',
+      },
       children: (
         <AddProviderComponent invite={!!invite} update={update} {...data} />
       ),
@@ -179,11 +185,11 @@ export const UrlModal: FC<{
     gotoUrl(data.url);
   }, []);
   return (
-    <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
+    <div className="cc-url relative">
       <TopTitle title={`Instance URL`} />
       <button
         onClick={close}
-        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="cc-url-legacy-close outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -207,10 +213,10 @@ export const UrlModal: FC<{
           onSubmit={methods.handleSubmit(submit)}
         >
           <div className="pt-[10px]">
-            <Input label="URL" name="url" />
+            <Input label="URL" name="url" className="cc-input" />
           </div>
-          <div>
-            <Button type="submit">{t('connect', 'Connect')}</Button>
+          <div className="cc-actions">
+            <Button type="submit" className="cc-primary">{t('connect', 'Connect')}</Button>
           </div>
         </form>
       </FormProvider>
@@ -288,10 +294,10 @@ export const CustomVariables: FC<{
   const t = useT();
 
   return (
-    <div className="rounded-[4px] relative">
+    <div className="cc-fields relative">
       <FormProvider {...methods}>
         <form
-          className="gap-[8px] flex flex-col pt-[10px]"
+          className="gap-[12px] flex flex-col"
           onSubmit={methods.handleSubmit(submit)}
         >
           {variables.map((variable) => (
@@ -312,6 +318,7 @@ export const CustomVariables: FC<{
                     label=""
                     name={variable.key}
                     type={variable.type == 'text' ? 'text' : 'password'}
+                    className="cc-input"
                   />
                 </div>
               ) : (
@@ -319,12 +326,13 @@ export const CustomVariables: FC<{
                   label={variable.label}
                   name={variable.key}
                   type={variable.type == 'text' ? 'text' : 'password'}
+                  className="cc-input"
                 />
               )}
             </div>
           ))}
-          <div>
-            <Button type="submit">{t('connect', 'Connect')}</Button>
+          <div className="cc-actions">
+            <Button type="submit" className="cc-primary">{t('connect', 'Connect')}</Button>
           </div>
         </form>
       </FormProvider>
@@ -335,17 +343,18 @@ const ExtensionNotFound: FC = () => {
   const modals = useModals();
   const t = useT();
   return (
-    <div className="flex flex-col gap-[16px] pt-[8px]">
-      <p className="text-[14px] text-textColor/80">
+    <div className="cc-missing flex flex-col gap-[16px]">
+      <p className="cc-copy">
         {t(
           'extension_not_available',
           'The browser extension for this channel is not available in Crea8one. Contact support@crea8.one if you need it.'
         )}
       </p>
-      <div className="flex gap-[10px]">
+      <div className="cc-actions">
         <Button
           type="button"
-          className="flex-1 !bg-transparent border border-tableBorder text-textColor"
+          secondary
+          className="cc-secondary"
           onClick={() => modals.closeCurrent()}
         >
           {t('cancel', 'Cancel')}
@@ -362,14 +371,14 @@ const ChromeExtensionWarning: FC<{
   const modals = useModals();
   const t = useT();
   return (
-    <div className="flex flex-col gap-[16px] pt-[8px]">
-      <p className="text-[14px] text-textColor/80">
+    <div className="cc-notice flex flex-col gap-[16px]">
+      <p className="cc-copy">
         {t(
           'chrome_extension_warning_intro',
           'This channel connects via the browser extension. Please be aware of the following:'
         )}
       </p>
-      <ul className="flex flex-col gap-[8px] list-disc ps-[20px] text-[14px] text-textColor/80">
+      <ul className="cc-bullets">
         <li>
           {t(
             'chrome_extension_warning_tos',
@@ -396,26 +405,27 @@ const ChromeExtensionWarning: FC<{
           termination due to the use of this method.
         </li>
       </ul>
-      <div className="flex gap-[10px] mt-[8px]">
+      <div className="cc-actions">
         <Button
           type="button"
-          className="flex-1"
-          onClick={() => {
-            modals.closeCurrent();
-            onConfirm();
-          }}
-        >
-          {t('i_understand_continue', 'I understand, continue')}
-        </Button>
-        <Button
-          type="button"
-          className="flex-1 !bg-transparent border border-tableBorder text-textColor"
+          secondary
+          className="cc-secondary"
           onClick={() => {
             modals.closeCurrent();
             onCancel();
           }}
         >
           {t('cancel', 'Cancel')}
+        </Button>
+        <Button
+          type="button"
+          className="cc-primary"
+          onClick={() => {
+            modals.closeCurrent();
+            onConfirm();
+          }}
+        >
+          {t('i_understand_continue', 'I understand, continue')}
         </Button>
       </div>
     </div>
@@ -567,6 +577,8 @@ export const AddProviderComponent: FC<{
             modal.openModal({
               title: t('invite_link_title', 'Invite link'),
               withCloseButton: true,
+              size: '480px',
+              classNames: { modal: 'cc-invite-modal' },
               ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
               children: <InviteLinkModal url={url} />,
             });
@@ -598,10 +610,12 @@ export const AddProviderComponent: FC<{
         }
         if (isChromeExtension) {
           const confirmed = await new Promise<boolean>((resolve) => {
-            modal.openModal({
-              title: t('chrome_extension_notice', 'Browser Extension Notice'),
-              withCloseButton: true,
-              onClose: () => resolve(false),
+          modal.openModal({
+            title: t('chrome_extension_notice', 'Browser Extension Notice'),
+            withCloseButton: true,
+            size: '520px',
+            classNames: { modal: 'cc-notice-modal' },
+            onClose: () => resolve(false),
               children: (
                 <ChromeExtensionWarning
                   onConfirm={() => {
@@ -621,6 +635,8 @@ export const AddProviderComponent: FC<{
             modal.openModal({
               title: t('extension_not_available_title', 'Extension Not Found'),
               withCloseButton: true,
+              size: '460px',
+              classNames: { modal: 'cc-missing-modal' },
               children: <ExtensionNotFound />,
             });
             return;
@@ -700,9 +716,10 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: 'URL',
             withCloseButton: true,
+            size: '440px',
             ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
-              modal: 'bg-transparent text-textColor',
+              modal: 'cc-url-modal text-textColor',
             },
             children: <UrlModal gotoUrl={gotoIntegration} />,
           });
@@ -712,9 +729,10 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: t('add_provider_title', 'Add Provider'),
             withCloseButton: true,
+            size: '460px',
             ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
-              modal: 'bg-transparent text-textColor',
+              modal: 'cc-fields-modal text-textColor',
             },
             children: (
               <div
@@ -738,7 +756,7 @@ export const AddProviderComponent: FC<{
 
   return (
     <div
-      className="w-full flex flex-col gap-[20px] rounded-[4px] relative]"
+      className="cc-picker w-full flex flex-col gap-[16px] relative"
       data-invite={props.invite ? 'true' : 'false'}
     >
       {props.invite ? (
@@ -754,7 +772,7 @@ export const AddProviderComponent: FC<{
           className={clsx(
             isMobile && 'gap-[20px] flex flex-col',
             !isMobile &&
-              'grid grid-cols-5 gap-[10px] justify-items-center justify-center',
+              'cc-grid grid grid-cols-5 gap-[10px] justify-items-center justify-center',
             isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-5'
           )}
         >
@@ -793,13 +811,29 @@ export const AddProviderComponent: FC<{
                   isMobile
                     ? 'flex-row h-[72px] p-[16px]'
                     : 'flex-col p-[10px] h-[100px] justify-center',
-                  'w-full text-[14px] rounded-[16px] bg-newTableHeader border border-transparent text-textColor relative items-center flex gap-[10px] cursor-pointer transition-colors hover:border-[#00D9FF] hover:bg-[#00D9FF]/10'
+                  item.comingSoon && 'is-soon',
+                  'cc-tile w-full text-[14px] rounded-[16px] bg-newTableHeader border border-transparent text-textColor relative items-center flex gap-[10px] cursor-pointer transition-colors hover:border-[#00D9FF] hover:bg-[#00D9FF]/10'
                 )}
               >
                 {item.comingSoon && (
-                  <span className="pointer-events-none absolute -top-[7px] start-[8px] z-[2] max-w-[calc(100%-16px)] truncate rounded-full bg-[#00D9FF] px-[6px] text-[9px] font-[700] leading-[16px] text-[#0a0a0a]">
+                  <span className="cc-soon pointer-events-none absolute -top-[7px] start-[8px] z-[2] max-w-[calc(100%-16px)] truncate rounded-full bg-[#00D9FF] px-[6px] text-[9px] font-[700] leading-[16px] text-[#0a0a0a]">
                     {t('coming_soon', 'Coming soon')}
                   </span>
+                )}
+                {!!item.toolTip && !isMobile && (
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 26 26"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="cc-info absolute top-[10px] end-[10px]"
+                  >
+                    <path
+                      d="M13 0C10.4288 0 7.91543 0.762437 5.77759 2.1909C3.63975 3.61935 1.97351 5.64968 0.989572 8.02512C0.0056327 10.4006 -0.251811 13.0144 0.249797 15.5362C0.751405 18.0579 1.98953 20.3743 3.80762 22.1924C5.6257 24.0105 7.94208 25.2486 10.4638 25.7502C12.9856 26.2518 15.5995 25.9944 17.9749 25.0104C20.3503 24.0265 22.3807 22.3603 23.8091 20.2224C25.2376 18.0846 26 15.5712 26 13C25.9964 9.5533 24.6256 6.24882 22.1884 3.81163C19.7512 1.37445 16.4467 0.00363977 13 0ZM13 21C12.7033 21 12.4133 20.912 12.1667 20.7472C11.92 20.5824 11.7277 20.3481 11.6142 20.074C11.5007 19.7999 11.471 19.4983 11.5288 19.2074C11.5867 18.9164 11.7296 18.6491 11.9393 18.4393C12.1491 18.2296 12.4164 18.0867 12.7074 18.0288C12.9983 17.9709 13.2999 18.0007 13.574 18.1142C13.8481 18.2277 14.0824 18.42 14.2472 18.6666C14.412 18.9133 14.5 19.2033 14.5 19.5C14.5 19.8978 14.342 20.2794 14.0607 20.5607C13.7794 20.842 13.3978 21 13 21ZM14 14.91V15C14 15.2652 13.8946 15.5196 13.7071 15.7071C13.5196 15.8946 13.2652 16 13 16C12.7348 16 12.4804 15.8946 12.2929 15.7071C12.1054 15.5196 12 15.2652 12 15V14C12 13.7348 12.1054 13.4804 12.2929 13.2929C12.4804 13.1054 12.7348 13 13 13C14.6538 13 16 11.875 16 10.5C16 9.125 14.6538 8 13 8C11.3463 8 10 9.125 10 10.5V11C10 11.2652 9.89465 11.5196 9.70711 11.7071C9.51958 11.8946 9.26522 12 9.00001 12C8.73479 12 8.48044 11.8946 8.2929 11.7071C8.10536 11.5196 8.00001 11.2652 8.00001 11V10.5C8.00001 8.01875 10.2425 6 13 6C15.7575 6 18 8.01875 18 10.5C18 12.6725 16.28 14.4913 14 14.91Z"
+                      fill="currentColor"
+                    />
+                  </svg>
                 )}
                 <div>
                   {item.identifier === 'youtube' ? (
@@ -818,25 +852,10 @@ export const AddProviderComponent: FC<{
                 <div
                   className={clsx(
                     isMobile ? '' : 'whitespace-pre-wrap',
-                    'text-center'
+                    'cc-name text-center'
                   )}
                 >
                   {item.name}
-                  {!!item.toolTip && !isMobile && (
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 26 26"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="absolute top-[10px] end-[10px]"
-                    >
-                      <path
-                        d="M13 0C10.4288 0 7.91543 0.762437 5.77759 2.1909C3.63975 3.61935 1.97351 5.64968 0.989572 8.02512C0.0056327 10.4006 -0.251811 13.0144 0.249797 15.5362C0.751405 18.0579 1.98953 20.3743 3.80762 22.1924C5.6257 24.0105 7.94208 25.2486 10.4638 25.7502C12.9856 26.2518 15.5995 25.9944 17.9749 25.0104C20.3503 24.0265 22.3807 22.3603 23.8091 20.2224C25.2376 18.0846 26 15.5712 26 13C25.9964 9.5533 24.6256 6.24882 22.1884 3.81163C19.7512 1.37445 16.4467 0.00363977 13 0ZM13 21C12.7033 21 12.4133 20.912 12.1667 20.7472C11.92 20.5824 11.7277 20.3481 11.6142 20.074C11.5007 19.7999 11.471 19.4983 11.5288 19.2074C11.5867 18.9164 11.7296 18.6491 11.9393 18.4393C12.1491 18.2296 12.4164 18.0867 12.7074 18.0288C12.9983 17.9709 13.2999 18.0007 13.574 18.1142C13.8481 18.2277 14.0824 18.42 14.2472 18.6666C14.412 18.9133 14.5 19.2033 14.5 19.5C14.5 19.8978 14.342 20.2794 14.0607 20.5607C13.7794 20.842 13.3978 21 13 21ZM14 14.91V15C14 15.2652 13.8946 15.5196 13.7071 15.7071C13.5196 15.8946 13.2652 16 13 16C12.7348 16 12.4804 15.8946 12.2929 15.7071C12.1054 15.5196 12 15.2652 12 15V14C12 13.7348 12.1054 13.4804 12.2929 13.2929C12.4804 13.1054 12.7348 13 13 13C14.6538 13 16 11.875 16 10.5C16 9.125 14.6538 8 13 8C11.3463 8 10 9.125 10 10.5V11C10 11.2652 9.89465 11.5196 9.70711 11.7071C9.51958 11.8946 9.26522 12 9.00001 12C8.73479 12 8.48044 11.8946 8.2929 11.7071C8.10536 11.5196 8.00001 11.2652 8.00001 11V10.5C8.00001 8.01875 10.2425 6 13 6C15.7575 6 18 8.01875 18 10.5C18 12.6725 16.28 14.4913 14 14.91Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  )}
                 </div>
               </div>
             ))}
