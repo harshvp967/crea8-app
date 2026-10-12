@@ -19,6 +19,14 @@ const SOCIAL_LOGO: Record<string, string> = {
   reddit: '/icons/platforms/reddit.png',
 };
 
+export const linkInitials = (value: string) => {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return (parts[0] || '').slice(0, 2).toUpperCase();
+};
+
 export const SocialMark = ({ network }: { network: string }) => {
   const logo = SOCIAL_LOGO[network];
   if (logo) {
@@ -125,7 +133,7 @@ export const LinkPublicView = ({
             {(design.titleMode === 'logo' && design.logoUrl) || data.avatarPath ? (
               <img src={design.titleMode === 'logo' && design.logoUrl ? design.logoUrl : data.avatarPath} alt="" />
             ) : (
-              (data.name || data.slug || 'c').slice(0, 1).toUpperCase()
+              linkInitials(data.name || data.slug || 'c')
             )}
           </div>
           <div>

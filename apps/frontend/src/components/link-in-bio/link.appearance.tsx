@@ -19,9 +19,9 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, LinkSegments, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
-import { LinkPublicView, SocialMark } from '@gitroom/frontend/components/link-in-bio/link.public-view';
+import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 
@@ -172,17 +172,22 @@ export const LinkAppearanceScreen = () => {
       }
     >
       <div className="flex min-w-0 flex-col gap-[16px] pb-[24px]">
-        <div className="flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="flex items-start justify-between gap-[12px]">
           <div className="min-w-0">
             <h1 className={stkTitle}>Appearance</h1>
             <p className={stkSub}>Themes, wallpaper and the phone preview update as you edit</p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-[8px] sm:justify-end">
-            <button type="button" className={`${linkSecondary} lib-preview-toggle`} onClick={() => setPreview((value) => !value)}>
+          <div className="flex shrink-0 items-center gap-[8px]">
+            <button
+              type="button"
+              className={`${linkSecondary} lib-preview-toggle`}
+              aria-label={preview ? 'Close preview' : 'Preview'}
+              onClick={() => setPreview((value) => !value)}
+            >
               <HugeIcon name="eye" size={16} />
-              {preview ? 'Close preview' : 'Preview'}
+              <span className="lib-preview-label">{preview ? 'Close preview' : 'Preview'}</span>
             </button>
-            <button type="button" className={linkSecondary} onClick={() => setDraft(toDraft(data))}>
+            <button type="button" className={`${linkSecondary} lib-reset`} onClick={() => setDraft(toDraft(data))}>
               Reset
             </button>
             <button type="button" className={linkPrimary} disabled={busy} onClick={save}>
@@ -190,6 +195,9 @@ export const LinkAppearanceScreen = () => {
             </button>
           </div>
         </div>
+        <button type="button" className={`${linkSecondary} lib-reset-phone`} onClick={() => setDraft(toDraft(data))}>
+          Reset
+        </button>
 
         <section className={stkCard}>
           <h2 className="text-[16px] font-[600]">Profile</h2>
@@ -199,7 +207,7 @@ export const LinkAppearanceScreen = () => {
               {draft.avatarPath ? (
                 <img src={draft.avatarPath} alt="" className="h-full w-full object-cover" />
               ) : (
-                (draft.name || data.slug).slice(0, 1).toUpperCase()
+                linkInitials(draft.name || data.slug)
               )}
             </div>
             <label className={`${linkSecondary} cursor-pointer`}>
@@ -221,23 +229,17 @@ export const LinkAppearanceScreen = () => {
                 }}
               />
             </label>
-            {draft.avatarPath ? (
-              <button type="button" className="text-[14px] text-textItemBlur" onClick={() => setDraft({ ...draft, avatarPath: '' })}>
-                Remove
-              </button>
-            ) : null}
+            <button type="button" className="text-[14px] font-[500] text-textItemBlur" onClick={() => setDraft({ ...draft, avatarPath: '' })}>
+              Remove
+            </button>
           </div>
-          <div className="mb-[12px] flex flex-wrap gap-[8px]">
-            {LINK_TITLE_MODES.map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                className={design.titleMode === mode ? linkChoice : linkSecondary}
-                onClick={() => setDesign({ titleMode: mode })}
-              >
-                {mode === 'text' ? 'Title text' : 'Logo'}
-              </button>
-            ))}
+          <div className="mb-[12px]">
+            <LinkSegments
+              label="Title display"
+              value={design.titleMode}
+              options={LINK_TITLE_MODES.map((mode) => ({ id: mode, label: mode === 'text' ? 'Title text' : 'Logo' }))}
+              onChange={(titleMode) => setDesign({ titleMode })}
+            />
           </div>
           {design.titleMode === 'logo' ? (
             <div className="mb-[12px]">
@@ -450,18 +452,15 @@ export const LinkAppearanceScreen = () => {
               <h2 className="text-[16px] font-[600]">Social icons</h2>
               <p className="text-[13px] text-textItemBlur">Accounts connected in Schedule show up here. Stalker uses the same accounts.</p>
             </div>
-            <div className="flex gap-[8px]">
-              {(['top', 'bottom'] as const).map((position) => (
-                <button
-                  key={position}
-                  type="button"
-                  className={design.socialPosition === position ? linkChoice : linkSecondary}
-                  onClick={() => setDesign({ socialPosition: position })}
-                >
-                  {position === 'top' ? 'Top' : 'Bottom'}
-                </button>
-              ))}
-            </div>
+            <LinkSegments
+              label="Social position"
+              value={design.socialPosition}
+              options={[
+                { id: 'top', label: 'Top' },
+                { id: 'bottom', label: 'Bottom' },
+              ]}
+              onChange={(socialPosition) => setDesign({ socialPosition })}
+            />
           </div>
           <div className="mb-[12px] flex flex-col gap-[8px]">
             {data.accounts.map((account) => (
