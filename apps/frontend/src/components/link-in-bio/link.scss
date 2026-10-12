@@ -291,6 +291,26 @@
   padding-top: 36px;
 }
 
+.lib-phone .lib-stack,
+.lib-phone .lib-capture,
+.lib-phone .lib-capture form,
+.lib-phone .lib-row {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.lib-phone .lib-capture input,
+.lib-phone .lib-row input {
+  width: 0;
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+.lib-phone .lib-subscribe {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
 .lib-public {
   --lib-radius: 999px;
   min-height: 100vh;
@@ -834,7 +854,68 @@
 }
 
 .lib-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
+}
+
+.lib-editor-drag {
+  display: grid;
+  width: 16px;
+  flex: 0 0 16px;
+  place-items: center;
+}
+
+.lib-type-tile {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 14px;
+  border: 1px solid var(--new-border);
+  background: var(--new-boxHover);
+  color: var(--new-textItemBlur, #6b6b6b);
+}
+
+.lib-editor-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.lib-editor-titleline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lib-editor-titleline .lib-pill {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.lib-editor-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lib-editor-note {
+  margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--new-textItemBlur, #a3a3a3);
+}
+
+.lib-editor-feature-line {
+  display: none;
 }
 
 .lib-editor-row.is-feature {
@@ -940,6 +1021,33 @@
 
   .lib-editor-row {
     flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .lib-editor-drag,
+  .lib-type-tile,
+  .lib-editor-toggle,
+  .lib-editor-more {
+    align-self: center;
+  }
+
+  .lib-editor-row.is-feature .lib-pill-inline,
+  .lib-editor-change {
+    display: none;
+  }
+
+  .lib-editor-feature-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .lib-editor-row.is-feature .lib-editor-name {
+    flex: 0 0 auto;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .lib-editor-clicks {

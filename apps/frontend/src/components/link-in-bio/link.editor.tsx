@@ -12,7 +12,7 @@ import {
   useLinkPage,
   useLinkPosts,
 } from '@gitroom/frontend/components/link-in-bio/link.api';
-import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkMenuRow, LinkModal, LinkToggle, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
@@ -56,6 +56,21 @@ const emptyLink = {
   priorityMode: 'none' as LinkBlock['priorityMode'],
   minAge: 18,
   rules: [] as LinkBlock['rules'],
+};
+
+const blockIcon = (type: LinkBlock['type']): HugeIconName => {
+  if (type === 'HEADING') return 'heading';
+  if (type === 'FEATURED_POST' || type === 'IMAGE_CAROUSEL') return 'image';
+  if (type === 'EMAIL_CAPTURE' || type === 'CONTACT_FORM') return 'mail';
+  if (type === 'TEXT') return 'text';
+  if (type === 'EMBED') return 'play';
+  if (type === 'FAQ') return 'list';
+  if (type === 'MAP') return 'location';
+  if (type === 'CALENDLY') return 'calendar';
+  if (type === 'EVENTS') return 'calendar-day';
+  if (type === 'CONTACT_DETAILS') return 'user';
+  if (type === 'DISCOUNT') return 'tag';
+  return 'link';
 };
 
 const blockName = (block: LinkBlock) => {
@@ -524,7 +539,7 @@ export const LinkEditorScreen = () => {
           data.blocks.map((block) => (
             <article
               key={block.id}
-              className={`lib-editor-row ${stkCard} flex items-center gap-[12px] !p-[14px]${
+              className={`lib-editor-row ${stkCard} !p-[14px]${
                 block.type === 'FEATURED_POST' ? ' is-feature' : ''
               }`}
               draggable
@@ -535,18 +550,16 @@ export const LinkEditorScreen = () => {
                 reorder(event.dataTransfer.getData('text/plain'), block.id);
               }}
             >
-              <span className="cursor-grab text-textItemBlur" aria-hidden>
-                <HugeIcon name="drag" size={18} />
+              <span className="lib-editor-drag cursor-grab text-textItemBlur" aria-hidden>
+                <HugeIcon name="drag" size={16} />
               </span>
-              {block.type === 'FEATURED_POST' ? (
-                <div className="h-[42px] w-[42px] shrink-0 overflow-hidden rounded-[10px] bg-newBgLineColor">
-                  {block.post?.image ? <img src={block.post.image} alt="" className="h-full w-full object-cover" /> : null}
-                </div>
-              ) : null}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-[6px]">
-                  <strong className="truncate text-[14px] font-[600]">{blockName(block)}</strong>
-                  {block.type === 'FEATURED_POST' ? <span className="lib-pill lib-pill-cyan">From Schedule</span> : null}
+              <span className="lib-type-tile" aria-hidden>
+                <HugeIcon name={blockIcon(block.type)} size={18} />
+              </span>
+              <div className="lib-editor-copy">
+                <div className="lib-editor-titleline">
+                  <strong className="lib-editor-name">{blockName(block)}</strong>
+                  {block.type === 'FEATURED_POST' ? <span className="lib-pill lib-pill-cyan lib-pill-inline">From Schedule</span> : null}
                   {block.layout === 'featured' ? <span className="lib-pill">Featured</span> : null}
                   {block.animation && block.animation !== 'none' ? <span className="lib-pill lib-pill-cyan">Animated</span> : null}
                   {block.priorityMode === 'expand' ? <span className="lib-pill lib-pill-cyan">Expand</span> : null}
@@ -561,11 +574,26 @@ export const LinkEditorScreen = () => {
                   {block.state === 'ended' ? <span className="lib-pill">Ended</span> : null}
                   {block.state === 'hidden' ? <span className="lib-pill">Hidden</span> : null}
                 </div>
-                <p className="truncate text-[13px] text-textItemBlur">{blockNote(block)}</p>
+                <p className="lib-editor-note">{blockNote(block)}</p>
                 {block.scheduleOn && block.startsAt && block.state === 'scheduled' ? (
-                  <p className="text-[13px] text-textItemBlur">
+                  <p className="lib-editor-note">
                     {scheduleLabel('Starts', new Date(block.startsAt), data.timezone)}
                   </p>
+                ) : null}
+                {block.type === 'FEATURED_POST' ? (
+                  <div className="lib-editor-feature-line">
+                    <span className="lib-pill lib-pill-cyan">From Schedule</span>
+                    <button
+                      type="button"
+                      className={`${linkSecondary} !h-[36px] !min-h-[36px]`}
+                      onClick={() => {
+                        setPostId(block.postId || '');
+                        setModal({ kind: 'post', block });
+                      }}
+                    >
+                      Change post
+                    </button>
+                  </div>
                 ) : null}
               </div>
               {block.type === 'LINK' ? (
@@ -576,7 +604,7 @@ export const LinkEditorScreen = () => {
               {block.type === 'FEATURED_POST' ? (
                 <button
                   type="button"
-                  className={`${linkSecondary} lib-editor-wide`}
+                  className={`${linkSecondary} lib-editor-wide lib-editor-change`}
                   onClick={() => {
                     setPostId(block.postId || '');
                     setModal({ kind: 'post', block });
@@ -594,8 +622,8 @@ export const LinkEditorScreen = () => {
                 </span>
               )}
               <div className="relative shrink-0">
-                <button type="button" className="grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={() => setMenu(menu === block.id ? '' : block.id)}>
-                  <HugeIcon name="more-v" size={18} />
+                <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={() => setMenu(menu === block.id ? '' : block.id)}>
+                  <HugeIcon name="more" size={18} />
                 </button>
                 {menu === block.id ? (
                   <div className="lib-menu">
