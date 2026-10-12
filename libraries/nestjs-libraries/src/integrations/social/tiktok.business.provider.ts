@@ -37,6 +37,10 @@ export class TiktokBusinessProvider
   implements SocialProvider
 {
   identifier = 'tiktok-business';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'tiktok', url: `https://www.tiktok.com/@${handle}` } : null;
+  }
   name = 'TikTok';
   isBetweenSteps = false;
   convertToJPEG = true;

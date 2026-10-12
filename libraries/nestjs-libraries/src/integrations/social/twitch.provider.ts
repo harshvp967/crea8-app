@@ -14,6 +14,10 @@ import { timer } from '@gitroom/helpers/utils/timer';
 export class TwitchProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 1;
   identifier = 'twitch';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'twitch', url: `https://www.twitch.tv/${handle}` } : null;
+  }
   name = 'Twitch';
   isBetweenSteps = false;
   editor = 'normal' as const;

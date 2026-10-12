@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
@@ -21,13 +21,25 @@ export class LinkPublicController {
   }
 
   @Get('/host/:hostname')
-  byHost(@Param('hostname') hostname: string) {
-    return this._linkService.publicByHost(hostname);
+  byHost(
+    @Param('hostname') hostname: string,
+    @Query('country') country = '',
+    @Query('language') language = '',
+    @Query('platform') platform = '',
+    @Query('referrer') referrer = ''
+  ) {
+    return this._linkService.publicByHost(hostname, { country, language, platform, referrer });
   }
 
   @Get('/:slug')
-  bySlug(@Param('slug') slug: string) {
-    return this._linkService.publicBySlug(slug);
+  bySlug(
+    @Param('slug') slug: string,
+    @Query('country') country = '',
+    @Query('language') language = '',
+    @Query('platform') platform = '',
+    @Query('referrer') referrer = ''
+  ) {
+    return this._linkService.publicBySlug(slug, { country, language, platform, referrer });
   }
 
   @Post('/view')

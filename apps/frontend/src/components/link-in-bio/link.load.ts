@@ -22,6 +22,24 @@ export async function loadPublicLink(path: string, revalidate?: number): Promise
 
 export function presentPublicLink(page: PublicLink) {
   const gated = page.sensitive && page.isPublic;
-  const initial = gated ? { ...page, blocks: [], capture: null } : page;
+  const initial = gated ? { ...page, blocks: [], capture: null, redirectUrl: '' } : page;
   return { gated, initial };
+}
+
+export function visitorSearch(head: { get(name: string): string | null }) {
+  const params = new URLSearchParams();
+  const country = head.get('x-vercel-ip-country') || head.get('cf-ipcountry') || '';
+  const language = (head.get('accept-language') || '').split(',')[0]?.trim() || '';
+  const referrer = head.get('referer') || '';
+  if (country) {
+    params.set('country', country);
+  }
+  if (language) {
+    params.set('language', language.slice(0, 35));
+  }
+  if (referrer) {
+    params.set('referrer', referrer.slice(0, 300));
+  }
+  const query = params.toString();
+  return query ? `?${query}` : '';
 }

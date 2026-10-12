@@ -56,6 +56,10 @@ type RedditPendingData = {
 export class RedditProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 1; // Reddit has strict rate limits (1 request per second)
   identifier = 'reddit';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'reddit', url: `https://www.reddit.com/user/${handle}` } : null;
+  }
   name = 'Reddit';
   isBetweenSteps = false;
   scopes = ['read', 'identity', 'submit', 'flair'];

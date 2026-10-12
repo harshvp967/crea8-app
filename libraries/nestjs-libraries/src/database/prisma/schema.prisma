@@ -2190,6 +2190,11 @@ enum LinkBlockType {
   FAQ
   IMAGE_CAROUSEL
   CONTACT_FORM
+  MAP
+  CALENDLY
+  CONTACT_DETAILS
+  DISCOUNT
+  EVENTS
 }
 
 enum LinkLockType {
@@ -2197,6 +2202,9 @@ enum LinkLockType {
   AGE
   EMAIL
   PASSWORD
+  CODE
+  DOB
+  SENSITIVE
 }
 
 enum LinkDomainStatus {
@@ -2252,6 +2260,7 @@ model LinkPage {
   captureDoubleOptIn Boolean          @default(true)
   captureNotify      Boolean          @default(false)
   socials            Json             @default("[]")
+  design             Json             @default("{}")
   mailchimpKey       String           @default("")
   mailchimpAudience  String           @default("")
   convertkitKey      String           @default("")

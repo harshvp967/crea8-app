@@ -22,6 +22,10 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'threads', url: `https://www.threads.net/@${handle}` } : null;
+  }
   name = 'Threads';
   isBetweenSteps = false;
   scopes = [

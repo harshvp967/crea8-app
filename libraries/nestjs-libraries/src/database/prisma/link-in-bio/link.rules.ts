@@ -1,28 +1,58 @@
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 
 export const LINK_BLOCK_CAP = 2000;
+
+/**
+ * Flip this to true once payments are live.
+ * While it is false, every Link-in-Bio feature stays unlocked, including
+ * Pro themes and layouts and the existing paid markers (deeper analytics,
+ * lead sync, badge removal, custom domain add-on).
+ */
+export const LINK_PLAN_GATING_ENABLED = false;
+
 export const LINK_THEMES = [
-  { id: 'midnight', label: 'Midnight' },
-  { id: 'paper', label: 'Paper' },
-  { id: 'sand', label: 'Sand' },
-  { id: 'ocean', label: 'Ocean' },
-  { id: 'bloom', label: 'Bloom' },
+  { id: 'midnight', label: 'Midnight', pro: false },
+  { id: 'paper', label: 'Paper', pro: false },
+  { id: 'sand', label: 'Sand', pro: false },
+  { id: 'ocean', label: 'Ocean', pro: false },
+  { id: 'bloom', label: 'Bloom', pro: false },
+  { id: 'aurora', label: 'Aurora', pro: true },
+  { id: 'noir', label: 'Noir', pro: true },
+  { id: 'forest', label: 'Forest', pro: true },
+  { id: 'sunset', label: 'Sunset', pro: true },
 ] as const;
 export const LINK_BUTTONS = [
   { id: 'pill', label: 'Pill' },
   { id: 'rounded', label: 'Rounded' },
   { id: 'square', label: 'Square' },
 ] as const;
-export const LINK_FONTS = ['Plus Jakarta Sans'] as const;
+export const LINK_FONTS = ['Plus Jakarta Sans', 'Georgia', 'Palatino', 'Trebuchet MS', 'Courier New'] as const;
+export const LINK_WALLPAPERS = ['fill', 'gradient', 'blur', 'pattern'] as const;
+export const LINK_PATTERNS = ['dots', 'grid', 'diagonal', 'waves'] as const;
+export const LINK_BUTTON_FILLS = ['solid', 'glass', 'outline'] as const;
+export const LINK_SHADOWS = ['none', 'soft', 'strong', 'hard'] as const;
+export const LINK_HEADERS = ['classic', 'hero', 'banner', 'cutout', 'shape'] as const;
+export const LINK_TITLE_MODES = ['text', 'logo'] as const;
+export const LINK_SOCIAL_POSITIONS = ['top', 'bottom'] as const;
+export const LINK_LAYOUTS = ['classic', 'featured'] as const;
+export const LINK_ANIMATIONS = ['none', 'wiggle', 'pop', 'electricity', 'glitch', 'shimmer', 'bounce', 'pulse'] as const;
+export const LINK_PRIORITY_MODES = ['none', 'highlight', 'expand', 'redirect'] as const;
+export const LINK_RULE_ACTIONS = ['hide', 'title', 'url'] as const;
 export const LINK_SOCIALS = [
   { id: 'instagram', label: 'Instagram' },
   { id: 'x', label: 'X' },
   { id: 'youtube', label: 'YouTube' },
   { id: 'linkedin', label: 'LinkedIn' },
   { id: 'tiktok', label: 'TikTok' },
+  { id: 'threads', label: 'Threads' },
+  { id: 'facebook', label: 'Facebook' },
+  { id: 'bluesky', label: 'Bluesky' },
+  { id: 'twitch', label: 'Twitch' },
+  { id: 'pinterest', label: 'Pinterest' },
+  { id: 'reddit', label: 'Reddit' },
   { id: 'website', label: 'Website' },
 ] as const;
-export const LINK_RANGES = ['7d', '30d', '90d', '12m'] as const;
+export const LINK_RANGES = ['7d', '28d', '30d', '90d', '365d', '12m'] as const;
 
 const RESERVED = new Set([
   'about',
@@ -234,6 +264,18 @@ export function isPaidPlan(subscription?: LinkPlan) {
 
 export function hasCustomDomainAddon(org?: { customDomainAddon?: boolean | null } | null) {
   return org?.customDomainAddon === true;
+}
+
+export function linkFeatureOpen(subscription?: LinkPlan) {
+  return !LINK_PLAN_GATING_ENABLED || isPaidPlan(subscription);
+}
+
+export function linkDomainOpen(org?: { customDomainAddon?: boolean | null } | null) {
+  return !LINK_PLAN_GATING_ENABLED || hasCustomDomainAddon(org);
+}
+
+export function themeIsPro(id: string) {
+  return LINK_THEMES.find((item) => item.id === id)?.pro === true;
 }
 
 export function showBadge(hideBadge: boolean, paid: boolean) {
@@ -480,7 +522,18 @@ export function utcDay(date: Date) {
 }
 
 export function rangeWindow(range: string, now = new Date()) {
-  const days = range === '7d' ? 7 : range === '90d' ? 90 : range === '12m' ? 365 : 30;
+  const days =
+    range === '7d'
+      ? 7
+      : range === '28d'
+      ? 28
+      : range === '90d'
+      ? 90
+      : range === '365d' || range === '12m'
+      ? 365
+      : range === '30d'
+      ? 30
+      : 28;
   const to = now;
   const from = new Date(now.getTime() - days * 86400000);
   const previousFrom = new Date(from.getTime() - days * 86400000);
@@ -669,24 +722,57 @@ export const LINK_BLOCK_TYPES = [
   'FAQ',
   'IMAGE_CAROUSEL',
   'CONTACT_FORM',
+  'MAP',
+  'CALENDLY',
+  'CONTACT_DETAILS',
+  'DISCOUNT',
+  'EVENTS',
 ] as const;
 
-export const LINK_LOCKS = ['NONE', 'AGE', 'EMAIL', 'PASSWORD'] as const;
+export const LINK_LOCKS = ['NONE', 'AGE', 'EMAIL', 'PASSWORD', 'CODE', 'DOB', 'SENSITIVE'] as const;
 export type LinkLock = (typeof LINK_LOCKS)[number];
-export type EmbedProvider = 'youtube' | 'spotify' | 'soundcloud' | 'vimeo';
+export type EmbedProvider =
+  | 'youtube'
+  | 'spotify'
+  | 'soundcloud'
+  | 'vimeo'
+  | 'instagram'
+  | 'tiktok'
+  | 'x'
+  | 'threads'
+  | 'maps'
+  | 'calendly';
 export type EmbedFrame = { provider: EmbedProvider; src: string };
 
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const SPOTIFY_KIND = new Set(['track', 'album', 'playlist', 'episode', 'show', 'artist']);
 const SPOTIFY_ID = /^[A-Za-z0-9]{10,40}$/;
 
-export type PaidFeature = 'spotlight' | 'lock' | 'integrations' | 'deepAnalytics';
+export type PaidFeature =
+  | 'spotlight'
+  | 'lock'
+  | 'integrations'
+  | 'deepAnalytics'
+  | 'theme'
+  | 'layout'
+  | 'wallpaper'
+  | 'button'
+  | 'animation'
+  | 'priority'
+  | 'rules';
 
 const PAID_COPY: Record<PaidFeature, string> = {
   spotlight: 'Spotlight is on a paid plan',
   lock: 'Locked links are on a paid plan',
   integrations: 'Lead integrations are on a paid plan',
   deepAnalytics: 'Deeper analytics are on a paid plan',
+  theme: 'That theme is on a paid plan',
+  layout: 'That layout is on a paid plan',
+  wallpaper: 'That wallpaper is on a paid plan',
+  button: 'Glass buttons are on a paid plan',
+  animation: 'Link animations are on a paid plan',
+  priority: 'That priority option is on a paid plan',
+  rules: 'Visitor rules are on a paid plan',
 };
 
 export function paidFeatureProblem(paid: boolean, feature: PaidFeature) {
@@ -766,15 +852,123 @@ export function parseEmbed(raw: string): EmbedFrame | null {
     }
     return { provider: 'vimeo', src: `https://player.vimeo.com/video/${id}` };
   }
+  if (host === 'instagram.com') {
+    const parts = url.pathname.split('/').filter(Boolean);
+    const kind = parts[0] || '';
+    const code = parts[1] || '';
+    if (!['p', 'reel', 'tv'].includes(kind) || !/^[A-Za-z0-9_-]{5,40}$/.test(code)) {
+      return null;
+    }
+    return { provider: 'instagram', src: `https://www.instagram.com/${kind}/${code}/embed` };
+  }
+  if (host === 'tiktok.com') {
+    const parts = url.pathname.split('/').filter(Boolean);
+    const id = parts[0] === 'embed' && parts[1] === 'v2' ? parts[2] || '' : parts[1] === 'video' ? parts[2] || '' : '';
+    if (!/^\d{8,22}$/.test(id)) {
+      return null;
+    }
+    return { provider: 'tiktok', src: `https://www.tiktok.com/embed/v2/${id}` };
+  }
+  if (host === 'x.com' || host === 'twitter.com') {
+    const parts = url.pathname.split('/').filter(Boolean);
+    const id = parts[1] === 'status' ? parts[2] || '' : '';
+    if (!/^\d{5,25}$/.test(id)) {
+      return null;
+    }
+    return { provider: 'x', src: `https://platform.twitter.com/embed/Tweet.html?id=${id}` };
+  }
+  if (host === 'threads.net' || host === 'threads.com') {
+    const parts = url.pathname.split('/').filter(Boolean);
+    const user = (parts[0] || '').replace(/^@/, '');
+    const code = parts[2] || '';
+    if (parts[1] !== 'post' || !/^[A-Za-z0-9._]{1,40}$/.test(user) || !/^[A-Za-z0-9_-]{5,40}$/.test(code)) {
+      return null;
+    }
+    return { provider: 'threads', src: `https://www.threads.net/@${user}/post/${code}/embed` };
+  }
   return null;
+}
+
+export function parseMap(raw: string): EmbedFrame | null {
+  const url = httpUrl(raw);
+  if (!url) {
+    return null;
+  }
+  const host = bareHost(url.hostname);
+  if (host !== 'google.com' && host !== 'maps.google.com') {
+    return null;
+  }
+  if (url.pathname.startsWith('/maps/embed')) {
+    const pb = url.searchParams.get('pb') || '';
+    const query = url.searchParams.get('q') || '';
+    if (!pb && !query) {
+      return null;
+    }
+    if (pb && !/^[\w!._~%-]+$/.test(pb)) {
+      return null;
+    }
+    const src = new URL('https://www.google.com/maps/embed');
+    if (pb) {
+      src.searchParams.set('pb', pb);
+    }
+    if (query) {
+      src.searchParams.set('q', query.slice(0, 200));
+    }
+    return { provider: 'maps', src: src.toString() };
+  }
+  const query = url.searchParams.get('q') || url.searchParams.get('query') || '';
+  if (query) {
+    return { provider: 'maps', src: `https://maps.google.com/maps?q=${encodeURIComponent(query.slice(0, 200))}&output=embed` };
+  }
+  const parts = url.pathname.split('/').filter(Boolean);
+  if (parts[0] === 'maps' && (parts[1] === 'place' || parts[1] === 'search') && parts[2]) {
+    const name = decodeURIComponent(parts[2]).replace(/\+/g, ' ').slice(0, 200);
+    if (!name) {
+      return null;
+    }
+    return { provider: 'maps', src: `https://maps.google.com/maps?q=${encodeURIComponent(name)}&output=embed` };
+  }
+  return null;
+}
+
+export function parseCalendly(raw: string): EmbedFrame | null {
+  const url = httpUrl(raw);
+  if (!url || bareHost(url.hostname) !== 'calendly.com') {
+    return null;
+  }
+  const parts = url.pathname.split('/').filter(Boolean);
+  if (!parts.length || parts.length > 3 || parts.some((part) => !/^[A-Za-z0-9_-]{1,80}$/.test(part))) {
+    return null;
+  }
+  return { provider: 'calendly', src: `https://calendly.com/${parts.join('/')}?hide_gdpr_banner=1` };
 }
 
 export function embedProblem(raw: string) {
   if (!raw.trim()) {
-    return 'Paste a YouTube, Spotify, SoundCloud or Vimeo link';
+    return 'Paste a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads link';
   }
   if (!parseEmbed(raw)) {
-    return 'Use a YouTube, Spotify, SoundCloud or Vimeo link';
+    return 'Use a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads link';
+  }
+  return null;
+}
+
+export function mapProblem(raw: string) {
+  if (!raw.trim()) {
+    return 'Paste a Google Maps link';
+  }
+  if (!parseMap(raw)) {
+    return 'Use a Google Maps place, search or embed link';
+  }
+  return null;
+}
+
+export function calendlyProblem(raw: string) {
+  if (!raw.trim()) {
+    return 'Paste a Calendly link';
+  }
+  if (!parseCalendly(raw)) {
+    return 'Use a calendly.com link';
   }
   return null;
 }
@@ -794,7 +988,7 @@ export function normalizeLock(value: string | null | undefined): LinkLock {
 
 export function lockProblem(input: { lockType?: string; password?: string; hasHash?: boolean }) {
   const lock = normalizeLock(input.lockType);
-  if (lock !== 'PASSWORD') {
+  if (lock !== 'PASSWORD' && lock !== 'CODE') {
     return null;
   }
   const password = (input.password || '').trim();
@@ -802,7 +996,7 @@ export function lockProblem(input: { lockType?: string; password?: string; hasHa
     return null;
   }
   if (password.length < 4 || password.length > 80) {
-    return 'Use a password between 4 and 80 characters';
+    return lock === 'CODE' ? 'Use a code between 4 and 80 characters' : 'Use a password between 4 and 80 characters';
   }
   return null;
 }
@@ -951,31 +1145,50 @@ export type PublicBlockInput = {
   payload?: unknown;
 };
 
-export function presentPublicBlock(block: PublicBlockInput, paid: boolean) {
+export function presentPublicBlock(block: PublicBlockInput, paid: boolean, visitor?: VisitorContext) {
+  const extras = block.type === 'LINK' ? normalizeLinkExtras(block.payload) : emptyLinkExtras();
+  const effect = block.type === 'LINK' && visitor ? applyVisitorRules(extras.rules, visitor) : { action: 'none' as const, title: '', url: '' };
+  const title = effect.action === 'title' && effect.title ? effect.title : block.title;
+  const rawUrl = effect.action === 'url' && effect.url ? effect.url : block.url;
   const lock = block.type === 'LINK' ? normalizeLock(block.lockType) : 'NONE';
   const locked = lock !== 'NONE';
-  const embed = block.type === 'EMBED' ? parseEmbed(block.url) : null;
+  const embed =
+    block.type === 'EMBED'
+      ? parseEmbed(block.url)
+      : block.type === 'MAP'
+      ? parseMap(block.url)
+      : block.type === 'CALENDLY'
+      ? parseCalendly(block.url)
+      : null;
   const mode = block.iconMode === 'upload' || block.iconMode === 'favicon' ? block.iconMode : '';
   const thumbnail =
     block.type === 'LINK' && mode === 'upload'
       ? (block.thumbnail || '').trim()
       : block.type === 'LINK' && mode === 'favicon'
-      ? faviconFor(block.url)
+      ? faviconFor(rawUrl)
       : '';
+  const open = paid;
   return {
     id: block.id,
     type: block.type,
-    title: block.title,
-    url: block.type === 'LINK' && !locked ? block.url : '',
+    title,
+    url: block.type === 'LINK' && !locked ? rawUrl : block.type === 'DISCOUNT' ? normalizeDiscount(block).url : '',
     embed,
     priority: !!block.priority,
-    spotlight: block.type === 'LINK' && !!block.spotlight && paid,
+    priorityMode: open ? extras.priorityMode : extras.priorityMode === 'highlight' ? 'highlight' : 'none',
+    layout: block.type === 'LINK' && open && extras.layout === 'featured' ? 'featured' : 'classic',
+    animation: block.type === 'LINK' && open ? extras.animation : 'none',
+    expand: block.type === 'LINK' && open && extras.priorityMode === 'expand',
+    spotlight: block.type === 'LINK' && !!block.spotlight && open,
     thumbnail,
     lock,
     body: block.type === 'TEXT' ? block.body || '' : '',
     faq: block.type === 'FAQ' ? normalizeFaq(block.payload) : [],
     images: block.type === 'IMAGE_CAROUSEL' ? normalizeImages(block.payload) : [],
     form: block.type === 'CONTACT_FORM' ? normalizeForm(block) : null,
+    details: block.type === 'CONTACT_DETAILS' ? normalizeDetails(block.payload) : null,
+    discount: block.type === 'DISCOUNT' ? normalizeDiscount(block) : null,
+    events: block.type === 'EVENTS' ? normalizeEvents(block.payload) : [],
   };
 }
 
@@ -1129,4 +1342,353 @@ export function analyticsToCsv(input: {
     lines.push(['utm', row.label, String(row.views), '', '', `${row.share}%`].map(csvCell).join(','));
   }
   return lines.join('\n') + '\n';
+}
+
+export type LinkColors = {
+  background: string;
+  button: string;
+  buttonText: string;
+  pageText: string;
+  title: string;
+};
+
+export type LinkDesign = {
+  wallpaper: (typeof LINK_WALLPAPERS)[number];
+  pattern: (typeof LINK_PATTERNS)[number];
+  gradientFrom: string;
+  gradientTo: string;
+  buttonFill: (typeof LINK_BUTTON_FILLS)[number];
+  radius: number;
+  shadow: (typeof LINK_SHADOWS)[number];
+  titleFont: (typeof LINK_FONTS)[number];
+  colors: LinkColors;
+  header: (typeof LINK_HEADERS)[number];
+  titleMode: (typeof LINK_TITLE_MODES)[number];
+  logoUrl: string;
+  socialPosition: (typeof LINK_SOCIAL_POSITIONS)[number];
+  hiddenSocials: string[];
+  wallpaperChosen: boolean;
+};
+
+export type VisitorRule = {
+  country: string;
+  platform: string;
+  language: string;
+  action: (typeof LINK_RULE_ACTIONS)[number];
+  title: string;
+  url: string;
+};
+
+export type VisitorContext = { country: string; platform: string; language: string };
+
+export type LinkExtras = {
+  layout: (typeof LINK_LAYOUTS)[number];
+  animation: (typeof LINK_ANIMATIONS)[number];
+  priorityMode: (typeof LINK_PRIORITY_MODES)[number];
+  rules: VisitorRule[];
+  minAge: number;
+};
+
+export type ContactDetails = { email: string; phone: string; address: string; website: string };
+export type DiscountBlock = { code: string; note: string; url: string };
+export type EventItem = { title: string; when: string; place: string; url: string };
+
+const FONT_STACKS: Record<string, string> = {
+  'Plus Jakarta Sans': "'Plus Jakarta Sans', 'Helvetica Neue', sans-serif",
+  Georgia: "Georgia, 'Iowan Old Style', serif",
+  Palatino: "Palatino, 'Palatino Linotype', serif",
+  'Trebuchet MS': "'Trebuchet MS', 'Segoe UI', sans-serif",
+  'Courier New': "'Courier New', ui-monospace, monospace",
+};
+
+function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+function hexColor(value: unknown) {
+  const text = String(value || '').trim();
+  return /^#[0-9a-fA-F]{6}$/.test(text) ? text.toLowerCase() : '';
+}
+
+export function fontStack(name: string) {
+  return FONT_STACKS[name] || FONT_STACKS['Plus Jakarta Sans'];
+}
+
+export function emptyDesign(): LinkDesign {
+  return {
+    wallpaper: 'fill',
+    pattern: 'dots',
+    gradientFrom: '',
+    gradientTo: '',
+    buttonFill: 'solid',
+    radius: -1,
+    shadow: 'none',
+    titleFont: 'Plus Jakarta Sans',
+    colors: { background: '', button: '', buttonText: '', pageText: '', title: '' },
+    header: 'classic',
+    titleMode: 'text',
+    logoUrl: '',
+    socialPosition: 'top',
+    hiddenSocials: [],
+    wallpaperChosen: false,
+  };
+}
+
+export function normalizeDesign(value: unknown): LinkDesign {
+  const row = asRecord(value);
+  const colors = asRecord(row.colors);
+  const logo = String(row.logoUrl || '').trim().slice(0, 2000);
+  const hidden = Array.isArray(row.hiddenSocials) ? row.hiddenSocials : [];
+  const radius = Number(row.radius);
+  return {
+    wallpaper: pick(row.wallpaper, LINK_WALLPAPERS, 'fill'),
+    pattern: pick(row.pattern, LINK_PATTERNS, 'dots'),
+    gradientFrom: hexColor(row.gradientFrom),
+    gradientTo: hexColor(row.gradientTo),
+    buttonFill: pick(row.buttonFill, LINK_BUTTON_FILLS, 'solid'),
+    radius: Number.isInteger(radius) ? Math.max(-1, Math.min(32, radius)) : -1,
+    shadow: pick(row.shadow, LINK_SHADOWS, 'none'),
+    titleFont: pick(row.titleFont, LINK_FONTS, 'Plus Jakarta Sans'),
+    colors: {
+      background: hexColor(colors.background),
+      button: hexColor(colors.button),
+      buttonText: hexColor(colors.buttonText),
+      pageText: hexColor(colors.pageText),
+      title: hexColor(colors.title),
+    },
+    header: pick(row.header, LINK_HEADERS, 'classic'),
+    titleMode: pick(row.titleMode, LINK_TITLE_MODES, 'text'),
+    logoUrl: logo && !imagePathProblem(logo) ? logo : '',
+    socialPosition: pick(row.socialPosition, LINK_SOCIAL_POSITIONS, 'top'),
+    hiddenSocials: hidden
+      .map((item) => String(item || '').trim())
+      .filter((item) => /^[a-zA-Z0-9_-]{1,40}$/.test(item))
+      .slice(0, 40),
+    wallpaperChosen: row.wallpaperChosen === true || typeof row.wallpaper === 'string',
+  };
+}
+
+export function designProKind(theme: string, design: LinkDesign): PaidFeature | null {
+  if (themeIsPro(theme)) {
+    return 'theme';
+  }
+  if (design.header !== 'classic') {
+    return 'layout';
+  }
+  if (design.wallpaper === 'blur' || design.wallpaper === 'pattern') {
+    return 'wallpaper';
+  }
+  if (design.buttonFill === 'glass') {
+    return 'button';
+  }
+  return null;
+}
+
+export function emptyLinkExtras(): LinkExtras {
+  return { layout: 'classic', animation: 'none', priorityMode: 'none', rules: [], minAge: 18 };
+}
+
+export function normalizeMinAge(value: unknown) {
+  const age = Number(value);
+  if (!Number.isInteger(age)) {
+    return 18;
+  }
+  return Math.min(120, Math.max(13, age));
+}
+
+export function normalizeRules(value: unknown): VisitorRule[] {
+  const items = Array.isArray(value) ? value : [];
+  const out: VisitorRule[] = [];
+  for (const item of items) {
+    const row = asRecord(item);
+    const country = cleanCountry(String(row.country || ''));
+    const platform = String(row.platform || '').trim().slice(0, 40);
+    const language = String(row.language || '')
+      .trim()
+      .toLowerCase()
+      .slice(0, 12);
+    const action = pick(row.action, LINK_RULE_ACTIONS, 'hide');
+    const title = String(row.title || '').trim().slice(0, 160);
+    const url = String(row.url || '').trim().slice(0, 2000);
+    if (!country && !platform && !language) {
+      continue;
+    }
+    if (action === 'url' && urlProblem(url)) {
+      continue;
+    }
+    if (action === 'title' && !title) {
+      continue;
+    }
+    out.push({ country, platform, language, action, title, url });
+    if (out.length === 8) {
+      break;
+    }
+  }
+  return out;
+}
+
+export function normalizeLinkExtras(payload: unknown): LinkExtras {
+  const row = asRecord(payload);
+  return {
+    layout: pick(row.layout, LINK_LAYOUTS, 'classic'),
+    animation: pick(row.animation, LINK_ANIMATIONS, 'none'),
+    priorityMode: pick(row.priorityMode, LINK_PRIORITY_MODES, 'none'),
+    rules: normalizeRules(row.rules),
+    minAge: normalizeMinAge(row.minAge),
+  };
+}
+
+export function linkProKind(extras: LinkExtras): PaidFeature | null {
+  if (extras.animation !== 'none') {
+    return 'animation';
+  }
+  if (extras.layout === 'featured') {
+    return 'layout';
+  }
+  if (extras.priorityMode === 'expand' || extras.priorityMode === 'redirect') {
+    return 'priority';
+  }
+  if (extras.rules.length) {
+    return 'rules';
+  }
+  return null;
+}
+
+export function normalizeVisitor(input: {
+  country?: string;
+  language?: string;
+  platform?: string;
+  referrer?: string;
+}): VisitorContext {
+  const platform = (input.platform || '').trim().slice(0, 40);
+  return {
+    country: cleanCountry(input.country || ''),
+    language: (input.language || '').trim().toLowerCase().slice(0, 12),
+    platform: platform || (input.referrer ? sourceLabel({ referrer: input.referrer }) : ''),
+  };
+}
+
+function languageMatches(want: string, have: string) {
+  if (!want) {
+    return true;
+  }
+  return have === want || have.startsWith(`${want}-`);
+}
+
+export function applyVisitorRules(rules: VisitorRule[], visitor: VisitorContext) {
+  for (const rule of rules) {
+    if (rule.country && rule.country !== visitor.country) {
+      continue;
+    }
+    if (rule.platform && rule.platform.toLowerCase() !== visitor.platform.toLowerCase()) {
+      continue;
+    }
+    if (!languageMatches(rule.language, visitor.language)) {
+      continue;
+    }
+    return { action: rule.action, title: rule.title, url: rule.url };
+  }
+  return { action: 'none' as const, title: '', url: '' };
+}
+
+export function linkIsHidden(payload: unknown, visitor?: VisitorContext) {
+  if (!visitor) {
+    return false;
+  }
+  return applyVisitorRules(normalizeLinkExtras(payload).rules, visitor).action === 'hide';
+}
+
+export function normalizeDetails(payload: unknown): ContactDetails {
+  const row = asRecord(payload);
+  const details = asRecord(row.details || row);
+  const email = String(details.email || '').trim().toLowerCase().slice(0, 200);
+  const website = String(details.website || '').trim().slice(0, 2000);
+  return {
+    email: email && !emailProblem(email) ? email : '',
+    phone: String(details.phone || '').trim().slice(0, 40),
+    address: String(details.address || '').trim().slice(0, 200),
+    website: website && !urlProblem(website) ? website : '',
+  };
+}
+
+export function detailsProblem(details: ContactDetails) {
+  if (!details.email && !details.phone && !details.address && !details.website) {
+    return 'Add at least one contact detail';
+  }
+  return null;
+}
+
+export function normalizeDiscount(input: { title?: string; url?: string; body?: string; payload?: unknown }): DiscountBlock {
+  const row = asRecord(input.payload);
+  const discount = asRecord(row.discount || row);
+  const url = String(discount.url || input.url || '').trim().slice(0, 2000);
+  return {
+    code: String(discount.code || input.title || '').trim().slice(0, 40),
+    note: String(discount.note || input.body || '').trim().slice(0, 160),
+    url: url && !urlProblem(url) ? url : '',
+  };
+}
+
+export function normalizeEvents(payload: unknown): EventItem[] {
+  const items = Array.isArray(payload) ? payload : asRecord(payload).events;
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  const out: EventItem[] = [];
+  for (const item of items) {
+    const row = asRecord(item);
+    const title = String(row.title || '').trim().slice(0, 80);
+    if (!title) {
+      continue;
+    }
+    const url = String(row.url || '').trim().slice(0, 2000);
+    out.push({
+      title,
+      when: String(row.when || '').trim().slice(0, 80),
+      place: String(row.place || '').trim().slice(0, 80),
+      url: url && !urlProblem(url) ? url : '',
+    });
+    if (out.length === 12) {
+      break;
+    }
+  }
+  return out;
+}
+
+export function ageYears(raw: string, now = new Date()) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec((raw || '').trim());
+  if (!match) {
+    return null;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    return null;
+  }
+  if (date.getTime() > now.getTime()) {
+    return null;
+  }
+  let age = now.getUTCFullYear() - year;
+  const monthDelta = now.getUTCMonth() + 1 - month;
+  if (monthDelta < 0 || (monthDelta === 0 && now.getUTCDate() < day)) {
+    age -= 1;
+  }
+  return age;
+}
+
+export function dobProblem(raw: string, minAge: number, now = new Date()) {
+  const age = ageYears(raw, now);
+  if (age === null) {
+    return 'Enter a real date of birth';
+  }
+  if (age < minAge) {
+    return `You need to be ${minAge} or older`;
+  }
+  return null;
+}
+
+export function knownRange(range: string) {
+  return (LINK_RANGES as readonly string[]).includes(range) ? range : '28d';
 }

@@ -28,6 +28,10 @@ export class LinkedinPageProvider
   implements SocialProvider
 {
   override identifier = 'linkedin-page';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'linkedin', url: `https://www.linkedin.com/company/${handle}` } : null;
+  }
   override name = 'LinkedIn Page';
   override isBetweenSteps = true;
   override refreshWait = true;

@@ -28,6 +28,10 @@ export class InstagramStandaloneProvider
   implements SocialProvider
 {
   identifier = 'instagram-standalone';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'instagram', url: `https://www.instagram.com/${handle}/` } : null;
+  }
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
   stalkerComments = { filter: 'INSTAGRAM_COMMENT', label: 'Instagram comments' };

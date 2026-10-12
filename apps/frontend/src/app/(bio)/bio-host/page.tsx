@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { loadPublicLink, presentPublicLink } from '@gitroom/frontend/components/link-in-bio/link.load';
+import { loadPublicLink, presentPublicLink, visitorSearch } from '@gitroom/frontend/components/link-in-bio/link.load';
 import { LinkLive } from '@gitroom/frontend/components/link-in-bio/link.live';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ async function load() {
   if (!host) {
     return null;
   }
-  return loadPublicLink(`/public/link/host/${encodeURIComponent(host)}`);
+  return loadPublicLink(`/public/link/host/${encodeURIComponent(host)}${visitorSearch(await headers())}`);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

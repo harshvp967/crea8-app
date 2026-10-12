@@ -33,6 +33,10 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 )
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'tiktok', url: `https://www.tiktok.com/@${handle}` } : null;
+  }
   name = 'Tiktok';
   isBetweenSteps = false;
   convertToJPEG = true;

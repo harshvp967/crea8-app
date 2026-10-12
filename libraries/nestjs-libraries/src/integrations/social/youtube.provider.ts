@@ -60,6 +60,16 @@ const clientAndYoutube = () => {
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 200; // YouTube has strict upload quotas
   identifier = 'youtube';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    if (!handle) {
+      return null;
+    }
+    const url = /^UC[\w-]{20,}$/.test(handle)
+      ? `https://www.youtube.com/channel/${handle}`
+      : `https://www.youtube.com/@${handle}`;
+    return { network: 'youtube', url };
+  }
   name = 'YouTube';
   isBetweenSteps = true;
   stalkerComments = { filter: 'YOUTUBE_COMMENT', label: 'YouTube comments' };

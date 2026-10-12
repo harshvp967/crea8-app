@@ -1,8 +1,8 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { CSSProperties, FormEvent, useState } from 'react';
 import { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
-import { parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { fontStack, normalizeDesign, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 const SOCIAL: Record<string, string> = {
   instagram: 'Ig',
@@ -10,7 +10,20 @@ const SOCIAL: Record<string, string> = {
   youtube: 'Yt',
   linkedin: 'In',
   tiktok: 'Tk',
+  threads: 'Th',
+  facebook: 'Fb',
+  bluesky: 'Bs',
+  twitch: 'Tw',
+  pinterest: 'Pi',
+  reddit: 'Rd',
   website: 'W',
+};
+
+const SHADOW: Record<string, string> = {
+  none: 'none',
+  soft: '0 8px 24px rgba(0,0,0,.18)',
+  strong: '0 14px 32px rgba(0,0,0,.32)',
+  hard: '4px 4px 0 rgba(0,0,0,.85)',
 };
 
 export const LinkPublicView = ({
@@ -28,7 +41,10 @@ export const LinkPublicView = ({
   onClick?: (blockId: string) => void;
   onSubscribe?: (input: { email: string; name: string }) => Promise<'confirmed' | 'pending'>;
   onContinue?: () => Promise<void> | void;
-  onUnlock?: (blockId: string, input: { age?: boolean; email?: string; name?: string; password?: string }) => Promise<string>;
+  onUnlock?: (
+    blockId: string,
+    input: { age?: boolean; email?: string; name?: string; password?: string; dob?: string; sensitive?: boolean }
+  ) => Promise<string>;
   onContact?: (blockId: string, input: { email: string; name: string; message: string; website: string }) => Promise<void>;
   unlocked?: boolean;
 }) => {
@@ -42,16 +58,32 @@ export const LinkPublicView = ({
   const [opened, setOpened] = useState<Record<string, string>>({});
   const open = unlocked || dismissed || !data.sensitive || !data.isPublic;
 
-  const style =
-    data.backgroundMode === 'image' && data.backgroundImage
+  const design = normalizeDesign(data.design);
+  const legacyImage = !design.wallpaperChosen && data.backgroundMode === 'image' && data.backgroundImage;
+  const radius = design.radius < 0 ? undefined : design.radius >= 28 ? '999px' : `${design.radius}px`;
+  const style = {
+    ...(legacyImage
       ? {
           backgroundImage: `linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.72)), url(${data.backgroundImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }
+      : design.wallpaper === 'gradient'
+      ? { background: `linear-gradient(160deg, ${design.gradientFrom || 'var(--lib-glow)'}, ${design.gradientTo || design.colors.background || 'var(--lib-bg)'})` }
+      : design.colors.background
+      ? { background: design.colors.background }
       : data.backgroundMode === 'colour' && data.backgroundColor
       ? { background: data.backgroundColor }
-      : undefined;
+      : undefined),
+    '--lib-font': fontStack(data.font),
+    '--lib-title-font': fontStack(design.titleFont),
+    ...(design.colors.button ? { '--lib-btn': design.colors.button } : {}),
+    ...(design.colors.buttonText ? { '--lib-btn-text': design.colors.buttonText } : {}),
+    ...(design.colors.pageText ? { '--lib-text': design.colors.pageText } : {}),
+    ...(design.colors.title ? { '--lib-title': design.colors.title } : {}),
+    ...(radius ? { '--lib-radius': radius } : {}),
+    '--lib-shadow': SHADOW[design.shadow] || 'none',
+  } as unknown as CSSProperties;
 
   const subscribe = async (event: FormEvent) => {
     event.preventDefault();
@@ -72,29 +104,28 @@ export const LinkPublicView = ({
       className="lib-public"
       data-theme={data.theme || 'midnight'}
       data-buttons={data.buttonStyle || 'pill'}
+      data-wallpaper={legacyImage ? 'image' : design.wallpaper}
+      data-pattern={design.pattern}
+      data-fill={design.buttonFill}
+      data-header={design.header}
+      data-shadow={design.shadow}
       style={style}
     >
       <div className="lib-stack">
-        <div className="lib-avatar">
-          {data.avatarPath ? <img src={data.avatarPath} alt="" /> : (data.name || data.slug || 'c').slice(0, 1).toUpperCase()}
-        </div>
-        <div>
-          <h1 className="lib-name">{data.name || data.slug}</h1>
-          {data.bio ? <p className="lib-bio">{data.bio}</p> : null}
-        </div>
-        {data.socials.length ? (
-          <div className="lib-socials">
-            {data.socials.map((item) =>
-              mode === 'preview' ? (
-                <span key={item.network}>{SOCIAL[item.network] || '•'}</span>
-              ) : (
-                <a key={item.network} href={item.url} target="_blank" rel="noreferrer">
-                  {SOCIAL[item.network] || '•'}
-                </a>
-              )
+        <header className="lib-header">
+          <div className="lib-avatar">
+            {(design.titleMode === 'logo' && design.logoUrl) || data.avatarPath ? (
+              <img src={design.titleMode === 'logo' && design.logoUrl ? design.logoUrl : data.avatarPath} alt="" />
+            ) : (
+              (data.name || data.slug || 'c').slice(0, 1).toUpperCase()
             )}
           </div>
-        ) : null}
+          <div>
+            {design.titleMode === 'logo' ? null : <h1 className="lib-name">{data.name || data.slug}</h1>}
+            {data.bio ? <p className="lib-bio">{data.bio}</p> : null}
+          </div>
+        </header>
+        {design.socialPosition === 'top' ? <SocialRow items={data.socials} preview={mode === 'preview'} /> : null}
         {!data.isPublic ? (
           <div className="lib-soon">
             <strong>Coming soon</strong>
@@ -269,9 +300,55 @@ export const LinkPublicView = ({
                 />
               );
             }
+            if (block.type === 'MAP' && block.embed) {
+              return (
+                <div key={block.id} className="lib-embed" data-provider="maps">
+                  <iframe src={block.embed.src} title={block.title || 'Map'} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
+                </div>
+              );
+            }
+            if (block.type === 'CALENDLY' && block.embed) {
+              return (
+                <div key={block.id} className="lib-embed" data-provider="calendly">
+                  <iframe src={block.embed.src} title={block.title || 'Calendar'} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
+                </div>
+              );
+            }
+            if (block.type === 'CONTACT_DETAILS' && block.details) {
+              return <DetailsCard key={block.id} title={block.title} details={block.details} />;
+            }
+            if (block.type === 'DISCOUNT' && block.discount) {
+              return <DiscountCard key={block.id} title={block.title} discount={block.discount} />;
+            }
+            if (block.type === 'EVENTS' && block.events.length) {
+              return (
+                <div key={block.id} className="lib-events">
+                  {block.title ? <strong>{block.title}</strong> : null}
+                  {block.events.map((item) => (
+                    <div key={`${item.title}-${item.when}`}>
+                      <strong>{item.title}</strong>
+                      <p>
+                        {[item.when, item.place].filter(Boolean).join(' · ')}
+                      </p>
+                      {item.url && mode !== 'preview' ? (
+                        <a href={item.url} target="_blank" rel="noreferrer">
+                          Details
+                        </a>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
             if (block.type === 'LINK') {
               const href = opened[block.id] || block.url;
-              const className = ['lib-link', block.priority ? 'priority' : '', block.spotlight ? 'spotlight' : '']
+              const className = [
+                'lib-link',
+                block.layout === 'featured' ? 'is-featured' : '',
+                block.expand ? 'is-expanded' : '',
+                block.priority ? 'priority' : '',
+                block.spotlight ? 'spotlight' : '',
+              ]
                 .filter(Boolean)
                 .join(' ');
               const face = (
@@ -280,6 +357,7 @@ export const LinkPublicView = ({
                   <span>{block.title}</span>
                 </>
               );
+              const anim = block.animation && block.animation !== 'none' ? block.animation : undefined;
               if (block.lock !== 'NONE' && !href) {
                 return (
                   <LockCard
@@ -289,6 +367,8 @@ export const LinkPublicView = ({
                     thumbnail={block.thumbnail}
                     spotlight={block.spotlight}
                     priority={block.priority}
+                    layout={block.layout}
+                    animation={block.animation}
                     lock={block.lock}
                     preview={mode === 'preview'}
                     onUnlock={async (input) => {
@@ -303,13 +383,14 @@ export const LinkPublicView = ({
                 );
               }
               return mode === 'preview' || href === 'preview' ? (
-                <div key={block.id} className={className}>
+                <div key={block.id} className={className} data-anim={anim}>
                   {face}
                 </div>
               ) : (
                 <a
                   key={block.id}
                   className={className}
+                  data-anim={anim}
                   href={href}
                   target="_blank"
                   rel="noreferrer"
@@ -322,12 +403,91 @@ export const LinkPublicView = ({
             return null;
           })
         )}
+        {design.socialPosition === 'bottom' ? <SocialRow items={data.socials} preview={mode === 'preview'} /> : null}
         {data.showBadge ? (
-          <a className="lib-made" href="https://crea8.one">
-            made with crea8.one
-          </a>
+          <footer className="lib-footer">
+            <a className="lib-made" href="https://crea8.one">
+              Made with crea8.one
+            </a>
+            <p>
+              Want to schedule posts and track competitors? <a href="https://crea8.one">Try crea8.one</a>
+            </p>
+          </footer>
         ) : null}
       </div>
+    </div>
+  );
+};
+
+const SocialRow = ({
+  items,
+  preview,
+}: {
+  items: Array<{ network: string; url: string }>;
+  preview: boolean;
+}) =>
+  items.length ? (
+    <div className="lib-socials">
+      {items.map((item) =>
+        preview ? (
+          <span key={`${item.network}-${item.url}`} title={item.network}>
+            {SOCIAL[item.network] || '•'}
+          </span>
+        ) : (
+          <a key={`${item.network}-${item.url}`} href={item.url} target="_blank" rel="noreferrer" title={item.network}>
+            {SOCIAL[item.network] || '•'}
+          </a>
+        )
+      )}
+    </div>
+  ) : null;
+
+const DetailsCard = ({
+  title,
+  details,
+}: {
+  title: string;
+  details: { email: string; phone: string; address: string; website: string };
+}) => (
+  <div className="lib-details">
+    {title ? <strong>{title}</strong> : null}
+    {details.email ? <a href={`mailto:${details.email}`}>{details.email}</a> : null}
+    {details.phone ? <a href={`tel:${details.phone.replace(/[^\d+]/g, '')}`}>{details.phone}</a> : null}
+    {details.address ? <p>{details.address}</p> : null}
+    {details.website ? (
+      <a href={details.website} target="_blank" rel="noreferrer">
+        Website
+      </a>
+    ) : null}
+  </div>
+);
+
+const DiscountCard = ({
+  title,
+  discount,
+}: {
+  title: string;
+  discount: { code: string; note: string; url: string };
+}) => {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="lib-discount">
+      {title ? <strong>{title}</strong> : null}
+      <button
+        type="button"
+        onClick={() => {
+          navigator.clipboard?.writeText(discount.code);
+          setCopied(true);
+        }}
+      >
+        {discount.code}
+      </button>
+      <p>{copied ? 'Copied' : discount.note || 'Tap the code to copy it'}</p>
+      {discount.url ? (
+        <a href={discount.url} target="_blank" rel="noreferrer">
+          Use code
+        </a>
+      ) : null}
     </div>
   );
 };
@@ -433,6 +593,8 @@ const LockCard = ({
   thumbnail,
   spotlight,
   priority,
+  layout,
+  animation,
   lock,
   preview,
   onUnlock,
@@ -442,16 +604,22 @@ const LockCard = ({
   thumbnail: string;
   spotlight: boolean;
   priority: boolean;
-  lock: 'AGE' | 'EMAIL' | 'PASSWORD';
+  layout: string;
+  animation: string;
+  lock: 'AGE' | 'EMAIL' | 'PASSWORD' | 'CODE' | 'DOB' | 'SENSITIVE';
   preview: boolean;
-  onUnlock: (input: { age?: boolean; email?: string; name?: string; password?: string }) => Promise<void>;
+  onUnlock: (input: { age?: boolean; email?: string; name?: string; password?: string; dob?: string; sensitive?: boolean }) => Promise<void>;
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [dob, setDob] = useState('');
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
-  const className = ['lib-link', priority ? 'priority' : '', spotlight ? 'spotlight' : ''].filter(Boolean).join(' ');
-  const submit = async (input: { age?: boolean; email?: string; password?: string }) => {
+  const className = ['lib-link', layout === 'featured' ? 'is-featured' : '', priority ? 'priority' : '', spotlight ? 'spotlight' : '']
+    .filter(Boolean)
+    .join(' ');
+  const anim = animation && animation !== 'none' ? animation : undefined;
+  const submit = async (input: { age?: boolean; email?: string; password?: string; dob?: string; sensitive?: boolean }) => {
     setError('');
     try {
       await onUnlock(input);
@@ -461,7 +629,12 @@ const LockCard = ({
   };
   return (
     <div className="lib-lock">
-      <button type="button" className={className} onClick={() => (lock === 'AGE' ? submit({ age: true }) : setOpen(true))}>
+      <button
+        type="button"
+        className={className}
+        data-anim={anim}
+        onClick={() => (lock === 'AGE' ? submit({ age: true }) : lock === 'SENSITIVE' ? submit({ sensitive: true }) : setOpen(true))}
+      >
         {thumbnail ? <img className="lib-thumb" src={thumbnail} alt="" /> : null}
         <span>{title}</span>
       </button>
@@ -486,7 +659,7 @@ const LockCard = ({
           </button>
         </form>
       ) : null}
-      {open && lock === 'PASSWORD' ? (
+      {open && (lock === 'PASSWORD' || lock === 'CODE') ? (
         <form
           className="lib-lock-form"
           onSubmit={(event) => {
@@ -497,13 +670,27 @@ const LockCard = ({
           <input
             type="password"
             required
-            aria-label="Password"
-            placeholder="Password"
+            aria-label={lock === 'CODE' ? 'Code' : 'Password'}
+            placeholder={lock === 'CODE' ? 'Code' : 'Password'}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
           <button className="lib-subscribe" type="submit">
             Unlock
+          </button>
+        </form>
+      ) : null}
+      {open && lock === 'DOB' ? (
+        <form
+          className="lib-lock-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit({ dob });
+          }}
+        >
+          <input type="date" required aria-label="Date of birth" value={dob} onChange={(event) => setDob(event.target.value)} />
+          <button className="lib-subscribe" type="submit">
+            Continue
           </button>
         </form>
       ) : null}

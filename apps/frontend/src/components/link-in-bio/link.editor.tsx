@@ -6,6 +6,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
   LinkEditor,
   LinkBlock,
+  linkLocked,
   linkSend,
   toPublic,
   useLinkPage,
@@ -25,9 +26,16 @@ type Modal =
   | { kind: 'faq'; block?: LinkBlock }
   | { kind: 'carousel'; block?: LinkBlock }
   | { kind: 'contact'; block?: LinkBlock }
+  | { kind: 'map'; block?: LinkBlock }
+  | { kind: 'calendly'; block?: LinkBlock }
+  | { kind: 'details'; block?: LinkBlock }
+  | { kind: 'discount'; block?: LinkBlock }
+  | { kind: 'events'; block?: LinkBlock }
   | { kind: 'delete'; block: LinkBlock }
   | { kind: 'capture' }
   | null;
+
+const emptyRule = { country: '', platform: '', language: '', action: 'hide' as const, title: '', url: '' };
 
 const emptyLink = {
   title: '',
@@ -39,8 +47,13 @@ const emptyLink = {
   thumbnail: '',
   iconMode: '' as '' | 'upload' | 'favicon',
   spotlight: false,
-  lockType: 'NONE' as 'NONE' | 'AGE' | 'EMAIL' | 'PASSWORD',
+  lockType: 'NONE' as LinkBlock['lock']['type'],
   password: '',
+  layout: 'classic' as LinkBlock['layout'],
+  animation: 'none',
+  priorityMode: 'none' as LinkBlock['priorityMode'],
+  minAge: 18,
+  rules: [] as LinkBlock['rules'],
 };
 
 const blockName = (block: LinkBlock) => {
@@ -51,7 +64,31 @@ const blockName = (block: LinkBlock) => {
   if (block.type === 'FAQ') return block.title || 'FAQ';
   if (block.type === 'IMAGE_CAROUSEL') return block.title || 'Image carousel';
   if (block.type === 'CONTACT_FORM') return block.form?.heading || block.title || 'Contact form';
-  return block.title || 'Heading';
+  if (block.type === 'MAP') return block.title || 'Google Maps';
+  if (block.type === 'CALENDLY') return block.title || 'Calendly';
+  if (block.type === 'CONTACT_DETAILS') return block.title || 'Contact details';
+  if (block.type === 'DISCOUNT') return block.discount?.code || block.title || 'Discount code';
+  if (block.type === 'EVENTS') return block.title || 'Events';
+  return block.title || 'Header';
+};
+
+const blockNote = (block: LinkBlock) => {
+  if (block.type === 'FEATURED_POST') {
+    return block.post ? `${block.post.title} · ${block.post.platform} · ${block.post.dateLabel}` : 'Pick a published post';
+  }
+  if (block.type === 'LINK') return block.url;
+  if (block.type === 'EMAIL_CAPTURE') return 'Collects subscribers on your page';
+  if (block.type === 'EMBED') return block.url || 'YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads';
+  if (block.type === 'TEXT') return block.body || 'Text';
+  if (block.type === 'FAQ') return `${block.faq.length} questions`;
+  if (block.type === 'IMAGE_CAROUSEL') return `${block.images.length} images`;
+  if (block.type === 'CONTACT_FORM') return 'Collects messages on your page';
+  if (block.type === 'MAP') return block.url || 'Google Maps';
+  if (block.type === 'CALENDLY') return block.url || 'Calendly';
+  if (block.type === 'CONTACT_DETAILS') return 'Email, phone, address or website';
+  if (block.type === 'DISCOUNT') return block.discount?.note || 'A code visitors can copy';
+  if (block.type === 'EVENTS') return `${block.events.length} events`;
+  return 'Section divider';
 };
 
 export const LinkEditorScreen = () => {
@@ -74,6 +111,18 @@ export const LinkEditorScreen = () => {
   const [faq, setFaq] = useState<Array<{ question: string; answer: string }>>([{ question: '', answer: '' }]);
   const [images, setImages] = useState<Array<{ path: string; alt: string }>>([]);
   const [contact, setContact] = useState({ title: 'Get in touch', body: '', button: 'Send', askName: false });
+  const [embedHint, setEmbedHint] = useState('YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads. The player is loaded from that provider.');
+  const [mapTitle, setMapTitle] = useState('');
+  const [mapUrl, setMapUrl] = useState('');
+  const [calendlyTitle, setCalendlyTitle] = useState('');
+  const [calendlyUrl, setCalendlyUrl] = useState('');
+  const [details, setDetails] = useState({ title: 'Contact', email: '', phone: '', address: '', website: '' });
+  const [discount, setDiscount] = useState({ title: '', code: '', note: '', url: '' });
+  const [eventsTitle, setEventsTitle] = useState('Upcoming');
+  const [events, setEvents] = useState<Array<{ title: string; when: string; place: string; url: string }>>([
+    { title: '', when: '', place: '', url: '' },
+  ]);
+  const [visitor, setVisitor] = useState({ country: '', platform: '', language: '' });
   const [busy, setBusy] = useState(false);
 
   const upload = async (file: File) => {
@@ -125,6 +174,11 @@ export const LinkEditorScreen = () => {
             spotlight: block.spotlight,
             lockType: block.lock?.type || 'NONE',
             password: '',
+            layout: block.layout || 'classic',
+            animation: block.animation || 'none',
+            priorityMode: block.priorityMode || (block.priority ? 'highlight' : 'none'),
+            minAge: block.minAge || 18,
+            rules: block.rules || [],
           }
         : emptyLink
     );
@@ -164,7 +218,11 @@ export const LinkEditorScreen = () => {
             toast.show('Link copied', 'success');
           }}
         >
-          <LinkPublicView key={`${data.slug}-${data.isPublic}-${data.sensitive}`} data={toPublic(data)} mode="preview" />
+          <LinkPublicView
+            key={`${data.slug}-${data.isPublic}-${data.sensitive}`}
+            data={toPublic(data, visitor)}
+            mode="preview"
+          />
         </LinkPreview>
       }
     >
@@ -216,18 +274,120 @@ export const LinkEditorScreen = () => {
                       setAddOpen(false);
                     }}
                   >
-                    Heading
+                    Header
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       setEmbedTitle('');
                       setEmbedUrl('');
+                      setEmbedHint('YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads. The player is loaded from that provider.');
                       setModal({ kind: 'embed' });
                       setAddOpen(false);
                     }}
                   >
                     Embed
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmbedTitle('');
+                      setEmbedUrl('');
+                      setEmbedHint('Paste an Instagram post URL. The player is loaded from Instagram.');
+                      setModal({ kind: 'embed' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Instagram post
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmbedTitle('');
+                      setEmbedUrl('');
+                      setEmbedHint('Paste a TikTok post URL. The player is loaded from TikTok.');
+                      setModal({ kind: 'embed' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    TikTok post
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmbedTitle('');
+                      setEmbedUrl('');
+                      setEmbedHint('Paste an X post URL. The player is loaded from X.');
+                      setModal({ kind: 'embed' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    X post
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmbedTitle('');
+                      setEmbedUrl('');
+                      setEmbedHint('Paste a Threads post URL. The player is loaded from Threads.');
+                      setModal({ kind: 'embed' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Threads post
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMapTitle('');
+                      setMapUrl('');
+                      setModal({ kind: 'map' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Google Maps
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCalendlyTitle('');
+                      setCalendlyUrl('');
+                      setModal({ kind: 'calendly' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Calendly
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDetails({ title: 'Contact', email: '', phone: '', address: '', website: '' });
+                      setModal({ kind: 'details' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Contact details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDiscount({ title: '', code: '', note: '', url: '' });
+                      setModal({ kind: 'discount' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Discount code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEventsTitle('Upcoming');
+                      setEvents([{ title: '', when: '', place: '', url: '' }]);
+                      setModal({ kind: 'events' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Events
                   </button>
                   <button
                     type="button"
@@ -280,6 +440,56 @@ export const LinkEditorScreen = () => {
           </div>
         </div>
 
+        <section className="rounded-[18px] border border-newBorder p-[12px]">
+          <div className="mb-[8px] flex items-center justify-between gap-[8px]">
+            <h2 className="text-[14px] font-[600]">Preview as</h2>
+            <button
+              type="button"
+              className="text-[13px] text-textItemBlur"
+              onClick={() => setVisitor({ country: '', platform: '', language: '' })}
+            >
+              Reset
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-3">
+            <LinkField label="Country">
+              <input
+                value={visitor.country}
+                maxLength={2}
+                placeholder="IN"
+                aria-label="Preview country"
+                onChange={(event) => setVisitor({ ...visitor, country: event.target.value.toUpperCase() })}
+              />
+            </LinkField>
+            <LinkField label="Platform">
+              <select
+                value={visitor.platform}
+                aria-label="Preview platform"
+                onChange={(event) => setVisitor({ ...visitor, platform: event.target.value })}
+              >
+                <option value="">Any</option>
+                {['Instagram', 'TikTok', 'X', 'Threads', 'YouTube', 'Facebook', 'LinkedIn', 'Google', 'Direct'].map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </LinkField>
+            <LinkField label="Language">
+              <input
+                value={visitor.language}
+                maxLength={12}
+                placeholder="en"
+                aria-label="Preview language"
+                onChange={(event) => setVisitor({ ...visitor, language: event.target.value.toLowerCase() })}
+              />
+            </LinkField>
+          </div>
+          <p className="mt-[6px] text-[13px] text-textItemBlur">
+            Visitor rules hide a link or change its title and URL in this preview. Rules are Pro.
+          </p>
+        </section>
+
         {!data.blocks.length ? (
           <div className="flex flex-col items-center gap-[8px] py-[80px] text-center">
             <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
@@ -318,34 +528,21 @@ export const LinkEditorScreen = () => {
                 <div className="flex flex-wrap items-center gap-[6px]">
                   <strong className="truncate text-[14px] font-[600]">{blockName(block)}</strong>
                   {block.type === 'FEATURED_POST' ? <span className="lib-pill lib-pill-cyan">From Schedule</span> : null}
-                  {block.priority ? <span className="lib-pill lib-pill-cyan">Priority</span> : null}
+                  {block.layout === 'featured' ? <span className="lib-pill">Featured</span> : null}
+                  {block.animation && block.animation !== 'none' ? <span className="lib-pill lib-pill-cyan">Animated</span> : null}
+                  {block.priorityMode === 'expand' ? <span className="lib-pill lib-pill-cyan">Expand</span> : null}
+                  {block.priorityMode === 'redirect' ? <span className="lib-pill lib-pill-cyan">Redirect</span> : null}
+                  {block.priorityMode === 'highlight' || (block.priority && block.priorityMode === 'none') ? (
+                    <span className="lib-pill lib-pill-cyan">Priority</span>
+                  ) : null}
+                  {block.rules?.length ? <span className="lib-pill">Rules</span> : null}
                   {block.spotlight ? <span className="lib-pill lib-pill-cyan">Spotlight</span> : null}
                   {block.lock?.type && block.lock.type !== 'NONE' ? <span className="lib-pill">Locked</span> : null}
                   {block.state === 'scheduled' ? <span className="lib-pill lib-pill-amber">Scheduled</span> : null}
                   {block.state === 'ended' ? <span className="lib-pill">Ended</span> : null}
                   {block.state === 'hidden' ? <span className="lib-pill">Hidden</span> : null}
                 </div>
-                <p className="truncate text-[13px] text-textItemBlur">
-                  {block.type === 'FEATURED_POST'
-                    ? block.post
-                      ? `${block.post.title} · ${block.post.platform} · ${block.post.dateLabel}`
-                      : 'Pick a published post'
-                    : block.type === 'LINK'
-                    ? block.url
-                    : block.type === 'EMAIL_CAPTURE'
-                    ? 'Collects subscribers on your page'
-                    : block.type === 'EMBED'
-                    ? block.url || 'YouTube, Spotify, SoundCloud or Vimeo'
-                    : block.type === 'TEXT'
-                    ? block.body || 'Text'
-                    : block.type === 'FAQ'
-                    ? `${block.faq.length} questions`
-                    : block.type === 'IMAGE_CAROUSEL'
-                    ? `${block.images.length} images`
-                    : block.type === 'CONTACT_FORM'
-                    ? 'Collects messages on your page'
-                    : 'Heading'}
-                </p>
+                <p className="truncate text-[13px] text-textItemBlur">{blockNote(block)}</p>
                 {block.scheduleOn && block.startsAt && block.state === 'scheduled' ? (
                   <p className="text-[13px] text-textItemBlur">
                     {scheduleLabel('Starts', new Date(block.startsAt), data.timezone)}
@@ -480,6 +677,75 @@ export const LinkEditorScreen = () => {
                         Edit
                       </button>
                     ) : null}
+                    {block.type === 'MAP' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMapTitle(block.title);
+                          setMapUrl(block.url);
+                          setModal({ kind: 'map', block });
+                        }}
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                    {block.type === 'CALENDLY' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCalendlyTitle(block.title);
+                          setCalendlyUrl(block.url);
+                          setModal({ kind: 'calendly', block });
+                        }}
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                    {block.type === 'CONTACT_DETAILS' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDetails({
+                            title: block.title || 'Contact',
+                            email: block.details?.email || '',
+                            phone: block.details?.phone || '',
+                            address: block.details?.address || '',
+                            website: block.details?.website || '',
+                          });
+                          setModal({ kind: 'details', block });
+                        }}
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                    {block.type === 'DISCOUNT' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDiscount({
+                            title: block.title,
+                            code: block.discount?.code || '',
+                            note: block.discount?.note || '',
+                            url: block.discount?.url || block.url || '',
+                          });
+                          setModal({ kind: 'discount', block });
+                        }}
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                    {block.type === 'EVENTS' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEventsTitle(block.title || 'Upcoming');
+                          setEvents(block.events.length ? block.events : [{ title: '', when: '', place: '', url: '' }]);
+                          setModal({ kind: 'events', block });
+                        }}
+                      >
+                        Edit
+                      </button>
+                    ) : null}
                     {block.type === 'FEATURED_POST' ? (
                       <button type="button" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
                         {block.enabled ? 'Hidden' : 'Show'}
@@ -510,6 +776,47 @@ export const LinkEditorScreen = () => {
             <LinkField label="URL">
               <input value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} placeholder="https://" />
             </LinkField>
+            <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2">
+              <LinkField label="Layout">
+                <select
+                  value={draft.layout}
+                  onChange={(event) => {
+                    const layout = event.target.value === 'featured' ? 'featured' : 'classic';
+                    if (layout === 'featured' && linkLocked(data)) {
+                      toast.show('Featured cards are on a paid plan', 'warning');
+                      return;
+                    }
+                    setDraft({ ...draft, layout });
+                  }}
+                >
+                  <option value="classic">Classic</option>
+                  <option value="featured">Featured card</option>
+                </select>
+              </LinkField>
+              <LinkField label="Animation">
+                <select
+                  value={draft.animation}
+                  onChange={(event) => {
+                    const animation = event.target.value;
+                    if (animation !== 'none' && linkLocked(data)) {
+                      toast.show('Link animations are on a paid plan', 'warning');
+                      return;
+                    }
+                    setDraft({ ...draft, animation });
+                  }}
+                >
+                  <option value="none">None</option>
+                  <option value="wiggle">Wiggle</option>
+                  <option value="pop">Pop</option>
+                  <option value="electricity">Electricity</option>
+                  <option value="glitch">Glitch</option>
+                  <option value="shimmer">Shimmer</option>
+                  <option value="bounce">Bounce</option>
+                  <option value="pulse">Pulse</option>
+                </select>
+              </LinkField>
+            </div>
+            <p className="text-[13px] text-textItemBlur">Only one link can animate at a time. Featured cards are Pro.</p>
             <div className="flex items-center justify-between gap-[12px]">
               <div>
                 <div className="text-[14px] font-[500]">Schedule</div>
@@ -527,13 +834,25 @@ export const LinkEditorScreen = () => {
                 </LinkField>
               </div>
             ) : null}
-            <div className="flex items-center justify-between gap-[12px]">
-              <div>
-                <div className="text-[14px] font-[500]">Priority</div>
-                <p className="text-[13px] text-textItemBlur">Highlight this link at the top</p>
-              </div>
-              <LinkToggle checked={draft.priority} label="Priority" onChange={(priority) => setDraft({ ...draft, priority })} />
-            </div>
+            <LinkField label="Prioritize">
+              <select
+                value={draft.priorityMode}
+                onChange={(event) => {
+                  const priorityMode = event.target.value as typeof draft.priorityMode;
+                  if ((priorityMode === 'expand' || priorityMode === 'redirect') && linkLocked(data)) {
+                    toast.show('Expand and redirect are on a paid plan', 'warning');
+                    return;
+                  }
+                  setDraft({ ...draft, priorityMode, priority: priorityMode !== 'none' });
+                }}
+              >
+                <option value="none">None</option>
+                <option value="highlight">Highlight at the top</option>
+                <option value="expand">Auto-expand</option>
+                <option value="redirect">Redirect all visitors</option>
+              </select>
+            </LinkField>
+            <p className="text-[13px] text-textItemBlur">Only one link can be prioritized. A redirect cannot be locked.</p>
             <div className="flex items-center justify-between gap-[12px]">
               <div>
                 <div className="text-[14px] font-[500]">Thumbnail</div>
@@ -572,14 +891,14 @@ export const LinkEditorScreen = () => {
               <div>
                 <div className="text-[14px] font-[500]">Spotlight</div>
                 <p className="text-[13px] text-textItemBlur">
-                  {data.paid ? 'Animated highlight on this link' : 'Spotlight is on a paid plan'}
+                  {linkLocked(data) ? 'Spotlight is on a paid plan' : 'Animated highlight on this link'}
                 </p>
               </div>
               <LinkToggle
                 checked={draft.spotlight}
                 label="Spotlight"
                 onChange={(spotlight) => {
-                  if (spotlight && !data.paid) {
+                  if (spotlight && linkLocked(data)) {
                     toast.show('Spotlight is on a paid plan', 'warning');
                     return;
                   }
@@ -592,7 +911,7 @@ export const LinkEditorScreen = () => {
                 value={draft.lockType}
                 onChange={(event) => {
                   const lockType = event.target.value as typeof draft.lockType;
-                  if (lockType !== 'NONE' && !data.paid) {
+                  if (lockType !== 'NONE' && linkLocked(data)) {
                     toast.show('Locked links are on a paid plan', 'warning');
                     return;
                   }
@@ -600,21 +919,152 @@ export const LinkEditorScreen = () => {
                 }}
               >
                 <option value="NONE">No lock</option>
-                <option value="AGE">Age gate, 18+</option>
+                <option value="AGE">Age gate</option>
+                <option value="DOB">Date of birth</option>
                 <option value="EMAIL">Email required</option>
                 <option value="PASSWORD">Password</option>
+                <option value="CODE">Code</option>
+                <option value="SENSITIVE">Sensitive content</option>
               </select>
             </LinkField>
-            {draft.lockType === 'PASSWORD' ? (
-              <LinkField label={modal.block?.lock.hasPassword ? 'New password' : 'Password'}>
+            {draft.lockType === 'AGE' || draft.lockType === 'DOB' ? (
+              <LinkField label="Minimum age">
                 <input
-                  type="password"
+                  type="number"
+                  min={13}
+                  max={120}
+                  value={draft.minAge}
+                  onChange={(event) => setDraft({ ...draft, minAge: Number(event.target.value) || 18 })}
+                />
+              </LinkField>
+            ) : null}
+            {draft.lockType === 'PASSWORD' || draft.lockType === 'CODE' ? (
+              <LinkField label={modal.block?.lock.hasPassword ? (draft.lockType === 'CODE' ? 'New code' : 'New password') : draft.lockType === 'CODE' ? 'Code' : 'Password'}>
+                <input
+                  type={draft.lockType === 'CODE' ? 'text' : 'password'}
                   value={draft.password}
-                  placeholder={modal.block?.lock.hasPassword ? 'Leave blank to keep the current password' : ''}
+                  placeholder={modal.block?.lock.hasPassword ? 'Leave blank to keep the current one' : ''}
                   onChange={(event) => setDraft({ ...draft, password: event.target.value })}
                 />
               </LinkField>
             ) : null}
+            <div className="flex items-center justify-between gap-[12px]">
+              <div>
+                <div className="text-[14px] font-[500]">Visitor rules</div>
+                <p className="text-[13px] text-textItemBlur">If country, platform or language match, hide the link or change its title or URL</p>
+              </div>
+              <button
+                type="button"
+                className={linkSecondary}
+                onClick={() => {
+                  if (linkLocked(data)) {
+                    toast.show('Visitor rules are on a paid plan', 'warning');
+                    return;
+                  }
+                  setDraft({ ...draft, rules: [...draft.rules, { ...emptyRule }] });
+                }}
+              >
+                Add rule
+              </button>
+            </div>
+            {draft.rules.map((rule, index) => (
+              <div key={index} className="flex flex-col gap-[8px] rounded-[16px] border border-newBorder p-[10px]">
+                <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-3">
+                  <LinkField label="Country">
+                    <input
+                      value={rule.country}
+                      maxLength={2}
+                      placeholder="IN"
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          rules: draft.rules.map((row, rowIndex) =>
+                            rowIndex === index ? { ...row, country: event.target.value.toUpperCase() } : row
+                          ),
+                        })
+                      }
+                    />
+                  </LinkField>
+                  <LinkField label="Platform">
+                    <input
+                      value={rule.platform}
+                      placeholder="Instagram"
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          rules: draft.rules.map((row, rowIndex) => (rowIndex === index ? { ...row, platform: event.target.value } : row)),
+                        })
+                      }
+                    />
+                  </LinkField>
+                  <LinkField label="Language">
+                    <input
+                      value={rule.language}
+                      placeholder="en"
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          rules: draft.rules.map((row, rowIndex) =>
+                            rowIndex === index ? { ...row, language: event.target.value.toLowerCase() } : row
+                          ),
+                        })
+                      }
+                    />
+                  </LinkField>
+                </div>
+                <LinkField label="Then">
+                  <select
+                    value={rule.action}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        rules: draft.rules.map((row, rowIndex) =>
+                          rowIndex === index ? { ...row, action: event.target.value === 'title' || event.target.value === 'url' ? event.target.value : 'hide' } : row
+                        ),
+                      })
+                    }
+                  >
+                    <option value="hide">Hide link</option>
+                    <option value="title">Change title</option>
+                    <option value="url">Change URL</option>
+                  </select>
+                </LinkField>
+                {rule.action === 'title' ? (
+                  <LinkField label="New title">
+                    <input
+                      value={rule.title}
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          rules: draft.rules.map((row, rowIndex) => (rowIndex === index ? { ...row, title: event.target.value } : row)),
+                        })
+                      }
+                    />
+                  </LinkField>
+                ) : null}
+                {rule.action === 'url' ? (
+                  <LinkField label="New URL">
+                    <input
+                      value={rule.url}
+                      placeholder="https://"
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          rules: draft.rules.map((row, rowIndex) => (rowIndex === index ? { ...row, url: event.target.value } : row)),
+                        })
+                      }
+                    />
+                  </LinkField>
+                ) : null}
+                <button
+                  type="button"
+                  className="self-start text-[13px] text-textItemBlur"
+                  onClick={() => setDraft({ ...draft, rules: draft.rules.filter((_, rowIndex) => rowIndex !== index) })}
+                >
+                  Remove rule
+                </button>
+              </div>
+            ))}
             <div className="flex justify-end gap-[8px]">
               <button type="button" className={linkSecondary} onClick={() => setModal(null)}>
                 Cancel
@@ -623,28 +1073,36 @@ export const LinkEditorScreen = () => {
                 type="button"
                 className={linkPrimary}
                 disabled={busy}
-                onClick={() =>
+                onClick={() => {
+                  if (draft.priorityMode === 'redirect' && draft.lockType !== 'NONE') {
+                    toast.show("A redirect link can't be locked", 'warning');
+                    return;
+                  }
+                  const rules = draft.rules.filter((rule) => rule.country || rule.platform || rule.language);
+                  const body = {
+                    title: draft.title,
+                    url: draft.url,
+                    scheduleOn: draft.scheduleOn,
+                    startsLocal: draft.startsLocal,
+                    endsLocal: draft.endsLocal,
+                    priorityMode: draft.priorityMode,
+                    thumbnail: draft.thumbnail,
+                    iconMode: draft.iconMode,
+                    spotlight: draft.spotlight,
+                    lockType: draft.lockType,
+                    layout: draft.layout,
+                    animation: draft.animation,
+                    minAge: draft.minAge,
+                    rules,
+                    ...(draft.password ? { password: draft.password } : {}),
+                  };
                   save(
                     modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
                     modal.block ? 'PUT' : 'POST',
-                    modal.block
-                      ? {
-                          title: draft.title,
-                          url: draft.url,
-                          scheduleOn: draft.scheduleOn,
-                          startsLocal: draft.startsLocal,
-                          endsLocal: draft.endsLocal,
-                          priority: draft.priority,
-                          thumbnail: draft.thumbnail,
-                          iconMode: draft.iconMode,
-                          spotlight: draft.spotlight,
-                          lockType: draft.lockType,
-                          ...(draft.password ? { password: draft.password } : {}),
-                        }
-                      : { type: 'LINK', ...draft },
+                    modal.block ? body : { type: 'LINK', ...body },
                     modal.block ? 'Link saved' : 'Link added'
-                  )
-                }
+                  );
+                }}
               >
                 {modal.block ? 'Save changes' : 'Add link'}
               </button>
@@ -654,9 +1112,9 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'heading' ? (
-        <LinkModal title={modal.block ? 'Edit heading' : 'Add heading'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit header' : 'Add header'} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-[14px]">
-            <LinkField label="Heading">
+            <LinkField label="Header">
               <input value={heading} onChange={(event) => setHeading(event.target.value)} />
             </LinkField>
             <div className="flex justify-end gap-[8px]">
@@ -672,7 +1130,7 @@ export const LinkEditorScreen = () => {
                     modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
                     modal.block ? 'PUT' : 'POST',
                     modal.block ? { title: heading } : { type: 'HEADING', title: heading },
-                    'Heading saved'
+                    'Header saved'
                   )
                 }
               >
@@ -754,7 +1212,7 @@ export const LinkEditorScreen = () => {
             <LinkField label="URL">
               <input value={embedUrl} placeholder="https://" onChange={(event) => setEmbedUrl(event.target.value)} />
             </LinkField>
-            <p className="text-[13px] text-textItemBlur">YouTube, Spotify, SoundCloud or Vimeo. The player is loaded from that provider.</p>
+            <p className="text-[13px] text-textItemBlur">{embedHint}</p>
             <div className="flex justify-end gap-[8px]">
               <button type="button" className={linkSecondary} onClick={() => setModal(null)}>Cancel</button>
               <button
@@ -949,6 +1407,223 @@ export const LinkEditorScreen = () => {
                       ? { title: contact.title, body: contact.body, formButton: contact.button, formAskName: contact.askName }
                       : { type: 'CONTACT_FORM', title: contact.title, body: contact.body, formButton: contact.button, formAskName: contact.askName },
                     'Contact form saved'
+                  )
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'map' ? (
+        <LinkModal title={modal.block ? 'Edit map' : 'Add map'} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-[14px]">
+            <LinkField label="Title">
+              <input value={mapTitle} onChange={(event) => setMapTitle(event.target.value)} />
+            </LinkField>
+            <LinkField label="Google Maps URL">
+              <input value={mapUrl} placeholder="https://www.google.com/maps/place/..." onChange={(event) => setMapUrl(event.target.value)} />
+            </LinkField>
+            <p className="text-[13px] text-textItemBlur">Paste a Google Maps place, search or embed link. Short links are not fetched.</p>
+            <div className="flex justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>Cancel</button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() =>
+                  save(
+                    modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                    modal.block ? 'PUT' : 'POST',
+                    modal.block ? { title: mapTitle, url: mapUrl } : { type: 'MAP', title: mapTitle, url: mapUrl },
+                    'Map saved'
+                  )
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'calendly' ? (
+        <LinkModal title={modal.block ? 'Edit Calendly' : 'Add Calendly'} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-[14px]">
+            <LinkField label="Title">
+              <input value={calendlyTitle} onChange={(event) => setCalendlyTitle(event.target.value)} />
+            </LinkField>
+            <LinkField label="Calendly URL">
+              <input value={calendlyUrl} placeholder="https://calendly.com/you/30min" onChange={(event) => setCalendlyUrl(event.target.value)} />
+            </LinkField>
+            <p className="text-[13px] text-textItemBlur">The booking page is loaded from Calendly.</p>
+            <div className="flex justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>Cancel</button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() =>
+                  save(
+                    modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                    modal.block ? 'PUT' : 'POST',
+                    modal.block ? { title: calendlyTitle, url: calendlyUrl } : { type: 'CALENDLY', title: calendlyTitle, url: calendlyUrl },
+                    'Calendly saved'
+                  )
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'details' ? (
+        <LinkModal title={modal.block ? 'Edit contact details' : 'Add contact details'} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-[12px]">
+            <LinkField label="Heading">
+              <input value={details.title} onChange={(event) => setDetails({ ...details, title: event.target.value })} />
+            </LinkField>
+            <LinkField label="Email">
+              <input value={details.email} onChange={(event) => setDetails({ ...details, email: event.target.value })} />
+            </LinkField>
+            <LinkField label="Phone">
+              <input value={details.phone} onChange={(event) => setDetails({ ...details, phone: event.target.value })} />
+            </LinkField>
+            <LinkField label="Address">
+              <input value={details.address} onChange={(event) => setDetails({ ...details, address: event.target.value })} />
+            </LinkField>
+            <LinkField label="Website">
+              <input value={details.website} placeholder="https://" onChange={(event) => setDetails({ ...details, website: event.target.value })} />
+            </LinkField>
+            <div className="flex justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>Cancel</button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() =>
+                  save(
+                    modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                    modal.block ? 'PUT' : 'POST',
+                    {
+                      ...(modal.block ? {} : { type: 'CONTACT_DETAILS' }),
+                      title: details.title,
+                      detailEmail: details.email,
+                      detailPhone: details.phone,
+                      detailAddress: details.address,
+                      detailWebsite: details.website,
+                    },
+                    'Contact details saved'
+                  )
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'discount' ? (
+        <LinkModal title={modal.block ? 'Edit discount code' : 'Add discount code'} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-[12px]">
+            <LinkField label="Code">
+              <input value={discount.code} onChange={(event) => setDiscount({ ...discount, code: event.target.value })} />
+            </LinkField>
+            <LinkField label="Note">
+              <input value={discount.note} onChange={(event) => setDiscount({ ...discount, note: event.target.value })} />
+            </LinkField>
+            <LinkField label="Link">
+              <input value={discount.url} placeholder="https://" onChange={(event) => setDiscount({ ...discount, url: event.target.value })} />
+            </LinkField>
+            <div className="flex justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>Cancel</button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() =>
+                  save(
+                    modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                    modal.block ? 'PUT' : 'POST',
+                    {
+                      ...(modal.block ? {} : { type: 'DISCOUNT' }),
+                      title: discount.title || discount.code,
+                      url: discount.url,
+                      discountCode: discount.code,
+                      discountNote: discount.note,
+                    },
+                    'Discount code saved'
+                  )
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'events' ? (
+        <LinkModal title={modal.block ? 'Edit events' : 'Add events'} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-[12px]">
+            <LinkField label="Heading">
+              <input value={eventsTitle} onChange={(event) => setEventsTitle(event.target.value)} />
+            </LinkField>
+            {events.map((item, index) => (
+              <div key={index} className="flex flex-col gap-[8px] rounded-[16px] border border-newBorder p-[10px]">
+                <LinkField label="Title">
+                  <input
+                    value={item.title}
+                    onChange={(event) => setEvents(events.map((row, rowIndex) => (rowIndex === index ? { ...row, title: event.target.value } : row)))}
+                  />
+                </LinkField>
+                <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-2">
+                  <LinkField label="When">
+                    <input
+                      value={item.when}
+                      onChange={(event) => setEvents(events.map((row, rowIndex) => (rowIndex === index ? { ...row, when: event.target.value } : row)))}
+                    />
+                  </LinkField>
+                  <LinkField label="Place">
+                    <input
+                      value={item.place}
+                      onChange={(event) => setEvents(events.map((row, rowIndex) => (rowIndex === index ? { ...row, place: event.target.value } : row)))}
+                    />
+                  </LinkField>
+                </div>
+                <LinkField label="URL">
+                  <input
+                    value={item.url}
+                    placeholder="https://"
+                    onChange={(event) => setEvents(events.map((row, rowIndex) => (rowIndex === index ? { ...row, url: event.target.value } : row)))}
+                  />
+                </LinkField>
+              </div>
+            ))}
+            <button type="button" className={linkSecondary} onClick={() => setEvents([...events, { title: '', when: '', place: '', url: '' }])}>
+              Add event
+            </button>
+            <div className="flex justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>Cancel</button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() =>
+                  save(
+                    modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                    modal.block ? 'PUT' : 'POST',
+                    {
+                      ...(modal.block ? {} : { type: 'EVENTS' }),
+                      title: eventsTitle,
+                      events: events.filter((item) => item.title.trim()),
+                    },
+                    'Events saved'
                   )
                 }
               >
