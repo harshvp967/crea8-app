@@ -32,6 +32,14 @@ describe('link-in-bio slug and domain rules', () => {
     expect(slugProblem('link')).toMatch(/reserved/);
     expect(slugProblem('bio-host')).toMatch(/reserved/);
     expect(slugProblem('robots.txt')).toMatch(/reserved/);
+    expect(slugProblem('pricing')).toMatch(/reserved/);
+    expect(slugProblem('privacy')).toMatch(/reserved/);
+    expect(slugProblem('terms')).toMatch(/reserved/);
+    expect(slugProblem('refund-policy')).toMatch(/reserved/);
+    expect(slugProblem('about')).toMatch(/reserved/);
+    expect(slugProblem('contact')).toMatch(/reserved/);
+    expect(slugProblem('features')).toMatch(/reserved/);
+    expect(slugProblem('blog')).toMatch(/reserved/);
     expect(slugProblem('ab')).toMatch(/3 to 30/);
     expect(slugProblem('1abc')).toMatch(/letter/);
     expect(slugProblem('my..page')).toMatch(/dot or underscore/);
