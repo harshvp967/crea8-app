@@ -143,7 +143,7 @@ export function SegmentedControl({
                 {option.icon}
               </span>
             )}
-            <span className={clsx('relative', compactBelow1440 && 'max-[1439px]:sr-only')}>
+            <span className={clsx('relative', compactBelow1440 && 'seg-compact-label')}>
               {option.label}
             </span>
           </>

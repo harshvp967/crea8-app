@@ -65,7 +65,9 @@ body :focus-visible {
   display: none;
 }
 
-@media (min-width: 1440px) {
+/* Icons on every width where the Schedule row is on screen.
+   Below 768px the nav itself is hidden (phone tab bar), so the glyphs stay off there. */
+@media (min-width: 768px) {
   .desktop-nav a > div:first-child,
   .desktop-nav button > div:first-child {
     display: flex;
@@ -75,6 +77,24 @@ body :focus-visible {
   .desktop-nav a.arc-selected::before,
   .desktop-nav button.arc-selected::before {
     content: none;
+  }
+}
+
+/* theme.screens uses raw objects, so Tailwind never emits max-* variants
+   (max-[1439px]:sr-only was a no-op). Keep the dashboard labels for AT
+   and hide them visually below 1440 so the Schedule tabs and their icons
+   fit on one row from 1024px up. */
+@media (max-width: 1439px) {
+  span.seg-compact-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 }
 
