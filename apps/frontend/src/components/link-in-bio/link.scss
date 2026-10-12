@@ -66,6 +66,11 @@
   display: none !important;
 }
 
+.lib-settings {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
 @media (max-width: 767px) {
   .lib-preview-toggle {
     width: 44px;
@@ -91,6 +96,10 @@
 
   .lib-reset-phone {
     display: inline-flex !important;
+  }
+
+  .lib-settings {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 }
 
@@ -159,8 +168,8 @@
   width: 36px;
   height: 20px;
   border-radius: 999px;
-  border: 1px solid var(--new-border);
-  background: transparent;
+  border: 1px solid #3a3a40;
+  background: #3a3a40;
   position: relative;
   flex: 0 0 auto;
   cursor: pointer;
@@ -173,8 +182,19 @@
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  background: #6b6b6b;
+  background: #ececee;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
   transition: transform 0.15s ease;
+}
+
+.light .lib-toggle {
+  border-color: #e4e4e7;
+  background: #e4e4e7;
+}
+
+.light .lib-toggle i {
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
 }
 
 .lib-toggle[data-on='true'] {

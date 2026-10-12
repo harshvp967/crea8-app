@@ -11,7 +11,12 @@ import {
   linkSend,
   useLinkPage,
 } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+
+const fieldClass =
+  'h-[44px] min-h-[44px] w-full rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none';
 
 const statusCopy: Record<LinkEditor['domainStatus'], string> = {
   NONE: 'Not connected',
@@ -123,8 +128,12 @@ export const LinkSettingsScreen = () => {
 
   if (isLoading || !data || !ready) {
     return (
-      <div className="p-[8px] text-[14px] text-textItemBlur">
-        {error ? 'Could not load your page.' : 'Loading your page…'}
+      <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
+        <h1 className={stkTitle}>Page settings</h1>
+        <div className={`${stkCard} flex items-center gap-[12px]`}>
+          {error ? <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" /> : null}
+          <p className="text-[14px] font-[500] text-textItemBlur">{error ? 'Could not load your page.' : 'Loading your page…'}</p>
+        </div>
       </div>
     );
   }
@@ -258,64 +267,65 @@ export const LinkSettingsScreen = () => {
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
-      <div className="flex flex-wrap items-start justify-between gap-[12px]">
+    <div className="lib-settings flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
+      <div className="flex flex-col items-start gap-[12px] sm:flex-row sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-[22px] font-[600]">Page settings</h1>
-          <p className="text-[14px] text-textItemBlur">Address, custom domain, sharing and search for {origin}/{data.slug}</p>
+          <h1 className={stkTitle}>Page settings</h1>
+          <p className={stkSub}>Address, custom domain, sharing and search for {origin}/{data.slug}</p>
         </div>
         <button type="button" className={linkPrimary} disabled={busy || (slugState ? !slugState.ok : false)} onClick={save}>
           Save changes
         </button>
       </div>
 
-      <section className="rounded-[20px] border border-newBorder p-[16px]">
+      <section className={stkCard}>
         <h2 className="text-[16px] font-[600]">Your page address</h2>
         <div className="mt-[12px] grid gap-[6px]">
           <span className="text-[14px] font-[500]">Username</span>
           <div className="relative">
             <input
-              className={`min-h-[44px] w-full rounded-[14px] border border-newBorder bg-transparent px-[12px] ${
-                slugState?.ok ? 'pe-[100px]' : ''
-              }`}
+              className={`${fieldClass} ${slugState?.ok ? 'pe-[100px]' : ''}`}
               value={slug}
               maxLength={30}
               onChange={(event) => setSlug(event.target.value.toLowerCase())}
               aria-label="Username"
             />
             {slugState?.ok ? (
-              <span className="pointer-events-none absolute inset-y-0 end-[12px] flex items-center text-[13px] text-textItemBlur">
+              <span className="pointer-events-none absolute inset-y-0 end-[12px] flex items-center text-[13px] font-[600] text-[color:var(--arc-success)]">
                 {slugState.message}
               </span>
             ) : null}
           </div>
           <p className="text-[13px] text-textItemBlur">Letters, numbers, dots and underscores · 3 to 30 characters</p>
-          {slugState && !slugState.ok ? <p className="text-[13px] text-[#f07178]">{slugState.message}</p> : null}
+          {slugState && !slugState.ok ? <p className="text-[13px] font-[600] text-[color:var(--arc-danger)]">{slugState.message}</p> : null}
           <p className="text-[13px] text-textItemBlur">Opens {origin}/{slug || data.slug}</p>
         </div>
       </section>
 
-      <section className="rounded-[20px] border border-newBorder p-[16px]">
+      <section className={stkCard}>
         <div className="mb-[12px] flex items-center justify-between gap-[12px]">
           <h2 className="text-[16px] font-[600]">Custom domain</h2>
           {data.domainStatus !== 'NONE' ? <span className={statusClass[data.domainStatus]}>{statusCopy[data.domainStatus]}</span> : null}
         </div>
         {data.domainStatus === 'NONE' ? (
           <div className="flex flex-col gap-[8px] sm:flex-row">
-            <input
-              className="min-h-[44px] min-w-0 flex-1 rounded-[14px] border border-newBorder bg-transparent px-[12px]"
-              value={domain}
-              placeholder="links.yourbrand.com"
-              disabled={!!data.gating && !data.customDomainAddon}
-              onChange={(event) => setDomain(event.target.value)}
-              aria-label="Custom domain"
-            />
+            <div className="relative min-w-0 flex-1">
+              <HugeIcon name="link" size={16} className="pointer-events-none absolute start-[14px] top-1/2 -translate-y-1/2 text-textItemBlur" />
+              <input
+                className={`${fieldClass} ps-[38px]`}
+                value={domain}
+                placeholder="links.yourdomain.com"
+                disabled={!!data.gating && !data.customDomainAddon}
+                onChange={(event) => setDomain(event.target.value)}
+                aria-label="Custom domain"
+              />
+            </div>
             {!data.gating || data.customDomainAddon ? (
               <button type="button" className={linkSecondary} disabled={busy || !domain.trim()} onClick={connect}>
                 Connect domain
               </button>
             ) : (
-              <Link href="/billing" className={linkPrimary}>
+              <Link href="/billing" className={linkSecondary}>
                 Get the add-on
               </Link>
             )}
@@ -366,15 +376,10 @@ export const LinkSettingsScreen = () => {
         ) : null}
         {!data.customDomainAddon ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">
-            Custom domains are a separate add-on. They are not included in a plan.
-            {data.domainStatus !== 'NONE' ? (
-              <>
-                {' '}
-                <Link href="/billing" className="text-[#00D9FF]">
-                  Get the add-on
-                </Link>
-              </>
-            ) : null}
+            Custom domains are a separate add-on. They are not included in a plan.{' '}
+            <Link href="/billing" className="text-[#00D9FF]">
+              Get the add-on
+            </Link>
           </p>
         ) : domainNote === 'upgrade' ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">
@@ -387,7 +392,7 @@ export const LinkSettingsScreen = () => {
       </section>
 
       <div className="grid min-w-0 grid-cols-1 gap-[16px] md:grid-cols-2">
-        <section className="rounded-[20px] border border-newBorder p-[16px]">
+        <section className={stkCard}>
           <h2 className="mb-[12px] text-[16px] font-[600]">Page visibility</h2>
           <div className="mb-[14px] flex items-center justify-between gap-[12px]">
             <div className="min-w-0">
@@ -433,7 +438,7 @@ export const LinkSettingsScreen = () => {
           ) : null}
         </section>
 
-        <section className="rounded-[20px] border border-newBorder p-[16px]">
+        <section className={stkCard}>
           <h2 className="mb-[12px] text-[16px] font-[600]">QR code</h2>
           <div className="flex flex-wrap items-center gap-[16px]">
             <div className="grid h-[120px] w-[120px] place-items-center overflow-hidden rounded-[12px] bg-white">
@@ -441,9 +446,11 @@ export const LinkSettingsScreen = () => {
             </div>
             <div className="flex flex-col gap-[8px]">
               <button type="button" className={linkSecondary} onClick={() => download('png')}>
+                <HugeIcon name="download" size={16} />
                 Download PNG
               </button>
               <button type="button" className={linkSecondary} onClick={() => download('svg')}>
+                <HugeIcon name="download" size={16} />
                 SVG
               </button>
             </div>
@@ -451,7 +458,7 @@ export const LinkSettingsScreen = () => {
         </section>
       </div>
 
-      <section className="rounded-[20px] border border-newBorder p-[16px]">
+      <section className={stkCard}>
         <h2 className="mb-[12px] text-[16px] font-[600]">Search and sharing</h2>
         <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
           <LinkField label="Page title">
