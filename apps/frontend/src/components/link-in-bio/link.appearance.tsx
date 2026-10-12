@@ -18,7 +18,7 @@ import {
   normalizeDesign,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
-import { LinkField, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { LinkPublicView } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
@@ -223,7 +223,7 @@ export const LinkAppearanceScreen = () => {
               <button
                 key={mode}
                 type="button"
-                className={design.titleMode === mode ? linkPrimary : linkSecondary}
+                className={design.titleMode === mode ? linkChoice : linkSecondary}
                 onClick={() => setDesign({ titleMode: mode })}
               >
                 {mode === 'text' ? 'Title text' : 'Logo'}
@@ -262,7 +262,7 @@ export const LinkAppearanceScreen = () => {
               <button
                 key={header}
                 type="button"
-                className={design.header === header ? linkPrimary : linkSecondary}
+                className={design.header === header ? linkChoice : linkSecondary}
                 onClick={() => {
                   if (!guard(header !== 'classic', 'That layout is on a paid plan')) return;
                   setDesign({ header });
@@ -320,7 +320,7 @@ export const LinkAppearanceScreen = () => {
                 <button
                   key={item}
                   type="button"
-                  className={design.wallpaper === item ? linkPrimary : linkSecondary}
+                  className={design.wallpaper === item ? linkChoice : linkSecondary}
                   onClick={() => {
                     const pro = item === 'blur' || item === 'pattern';
                     if (!guard(pro, 'That wallpaper is on a paid plan')) return;
@@ -335,7 +335,7 @@ export const LinkAppearanceScreen = () => {
             {design.wallpaper === 'pattern' ? (
               <div className="mb-[12px] flex flex-wrap gap-[8px]">
                 {LINK_PATTERNS.map((item) => (
-                  <button key={item} type="button" className={design.pattern === item ? linkPrimary : linkSecondary} onClick={() => setDesign({ pattern: item })}>
+                  <button key={item} type="button" className={design.pattern === item ? linkChoice : linkSecondary} onClick={() => setDesign({ pattern: item })}>
                     {item}
                   </button>
                 ))}
@@ -359,7 +359,7 @@ export const LinkAppearanceScreen = () => {
                 <button
                   key={item}
                   type="button"
-                  className={design.buttonFill === item ? linkPrimary : linkSecondary}
+                  className={design.buttonFill === item ? linkChoice : linkSecondary}
                   onClick={() => {
                     if (!guard(item === 'glass', 'Glass buttons are on a paid plan')) return;
                     setDesign({ buttonFill: item });
@@ -375,7 +375,7 @@ export const LinkAppearanceScreen = () => {
                 <button
                   key={item.id}
                   type="button"
-                  className={draft.buttonStyle === item.id && design.radius < 0 ? linkPrimary : linkSecondary}
+                  className={draft.buttonStyle === item.id && design.radius < 0 ? linkChoice : linkSecondary}
                   onClick={() => {
                     const radius = item.id === 'pill' ? 32 : item.id === 'rounded' ? 16 : 8;
                     setDraft({ ...draft, buttonStyle: item.id, design: { ...design, radius } });
@@ -396,7 +396,7 @@ export const LinkAppearanceScreen = () => {
             </LinkField>
             <div className="mt-[12px] flex flex-wrap gap-[8px]">
               {LINK_SHADOWS.map((item) => (
-                <button key={item} type="button" className={design.shadow === item ? linkPrimary : linkSecondary} onClick={() => setDesign({ shadow: item })}>
+                <button key={item} type="button" className={design.shadow === item ? linkChoice : linkSecondary} onClick={() => setDesign({ shadow: item })}>
                   {item[0].toUpperCase() + item.slice(1)}
                 </button>
               ))}
@@ -446,7 +446,7 @@ export const LinkAppearanceScreen = () => {
                 <button
                   key={position}
                   type="button"
-                  className={design.socialPosition === position ? linkPrimary : linkSecondary}
+                  className={design.socialPosition === position ? linkChoice : linkSecondary}
                   onClick={() => setDesign({ socialPosition: position })}
                 >
                   {position === 'top' ? 'Top' : 'Bottom'}
