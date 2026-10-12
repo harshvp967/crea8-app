@@ -178,7 +178,7 @@ export const LinkAppearanceScreen = () => {
             <p className={stkSub}>Themes, wallpaper and the phone preview update as you edit</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-[8px] sm:justify-end">
-            <button type="button" className={`${linkSecondary} min-[1200px]:hidden`} onClick={() => setPreview((value) => !value)}>
+            <button type="button" className={`${linkSecondary} lib-preview-toggle`} onClick={() => setPreview((value) => !value)}>
               <HugeIcon name="eye" size={16} />
               {preview ? 'Close preview' : 'Preview'}
             </button>
