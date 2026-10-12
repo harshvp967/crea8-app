@@ -52,6 +52,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const ref = useRef(null);
   const existingData = useExistingData();
   const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState<null | 'draft' | 'submit'>(null);
   const toaster = useToaster();
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
@@ -154,7 +155,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           'are_you_sure_you_want_to_close_this_modal_all_data_will_be_lost',
           'Are you sure you want to close this modal? (all data will be lost)'
         ),
-        t('yes_close_it', 'Yes, close it!')
+        t('yes_close_it', 'Yes, close it!'),
+        undefined,
+        undefined,
+        'danger'
       )
     ) {
       if (customClose) {
@@ -205,46 +209,53 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         const whatToDo = await new Promise((resolve) => {
           modal.openModal({
             title: t('what_do_you_want_to_do', 'What do you want to do?'),
+            classNames: { modal: 'po-edit-modal' },
+            size: '500px',
             children: (
-              <div className="flex flex-col">
-                <div className="text-[20px] mb-[20px]">
+              <div className="po-edit">
+                <p className="po-edit-copy">
                   {t(
                     'post_already_published_republish_warning',
                     'This post was already published. Republishing will publish it again to'
                   )}{' '}
                   {channels} {t('republish_at', 'at')}{' '}
                   {date.format('DD/MM/YYYY HH:mm')}.
-                  {isRecurring && (
-                    <div className="mt-[10px]">
+                </p>
+                {isRecurring && (
+                  <div className="po-edit-note">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M4 12a8 8 0 0 1 13.7-5.6L20 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M20 4v4h-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M20 12a8 8 0 0 1-13.7 5.6L4 16" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M4 20v-4h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span>
                       {t(
                         'republish_recurring_note',
                         'This is a recurring post: your changes apply to all future recurrences starting now.'
                       )}
-                    </div>
-                  )}
-                </div>
-                <div className="flex w-full gap-[10px]">
-                  <div className="flex-1 flex">
-                    <Button
-                      type="button"
-                      className="flex-1"
-                      onClick={() => resolve('update')}
-                    >
-                      {t(
-                        'just_update_post_details',
-                        'Just update the post details'
-                      )}
-                    </Button>
+                    </span>
                   </div>
-                  <div className="flex-1 flex">
-                    <Button
-                      type="button"
-                      className="flex-1"
-                      onClick={() => resolve('republish')}
-                    >
-                      {t('republish_the_post', 'Republish the post')}
-                    </Button>
-                  </div>
+                )}
+                <div className="po-edit-actions">
+                  <Button
+                    type="button"
+                    secondary
+                    className="po-edit-update"
+                    onClick={() => resolve('update')}
+                  >
+                    {t(
+                      'just_update_post_details',
+                      'Just update the post details'
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="po-edit-republish"
+                    onClick={() => resolve('republish')}
+                  >
+                    {t('republish_the_post', 'Republish the post')}
+                  </Button>
                 </div>
               </div>
             ),
@@ -261,6 +272,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }
 
       setLoading(true);
+      setBusy(type === 'draft' ? 'draft' : 'submit');
       setIssue(null);
 
       // Pull the local values to build the payload, but rely on the server
@@ -318,7 +330,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 'post_needs_content_or_image',
                 'Your post should have at least one character or one image.'
               ),
-            'warning'
+            'error'
           );
           setLoading(false);
           focus(item.id, 'preview');
@@ -660,12 +672,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 onClick={schedule('draft')}
                 className="relative cursor-pointer disabled:cursor-not-allowed px-[20px] h-[44px] bg-btnSimple border border-newBorder justify-center items-center flex rounded-[18px] text-[15px] font-[500]"
               >
-                {loading && (
+                {loading && busy === 'draft' && (
                   <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
-                    <div className="animate-spin h-[20px] w-[20px] border-4 border-textColor border-t-transparent rounded-full" />
+                    <div className="po-spin" />
                   </div>
                 )}
-                <div className={clsx(loading && 'invisible')}>
+                <div className={clsx(loading && busy === 'draft' && 'invisible')}>
                   {t('save_as_draft', 'Save as Draft')}
                 </div>
               </button>
@@ -690,12 +702,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   onClick={schedule('schedule')}
                   className="po-split-main text-[#0A0A0A] relative btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none flex justify-center items-center"
                 >
-                  {loading && (
-                    <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
-                      <div className="animate-spin h-[20px] w-[20px] border-4 border-[#0A0A0A] border-t-transparent rounded-full" />
+                  {loading && busy === 'submit' && (
+                    <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%] text-[#0A0A0A]">
+                      <div className="po-spin" />
                     </div>
                   )}
-                  <span className={clsx(loading && 'invisible')}>
+                  <span className={clsx(loading && busy === 'submit' && 'invisible')}>
                     {selectedIntegrations.length === 0
                       ? t('check_circles_above', 'Check the circles above')
                       : dummy
@@ -747,6 +759,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         </div>
       </div>
       <CopilotPopup
+        className="po-assist"
         hitEscapeToClose={false}
         clickOutsideToClose={true}
         instructions={`
@@ -761,11 +774,12 @@ Post content can be added using the addPostContentFor{num} function.
 After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} function.
 `}
         labels={{
-          title: t('your_assistant', 'Your Assistant'),
+          title: t('composer_assistant_title', 'Your Assistant'),
           initial: t(
             'assistant_initial_message',
             'Hi! I can help you to refine your social media posts.'
           ),
+          placeholder: t('ask_the_assistant', 'Ask the assistant…'),
         }}
       />
     </div>

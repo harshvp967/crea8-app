@@ -339,33 +339,70 @@ export const DecisionModal: FC<{
   cancelLabel: string;
   onlyApprove: boolean;
   resolution: (value: boolean) => void;
-}> = ({ description, cancelLabel, approveLabel, resolution, onlyApprove }) => {
+  title?: string;
+  tone?: 'danger' | 'primary';
+}> = ({
+  description,
+  cancelLabel,
+  approveLabel,
+  resolution,
+  onlyApprove,
+  title,
+  tone,
+}) => {
   const { closeCurrent } = useModals();
+  const approve = (
+    <Button
+      className="po-sure-yes"
+      onClick={() => {
+        resolution(true);
+        closeCurrent();
+      }}
+    >
+      {approveLabel}
+    </Button>
+  );
+  const cancel = !onlyApprove && (
+    <Button
+      secondary
+      className="po-sure-no"
+      onClick={() => {
+        resolution(false);
+        closeCurrent();
+      }}
+    >
+      {cancelLabel}
+    </Button>
+  );
+  if (tone === 'danger') {
+    return (
+      <div className="po-sure">
+        <div className="po-sure-body">
+          <span className="po-sure-mark is-bad" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 4.2 21 19.2H3L12 4.2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+              <path d="M12 10v4.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="12" cy="16.6" r="0.8" fill="currentColor" />
+            </svg>
+          </span>
+          <div className="min-w-0">
+            <div className="po-sure-title">{title}</div>
+            <div className="po-sure-copy">{description}</div>
+          </div>
+        </div>
+        <div className="po-sure-actions">
+          {cancel}
+          {approve}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col">
       <div className="max-w-[600px]">{description}</div>
       <div className="flex gap-[12px] mt-[16px]">
-        <Button
-          className="po-sure-yes"
-          onClick={() => {
-            resolution(true);
-            closeCurrent();
-          }}
-        >
-          {approveLabel}
-        </Button>
-        {!onlyApprove && (
-          <Button
-            secondary
-            className="po-sure-no"
-            onClick={() => {
-              resolution(false);
-              closeCurrent();
-            }}
-          >
-            {cancelLabel}
-          </Button>
-        )}
+        {approve}
+        {cancel}
       </div>
     </div>
   );
@@ -378,6 +415,7 @@ export const areYouSure = ({
   description = 'Are you sure you want to close this modal?' as any,
   approveLabel = 'Yes',
   cancelLabel = 'No',
+  tone = undefined as 'danger' | 'primary' | undefined,
 } = {}): Promise<boolean> => {
   return new Promise<boolean>((newRes) => {
     decisionModalEmitter.emit('open', {
@@ -385,6 +423,7 @@ export const areYouSure = ({
       description,
       approveLabel,
       cancelLabel,
+      tone,
       newRes,
     });
   });
@@ -407,17 +446,23 @@ export const useDecisionModal = () => {
       onlyApprove = false,
       approveLabel = 'Yes',
       cancelLabel = 'No',
+      tone = undefined as 'danger' | 'primary' | undefined,
       newRes = undefined as any,
     } = {}) => {
       return new Promise<boolean>((res) => {
         modals.openModal({
           title,
           askClose: false,
-          classNames: { modal: 'po-sure-modal' },
+          withCloseButton: tone === 'danger' ? false : undefined,
+          classNames: {
+            modal: clsx('po-sure-modal', tone === 'danger' && 'po-sure-danger'),
+          },
           onClose: () => res(false),
           children: (
             <DecisionModal
               onlyApprove={onlyApprove}
+              tone={tone}
+              title={title}
               resolution={(value) => (newRes ? newRes(value) : res(value))}
               description={description}
               approveLabel={approveLabel}
