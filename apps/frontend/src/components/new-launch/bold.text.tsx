@@ -3,6 +3,7 @@
 import { FC, useCallback } from 'react';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 const originalMap = {
   a: '𝗮',
   b: '𝗯',
@@ -86,21 +87,7 @@ export const BoldText: FC<{
       onClick={mark}
       className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-      >
-        <path
-          d="M4 8.00033H9.33333C10.8061 8.00033 12 6.80642 12 5.33366C12 3.8609 10.8061 2.66699 9.33333 2.66699H4V8.00033ZM4 8.00033H10C11.4728 8.00033 12.6667 9.19423 12.6667 10.667C12.6667 12.1398 11.4728 13.3337 10 13.3337H4V8.00033Z"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <HugeIcon name="bold" size={18} />
     </div>
   );
 };

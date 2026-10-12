@@ -15,6 +15,7 @@ import { SelectCustomer } from '@gitroom/frontend/components/launches/select.cus
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
@@ -325,21 +326,7 @@ export const Filters = () => {
               aria-label="Previous"
               className="cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-              >
-                <path
-                  d="M6.5 11L1.5 6L6.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <HugeIcon name="chevron-left" size={12} />
             </div>
             <div className="cal-range-label min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="cal-range-desktop py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
@@ -363,21 +350,7 @@ export const Filters = () => {
               aria-label="Next"
               className="cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-              >
-                <path
-                  d="M1.5 11L6.5 6L1.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <HugeIcon name="chevron-right" size={12} />
             </div>
           </div>
           <div className="cal-today flex-1 text-[14px] font-[500]">
@@ -404,21 +377,7 @@ export const Filters = () => {
                   : 'opacity-50 cursor-not-allowed'
               )}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-              >
-                <path
-                  d="M6.5 11L1.5 6L6.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <HugeIcon name="chevron-left" size={12} />
             </div>
             <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
@@ -434,21 +393,7 @@ export const Filters = () => {
                   : 'opacity-50 cursor-not-allowed'
               )}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-              >
-                <path
-                  d="M1.5 11L6.5 6L1.5 1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <HugeIcon name="chevron-right" size={12} />
             </div>
           </div>
           <div className="cal-list-states flex flex-row p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
@@ -504,22 +449,7 @@ export const Filters = () => {
               : 'text-textItemBlur hover:text-newTextColor'
           )}
         >
-          {/*calendar*/}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="17"
-            height="19"
-            viewBox="0 0 17 19"
-            fill="none"
-          >
-            <path
-              d="M15.75 7.41667H0.75M11.5833 0.75V4.08333M4.91667 0.75V4.08333M4.75 17.4167H11.75C13.1501 17.4167 13.8502 17.4167 14.385 17.1442C14.8554 16.9045 15.2378 16.522 15.4775 16.0516C15.75 15.5169 15.75 14.8168 15.75 13.4167V6.41667C15.75 5.01654 15.75 4.31647 15.4775 3.78169C15.2378 3.31129 14.8554 2.92883 14.385 2.68915C13.8502 2.41667 13.1501 2.41667 11.75 2.41667H4.75C3.34987 2.41667 2.6498 2.41667 2.11502 2.68915C1.64462 2.92883 1.26217 3.31129 1.02248 3.78169C0.75 4.31647 0.75 5.01654 0.75 6.41667V13.4167C0.75 14.8168 0.75 15.5169 1.02248 16.0516C1.26217 16.522 1.64462 16.9045 2.11502 17.1442C2.6498 17.4167 3.34987 17.4167 4.75 17.4167Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <HugeIcon name="calendar" size={18} />
         </div>
         <div
           onClick={setList}
@@ -530,22 +460,7 @@ export const Filters = () => {
               : 'text-textItemBlur hover:text-newTextColor'
           )}
         >
-          {/*list*/}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-          >
-            <path
-              d="M17.5 10L7.5 10M17.5 5.00002L7.5 5.00002M17.5 15L7.5 15M4.16667 10C4.16667 10.4603 3.79357 10.8334 3.33333 10.8334C2.8731 10.8334 2.5 10.4603 2.5 10C2.5 9.53978 2.8731 9.16669 3.33333 9.16669C3.79357 9.16669 4.16667 9.53978 4.16667 10ZM4.16667 5.00002C4.16667 5.46026 3.79357 5.83335 3.33333 5.83335C2.8731 5.83335 2.5 5.46026 2.5 5.00002C2.5 4.53978 2.8731 4.16669 3.33333 4.16669C3.79357 4.16669 4.16667 4.53978 4.16667 5.00002ZM4.16667 15C4.16667 15.4603 3.79357 15.8334 3.33333 15.8334C2.8731 15.8334 2.5 15.4603 2.5 15C2.5 14.5398 2.8731 14.1667 3.33333 14.1667C3.79357 14.1667 4.16667 14.5398 4.16667 15Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <HugeIcon name="list-bullet" size={18} />
         </div>
       </div>
     </div>

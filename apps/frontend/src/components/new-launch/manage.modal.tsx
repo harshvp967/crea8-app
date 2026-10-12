@@ -45,6 +45,7 @@ import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
@@ -223,12 +224,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 </p>
                 {isRecurring && (
                   <div className="po-edit-note">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <path d="M4 12a8 8 0 0 1 13.7-5.6L20 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M20 4v4h-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M20 12a8 8 0 0 1-13.7 5.6L4 16" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M4 20v-4h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <HugeIcon name="repeat" size={18} />
                     <span>
                       {t(
                         'republish_recurring_note',
@@ -551,11 +547,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       <div className="po-valid" role="alert">
                         <div className="po-valid-copy">
                           <div className="po-valid-title">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                              <path d="M12 3.5 21.5 20.5H2.5L12 3.5Z" stroke="#F04438" strokeWidth="1.6" strokeLinejoin="round" />
-                              <path d="M12 10v4.5" stroke="#F04438" strokeWidth="1.6" strokeLinecap="round" />
-                              <circle cx="12" cy="17.2" r="0.8" fill="#F04438" />
-                            </svg>
+                            <HugeIcon name="alert" size={16} className="text-[#F04438]" />
                             <span>{issue.title}</span>
                           </div>
                           <div className="po-valid-body">{issue.body}</div>
@@ -750,10 +742,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       }
                       onClick={schedule('now')}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path d="M21 3 10.5 13.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                        <path d="M21 3 14.5 21l-4-7.5L3 9.5 21 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-                      </svg>
+                      <HugeIcon name="send" size={16} />
                       <span>{t('post_now', 'Post Now')}</span>
                     </button>
                   </div>
@@ -780,10 +769,7 @@ After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} f
 `}
         icons={{
           sendIcon: (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M21 3 10.5 13.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-              <path d="M21 3 14.5 21l-4-7.5L3 9.5 21 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-            </svg>
+            <HugeIcon name="send" size={16} />
           ),
         }}
         labels={{

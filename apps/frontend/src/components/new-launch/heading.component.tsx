@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useCallback } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export const HeadingComponent: FC<{
   editor: any;
@@ -14,21 +15,7 @@ export const HeadingComponent: FC<{
 
   return (
     <div className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center group relative">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-      >
-        <path
-          d="M3.9974 2.66602V13.3327M11.9974 2.66602V13.3327M5.33073 2.66602H2.66406M11.9974 7.99935L3.9974 7.99935M5.33073 13.3327H2.66406M13.3307 13.3327H10.6641M13.3307 2.66602H10.6641"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <HugeIcon name="heading" size={18} />
       <div
         data-tooltip-id="tooltip"
         data-tooltip-content="Title"

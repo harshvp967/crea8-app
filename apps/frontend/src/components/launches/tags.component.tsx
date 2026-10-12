@@ -18,6 +18,7 @@ import {
   PlusIcon,
   CheckmarkIcon,
 } from '@gitroom/frontend/components/ui/icons';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export const TagsComponent: FC<{
   name: string;
@@ -195,10 +196,7 @@ export const TagsComponentInner: FC<{
       {isOpen && (
         <div className="po-tags-menu z-[300] absolute start-0 bottom-[calc(100%+8px)] flex flex-col">
           <label className="po-tag-search">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M16 16.5L20 20.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
+            <HugeIcon name="search" size={16} />
             <input
               value={tagQuery}
               onChange={(e) => setTagQuery(e.target.value)}
@@ -281,9 +279,7 @@ export const TagsComponentInner: FC<{
                       });
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                    </svg>
+                    <HugeIcon name="pencil" size={14} />
                   </button>
                   {!selected && (
                     <button

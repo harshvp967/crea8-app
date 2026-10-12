@@ -8,6 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
   toolTip,
@@ -93,15 +94,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                       (p) => p.integration.id === integration.id
                     ) !== -1 && (
                       <span className="po-pick-check" aria-hidden>
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                          <path
-                            d="M2.2 6.2 4.7 8.8 9.8 3.2"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <HugeIcon name="check" size={12} />
                       </span>
                     )}
                   </div>
