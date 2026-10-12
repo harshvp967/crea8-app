@@ -896,6 +896,13 @@
   max-height: calc(100dvh - 160px);
 }
 
+@media (max-width: 767px) {
+  .lib-preview-col.is-open .lib-phone {
+    height: min(760px, calc(100dvh - 230px));
+    max-height: calc(100dvh - 230px);
+  }
+}
+
 @media (max-width: 1199px) {
   .lib-split {
     gap: 0;
