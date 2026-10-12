@@ -163,9 +163,6 @@ export const LinkSettingsScreen = () => {
       current = await linkSend(fetch, '/link-in-bio', 'PUT', body);
       applyPage(current, 'Changes saved');
     } catch (err) {
-      if (err instanceof LinkRequestError && err.upgrade) {
-        setDomainNote('upgrade');
-      }
       toast.show(err instanceof Error ? err.message : 'Something went wrong', 'warning');
     } finally {
       setBusy(false);
@@ -178,7 +175,7 @@ export const LinkSettingsScreen = () => {
       setDomainNote('unavailable');
       return;
     }
-    if (!data.paid) {
+    if (!data.customDomainAddon) {
       setDomainNote('upgrade');
       return;
     }
@@ -260,9 +257,9 @@ export const LinkSettingsScreen = () => {
   };
 
   return (
-    <div className="flex flex-col gap-[16px] overflow-y-auto pb-[24px]">
+    <div className="flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
       <div className="flex flex-wrap items-start justify-between gap-[12px]">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-[22px] font-[600]">Page settings</h1>
           <p className="text-[14px] text-textItemBlur">Address, custom domain, sharing and search for {origin}/{data.slug}</p>
         </div>
@@ -274,17 +271,23 @@ export const LinkSettingsScreen = () => {
       <section className="rounded-[20px] border border-newBorder p-[16px]">
         <h2 className="text-[16px] font-[600]">Your page address</h2>
         <div className="mt-[12px] grid gap-[6px]">
-          <div className="flex items-center justify-between">
-            <span className="text-[14px] font-[500]">Username</span>
-            {slugState?.ok ? <span className="text-[13px] text-textItemBlur">{slugState.message}</span> : null}
+          <span className="text-[14px] font-[500]">Username</span>
+          <div className="relative">
+            <input
+              className={`min-h-[44px] w-full rounded-[14px] border border-newBorder bg-transparent px-[12px] ${
+                slugState?.ok ? 'pe-[100px]' : ''
+              }`}
+              value={slug}
+              maxLength={30}
+              onChange={(event) => setSlug(event.target.value.toLowerCase())}
+              aria-label="Username"
+            />
+            {slugState?.ok ? (
+              <span className="pointer-events-none absolute inset-y-0 end-[12px] flex items-center text-[13px] text-textItemBlur">
+                {slugState.message}
+              </span>
+            ) : null}
           </div>
-          <input
-            className="min-h-[44px] rounded-[14px] border border-newBorder bg-transparent px-[12px]"
-            value={slug}
-            maxLength={30}
-            onChange={(event) => setSlug(event.target.value.toLowerCase())}
-            aria-label="Username"
-          />
           <p className="text-[13px] text-textItemBlur">Letters, numbers, dots and underscores · 3 to 30 characters</p>
           {slugState && !slugState.ok ? <p className="text-[13px] text-[#f07178]">{slugState.message}</p> : null}
           <p className="text-[13px] text-textItemBlur">Opens {origin}/{slug || data.slug}</p>
@@ -299,21 +302,29 @@ export const LinkSettingsScreen = () => {
         {data.domainStatus === 'NONE' ? (
           <div className="flex flex-col gap-[8px] sm:flex-row">
             <input
-              className="min-h-[44px] flex-1 rounded-[14px] border border-newBorder bg-transparent px-[12px]"
+              className="min-h-[44px] min-w-0 flex-1 rounded-[14px] border border-newBorder bg-transparent px-[12px]"
               value={domain}
               placeholder="links.yourbrand.com"
+              disabled={!data.customDomainAddon}
               onChange={(event) => setDomain(event.target.value)}
               aria-label="Custom domain"
             />
-            <button type="button" className={linkSecondary} disabled={busy || !domain.trim()} onClick={connect}>
-              Connect domain
-            </button>
+            {data.customDomainAddon ? (
+              <button type="button" className={linkSecondary} disabled={busy || !domain.trim()} onClick={connect}>
+                Connect domain
+              </button>
+            ) : (
+              <Link href="/billing" className={linkPrimary}>
+                Get the add-on
+              </Link>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-[12px]">
             <p className="text-[14px]">{data.customDomain}</p>
             {data.domainError ? <p className="text-[13px] text-[#f07178]">{data.domainError}</p> : null}
             {data.domainRecords.length ? (
+              <div className="lib-table-wrap">
               <table className="lib-table">
                 <thead>
                   <tr>
@@ -334,10 +345,11 @@ export const LinkSettingsScreen = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-[8px]">
               <span className="text-[13px] text-textItemBlur">{checkedLabel(data.domainCheckedAt)}</span>
-              <div className="flex gap-[8px]">
+                <div className="flex flex-wrap gap-[8px]">
                 <button type="button" className={linkSecondary} disabled={busy} onClick={check}>
                   Check again
                 </button>
@@ -351,35 +363,47 @@ export const LinkSettingsScreen = () => {
         {domainNote === 'unavailable' ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">Custom domains are unavailable until Cloudflare is configured.</p>
         ) : null}
-        {domainNote === 'upgrade' ? (
+        {!data.customDomainAddon ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">
-            Custom domains are on a paid plan.{' '}
+            Custom domains are a separate add-on. They are not included in a plan.
+            {data.domainStatus !== 'NONE' ? (
+              <>
+                {' '}
+                <Link href="/billing" className="text-[#00D9FF]">
+                  Get the add-on
+                </Link>
+              </>
+            ) : null}
+          </p>
+        ) : domainNote === 'upgrade' ? (
+          <p className="mt-[8px] text-[13px] text-textItemBlur">
+            Custom domains are a separate add-on. They are not included in a plan.{' '}
             <Link href="/billing" className="text-[#00D9FF]">
-              Upgrade
+              Get the add-on
             </Link>
           </p>
         ) : null}
       </section>
 
-      <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 gap-[16px] md:grid-cols-2">
         <section className="rounded-[20px] border border-newBorder p-[16px]">
           <h2 className="mb-[12px] text-[16px] font-[600]">Page visibility</h2>
           <div className="mb-[14px] flex items-center justify-between gap-[12px]">
-            <div>
+            <div className="min-w-0">
               <div className="text-[14px] font-[500]">Page is public</div>
               <p className="text-[13px] text-textItemBlur">Turn off to show a “coming soon” page</p>
             </div>
             <LinkToggle checked={isPublic} label="Page is public" onChange={setIsPublic} />
           </div>
           <div className="mb-[14px] flex items-center justify-between gap-[12px]">
-            <div>
+            <div className="min-w-0">
               <div className="text-[14px] font-[500]">Sensitive content warning</div>
               <p className="text-[13px] text-textItemBlur">Ask visitors to confirm before opening</p>
             </div>
             <LinkToggle checked={sensitive} label="Sensitive content warning" onChange={setSensitive} />
           </div>
           <div className="flex items-center justify-between gap-[12px]">
-            <div>
+            <div className="min-w-0">
               <div className="text-[14px] font-[500]">Show “made with crea8.one”</div>
               <p className="text-[13px] text-textItemBlur">
                 {data.paid ? 'Paid plans can hide the badge' : 'Hiding the badge is on a paid plan'}
@@ -410,7 +434,7 @@ export const LinkSettingsScreen = () => {
 
         <section className="rounded-[20px] border border-newBorder p-[16px]">
           <h2 className="mb-[12px] text-[16px] font-[600]">QR code</h2>
-          <div className="flex items-center gap-[16px]">
+          <div className="flex flex-wrap items-center gap-[16px]">
             <div className="grid h-[120px] w-[120px] place-items-center overflow-hidden rounded-[12px] bg-white">
               {qr ? <img src={qr} alt={`QR code for ${data.publicUrl}`} className="h-full w-full" /> : null}
             </div>
@@ -441,7 +465,8 @@ export const LinkSettingsScreen = () => {
       {recordsOpen && data.domainStatus !== 'NONE' ? (
         <LinkModal title="Connect domain" onClose={() => setRecordsOpen(false)}>
           <p className="mb-[12px] text-[14px] text-textItemBlur">Add these records at your DNS provider</p>
-          <p className="mb-[10px] text-[14px]">{data.customDomain}</p>
+          <p className="mb-[10px] break-all text-[14px]">{data.customDomain}</p>
+          <div className="lib-table-wrap">
           <table className="lib-table">
             <thead>
               <tr>
@@ -462,6 +487,7 @@ export const LinkSettingsScreen = () => {
               ))}
             </tbody>
           </table>
+          </div>
           <p className="mt-[8px] text-[13px] text-textItemBlur">{checkedLabel(data.domainCheckedAt)}</p>
           <div className="mt-[14px] flex justify-end">
             <button type="button" className={linkPrimary} onClick={() => setRecordsOpen(false)}>

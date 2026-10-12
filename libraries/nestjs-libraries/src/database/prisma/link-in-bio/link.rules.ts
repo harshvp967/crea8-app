@@ -222,6 +222,10 @@ export function isPaidPlan(subscription?: LinkPlan) {
   return plan.month_price > 0;
 }
 
+export function hasCustomDomainAddon(org?: { customDomainAddon?: boolean | null } | null) {
+  return org?.customDomainAddon === true;
+}
+
 export function showBadge(hideBadge: boolean, paid: boolean) {
   return !(hideBadge && paid);
 }

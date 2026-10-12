@@ -44,7 +44,7 @@ export const LinkAnalyticsScreen = () => {
   const host = page.data ? `${page.data.publicOrigin.replace(/^https?:\/\//, '')}/${page.data.slug}` : '';
 
   return (
-    <div className="flex flex-col gap-[16px] overflow-y-auto pb-[24px]">
+    <div className="flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
       <div className="flex flex-wrap items-start justify-between gap-[12px]">
         <div>
           <h1 className="text-[22px] font-[600]">Analytics</h1>
@@ -73,7 +73,7 @@ export const LinkAnalyticsScreen = () => {
         <p className="text-[14px] text-textItemBlur">Loading analytics…</p>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2 xl:grid-cols-4">
             <Metric label="Views" value={data.views.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.views)} />
             <Metric label="Link clicks" value={data.clicks.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.clicks)} />
             <Metric label="Click-through rate" value={formatRate(data.ctr)} delta={deltaText('pt', data.deltas.ctr)} />
@@ -102,10 +102,11 @@ export const LinkAnalyticsScreen = () => {
             )}
           </section>
 
-          <div className="grid grid-cols-1 gap-[12px] lg:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-1 gap-[12px] lg:grid-cols-3">
             <section className="rounded-[20px] border border-newBorder p-[16px]">
               <h2 className="mb-[8px] text-[16px] font-[600]">Top links</h2>
               {data.topLinks.length ? (
+                <div className="lib-table-wrap">
                 <table className="lib-table">
                   <thead>
                     <tr>
@@ -124,6 +125,7 @@ export const LinkAnalyticsScreen = () => {
                     ))}
                   </tbody>
                 </table>
+                </div>
               ) : (
                 <p className="text-[14px] text-textItemBlur">No clicks yet</p>
               )}

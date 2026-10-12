@@ -62,6 +62,7 @@ export type LinkEditor = {
   cnameTarget: string;
   domainRecords: LinkRecord[];
   paid: boolean;
+  customDomainAddon: boolean;
   publicOrigin: string;
   publicUrl: string;
   capture: {
