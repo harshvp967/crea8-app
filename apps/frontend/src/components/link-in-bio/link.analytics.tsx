@@ -249,7 +249,7 @@ export const LinkAnalyticsScreen = () => {
               <span className="text-[13px] font-[500] text-textItemBlur">Daily</span>
             </div>
             {data.views === 0 && data.clicks === 0 ? (
-              <div className="flex flex-col items-center gap-[8px] py-[36px] text-center">
+              <div className="lib-analytics-empty flex flex-col items-center gap-[8px] py-[36px] text-center">
                 <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
                   <HugeIcon name="chart-line" size={18} />
                 </div>
@@ -364,7 +364,7 @@ const Metric = ({
   deltaValue: number | null;
   period: string;
 }) => (
-  <section className={stkCard}>
+  <section className={`${stkCard} lib-metric`}>
     <p className="text-[13px] font-[500] text-textItemBlur">{label}</p>
     <p className="mt-[6px] text-[28px] font-[600] tracking-[-0.03em]">{value}</p>
     {delta ? (

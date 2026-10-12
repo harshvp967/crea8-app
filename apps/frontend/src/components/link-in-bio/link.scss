@@ -113,6 +113,15 @@
   .lib-analytics {
     padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
+
+  .lib-analytics .lib-metric {
+    padding: 14px !important;
+  }
+
+  .lib-analytics-empty {
+    padding-top: 12px !important;
+    padding-bottom: 8px !important;
+  }
 }
 
 .lib-pill {
