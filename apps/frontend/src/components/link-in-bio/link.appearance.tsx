@@ -21,7 +21,7 @@ import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroo
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
-import { LinkPublicView } from '@gitroom/frontend/components/link-in-bio/link.public-view';
+import { LinkPublicView, SocialMark } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 
@@ -466,9 +466,16 @@ export const LinkAppearanceScreen = () => {
           <div className="mb-[12px] flex flex-col gap-[8px]">
             {data.accounts.map((account) => (
               <label key={account.id} className="flex items-center justify-between gap-[12px] rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] py-[10px]">
-                <span className="min-w-0">
-                  <strong className="block truncate text-[14px]">{account.name}</strong>
-                  <span className="block truncate text-[13px] text-textItemBlur">{account.url}</span>
+                <span className="flex min-w-0 items-center gap-[10px]">
+                  <span className="lib-socials" aria-hidden>
+                    <span title={account.network}>
+                      <SocialMark network={account.network} />
+                    </span>
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="block truncate text-[14px]">{account.name}</strong>
+                    <span className="block truncate text-[13px] text-textItemBlur">{account.url}</span>
+                  </span>
                 </span>
                 <input
                   type="checkbox"
@@ -490,9 +497,15 @@ export const LinkAppearanceScreen = () => {
           </div>
           <div className="flex flex-col gap-[8px]">
             {draft.socials.map((item, index) => (
-              <div key={`${item.network}-${index}`} className="grid min-w-0 grid-cols-1 gap-[8px] sm:grid-cols-[minmax(0,160px)_minmax(0,1fr)_auto]">
+              <div key={`${item.network}-${index}`} className="grid min-w-0 grid-cols-1 gap-[8px] sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)_auto]">
+                <span className="flex min-w-0 items-center gap-[8px]">
+                  <span className="lib-socials" aria-hidden>
+                    <span title={item.network}>
+                      <SocialMark network={item.network} />
+                    </span>
+                  </span>
                 <select
-                  className="h-[44px] min-h-[44px] min-w-0 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
+                  className="h-[44px] min-h-[44px] min-w-0 flex-1 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
                   value={item.network}
                   onChange={(event) => {
                     const socials = draft.socials.slice();
@@ -506,6 +519,7 @@ export const LinkAppearanceScreen = () => {
                     </option>
                   ))}
                 </select>
+                </span>
                 <input
                   className="h-[44px] min-h-[44px] min-w-0 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
                   value={item.url}

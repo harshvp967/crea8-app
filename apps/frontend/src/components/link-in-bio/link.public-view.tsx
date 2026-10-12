@@ -2,21 +2,29 @@
 
 import { CSSProperties, FormEvent, useState } from 'react';
 import { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { fontStack, normalizeDesign, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
-const SOCIAL: Record<string, string> = {
-  instagram: 'Ig',
-  x: 'X',
-  youtube: 'Yt',
-  linkedin: 'In',
-  tiktok: 'Tk',
-  threads: 'Th',
-  facebook: 'Fb',
-  bluesky: 'Bs',
-  twitch: 'Tw',
-  pinterest: 'Pi',
-  reddit: 'Rd',
-  website: 'W',
+const SOCIAL_LOGO: Record<string, string> = {
+  instagram: '/icons/platforms/instagram.png',
+  x: '/icons/platforms/x.png',
+  youtube: '/icons/platforms/youtube.png',
+  linkedin: '/icons/platforms/linkedin.png',
+  tiktok: '/icons/platforms/tiktok.png',
+  threads: '/icons/platforms/threads.png',
+  facebook: '/icons/platforms/facebook.png',
+  bluesky: '/icons/platforms/bluesky.png',
+  twitch: '/icons/platforms/twitch.png',
+  pinterest: '/icons/platforms/pinterest.png',
+  reddit: '/icons/platforms/reddit.png',
+};
+
+export const SocialMark = ({ network }: { network: string }) => {
+  const logo = SOCIAL_LOGO[network];
+  if (logo) {
+    return <img src={logo} alt="" className="lib-social-mark" />;
+  }
+  return <HugeIcon name="globe" size={16} />;
 };
 
 const SHADOW: Record<string, string> = {
@@ -431,11 +439,11 @@ const SocialRow = ({
       {items.map((item) =>
         preview ? (
           <span key={`${item.network}-${item.url}`} title={item.network}>
-            {SOCIAL[item.network] || '•'}
+            <SocialMark network={item.network} />
           </span>
         ) : (
           <a key={`${item.network}-${item.url}`} href={item.url} target="_blank" rel="noreferrer" title={item.network}>
-            {SOCIAL[item.network] || '•'}
+            <SocialMark network={item.network} />
           </a>
         )
       )}

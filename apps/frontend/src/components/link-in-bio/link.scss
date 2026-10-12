@@ -462,11 +462,17 @@
   border-radius: 999px;
   display: grid;
   place-items: center;
+  overflow: hidden;
   border: 1px solid var(--lib-line);
   color: var(--lib-text);
-  font-size: 11px;
-  font-weight: 700;
   text-decoration: none;
+}
+
+.lib-socials .lib-social-mark {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .lib-block {
