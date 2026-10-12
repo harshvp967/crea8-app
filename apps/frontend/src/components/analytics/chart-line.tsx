@@ -36,6 +36,7 @@ import {
   type Point,
   type ValueFormat,
 } from '@gitroom/frontend/components/analytics/chart-kit';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export interface ChartLineProps extends ChartBaseProps {
   /** Rows of data, e.g. `{ month: "Jan", revenue: 18600 }`. */
@@ -754,17 +755,5 @@ function Ticker({
 }
 
 function TrendGlyph() {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      className="size-3.5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M2 11.5 6 7.5l3 3 5-6" />
-    </svg>
-  );
+  return <HugeIcon name="trade-up" size={16} className="size-3.5" />;
 }

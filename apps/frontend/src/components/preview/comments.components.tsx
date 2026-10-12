@@ -7,6 +7,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 export const RenderComponents: FC<{
   postId: string;
 }> = (props) => {
@@ -60,21 +61,11 @@ export const RenderComponents: FC<{
           />
           <div className="flex justify-end">
             <Button type="submit">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width={24}
-                height={24}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <HugeIcon
+                name="send"
+                size={16}
                 className="lucide lucide-send me-2 h-4 w-4"
-              >
-                <path d="m22 2-7 20-4-9-9-4Z" />
-                <path d="M22 2 11 13" />
-              </svg>
+              />
               {t('post', 'Post')}
             </Button>
           </div>

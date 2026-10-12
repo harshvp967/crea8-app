@@ -65,6 +65,19 @@ body :focus-visible {
   display: none;
 }
 
+@media (min-width: 1440px) {
+  .desktop-nav a > div:first-child,
+  .desktop-nav button > div:first-child {
+    display: flex;
+    align-items: center;
+  }
+
+  .desktop-nav a.arc-selected::before,
+  .desktop-nav button.arc-selected::before {
+    content: none;
+  }
+}
+
 .desktop-nav a.arc-selected::before,
 .desktop-nav button.arc-selected::before {
   content: '';

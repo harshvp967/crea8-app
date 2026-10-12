@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export default function OAuthAuthorizePage() {
   const searchParams = useSearchParams();
@@ -124,17 +125,11 @@ export default function OAuthAuthorizePage() {
             <Logo />
           </div>
           <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-red-500/20 flex items-center justify-center">
-            <svg
+            <HugeIcon
+              name="close"
+              size={24}
               className="w-[40px] h-[40px] text-red-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
+            />
           </div>
           <div className="text-[28px] font-semibold mb-[12px]">
             Authorization Error

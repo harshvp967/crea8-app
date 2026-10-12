@@ -47,9 +47,9 @@ export const MenuItem: FC<{
 
   const iconClass =
     variant === 'horizontal'
-      ? '[&_svg]:w-[16px] [&_svg]:h-[16px] shrink-0'
+      ? '[&_svg]:w-[18px] [&_svg]:h-[18px] shrink-0'
       : variant === 'utility' || variant === 'sidebar'
-        ? '[&_svg]:w-[16px] [&_svg]:h-[16px] shrink-0'
+        ? '[&_svg]:w-[18px] [&_svg]:h-[18px] shrink-0'
         : 'custom:scale-90 transition-transform';
 
   const inner = (

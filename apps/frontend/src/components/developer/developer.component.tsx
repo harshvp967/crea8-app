@@ -8,6 +8,7 @@ import { useDecisionModal, useModals } from '@gitroom/frontend/components/layout
 import { MediaBox } from '@gitroom/frontend/components/media/media.component';
 import copy from 'copy-to-clipboard';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 const useOAuthApp = () => {
   const fetch = useFetch();
@@ -43,19 +44,7 @@ const CopyButton = ({
       }}
       className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
     >
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-      </svg>
+      <HugeIcon name="copy" size={18} />
       {label}
     </button>
   );
@@ -510,7 +499,7 @@ export const DeveloperComponent: FC = () => {
                 onClick={startEditing}
                 className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                <HugeIcon name="pencil" size={18} />
                 {t('edit_app', 'Edit App')}
               </button>
             </div>
@@ -566,7 +555,7 @@ export const DeveloperComponent: FC = () => {
               onClick={rotateSecret}
               className="cursor-pointer px-[16px] h-[36px] bg-transparent border border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/10 transition-colors rounded-full text-[13px] font-[600] flex items-center gap-[6px]"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6" /><path d="M21.34 15.57a10 10 0 11-.57-8.38L21.5 8" /></svg>
+              <HugeIcon name="refresh" size={18} />
               {t('rotate_secret', 'Rotate Secret')}
             </button>
             <button
@@ -574,7 +563,7 @@ export const DeveloperComponent: FC = () => {
               onClick={deleteApp}
               className="cursor-pointer px-[16px] h-[36px] bg-red-600 hover:bg-red-700 text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
+              <HugeIcon name="trash" size={18} />
               {t('delete_app', 'Delete App')}
             </button>
           </div>

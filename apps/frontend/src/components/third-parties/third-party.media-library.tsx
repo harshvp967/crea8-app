@@ -9,6 +9,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { Pagination } from '@gitroom/frontend/components/media/media.component';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 const ThirdPartyMediaLibraryBrowser: FC<{
   integration: any;
@@ -273,18 +274,7 @@ export const ThirdPartyMediaLibrary: FC<{
       }}
       className="cursor-pointer bg-transparent border border-[#00D9FF] text-[#00D9FF] changeColor flex gap-[8px] h-[44px] px-[18px] justify-center items-center rounded-full font-[600] text-[14px] hover:bg-[#00D9FF]/10 transition-colors"
     >
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
-          fill="currentColor"
-        />
-      </svg>
+      <HugeIcon name="download" size={18} />
       <div>{t('import', 'Import')}</div>
     </button>
   );

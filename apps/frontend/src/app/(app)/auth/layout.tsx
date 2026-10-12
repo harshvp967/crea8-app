@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { ReactNode } from 'react';
 import loadDynamic from 'next/dynamic';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { Toaster } from '@gitroom/react/toaster/toaster';
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
@@ -34,27 +35,19 @@ export default async function AuthLayout({
             <ul>
               <li>
                 <span className="auth-pitch-icon" aria-hidden>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                    <rect x="3" y="5" width="18" height="16" rx="3" />
-                    <path d="M3 10h18M8 3v4M16 3v4" />
-                  </svg>
+                  <HugeIcon name="calendar" size={18} />
                 </span>
                 <span>{t('auth_panel_schedule_body', 'Plan a week of posts in one calendar')}</span>
               </li>
               <li>
                 <span className="auth-pitch-icon" aria-hidden>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                    <circle cx="12" cy="12" r="8" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
+                  <HugeIcon name="target" size={18} />
                 </span>
                 <span>{t('auth_panel_insights_body', 'Every mention of your brand in one feed')}</span>
               </li>
               <li>
                 <span className="auth-pitch-icon" aria-hidden>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                    <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
-                  </svg>
+                  <HugeIcon name="pencil" size={18} />
                 </span>
                 <span>{t('auth_panel_draft_body', 'Turn an insight into a ready-to-edit post')}</span>
               </li>
