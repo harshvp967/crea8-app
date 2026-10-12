@@ -1966,14 +1966,49 @@ body :focus-visible {
   border-radius: 18px !important;
 }
 
-.auth-or > .absolute.w-full {
-  background: var(--new-border) !important;
+.auth-or {
+  display: flex;
+  align-items: center;
+}
+
+.auth-or > .h-\[1px\] {
+  display: none;
+}
+
+.auth-or > .flex {
+  position: static;
+  top: auto;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+
+.auth-or > .flex::before,
+.auth-or > .flex::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--new-border);
 }
 
 .auth-or .px-\[16px\] {
-  background: var(--new-bgColorInner);
+  background: transparent;
+  padding: 0;
   color: var(--new-textItemBlur);
   font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+.auth-providers > button,
+.auth-providers > div {
+  white-space: nowrap;
+}
+
+.auth-providers svg {
+  flex: none;
 }
 
 .auth-card {
@@ -2021,11 +2056,13 @@ body :focus-visible {
 
 .auth-mark,
 .auth-status::before {
+  content: '';
   width: 44px;
   height: 44px;
   border-radius: 16px;
   display: block;
   margin: 0 0 12px;
+  flex: none;
   background-repeat: no-repeat;
   background-position: center;
   background-size: 20px;

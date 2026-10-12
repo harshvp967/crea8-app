@@ -157,6 +157,7 @@ export function RegisterAfter({
         className="auth-form flex-1 flex"
         method="post"
         action="/auth/native-submit"
+        noValidate
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="flex flex-col flex-1">

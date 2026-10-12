@@ -34,6 +34,7 @@ export function Login() {
   const t = useT();
   const [loading, setLoading] = useState(false);
   const [notActivated, setNotActivated] = useState(false);
+  const [apiEmailError, setApiEmailError] = useState<string>();
   const {
     isGeneral,
     neynarClientId,
@@ -67,6 +68,7 @@ export function Login() {
       if (errorMessage === 'User is not activated') {
         setNotActivated(true);
       } else {
+        setApiEmailError(errorMessage);
         form.setError('email', {
           message: errorMessage,
         });
@@ -74,14 +76,17 @@ export function Login() {
       setLoading(false);
     }
   };
-  const emailError = form.formState.errors.email?.message as string | undefined;
   return (
     <FormProvider {...form}>
       <form
         className="auth-form flex-1 flex"
         method="post"
         action="/auth/native-submit"
-        onSubmit={form.handleSubmit(onSubmit)}
+        noValidate
+        onSubmit={(event) => {
+          setApiEmailError(undefined);
+          return form.handleSubmit(onSubmit)(event);
+        }}
       >
         <div className="flex flex-col flex-1">
           <div>
@@ -114,9 +119,9 @@ export function Login() {
               </div>
             </div>
             <div className="flex flex-col gap-[12px]">
-              {emailError ? (
+              {apiEmailError ? (
                 <div className="auth-alert" role="alert">
-                  {emailError}
+                  {apiEmailError}
                 </div>
               ) : null}
               <div className="text-textColor">
@@ -127,7 +132,7 @@ export function Login() {
                   type="email"
                   placeholder={t('email_address', 'Email Address')}
                   className="cc-input"
-                  removeError={!!emailError}
+                  removeError={!!apiEmailError}
                 />
                 <Input
                   label="Password"
