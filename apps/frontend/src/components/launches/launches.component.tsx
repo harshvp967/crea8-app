@@ -718,6 +718,24 @@ export const LaunchesComponent = () => {
               onClick={() => setChannelsOpen(false)}
             />
           )}
+          {sortedIntegrations.length === 0 && (
+            <div className="channel-empty-phone">
+              <img
+                src={
+                  mode === 'dark'
+                    ? '/no-channels.svg'
+                    : '/no-channels-colors.svg'
+                }
+                alt=""
+              />
+              <div className="font-[600] text-[20px]">
+                {t('no_channels', 'No channels yet')}
+              </div>
+              <div className="text-[14px] text-textItemBlur">
+                {t('connect_your_accounts')}
+              </div>
+            </div>
+          )}
           <Filters />
           <div className="calendar-well flex-1 flex min-h-0 overflow-hidden">
             <Calendar />

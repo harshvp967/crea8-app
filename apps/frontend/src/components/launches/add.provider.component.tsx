@@ -45,8 +45,8 @@ const InviteLinkModal: FC<{
   }, [url]);
 
   return (
-    <div className="flex flex-col gap-[12px] pt-[8px]">
-      <p className="text-[14px] text-textColor/80">
+    <div className="cc-invite flex flex-col gap-[16px]">
+      <p className="cc-copy">
         {t(
           'invite_link_manual_copy',
           'Copy this link and send it to your customer. It expires in 1 hour.'
@@ -56,13 +56,15 @@ const InviteLinkModal: FC<{
         readOnly
         value={url}
         onFocus={(e) => e.currentTarget.select()}
-        className="w-full bg-newTableHeader border border-tableBorder rounded-[8px] px-[12px] py-[10px] text-[13px] text-textColor"
+        className="cc-field"
       />
-      <Button type="button" onClick={onCopy}>
-        {copied
-          ? t('copied', 'Copied')
-          : t('copy_link', 'Copy link')}
-      </Button>
+      <div className="cc-actions">
+        <Button type="button" className="cc-primary" onClick={onCopy}>
+          {copied
+            ? t('copied', 'Copied')
+            : t('copy_link', 'Copy link')}
+        </Button>
+      </div>
     </div>
   );
 };
@@ -78,6 +80,10 @@ export const useAddProvider = (update?: () => void, invite?: boolean) => {
         ? t('invite_link_title', 'Invite link')
         : 'Add Channel',
       withCloseButton: true,
+      size: '820px',
+      classNames: {
+        modal: 'cc-picker-modal',
+      },
       children: (
         <AddProviderComponent invite={!!invite} update={update} {...data} />
       ),
@@ -179,11 +185,11 @@ export const UrlModal: FC<{
     gotoUrl(data.url);
   }, []);
   return (
-    <div className="rounded-[4px] border border-customColor6 bg-sixth px-[16px] pb-[16px] relative">
+    <div className="cc-url relative">
       <TopTitle title={`Instance URL`} />
       <button
         onClick={close}
-        className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+        className="cc-url-legacy-close outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
         type="button"
       >
         <svg
@@ -209,8 +215,8 @@ export const UrlModal: FC<{
           <div className="pt-[10px]">
             <Input label="URL" name="url" />
           </div>
-          <div>
-            <Button type="submit">{t('connect', 'Connect')}</Button>
+          <div className="cc-actions">
+            <Button type="submit" className="cc-primary">{t('connect', 'Connect')}</Button>
           </div>
         </form>
       </FormProvider>
@@ -288,10 +294,10 @@ export const CustomVariables: FC<{
   const t = useT();
 
   return (
-    <div className="rounded-[4px] relative">
+    <div className="cc-fields relative">
       <FormProvider {...methods}>
         <form
-          className="gap-[8px] flex flex-col pt-[10px]"
+          className="gap-[12px] flex flex-col"
           onSubmit={methods.handleSubmit(submit)}
         >
           {variables.map((variable) => (
@@ -323,8 +329,8 @@ export const CustomVariables: FC<{
               )}
             </div>
           ))}
-          <div>
-            <Button type="submit">{t('connect', 'Connect')}</Button>
+          <div className="cc-actions">
+            <Button type="submit" className="cc-primary">{t('connect', 'Connect')}</Button>
           </div>
         </form>
       </FormProvider>
@@ -335,17 +341,18 @@ const ExtensionNotFound: FC = () => {
   const modals = useModals();
   const t = useT();
   return (
-    <div className="flex flex-col gap-[16px] pt-[8px]">
-      <p className="text-[14px] text-textColor/80">
+    <div className="cc-missing flex flex-col gap-[16px]">
+      <p className="cc-copy">
         {t(
           'extension_not_available',
           'The browser extension for this channel is not available in Crea8one. Contact support@crea8.one if you need it.'
         )}
       </p>
-      <div className="flex gap-[10px]">
+      <div className="cc-actions">
         <Button
           type="button"
-          className="flex-1 !bg-transparent border border-tableBorder text-textColor"
+          secondary
+          className="cc-secondary"
           onClick={() => modals.closeCurrent()}
         >
           {t('cancel', 'Cancel')}
@@ -362,14 +369,14 @@ const ChromeExtensionWarning: FC<{
   const modals = useModals();
   const t = useT();
   return (
-    <div className="flex flex-col gap-[16px] pt-[8px]">
-      <p className="text-[14px] text-textColor/80">
+    <div className="cc-notice flex flex-col gap-[16px]">
+      <p className="cc-copy">
         {t(
           'chrome_extension_warning_intro',
           'This channel connects via the browser extension. Please be aware of the following:'
         )}
       </p>
-      <ul className="flex flex-col gap-[8px] list-disc ps-[20px] text-[14px] text-textColor/80">
+      <ul className="cc-bullets">
         <li>
           {t(
             'chrome_extension_warning_tos',
@@ -396,26 +403,27 @@ const ChromeExtensionWarning: FC<{
           termination due to the use of this method.
         </li>
       </ul>
-      <div className="flex gap-[10px] mt-[8px]">
+      <div className="cc-actions">
         <Button
           type="button"
-          className="flex-1"
-          onClick={() => {
-            modals.closeCurrent();
-            onConfirm();
-          }}
-        >
-          {t('i_understand_continue', 'I understand, continue')}
-        </Button>
-        <Button
-          type="button"
-          className="flex-1 !bg-transparent border border-tableBorder text-textColor"
+          secondary
+          className="cc-secondary"
           onClick={() => {
             modals.closeCurrent();
             onCancel();
           }}
         >
           {t('cancel', 'Cancel')}
+        </Button>
+        <Button
+          type="button"
+          className="cc-primary"
+          onClick={() => {
+            modals.closeCurrent();
+            onConfirm();
+          }}
+        >
+          {t('i_understand_continue', 'I understand, continue')}
         </Button>
       </div>
     </div>
@@ -567,6 +575,8 @@ export const AddProviderComponent: FC<{
             modal.openModal({
               title: t('invite_link_title', 'Invite link'),
               withCloseButton: true,
+              size: '480px',
+              classNames: { modal: 'cc-invite-modal' },
               ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
               children: <InviteLinkModal url={url} />,
             });
@@ -598,10 +608,12 @@ export const AddProviderComponent: FC<{
         }
         if (isChromeExtension) {
           const confirmed = await new Promise<boolean>((resolve) => {
-            modal.openModal({
-              title: t('chrome_extension_notice', 'Browser Extension Notice'),
-              withCloseButton: true,
-              onClose: () => resolve(false),
+          modal.openModal({
+            title: t('chrome_extension_notice', 'Browser Extension Notice'),
+            withCloseButton: true,
+            size: '520px',
+            classNames: { modal: 'cc-notice-modal' },
+            onClose: () => resolve(false),
               children: (
                 <ChromeExtensionWarning
                   onConfirm={() => {
@@ -621,6 +633,8 @@ export const AddProviderComponent: FC<{
             modal.openModal({
               title: t('extension_not_available_title', 'Extension Not Found'),
               withCloseButton: true,
+              size: '460px',
+              classNames: { modal: 'cc-missing-modal' },
               children: <ExtensionNotFound />,
             });
             return;
@@ -700,9 +714,10 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: 'URL',
             withCloseButton: true,
+            size: '440px',
             ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
-              modal: 'bg-transparent text-textColor',
+              modal: 'cc-url-modal text-textColor',
             },
             children: <UrlModal gotoUrl={gotoIntegration} />,
           });
@@ -712,9 +727,10 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: t('add_provider_title', 'Add Provider'),
             withCloseButton: true,
+            size: '460px',
             ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
-              modal: 'bg-transparent text-textColor',
+              modal: 'cc-fields-modal text-textColor',
             },
             children: (
               <div
@@ -738,7 +754,7 @@ export const AddProviderComponent: FC<{
 
   return (
     <div
-      className="w-full flex flex-col gap-[20px] rounded-[4px] relative]"
+      className="cc-picker w-full flex flex-col gap-[16px] relative"
       data-invite={props.invite ? 'true' : 'false'}
     >
       {props.invite ? (
@@ -754,7 +770,7 @@ export const AddProviderComponent: FC<{
           className={clsx(
             isMobile && 'gap-[20px] flex flex-col',
             !isMobile &&
-              'grid grid-cols-5 gap-[10px] justify-items-center justify-center',
+              'cc-grid grid grid-cols-5 gap-[10px] justify-items-center justify-center',
             isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-5'
           )}
         >
@@ -793,11 +809,11 @@ export const AddProviderComponent: FC<{
                   isMobile
                     ? 'flex-row h-[72px] p-[16px]'
                     : 'flex-col p-[10px] h-[100px] justify-center',
-                  'w-full text-[14px] rounded-[16px] bg-newTableHeader border border-transparent text-textColor relative items-center flex gap-[10px] cursor-pointer transition-colors hover:border-[#00D9FF] hover:bg-[#00D9FF]/10'
+                  'cc-tile w-full text-[14px] rounded-[16px] bg-newTableHeader border border-transparent text-textColor relative items-center flex gap-[10px] cursor-pointer transition-colors hover:border-[#00D9FF] hover:bg-[#00D9FF]/10'
                 )}
               >
                 {item.comingSoon && (
-                  <span className="pointer-events-none absolute -top-[7px] start-[8px] z-[2] max-w-[calc(100%-16px)] truncate rounded-full bg-[#00D9FF] px-[6px] text-[9px] font-[700] leading-[16px] text-[#0a0a0a]">
+                  <span className="cc-soon pointer-events-none absolute -top-[7px] start-[8px] z-[2] max-w-[calc(100%-16px)] truncate rounded-full bg-[#00D9FF] px-[6px] text-[9px] font-[700] leading-[16px] text-[#0a0a0a]">
                     {t('coming_soon', 'Coming soon')}
                   </span>
                 )}

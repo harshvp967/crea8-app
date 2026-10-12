@@ -124,7 +124,7 @@ export function withContinueProvider<TItem, TSelection>(
     }
 
     return (
-      <div className="flex flex-col gap-[20px]">
+      <div className="cc-pages flex flex-col gap-[20px]">
         <div>{t(titleKey, titleDefault)}</div>
         <div className="grid grid-cols-3 justify-items-center select-none cursor-pointer gap-[10px]">
           {filteredData.map((item) => (
