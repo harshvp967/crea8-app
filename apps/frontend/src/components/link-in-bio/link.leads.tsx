@@ -4,17 +4,48 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { LinkRequestError, linkLocked, linkSend, useLinkLeads, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
-import { LinkField, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkRequestError, linkLocked, linkSend, useLinkLeads, useLinkPage, type LinkLead } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { LinkField, LinkSegments, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { stkCard, stkCardTight, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
-const filters = [
-  { id: '', label: 'All' },
-  { id: 'CONFIRMED', label: 'Confirmed' },
-  { id: 'PENDING', label: 'Pending' },
-];
+const SOURCE_LOGO: Record<string, string> = {
+  instagram: '/icons/platforms/instagram.png',
+  x: '/icons/platforms/x.png',
+  youtube: '/icons/platforms/youtube.png',
+  linkedin: '/icons/platforms/linkedin.png',
+  tiktok: '/icons/platforms/tiktok.png',
+  facebook: '/icons/platforms/facebook.png',
+  reddit: '/icons/platforms/reddit.png',
+  pinterest: '/icons/platforms/pinterest.png',
+  threads: '/icons/platforms/threads.png',
+  bluesky: '/icons/platforms/bluesky.png',
+  twitch: '/icons/platforms/twitch.png',
+};
 
 const dayLabel = (iso: string) =>
   new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(iso));
+
+const countLabel = (label: string, count: number | undefined) => (count === undefined ? label : `${label} · ${count}`);
+
+const StatusPill = ({ status }: { status: LinkLead['status'] }) => (
+  <span className={status === 'CONFIRMED' ? 'lib-lead-status lib-lead-ok' : 'lib-lead-status lib-lead-pending'}>
+    {status === 'CONFIRMED' ? 'Confirmed' : 'Pending'}
+  </span>
+);
+
+const SourceLabel = ({ source }: { source: string }) => {
+  const logo = SOURCE_LOGO[source.trim().toLowerCase()];
+  if (!logo) {
+    return <>{source}</>;
+  }
+  return (
+    <span className="inline-flex min-w-0 items-center gap-[8px]">
+      <img src={logo} alt="" className="h-[16px] w-[16px] shrink-0 rounded-[4px] object-cover" />
+      <span className="truncate">{source}</span>
+    </span>
+  );
+};
 
 export const LinkLeadsScreen = () => {
   const fetch = useFetch();
@@ -33,6 +64,11 @@ export const LinkLeadsScreen = () => {
 
   const capture = page.data?.blocks.find((block) => block.type === 'EMAIL_CAPTURE');
   const counts = data?.counts;
+  const filters: Array<{ id: string; label: string }> = [
+    { id: '', label: countLabel('All', counts?.all) },
+    { id: 'CONFIRMED', label: countLabel('Confirmed', counts?.confirmed) },
+    { id: 'PENDING', label: countLabel('Pending', counts?.pending) },
+  ];
 
   const exportCsv = async () => {
     setBusy(true);
@@ -60,108 +96,122 @@ export const LinkLeadsScreen = () => {
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
-      <div className="flex flex-wrap items-start justify-between gap-[12px]">
-        <div>
-          <h1 className="text-[22px] font-[600]">Leads</h1>
-          <p className="text-[14px] text-textItemBlur">
+    <div className="lib-leads flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
+      <div className="flex flex-col items-start gap-[12px] md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <h1 className={stkTitle}>Leads</h1>
+          <p className={stkSub}>
             {counts ? `${counts.all.toLocaleString('en-US')} subscribers` : 'Subscribers'} · Your leads stay yours:
             unlimited contacts and CSV export, free.
           </p>
         </div>
         <button type="button" className={linkSecondary} disabled={busy} onClick={exportCsv}>
+          <HugeIcon name="download" size={16} />
           Export CSV
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-[12px]">
-        <div className="flex flex-wrap gap-[6px]">
-          {filters.map((item) => {
-            const count = item.id === 'CONFIRMED' ? counts?.confirmed : item.id === 'PENDING' ? counts?.pending : counts?.all;
-            return (
-              <button
-                key={item.id || 'all'}
-                type="button"
-                className={
-                  status === item.id
-                    ? 'h-[34px] rounded-[18px] border border-newBorder bg-newBoxHover px-[12px] text-[13px]'
-                    : 'h-[34px] rounded-[18px] border border-transparent px-[12px] text-[13px] text-textItemBlur'
-                }
-                onClick={() => setStatus(item.id)}
-              >
-                {item.label}
-                {count !== undefined ? ` · ${count}` : ''}
-              </button>
-            );
-          })}
-        </div>
-        <input
-          className="h-[40px] w-full min-w-0 rounded-[14px] border border-newBorder bg-transparent px-[12px] text-[14px] sm:max-w-[260px]"
-          placeholder="Search emails"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          aria-label="Search emails"
-        />
-      </div>
-
-      {error ? <p className="text-[14px] text-textItemBlur">Could not load leads.</p> : null}
-      {isLoading || !data ? (
-        <p className="text-[14px] text-textItemBlur">Loading leads…</p>
-      ) : data.leads.length ? (
-        <div className="min-w-0 overflow-hidden rounded-[20px] border border-newBorder">
-          <div className="lib-table-wrap">
-          <table className="lib-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Country</th>
-                <th>Signed up from</th>
-                <th>Message</th>
-                <th>Status</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.leads.map((lead) => (
-                <tr key={lead.id}>
-                  <td data-label="Name">{lead.name || '—'}</td>
-                  <td data-label="Email">{lead.email}</td>
-                  <td data-label="Country">{lead.country || '—'}</td>
-                  <td data-label="Signed up from">{lead.source}</td>
-                  <td data-label="Message">{lead.message || '—'}</td>
-                  <td data-label="Status">
-                    <span className={lead.status === 'CONFIRMED' ? 'lib-pill lib-pill-green' : 'lib-pill lib-pill-amber'}>
-                      {lead.status === 'CONFIRMED' ? 'Confirmed' : 'Pending'}
-                    </span>
-                  </td>
-                  <td data-label="Date">{dayLabel(lead.createdAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {error ? null : (
+        <div className="flex flex-col items-stretch gap-[8px] md:flex-row md:items-center md:justify-between">
+          <div className="max-w-full overflow-x-auto">
+            <LinkSegments label="Lead status" value={status} options={filters} onChange={setStatus} />
           </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-[8px] py-[64px] text-center">
-          <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
-            ✉
-          </div>
-          <h2 className="text-[16px] font-[600]">No leads yet</h2>
-          <p className="max-w-[360px] text-[14px] text-textItemBlur">
-            Turn on Email capture to collect subscribers from your page.
-          </p>
-          <Link href="/link" className={linkPrimary}>
-            Email capture
-          </Link>
+          <label className="relative block w-full md:w-[240px]">
+            <HugeIcon name="search" size={16} className="pointer-events-none absolute start-[14px] top-[14px] text-textItemBlur" />
+            <input
+              className="h-[44px] w-full rounded-[18px] border border-newBorder bg-newBgColorInner pe-[14px] ps-[38px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none placeholder:text-textItemBlur focus:border-[color:var(--arc-selected-border)] focus:shadow-[inset_0_0_0_1px_var(--arc-selected-border)]"
+              placeholder="Search emails"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              aria-label="Search emails"
+            />
+          </label>
         </div>
       )}
 
+      {error ? (
+        <section className={`${stkCard} flex items-center gap-[12px]`}>
+          <HugeIcon name="alert" size={20} className="shrink-0 text-[color:var(--arc-danger)]" />
+          <p className="text-[14px] font-[500]">Could not load leads.</p>
+        </section>
+      ) : isLoading || !data ? (
+        <section className={stkCard}>
+          <p className="text-[14px] font-[500] text-textItemBlur">Loading leads…</p>
+        </section>
+      ) : data.leads.length ? (
+        <>
+          <section className={`${stkCard} lib-leads-table-wrap overflow-hidden !p-0`}>
+            <div className="lib-table-wrap">
+              <table className="lib-table lib-leads-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Country</th>
+                    <th>Signed up from</th>
+                    <th>Message</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.leads.map((lead) => (
+                    <tr key={lead.id}>
+                      <td data-label="Name">{lead.name || '—'}</td>
+                      <td data-label="Email">{lead.email}</td>
+                      <td data-label="Country">{lead.country || '—'}</td>
+                      <td data-label="Signed up from">
+                        <SourceLabel source={lead.source} />
+                      </td>
+                      <td data-label="Message">{lead.message || '—'}</td>
+                      <td data-label="Status">
+                        <StatusPill status={lead.status} />
+                      </td>
+                      <td data-label="Date">{dayLabel(lead.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <div className="lib-leads-cards">
+            {data.leads.map((lead) => (
+              <article key={lead.id} className={stkCardTight}>
+                <div className="flex items-start justify-between gap-[8px]">
+                  <span className="min-w-0 truncate text-[14px] font-[600]">{lead.email}</span>
+                  <StatusPill status={lead.status} />
+                </div>
+                <p className="mt-[4px] text-[13px] font-[500] text-textItemBlur">
+                  {[lead.name, lead.country, dayLabel(lead.createdAt)].filter(Boolean).join(' · ')}
+                </p>
+                <p className="mt-[2px] text-[13px] font-[500] text-textItemBlur">
+                  From <SourceLabel source={lead.source} />
+                  {lead.message ? ` · ${lead.message}` : ''}
+                </p>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : (
+        <section className={`${stkCard} flex flex-col items-center gap-[8px] py-[28px] text-center`}>
+          <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
+            <HugeIcon name="mail" size={18} />
+          </div>
+          <h2 className="text-[16px] font-[600] tracking-[-0.02em]">No leads yet</h2>
+          <p className="max-w-[360px] text-[14px] font-[500] text-textItemBlur">
+            Turn on Email capture to collect subscribers from your page.
+          </p>
+          <Link href="/link" className={`${linkPrimary} mt-[8px]`}>
+            Email capture
+          </Link>
+        </section>
+      )}
+
       {capture && counts?.all === 0 ? (
-        <section className="flex flex-wrap items-center justify-between gap-[12px] rounded-[20px] border border-newBorder px-[16px] py-[14px]">
+        <section className={`${stkCardTight} flex flex-wrap items-center justify-between gap-[12px]`}>
           <div className="min-w-0">
             <strong className="text-[14px]">Email capture</strong>
-            <p className="text-[13px] text-textItemBlur">Collecting · {capture.position === 0 ? 'Above links' : 'Below links'}</p>
+            <p className="text-[13px] font-[500] text-textItemBlur">Collecting · {capture.position === 0 ? 'Above links' : 'Below links'}</p>
           </div>
           <LinkToggle
             checked={capture.enabled}
@@ -179,7 +229,7 @@ export const LinkLeadsScreen = () => {
         </section>
       ) : null}
 
-      <Integrations busy={busy} setBusy={setBusy} />
+      {error ? null : <Integrations busy={busy} setBusy={setBusy} />}
     </div>
   );
 };
@@ -226,9 +276,9 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
     }
   };
   return (
-    <section className="rounded-[20px] border border-newBorder p-[16px]">
-      <h2 className="text-[16px] font-[600]">Integrations</h2>
-      <p className="mb-[12px] text-[13px] text-textItemBlur">
+    <section className={stkCard}>
+      <h2 className="text-[16px] font-[600] tracking-[-0.02em]">Integrations{data.paid ? '' : ' (Pro)'}</h2>
+      <p className="mb-[16px] mt-[4px] text-[13px] font-[500] text-textItemBlur">
         {linkLocked(data)
           ? 'Mailchimp, ConvertKit and webhooks are on a paid plan.'
           : data.paid
@@ -240,8 +290,14 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
           </Link>
         ) : null}
       </p>
-      <div className="grid grid-cols-1 gap-[12px] lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-[16px] md:grid-cols-2 xl:grid-cols-3">
         <div className="flex flex-col gap-[8px]">
+          <div className="mb-[4px] flex items-center justify-between gap-[8px]">
+            <strong className="text-[14px]">Mailchimp</strong>
+            <span className="text-[13px] font-[500] text-textItemBlur">
+              {data.integrations.mailchimp.connected ? 'Connected' : 'Not connected'}
+            </span>
+          </div>
           <LinkField label="Mailchimp API key">
             <input
               type="password"
@@ -266,6 +322,12 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
           </div>
         </div>
         <div className="flex flex-col gap-[8px]">
+          <div className="mb-[4px] flex items-center justify-between gap-[8px]">
+            <strong className="text-[14px]">ConvertKit</strong>
+            <span className="text-[13px] font-[500] text-textItemBlur">
+              {data.integrations.convertkit.connected ? 'Connected' : 'Not connected'}
+            </span>
+          </div>
           <LinkField label="ConvertKit API key">
             <input
               type="password"
@@ -290,6 +352,12 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
           </div>
         </div>
         <div className="flex flex-col gap-[8px]">
+          <div className="mb-[4px] flex items-center justify-between gap-[8px]">
+            <strong className="text-[14px]">Webhook</strong>
+            <span className="text-[13px] font-[500] text-textItemBlur">
+              {data.integrations.webhook.url ? 'Connected' : 'Not connected'}
+            </span>
+          </div>
           <LinkField label="Webhook URL">
             <input placeholder="https://" value={webhookUrl} onChange={(event) => setWebhookUrl(event.target.value)} />
           </LinkField>
