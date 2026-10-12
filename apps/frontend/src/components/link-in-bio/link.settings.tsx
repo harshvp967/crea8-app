@@ -267,7 +267,7 @@ export const LinkSettingsScreen = () => {
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
+    <div className="lib-settings flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
       <div className="flex flex-col items-start gap-[12px] sm:flex-row sm:justify-between">
         <div className="min-w-0">
           <h1 className={stkTitle}>Page settings</h1>

@@ -66,6 +66,11 @@
   display: none !important;
 }
 
+.lib-settings {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
 @media (max-width: 767px) {
   .lib-preview-toggle {
     width: 44px;
@@ -91,6 +96,10 @@
 
   .lib-reset-phone {
     display: inline-flex !important;
+  }
+
+  .lib-settings {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 }
 
