@@ -18,6 +18,7 @@ import {
   ConnectLinkDomainDto,
   ReorderLinkBlocksDto,
   SaveLinkBlockDto,
+  UpdateLinkIntegrationsDto,
   UpdateLinkPageDto,
   UpdateLinkSlugDto,
 } from '@gitroom/nestjs-libraries/dtos/link-in-bio/link.dto';
@@ -76,9 +77,32 @@ export class LinkController {
     return this._linkService.deleteBlock(org, id);
   }
 
+  @Get('/analytics.csv')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="crea8-analytics.csv"')
+  async exportAnalytics(
+    @GetOrgFromRequest() org: Organization,
+    @Query('range') range = '30d',
+    @Query('from') from = '',
+    @Query('to') to = ''
+  ) {
+    const csv = await this._linkService.exportAnalytics(org, range, from, to);
+    return new StreamableFile(Buffer.from(csv, 'utf8'));
+  }
+
   @Get('/analytics')
-  analytics(@GetOrgFromRequest() org: Organization, @Query('range') range = '30d') {
-    return this._linkService.analytics(org, range);
+  analytics(
+    @GetOrgFromRequest() org: Organization,
+    @Query('range') range = '30d',
+    @Query('from') from = '',
+    @Query('to') to = ''
+  ) {
+    return this._linkService.analytics(org, range, from, to);
+  }
+
+  @Put('/integrations')
+  integrations(@GetOrgFromRequest() org: Organization, @Body() body: UpdateLinkIntegrationsDto) {
+    return this._linkService.integrations(org, body);
   }
 
   @Get('/leads.csv')

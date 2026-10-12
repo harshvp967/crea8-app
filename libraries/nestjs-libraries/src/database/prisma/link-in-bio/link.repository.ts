@@ -193,7 +193,7 @@ export class LinkRepository {
     });
   }
 
-  grouped(pageId: string, field: 'country' | 'source', from: Date, to: Date) {
+  grouped(pageId: string, field: 'country' | 'source' | 'device' | 'browser', from: Date, to: Date) {
     return this._event.model.linkEvent.groupBy({
       by: [field],
       where: {
@@ -201,6 +201,18 @@ export class LinkRepository {
         type: 'VIEW',
         createdAt: { gte: from, lt: to },
         [field]: { not: '' },
+      },
+      _count: { _all: true },
+    });
+  }
+
+  utmBreakdown(pageId: string, from: Date, to: Date) {
+    return this._event.model.linkEvent.groupBy({
+      by: ['utmSource', 'utmMedium', 'utmCampaign'],
+      where: {
+        pageId,
+        type: 'VIEW',
+        createdAt: { gte: from, lt: to },
       },
       _count: { _all: true },
     });
@@ -254,6 +266,10 @@ export class LinkRepository {
 
   createLead(data: Prisma.LinkLeadUncheckedCreateInput) {
     return this._lead.model.linkLead.create({ data });
+  }
+
+  updateLead(id: string, data: Prisma.LinkLeadUpdateInput) {
+    return this._lead.model.linkLead.update({ where: { id }, data });
   }
 
   confirmLead(token: string) {

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 const SOCIAL: Record<string, string> = {
   instagram: 'Ig',
@@ -18,6 +19,8 @@ export const LinkPublicView = ({
   onClick,
   onSubscribe,
   onContinue,
+  onUnlock,
+  onContact,
   unlocked = false,
 }: {
   data: PublicLink;
@@ -25,6 +28,8 @@ export const LinkPublicView = ({
   onClick?: (blockId: string) => void;
   onSubscribe?: (input: { email: string; name: string }) => Promise<'confirmed' | 'pending'>;
   onContinue?: () => Promise<void> | void;
+  onUnlock?: (blockId: string, input: { age?: boolean; email?: string; name?: string; password?: string }) => Promise<string>;
+  onContact?: (blockId: string, input: { email: string; name: string; message: string; website: string }) => Promise<void>;
   unlocked?: boolean;
 }) => {
   const [dismissed, setDismissed] = useState(false);
@@ -32,6 +37,9 @@ export const LinkPublicView = ({
   const [name, setName] = useState('');
   const [done, setDone] = useState<'confirmed' | 'pending' | ''>('');
   const [error, setError] = useState('');
+  const [openFaq, setOpenFaq] = useState('');
+  const [slide, setSlide] = useState<Record<string, number>>({});
+  const [opened, setOpened] = useState<Record<string, string>>({});
   const open = unlocked || dismissed || !data.sensitive || !data.isPublic;
 
   const style =
@@ -191,21 +199,123 @@ export const LinkPublicView = ({
                 </div>
               );
             }
+            if (block.type === 'TEXT') {
+              return <RichText key={block.id} value={block.body} />;
+            }
+            if (block.type === 'EMBED' && block.embed) {
+              return (
+                <div key={block.id} className="lib-embed" data-provider={block.embed.provider}>
+                  <iframe
+                    src={block.embed.src}
+                    title={block.title || `${block.embed.provider} embed`}
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                </div>
+              );
+            }
+            if (block.type === 'FAQ') {
+              return (
+                <div key={block.id} className="lib-faq">
+                  {block.title ? <strong>{block.title}</strong> : null}
+                  {block.faq.map((item, index) => {
+                    const id = `${block.id}-${index}`;
+                    const open = openFaq === id;
+                    return (
+                      <div key={id}>
+                        <button type="button" aria-expanded={open} onClick={() => setOpenFaq(open ? '' : id)}>
+                          {item.question}
+                        </button>
+                        {open ? <p>{item.answer}</p> : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }
+            if (block.type === 'IMAGE_CAROUSEL' && block.images.length) {
+              const index = slide[block.id] || 0;
+              const image = block.images[index % block.images.length];
+              const move = (delta: number) =>
+                setSlide({ ...slide, [block.id]: (index + delta + block.images.length) % block.images.length });
+              return (
+                <div key={block.id} className="lib-carousel">
+                  <img src={image.path} alt={image.alt || ''} />
+                  {block.images.length > 1 ? (
+                    <div className="lib-carousel-nav">
+                      <button type="button" aria-label="Previous image" onClick={() => move(-1)}>
+                        ‹
+                      </button>
+                      <span>
+                        {index + 1} / {block.images.length}
+                      </span>
+                      <button type="button" aria-label="Next image" onClick={() => move(1)}>
+                        ›
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            }
+            if (block.type === 'CONTACT_FORM' && block.form) {
+              return (
+                <ContactCard
+                  key={block.id}
+                  blockId={block.id}
+                  form={block.form}
+                  preview={mode === 'preview'}
+                  onContact={onContact}
+                />
+              );
+            }
             if (block.type === 'LINK') {
-              return mode === 'preview' ? (
-                <div key={block.id} className={block.priority ? 'lib-link priority' : 'lib-link'}>
-                  {block.title}
+              const href = opened[block.id] || block.url;
+              const className = ['lib-link', block.priority ? 'priority' : '', block.spotlight ? 'spotlight' : '']
+                .filter(Boolean)
+                .join(' ');
+              const face = (
+                <>
+                  {block.thumbnail ? <img className="lib-thumb" src={block.thumbnail} alt="" /> : null}
+                  <span>{block.title}</span>
+                </>
+              );
+              if (block.lock !== 'NONE' && !href) {
+                return (
+                  <LockCard
+                    key={block.id}
+                    blockId={block.id}
+                    title={block.title}
+                    thumbnail={block.thumbnail}
+                    spotlight={block.spotlight}
+                    priority={block.priority}
+                    lock={block.lock}
+                    preview={mode === 'preview'}
+                    onUnlock={async (input) => {
+                      if (mode === 'preview' || !onUnlock) {
+                        setOpened({ ...opened, [block.id]: 'preview' });
+                        return;
+                      }
+                      const url = await onUnlock(block.id, input);
+                      setOpened({ ...opened, [block.id]: url });
+                    }}
+                  />
+                );
+              }
+              return mode === 'preview' || href === 'preview' ? (
+                <div key={block.id} className={className}>
+                  {face}
                 </div>
               ) : (
                 <a
                   key={block.id}
-                  className={block.priority ? 'lib-link priority' : 'lib-link'}
-                  href={block.url}
+                  className={className}
+                  href={href}
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => onClick?.(block.id)}
                 >
-                  {block.title}
+                  {face}
                 </a>
               );
             }
@@ -218,6 +328,188 @@ export const LinkPublicView = ({
           </a>
         ) : null}
       </div>
+    </div>
+  );
+};
+
+const RichText = ({ value }: { value: string }) => (
+  <div className="lib-text">
+    {parseRichText(value).map((part, index) => {
+      if (part.type === 'break') {
+        return <br key={index} />;
+      }
+      if (part.type === 'bold') {
+        return <strong key={index}>{part.text}</strong>;
+      }
+      if (part.type === 'italic') {
+        return <em key={index}>{part.text}</em>;
+      }
+      if (part.type === 'link') {
+        return (
+          <a key={index} href={part.href} target="_blank" rel="noreferrer">
+            {part.text}
+          </a>
+        );
+      }
+      return <span key={index}>{part.text}</span>;
+    })}
+  </div>
+);
+
+const ContactCard = ({
+  blockId,
+  form,
+  preview,
+  onContact,
+}: {
+  blockId: string;
+  form: NonNullable<PublicLink['blocks'][number]['form']>;
+  preview: boolean;
+  onContact?: (blockId: string, input: { email: string; name: string; message: string; website: string }) => Promise<void>;
+}) => {
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const [website, setWebsite] = useState('');
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError('');
+    if (preview || !onContact) {
+      setDone(true);
+      return;
+    }
+    try {
+      await onContact(blockId, { email, name, message, website });
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send that');
+    }
+  };
+  return (
+    <div className="lib-capture">
+      <strong>{form.heading}</strong>
+      {form.consent ? <p>{form.consent}</p> : null}
+      {done ? (
+        <p className="lib-ok">Message sent</p>
+      ) : (
+        <form onSubmit={submit}>
+          {form.askName ? (
+            <input aria-label="Name" placeholder="Your name" value={name} onChange={(event) => setName(event.target.value)} />
+          ) : null}
+          <input
+            type="email"
+            required
+            aria-label="Email"
+            placeholder="you@email.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          <textarea
+            required
+            aria-label="Message"
+            placeholder="Message"
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+          />
+          <label className="lib-honey">
+            Website
+            <input tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
+          </label>
+          {error ? <p>{error}</p> : null}
+          <button className="lib-subscribe" type="submit">
+            {form.button || 'Send'}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+};
+
+const LockCard = ({
+  blockId,
+  title,
+  thumbnail,
+  spotlight,
+  priority,
+  lock,
+  preview,
+  onUnlock,
+}: {
+  blockId: string;
+  title: string;
+  thumbnail: string;
+  spotlight: boolean;
+  priority: boolean;
+  lock: 'AGE' | 'EMAIL' | 'PASSWORD';
+  preview: boolean;
+  onUnlock: (input: { age?: boolean; email?: string; name?: string; password?: string }) => Promise<void>;
+}) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [open, setOpen] = useState(false);
+  const className = ['lib-link', priority ? 'priority' : '', spotlight ? 'spotlight' : ''].filter(Boolean).join(' ');
+  const submit = async (input: { age?: boolean; email?: string; password?: string }) => {
+    setError('');
+    try {
+      await onUnlock(input);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open that link');
+    }
+  };
+  return (
+    <div className="lib-lock">
+      <button type="button" className={className} onClick={() => (lock === 'AGE' ? submit({ age: true }) : setOpen(true))}>
+        {thumbnail ? <img className="lib-thumb" src={thumbnail} alt="" /> : null}
+        <span>{title}</span>
+      </button>
+      {open && lock === 'EMAIL' ? (
+        <form
+          className="lib-lock-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit({ email });
+          }}
+        >
+          <input
+            type="email"
+            required
+            aria-label="Email"
+            placeholder="you@email.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          <button className="lib-subscribe" type="submit">
+            Continue
+          </button>
+        </form>
+      ) : null}
+      {open && lock === 'PASSWORD' ? (
+        <form
+          className="lib-lock-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit({ password });
+          }}
+        >
+          <input
+            type="password"
+            required
+            aria-label="Password"
+            placeholder="Password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <button className="lib-subscribe" type="submit">
+            Unlock
+          </button>
+        </form>
+      ) : null}
+      {preview && open ? <p className="lib-lock-note">Visitors unlock this on the live page.</p> : null}
+      {error ? <p className="lib-lock-note">{error}</p> : null}
+      <span className="sr-only">{blockId}</span>
     </div>
   );
 };

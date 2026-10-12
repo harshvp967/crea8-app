@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import { formatRate } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
-import { useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { LinkRequestError, useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 
 const ranges = [
   { id: '7d', label: '7 days' },
@@ -38,9 +42,15 @@ const Chart = ({ series }: { series: Array<{ views: number }> }) => {
 };
 
 export const LinkAnalyticsScreen = () => {
+  const fetch = useFetch();
+  const toast = useToaster();
   const page = useLinkPage();
   const [range, setRange] = useState('30d');
-  const { data, error, isLoading } = useLinkAnalytics(range);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [applied, setApplied] = useState({ from: '', to: '' });
+  const [busy, setBusy] = useState(false);
+  const { data, error, isLoading } = useLinkAnalytics(applied.from ? 'custom' : range, applied.from, applied.to);
   const host = page.data ? `${page.data.publicOrigin.replace(/^https?:\/\//, '')}/${page.data.slug}` : '';
 
   return (
@@ -50,21 +60,77 @@ export const LinkAnalyticsScreen = () => {
           <h1 className="text-[22px] font-[600]">Analytics</h1>
           <p className="text-[14px] text-textItemBlur">{host}</p>
         </div>
-        <div className="flex flex-wrap gap-[6px]">
+        <div className="flex flex-wrap items-center gap-[6px]">
           {ranges.map((item) => (
             <button
               key={item.id}
               type="button"
               className={
-                range === item.id
+                !applied.from && range === item.id
                   ? 'h-[36px] rounded-[18px] border border-[rgba(0,217,255,.45)] px-[12px] text-[14px] text-[#00D9FF]'
                   : 'h-[36px] rounded-[18px] border border-transparent px-[12px] text-[14px] text-textItemBlur'
               }
-              onClick={() => setRange(item.id)}
+              onClick={() => {
+                setRange(item.id);
+                setApplied({ from: '', to: '' });
+              }}
             >
               {item.label}
             </button>
           ))}
+          <input className="h-[36px] rounded-[14px] border border-newBorder bg-transparent px-[8px] text-[13px]" type="date" aria-label="From" value={from} onChange={(event) => setFrom(event.target.value)} />
+          <input className="h-[36px] rounded-[14px] border border-newBorder bg-transparent px-[8px] text-[13px]" type="date" aria-label="To" value={to} onChange={(event) => setTo(event.target.value)} />
+          <button
+            type="button"
+            className={linkSecondary}
+            onClick={() => {
+              if (!page.data?.paid) {
+                toast.show('A custom date range is on a paid plan', 'warning');
+                return;
+              }
+              if (!from || !to) {
+                toast.show('Choose a start and end date', 'warning');
+                return;
+              }
+              setApplied({ from, to });
+            }}
+          >
+            Apply
+          </button>
+          <button
+            type="button"
+            className={linkSecondary}
+            disabled={busy}
+            onClick={async () => {
+              if (!page.data?.paid) {
+                toast.show('Analytics export is on a paid plan', 'warning');
+                return;
+              }
+              setBusy(true);
+              try {
+                const response = await fetch(
+                  `/link-in-bio/analytics.csv?range=${encodeURIComponent(range)}&from=${encodeURIComponent(applied.from)}&to=${encodeURIComponent(applied.to)}`,
+                  { headers: { Accept: 'text/csv' } }
+                );
+                if (!response.ok) {
+                  throw new LinkRequestError('Could not export analytics', response.status);
+                }
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'crea8-analytics.csv';
+                link.click();
+                URL.revokeObjectURL(url);
+              } catch (err) {
+                toast.show(err instanceof Error ? err.message : 'Could not export analytics', 'warning');
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Export CSV
+          </button>
         </div>
       </div>
 
@@ -131,6 +197,51 @@ export const LinkAnalyticsScreen = () => {
             <ShareList title="Traffic sources" empty="No data yet" rows={data.sources.map((row) => ({ label: row.source, share: row.share }))} />
             <ShareList title="Countries" empty="No data yet" rows={data.countries.map((row) => ({ label: row.name || row.code, share: row.share }))} />
           </div>
+
+          {data.deep ? (
+            <div className="grid grid-cols-1 gap-[12px] lg:grid-cols-2">
+              <section className="rounded-[20px] border border-newBorder p-[16px]">
+                <h2 className="mb-[8px] text-[16px] font-[600]">Click-through by link</h2>
+                {data.deep.links.length ? (
+                  <table className="lib-table">
+                    <thead>
+                      <tr>
+                        <th>Link</th>
+                        <th>Clicks</th>
+                        <th>CTR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.deep.links.map((link) => (
+                        <tr key={link.id}>
+                          <td data-label="Link">{link.title}</td>
+                          <td data-label="Clicks">{link.clicks.toLocaleString('en-US')}</td>
+                          <td data-label="CTR">{formatRate(link.ctr)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-[14px] text-textItemBlur">No links yet</p>
+                )}
+              </section>
+              <div className="grid grid-cols-1 gap-[12px]">
+                <ShareList title="Devices" empty="No data yet" rows={data.deep.devices} />
+                <ShareList title="Browsers" empty="No data yet" rows={data.deep.browsers} />
+                <ShareList title="UTM" empty="No UTM visits yet" rows={data.deep.utm} />
+              </div>
+            </div>
+          ) : (
+            <section className="rounded-[20px] border border-newBorder p-[16px]">
+              <h2 className="text-[16px] font-[600]">Device, browser and UTM</h2>
+              <p className="mt-[6px] text-[14px] text-textItemBlur">
+                Per-link CTR, device, browser, UTM and CSV export are on a paid plan.{' '}
+                <Link href="/billing" className="text-[#00D9FF]">
+                  Upgrade
+                </Link>
+              </p>
+            </section>
+          )}
         </>
       )}
     </div>

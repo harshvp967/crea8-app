@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { presentPublicBlock } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 export type LinkPostCard = {
   id: string;
@@ -12,9 +13,24 @@ export type LinkPostCard = {
   url: string;
 };
 
+export type LinkBlockType =
+  | 'LINK'
+  | 'FEATURED_POST'
+  | 'EMAIL_CAPTURE'
+  | 'HEADING'
+  | 'EMBED'
+  | 'TEXT'
+  | 'FAQ'
+  | 'IMAGE_CAROUSEL'
+  | 'CONTACT_FORM';
+
+export type LinkFaq = { question: string; answer: string };
+export type LinkImage = { path: string; alt: string };
+export type LinkForm = { heading: string; button: string; consent: string; askName: boolean };
+
 export type LinkBlock = {
   id: string;
-  type: 'LINK' | 'FEATURED_POST' | 'EMAIL_CAPTURE' | 'HEADING';
+  type: LinkBlockType;
   position: number;
   enabled: boolean;
   title: string;
@@ -26,6 +42,14 @@ export type LinkBlock = {
   postId: string | null;
   state: 'live' | 'scheduled' | 'ended' | 'hidden';
   clicks: number;
+  thumbnail: string;
+  iconMode: string;
+  spotlight: boolean;
+  body: string;
+  lock: { type: 'NONE' | 'AGE' | 'EMAIL' | 'PASSWORD'; hasPassword: boolean };
+  faq: LinkFaq[];
+  images: LinkImage[];
+  form: LinkForm | null;
   post: LinkPostCard | null;
 };
 
@@ -73,6 +97,11 @@ export type LinkEditor = {
     notify: boolean;
   };
   socials: Array<{ network: string; url: string }>;
+  integrations: {
+    mailchimp: { connected: boolean; audience: string; hint: string };
+    convertkit: { connected: boolean; form: string; hint: string };
+    webhook: { url: string; hasSecret: boolean };
+  };
   blocks: LinkBlock[];
 };
 
@@ -99,14 +128,11 @@ export type PublicLink = {
     consent: string;
     askName: boolean;
   } | null;
-  blocks: Array<{
-    id: string;
-    type: LinkBlock['type'];
-    title: string;
-    url: string;
-    priority: boolean;
-    post: LinkPostCard | null;
-  }>;
+  blocks: Array<
+    ReturnType<typeof presentPublicBlock> & {
+      post: LinkPostCard | null;
+    }
+  >;
 };
 
 export class LinkRequestError extends Error {
@@ -159,6 +185,14 @@ export type LinkAnalytics = {
   topLinks: Array<{ id: string; title: string; clicks: number; ctr: number }>;
   countries: Array<{ code: string; name: string; views: number; share: number }>;
   sources: Array<{ source: string; views: number; share: number }>;
+  from: string | null;
+  to: string | null;
+  deep: {
+    links: Array<{ id: string; title: string; clicks: number; ctr: number }>;
+    devices: Array<{ label: string; views: number; share: number }>;
+    browsers: Array<{ label: string; views: number; share: number }>;
+    utm: Array<{ label: string; views: number; share: number }>;
+  } | null;
 };
 
 export type LinkLead = {
@@ -168,6 +202,8 @@ export type LinkLead = {
   country: string;
   source: string;
   status: 'PENDING' | 'CONFIRMED';
+  kind: string;
+  message: string;
   createdAt: string;
 };
 
@@ -176,9 +212,10 @@ export type LinkLeads = {
   leads: LinkLead[];
 };
 
-export const useLinkAnalytics = (range: string) => {
+export const useLinkAnalytics = (range: string, from = '', to = '') => {
   const fetch = useFetch();
-  return useSWR<LinkAnalytics>(`/link-in-bio/analytics?range=${range}`, async (path: string) => {
+  const key = `/link-in-bio/analytics?range=${encodeURIComponent(range)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  return useSWR<LinkAnalytics>(key, async (path: string) => {
     const response = await fetch(path);
     if (!response.ok) {
       throw new Error('Could not load analytics');
@@ -239,12 +276,40 @@ export function toPublic(page: LinkEditor): PublicLink {
     socials: page.socials,
     capture: capture ? page.capture : null,
     blocks: live.map((block) => ({
-      id: block.id,
-      type: block.type,
-      title: block.title,
-      url: block.url,
-      priority: block.priority,
+      ...presentPublicBlock(
+        {
+          id: block.id,
+          type: block.type,
+          title: block.title,
+          url: block.url,
+          body: block.body,
+          priority: block.priority,
+          thumbnail: block.thumbnail,
+          iconMode: block.iconMode,
+          spotlight: block.spotlight,
+          lockType: block.lock.type,
+          payload:
+            block.type === 'FAQ'
+              ? { items: block.faq }
+              : block.type === 'IMAGE_CAROUSEL'
+              ? { images: block.images }
+              : block.form,
+        },
+        page.paid
+      ),
       post: block.post,
     })),
   };
+}
+
+export function linkCollectUrl(action: string) {
+  if (typeof window === 'undefined') {
+    return `/api/link/${action}`;
+  }
+  const host = window.location.hostname;
+  if (host !== 'crea8.one' && host !== 'www.crea8.one') {
+    return `/api/link/${action}`;
+  }
+  const origin = (process.env.NEXT_PUBLIC_ASSET_PREFIX || 'https://app.crea8.one').replace(/\/$/, '');
+  return `${origin}/api/link/${action}`;
 }

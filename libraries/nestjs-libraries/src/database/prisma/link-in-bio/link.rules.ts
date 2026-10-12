@@ -583,12 +583,16 @@ export function leadsToCsv(
     slug: string;
     country: string;
     referrer: string;
+    kind?: string;
+    message?: string;
   }>
 ) {
-  const lines = [['email', 'captured_at', 'source block', 'page slug', 'country', 'referrer'].join(',')];
+  const lines = [['email', 'captured_at', 'source block', 'page slug', 'country', 'referrer', 'kind', 'message'].join(',')];
   for (const row of rows) {
     lines.push(
-      [row.email, row.capturedAt, row.sourceBlock, row.slug, row.country, row.referrer].map(csvCell).join(',')
+      [row.email, row.capturedAt, row.sourceBlock, row.slug, row.country, row.referrer, row.kind || '', row.message || '']
+        .map(csvCell)
+        .join(',')
     );
   }
   return lines.join('\n') + '\n';
@@ -639,4 +643,476 @@ export function domainRecords(input: {
 export function cnameName(hostname: string) {
   const labels = hostname.split('.');
   return labels.length > 2 ? labels[0] : '@';
+}
+
+export const LINK_BLOCK_TYPES = [
+  'LINK',
+  'FEATURED_POST',
+  'EMAIL_CAPTURE',
+  'HEADING',
+  'EMBED',
+  'TEXT',
+  'FAQ',
+  'IMAGE_CAROUSEL',
+  'CONTACT_FORM',
+] as const;
+
+export const LINK_LOCKS = ['NONE', 'AGE', 'EMAIL', 'PASSWORD'] as const;
+export type LinkLock = (typeof LINK_LOCKS)[number];
+export type EmbedProvider = 'youtube' | 'spotify' | 'soundcloud' | 'vimeo';
+export type EmbedFrame = { provider: EmbedProvider; src: string };
+
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+const SPOTIFY_KIND = new Set(['track', 'album', 'playlist', 'episode', 'show', 'artist']);
+const SPOTIFY_ID = /^[A-Za-z0-9]{10,40}$/;
+
+export type PaidFeature = 'spotlight' | 'lock' | 'integrations' | 'deepAnalytics';
+
+const PAID_COPY: Record<PaidFeature, string> = {
+  spotlight: 'Spotlight is on a paid plan',
+  lock: 'Locked links are on a paid plan',
+  integrations: 'Lead integrations are on a paid plan',
+  deepAnalytics: 'Deeper analytics are on a paid plan',
+};
+
+export function paidFeatureProblem(paid: boolean, feature: PaidFeature) {
+  return paid ? null : PAID_COPY[feature];
+}
+
+function httpUrl(raw: string) {
+  try {
+    const url = new URL((raw || '').trim());
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+    if (url.username || url.password) {
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function bareHost(hostname: string) {
+  return hostname.replace(/^www\./, '').toLowerCase();
+}
+
+export function parseEmbed(raw: string): EmbedFrame | null {
+  const url = httpUrl(raw);
+  if (!url) {
+    return null;
+  }
+  const host = bareHost(url.hostname);
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com' || host === 'youtube-nocookie.com') {
+    const parts = url.pathname.split('/').filter(Boolean);
+    let id = '';
+    if (url.pathname === '/watch' || parts[0] === 'watch') {
+      id = url.searchParams.get('v') || '';
+    } else if (['embed', 'shorts', 'live', 'v'].includes(parts[0] || '')) {
+      id = parts[1] || '';
+    }
+    if (!YOUTUBE_ID.test(id)) {
+      return null;
+    }
+    return { provider: 'youtube', src: `https://www.youtube-nocookie.com/embed/${id}` };
+  }
+  if (host === 'youtu.be') {
+    const id = url.pathname.split('/').filter(Boolean)[0] || '';
+    if (!YOUTUBE_ID.test(id)) {
+      return null;
+    }
+    return { provider: 'youtube', src: `https://www.youtube-nocookie.com/embed/${id}` };
+  }
+  if (host === 'open.spotify.com') {
+    const parts = url.pathname.split('/').filter(Boolean);
+    const start = parts[0] === 'embed' ? 1 : 0;
+    const kind = parts[start] || '';
+    const id = (parts[start + 1] || '').split('?')[0];
+    if (!SPOTIFY_KIND.has(kind) || !SPOTIFY_ID.test(id)) {
+      return null;
+    }
+    return { provider: 'spotify', src: `https://open.spotify.com/embed/${kind}/${id}` };
+  }
+  if (host === 'soundcloud.com' || host === 'm.soundcloud.com' || host === 'on.soundcloud.com') {
+    if (url.pathname.length < 2) {
+      return null;
+    }
+    const canonicalHost = host === 'on.soundcloud.com' ? 'on.soundcloud.com' : 'soundcloud.com';
+    const canonical = `https://${canonicalHost}${url.pathname}`;
+    return {
+      provider: 'soundcloud',
+      src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(canonical)}&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`,
+    };
+  }
+  if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+    const id = url.pathname.split('/').filter((part) => /^\d{6,12}$/.test(part)).pop() || '';
+    if (!id) {
+      return null;
+    }
+    return { provider: 'vimeo', src: `https://player.vimeo.com/video/${id}` };
+  }
+  return null;
+}
+
+export function embedProblem(raw: string) {
+  if (!raw.trim()) {
+    return 'Paste a YouTube, Spotify, SoundCloud or Vimeo link';
+  }
+  if (!parseEmbed(raw)) {
+    return 'Use a YouTube, Spotify, SoundCloud or Vimeo link';
+  }
+  return null;
+}
+
+export function faviconFor(linkUrl: string) {
+  const url = httpUrl(linkUrl);
+  if (!url || !url.hostname || url.hostname === 'localhost') {
+    return '';
+  }
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(url.hostname)}&sz=64`;
+}
+
+export function normalizeLock(value: string | null | undefined): LinkLock {
+  const lock = (value || 'NONE').toUpperCase();
+  return (LINK_LOCKS as readonly string[]).includes(lock) ? (lock as LinkLock) : 'NONE';
+}
+
+export function lockProblem(input: { lockType?: string; password?: string; hasHash?: boolean }) {
+  const lock = normalizeLock(input.lockType);
+  if (lock !== 'PASSWORD') {
+    return null;
+  }
+  const password = (input.password || '').trim();
+  if (!password && input.hasHash) {
+    return null;
+  }
+  if (password.length < 4 || password.length > 80) {
+    return 'Use a password between 4 and 80 characters';
+  }
+  return null;
+}
+
+export type RichPart =
+  | { type: 'text' | 'bold' | 'italic'; text: string }
+  | { type: 'break' }
+  | { type: 'link'; text: string; href: string };
+
+export function parseRichText(raw: string): RichPart[] {
+  const source = (raw || '').replace(/\r\n/g, '\n').slice(0, 4000);
+  const parts: RichPart[] = [];
+  const pushText = (text: string) => {
+    if (text) {
+      parts.push({ type: 'text', text });
+    }
+  };
+  let index = 0;
+  while (index < source.length) {
+    if (source[index] === '\n') {
+      parts.push({ type: 'break' });
+      index += 1;
+      continue;
+    }
+    const rest = source.slice(index);
+    const link = /^\[([^\]\n]{1,80})\]\((https?:\/\/[^\s)]+)\)/.exec(rest);
+    if (link && httpUrl(link[2])) {
+      parts.push({ type: 'link', text: link[1], href: httpUrl(link[2])!.toString() });
+      index += link[0].length;
+      continue;
+    }
+    const bold = /^\*\*([^*\n]{1,200})\*\*/.exec(rest);
+    if (bold) {
+      parts.push({ type: 'bold', text: bold[1] });
+      index += bold[0].length;
+      continue;
+    }
+    const italic = /^\*([^*\n]{1,200})\*/.exec(rest);
+    if (italic) {
+      parts.push({ type: 'italic', text: italic[1] });
+      index += italic[0].length;
+      continue;
+    }
+    const next = rest.slice(1).search(/[\n*[]/);
+    const take = next < 0 ? rest.length : next + 1;
+    pushText(rest.slice(0, take));
+    index += take;
+  }
+  return parts;
+}
+
+export type FaqItem = { question: string; answer: string };
+export type CarouselImage = { path: string; alt: string };
+export type ContactForm = { heading: string; button: string; consent: string; askName: boolean };
+
+function asRecord(value: unknown) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+export function normalizeFaq(payload: unknown): FaqItem[] {
+  const items = Array.isArray(payload) ? payload : asRecord(payload).items;
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  const out: FaqItem[] = [];
+  for (const item of items) {
+    const row = asRecord(item);
+    const question = String(row.question || '').trim().slice(0, 160);
+    const answer = String(row.answer || '').trim().slice(0, 800);
+    if (question && answer) {
+      out.push({ question, answer });
+    }
+    if (out.length === 12) {
+      break;
+    }
+  }
+  return out;
+}
+
+export function imagePathProblem(raw: string) {
+  const path = (raw || '').trim();
+  if (!path) {
+    return 'Add an image';
+  }
+  if (path.startsWith('/') && !path.startsWith('//')) {
+    return null;
+  }
+  return urlProblem(path);
+}
+
+export function normalizeImages(payload: unknown): CarouselImage[] {
+  const items = Array.isArray(payload) ? payload : asRecord(payload).images;
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  const out: CarouselImage[] = [];
+  for (const item of items) {
+    const row = asRecord(item);
+    const path = String(row.path || '').trim().slice(0, 2000);
+    if (imagePathProblem(path)) {
+      continue;
+    }
+    out.push({ path, alt: String(row.alt || '').trim().slice(0, 140) });
+    if (out.length === 12) {
+      break;
+    }
+  }
+  return out;
+}
+
+export function normalizeForm(input: { title?: string; body?: string; payload?: unknown }): ContactForm {
+  const payload = asRecord(input.payload);
+  return {
+    heading: (input.title || String(payload.heading || '') || 'Get in touch').trim().slice(0, 120),
+    button: (String(payload.button || 'Send') || 'Send').trim().slice(0, 40) || 'Send',
+    consent: (input.body || String(payload.consent || '')).trim().slice(0, 240),
+    askName: !!payload.askName,
+  };
+}
+
+export function contactDecision(input: { website?: string; email?: string; message?: string }) {
+  if ((input.website || '').trim()) {
+    return 'drop' as const;
+  }
+  if (emailProblem(input.email || '')) {
+    return 'invalid' as const;
+  }
+  const message = (input.message || '').trim();
+  if (!message || message.length > 2000) {
+    return 'invalid' as const;
+  }
+  return 'ok' as const;
+}
+
+export type PublicBlockInput = {
+  id: string;
+  type: string;
+  title: string;
+  url: string;
+  body?: string;
+  priority?: boolean;
+  thumbnail?: string;
+  iconMode?: string;
+  spotlight?: boolean;
+  lockType?: string;
+  payload?: unknown;
+};
+
+export function presentPublicBlock(block: PublicBlockInput, paid: boolean) {
+  const lock = block.type === 'LINK' ? normalizeLock(block.lockType) : 'NONE';
+  const locked = lock !== 'NONE';
+  const embed = block.type === 'EMBED' ? parseEmbed(block.url) : null;
+  const mode = block.iconMode === 'upload' || block.iconMode === 'favicon' ? block.iconMode : '';
+  const thumbnail =
+    block.type === 'LINK' && mode === 'upload'
+      ? (block.thumbnail || '').trim()
+      : block.type === 'LINK' && mode === 'favicon'
+      ? faviconFor(block.url)
+      : '';
+  return {
+    id: block.id,
+    type: block.type,
+    title: block.title,
+    url: block.type === 'LINK' && !locked ? block.url : '',
+    embed,
+    priority: !!block.priority,
+    spotlight: block.type === 'LINK' && !!block.spotlight && paid,
+    thumbnail,
+    lock,
+    body: block.type === 'TEXT' ? block.body || '' : '',
+    faq: block.type === 'FAQ' ? normalizeFaq(block.payload) : [],
+    images: block.type === 'IMAGE_CAROUSEL' ? normalizeImages(block.payload) : [],
+    form: block.type === 'CONTACT_FORM' ? normalizeForm(block) : null,
+  };
+}
+
+function ipv4Private(host: string) {
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!match) {
+    return false;
+  }
+  const parts = match.slice(1).map(Number);
+  if (parts.some((part) => part > 255)) {
+    return true;
+  }
+  const [a, b] = parts;
+  if (a === 0 || a === 10 || a === 127) {
+    return true;
+  }
+  if (a === 169 && b === 254) {
+    return true;
+  }
+  if (a === 172 && b >= 16 && b <= 31) {
+    return true;
+  }
+  if (a === 192 && b === 168) {
+    return true;
+  }
+  if (a === 100 && b >= 64 && b <= 127) {
+    return true;
+  }
+  return false;
+}
+
+export function webhookProblem(raw: string) {
+  const url = httpUrl(raw);
+  if (!url || url.protocol !== 'https:') {
+    return 'Use an https webhook URL';
+  }
+  const host = url.hostname.toLowerCase().replace(/\.$/, '');
+  if (
+    !host ||
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host === '::1' ||
+    ipv4Private(host)
+  ) {
+    return 'Use a public https webhook';
+  }
+  return null;
+}
+
+export function secretHint(value: string) {
+  const text = (value || '').trim();
+  if (text.length < 4) {
+    return '';
+  }
+  return `••••${text.slice(-4)}`;
+}
+
+export function cleanUtm(value: string) {
+  return (value || '').trim().replace(/[\r\n]/g, '').slice(0, 80);
+}
+
+export function captureUtm(input: {
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+}) {
+  return {
+    utmSource: cleanUtm(input.utmSource || ''),
+    utmMedium: cleanUtm(input.utmMedium || ''),
+    utmCampaign: cleanUtm(input.utmCampaign || ''),
+    utmContent: cleanUtm(input.utmContent || ''),
+    utmTerm: cleanUtm(input.utmTerm || ''),
+  };
+}
+
+export function clientLabel(userAgent: string) {
+  const ua = (userAgent || '').slice(0, 400);
+  if (!ua) {
+    return { device: '', browser: '' };
+  }
+  let device = 'desktop';
+  if (/iPad|Tablet|PlayBook|Silk/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) {
+    device = 'tablet';
+  } else if (/Mobi|iPhone|Android|Windows Phone/i.test(ua)) {
+    device = 'mobile';
+  }
+  let browser = 'Other';
+  if (/Edg\//.test(ua)) {
+    browser = 'Edge';
+  } else if (/OPR\/|Opera/.test(ua)) {
+    browser = 'Opera';
+  } else if (/Firefox\//.test(ua)) {
+    browser = 'Firefox';
+  } else if (/Chrome\//.test(ua)) {
+    browser = 'Chrome';
+  } else if (/Safari\//.test(ua)) {
+    browser = 'Safari';
+  }
+  return { device, browser };
+}
+
+export function customWindow(from: string, to: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from || '') || !/^\d{4}-\d{2}-\d{2}$/.test(to || '')) {
+    return null;
+  }
+  const start = new Date(`${from}T00:00:00.000Z`);
+  const end = new Date(`${to}T23:59:59.999Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return null;
+  }
+  const span = end.getTime() - start.getTime();
+  if (span > 366 * 86400000) {
+    return null;
+  }
+  return { from: start, to: end, previousFrom: new Date(start.getTime() - span), days: Math.max(1, Math.ceil(span / 86400000)) };
+}
+
+export function shareRows(rows: Array<{ label: string; views: number }>, limit = 8) {
+  const total = rows.reduce((sum, row) => sum + row.views, 0);
+  return [...rows]
+    .filter((row) => row.label && row.views > 0)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, limit)
+    .map((row) => ({
+      label: row.label,
+      views: row.views,
+      share: total ? Math.round((row.views / total) * 100) : 0,
+    }));
+}
+
+export function analyticsToCsv(input: {
+  links: Array<{ title: string; clicks: number; ctr: number }>;
+  devices: Array<{ label: string; views: number; share: number }>;
+  browsers: Array<{ label: string; views: number; share: number }>;
+  utm: Array<{ label: string; views: number; share: number }>;
+}) {
+  const lines = ['kind,label,views,clicks,ctr,share'];
+  for (const link of input.links) {
+    lines.push(['link', link.title, '', String(link.clicks), formatRate(link.ctr), ''].map(csvCell).join(','));
+  }
+  for (const row of input.devices) {
+    lines.push(['device', row.label, String(row.views), '', '', `${row.share}%`].map(csvCell).join(','));
+  }
+  for (const row of input.browsers) {
+    lines.push(['browser', row.label, String(row.views), '', '', `${row.share}%`].map(csvCell).join(','));
+  }
+  for (const row of input.utm) {
+    lines.push(['utm', row.label, String(row.views), '', '', `${row.share}%`].map(csvCell).join(','));
+  }
+  return lines.join('\n') + '\n';
 }
