@@ -8822,8 +8822,19 @@ body.composer-open .app-toast.is-error {
   display: none !important;
 }
 
+.composer .po-split .po-split-main:disabled + .po-split-chevron {
+  display: flex !important;
+  opacity: 1 !important;
+  background: #00d9ff !important;
+  color: #0a0a0a !important;
+}
+
+.po-split:has(.po-spin) .po-split-main,
 .po-split:has(.po-spin) .po-split-chevron {
-  opacity: 0.45;
+  opacity: 1 !important;
+}
+
+.po-split:has(.po-spin) .po-split-chevron {
   pointer-events: none;
   cursor: not-allowed;
 }
@@ -8832,8 +8843,10 @@ body.composer-open .app-toast.is-error {
   transform: none !important;
 }
 
-.po-assist {
-  font-family: 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif;
+.po-assist,
+.po-assist.copilotKitPopup,
+.po-assist.copilotKitPopup * {
+  font-family: 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif !important;
 }
 
 .po-assist.copilotKitPopup {

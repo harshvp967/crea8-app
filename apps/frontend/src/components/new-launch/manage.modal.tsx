@@ -778,6 +778,14 @@ Here are the things you can do:
 Post content can be added using the addPostContentFor{num} function.
 After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} function.
 `}
+        icons={{
+          sendIcon: (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M21 3 10.5 13.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              <path d="M21 3 14.5 21l-4-7.5L3 9.5 21 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+            </svg>
+          ),
+        }}
         labels={{
           title: t('composer_assistant_title', 'Your Assistant'),
           initial: t(
