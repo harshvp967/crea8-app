@@ -8408,6 +8408,71 @@ body.composer-open .app-toast.is-error {
   padding-top: 8px;
 }
 
+/* Desktop and tablet only. Phone keeps the max-width:767px rules below.
+   EditorWrapper is a row-flex item (`#social-content .flex-1.flex > .relative`).
+   With flex-basis:auto and no width it sizes to max-content, so a short post
+   collapses the card, thread cards, and add-comment row to ~150px. */
+@media (min-width: 768px) {
+  #social-content .flex-1.flex > .relative {
+    flex: 1 1 auto;
+    align-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .composer-editor .po-editor-shell .min-h-\[64px\] {
+    min-height: 120px;
+    padding: 14px 16px;
+  }
+
+  .composer-editor .po-editor-tools {
+    min-height: 48px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .composer-editor .editor-toolbar {
+    gap: 2px;
+  }
+
+  .composer .composer-editor .editor-toolbar > div {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    flex: none;
+  }
+
+  .composer-editor .po-attach {
+    gap: 6px;
+    padding: 8px 10px;
+    align-items: center;
+  }
+
+  .composer-editor .po-attach .b2 {
+    gap: 6px;
+  }
+
+  .composer .composer-editor .po-attach .b2 .cursor-pointer {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 18px;
+  }
+
+  .composer-editor .po-attach .b2 .cursor-pointer .text-\[10px\] {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .composer-editor .po-attach .maxMedia\:hidden,
+  .composer-editor .po-attach .iconBreak\:hidden {
+    display: block !important;
+  }
+}
+
 @media (max-width: 767px) {
   .composer {
     padding: 0 !important;
