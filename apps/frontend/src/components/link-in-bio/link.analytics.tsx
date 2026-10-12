@@ -265,6 +265,8 @@ export const LinkAnalyticsScreen = () => {
             )}
           </section>
 
+          {data.views === 0 && data.clicks === 0 ? null : (
+          <>
           <div className="grid min-w-0 grid-cols-1 gap-[12px] md:grid-cols-3">
             <section className={stkCard}>
               <h2 className="mb-[8px] text-[16px] font-[600] tracking-[-0.02em]">Top links</h2>
@@ -340,6 +342,8 @@ export const LinkAnalyticsScreen = () => {
                 </Link>
               </p>
             </section>
+          )}
+          </>
           )}
         </>
       )}
