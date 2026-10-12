@@ -1,11 +1,14 @@
 import {
   analyticsToCsv,
+  applyVisitorRules,
   blockState,
   buildAnalytics,
   captureUtm,
   clientLabel,
   contactDecision,
   customWindow,
+  designProKind,
+  dobProblem,
   domainProblem,
   emailProblem,
   embedProblem,
@@ -14,12 +17,20 @@ import {
   formatRate,
   isPaidPlan,
   hasCustomDomainAddon,
+  knownRange,
   leadsToCsv,
+  linkFeatureOpen,
+  linkIsHidden,
+  LINK_PLAN_GATING_ENABLED,
   lockProblem,
   mapHostnameStatus,
+  mapProblem,
+  normalizeDesign,
   pageUrl,
   paidFeatureProblem,
+  parseCalendly,
   parseEmbed,
+  parseMap,
   parseRichText,
   presentPublicBlock,
   rangeWindow,
@@ -352,5 +363,80 @@ describe('link-in-bio deeper analytics rules', () => {
     expect(csv).toContain('"Shop, now"');
     expect(csv).toContain('device,mobile,8,,,80%');
     expect(csv).toContain('utm,instagram / story / spring,3,,,30%');
+  });
+
+  it('maps the preset ranges and keeps a year of history', () => {
+    expect(rangeWindow('7d').days).toBe(7);
+    expect(rangeWindow('28d').days).toBe(28);
+    expect(rangeWindow('90d').days).toBe(90);
+    expect(rangeWindow('365d').days).toBe(365);
+    expect(rangeWindow('12m').days).toBe(365);
+    expect(knownRange('nope')).toBe('28d');
+  });
+});
+
+describe('link-in-bio v3 design, embeds and visitor rules', () => {
+  it('keeps paid features open while the gating flag is off', () => {
+    expect(linkFeatureOpen(null)).toBe(!LINK_PLAN_GATING_ENABLED);
+    expect(linkFeatureOpen({ subscriptionTier: 'FREE' })).toBe(!LINK_PLAN_GATING_ENABLED);
+    expect(linkFeatureOpen({ subscriptionTier: 'PRO' })).toBe(true);
+    expect(isPaidPlan({ subscriptionTier: 'FREE' })).toBe(false);
+  });
+
+  it('marks pro themes, blur wallpaper and glass buttons', () => {
+    const classic = normalizeDesign({ header: 'classic', wallpaper: 'fill', buttonFill: 'solid' });
+    expect(designProKind('midnight', classic)).toBeNull();
+    expect(designProKind('midnight', normalizeDesign({ header: 'hero' }))).toBe('layout');
+    expect(designProKind('midnight', normalizeDesign({ wallpaper: 'blur' }))).toBe('wallpaper');
+    expect(designProKind('midnight', normalizeDesign({ buttonFill: 'glass' }))).toBe('button');
+    expect(designProKind('aurora', classic)).toBe('theme');
+    expect(normalizeDesign({}).titleMode).toBe('text');
+  });
+
+  it('turns official post and booking URLs into embeds', () => {
+    expect(parseEmbed('https://www.instagram.com/p/Abcde12/')?.src).toBe('https://www.instagram.com/p/Abcde12/embed');
+    expect(parseEmbed('https://www.tiktok.com/@crea8/video/1234567890123456789')?.provider).toBe('tiktok');
+    expect(parseEmbed('https://x.com/crea8/status/1234567890')?.src).toContain('id=1234567890');
+    expect(parseEmbed('https://www.threads.net/@crea8/post/Abcde12')?.src).toBe(
+      'https://www.threads.net/@crea8/post/Abcde12/embed'
+    );
+    expect(parseEmbed('https://vm.tiktok.com/short')).toBeNull();
+    expect(embedProblem('https://example.com')).toMatch(/YouTube/);
+    expect(parseMap('https://www.google.com/maps/place/Crea8+Studio')?.src).toContain('output=embed');
+    expect(parseMap('https://maps.app.goo.gl/abc')).toBeNull();
+    expect(mapProblem('https://maps.app.goo.gl/abc')).toMatch(/Google Maps/);
+    expect(parseCalendly('https://calendly.com/crea8/intro')?.src).toContain('hide_gdpr_banner=1');
+    expect(parseCalendly('https://cal.com/crea8')).toBeNull();
+  });
+
+  it('applies the first matching visitor rule and checks a date of birth', () => {
+    const rules = [
+      { country: 'IN', platform: '', language: '', action: 'hide' as const, title: '', url: '' },
+      { country: 'US', platform: 'Instagram', language: 'en', action: 'title' as const, title: 'Shop the drop', url: '' },
+    ];
+    expect(applyVisitorRules(rules, { country: 'IN', platform: 'Direct', language: 'en' }).action).toBe('hide');
+    expect(applyVisitorRules(rules, { country: 'US', platform: 'Instagram', language: 'en-US' }).title).toBe('Shop the drop');
+    expect(applyVisitorRules(rules, { country: 'US', platform: 'X', language: 'en' }).action).toBe('none');
+    expect(linkIsHidden({ rules }, { country: 'IN', platform: '', language: '' })).toBe(true);
+    const hidden = presentPublicBlock(
+      {
+        id: 'b1',
+        type: 'LINK',
+        title: 'Shop',
+        url: 'https://example.com/drop',
+        lockType: 'NONE',
+        payload: { rules, priorityMode: 'redirect', animation: 'wiggle', layout: 'featured' },
+      },
+      false,
+      { country: 'BR', platform: 'Direct', language: 'pt' }
+    );
+    expect(hidden.url).toBe('https://example.com/drop');
+    expect(hidden.animation).toBe('none');
+    expect(hidden.layout).toBe('classic');
+    expect(hidden.priorityMode).toBe('none');
+    expect(dobProblem('2015-01-01', 18, new Date('2026-10-12T00:00:00.000Z'))).toMatch(/18/);
+    expect(dobProblem('1990-01-01', 18, new Date('2026-10-12T00:00:00.000Z'))).toBeNull();
+    expect(lockProblem({ lockType: 'CODE', password: 'open' })).toBeNull();
+    expect(lockProblem({ lockType: 'SENSITIVE' })).toBeNull();
   });
 });

@@ -194,6 +194,23 @@ export abstract class SocialAbstract {
   abstract identifier: string;
   maxConcurrentJob = 1;
 
+  // Public profile for Link-in-Bio icons. Providers that have a public page
+  // override this. The same Integration row is what Schedule and Stalker use.
+  linkProfile(_integration: {
+    profile?: string | null;
+    internalId?: string | null;
+  }): { network: string; url: string } | null {
+    return null;
+  }
+
+  protected socialHandle(profile?: string | null) {
+    const value = (profile || '').trim().replace(/^@/, '');
+    if (!value || value.length > 80 || /[\s<>"'`]/.test(value)) {
+      return '';
+    }
+    return value;
+  }
+
   public handleErrors(
     body: string,
     status: number

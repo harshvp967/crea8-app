@@ -32,6 +32,10 @@ export const META_GRAPH_API_VERSION = 'v25.0';
 )
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'facebook', url: `https://www.facebook.com/${handle}` } : null;
+  }
   name = 'Facebook Page';
   isBetweenSteps = true;
   stalkerComments = { filter: 'FACEBOOK_COMMENT', label: 'Facebook comments' };

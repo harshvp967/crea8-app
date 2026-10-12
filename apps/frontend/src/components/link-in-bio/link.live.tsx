@@ -24,6 +24,13 @@ export const LinkLive = ({ initial, gated }: { initial: PublicLink; gated: boole
   const shown = data.isPublic && (!gated || unlocked);
 
   useEffect(() => {
+    if (!shown || !data.redirectUrl) {
+      return;
+    }
+    window.location.assign(data.redirectUrl);
+  }, [shown, data.redirectUrl]);
+
+  useEffect(() => {
     if (!shown || tracked.current) {
       return;
     }

@@ -164,6 +164,10 @@ type XPendingData = {
 )
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'x', url: `https://x.com/${handle}` } : null;
+  }
   name = 'X';
   isBetweenSteps = false;
   scopes = [] as string[];

@@ -235,6 +235,13 @@ type BlueskyPendingData = {
 export class BlueskyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 2; // Bluesky has moderate rate limits
   identifier = 'bluesky';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    if (!handle || handle.startsWith('did:')) {
+      return null;
+    }
+    return { network: 'bluesky', url: `https://bsky.app/profile/${handle}` };
+  }
   name = 'Bluesky';
   toolTip =
     'We don’t currently support two-factor authentication. If it’s enabled on Bluesky, you’ll need to disable it.';

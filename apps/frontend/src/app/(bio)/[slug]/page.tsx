@@ -1,13 +1,13 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { slugProblem } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
-import { loadPublicLink, presentPublicLink } from '@gitroom/frontend/components/link-in-bio/link.load';
+import { loadPublicLink, presentPublicLink, visitorSearch } from '@gitroom/frontend/components/link-in-bio/link.load';
 import { LinkLive } from '@gitroom/frontend/components/link-in-bio/link.live';
 
-export const revalidate = 60;
-
-async function load(slug: string) {
-  return loadPublicLink(`/public/link/${encodeURIComponent(slug)}`, 60);
+async function load(slug: string, personalized = false) {
+  const query = personalized ? visitorSearch(await headers()) : '';
+  return loadPublicLink(`/public/link/${encodeURIComponent(slug)}${query}`);
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -38,7 +38,7 @@ export default async function PublicLinkPage(props: { params: Promise<{ slug: st
   if (slugProblem(lower)) {
     notFound();
   }
-  const page = await load(lower);
+  const page = await load(lower, true);
   if (!page) {
     notFound();
   }

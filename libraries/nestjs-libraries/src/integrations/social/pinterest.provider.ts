@@ -52,6 +52,10 @@ export class PinterestProvider
   implements SocialProvider
 {
   identifier = 'pinterest';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'pinterest', url: `https://www.pinterest.com/${handle}/` } : null;
+  }
   name = 'Pinterest';
   isBetweenSteps = false;
   scopes = [

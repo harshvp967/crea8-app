@@ -31,6 +31,10 @@ export class InstagramProvider
   implements SocialProvider
 {
   identifier = 'instagram';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'instagram', url: `https://www.instagram.com/${handle}/` } : null;
+  }
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
   stalkerComments = { filter: 'INSTAGRAM_COMMENT', label: 'Instagram comments' };

@@ -26,7 +26,21 @@ export async function GET(request: NextRequest, props: { params: Promise<{ actio
   const path = host
     ? `/public/link/host/${encodeURIComponent(host)}`
     : `/public/link/${encodeURIComponent(slug)}`;
-  const response = await fetch(`${base}${path}`, { cache: 'no-store' });
+  const visitor = new URLSearchParams();
+  const countryCode = country(request);
+  const language = (request.headers.get('accept-language') || '').split(',')[0]?.trim() || '';
+  const referrer = request.headers.get('referer') || '';
+  if (countryCode) {
+    visitor.set('country', countryCode);
+  }
+  if (language) {
+    visitor.set('language', language.slice(0, 35));
+  }
+  if (referrer) {
+    visitor.set('referrer', referrer.slice(0, 300));
+  }
+  const query = visitor.toString();
+  const response = await fetch(`${base}${path}${query ? `?${query}` : ''}`, { cache: 'no-store' });
   const data = await response.json().catch(() => null);
   return NextResponse.json(data, { status: response.ok ? 200 : response.status });
 }

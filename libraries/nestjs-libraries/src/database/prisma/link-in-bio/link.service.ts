@@ -10,6 +10,7 @@ import { Prisma } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/services/cloudflare.custom-hostname.service';
+import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
   openIntegrationSecret,
   sealIntegrationSecret,
@@ -20,15 +21,20 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.repository';
 import {
   LINK_BLOCK_CAP,
+  LINK_PLAN_GATING_ENABLED,
   analyticsToCsv,
   blockState,
   buildAnalytics,
+  calendlyProblem,
   captureUtm,
   cleanCountry,
   clientLabel,
   contactDecision,
   countryName,
   customWindow,
+  designProKind,
+  detailsProblem,
+  dobProblem,
   domainProblem,
   domainRecords,
   emailProblem,
@@ -39,11 +45,23 @@ import {
   imagePathProblem,
   isPaidPlan,
   isValidTimeZone,
+  knownRange,
   leadsToCsv,
+  linkDomainOpen,
+  linkFeatureOpen,
+  linkIsHidden,
+  linkProKind,
   lockProblem,
+  mapProblem,
+  normalizeDesign,
+  normalizeDetails,
+  normalizeDiscount,
+  normalizeEvents,
   normalizeFaq,
   normalizeForm,
   normalizeImages,
+  normalizeLinkExtras,
+  normalizeVisitor,
   pageUrl,
   paidFeatureProblem,
   plainText,
@@ -60,6 +78,7 @@ import {
   slugProblem,
   sourceLabel,
   suggestSlug,
+  themeIsPro,
   urlProblem,
   utcDay,
   webhookProblem,
@@ -90,7 +109,8 @@ export class LinkService {
   constructor(
     private _repository: LinkRepository,
     private _cloudflare: CloudflareCustomHostnameService,
-    private _email: EmailService
+    private _email: EmailService,
+    private _integrations: IntegrationManager
   ) {}
 
   async page(org: PlanOrg, timezone?: string) {
@@ -100,11 +120,23 @@ export class LinkService {
 
   async update(org: PlanOrg, body: UpdateLinkPageDto) {
     const record = await this.ensure(org);
-    if (body.hideBadge && !isPaidPlan(record.organization.subscription)) {
+    if (body.hideBadge && !linkFeatureOpen(record.organization.subscription)) {
       throw new HttpException(
         { message: 'Removing the badge is on a paid plan', upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
       );
+    }
+    const design = body.design
+      ? normalizeDesign({ ...(record.design as object), ...body.design, colors: { ...((record.design as { colors?: object })?.colors || {}), ...(body.design.colors || {}) } })
+      : undefined;
+    if (design) {
+      const kind = designProKind(body.theme || record.theme, design);
+      if (kind && !linkFeatureOpen(record.organization.subscription)) {
+        throw new HttpException({ message: paidFeatureProblem(false, kind), upgrade: true }, HttpStatus.PAYMENT_REQUIRED);
+      }
+    }
+    if (body.theme && themeIsPro(body.theme) && !linkFeatureOpen(record.organization.subscription)) {
+      throw new HttpException({ message: paidFeatureProblem(false, 'theme'), upgrade: true }, HttpStatus.PAYMENT_REQUIRED);
     }
     if (body.timezone && !isValidTimeZone(body.timezone)) {
       throw new BadRequestException('Choose a valid timezone');
@@ -115,7 +147,7 @@ export class LinkService {
           .filter((item) => item.url && !urlProblem(item.url))
       : undefined;
     const next = await this._repository.update(record.id, {
-      ...(body.name !== undefined ? { name: body.name.trim() } : {}),
+      ...(body.name !== undefined ? { name: body.name.trim().slice(0, 30) } : {}),
       ...(body.bio !== undefined ? { bio: body.bio.trim() } : {}),
       ...(body.avatarPath !== undefined ? { avatarPath: body.avatarPath.trim() } : {}),
       ...(body.theme !== undefined ? { theme: body.theme } : {}),
@@ -137,6 +169,7 @@ export class LinkService {
       ...(body.captureDoubleOptIn !== undefined ? { captureDoubleOptIn: body.captureDoubleOptIn } : {}),
       ...(body.captureNotify !== undefined ? { captureNotify: body.captureNotify } : {}),
       ...(socials ? { socials } : {}),
+      ...(design ? { design: design as Prisma.InputJsonValue } : {}),
     });
     return this.toEditor(next);
   }
@@ -218,6 +251,21 @@ export class LinkService {
     if (!id && type === 'CONTACT_FORM' && !(body.title || '').trim()) {
       throw new BadRequestException('Add a heading');
     }
+    if (!id && type === 'MAP' && mapProblem(body.url || '')) {
+      throw new BadRequestException(mapProblem(body.url || ''));
+    }
+    if (!id && type === 'CALENDLY' && calendlyProblem(body.url || '')) {
+      throw new BadRequestException(calendlyProblem(body.url || ''));
+    }
+    if (!id && type === 'CONTACT_DETAILS' && detailsProblem(normalizeDetails({ details: this.detailInput(body) }))) {
+      throw new BadRequestException('Add at least one contact detail');
+    }
+    if (!id && type === 'DISCOUNT' && !(body.discountCode || body.title || '').trim()) {
+      throw new BadRequestException('Add a discount code');
+    }
+    if (!id && type === 'EVENTS' && !normalizeEvents({ events: body.events || [] }).length) {
+      throw new BadRequestException('Add at least one event');
+    }
     const data = await this.blockData(org.id, record.timezone, type, body, record.organization.subscription, current);
     const block = id
       ? await this._repository.updateBlock(id, data as Prisma.LinkBlockUpdateInput)
@@ -228,9 +276,17 @@ export class LinkService {
           payload: {},
           ...(data as Prisma.LinkBlockUncheckedCreateInput),
         });
-    if (data.priority && type === 'LINK') {
-      await this._repository.clearPriority(record.id, block.id);
-      await this._repository.moveBlock(record.id, block.id, 'above');
+    if (type === 'LINK') {
+      const extras = normalizeLinkExtras(data.payload || current?.payload);
+      if (extras.animation !== 'none' || (extras.priorityMode !== 'none' && data.priority !== false)) {
+        await this.quietOthers(record.id, block.id, {
+          animation: extras.animation !== 'none',
+          focus: extras.priorityMode !== 'none',
+        });
+      }
+      if (data.priority && extras.priorityMode !== 'none') {
+        await this._repository.moveBlock(record.id, block.id, 'above');
+      }
     } else if ((body.placement === 'above' || body.placement === 'below') && type === 'EMAIL_CAPTURE') {
       await this._repository.moveBlock(record.id, block.id, body.placement);
     }
@@ -255,9 +311,9 @@ export class LinkService {
 
   async analytics(org: PlanOrg, range: string, from = '', to = '') {
     const record = await this.ensure(org);
-    const paid = isPaidPlan(record.organization.subscription);
+    const open = linkFeatureOpen(record.organization.subscription);
     const custom = from || to ? customWindow(from, to) : null;
-    if ((from || to) && !paid) {
+    if ((from || to) && !open) {
       throw new HttpException(
         { message: paidFeatureProblem(false, 'deepAnalytics'), upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
@@ -269,17 +325,17 @@ export class LinkService {
     const window = custom || rangeWindow(range);
     const report = await this.analyticsReport(record, window);
     return {
-      range: custom ? 'custom' : range === '7d' || range === '90d' || range === '12m' ? range : '30d',
+      range: custom ? 'custom' : knownRange(range),
       from: custom ? from : null,
       to: custom ? to : null,
       ...report.summary,
-      deep: paid ? report.deep : null,
+      deep: open ? report.deep : null,
     };
   }
 
   async exportAnalytics(org: PlanOrg, range: string, from = '', to = '') {
     const record = await this.ensure(org);
-    if (!isPaidPlan(record.organization.subscription)) {
+    if (!linkFeatureOpen(record.organization.subscription)) {
       throw new HttpException(
         { message: paidFeatureProblem(false, 'deepAnalytics'), upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
@@ -336,7 +392,7 @@ export class LinkService {
 
   async integrations(org: PlanOrg, body: UpdateLinkIntegrationsDto) {
     const record = await this.ensure(org);
-    const paid = isPaidPlan(record.organization.subscription);
+    const paid = linkFeatureOpen(record.organization.subscription);
     const writesSecret =
       !!body.mailchimpKey ||
       !!body.convertkitKey ||
@@ -387,7 +443,7 @@ export class LinkService {
 
   async connectDomain(org: PlanOrg, domain: string) {
     const record = await this.ensure(org);
-    if (!hasCustomDomainAddon(record.organization)) {
+    if (!linkDomainOpen(record.organization)) {
       throw new HttpException(
         { message: 'Custom domains are a separate add-on', upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
@@ -482,7 +538,7 @@ export class LinkService {
     return QRCode.toBuffer(url, { type: 'png', margin: 1, width: 512 });
   }
 
-  async publicBySlug(slug: string) {
+  async publicBySlug(slug: string, visitor?: { country?: string; language?: string; platform?: string; referrer?: string }) {
     const normalized = slug.trim().toLowerCase();
     if (slugProblem(normalized)) {
       return null;
@@ -491,10 +547,10 @@ export class LinkService {
     if (!record) {
       return null;
     }
-    return this.toPublic(record);
+    return this.toPublic(record, normalizeVisitor(visitor || {}));
   }
 
-  async publicByHost(host: string) {
+  async publicByHost(host: string, visitor?: { country?: string; language?: string; platform?: string; referrer?: string }) {
     const hostname = host.trim().toLowerCase().replace(/:\d+$/, '');
     if (domainProblem(hostname)) {
       return null;
@@ -503,7 +559,7 @@ export class LinkService {
     if (!record || record.domainStatus !== 'LIVE') {
       return null;
     }
-    return this.toPublic(record);
+    return this.toPublic(record, normalizeVisitor(visitor || {}));
   }
 
   async track(kind: 'VIEW' | 'CLICK', body: PublicLinkTrackDto, countryHeader: string, userAgent = '') {
@@ -618,6 +674,25 @@ export class LinkService {
       }
       return { url: block.url };
     }
+    if (block.lockType === 'DOB') {
+      const problem = dobProblem(body.dob || '', normalizeLinkExtras(block.payload).minAge);
+      if (problem) {
+        throw new BadRequestException(problem);
+      }
+      return { url: block.url };
+    }
+    if (block.lockType === 'SENSITIVE') {
+      if (!body.sensitive) {
+        throw new BadRequestException('Confirm you want to view this');
+      }
+      return { url: block.url };
+    }
+    if (block.lockType === 'CODE') {
+      if (!body.password || !block.lockHash || !AuthService.comparePassword(body.password, block.lockHash)) {
+        throw new BadRequestException('That code is not right');
+      }
+      return { url: block.url };
+    }
     if (block.lockType === 'EMAIL') {
       const problem = emailProblem(body.email || '');
       if (problem) {
@@ -710,7 +785,7 @@ export class LinkService {
     record: LinkPageRecord,
     window: { from: Date; to: Date; previousFrom: Date }
   ) {
-    const paid = isPaidPlan(record.organization.subscription);
+    const paid = linkFeatureOpen(record.organization.subscription);
     const [views, clicks, subscribers, previousViews, previousClicks, previousSubscribers, series, countries, sources, linkClicks, devices, browsers, utm] =
       await Promise.all([
         this._repository.countEvents(record.id, 'VIEW', window.from, window.to),
@@ -792,7 +867,7 @@ export class LinkService {
     record: LinkPageRecord,
     lead: { email: string; name: string; source: string; kind: string }
   ) {
-    if (!isPaidPlan(record.organization.subscription)) {
+    if (!linkFeatureOpen(record.organization.subscription)) {
       return;
     }
     const jobs: Array<Promise<unknown>> = [];
@@ -904,7 +979,7 @@ export class LinkService {
       return await this._repository.create({
         organizationId: org.id,
         slug,
-        name: (org.name || slug).slice(0, 80),
+        name: (org.name || slug).slice(0, 30),
         timezone: timezone && isValidTimeZone(timezone) ? timezone : 'Asia/Kolkata',
       });
     } catch (error) {
@@ -940,7 +1015,7 @@ export class LinkService {
     type: string,
     body: SaveLinkBlockDto,
     subscription: LinkPageRecord['organization']['subscription'],
-    current: { lockHash: string; lockType: string; spotlight: boolean } | null
+    current: { lockHash: string; lockType: string; spotlight: boolean; payload?: unknown } | null
   ) {
     const title = (body.title || '').trim();
     const url = (body.url || '').trim();
@@ -961,14 +1036,20 @@ export class LinkService {
     if (type === 'EMBED' && body.url !== undefined && embedProblem(url)) {
       throw new BadRequestException(embedProblem(url));
     }
+    if (type === 'MAP' && body.url !== undefined && mapProblem(url)) {
+      throw new BadRequestException(mapProblem(url));
+    }
+    if (type === 'CALENDLY' && body.url !== undefined && calendlyProblem(url)) {
+      throw new BadRequestException(calendlyProblem(url));
+    }
     if (type === 'TEXT' && body.body !== undefined && !(body.body || '').trim()) {
       throw new BadRequestException('Add some text');
     }
     if (body.thumbnail && imagePathProblem(body.thumbnail)) {
       throw new BadRequestException('Use an uploaded image');
     }
-    const paid = isPaidPlan(subscription);
-    if (body.spotlight && type === 'LINK' && !paid && !current?.spotlight) {
+    const open = linkFeatureOpen(subscription);
+    if (body.spotlight && type === 'LINK' && !open && !current?.spotlight) {
       throw new HttpException(
         { message: paidFeatureProblem(false, 'spotlight'), upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
@@ -978,7 +1059,7 @@ export class LinkService {
       body.lockType &&
       body.lockType !== 'NONE' &&
       type === 'LINK' &&
-      !paid &&
+      !open &&
       current?.lockType !== body.lockType
     ) {
       throw new HttpException(
@@ -1010,20 +1091,70 @@ export class LinkService {
         throw new BadRequestException('Add at least one image');
       }
     }
+    const currentExtras = normalizeLinkExtras(current?.payload);
+    const priorityMode =
+      body.priorityMode ||
+      (body.priority === true ? 'highlight' : body.priority === false ? 'none' : currentExtras.priorityMode);
+    const nextExtras = normalizeLinkExtras({
+      ...currentExtras,
+      ...(body.layout ? { layout: body.layout } : {}),
+      ...(body.animation ? { animation: body.animation } : {}),
+      priorityMode,
+      ...(body.rules ? { rules: body.rules } : { rules: currentExtras.rules }),
+      ...(body.minAge !== undefined ? { minAge: body.minAge } : { minAge: currentExtras.minAge }),
+    });
+    if (type === 'LINK') {
+      const kind = linkProKind(nextExtras);
+      if (kind && kind !== linkProKind(currentExtras) && !open) {
+        throw new HttpException({ message: paidFeatureProblem(false, kind), upgrade: true }, HttpStatus.PAYMENT_REQUIRED);
+      }
+      const nextLock = body.lockType || current?.lockType || 'NONE';
+      if (nextExtras.priorityMode === 'redirect' && nextLock !== 'NONE') {
+        throw new BadRequestException("A redirect link can't be locked");
+      }
+    }
+    if (type === 'CONTACT_DETAILS' && (body.detailEmail !== undefined || body.detailPhone !== undefined || body.detailAddress !== undefined || body.detailWebsite !== undefined)) {
+      const problem = detailsProblem(normalizeDetails({ details: this.detailInput(body) }));
+      if (problem) {
+        throw new BadRequestException(problem);
+      }
+    }
+    if (type === 'DISCOUNT' && body.discountCode !== undefined && !(body.discountCode || '').trim()) {
+      throw new BadRequestException('Add a discount code');
+    }
+    if (type === 'EVENTS' && body.events && !normalizeEvents({ events: body.events }).length) {
+      throw new BadRequestException('Add at least one event');
+    }
     const lockHash =
       type !== 'LINK' || body.lockType === undefined
         ? undefined
-        : body.lockType === 'PASSWORD' && body.password
+        : (body.lockType === 'PASSWORD' || body.lockType === 'CODE') && body.password
         ? AuthService.hashPassword(body.password)
-        : body.lockType === 'PASSWORD'
+        : body.lockType === 'PASSWORD' || body.lockType === 'CODE'
         ? undefined
         : '';
+    const linkTouched =
+      type === 'LINK' &&
+      (body.layout !== undefined ||
+        body.animation !== undefined ||
+        body.priorityMode !== undefined ||
+        body.priority !== undefined ||
+        body.rules !== undefined ||
+        body.minAge !== undefined);
     const payload = body.faq
       ? { items: normalizeFaq(body.faq) }
       : body.images
       ? { images: normalizeImages({ images: body.images }) }
       : body.formButton !== undefined || body.formAskName !== undefined
       ? { button: (body.formButton || 'Send').trim() || 'Send', askName: !!body.formAskName }
+      : type === 'CONTACT_DETAILS' && (body.detailEmail !== undefined || !current)
+      ? { details: normalizeDetails({ details: this.detailInput(body) }) }
+      : type === 'DISCOUNT' && (body.discountCode !== undefined || !current)
+      ? { discount: normalizeDiscount({ title: body.discountCode || title, url, body: body.discountNote || body.body, payload: { code: body.discountCode || title, note: body.discountNote || body.body || '', url } }) }
+      : type === 'EVENTS' && body.events
+      ? { events: normalizeEvents({ events: body.events }) }
+      : linkTouched
+      ? { ...(current?.payload && typeof current.payload === 'object' ? (current.payload as object) : {}), layout: nextExtras.layout, animation: nextExtras.animation, priorityMode: nextExtras.priorityMode, rules: nextExtras.rules, minAge: nextExtras.minAge }
       : undefined;
     if (type === 'FEATURED_POST' && body.postId) {
       const post = await this._repository.findPost(orgId, body.postId);
@@ -1049,7 +1180,9 @@ export class LinkService {
       ...(body.title !== undefined ? { title } : {}),
       ...(body.url !== undefined ? { url } : {}),
       ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
-      ...(body.priority !== undefined ? { priority: type === 'LINK' ? body.priority : false } : {}),
+      ...(body.priority !== undefined || body.priorityMode !== undefined
+        ? { priority: type === 'LINK' ? nextExtras.priorityMode !== 'none' : false }
+        : {}),
       ...(body.scheduleOn !== undefined ? { scheduleOn: body.scheduleOn } : {}),
       ...(body.startsLocal !== undefined ? { startsAt } : {}),
       ...(body.endsLocal !== undefined ? { endsAt } : {}),
@@ -1070,12 +1203,15 @@ export class LinkService {
     const clicks = await this._repository.clickCounts(record.id);
     const byBlock = new Map(clicks.filter((row) => row.blockId).map((row) => [row.blockId, row._count._all]));
     const paid = isPaidPlan(record.organization.subscription);
+    const open = linkFeatureOpen(record.organization.subscription);
     const customDomainAddon = hasCustomDomainAddon(record.organization);
+    const design = normalizeDesign(record.design);
+    const accounts = await this.accounts(record.organizationId, design);
     const hostname = record.customDomain || '';
     return {
       id: record.id,
       slug: record.slug,
-      name: record.name,
+      name: record.name.slice(0, 30),
       bio: record.bio,
       avatarPath: record.avatarPath,
       theme: record.theme,
@@ -1088,7 +1224,9 @@ export class LinkService {
       seoDescription: record.seoDescription,
       isPublic: record.isPublic,
       sensitive: record.sensitive,
-      hideBadge: record.hideBadge && paid,
+      hideBadge: record.hideBadge && open,
+      gating: LINK_PLAN_GATING_ENABLED,
+      design,
       timezone: record.timezone,
       customDomain: hostname,
       domainStatus: record.domainStatus,
@@ -1117,6 +1255,7 @@ export class LinkService {
         notify: record.captureNotify,
       },
       socials: this.socials(record.socials),
+      accounts,
       integrations: {
         mailchimp: {
           connected: !!record.mailchimpKey,
@@ -1155,15 +1294,24 @@ export class LinkService {
         faq: block.type === 'FAQ' ? normalizeFaq(block.payload) : [],
         images: block.type === 'IMAGE_CAROUSEL' ? normalizeImages(block.payload) : [],
         form: block.type === 'CONTACT_FORM' ? normalizeForm(block) : null,
+        details: block.type === 'CONTACT_DETAILS' ? normalizeDetails(block.payload) : null,
+        discount: block.type === 'DISCOUNT' ? normalizeDiscount(block) : null,
+        events: block.type === 'EVENTS' ? normalizeEvents(block.payload) : [],
+        ...normalizeLinkExtras(block.type === 'LINK' ? block.payload : {}),
         post: block.post ? this.postCard(block.post, record.timezone) : null,
       })),
     };
   }
 
-  private toPublic(record: LinkPageRecord) {
-    const paid = isPaidPlan(record.organization.subscription);
+  private async toPublic(record: LinkPageRecord, visitor = normalizeVisitor({})) {
+    const open = linkFeatureOpen(record.organization.subscription);
+    const design = normalizeDesign(record.design);
+    const accounts = await this.accounts(record.organizationId, design);
     const visible = record.isPublic
       ? record.blocks.filter((block) => blockState(block) === 'live').filter((block) => {
+          if (block.type === 'LINK' && linkIsHidden(block.payload, visitor)) {
+            return false;
+          }
           if (block.type !== 'FEATURED_POST') {
             return true;
           }
@@ -1171,9 +1319,24 @@ export class LinkService {
         })
       : [];
     const capture = visible.some((block) => block.type === 'EMAIL_CAPTURE');
+    const blocks = visible.map((block) => {
+      const view = presentPublicBlock(block, open, visitor);
+      return {
+        ...view,
+        thumbnail: view.thumbnail.startsWith('http') ? view.thumbnail : publicAsset(view.thumbnail),
+        images: view.images.map((image) => ({
+          ...image,
+          path: image.path.startsWith('http') ? image.path : publicAsset(image.path),
+        })),
+        post: block.post ? this.postCard(block.post, record.timezone, true) : null,
+      };
+    });
+    const redirect = open
+      ? visible.find((block) => block.type === 'LINK' && block.lockType === 'NONE' && normalizeLinkExtras(block.payload).priorityMode === 'redirect')
+      : undefined;
     return {
       slug: record.slug,
-      name: record.name,
+      name: record.name.slice(0, 30),
       bio: record.bio,
       avatarPath: publicAsset(record.avatarPath),
       theme: record.theme,
@@ -1182,14 +1345,14 @@ export class LinkService {
       backgroundMode: record.backgroundMode,
       backgroundColor: record.backgroundColor,
       backgroundImage: publicAsset(record.backgroundImage),
+      design,
       seoTitle: record.seoTitle,
       seoDescription: record.seoDescription,
       isPublic: record.isPublic,
       sensitive: record.sensitive,
-      showBadge: showBadge(record.hideBadge, paid),
-      socials: this.socials(record.socials)
-        .map((item) => ({ ...item, url: item.url }))
-        .filter((item) => !urlProblem(item.url)),
+      showBadge: showBadge(record.hideBadge, open),
+      socials: this.mergedSocials(record.socials, accounts),
+      redirectUrl: redirect && !urlProblem(redirect.url) ? redirect.url : '',
       capture: capture
         ? {
             heading: record.captureHeading,
@@ -1198,18 +1361,7 @@ export class LinkService {
             askName: record.captureAskName,
           }
         : null,
-      blocks: visible.map((block) => {
-        const view = presentPublicBlock(block, paid);
-        return {
-          ...view,
-          thumbnail: view.thumbnail.startsWith('http') ? view.thumbnail : publicAsset(view.thumbnail),
-          images: view.images.map((image) => ({
-            ...image,
-            path: image.path.startsWith('http') ? image.path : publicAsset(image.path),
-          })),
-          post: block.post ? this.postCard(block.post, record.timezone, true) : null,
-        };
-      }),
+      blocks,
     };
   }
 
@@ -1247,6 +1399,82 @@ export class LinkService {
       .filter((item) => item && typeof item.network === 'string' && typeof item.url === 'string')
       .map((item) => ({ network: String(item.network), url: String(item.url) }))
       .slice(0, 8);
+  }
+
+  private mergedSocials(
+    value: unknown,
+    accounts: Array<{ id: string; network: string; url: string; shown: boolean }>
+  ) {
+    const manual = this.socials(value).filter((item) => !urlProblem(item.url));
+    const connected = accounts.filter((item) => item.shown && !urlProblem(item.url));
+    const seen = new Set<string>();
+    const out: Array<{ network: string; url: string }> = [];
+    for (const item of [...connected, ...manual]) {
+      const key = `${item.network}|${item.url}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      out.push({ network: item.network, url: item.url });
+      if (out.length === 12) {
+        break;
+      }
+    }
+    return out;
+  }
+
+  private async accounts(organizationId: string, design: { hiddenSocials: string[] }) {
+    const hidden = new Set(design.hiddenSocials);
+    const rows = await this._repository.connectedAccounts(organizationId);
+    return rows.flatMap((row) => {
+      const provider = this._integrations.getSocialIntegration(row.providerIdentifier);
+      const profile = provider?.linkProfile?.({ profile: row.profile, internalId: row.internalId });
+      if (!profile || urlProblem(profile.url)) {
+        return [];
+      }
+      return [
+        {
+          id: row.id,
+          network: profile.network,
+          name: row.name,
+          url: profile.url,
+          picture: row.picture || '',
+          shown: !hidden.has(row.id),
+        },
+      ];
+    });
+  }
+
+  private detailInput(body: SaveLinkBlockDto) {
+    return {
+      email: body.detailEmail || '',
+      phone: body.detailPhone || '',
+      address: body.detailAddress || '',
+      website: body.detailWebsite || '',
+    };
+  }
+
+  private async quietOthers(pageId: string, exceptId: string, fields: { animation: boolean; focus: boolean }) {
+    const blocks = await this._repository.otherLinks(pageId, exceptId);
+    for (const block of blocks) {
+      const extras = normalizeLinkExtras(block.payload);
+      const payload = {
+        ...(block.payload && typeof block.payload === 'object' ? (block.payload as object) : {}),
+        layout: extras.layout,
+        animation: fields.animation ? 'none' : extras.animation,
+        priorityMode: fields.focus ? 'none' : extras.priorityMode,
+        rules: extras.rules,
+        minAge: extras.minAge,
+      };
+      const dirty = (fields.animation && extras.animation !== 'none') || (fields.focus && (extras.priorityMode !== 'none' || block.priority));
+      if (!dirty) {
+        continue;
+      }
+      await this._repository.updateBlock(block.id, {
+        ...(fields.focus ? { priority: false } : {}),
+        payload: payload as Prisma.InputJsonValue,
+      });
+    }
   }
 
   private escape(value: string) {

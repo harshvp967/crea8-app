@@ -44,6 +44,7 @@ export class LinkRepository {
     private _lead: PrismaRepository<'linkLead'>,
     private _post: PrismaRepository<'post'>,
     private _userOrg: PrismaRepository<'userOrganization'>,
+    private _integration: PrismaRepository<'integration'>,
     private _transaction: PrismaTransaction
   ) {}
 
@@ -107,6 +108,27 @@ export class LinkRepository {
     return this._block.model.linkBlock.updateMany({
       where: { pageId, deletedAt: null, id: { not: exceptId }, priority: true },
       data: { priority: false },
+    });
+  }
+
+  connectedAccounts(organizationId: string) {
+    return this._integration.model.integration.findMany({
+      where: { organizationId, deletedAt: null, disabled: false, inBetweenSteps: false },
+      select: {
+        id: true,
+        name: true,
+        picture: true,
+        providerIdentifier: true,
+        profile: true,
+        internalId: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  otherLinks(pageId: string, exceptId: string) {
+    return this._block.model.linkBlock.findMany({
+      where: { pageId, deletedAt: null, id: { not: exceptId }, type: 'LINK' },
     });
   }
 

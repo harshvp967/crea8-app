@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { formatRate } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
-import { LinkRequestError, useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { LinkRequestError, linkLocked, useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 
 const ranges = [
   { id: '7d', label: '7 days' },
-  { id: '30d', label: '30 days' },
+  { id: '28d', label: '28 days' },
   { id: '90d', label: '90 days' },
-  { id: '12m', label: '12 months' },
+  { id: '365d', label: '365 days' },
 ];
 
 const deltaText = (kind: 'pct' | 'pt', value: number | null) => {
@@ -45,7 +45,7 @@ export const LinkAnalyticsScreen = () => {
   const fetch = useFetch();
   const toast = useToaster();
   const page = useLinkPage();
-  const [range, setRange] = useState('30d');
+  const [range, setRange] = useState('28d');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [applied, setApplied] = useState({ from: '', to: '' });
@@ -59,6 +59,9 @@ export const LinkAnalyticsScreen = () => {
         <div>
           <h1 className="text-[22px] font-[600]">Analytics</h1>
           <p className="text-[14px] text-textItemBlur">{host}</p>
+          {page.data && !page.data.paid ? (
+            <p className="text-[13px] text-textItemBlur">Custom ranges, CSV and device breakdowns are Pro.</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-[6px]">
           {ranges.map((item) => (
@@ -84,7 +87,7 @@ export const LinkAnalyticsScreen = () => {
             type="button"
             className={linkSecondary}
             onClick={() => {
-              if (!page.data?.paid) {
+              if (linkLocked(page.data)) {
                 toast.show('A custom date range is on a paid plan', 'warning');
                 return;
               }
@@ -102,7 +105,7 @@ export const LinkAnalyticsScreen = () => {
             className={linkSecondary}
             disabled={busy}
             onClick={async () => {
-              if (!page.data?.paid) {
+              if (linkLocked(page.data)) {
                 toast.show('Analytics export is on a paid plan', 'warning');
                 return;
               }

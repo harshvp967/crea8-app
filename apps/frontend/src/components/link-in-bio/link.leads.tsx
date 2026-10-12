@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { LinkRequestError, linkSend, useLinkLeads, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { LinkRequestError, linkLocked, linkSend, useLinkLeads, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { LinkField, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 
 const filters = [
@@ -206,7 +206,7 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
     return null;
   }
   const save = async (body: Record<string, unknown>) => {
-    if (!data.paid && !body.clearMailchimp && !body.clearConvertkit && !body.clearWebhook) {
+    if (linkLocked(data) && !body.clearMailchimp && !body.clearConvertkit && !body.clearWebhook) {
       toast.show('Lead integrations are on a paid plan', 'warning');
       return;
     }
@@ -229,10 +229,12 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
     <section className="rounded-[20px] border border-newBorder p-[16px]">
       <h2 className="text-[16px] font-[600]">Integrations</h2>
       <p className="mb-[12px] text-[13px] text-textItemBlur">
-        {data.paid
+        {linkLocked(data)
+          ? 'Mailchimp, ConvertKit and webhooks are on a paid plan.'
+          : data.paid
           ? 'New leads are sent to Mailchimp, ConvertKit and your webhook. Keys stay on the server.'
-          : 'Mailchimp, ConvertKit and webhooks are on a paid plan.'}{' '}
-        {!data.paid ? (
+          : 'Mailchimp, ConvertKit and webhooks are on a paid plan. They stay open while plan gating is off. Keys stay on the server.'}{' '}
+        {linkLocked(data) ? (
           <Link href="/billing" className="text-[#00D9FF]">
             Upgrade
           </Link>

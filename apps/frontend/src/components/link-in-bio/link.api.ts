@@ -2,7 +2,13 @@
 
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { presentPublicBlock } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import {
+  LinkDesign,
+  VisitorContext,
+  linkIsHidden,
+  normalizeDesign,
+  presentPublicBlock,
+} from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 export type LinkPostCard = {
   id: string;
@@ -22,7 +28,12 @@ export type LinkBlockType =
   | 'TEXT'
   | 'FAQ'
   | 'IMAGE_CAROUSEL'
-  | 'CONTACT_FORM';
+  | 'CONTACT_FORM'
+  | 'MAP'
+  | 'CALENDLY'
+  | 'CONTACT_DETAILS'
+  | 'DISCOUNT'
+  | 'EVENTS';
 
 export type LinkFaq = { question: string; answer: string };
 export type LinkImage = { path: string; alt: string };
@@ -46,10 +57,18 @@ export type LinkBlock = {
   iconMode: string;
   spotlight: boolean;
   body: string;
-  lock: { type: 'NONE' | 'AGE' | 'EMAIL' | 'PASSWORD'; hasPassword: boolean };
+  lock: { type: 'NONE' | 'AGE' | 'EMAIL' | 'PASSWORD' | 'CODE' | 'DOB' | 'SENSITIVE'; hasPassword: boolean };
   faq: LinkFaq[];
   images: LinkImage[];
   form: LinkForm | null;
+  details: { email: string; phone: string; address: string; website: string } | null;
+  discount: { code: string; note: string; url: string } | null;
+  events: Array<{ title: string; when: string; place: string; url: string }>;
+  layout: 'classic' | 'featured';
+  animation: string;
+  priorityMode: 'none' | 'highlight' | 'expand' | 'redirect';
+  rules: Array<{ country: string; platform: string; language: string; action: 'hide' | 'title' | 'url'; title: string; url: string }>;
+  minAge: number;
   post: LinkPostCard | null;
 };
 
@@ -69,6 +88,8 @@ export type LinkEditor = {
   theme: string;
   buttonStyle: string;
   font: string;
+  design: LinkDesign;
+  gating: boolean;
   backgroundMode: string;
   backgroundColor: string;
   backgroundImage: string;
@@ -98,6 +119,7 @@ export type LinkEditor = {
     notify: boolean;
   };
   socials: Array<{ network: string; url: string }>;
+  accounts: Array<{ id: string; network: string; name: string; url: string; picture: string; shown: boolean }>;
   integrations: {
     mailchimp: { connected: boolean; audience: string; hint: string };
     convertkit: { connected: boolean; form: string; hint: string };
@@ -114,9 +136,11 @@ export type PublicLink = {
   theme: string;
   buttonStyle: string;
   font: string;
+  design: LinkDesign;
   backgroundMode: string;
   backgroundColor: string;
   backgroundImage: string;
+  redirectUrl: string;
   seoTitle: string;
   seoDescription: string;
   isPublic: boolean;
@@ -255,9 +279,32 @@ export async function linkSend(
   return data;
 }
 
-export function toPublic(page: LinkEditor): PublicLink {
-  const live = page.isPublic ? page.blocks.filter((block) => block.state === 'live') : [];
+export function linkLocked(page?: { gating?: boolean; paid?: boolean } | null) {
+  return !!page?.gating && !page.paid;
+}
+
+export function toPublic(page: LinkEditor, visitor?: VisitorContext): PublicLink {
+  const open = !page.gating || page.paid;
+  const design = page.design || normalizeDesign({});
+  const live = page.isPublic
+    ? page.blocks.filter((block) => block.state === 'live' && !(block.type === 'LINK' && linkIsHidden(blockPayload(block), visitor)))
+    : [];
   const capture = live.some((block) => block.type === 'EMAIL_CAPTURE');
+  const seen = new Set<string>();
+  const socials = [
+    ...page.accounts.filter((item) => item.shown).map((item) => ({ network: item.network, url: item.url })),
+    ...page.socials,
+  ].filter((item) => {
+    const key = `${item.network}|${item.url}`;
+    if (!item.url || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+  const redirect = open
+    ? live.find((block) => block.type === 'LINK' && block.lock.type === 'NONE' && block.priorityMode === 'redirect')
+    : undefined;
   return {
     slug: page.slug,
     name: page.name,
@@ -266,15 +313,17 @@ export function toPublic(page: LinkEditor): PublicLink {
     theme: page.theme,
     buttonStyle: page.buttonStyle,
     font: page.font,
+    design,
     backgroundMode: page.backgroundMode,
     backgroundColor: page.backgroundColor,
     backgroundImage: page.backgroundImage,
+    redirectUrl: redirect?.url || '',
     seoTitle: page.seoTitle,
     seoDescription: page.seoDescription,
     isPublic: page.isPublic,
     sensitive: page.sensitive,
     showBadge: !page.hideBadge,
-    socials: page.socials,
+    socials,
     capture: capture ? page.capture : null,
     blocks: live.map((block) => ({
       ...presentPublicBlock(
@@ -289,17 +338,41 @@ export function toPublic(page: LinkEditor): PublicLink {
           iconMode: block.iconMode,
           spotlight: block.spotlight,
           lockType: block.lock.type,
-          payload:
-            block.type === 'FAQ'
-              ? { items: block.faq }
-              : block.type === 'IMAGE_CAROUSEL'
-              ? { images: block.images }
-              : block.form,
+          payload: blockPayload(block),
         },
-        page.paid
+        open,
+        visitor
       ),
       post: block.post,
     })),
+  };
+}
+
+function blockPayload(block: LinkBlock) {
+  if (block.type === 'FAQ') {
+    return { items: block.faq };
+  }
+  if (block.type === 'IMAGE_CAROUSEL') {
+    return { images: block.images };
+  }
+  if (block.type === 'CONTACT_FORM') {
+    return block.form;
+  }
+  if (block.type === 'CONTACT_DETAILS') {
+    return { details: block.details };
+  }
+  if (block.type === 'DISCOUNT') {
+    return { discount: block.discount };
+  }
+  if (block.type === 'EVENTS') {
+    return { events: block.events };
+  }
+  return {
+    layout: block.layout,
+    animation: block.animation,
+    priorityMode: block.priorityMode,
+    rules: block.rules,
+    minAge: block.minAge,
   };
 }
 

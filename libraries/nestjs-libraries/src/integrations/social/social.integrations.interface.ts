@@ -188,6 +188,10 @@ export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
   identifier: string;
+  linkProfile?(integration: {
+    profile?: string | null;
+    internalId?: string | null;
+  }): { network: string; url: string } | null;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
   stripLinks?: () => boolean;

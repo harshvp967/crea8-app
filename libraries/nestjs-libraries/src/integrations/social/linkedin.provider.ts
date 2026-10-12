@@ -65,6 +65,10 @@ type LinkedinPendingData = {
 )
 export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   identifier = 'linkedin';
+  override linkProfile(integration: { profile?: string | null }) {
+    const handle = this.socialHandle(integration.profile);
+    return handle ? { network: 'linkedin', url: `https://www.linkedin.com/in/${handle}` } : null;
+  }
   name = 'LinkedIn';
   oneTimeToken = true;
 
