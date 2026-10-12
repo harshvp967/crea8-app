@@ -140,7 +140,7 @@ export const LinkLeadsScreen = () => {
         </section>
       ) : data.leads.length ? (
         <>
-          <section className={`${stkCard} lib-leads-table-wrap overflow-hidden !p-0`}>
+          <section className={`${stkCard} lib-leads-table-wrap overflow-hidden`}>
             <div className="lib-table-wrap">
               <table className="lib-table lib-leads-table">
                 <thead>
