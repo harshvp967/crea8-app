@@ -74,6 +74,7 @@ export function Login() {
       setLoading(false);
     }
   };
+  const emailError = form.formState.errors.email?.message as string | undefined;
   return (
     <FormProvider {...form}>
       <form
@@ -104,7 +105,7 @@ export function Login() {
                 {billingEnabled && <WalletProvider />}
               </div>
             )}
-            <div className="h-[20px] mb-[24px] mt-[24px] relative">
+            <div className="auth-or h-[20px] mb-[24px] mt-[24px] relative">
               <div className="absolute w-full h-[1px] bg-fifth top-[50%] -translate-y-[50%]" />
               <div
                 className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
@@ -113,6 +114,11 @@ export function Login() {
               </div>
             </div>
             <div className="flex flex-col gap-[12px]">
+              {emailError ? (
+                <div className="auth-alert" role="alert">
+                  {emailError}
+                </div>
+              ) : null}
               <div className="text-textColor">
                 <Input
                   label="Email"
@@ -120,6 +126,8 @@ export function Login() {
                   {...form.register('email')}
                   type="email"
                   placeholder={t('email_address', 'Email Address')}
+                  className="cc-input"
+                  removeError={!!emailError}
                 />
                 <Input
                   label="Password"
@@ -128,10 +136,11 @@ export function Login() {
                   autoComplete="off"
                   type="password"
                   placeholder={t('label_password', 'Password')}
+                  className="cc-input"
                 />
               </div>
               {notActivated && (
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-[10px] p-4 mb-4">
+                <div className="auth-alert is-warn">
                   <p className="text-amber-400 text-sm mb-2">
                     {t(
                       'account_not_activated',
@@ -158,7 +167,7 @@ export function Login() {
                 <div className="w-full flex">
                   <Button
                     type="submit"
-                    className="flex-1 !rounded-[18px] !h-[50px]"
+                    className="auth-submit flex-1 !rounded-[18px] !h-[50px]"
                     loading={loading}
                   >
                     {t('sign_in_1', 'Sign In')}

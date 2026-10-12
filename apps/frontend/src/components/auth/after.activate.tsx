@@ -45,16 +45,16 @@ export const AfterActivate = () => {
       {showLoader ? (
         <LoadingComponent />
       ) : (
-        <>
+        <div className="auth-status is-bad">
           This user is already activated,
           <br />
-          <Link href="/auth/login" className="underline">
+          <Link href="/auth/login">
             {t(
               'click_here_to_go_back_to_login',
               'Click here to go back to login'
             )}
           </Link>
-        </>
+        </div>
       )}
     </>
   );
