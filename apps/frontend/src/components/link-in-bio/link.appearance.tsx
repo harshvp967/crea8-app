@@ -114,6 +114,7 @@ export const LinkAppearanceScreen = () => {
   return (
     <LinkSplit
       previewOpen={preview}
+      onPreviewClose={() => setPreview(false)}
       preview={
         <LinkPreview
           onCopy={() => {
@@ -125,15 +126,15 @@ export const LinkAppearanceScreen = () => {
         </LinkPreview>
       }
     >
-      <div className="flex flex-col gap-[16px] pb-[24px]">
-        <div className="flex flex-wrap items-start justify-between gap-[12px]">
-          <div>
+      <div className="flex min-w-0 flex-col gap-[16px] pb-[24px]">
+        <div className="flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-[22px] font-[600]">Appearance</h1>
             <p className="text-[14px] text-textItemBlur">Override the theme</p>
           </div>
-          <div className="flex items-center gap-[8px]">
-            <button type="button" className={`${linkSecondary} xl:hidden`} onClick={() => setPreview((value) => !value)}>
-              Preview
+          <div className="flex flex-wrap items-center justify-center gap-[8px] sm:justify-end">
+            <button type="button" className={`${linkSecondary} min-[1200px]:hidden`} onClick={() => setPreview((value) => !value)}>
+              {preview ? 'Close preview' : 'Preview'}
             </button>
             <button type="button" className={linkSecondary} onClick={() => setDraft(toDraft(data))}>
               Reset
@@ -223,7 +224,7 @@ export const LinkAppearanceScreen = () => {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-[16px] md:grid-cols-2">
           <section className="rounded-[20px] border border-newBorder p-[16px]">
             <h2 className="mb-[12px] text-[16px] font-[600]">Buttons</h2>
             <div className="mb-[14px] flex flex-wrap gap-[8px]">
@@ -251,7 +252,7 @@ export const LinkAppearanceScreen = () => {
 
           <section className="rounded-[20px] border border-newBorder p-[16px]">
             <h2 className="mb-[12px] text-[16px] font-[600]">Background</h2>
-            <div className="mb-[12px] flex gap-[8px]">
+            <div className="mb-[12px] flex flex-wrap gap-[8px]">
               <button
                 type="button"
                 className={draft.backgroundMode === 'colour' ? linkPrimary : linkSecondary}
@@ -289,7 +290,7 @@ export const LinkAppearanceScreen = () => {
                 />
               </label>
             ) : (
-              <div className="flex items-center gap-[8px]">
+              <div className="flex min-w-0 flex-wrap items-center gap-[8px]">
                 {colours.map((colour) => (
                   <button
                     key={colour}
@@ -321,7 +322,7 @@ export const LinkAppearanceScreen = () => {
           <h2 className="mb-[12px] text-[16px] font-[600]">Social icons</h2>
           <div className="flex flex-col gap-[8px]">
             {draft.socials.map((item, index) => (
-              <div key={`${item.network}-${index}`} className="grid grid-cols-1 gap-[8px] sm:grid-cols-[160px_1fr_auto]">
+              <div key={`${item.network}-${index}`} className="grid min-w-0 grid-cols-1 gap-[8px] sm:grid-cols-[minmax(0,160px)_minmax(0,1fr)_auto]">
                 <select
                   className="min-h-[44px] rounded-[14px] border border-newBorder bg-transparent px-[12px]"
                   value={item.network}

@@ -6,6 +6,7 @@ import {
   fillDays,
   formatRate,
   isPaidPlan,
+  hasCustomDomainAddon,
   leadsToCsv,
   mapHostnameStatus,
   pageUrl,
@@ -74,6 +75,14 @@ describe('link-in-bio plan gate and schedule', () => {
     expect(showBadge(true, false)).toBe(true);
     expect(showBadge(true, true)).toBe(false);
     expect(showBadge(false, true)).toBe(true);
+  });
+
+  it('treats a custom domain as an organization add-on, separate from the plan', () => {
+    expect(hasCustomDomainAddon(null)).toBe(false);
+    expect(hasCustomDomainAddon({})).toBe(false);
+    expect(hasCustomDomainAddon({ customDomainAddon: false })).toBe(false);
+    expect(hasCustomDomainAddon({ customDomainAddon: true })).toBe(true);
+    expect(isPaidPlan({ subscriptionTier: 'PRO' })).toBe(true);
   });
 
   it('hides a link before it starts and after it ends, and keeps it in the editor', () => {

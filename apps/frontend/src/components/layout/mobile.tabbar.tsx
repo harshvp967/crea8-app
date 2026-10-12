@@ -36,7 +36,9 @@ export const MobileTabBar = () => {
   });
 
   const tabs = link
-    ? linkNavLinks.slice(0, 4).map(asItem)
+    ? linkNavLinks
+        .slice(0, 4)
+        .map((item) => asItem({ ...item, icon: item.tabIcon || item.icon }))
     : stalker
     ? stalkerNavLinks
         .slice(0, 4)

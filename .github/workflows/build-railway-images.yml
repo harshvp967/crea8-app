@@ -106,3 +106,25 @@ jobs:
           else
             echo "Could not change visibility of ${IMAGE_NAME}. The image was still pushed."
           fi
+
+  # Runs after both images are on GHCR. A project token is environment-scoped,
+  # so RAILWAY_TOKEN must be a token for the environment that contains these
+  # two services. --from-source pulls the latest configured image (:latest),
+  # which a plain redeploy of the previous deployment would not.
+  redeploy:
+    name: Redeploy Railway
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Redeploy postiz-backend and postiz-orchestrator
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::Missing GitHub Actions secret RAILWAY_TOKEN. In the Railway project, create a project token for the production environment that contains postiz-backend and postiz-orchestrator, then add it as the repository secret RAILWAY_TOKEN."
+            exit 1
+          fi
+          npx -y @railway/cli@latest redeploy --service postiz-backend --from-source --yes
+          npx -y @railway/cli@latest redeploy --service postiz-orchestrator --from-source --yes
