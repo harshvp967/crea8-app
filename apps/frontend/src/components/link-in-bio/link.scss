@@ -53,22 +53,34 @@
   color: var(--new-textItemBlur);
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .lib-segment button.is-on {
-  background: var(--new-bgColorInner);
+  background-color: var(--new-bgColorInner);
+  background-image: var(--arc-wave);
   color: rgb(var(--new-textColor));
-  box-shadow: var(--arc-shadow-resting);
+  box-shadow: inset 0 0 0 1px var(--arc-selected-border);
 }
 
 .lib-reset-phone {
   display: none !important;
 }
 
-.lib-settings {
+.lib-settings,
+.lib-analytics {
   min-height: 0;
   flex: 1 1 auto;
+}
+
+.lib-analytics input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 }
 
 @media (max-width: 767px) {
@@ -98,8 +110,18 @@
     display: inline-flex !important;
   }
 
-  .lib-settings {
+  .lib-settings,
+  .lib-analytics {
     padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .lib-analytics .lib-metric {
+    padding: 14px !important;
+  }
+
+  .lib-analytics-empty {
+    padding-top: 12px !important;
+    padding-bottom: 8px !important;
   }
 }
 

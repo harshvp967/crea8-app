@@ -6,14 +6,33 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { formatRate } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkRequestError, linkLocked, useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
-import { linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { LinkSegments, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
-const ranges = [
+const ranges: Array<{ id: string; label: string }> = [
   { id: '7d', label: '7 days' },
   { id: '28d', label: '28 days' },
   { id: '90d', label: '90 days' },
   { id: '365d', label: '365 days' },
 ];
+
+const dateClass =
+  'relative h-[44px] min-h-[44px] w-[148px] rounded-[18px] border border-newBorder bg-newBgColorInner pe-[12px] ps-[36px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none';
+
+const SOURCE_LOGO: Record<string, string> = {
+  instagram: '/icons/platforms/instagram.png',
+  x: '/icons/platforms/x.png',
+  youtube: '/icons/platforms/youtube.png',
+  linkedin: '/icons/platforms/linkedin.png',
+  tiktok: '/icons/platforms/tiktok.png',
+  facebook: '/icons/platforms/facebook.png',
+  reddit: '/icons/platforms/reddit.png',
+  pinterest: '/icons/platforms/pinterest.png',
+  threads: '/icons/platforms/threads.png',
+  bluesky: '/icons/platforms/bluesky.png',
+  twitch: '/icons/platforms/twitch.png',
+};
 
 const deltaText = (kind: 'pct' | 'pt', value: number | null) => {
   if (value === null) {
@@ -23,7 +42,22 @@ const deltaText = (kind: 'pct' | 'pt', value: number | null) => {
   return kind === 'pt' ? `${sign}${value} pt` : `${sign}${value}%`;
 };
 
-const Chart = ({ series }: { series: Array<{ views: number }> }) => {
+const deltaTone = (value: number | null) => {
+  if (value === null || value === 0) {
+    return 'text-textItemBlur';
+  }
+  return value > 0 ? 'text-[color:var(--arc-success)]' : 'text-[color:var(--arc-danger)]';
+};
+
+const dayLabel = (iso: string) => {
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+};
+
+const Chart = ({ series }: { series: Array<{ day: string; views: number }> }) => {
   const width = 640;
   const height = 160;
   const max = Math.max(1, ...series.map((point) => point.views));
@@ -33,12 +67,33 @@ const Chart = ({ series }: { series: Array<{ views: number }> }) => {
     const y = height - (point.views / max) * (height - 12) - 6;
     return `${x},${y}`;
   });
+  const ticks =
+    series.length > 2
+      ? [series[0], series[Math.floor((series.length - 1) / 2)], series[series.length - 1]]
+      : series;
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-[180px] w-full" role="img" aria-label="Daily views">
-      <polygon points={`0,${height} ${coords.join(' ')} ${width},${height}`} fill="rgba(0,217,255,0.16)" />
-      <polyline points={coords.join(' ')} fill="none" stroke="#00D9FF" strokeWidth="2" />
-    </svg>
+    <div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[180px] w-full" role="img" aria-label="Daily views">
+        <polygon points={`0,${height} ${coords.join(' ')} ${width},${height}`} fill="rgba(0,217,255,0.16)" />
+        <polyline points={coords.join(' ')} fill="none" stroke="#00D9FF" strokeWidth="2" />
+      </svg>
+      {ticks.length ? (
+        <div className="mt-[6px] flex justify-between text-[12px] font-[500] text-textItemBlur">
+          {ticks.map((point) => (
+            <span key={point.day}>{dayLabel(point.day)}</span>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
+};
+
+const SourceMark = ({ label }: { label: string }) => {
+  const logo = SOURCE_LOGO[label.trim().toLowerCase()];
+  if (logo) {
+    return <img src={logo} alt="" className="h-[16px] w-[16px] shrink-0 rounded-[4px] object-cover" />;
+  }
+  return <HugeIcon name="globe" size={16} className="shrink-0 text-textItemBlur" />;
 };
 
 export const LinkAnalyticsScreen = () => {
@@ -52,37 +107,98 @@ export const LinkAnalyticsScreen = () => {
   const [busy, setBusy] = useState(false);
   const { data, error, isLoading } = useLinkAnalytics(applied.from ? 'custom' : range, applied.from, applied.to);
   const host = page.data ? `${page.data.publicOrigin.replace(/^https?:\/\//, '')}/${page.data.slug}` : '';
+  const period = applied.from ? 'Custom range' : `Last ${ranges.find((item) => item.id === range)?.label || '28 days'}`;
+
+  const copyLink = () => {
+    if (!page.data?.publicUrl) {
+      return;
+    }
+    navigator.clipboard?.writeText(page.data.publicUrl);
+    toast.show('Link copied', 'success');
+  };
 
   return (
-    <div className="flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
-      <div className="flex flex-wrap items-start justify-between gap-[12px]">
-        <div>
-          <h1 className="text-[22px] font-[600]">Analytics</h1>
-          <p className="text-[14px] text-textItemBlur">{host}</p>
-          {page.data && !page.data.paid ? (
-            <p className="text-[13px] text-textItemBlur">Custom ranges, CSV and device breakdowns are Pro.</p>
-          ) : null}
+    <div className="lib-analytics flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
+      <div className="flex flex-col items-start gap-[12px] sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className={stkTitle}>Analytics</h1>
+          <p className={stkSub}>
+            {host}
+            {page.data && !page.data.paid ? ' — Custom ranges, CSV and device breakdowns are Pro.' : ''}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-[6px]">
-          {ranges.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={
-                !applied.from && range === item.id
-                  ? 'h-[36px] rounded-[18px] border border-[rgba(0,217,255,.45)] px-[12px] text-[14px] text-[#00D9FF]'
-                  : 'h-[36px] rounded-[18px] border border-transparent px-[12px] text-[14px] text-textItemBlur'
+        <button
+          type="button"
+          className={linkSecondary}
+          disabled={busy}
+          onClick={async () => {
+            if (linkLocked(page.data)) {
+              toast.show('Analytics export is on a paid plan', 'warning');
+              return;
+            }
+            setBusy(true);
+            try {
+              const response = await fetch(
+                `/link-in-bio/analytics.csv?range=${encodeURIComponent(range)}&from=${encodeURIComponent(applied.from)}&to=${encodeURIComponent(applied.to)}`,
+                { headers: { Accept: 'text/csv' } }
+              );
+              if (!response.ok) {
+                throw new LinkRequestError('Could not export analytics', response.status);
               }
-              onClick={() => {
-                setRange(item.id);
-                setApplied({ from: '', to: '' });
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-          <input className="h-[36px] rounded-[14px] border border-newBorder bg-transparent px-[8px] text-[13px]" type="date" aria-label="From" value={from} onChange={(event) => setFrom(event.target.value)} />
-          <input className="h-[36px] rounded-[14px] border border-newBorder bg-transparent px-[8px] text-[13px]" type="date" aria-label="To" value={to} onChange={(event) => setTo(event.target.value)} />
+              const blob = await response.blob();
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'crea8-analytics.csv';
+              link.click();
+              URL.revokeObjectURL(url);
+            } catch (err) {
+              toast.show(err instanceof Error ? err.message : 'Could not export analytics', 'warning');
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <HugeIcon name="download" size={16} />
+          Export CSV
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-[8px]">
+        <div className="max-w-full overflow-x-auto">
+          <LinkSegments
+            label="Range"
+            value={applied.from ? '' : range}
+            options={ranges}
+            onChange={(id) => {
+              setRange(id);
+              setApplied({ from: '', to: '' });
+            }}
+          />
+        </div>
+        <div className="hidden flex-wrap items-center gap-[8px] sm:flex">
+          <label className="relative">
+            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[12px] top-[14px] text-textItemBlur" />
+            <input
+              className={`${dateClass} ${from ? '' : 'text-transparent'}`}
+              type="date"
+              aria-label="From"
+              value={from}
+              onChange={(event) => setFrom(event.target.value)}
+            />
+            {from ? null : <span className="pointer-events-none absolute start-[36px] top-[12px] text-[14px] font-[500] text-textItemBlur">From</span>}
+          </label>
+          <label className="relative">
+            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[12px] top-[14px] text-textItemBlur" />
+            <input
+              className={`${dateClass} ${to ? '' : 'text-transparent'}`}
+              type="date"
+              aria-label="To"
+              value={to}
+              onChange={(event) => setTo(event.target.value)}
+            />
+            {to ? null : <span className="pointer-events-none absolute start-[36px] top-[12px] text-[14px] font-[500] text-textItemBlur">To</span>}
+          </label>
           <button
             type="button"
             className={linkSecondary}
@@ -100,113 +216,93 @@ export const LinkAnalyticsScreen = () => {
           >
             Apply
           </button>
-          <button
-            type="button"
-            className={linkSecondary}
-            disabled={busy}
-            onClick={async () => {
-              if (linkLocked(page.data)) {
-                toast.show('Analytics export is on a paid plan', 'warning');
-                return;
-              }
-              setBusy(true);
-              try {
-                const response = await fetch(
-                  `/link-in-bio/analytics.csv?range=${encodeURIComponent(range)}&from=${encodeURIComponent(applied.from)}&to=${encodeURIComponent(applied.to)}`,
-                  { headers: { Accept: 'text/csv' } }
-                );
-                if (!response.ok) {
-                  throw new LinkRequestError('Could not export analytics', response.status);
-                }
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'crea8-analytics.csv';
-                link.click();
-                URL.revokeObjectURL(url);
-              } catch (err) {
-                toast.show(err instanceof Error ? err.message : 'Could not export analytics', 'warning');
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            Export CSV
-          </button>
         </div>
       </div>
 
-      {error ? <p className="text-[14px] text-textItemBlur">Could not load analytics.</p> : null}
-      {isLoading || !data ? (
-        <p className="text-[14px] text-textItemBlur">Loading analytics…</p>
+      {error ? (
+        <section className={`${stkCard} flex items-center gap-[12px]`}>
+          <HugeIcon name="alert" size={20} className="shrink-0 text-[color:var(--arc-danger)]" />
+          <p className="text-[14px] font-[500]">Could not load analytics.</p>
+        </section>
+      ) : isLoading || !data ? (
+        <section className={stkCard}>
+          <p className="text-[14px] font-[500] text-textItemBlur">Loading analytics…</p>
+        </section>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2 xl:grid-cols-4">
-            <Metric label="Views" value={data.views.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.views)} />
-            <Metric label="Link clicks" value={data.clicks.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.clicks)} />
-            <Metric label="Click-through rate" value={formatRate(data.ctr)} delta={deltaText('pt', data.deltas.ctr)} />
+          <div className="grid grid-cols-2 gap-[12px] xl:grid-cols-4">
+            <Metric label="Views" value={data.views.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.views)} deltaValue={data.deltas.views} period={period} />
+            <Metric label="Link clicks" value={data.clicks.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.clicks)} deltaValue={data.deltas.clicks} period={period} />
+            <Metric label="Click-through rate" value={formatRate(data.ctr)} delta={deltaText('pt', data.deltas.ctr)} deltaValue={data.deltas.ctr} period={period} />
             <Metric
               label="New subscribers"
               value={data.subscribers.toLocaleString('en-US')}
               delta={deltaText('pct', data.deltas.subscribers)}
+              deltaValue={data.deltas.subscribers}
+              period={period}
             />
           </div>
 
-          <section className="rounded-[20px] border border-newBorder p-[16px]">
-            <div className="mb-[8px] flex items-center justify-between">
-              <h2 className="text-[16px] font-[600]">Views and clicks</h2>
-              <span className="text-[13px] text-textItemBlur">Daily</span>
+          <section className={stkCard}>
+            <div className="mb-[8px] flex items-center justify-between gap-[12px]">
+              <h2 className="text-[16px] font-[600] tracking-[-0.02em]">Views and clicks</h2>
+              <span className="text-[13px] font-[500] text-textItemBlur">Daily</span>
             </div>
             {data.views === 0 && data.clicks === 0 ? (
-              <div className="flex flex-col items-center gap-[6px] py-[48px] text-center">
-                <div className="grid h-[36px] w-[36px] place-items-center rounded-[12px] border border-newBorder text-textItemBlur">
-                  ▂
+              <div className="lib-analytics-empty flex flex-col items-center gap-[8px] py-[36px] text-center">
+                <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
+                  <HugeIcon name="chart-line" size={18} />
                 </div>
-                <strong>No views yet</strong>
-                <p className="text-[14px] text-textItemBlur">Share {host} to start collecting views.</p>
+                <strong className="text-[16px] font-[600] tracking-[-0.02em]">No views yet</strong>
+                <p className="text-[14px] font-[500] text-textItemBlur">Share {host} to start collecting views.</p>
+                <button type="button" className={`${linkPrimary} mt-[8px]`} onClick={copyLink}>
+                  <HugeIcon name="copy" size={16} />
+                  Copy link
+                </button>
               </div>
             ) : (
               <Chart series={data.series} />
             )}
           </section>
 
-          <div className="grid min-w-0 grid-cols-1 gap-[12px] lg:grid-cols-3">
-            <section className="rounded-[20px] border border-newBorder p-[16px]">
-              <h2 className="mb-[8px] text-[16px] font-[600]">Top links</h2>
+          {data.views === 0 && data.clicks === 0 ? null : (
+          <>
+          <div className="grid min-w-0 grid-cols-1 gap-[12px] md:grid-cols-3">
+            <section className={stkCard}>
+              <h2 className="mb-[8px] text-[16px] font-[600] tracking-[-0.02em]">Top links</h2>
               {data.topLinks.length ? (
                 <div className="lib-table-wrap">
-                <table className="lib-table">
-                  <thead>
-                    <tr>
-                      <th>Link</th>
-                      <th>Clicks</th>
-                      <th>CTR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.topLinks.map((link) => (
-                      <tr key={link.id}>
-                        <td data-label="Link">{link.title}</td>
-                        <td data-label="Clicks">{link.clicks.toLocaleString('en-US')}</td>
-                        <td data-label="CTR">{formatRate(link.ctr)}</td>
+                  <table className="lib-table">
+                    <thead>
+                      <tr>
+                        <th>Link</th>
+                        <th>Clicks</th>
+                        <th>CTR</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {data.topLinks.map((link) => (
+                        <tr key={link.id}>
+                          <td data-label="Link">{link.title}</td>
+                          <td data-label="Clicks">{link.clicks.toLocaleString('en-US')}</td>
+                          <td data-label="CTR">{formatRate(link.ctr)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
-                <p className="text-[14px] text-textItemBlur">No clicks yet</p>
+                <p className="text-[14px] font-[500] text-textItemBlur">No clicks yet</p>
               )}
             </section>
-            <ShareList title="Traffic sources" empty="No data yet" rows={data.sources.map((row) => ({ label: row.source, share: row.share }))} />
+            <ShareList title="Traffic sources" empty="No data yet" logos rows={data.sources.map((row) => ({ label: row.source, share: row.share }))} />
             <ShareList title="Countries" empty="No data yet" rows={data.countries.map((row) => ({ label: row.name || row.code, share: row.share }))} />
           </div>
 
           {data.deep ? (
-            <div className="grid grid-cols-1 gap-[12px] lg:grid-cols-2">
-              <section className="rounded-[20px] border border-newBorder p-[16px]">
-                <h2 className="mb-[8px] text-[16px] font-[600]">Click-through by link</h2>
+            <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
+              <section className={stkCard}>
+                <h2 className="mb-[8px] text-[16px] font-[600] tracking-[-0.02em]">Click-through by link</h2>
                 {data.deep.links.length ? (
                   <table className="lib-table">
                     <thead>
@@ -227,7 +323,7 @@ export const LinkAnalyticsScreen = () => {
                     </tbody>
                   </table>
                 ) : (
-                  <p className="text-[14px] text-textItemBlur">No links yet</p>
+                  <p className="text-[14px] font-[500] text-textItemBlur">No links yet</p>
                 )}
               </section>
               <div className="grid grid-cols-1 gap-[12px]">
@@ -237,9 +333,9 @@ export const LinkAnalyticsScreen = () => {
               </div>
             </div>
           ) : (
-            <section className="rounded-[20px] border border-newBorder p-[16px]">
-              <h2 className="text-[16px] font-[600]">Device, browser and UTM</h2>
-              <p className="mt-[6px] text-[14px] text-textItemBlur">
+            <section className={stkCard}>
+              <h2 className="text-[16px] font-[600] tracking-[-0.02em]">Device, browser and UTM</h2>
+              <p className="mt-[6px] text-[14px] font-[500] text-textItemBlur">
                 Per-link CTR, device, browser, UTM and CSV export are on a paid plan.{' '}
                 <Link href="/billing" className="text-[#00D9FF]">
                   Upgrade
@@ -247,17 +343,35 @@ export const LinkAnalyticsScreen = () => {
               </p>
             </section>
           )}
+          </>
+          )}
         </>
       )}
     </div>
   );
 };
 
-const Metric = ({ label, value, delta }: { label: string; value: string; delta: string }) => (
-  <section className="rounded-[20px] border border-newBorder p-[16px]">
-    <p className="text-[13px] text-textItemBlur">{label}</p>
-    <p className="mt-[6px] text-[28px] font-[600]">{value}</p>
-    {delta ? <p className="text-[13px] text-[#3dd68c]">{delta}</p> : <p className="text-[13px] text-textItemBlur">No data yet</p>}
+const Metric = ({
+  label,
+  value,
+  delta,
+  deltaValue,
+  period,
+}: {
+  label: string;
+  value: string;
+  delta: string;
+  deltaValue: number | null;
+  period: string;
+}) => (
+  <section className={`${stkCard} lib-metric`}>
+    <p className="text-[13px] font-[500] text-textItemBlur">{label}</p>
+    <p className="mt-[6px] text-[28px] font-[600] tracking-[-0.03em]">{value}</p>
+    {delta ? (
+      <p className={`text-[13px] font-[600] ${deltaTone(deltaValue)}`}>{delta}</p>
+    ) : (
+      <p className="text-[13px] font-[500] text-textItemBlur">{period}</p>
+    )}
   </section>
 );
 
@@ -265,19 +379,24 @@ const ShareList = ({
   title,
   empty,
   rows,
+  logos,
 }: {
   title: string;
   empty: string;
   rows: Array<{ label: string; share: number }>;
+  logos?: boolean;
 }) => (
-  <section className="rounded-[20px] border border-newBorder p-[16px]">
-    <h2 className="mb-[10px] text-[16px] font-[600]">{title}</h2>
+  <section className={stkCard}>
+    <h2 className="mb-[10px] text-[16px] font-[600] tracking-[-0.02em]">{title}</h2>
     {rows.length ? (
       <div className="flex flex-col gap-[10px]">
         {rows.map((row) => (
           <div key={row.label}>
-            <div className="mb-[4px] flex justify-between text-[13px]">
-              <span>{row.label}</span>
+            <div className="mb-[4px] flex items-center justify-between gap-[8px] text-[13px] font-[500]">
+              <span className="flex min-w-0 items-center gap-[8px]">
+                {logos ? <SourceMark label={row.label} /> : null}
+                <span className="truncate">{row.label}</span>
+              </span>
               <span className="text-textItemBlur">{row.share}%</span>
             </div>
             <div className="lib-bar">
@@ -287,7 +406,7 @@ const ShareList = ({
         ))}
       </div>
     ) : (
-      <p className="text-[14px] text-textItemBlur">{empty}</p>
+      <p className="text-[14px] font-[500] text-textItemBlur">{empty}</p>
     )}
   </section>
 );
