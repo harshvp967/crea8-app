@@ -12,8 +12,10 @@ import {
   useLinkPage,
   useLinkPosts,
 } from '@gitroom/frontend/components/link-in-bio/link.api';
-import { LinkField, LinkModal, LinkToggle, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { LinkField, LinkMenuRow, LinkModal, LinkToggle, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
+import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { scheduleLabel, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
@@ -187,9 +189,25 @@ export const LinkEditorScreen = () => {
 
   if (isLoading || !data) {
     return (
-      <div className="p-[8px] text-[14px] text-textItemBlur">
-        {error ? 'Could not load your page.' : 'Loading your page…'}
-      </div>
+      <LinkSplit
+        preview={
+          <LinkPreview onCopy={() => undefined}>
+            <div className="h-full w-full bg-newBgColorInner" />
+          </LinkPreview>
+        }
+      >
+        <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
+          <div className="min-w-0">
+            <h1 className={stkTitle}>Editor</h1>
+          </div>
+          <div className={`${stkCard} flex items-center gap-[12px]`}>
+            {error ? <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" /> : null}
+            <p className="text-[14px] font-[500] text-textItemBlur">
+              {error ? 'Could not load your page.' : 'Loading your page…'}
+            </p>
+          </div>
+        </div>
+      </LinkSplit>
     );
   }
 
@@ -217,6 +235,7 @@ export const LinkEditorScreen = () => {
             navigator.clipboard?.writeText(data.publicUrl);
             toast.show('Link copied', 'success');
           }}
+          onClose={preview ? () => setPreview(false) : undefined}
         >
           <LinkPublicView
             key={`${data.slug}-${data.isPublic}-${data.sensitive}`}
@@ -229,26 +248,28 @@ export const LinkEditorScreen = () => {
       <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
         <div className="flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-[22px] font-[600]">Editor</h1>
-            <p className="truncate text-[14px] text-textItemBlur">
+            <h1 className={stkTitle}>Editor</h1>
+            <p className={`${stkSub} truncate`}>
               {data.publicOrigin.replace(/^https?:\/\//, '')}/{data.slug}
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-[8px] sm:justify-end">
             <button type="button" className={`${linkSecondary} min-[1200px]:hidden`} onClick={() => setPreview((value) => !value)}>
+              <HugeIcon name="eye" size={16} />
               {preview ? 'Close preview' : 'Preview'}
             </button>
             <div className="relative">
-              <button type="button" className={linkSecondary} onClick={() => setAddOpen((value) => !value)}>
-                + Add block
+              <button type="button" className={linkPrimary} onClick={() => setAddOpen((value) => !value)}>
+                <HugeIcon name="plus" size={16} />
+                Add block
               </button>
               {addOpen ? (
                 <div className="lib-menu">
-                  <button type="button" onClick={() => openLink()}>
+                  <LinkMenuRow icon="link" onClick={() => openLink()}>
                     Link
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="image"
                     onClick={() => {
                       setPostId('');
                       setModal({ kind: 'post' });
@@ -256,18 +277,18 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Featured post
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="mail"
                     onClick={() => {
                       setModal({ kind: 'capture' });
                       setAddOpen(false);
                     }}
                   >
                     Email capture
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="heading"
                     onClick={() => {
                       setHeading('');
                       setModal({ kind: 'heading' });
@@ -275,9 +296,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Header
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="code"
                     onClick={() => {
                       setEmbedTitle('');
                       setEmbedUrl('');
@@ -287,9 +308,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Embed
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="image"
                     onClick={() => {
                       setEmbedTitle('');
                       setEmbedUrl('');
@@ -299,9 +320,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Instagram post
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="play"
                     onClick={() => {
                       setEmbedTitle('');
                       setEmbedUrl('');
@@ -311,9 +332,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     TikTok post
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="at"
                     onClick={() => {
                       setEmbedTitle('');
                       setEmbedUrl('');
@@ -323,9 +344,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     X post
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="comment"
                     onClick={() => {
                       setEmbedTitle('');
                       setEmbedUrl('');
@@ -335,9 +356,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Threads post
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="location"
                     onClick={() => {
                       setMapTitle('');
                       setMapUrl('');
@@ -346,9 +367,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Google Maps
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="calendar"
                     onClick={() => {
                       setCalendlyTitle('');
                       setCalendlyUrl('');
@@ -357,9 +378,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Calendly
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="mail"
                     onClick={() => {
                       setDetails({ title: 'Contact', email: '', phone: '', address: '', website: '' });
                       setModal({ kind: 'details' });
@@ -367,9 +388,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Contact details
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="billing"
                     onClick={() => {
                       setDiscount({ title: '', code: '', note: '', url: '' });
                       setModal({ kind: 'discount' });
@@ -377,9 +398,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Discount code
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="calendar-day"
                     onClick={() => {
                       setEventsTitle('Upcoming');
                       setEvents([{ title: '', when: '', place: '', url: '' }]);
@@ -388,9 +409,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Events
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="comment"
                     onClick={() => {
                       setTextTitle('');
                       setTextBody('');
@@ -399,9 +420,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Text
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="list"
                     onClick={() => {
                       setFaqTitle('');
                       setFaq([{ question: '', answer: '' }]);
@@ -410,9 +431,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     FAQ
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="image"
                     onClick={() => {
                       setImages([]);
                       setModal({ kind: 'carousel' });
@@ -420,9 +441,9 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Image carousel
-                  </button>
-                  <button
-                    type="button"
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="mail"
                     onClick={() => {
                       setContact({ title: 'Get in touch', body: '', button: 'Send', askName: false });
                       setModal({ kind: 'contact' });
@@ -430,19 +451,16 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Contact form
-                  </button>
+                  </LinkMenuRow>
                 </div>
               ) : null}
             </div>
-            <button type="button" className={linkPrimary} onClick={() => openLink()}>
-              + Add link
-            </button>
           </div>
         </div>
 
-        <section className="rounded-[18px] border border-newBorder p-[12px]">
+        <section className={stkCard}>
           <div className="mb-[8px] flex items-center justify-between gap-[8px]">
-            <h2 className="text-[14px] font-[600]">Preview as</h2>
+            <h2 className="text-[16px] font-[600]">Preview as</h2>
             <button
               type="button"
               className="text-[13px] text-textItemBlur"
@@ -491,21 +509,22 @@ export const LinkEditorScreen = () => {
         </section>
 
         {!data.blocks.length ? (
-          <div className="flex flex-col items-center gap-[8px] py-[80px] text-center">
-            <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
-              ↗
-            </div>
+          <div className={`${stkCard} ${stkEmpty}`}>
+            <span className={stkIconTile} aria-hidden>
+              <HugeIcon name="link" size={24} />
+            </span>
             <h2 className="text-[16px] font-[600]">No links yet</h2>
             <p className="max-w-[320px] text-[14px] text-textItemBlur">Add your first link or block to start your page.</p>
-            <button type="button" className={linkPrimary} onClick={() => openLink()}>
-              + Add link
+            <button type="button" className={`${linkSecondary} mt-[6px]`} onClick={() => setAddOpen(true)}>
+              <HugeIcon name="plus" size={16} />
+              Add block
             </button>
           </div>
         ) : (
           data.blocks.map((block) => (
             <article
               key={block.id}
-              className={`lib-editor-row flex items-center gap-[10px] rounded-[18px] border border-newBorder px-[12px] py-[12px]${
+              className={`lib-editor-row ${stkCard} flex items-center gap-[12px] !p-[14px]${
                 block.type === 'FEATURED_POST' ? ' is-feature' : ''
               }`}
               draggable
@@ -517,7 +536,7 @@ export const LinkEditorScreen = () => {
               }}
             >
               <span className="cursor-grab text-textItemBlur" aria-hidden>
-                ⋮⋮
+                <HugeIcon name="drag" size={18} />
               </span>
               {block.type === 'FEATURED_POST' ? (
                 <div className="h-[42px] w-[42px] shrink-0 overflow-hidden rounded-[10px] bg-newBgLineColor">
@@ -550,7 +569,7 @@ export const LinkEditorScreen = () => {
                 ) : null}
               </div>
               {block.type === 'LINK' ? (
-                <span className="lib-editor-meta shrink-0 text-[13px] text-textItemBlur">
+                <span className="lib-editor-clicks shrink-0 text-[13px] text-textItemBlur">
                   {block.clicks.toLocaleString('en-US')} clicks
                 </span>
               ) : null}
@@ -566,7 +585,7 @@ export const LinkEditorScreen = () => {
                   Change post
                 </button>
               ) : (
-                <span className="lib-editor-meta shrink-0">
+                <span className="lib-editor-toggle shrink-0">
                   <LinkToggle
                     checked={block.enabled}
                     label={block.enabled ? 'Hide block' : 'Show block'}
@@ -575,15 +594,15 @@ export const LinkEditorScreen = () => {
                 </span>
               )}
               <div className="relative shrink-0">
-                <button type="button" className="px-[6px] text-[18px]" aria-label="Block actions" onClick={() => setMenu(menu === block.id ? '' : block.id)}>
-                  …
+                <button type="button" className="grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={() => setMenu(menu === block.id ? '' : block.id)}>
+                  <HugeIcon name="more-v" size={18} />
                 </button>
                 {menu === block.id ? (
                   <div className="lib-menu">
                     {block.type === 'LINK' ? (
                       <>
-                        <button
-                          type="button"
+                        <LinkMenuRow
+                          icon="copy"
                           onClick={() => {
                             navigator.clipboard?.writeText(block.url);
                             toast.show('Link copied', 'success');
@@ -591,32 +610,32 @@ export const LinkEditorScreen = () => {
                           }}
                         >
                           Copy link
-                        </button>
-                        <button type="button" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { priority: !block.priority })}>
+                        </LinkMenuRow>
+                        <LinkMenuRow icon="star" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { priority: !block.priority })}>
                           {block.priority ? 'Remove priority' : 'Make priority'}
-                        </button>
-                        <button type="button" onClick={() => openLink(block)}>
+                        </LinkMenuRow>
+                        <LinkMenuRow icon="clock" onClick={() => openLink(block)}>
                           Schedule
-                        </button>
-                        <button type="button" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
+                        </LinkMenuRow>
+                        <LinkMenuRow icon={block.enabled ? 'eye-off' : 'eye'} onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
                           {block.enabled ? 'Hidden' : 'Show'}
-                        </button>
+                        </LinkMenuRow>
                       </>
                     ) : null}
                     {block.type === 'HEADING' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setHeading(block.title);
                           setModal({ kind: 'heading', block });
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'EMBED' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setEmbedTitle(block.title);
                           setEmbedUrl(block.url);
@@ -624,11 +643,11 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'TEXT' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setTextTitle(block.title);
                           setTextBody(block.body);
@@ -636,11 +655,11 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'FAQ' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setFaqTitle(block.title);
                           setFaq(block.faq.length ? block.faq : [{ question: '', answer: '' }]);
@@ -648,22 +667,22 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'IMAGE_CAROUSEL' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setImages(block.images);
                           setModal({ kind: 'carousel', block });
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'CONTACT_FORM' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setContact({
                             title: block.title || block.form?.heading || '',
@@ -675,11 +694,11 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'MAP' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setMapTitle(block.title);
                           setMapUrl(block.url);
@@ -687,11 +706,11 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'CALENDLY' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setCalendlyTitle(block.title);
                           setCalendlyUrl(block.url);
@@ -699,11 +718,11 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'CONTACT_DETAILS' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setDetails({
                             title: block.title || 'Contact',
@@ -716,11 +735,11 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'DISCOUNT' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setDiscount({
                             title: block.title,
@@ -732,11 +751,11 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'EVENTS' ? (
-                      <button
-                        type="button"
+                      <LinkMenuRow
+                        icon="pencil"
                         onClick={() => {
                           setEventsTitle(block.title || 'Upcoming');
                           setEvents(block.events.length ? block.events : [{ title: '', when: '', place: '', url: '' }]);
@@ -744,21 +763,21 @@ export const LinkEditorScreen = () => {
                         }}
                       >
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'FEATURED_POST' ? (
-                      <button type="button" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
+                      <LinkMenuRow icon={block.enabled ? 'eye-off' : 'eye'} onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
                         {block.enabled ? 'Hidden' : 'Show'}
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
                     {block.type === 'EMAIL_CAPTURE' ? (
-                      <button type="button" onClick={() => setModal({ kind: 'capture' })}>
+                      <LinkMenuRow icon="pencil" onClick={() => setModal({ kind: 'capture' })}>
                         Edit
-                      </button>
+                      </LinkMenuRow>
                     ) : null}
-                    <button type="button" className="danger" onClick={() => setModal({ kind: 'delete', block })}>
+                    <LinkMenuRow icon="trash" danger onClick={() => setModal({ kind: 'delete', block })}>
                       Delete
-                    </button>
+                    </LinkMenuRow>
                   </div>
                 ) : null}
               </div>

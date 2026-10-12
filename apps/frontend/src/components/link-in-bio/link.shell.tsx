@@ -1,6 +1,8 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { stkClose } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import './link.scss';
 
 export const LinkShell = ({ children }: { children: ReactNode }) => {
@@ -29,6 +31,14 @@ export const LinkSplit = ({
           }
         }}
       >
+        {previewOpen ? (
+          <div className="lib-preview-sheet-head">
+            <span className="text-[16px] font-[600] tracking-[-0.02em]">Preview</span>
+            <button type="button" className={stkClose} aria-label="Close preview" onClick={onPreviewClose}>
+              <HugeIcon name="close" size={16} />
+            </button>
+          </div>
+        ) : null}
         {preview}
       </aside>
     ) : null}
@@ -38,16 +48,26 @@ export const LinkSplit = ({
 export const LinkPreview = ({
   children,
   onCopy,
+  onClose,
 }: {
   children: ReactNode;
   onCopy: () => void;
+  onClose?: () => void;
 }) => (
-  <div className="lib-preview flex w-full max-w-[320px] flex-col items-center gap-[10px]">
-    <div className="flex w-full items-center justify-between text-[14px]">
-      <span>Preview</span>
-      <button type="button" className="text-textItemBlur" onClick={onCopy}>
-        Copy link
-      </button>
+  <div className={`lib-preview flex w-full flex-col items-center gap-[10px] ${onClose ? 'max-w-[440px]' : 'max-w-[320px]'}`}>
+    <div className="lib-preview-tools flex w-full items-center justify-between text-[14px]">
+      <span className="font-[600] tracking-[-0.02em]">Preview</span>
+      <span className="inline-flex items-center gap-[14px]">
+        <button type="button" className="inline-flex items-center gap-[6px] text-[14px] font-[500]" onClick={onCopy}>
+          <HugeIcon name="copy" size={16} />
+          Copy link
+        </button>
+        {onClose ? (
+          <button type="button" className="text-[14px] font-[500]" onClick={onClose}>
+            Close preview
+          </button>
+        ) : null}
+      </span>
     </div>
     <div className="lib-phone">{children}</div>
   </div>

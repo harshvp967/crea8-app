@@ -1,6 +1,16 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ButtonHTMLAttributes, ReactNode, useEffect } from 'react';
+import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
+import {
+  stkClose,
+  stkDanger,
+  stkDialog,
+  stkDialogBody,
+  stkDialogHead,
+  stkPrimary,
+  stkSecondary,
+} from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 export const LinkToggle = ({
   checked,
@@ -50,14 +60,14 @@ export const LinkModal = ({
         }
       }}
     >
-      <div className="lib-dialog" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="mb-[14px] flex items-center justify-between gap-[12px]">
-          <h2 className="text-[18px] font-[600]">{title}</h2>
-          <button type="button" className="text-[18px] text-textItemBlur" aria-label="Close" onClick={onClose}>
-            ×
+      <div className={`lib-dialog ${stkDialog}`} role="dialog" aria-modal="true" aria-label={title}>
+        <div className={stkDialogHead}>
+          <h2 className="min-w-0 text-[18px] font-[600] leading-[1.2] tracking-[-0.02em]">{title}</h2>
+          <button type="button" className={stkClose} aria-label="Close" onClick={onClose}>
+            <HugeIcon name="close" size={16} />
           </button>
         </div>
-        {children}
+        <div className={stkDialogBody}>{children}</div>
       </div>
     </div>
   );
@@ -76,9 +86,21 @@ export const LinkField = ({
   </label>
 );
 
-export const linkPrimary =
-  'inline-flex h-[40px] items-center justify-center rounded-[18px] bg-forth px-[16px] text-[14px] font-[600] text-[#0A0A0A] disabled:opacity-50';
-export const linkSecondary =
-  'inline-flex h-[40px] items-center justify-center rounded-[18px] border border-newBorder bg-transparent px-[16px] text-[14px] font-[500]';
-export const linkDanger =
-  'inline-flex h-[40px] items-center justify-center rounded-[18px] border border-[#f07178] px-[16px] text-[14px] font-[600] text-[#f07178]';
+export const LinkMenuRow = ({
+  icon,
+  danger,
+  children,
+  className,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { icon: HugeIconName; danger?: boolean }) => (
+  <button type="button" className={`${danger ? 'danger ' : ''}${className || ''}`} {...props}>
+    <HugeIcon name={icon} size={16} />
+    <span>{children}</span>
+  </button>
+);
+
+export const linkPrimary = `${stkPrimary} lib-raised`;
+export const linkSecondary = stkSecondary;
+export const linkDanger = `${stkDanger} lib-danger`;
+export const linkChoice =
+  'stk-wave inline-flex h-[44px] min-h-[44px] shrink-0 items-center justify-center gap-[8px] rounded-[18px] border border-[color:var(--arc-selected-border)] bg-newBgColorInner px-[16px] text-[14px] font-[500] text-newTextColor shadow-[var(--arc-shadow-resting)]';
