@@ -9227,7 +9227,9 @@ body.composer-open .po-assist .copilotKitWindow.open,
 }
 
 .cc-picker .cc-tile {
-  height: 104px !important;
+  height: auto !important;
+  min-height: 104px;
+  align-self: stretch;
   border-radius: 20px !important;
   border: 1px solid var(--new-border) !important;
   background: var(--new-bgColorInner) !important;
@@ -9242,12 +9244,10 @@ body.composer-open .po-assist .copilotKitWindow.open,
 .cc-picker .cc-name {
   width: 100%;
   text-align: center !important;
-  white-space: normal;
+  white-space: normal !important;
   line-height: 1.2;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: block;
+  overflow: visible;
 }
 
 .cc-picker .cc-info {
@@ -9420,21 +9420,21 @@ body.composer-open .po-assist .copilotKitWindow.open,
 
 .cc-return-logo .logo-word {
   display: inline-flex !important;
-  height: 28px !important;
-  max-width: 220px !important;
-  width: auto !important;
-}
-
-.cc-return-logo .logo-word > span {
-  height: 28px !important;
+  height: 66px !important;
   max-width: none !important;
   width: auto !important;
 }
 
+.cc-return-logo .logo-word > span {
+  height: 66px !important;
+  max-width: none !important;
+  width: 222px !important;
+}
+
 .cc-return-logo .logo-word img {
-  height: 28px !important;
-  width: auto !important;
-  max-width: 220px !important;
+  height: 66px !important;
+  width: 222px !important;
+  max-width: none !important;
 }
 
 .cc-return-card {
@@ -9656,7 +9656,8 @@ body.composer-open .po-assist .copilotKitWindow.open,
 
   .cc-picker .cc-tile {
     flex-direction: column !important;
-    height: 92px !important;
+    height: auto !important;
+    min-height: 108px;
     justify-content: center !important;
     align-items: center !important;
     padding: 8px 6px !important;
@@ -9664,9 +9665,47 @@ body.composer-open .po-assist .copilotKitWindow.open,
     gap: 6px !important;
   }
 
+  .cc-picker .cc-tile.is-soon {
+    padding-top: 26px !important;
+  }
+
+  .cc-picker .cc-soon {
+    top: 6px !important;
+    left: 6px !important;
+    right: auto !important;
+    inset-inline-start: 6px !important;
+    inset-inline-end: auto !important;
+    transform: none;
+    max-width: none !important;
+    width: max-content;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    font-size: 10px !important;
+    height: 16px !important;
+    line-height: 14px !important;
+    padding: 0 6px !important;
+  }
+
   .cc-picker .cc-name {
     font-size: 12px;
     line-height: 1.15;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    display: block !important;
+  }
+
+  .cc-return-logo .logo-word,
+  .cc-return-logo .logo-word > span,
+  .cc-return-logo .logo-word img {
+    height: 66px !important;
+    max-width: none !important;
+  }
+
+  .cc-return-logo .logo-word > span,
+  .cc-return-logo .logo-word img {
+    width: 222px !important;
   }
 
   .cc-actions {
