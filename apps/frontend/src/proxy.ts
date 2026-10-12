@@ -11,6 +11,12 @@ import {
 acceptLanguage.languages(languages);
 
 const APP_HOSTS = new Set(['localhost', '127.0.0.1', 'crea8.one', 'www.crea8.one', 'app.crea8.one']);
+const LINK_API_ORIGINS = new Set([
+  'https://crea8.one',
+  'https://www.crea8.one',
+  'http://crea8.one',
+  'http://www.crea8.one',
+]);
 const APP_SECTIONS = new Set([
   'admin',
   'agents',
@@ -68,8 +74,36 @@ function publicBioPath(pathname: string) {
   return !APP_SECTIONS.has(slug);
 }
 
+// Bios opened from crea8.one call this app's /api/link. Those routes are not
+// authenticated. Answer them here so the auth redirects below stay unchanged.
+function linkApiCors(request: NextRequest) {
+  if (!request.nextUrl.pathname.startsWith('/api/link')) {
+    return null;
+  }
+  const origin = request.headers.get('origin') || '';
+  const headers = new Headers();
+  if (LINK_API_ORIGINS.has(origin)) {
+    headers.set('Access-Control-Allow-Origin', origin);
+    headers.set('Vary', 'Origin');
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  }
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers });
+  }
+  const response = NextResponse.next();
+  headers.forEach((value, key) => {
+    response.headers.set(key, value);
+  });
+  return response;
+}
+
 // This function can be marked `async` if using `await` inside
 export async function proxy(request: NextRequest) {
+  const linkCors = linkApiCors(request);
+  if (linkCors) {
+    return linkCors;
+  }
   const nextUrl = request.nextUrl;
   const authCookie =
     request.cookies.get('auth') ||
@@ -267,5 +301,5 @@ export async function proxy(request: NextRequest) {
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: '/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)',
+  matcher: ['/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)', '/api/link/:path*'],
 };
