@@ -291,13 +291,13 @@ export const LinkSettingsScreen = () => {
               aria-label="Username"
             />
             {slugState?.ok ? (
-              <span className="pointer-events-none absolute inset-y-0 end-[12px] flex items-center text-[13px] text-textItemBlur">
+              <span className="pointer-events-none absolute inset-y-0 end-[12px] flex items-center text-[13px] font-[600] text-[color:var(--arc-success)]">
                 {slugState.message}
               </span>
             ) : null}
           </div>
           <p className="text-[13px] text-textItemBlur">Letters, numbers, dots and underscores · 3 to 30 characters</p>
-          {slugState && !slugState.ok ? <p className="text-[13px] text-[#f07178]">{slugState.message}</p> : null}
+          {slugState && !slugState.ok ? <p className="text-[13px] font-[600] text-[color:var(--arc-danger)]">{slugState.message}</p> : null}
           <p className="text-[13px] text-textItemBlur">Opens {origin}/{slug || data.slug}</p>
         </div>
       </section>
