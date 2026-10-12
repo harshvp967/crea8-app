@@ -720,7 +720,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   </span>
                 </button>
                 {!dummy && (
-                  <button type="button" className="po-split-chevron" aria-label={t('post_now', 'Post Now')}>
+                  <button
+                    type="button"
+                    className="po-split-chevron"
+                    aria-label={t('post_now', 'Post Now')}
+                    disabled={loading || locked}
+                  >
                     <DropdownArrowSmallIcon className="group-hover:rotate-180 text-[#0A0A0A]" />
                   </button>
                 )}

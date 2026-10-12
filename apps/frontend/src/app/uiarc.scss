@@ -1519,7 +1519,6 @@ body :focus-visible {
   }
 
   .post-now-tray {
-    display: flex !important;
     position: static !important;
     width: 100% !important;
     left: auto !important;
@@ -8746,7 +8745,7 @@ body.composer-open .app-toast.is-error {
 
 .po-edit-modal .arc-dialog-head {
   padding: 22px 24px 16px;
-  border-bottom: 0;
+  border-bottom: 1px solid var(--new-border);
   min-height: 0;
 }
 
@@ -8818,8 +8817,27 @@ body.composer-open .app-toast.is-error {
   border-color: transparent !important;
 }
 
+.composer .po-split:has(.po-spin) .post-now-tray,
+.composer .group.po-split:hover:has(.po-spin) .post-now-tray {
+  display: none !important;
+}
+
+.po-split:has(.po-spin) .po-split-chevron {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.po-split:has(.po-spin) .po-split-chevron svg {
+  transform: none !important;
+}
+
 .po-assist {
   font-family: 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif;
+}
+
+.po-assist.copilotKitPopup {
+  z-index: 640 !important;
 }
 
 body.composer-open .po-assist .copilotKitWindow.open,
@@ -9004,26 +9022,49 @@ body.composer-open .po-assist .copilotKitWindow.open,
     margin: 12px auto 0;
   }
 
-  .po-sure-actions,
-  .po-edit-actions {
+  .po-sure-actions {
     flex-wrap: nowrap;
   }
 
-  .po-sure-actions button,
-  .po-edit-actions button {
+  .po-sure-actions button {
     flex: 1 1 0;
     min-width: 0;
     height: auto !important;
     min-height: 44px;
-    white-space: normal;
+    white-space: nowrap;
     padding: 8px 10px !important;
   }
 
-  .po-edit-actions button > div,
-  .po-sure-actions button > div {
-    white-space: normal;
-    text-align: center;
-    line-height: 1.25;
+  .po-edit-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .po-edit-actions button {
+    flex: none;
+    width: 100%;
+    height: 44px !important;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .po-edit-actions button > div {
+    white-space: nowrap;
+  }
+
+  .composer-foot .po-split {
+    max-width: 100%;
+  }
+
+  body.composer-open .po-assist.copilotKitPopup:has(.copilotKitWindow.open) {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    background: var(--new-bgColorInner) !important;
+    z-index: 640 !important;
   }
 
   .po-edit-copy,
