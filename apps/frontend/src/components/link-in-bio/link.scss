@@ -776,6 +776,11 @@
   text-align: left;
 }
 
+.lib-soon,
+.lib-sensitive {
+  text-align: center;
+}
+
 .lib-capture p,
 .lib-soon p,
 .lib-sensitive p {
@@ -823,8 +828,12 @@
 }
 
 .lib-continue {
-  width: 100%;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 14px;
+  padding: 0 22px;
   border-radius: 999px;
 }
 
