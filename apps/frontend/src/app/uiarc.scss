@@ -2530,6 +2530,10 @@ body :focus-visible {
   .week-grid {
     grid-template-columns: 52px repeat(7, minmax(0, 1fr));
   }
+
+  .cc-picker-modal .cc-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {
@@ -9228,6 +9232,35 @@ body.composer-open .po-assist .copilotKitWindow.open,
   border: 1px solid var(--new-border) !important;
   background: var(--new-bgColorInner) !important;
   gap: 8px !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center;
+  padding: 8px !important;
+}
+
+.cc-picker .cc-name {
+  width: 100%;
+  text-align: center !important;
+  white-space: normal;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cc-picker .cc-info {
+  color: var(--new-textItemBlur);
+  pointer-events: none;
+}
+
+.cc-picker .cc-tile.is-soon > div {
+  opacity: 0.55;
+}
+
+.cc-picker .cc-tile.is-soon:hover > div {
+  opacity: 1;
 }
 
 .cc-picker .cc-tile:hover {
@@ -9315,8 +9348,26 @@ body.composer-open .po-assist .copilotKitWindow.open,
   outline: none;
 }
 
-.cc-field:focus {
-  border-color: var(--arc-focus, #00d9ff);
+.cc-input input:focus,
+.cc-input input:focus-visible,
+.cc-field:focus,
+.cc-field:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+.cc-input:focus-within,
+.cc-field:focus,
+.cc-field:focus-visible {
+  border-color: var(--arc-selected-border) !important;
+  box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.22);
+  border-radius: 18px;
+}
+
+.cc-input[data-invalid='true'],
+.cc-input[data-invalid='true']:focus-within {
+  border-color: color-mix(in srgb, var(--arc-danger) 55%, var(--new-border)) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--arc-danger) 22%, transparent);
 }
 
 .cc-actions {
@@ -9352,12 +9403,38 @@ body.composer-open .po-assist .copilotKitWindow.open,
   color: var(--new-btn-text);
 }
 
+.cc-return-logo {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .cc-return-logo .logo-mark {
-  display: none;
+  display: none !important;
 }
 
 .cc-return-logo .app-logo {
   padding: 0;
+  justify-content: center;
+}
+
+.cc-return-logo .logo-word {
+  display: inline-flex !important;
+  height: 28px !important;
+  max-width: 220px !important;
+  width: auto !important;
+}
+
+.cc-return-logo .logo-word > span {
+  height: 28px !important;
+  max-width: none !important;
+  width: auto !important;
+}
+
+.cc-return-logo .logo-word img {
+  height: 28px !important;
+  width: auto !important;
+  max-width: 220px !important;
 }
 
 .cc-return-card {
@@ -9572,24 +9649,24 @@ body.composer-open .po-assist .copilotKitWindow.open,
   }
 
   .cc-picker .cc-grid {
-    display: flex !important;
-    flex-direction: column;
-    gap: 8px !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px !important;
   }
 
   .cc-picker .cc-tile {
-    flex-direction: row !important;
-    height: 64px !important;
-    justify-content: flex-start !important;
-    padding: 12px 14px !important;
-    text-align: left;
+    flex-direction: column !important;
+    height: 92px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 8px 6px !important;
+    text-align: center;
+    gap: 6px !important;
   }
 
-  .cc-picker .cc-tile > div:last-child {
-    text-align: left !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .cc-picker .cc-name {
+    font-size: 12px;
+    line-height: 1.15;
   }
 
   .cc-actions {

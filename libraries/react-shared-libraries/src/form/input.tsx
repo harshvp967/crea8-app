@@ -65,6 +65,7 @@ export const Input: FC<
           'bg-newBgColorInner h-[44px] border-newBorder border rounded-[18px] text-textColor placeholder-textColor flex items-center justify-center focus-within:border-[color:var(--arc-focus)]',
           className
         )}
+        {...(err ? { 'data-invalid': 'true' } : {})}
       >
         {icon && <div className="ps-[16px]">{icon}</div>}
         <input
