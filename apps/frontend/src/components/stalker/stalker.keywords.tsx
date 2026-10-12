@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -116,36 +117,15 @@ const mentionCount = (keyword: Keyword) => {
   return '—';
 };
 
-const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-  </svg>
-);
+const PlusIcon = () => <HugeIcon name="plus" size={16} />;
 
-const FolderIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <path d="M3 7h6l2 2h10v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" strokeLinejoin="round" />
-  </svg>
-);
+const FolderIcon = () => <HugeIcon name="folder" size={16} />;
 
-const PauseIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-    <rect x="6" y="5" width="3.5" height="14" rx="1" />
-    <rect x="14.5" y="5" width="3.5" height="14" rx="1" />
-  </svg>
-);
+const PauseIcon = () => <HugeIcon name="pause" size={16} />;
 
-const PlayIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-    <path d="M8 5.5v13l11-6.5z" />
-  </svg>
-);
+const PlayIcon = () => <HugeIcon name="play" size={16} />;
 
-const TrashIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+const TrashIcon = () => <HugeIcon name="trash" size={16} />;
 
 const PreviewPost = ({ phrase }: { phrase: string }) => (
   <article className="rounded-[20px] border border-newBorder bg-newBoxHover p-[14px]">
@@ -638,9 +618,7 @@ export const StalkerKeywords = () => {
         <section className={`${stkCard} stk-kw-empty`}>
           <div className={stkEmpty}>
             <span className={stkIconTile} aria-hidden>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M4 7h10M4 12h14M4 17h8" strokeLinecap="round" />
-              </svg>
+              <HugeIcon name="list" size={24} />
             </span>
             <h3 className="text-[16px] font-[600]">No keywords yet.</h3>
             <p className="max-w-[360px] text-[14px] text-textItemBlur">

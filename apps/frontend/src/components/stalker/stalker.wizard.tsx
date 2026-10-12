@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import clsx from 'clsx';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
@@ -81,17 +82,9 @@ const SOURCES = [
   ['linkedin', 'LinkedIn', 'linkedin', 'LINKEDIN'],
 ] as const;
 
-const Arrow = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-    <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+const Arrow = () => <HugeIcon name="chevron-right" size={16} />;
 
-const StepCheck = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
-    <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+const StepCheck = () => <HugeIcon name="check" size={12} />;
 
 export const StalkerWizard = () => {
   const fetch = useFetch();

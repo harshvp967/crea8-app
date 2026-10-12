@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, Fragment, useCallback } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { Button } from '@gitroom/react/form/button';
@@ -76,9 +77,7 @@ export const ApprovedAppsComponent: FC = () => {
         {!apps?.length ? (
           <div className="settings-empty">
             <span className="settings-empty-mark" aria-hidden>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path d="M12 3l7 3v6c0 4.2-2.8 7.4-7 8.5C7.8 19.4 5 16.2 5 12V6l7-3z" />
-              </svg>
+              <HugeIcon name="shield" size={24} />
             </span>
             <h2>{t('no_approved_apps', 'No approved apps yet.')}</h2>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -400,18 +401,7 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
       {features.map((feature) => (
         <div key={feature.key} className="flex items-center gap-[8px]">
           <div>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="17"
-              height="17"
-              viewBox="0 0 17 17"
-              fill="none"
-            >
-              <path
-                d="M11.825 0H4.84167C1.80833 0 0 1.80833 0 4.84167V11.8167C0 14.8583 1.80833 16.6667 4.84167 16.6667H11.8167C14.85 16.6667 16.6583 14.8583 16.6583 11.825V4.84167C16.6667 1.80833 14.8583 0 11.825 0ZM12.3167 6.41667L7.59167 11.1417C7.475 11.2583 7.31667 11.325 7.15 11.325C6.98333 11.325 6.825 11.2583 6.70833 11.1417L4.35 8.78333C4.10833 8.54167 4.10833 8.14167 4.35 7.9C4.59167 7.65833 4.99167 7.65833 5.23333 7.9L7.15 9.81667L11.4333 5.53333C11.675 5.29167 12.075 5.29167 12.3167 5.53333C12.5583 5.775 12.5583 6.16667 12.3167 6.41667Z"
-                fill="currentColor"
-              />
-            </svg>
+            <HugeIcon name="check-square" size={16} />
           </div>
           <div>{renderFeature(feature)}</div>
         </div>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import clsx from 'clsx';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import {
   StalkerScanSource,
   useStalkerProject,
@@ -107,10 +108,7 @@ export const StalkerCheckNow = ({
             aria-hidden
           />
         ) : iconOnly ? (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-            <circle cx="12" cy="12" r="8" />
-            <path d="M12 8v5l3 2" strokeLinecap="round" />
-          </svg>
+          <HugeIcon name="clock" size={16} />
         ) : null}
         {iconOnly ? null : showScanning ? 'Checking…' : 'Check now'}
       </button>
