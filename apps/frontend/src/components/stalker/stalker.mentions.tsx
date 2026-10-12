@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
+import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
@@ -171,11 +172,7 @@ const sentimentText = (sentiment?: string) => {
   return '';
 };
 
-const LineIcon = ({ d }: { d: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <path d={d} />
-  </svg>
-);
+const LineIcon = ({ name }: { name: HugeIconName }) => <HugeIcon name={name} size={16} />;
 
 export const StalkerMentions = () => {
   const fetch = useFetch();
@@ -386,9 +383,7 @@ export const StalkerMentions = () => {
               aria-expanded={naming}
               onClick={() => setNaming((value) => !value)}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M3 7h6l2 2h10v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-              </svg>
+              <HugeIcon name="folder" size={16} />
               <span className="stk-save-label">Save these filters as a view</span>
             </button>
             {naming ? (
@@ -490,9 +485,7 @@ export const StalkerMentions = () => {
         hiddenOffTopic && !filters.offTopic ? (
           <div className={stkEmpty}>
             <span className={stkIconTile} aria-hidden>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M5 6h14M5 12h14M5 18h9" />
-              </svg>
+              <HugeIcon name="list" size={24} />
             </span>
             <h2 className="text-[16px] font-[600]">
               {hiddenOffTopic} mention{hiddenOffTopic === 1 ? '' : 's'} hidden as off-topic
@@ -588,7 +581,7 @@ export const StalkerMentions = () => {
                       className={clsx(follow ? stkTint : stkGhost, 'stk-act')}
                       onClick={() => setStatus(mention.id, 'FOLLOW_UP')}
                     >
-                      <LineIcon d="M5 21V4h9l-1 4 1 4H5" />
+                      <LineIcon name="flag" />
                       <span>Follow up</span>
                     </button>
                     <button
@@ -596,7 +589,7 @@ export const StalkerMentions = () => {
                       className={clsx(done ? stkTint : stkGhost, 'stk-act')}
                       onClick={() => setStatus(mention.id, 'DONE')}
                     >
-                      <LineIcon d="M5 12.5l4.2 4.2L19 7" />
+                      <LineIcon name="check" />
                       <span>Done</span>
                     </button>
                     <button
@@ -604,7 +597,7 @@ export const StalkerMentions = () => {
                       className={clsx(ignored ? stkTint : stkGhost, 'stk-act')}
                       onClick={() => setStatus(mention.id, 'IGNORED')}
                     >
-                      <LineIcon d="M7 7l10 10M17 7L7 17" />
+                      <LineIcon name="close" />
                       <span>Irrelevant</span>
                     </button>
                     <div className="relative" data-mention-menu>
@@ -615,11 +608,7 @@ export const StalkerMentions = () => {
                         aria-expanded={marking === mention.id}
                         onClick={() => setMarking(marking === mention.id ? null : mention.id)}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                        <circle cx="6" cy="12" r="1.4" />
-                        <circle cx="12" cy="12" r="1.4" />
-                        <circle cx="18" cy="12" r="1.4" />
-                      </svg>
+                        <HugeIcon name="more" size={16} />
                       </button>
                       {marking === mention.id ? (
                         <>
@@ -631,11 +620,11 @@ export const StalkerMentions = () => {
                           />
                           <div className={`${stkMenu} stk-mention-menu`} role="menu">
                             <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, true)}>
-                              <LineIcon d="M5 12.5l4.2 4.2L19 7" />
+                              <LineIcon name="check" />
                               Relevant
                             </button>
                             <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, false)}>
-                              <LineIcon d="M7 7l10 10M17 7L7 17" />
+                              <LineIcon name="close" />
                               Off-topic
                             </button>
                             <div className="stk-menu-rule" />
@@ -649,7 +638,7 @@ export const StalkerMentions = () => {
                                 setMarking(null);
                               }}
                             >
-                              <LineIcon d="M8 8h9a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2v-9a2 2 0 012-2zM7 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v1" />
+                              <LineIcon name="copy" />
                               Copy link
                             </button>
                             <button
@@ -660,12 +649,12 @@ export const StalkerMentions = () => {
                                 setMarking(null);
                               }}
                             >
-                              <LineIcon d="M5 12h14M13 6l6 6-6 6" />
+                              <LineIcon name="chevron-right" />
                               {expanded === mention.id ? 'See less' : 'See more'}
                             </button>
                             {mention.url ? (
                               <a href={mention.url} target="_blank" rel="noreferrer" className={stkMenuItem}>
-                                <LineIcon d="M14 5h5v5M19 5l-9 9M10 5H6a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1v-4" />
+                                <LineIcon name="external" />
                                 Open
                               </a>
                             ) : null}

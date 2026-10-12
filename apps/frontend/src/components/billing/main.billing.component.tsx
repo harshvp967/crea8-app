@@ -1,6 +1,7 @@
 'use client';
 
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Subscription } from '@prisma/client';
@@ -122,22 +123,7 @@ export const Features: FC<{
     <div className="billing-features">
       {features.map((feature) => (
         <div key={feature} className="billing-feature">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M3.2 8.2 6.3 11.3 12.8 4.7"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <HugeIcon name="check" size={16} />
           <span>{feature}</span>
         </div>
       ))}

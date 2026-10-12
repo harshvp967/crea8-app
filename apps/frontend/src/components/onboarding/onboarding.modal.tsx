@@ -1,6 +1,7 @@
 'use client';
 
 import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { orderBy } from 'lodash';
@@ -50,20 +51,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
           type="button"
           onClick={modals.closeAll}
         >
-          <svg
-            viewBox="0 0 15 15"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-          >
-            <path
-              d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
-              fill="currentColor"
-              fillRule="evenodd"
-              clipRule="evenodd"
-            ></path>
-          </svg>
+          <HugeIcon name="close" size={16} />
         </button>
         <div className="flex-1 flex p-[32px]">
           <div className="flex flex-col gap-[24px] flex-1">
@@ -231,21 +219,11 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
           {sortedIntegrations.length > 0
             ? t('continue', 'Continue')
             : t('continue_without_channels', 'Continue without channels')}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <HugeIcon
+            name="chevron-right"
+            size={20}
             className="group-hover:translate-x-1 transition-transform"
-          >
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-          </svg>
+          />
         </button>
       </div>
     </div>
@@ -592,21 +570,11 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
           onClick={onBack}
           className="group flex items-center gap-[8px] bg-transparent border-2 border-boxFocused font-medium px-[24px] py-[12px] rounded-full text-[15px] transition-all"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <HugeIcon
+            name="chevron-left"
+            size={18}
             className="group-hover:-translate-x-1 transition-transform"
-          >
-            <path d="m12 19-7-7 7-7" />
-            <path d="M19 12H5" />
-          </svg>
+          />
           {t('back', 'Back')}
         </button>
         <div className="text-[13px] text-customColor18 text-center">
@@ -620,21 +588,11 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
           className="group flex items-center gap-[12px] bg-[#00D9FF] hover:brightness-95 text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all "
         >
           {t('continue_skip', 'Continue / Skip')}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <HugeIcon
+            name="chevron-right"
+            size={20}
             className="group-hover:translate-x-1 transition-transform"
-          >
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-          </svg>
+          />
         </button>
       </div>
     </div>
@@ -680,21 +638,11 @@ const OnboardingStep3: FC<{ onBack: () => void; onFinish: () => void }> = ({
           onClick={onBack}
           className="group flex items-center gap-[8px] bg-transparent border-2 border-boxFocused font-medium px-[24px] py-[12px] rounded-full text-[15px] transition-all"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <HugeIcon
+            name="chevron-left"
+            size={18}
             className="group-hover:-translate-x-1 transition-transform"
-          >
-            <path d="m12 19-7-7 7-7" />
-            <path d="M19 12H5" />
-          </svg>
+          />
           {t('back', 'Back')}
         </button>
         <button
@@ -702,21 +650,11 @@ const OnboardingStep3: FC<{ onBack: () => void; onFinish: () => void }> = ({
           className="group flex items-center gap-[12px] bg-[#00D9FF] hover:brightness-95 text-[#0a0a0a] font-semibold px-[32px] py-[14px] rounded-full text-[16px] transition-all "
         >
           {t('get_started', 'Get Started')}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <HugeIcon
+            name="check-circle"
+            size={20}
             className="group-hover:scale-110 transition-transform"
-          >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
+          />
         </button>
       </div>
     </div>

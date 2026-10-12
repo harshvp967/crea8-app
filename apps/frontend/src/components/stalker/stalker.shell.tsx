@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
@@ -11,9 +12,7 @@ const Welcome = ({ onCreate }: { onCreate: () => void }) => (
   <div className="flex flex-1 items-center justify-center px-[24px] py-[64px]">
     <div className={stkEmpty}>
       <span className={stkIconTile} aria-hidden>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M5 6h14M5 12h14M5 18h9" />
-        </svg>
+        <HugeIcon name="list" size={24} />
       </span>
       <h1 className="text-[16px] font-[600]">Welcome</h1>
       <p className="max-w-[360px] text-[14px] text-textItemBlur">
