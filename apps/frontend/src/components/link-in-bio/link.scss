@@ -27,6 +27,71 @@
   .lib-shell {
     padding: 20px;
   }
+
+  .lib-preview-toggle {
+    display: none !important;
+  }
+}
+
+.lib-segment {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--new-border);
+  background: var(--arc-muted);
+}
+
+.lib-segment button {
+  height: 38px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--new-textItemBlur);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.lib-segment button.is-on {
+  background: var(--new-bgColorInner);
+  color: rgb(var(--new-textColor));
+  box-shadow: var(--arc-shadow-resting);
+}
+
+.lib-reset-phone {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .lib-preview-toggle {
+    width: 44px;
+    min-width: 44px;
+    padding-inline: 0 !important;
+  }
+
+  .lib-preview-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .lib-reset {
+    display: none !important;
+  }
+
+  .lib-reset-phone {
+    display: inline-flex !important;
+  }
 }
 
 .lib-pill {
@@ -458,11 +523,17 @@
   border-radius: 999px;
   display: grid;
   place-items: center;
+  overflow: hidden;
   border: 1px solid var(--lib-line);
   color: var(--lib-text);
-  font-size: 11px;
-  font-weight: 700;
   text-decoration: none;
+}
+
+.lib-socials .lib-social-mark {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .lib-block {

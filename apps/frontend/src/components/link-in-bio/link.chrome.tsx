@@ -99,6 +99,30 @@ export const LinkMenuRow = ({
   </button>
 );
 
+export function LinkSegments<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: Array<{ id: T; label: string }>;
+  onChange: (id: T) => void;
+}) { return (
+  <div className="lib-segment" role="radiogroup" aria-label={label}>
+    {options.map((option) => {
+      const on = option.id === value;
+      return (
+        <button key={option.id} type="button" role="radio" aria-checked={on} className={on ? 'is-on' : ''} onClick={() => onChange(option.id)}>
+          {option.label}
+        </button>
+      );
+    })}
+  </div>
+);
+}
+
 export const linkPrimary = `${stkPrimary} lib-raised`;
 export const linkSecondary = stkSecondary;
 export const linkDanger = `${stkDanger} lib-danger`;

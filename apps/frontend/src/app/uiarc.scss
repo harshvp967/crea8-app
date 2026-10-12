@@ -8177,6 +8177,12 @@ body.composer-open .copilotKitWindow,
   transform: none;
 }
 
+@media (max-width: 767px) {
+  .app-toast {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
+
 .app-toast-icon {
   width: 30px;
   height: 30px;

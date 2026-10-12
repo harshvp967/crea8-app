@@ -18,9 +18,11 @@ import {
   normalizeDesign,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
-import { LinkField, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { LinkField, LinkSegments, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
-import { LinkPublicView } from '@gitroom/frontend/components/link-in-bio/link.public-view';
+import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
+import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 
 type Draft = {
@@ -77,8 +79,12 @@ export const LinkAppearanceScreen = () => {
 
   if (isLoading || !data || !draft) {
     return (
-      <div className="p-[8px] text-[14px] text-textItemBlur">
-        {error ? 'Could not load your page.' : 'Loading your page…'}
+      <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
+        <h1 className={stkTitle}>Appearance</h1>
+        <div className={`${stkCard} flex items-center gap-[12px]`}>
+          {error ? <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" /> : null}
+          <p className="text-[14px] font-[500] text-textItemBlur">{error ? 'Could not load your page.' : 'Loading your page…'}</p>
+        </div>
       </div>
     );
   }
@@ -159,22 +165,29 @@ export const LinkAppearanceScreen = () => {
             navigator.clipboard?.writeText(data.publicUrl);
             toast.show('Link copied', 'success');
           }}
+          onClose={preview ? () => setPreview(false) : undefined}
         >
           <LinkPublicView key={`${previewPage.slug}-${previewPage.theme}-${design.header}`} data={previewPage} mode="preview" />
         </LinkPreview>
       }
     >
       <div className="flex min-w-0 flex-col gap-[16px] pb-[24px]">
-        <div className="flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="flex items-start justify-between gap-[12px]">
           <div className="min-w-0">
-            <h1 className="text-[22px] font-[600]">Appearance</h1>
-            <p className="text-[14px] text-textItemBlur">Themes, wallpaper and the phone preview update as you edit</p>
+            <h1 className={stkTitle}>Appearance</h1>
+            <p className={stkSub}>Themes, wallpaper and the phone preview update as you edit</p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-[8px] sm:justify-end">
-            <button type="button" className={`${linkSecondary} min-[1200px]:hidden`} onClick={() => setPreview((value) => !value)}>
-              {preview ? 'Close preview' : 'Preview'}
+          <div className="flex shrink-0 items-center gap-[8px]">
+            <button
+              type="button"
+              className={`${linkSecondary} lib-preview-toggle`}
+              aria-label={preview ? 'Close preview' : 'Preview'}
+              onClick={() => setPreview((value) => !value)}
+            >
+              <HugeIcon name="eye" size={16} />
+              <span className="lib-preview-label">{preview ? 'Close preview' : 'Preview'}</span>
             </button>
-            <button type="button" className={linkSecondary} onClick={() => setDraft(toDraft(data))}>
+            <button type="button" className={`${linkSecondary} lib-reset`} onClick={() => setDraft(toDraft(data))}>
               Reset
             </button>
             <button type="button" className={linkPrimary} disabled={busy} onClick={save}>
@@ -182,8 +195,11 @@ export const LinkAppearanceScreen = () => {
             </button>
           </div>
         </div>
+        <button type="button" className={`${linkSecondary} lib-reset-phone`} onClick={() => setDraft(toDraft(data))}>
+          Reset
+        </button>
 
-        <section className="rounded-[20px] border border-newBorder p-[16px]">
+        <section className={stkCard}>
           <h2 className="text-[16px] font-[600]">Profile</h2>
           <p className="mb-[12px] text-[13px] text-textItemBlur">Photo, title and bio. Title is 30 characters, bio is 160.</p>
           <div className="mb-[14px] flex flex-wrap items-center gap-[12px]">
@@ -191,10 +207,11 @@ export const LinkAppearanceScreen = () => {
               {draft.avatarPath ? (
                 <img src={draft.avatarPath} alt="" className="h-full w-full object-cover" />
               ) : (
-                (draft.name || data.slug).slice(0, 1).toUpperCase()
+                linkInitials(draft.name || data.slug)
               )}
             </div>
             <label className={`${linkSecondary} cursor-pointer`}>
+              <HugeIcon name="upload" size={16} />
               Upload photo
               <input
                 type="file"
@@ -212,23 +229,17 @@ export const LinkAppearanceScreen = () => {
                 }}
               />
             </label>
-            {draft.avatarPath ? (
-              <button type="button" className="text-[14px] text-textItemBlur" onClick={() => setDraft({ ...draft, avatarPath: '' })}>
-                Remove
-              </button>
-            ) : null}
+            <button type="button" className="text-[14px] font-[500] text-textItemBlur" onClick={() => setDraft({ ...draft, avatarPath: '' })}>
+              Remove
+            </button>
           </div>
-          <div className="mb-[12px] flex flex-wrap gap-[8px]">
-            {LINK_TITLE_MODES.map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                className={design.titleMode === mode ? linkChoice : linkSecondary}
-                onClick={() => setDesign({ titleMode: mode })}
-              >
-                {mode === 'text' ? 'Title text' : 'Logo'}
-              </button>
-            ))}
+          <div className="mb-[12px]">
+            <LinkSegments
+              label="Title display"
+              value={design.titleMode}
+              options={LINK_TITLE_MODES.map((mode) => ({ id: mode, label: mode === 'text' ? 'Title text' : 'Logo' }))}
+              onChange={(titleMode) => setDesign({ titleMode })}
+            />
           </div>
           {design.titleMode === 'logo' ? (
             <div className="mb-[12px]">
@@ -254,7 +265,7 @@ export const LinkAppearanceScreen = () => {
           </div>
         </section>
 
-        <section className="rounded-[20px] border border-newBorder p-[16px]">
+        <section className={stkCard}>
           <h2 className="text-[16px] font-[600]">Header</h2>
           <p className="mb-[12px] text-[13px] text-textItemBlur">Classic is included. The other layouts are Pro.</p>
           <div className="flex flex-wrap gap-[8px]">
@@ -275,10 +286,10 @@ export const LinkAppearanceScreen = () => {
           </div>
         </section>
 
-        <section className="rounded-[20px] border border-newBorder p-[16px]">
+        <section className={stkCard}>
           <h2 className="text-[16px] font-[600]">Themes</h2>
           <p className="mb-[12px] text-[13px] text-textItemBlur">
-            {locked ? 'Pro themes need a paid plan' : 'Pro themes stay marked, and they are open while plan gating is off'}
+            Pro themes are marked
           </p>
           <div className="flex flex-wrap gap-[12px]">
             {LINK_THEMES.map((theme) => (
@@ -313,7 +324,7 @@ export const LinkAppearanceScreen = () => {
         </section>
 
         <div className="grid min-w-0 grid-cols-1 gap-[16px] xl:grid-cols-2">
-          <section className="rounded-[20px] border border-newBorder p-[16px]">
+          <section className={stkCard}>
             <h2 className="mb-[12px] text-[16px] font-[600]">Wallpaper</h2>
             <div className="mb-[12px] flex flex-wrap gap-[8px]">
               {LINK_WALLPAPERS.map((item) => (
@@ -352,7 +363,7 @@ export const LinkAppearanceScreen = () => {
             ) : null}
           </section>
 
-          <section className="rounded-[20px] border border-newBorder p-[16px]">
+          <section className={stkCard}>
             <h2 className="mb-[12px] text-[16px] font-[600]">Buttons</h2>
             <div className="mb-[12px] flex flex-wrap gap-[8px]">
               {LINK_BUTTON_FILLS.map((item) => (
@@ -404,7 +415,7 @@ export const LinkAppearanceScreen = () => {
           </section>
         </div>
 
-        <section className="rounded-[20px] border border-newBorder p-[16px]">
+        <section className={stkCard}>
           <h2 className="mb-[12px] text-[16px] font-[600]">Fonts and colours</h2>
           <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
             <LinkField label="Page font">
@@ -435,31 +446,35 @@ export const LinkAppearanceScreen = () => {
           </div>
         </section>
 
-        <section className="rounded-[20px] border border-newBorder p-[16px]">
+        <section className={stkCard}>
           <div className="mb-[12px] flex flex-wrap items-start justify-between gap-[8px]">
             <div>
               <h2 className="text-[16px] font-[600]">Social icons</h2>
               <p className="text-[13px] text-textItemBlur">Accounts connected in Schedule show up here. Stalker uses the same accounts.</p>
             </div>
-            <div className="flex gap-[8px]">
-              {(['top', 'bottom'] as const).map((position) => (
-                <button
-                  key={position}
-                  type="button"
-                  className={design.socialPosition === position ? linkChoice : linkSecondary}
-                  onClick={() => setDesign({ socialPosition: position })}
-                >
-                  {position === 'top' ? 'Top' : 'Bottom'}
-                </button>
-              ))}
-            </div>
+            <LinkSegments
+              label="Social position"
+              value={design.socialPosition}
+              options={[
+                { id: 'top', label: 'Top' },
+                { id: 'bottom', label: 'Bottom' },
+              ]}
+              onChange={(socialPosition) => setDesign({ socialPosition })}
+            />
           </div>
           <div className="mb-[12px] flex flex-col gap-[8px]">
             {data.accounts.map((account) => (
-              <label key={account.id} className="flex items-center justify-between gap-[12px] rounded-[14px] border border-newBorder px-[12px] py-[10px]">
-                <span className="min-w-0">
-                  <strong className="block truncate text-[14px]">{account.name}</strong>
-                  <span className="block truncate text-[13px] text-textItemBlur">{account.url}</span>
+              <label key={account.id} className="flex items-center justify-between gap-[12px] rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] py-[10px]">
+                <span className="flex min-w-0 items-center gap-[10px]">
+                  <span className="lib-socials" aria-hidden>
+                    <span title={account.network}>
+                      <SocialMark network={account.network} />
+                    </span>
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="block truncate text-[14px]">{account.name}</strong>
+                    <span className="block truncate text-[13px] text-textItemBlur">{account.url}</span>
+                  </span>
                 </span>
                 <input
                   type="checkbox"
@@ -475,14 +490,21 @@ export const LinkAppearanceScreen = () => {
             ))}
             {!data.accounts.length ? <p className="text-[14px] text-textItemBlur">No connected accounts yet.</p> : null}
             <button type="button" className={linkSecondary} onClick={() => connect()}>
+              <HugeIcon name="plus" size={16} />
               Connect account
             </button>
           </div>
           <div className="flex flex-col gap-[8px]">
             {draft.socials.map((item, index) => (
-              <div key={`${item.network}-${index}`} className="grid min-w-0 grid-cols-1 gap-[8px] sm:grid-cols-[minmax(0,160px)_minmax(0,1fr)_auto]">
+              <div key={`${item.network}-${index}`} className="grid min-w-0 grid-cols-1 gap-[8px] sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)_auto]">
+                <span className="flex min-w-0 items-center gap-[8px]">
+                  <span className="lib-socials" aria-hidden>
+                    <span title={item.network}>
+                      <SocialMark network={item.network} />
+                    </span>
+                  </span>
                 <select
-                  className="min-h-[44px] rounded-[14px] border border-newBorder bg-transparent px-[12px]"
+                  className="h-[44px] min-h-[44px] min-w-0 flex-1 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
                   value={item.network}
                   onChange={(event) => {
                     const socials = draft.socials.slice();
@@ -496,8 +518,9 @@ export const LinkAppearanceScreen = () => {
                     </option>
                   ))}
                 </select>
+                </span>
                 <input
-                  className="min-h-[44px] rounded-[14px] border border-newBorder bg-transparent px-[12px]"
+                  className="h-[44px] min-h-[44px] min-w-0 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
                   value={item.url}
                   placeholder="https://"
                   onChange={(event) => {
@@ -517,6 +540,7 @@ export const LinkAppearanceScreen = () => {
             ))}
             {draft.socials.length < 8 ? (
               <button type="button" className={linkSecondary} onClick={() => setDraft({ ...draft, socials: [...draft.socials, { network: 'website', url: '' }] })}>
+                <HugeIcon name="plus" size={16} />
                 Add a link
               </button>
             ) : null}
@@ -538,10 +562,19 @@ const ColorField = ({
   onChange: (value: string) => void;
   swatches?: string[];
 }) => (
-  <label className="flex min-w-[140px] flex-col gap-[6px] text-[13px]">
+  <label className="flex min-w-[140px] flex-col gap-[6px] text-[13px] font-[500]">
     <span>{label}</span>
     <span className="flex items-center gap-[8px]">
-      <input type="color" aria-label={label} value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : '#0a0a0a'} onChange={(event) => onChange(event.target.value)} />
+      <span className="relative h-[28px] w-[28px] shrink-0 overflow-hidden rounded-full border border-newBorder">
+        <input
+          type="color"
+          aria-label={label}
+          className="absolute -left-[6px] -top-[6px] h-[40px] w-[40px] cursor-pointer border-0 bg-transparent p-0"
+          value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : '#0a0a0a'}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </span>
+      <span className="text-[13px] uppercase text-textItemBlur">{value}</span>
       {swatches.map((colour) => (
         <button
           key={colour}
