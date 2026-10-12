@@ -9,7 +9,14 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { LINK_BUTTONS, LINK_FONTS, LINK_SOCIALS, LINK_THEMES } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import {
+  LINK_BLOCK_TYPES,
+  LINK_BUTTONS,
+  LINK_FONTS,
+  LINK_LOCKS,
+  LINK_SOCIALS,
+  LINK_THEMES,
+} from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 const themes = LINK_THEMES.map((item) => item.id);
 const buttons = LINK_BUTTONS.map((item) => item.id);
@@ -135,9 +142,30 @@ export class UpdateLinkSlugDto {
   slug: string;
 }
 
+export class FaqItemDto {
+  @IsString()
+  @MaxLength(160)
+  question: string;
+
+  @IsString()
+  @MaxLength(800)
+  answer: string;
+}
+
+export class CarouselImageDto {
+  @IsString()
+  @MaxLength(2000)
+  path: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(140)
+  alt?: string;
+}
+
 export class SaveLinkBlockDto {
   @IsOptional()
-  @IsIn(['LINK', 'FEATURED_POST', 'EMAIL_CAPTURE', 'HEADING'])
+  @IsIn([...LINK_BLOCK_TYPES])
   type?: string;
 
   @IsOptional()
@@ -179,6 +207,100 @@ export class SaveLinkBlockDto {
   @IsOptional()
   @IsIn(['above', 'below'])
   placement?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  thumbnail?: string;
+
+  @IsOptional()
+  @IsIn(['upload', 'favicon', ''])
+  iconMode?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  spotlight?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  body?: string;
+
+  @IsOptional()
+  @IsIn([...LINK_LOCKS])
+  lockType?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  password?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(12)
+  @ValidateNested({ each: true })
+  @Type(() => FaqItemDto)
+  faq?: FaqItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(12)
+  @ValidateNested({ each: true })
+  @Type(() => CarouselImageDto)
+  images?: CarouselImageDto[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  formButton?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  formAskName?: boolean;
+}
+
+export class UpdateLinkIntegrationsDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  mailchimpKey?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  mailchimpAudience?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  convertkitKey?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  convertkitForm?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  webhookUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  webhookSecret?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  clearMailchimp?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  clearConvertkit?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  clearWebhook?: boolean;
 }
 
 export class ReorderLinkBlocksDto {
@@ -212,6 +334,67 @@ export class PublicLinkTrackDto {
   @IsString()
   @MaxLength(80)
   utmSource?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  utmMedium?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  utmCampaign?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  utmContent?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  utmTerm?: string;
+}
+
+export class PublicLinkUnlockDto extends PublicLinkTrackDto {
+  @IsOptional()
+  @IsBoolean()
+  age?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  password?: string;
+}
+
+export class PublicLinkContactDto extends PublicLinkTrackDto {
+  @IsString()
+  @MaxLength(200)
+  email: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  name?: string;
+
+  @IsString()
+  @MaxLength(2000)
+  message: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  website?: string;
 }
 
 export class PublicLinkSubscribeDto extends PublicLinkTrackDto {

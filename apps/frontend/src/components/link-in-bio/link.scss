@@ -162,6 +162,18 @@
   border-color: rgba(0, 217, 255, 0.7);
 }
 
+.dark .lib-field input[type='date'],
+.dark .lib-field input[type='datetime-local'],
+.dark input[type='date'].border-newBorder {
+  color-scheme: dark;
+}
+
+.light .lib-field input[type='date'],
+.light .lib-field input[type='datetime-local'],
+.light input[type='date'].border-newBorder {
+  color-scheme: light;
+}
+
 .lib-modal {
   position: fixed;
   inset: 0;
@@ -190,6 +202,8 @@
   right: 0;
   top: calc(100% + 6px);
   min-width: 180px;
+  max-height: min(70vh, 420px);
+  overflow: auto;
   padding: 6px;
   border-radius: 16px;
   border: 1px solid var(--new-border);
@@ -415,6 +429,7 @@
 }
 
 .lib-link {
+  position: relative;
   min-height: 48px;
   display: flex;
   align-items: center;
@@ -424,6 +439,50 @@
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+}
+
+.lib-link:has(.lib-thumb) {
+  padding-left: 44px;
+  padding-right: 44px;
+}
+
+.lib-thumb {
+  position: absolute;
+  left: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.lib-link.spotlight {
+  overflow: hidden;
+}
+
+.lib-link.spotlight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.38), transparent 70%);
+  transform: translateX(-120%);
+  animation: lib-spotlight 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes lib-spotlight {
+  0% {
+    transform: translateX(-120%);
+  }
+  55%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lib-link.spotlight::after {
+    animation: none;
+  }
 }
 
 .lib-link.priority,
@@ -548,6 +607,147 @@
   margin-top: 8px;
   font-size: 13px;
   text-decoration: none;
+}
+
+.lib-embed,
+.lib-text,
+.lib-faq,
+.lib-carousel,
+.lib-lock {
+  width: 100%;
+}
+
+.lib-embed {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--lib-line);
+  background: var(--lib-card);
+}
+
+.lib-embed iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+}
+
+.lib-embed[data-provider='youtube'] iframe,
+.lib-embed[data-provider='vimeo'] iframe {
+  aspect-ratio: 16 / 9;
+}
+
+.lib-embed[data-provider='spotify'] iframe {
+  height: 152px;
+}
+
+.lib-embed[data-provider='soundcloud'] iframe {
+  height: 166px;
+}
+
+.lib-text {
+  color: var(--lib-text);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.lib-text a {
+  color: var(--lib-accent);
+}
+
+.lib-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lib-faq button {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--lib-line);
+  border-radius: 16px;
+  background: var(--lib-card);
+  color: var(--lib-text);
+  padding: 10px 12px;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lib-faq p,
+.lib-lock-note {
+  margin: 0;
+  color: var(--lib-muted);
+  font-size: 13px;
+}
+
+.lib-carousel img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 18px;
+  background: var(--lib-card);
+}
+
+.lib-carousel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: var(--lib-muted);
+  font-size: 13px;
+}
+
+.lib-carousel-nav button {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--lib-line);
+  background: var(--lib-card);
+  color: var(--lib-text);
+  cursor: pointer;
+}
+
+.lib-lock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lib-lock .lib-link {
+  width: 100%;
+  border: 0;
+}
+
+.lib-lock-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lib-lock-form input {
+  flex: 1 1 140px;
+}
+
+.lib-lock-form input,
+.lib-capture textarea {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--lib-line);
+  background: var(--lib-input);
+  color: var(--lib-text);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.lib-honey {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 .lib-swatch {

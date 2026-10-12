@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { linkSend, useLinkLeads, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
-import { LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkRequestError, linkSend, useLinkLeads, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { LinkField, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 
 const filters = [
   { id: '', label: 'All' },
@@ -117,6 +117,7 @@ export const LinkLeadsScreen = () => {
                 <th>Email</th>
                 <th>Country</th>
                 <th>Signed up from</th>
+                <th>Message</th>
                 <th>Status</th>
                 <th>Date</th>
               </tr>
@@ -128,6 +129,7 @@ export const LinkLeadsScreen = () => {
                   <td data-label="Email">{lead.email}</td>
                   <td data-label="Country">{lead.country || '—'}</td>
                   <td data-label="Signed up from">{lead.source}</td>
+                  <td data-label="Message">{lead.message || '—'}</td>
                   <td data-label="Status">
                     <span className={lead.status === 'CONFIRMED' ? 'lib-pill lib-pill-green' : 'lib-pill lib-pill-amber'}>
                       {lead.status === 'CONFIRMED' ? 'Confirmed' : 'Pending'}
@@ -176,6 +178,145 @@ export const LinkLeadsScreen = () => {
           />
         </section>
       ) : null}
+
+      <Integrations busy={busy} setBusy={setBusy} />
     </div>
+  );
+};
+
+const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boolean) => void }) => {
+  const fetch = useFetch();
+  const toast = useToaster();
+  const page = useLinkPage();
+  const data = page.data;
+  const [mailchimpKey, setMailchimpKey] = useState('');
+  const [audience, setAudience] = useState(data?.integrations.mailchimp.audience || '');
+  const [convertkitKey, setConvertkitKey] = useState('');
+  const [formId, setFormId] = useState(data?.integrations.convertkit.form || '');
+  const [webhookUrl, setWebhookUrl] = useState(data?.integrations.webhook.url || '');
+  const [webhookSecret, setWebhookSecret] = useState('');
+  const [ready, setReady] = useState(false);
+  if (data && !ready) {
+    setAudience(data.integrations.mailchimp.audience);
+    setFormId(data.integrations.convertkit.form);
+    setWebhookUrl(data.integrations.webhook.url);
+    setReady(true);
+  }
+  if (!data) {
+    return null;
+  }
+  const save = async (body: Record<string, unknown>) => {
+    if (!data.paid && !body.clearMailchimp && !body.clearConvertkit && !body.clearWebhook) {
+      toast.show('Lead integrations are on a paid plan', 'warning');
+      return;
+    }
+    setBusy(true);
+    try {
+      const next = await linkSend(fetch, '/link-in-bio/integrations', 'PUT', body);
+      await page.mutate(next, { revalidate: false });
+      setMailchimpKey('');
+      setConvertkitKey('');
+      setWebhookSecret('');
+      toast.show('Integrations saved', 'success');
+    } catch (err) {
+      const message = err instanceof LinkRequestError ? err.message : err instanceof Error ? err.message : 'Could not save integrations';
+      toast.show(message, 'warning');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="rounded-[20px] border border-newBorder p-[16px]">
+      <h2 className="text-[16px] font-[600]">Integrations</h2>
+      <p className="mb-[12px] text-[13px] text-textItemBlur">
+        {data.paid
+          ? 'New leads are sent to Mailchimp, ConvertKit and your webhook. Keys stay on the server.'
+          : 'Mailchimp, ConvertKit and webhooks are on a paid plan.'}{' '}
+        {!data.paid ? (
+          <Link href="/billing" className="text-[#00D9FF]">
+            Upgrade
+          </Link>
+        ) : null}
+      </p>
+      <div className="grid grid-cols-1 gap-[12px] lg:grid-cols-3">
+        <div className="flex flex-col gap-[8px]">
+          <LinkField label="Mailchimp API key">
+            <input
+              type="password"
+              autoComplete="off"
+              placeholder={data.integrations.mailchimp.hint || 'API key'}
+              value={mailchimpKey}
+              onChange={(event) => setMailchimpKey(event.target.value)}
+            />
+          </LinkField>
+          <LinkField label="Audience id">
+            <input value={audience} onChange={(event) => setAudience(event.target.value)} />
+          </LinkField>
+          <div className="flex gap-[8px]">
+            <button type="button" className={linkSecondary} disabled={busy} onClick={() => save({ mailchimpKey, mailchimpAudience: audience })}>
+              Save
+            </button>
+            {data.integrations.mailchimp.connected ? (
+              <button type="button" className={linkSecondary} disabled={busy} onClick={() => save({ clearMailchimp: true })}>
+                Remove
+              </button>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex flex-col gap-[8px]">
+          <LinkField label="ConvertKit API key">
+            <input
+              type="password"
+              autoComplete="off"
+              placeholder={data.integrations.convertkit.hint || 'API key'}
+              value={convertkitKey}
+              onChange={(event) => setConvertkitKey(event.target.value)}
+            />
+          </LinkField>
+          <LinkField label="Form id">
+            <input value={formId} onChange={(event) => setFormId(event.target.value)} />
+          </LinkField>
+          <div className="flex gap-[8px]">
+            <button type="button" className={linkSecondary} disabled={busy} onClick={() => save({ convertkitKey, convertkitForm: formId })}>
+              Save
+            </button>
+            {data.integrations.convertkit.connected ? (
+              <button type="button" className={linkSecondary} disabled={busy} onClick={() => save({ clearConvertkit: true })}>
+                Remove
+              </button>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex flex-col gap-[8px]">
+          <LinkField label="Webhook URL">
+            <input placeholder="https://" value={webhookUrl} onChange={(event) => setWebhookUrl(event.target.value)} />
+          </LinkField>
+          <LinkField label="Signing secret">
+            <input
+              type="password"
+              autoComplete="off"
+              placeholder={data.integrations.webhook.hasSecret ? 'Saved' : 'Optional'}
+              value={webhookSecret}
+              onChange={(event) => setWebhookSecret(event.target.value)}
+            />
+          </LinkField>
+          <div className="flex gap-[8px]">
+            <button
+              type="button"
+              className={linkSecondary}
+              disabled={busy}
+              onClick={() => save({ webhookUrl, ...(webhookSecret ? { webhookSecret } : {}) })}
+            >
+              Save
+            </button>
+            {data.integrations.webhook.url ? (
+              <button type="button" className={linkSecondary} disabled={busy} onClick={() => save({ clearWebhook: true })}>
+                Remove
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };

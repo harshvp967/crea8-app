@@ -1,15 +1,27 @@
 import {
+  analyticsToCsv,
   blockState,
   buildAnalytics,
+  captureUtm,
+  clientLabel,
+  contactDecision,
+  customWindow,
   domainProblem,
   emailProblem,
+  embedProblem,
+  faviconFor,
   fillDays,
   formatRate,
   isPaidPlan,
   hasCustomDomainAddon,
   leadsToCsv,
+  lockProblem,
   mapHostnameStatus,
   pageUrl,
+  paidFeatureProblem,
+  parseEmbed,
+  parseRichText,
+  presentPublicBlock,
   rangeWindow,
   sanitizeReferrer,
   showBadge,
@@ -18,6 +30,7 @@ import {
   suggestSlug,
   urlProblem,
   utcToZonedInput,
+  webhookProblem,
   zonedLocalToUtc,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
@@ -192,7 +205,7 @@ describe('link-in-bio analytics and leads', () => {
         referrer: '',
       },
     ]);
-    expect(csv.split('\n')[0]).toBe('email,captured_at,source block,page slug,country,referrer');
+    expect(csv.split('\n')[0]).toBe('email,captured_at,source block,page slug,country,referrer,kind,message');
     expect(csv).toContain('"a,b@example.com"');
     expect(csv).toContain('"Say ""hi"""');
   });
@@ -204,5 +217,140 @@ describe('link-in-bio analytics and leads', () => {
     expect(mapHostnameStatus({ status: 'blocked', sslStatus: 'active' })).toBe('ERROR');
     expect(pageUrl('crea8one', 'links.yourbrand.com', 'LIVE')).toBe('https://links.yourbrand.com');
     expect(pageUrl('crea8one', 'links.yourbrand.com', 'WAITING')).toBe('https://crea8.one/crea8one');
+  });
+});
+
+describe('link-in-bio embeds', () => {
+  it('turns allowlisted provider URLs into iframe sources', () => {
+    expect(parseEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=12')?.src).toBe(
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+    );
+    expect(parseEmbed('https://youtu.be/dQw4w9WgXcQ')?.provider).toBe('youtube');
+    expect(parseEmbed('https://youtube.com/shorts/dQw4w9WgXcQ')?.src).toContain('/embed/dQw4w9WgXcQ');
+    expect(parseEmbed('https://open.spotify.com/track/1234567890abcDEF123456')?.src).toBe(
+      'https://open.spotify.com/embed/track/1234567890abcDEF123456'
+    );
+    expect(parseEmbed('https://open.spotify.com/embed/playlist/1234567890abcDEF123456')?.provider).toBe('spotify');
+    expect(parseEmbed('https://soundcloud.com/artist/track-name')?.src).toContain(
+      'https://w.soundcloud.com/player/?url='
+    );
+    expect(parseEmbed('https://vimeo.com/123456789')?.src).toBe('https://player.vimeo.com/video/123456789');
+    expect(parseEmbed('https://player.vimeo.com/video/123456789')?.provider).toBe('vimeo');
+  });
+
+  it('rejects hosts and schemes outside the allowlist', () => {
+    expect(parseEmbed('javascript:alert(1)')).toBeNull();
+    expect(parseEmbed('https://evil.com/watch?v=dQw4w9WgXcQ')).toBeNull();
+    expect(parseEmbed('https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ')).toBeNull();
+    expect(parseEmbed('https://notyoutube.com/embed/dQw4w9WgXcQ')).toBeNull();
+    expect(parseEmbed('https://open.spotify.com/user/someone')).toBeNull();
+    expect(parseEmbed('')).toBeNull();
+    expect(embedProblem('https://example.com')).toMatch(/YouTube/);
+  });
+});
+
+describe('link-in-bio paid gates and public blocks', () => {
+  const link = {
+    id: 'b1',
+    type: 'LINK',
+    title: 'Shop',
+    url: 'https://example.com/drop',
+    priority: false,
+    thumbnail: '/uploads/icon.png',
+    iconMode: 'upload',
+    spotlight: true,
+    lockType: 'PASSWORD',
+  };
+
+  it('keeps spotlight, locks, integrations and deep analytics on a paid plan', () => {
+    expect(paidFeatureProblem(false, 'spotlight')).toMatch(/paid/);
+    expect(paidFeatureProblem(false, 'lock')).toMatch(/paid/);
+    expect(paidFeatureProblem(false, 'integrations')).toMatch(/paid/);
+    expect(paidFeatureProblem(false, 'deepAnalytics')).toMatch(/paid/);
+    expect(paidFeatureProblem(true, 'spotlight')).toBeNull();
+    expect(isPaidPlan({ subscriptionTier: 'STANDARD' })).toBe(true);
+  });
+
+  it('hides the target URL until a lock is cleared and only animates spotlight when paid', () => {
+    const free = presentPublicBlock(link, false);
+    expect(free.url).toBe('');
+    expect(free.lock).toBe('PASSWORD');
+    expect(free.spotlight).toBe(false);
+    expect(free.thumbnail).toBe('/uploads/icon.png');
+    const open = presentPublicBlock({ ...link, lockType: 'NONE', iconMode: 'favicon' }, true);
+    expect(open.url).toBe('https://example.com/drop');
+    expect(open.spotlight).toBe(true);
+    expect(open.thumbnail).toBe(faviconFor('https://example.com/drop'));
+    expect(faviconFor('javascript:alert(1)')).toBe('');
+  });
+
+  it('asks for a password only when a password lock has no saved hash', () => {
+    expect(lockProblem({ lockType: 'AGE' })).toBeNull();
+    expect(lockProblem({ lockType: 'PASSWORD', hasHash: true })).toBeNull();
+    expect(lockProblem({ lockType: 'PASSWORD', password: 'no' })).toMatch(/4 and 80/);
+    expect(lockProblem({ lockType: 'PASSWORD', password: 'open' })).toBeNull();
+  });
+
+  it('parses rich text without keeping raw html', () => {
+    const parts = parseRichText('Hello **there**\nSee [crea8](https://crea8.one/a) and <script>');
+    expect(parts).toEqual([
+      { type: 'text', text: 'Hello ' },
+      { type: 'bold', text: 'there' },
+      { type: 'break' },
+      { type: 'text', text: 'See ' },
+      { type: 'link', text: 'crea8', href: 'https://crea8.one/a' },
+      { type: 'text', text: ' and <script>' },
+    ]);
+    expect(parseRichText('[x](javascript:alert(1))')[0].type).toBe('text');
+  });
+
+  it('drops honeypot contact posts and keeps real messages', () => {
+    expect(contactDecision({ website: 'https://spam.test', email: 'a@b.co', message: 'hi' })).toBe('drop');
+    expect(contactDecision({ email: 'nope', message: 'hi' })).toBe('invalid');
+    expect(contactDecision({ email: 'a@b.co', message: '  ' })).toBe('invalid');
+    expect(contactDecision({ email: 'a@b.co', message: 'Hello' })).toBe('ok');
+  });
+
+  it('rejects private webhook targets', () => {
+    expect(webhookProblem('http://hooks.example.com/lead')).toMatch(/https/);
+    expect(webhookProblem('https://localhost/hook')).toMatch(/public/);
+    expect(webhookProblem('https://127.0.0.1/hook')).toMatch(/public/);
+    expect(webhookProblem('https://10.1.2.3/hook')).toMatch(/public/);
+    expect(webhookProblem('https://hooks.example.com/lead')).toBeNull();
+  });
+});
+
+describe('link-in-bio deeper analytics rules', () => {
+  it('labels device and browser and keeps UTM fields short', () => {
+    expect(
+      clientLabel(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+      )
+    ).toEqual({ device: 'mobile', browser: 'Safari' });
+    expect(clientLabel('Mozilla/5.0 Chrome/120.0.0.0')).toEqual({ device: 'desktop', browser: 'Chrome' });
+    expect(clientLabel('')).toEqual({ device: '', browser: '' });
+    expect(captureUtm({ utmSource: 'instagram', utmMedium: 'story', utmCampaign: 'spring' })).toEqual({
+      utmSource: 'instagram',
+      utmMedium: 'story',
+      utmCampaign: 'spring',
+      utmContent: '',
+      utmTerm: '',
+    });
+  });
+
+  it('accepts a custom range up to a year and writes the analytics CSV', () => {
+    expect(customWindow('2026-10-01', '2026-10-12')?.days).toBe(12);
+    expect(customWindow('2026-10-12', '2026-10-01')).toBeNull();
+    expect(customWindow('2020-01-01', '2026-01-01')).toBeNull();
+    const csv = analyticsToCsv({
+      links: [{ title: 'Shop, now', clicks: 4, ctr: 10 }],
+      devices: [{ label: 'mobile', views: 8, share: 80 }],
+      browsers: [{ label: 'Chrome', views: 5, share: 50 }],
+      utm: [{ label: 'instagram / story / spring', views: 3, share: 30 }],
+    });
+    expect(csv.split('\n')[0]).toBe('kind,label,views,clicks,ctr,share');
+    expect(csv).toContain('"Shop, now"');
+    expect(csv).toContain('device,mobile,8,,,80%');
+    expect(csv).toContain('utm,instagram / story / spring,3,,,30%');
   });
 });

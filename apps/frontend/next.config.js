@@ -1,8 +1,28 @@
 // @ts-check
 import { withSentryConfig } from '@sentry/nextjs';
 
+// Public bios are also served through www.crea8.one, which does not host
+// /_next/static. Point built assets at the app origin unless an explicit
+// prefix is set. Local FRONTEND_URL stays unprefixed.
+function assetPrefix() {
+  const explicit = (process.env.NEXT_PUBLIC_ASSET_PREFIX || '').trim().replace(/\/$/, '');
+  if (explicit) {
+    return explicit;
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    return undefined;
+  }
+  const frontend = process.env.FRONTEND_URL || '';
+  if (/localhost|127\.0\.0\.1/.test(frontend)) {
+    return undefined;
+  }
+  return 'https://app.crea8.one';
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  assetPrefix: assetPrefix(),
+  crossOrigin: 'anonymous',
   experimental: {
     proxyTimeout: 90_000,
   },
@@ -48,6 +68,17 @@ const nextConfig = {
             key: 'Document-Policy',
             value: 'js-profiling',
           },
+        ],
+      },
+      {
+        // Middleware does not run for /_next/static. One
+        // Access-Control-Allow-Origin value cannot name two hosts, so these
+        // files allow crea8.one and www.crea8.one (and the app itself) to
+        // load scripts and next/font files without credentials.
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, HEAD, OPTIONS' },
         ],
       },
     ];

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ actio
 
 export async function POST(request: NextRequest, props: { params: Promise<{ action: string }> }) {
   const { action } = await props.params;
-  if (action !== 'view' && action !== 'click' && action !== 'subscribe') {
+  if (action !== 'view' && action !== 'click' && action !== 'subscribe' && action !== 'unlock' && action !== 'contact') {
     return NextResponse.json({ message: 'Not found' }, { status: 404 });
   }
   const base = backend();
@@ -48,6 +48,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ acti
     headers: {
       'Content-Type': 'application/json',
       'x-link-country': country(request),
+      'x-link-ua': request.headers.get('user-agent') || '',
       ...(ip ? { 'x-forwarded-for': ip } : {}),
     },
     body: JSON.stringify(body),

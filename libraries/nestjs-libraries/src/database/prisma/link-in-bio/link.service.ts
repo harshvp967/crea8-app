@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+import { createHmac, randomBytes } from 'crypto';
 import {
   BadRequestException,
   HttpException,
@@ -7,34 +7,54 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/services/cloudflare.custom-hostname.service';
+import {
+  openIntegrationSecret,
+  sealIntegrationSecret,
+} from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.token.crypto';
 import {
   LinkRepository,
   LinkPageRecord,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.repository';
 import {
   LINK_BLOCK_CAP,
+  analyticsToCsv,
   blockState,
   buildAnalytics,
+  captureUtm,
   cleanCountry,
+  clientLabel,
+  contactDecision,
   countryName,
+  customWindow,
   domainProblem,
   domainRecords,
   emailProblem,
+  embedProblem,
   fillDays,
   firstImage,
   hasCustomDomainAddon,
+  imagePathProblem,
   isPaidPlan,
   isValidTimeZone,
   leadsToCsv,
+  lockProblem,
+  normalizeFaq,
+  normalizeForm,
+  normalizeImages,
   pageUrl,
+  paidFeatureProblem,
   plainText,
   platformLabel,
+  presentPublicBlock,
   publicAsset,
   publicOrigin,
   rangeWindow,
   sanitizeReferrer,
+  secretHint,
+  shareRows,
   shortDate,
   showBadge,
   slugProblem,
@@ -42,12 +62,16 @@ import {
   suggestSlug,
   urlProblem,
   utcDay,
+  webhookProblem,
   zonedLocalToUtc,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import {
+  PublicLinkContactDto,
   PublicLinkSubscribeDto,
   PublicLinkTrackDto,
+  PublicLinkUnlockDto,
   SaveLinkBlockDto,
+  UpdateLinkIntegrationsDto,
   UpdateLinkPageDto,
 } from '@gitroom/nestjs-libraries/dtos/link-in-bio/link.dto';
 
@@ -156,7 +180,8 @@ export class LinkService {
 
   async saveBlock(org: PlanOrg, id: string | null, body: SaveLinkBlockDto) {
     const record = await this.ensure(org);
-    const type = id ? (await this.requireBlock(record.id, id)).type : body.type;
+    const current = id ? await this.requireBlock(record.id, id) : null;
+    const type = current ? current.type : body.type;
     if (!type) {
       throw new BadRequestException('Choose a block type');
     }
@@ -178,14 +203,30 @@ export class LinkService {
     if (!id && type === 'FEATURED_POST' && !body.postId) {
       throw new BadRequestException('Pick a published post');
     }
-    const data = await this.blockData(org.id, record.timezone, type, body);
+    if (!id && type === 'EMBED' && embedProblem(body.url || '')) {
+      throw new BadRequestException(embedProblem(body.url || ''));
+    }
+    if (!id && type === 'TEXT' && !(body.body || '').trim()) {
+      throw new BadRequestException('Add some text');
+    }
+    if (!id && type === 'FAQ' && !normalizeFaq(body.faq || []).length) {
+      throw new BadRequestException('Add at least one question');
+    }
+    if (!id && type === 'IMAGE_CAROUSEL' && !normalizeImages({ images: body.images || [] }).length) {
+      throw new BadRequestException('Add at least one image');
+    }
+    if (!id && type === 'CONTACT_FORM' && !(body.title || '').trim()) {
+      throw new BadRequestException('Add a heading');
+    }
+    const data = await this.blockData(org.id, record.timezone, type, body, record.organization.subscription, current);
     const block = id
-      ? await this._repository.updateBlock(id, data)
+      ? await this._repository.updateBlock(id, data as Prisma.LinkBlockUpdateInput)
       : await this._repository.createBlock({
           pageId: record.id,
-          type: type as 'LINK',
+          type: type as Prisma.LinkBlockUncheckedCreateInput['type'],
           position: record.blocks.length,
-          ...data,
+          payload: {},
+          ...(data as Prisma.LinkBlockUncheckedCreateInput),
         });
     if (data.priority && type === 'LINK') {
       await this._repository.clearPriority(record.id, block.id);
@@ -212,50 +253,44 @@ export class LinkService {
     return this.toEditor(await this.requirePage(org.id));
   }
 
-  async analytics(org: PlanOrg, range: string) {
+  async analytics(org: PlanOrg, range: string, from = '', to = '') {
     const record = await this.ensure(org);
-    const window = rangeWindow(range);
-    const [views, clicks, subscribers, previousViews, previousClicks, previousSubscribers, series, countries, sources, linkClicks] =
-      await Promise.all([
-        this._repository.countEvents(record.id, 'VIEW', window.from, window.to),
-        this._repository.countEvents(record.id, 'CLICK', window.from, window.to),
-        this._repository.countSubscribers(record.id, window.from, window.to),
-        this._repository.countEvents(record.id, 'VIEW', window.previousFrom, window.from),
-        this._repository.countEvents(record.id, 'CLICK', window.previousFrom, window.from),
-        this._repository.countSubscribers(record.id, window.previousFrom, window.from),
-        this._repository.series(record.id, utcDay(window.from), utcDay(window.to)),
-        this._repository.grouped(record.id, 'country', window.from, window.to),
-        this._repository.grouped(record.id, 'source', window.from, window.to),
-        this._repository.clicksByBlock(record.id, window.from, window.to),
-      ]);
-    const titles = new Map(record.blocks.map((block) => [block.id, block.title || 'Link']));
+    const paid = isPaidPlan(record.organization.subscription);
+    const custom = from || to ? customWindow(from, to) : null;
+    if ((from || to) && !paid) {
+      throw new HttpException(
+        { message: paidFeatureProblem(false, 'deepAnalytics'), upgrade: true },
+        HttpStatus.PAYMENT_REQUIRED
+      );
+    }
+    if ((from || to) && !custom) {
+      throw new BadRequestException('Choose a valid date range');
+    }
+    const window = custom || rangeWindow(range);
+    const report = await this.analyticsReport(record, window);
     return {
-      range: range === '7d' || range === '90d' || range === '12m' ? range : '30d',
-      ...buildAnalytics({
-        views,
-        clicks,
-        subscribers,
-        previousViews,
-        previousClicks,
-        previousSubscribers,
-        series: fillDays(
-          window.from,
-          window.to,
-          series.map((row) => ({ day: row.day, type: row.type, count: row._count._all }))
-        ),
-        links: linkClicks
-          .filter((row) => row.blockId)
-          .map((row) => ({
-            id: row.blockId || '',
-            title: titles.get(row.blockId || '') || 'Deleted link',
-            clicks: row._count._all,
-          })),
-        countries: countries
-          .filter((row) => row.country)
-          .map((row) => ({ code: row.country, views: row._count._all })),
-        sources: sources.map((row) => ({ source: row.source, views: row._count._all })),
-      }),
+      range: custom ? 'custom' : range === '7d' || range === '90d' || range === '12m' ? range : '30d',
+      from: custom ? from : null,
+      to: custom ? to : null,
+      ...report.summary,
+      deep: paid ? report.deep : null,
     };
+  }
+
+  async exportAnalytics(org: PlanOrg, range: string, from = '', to = '') {
+    const record = await this.ensure(org);
+    if (!isPaidPlan(record.organization.subscription)) {
+      throw new HttpException(
+        { message: paidFeatureProblem(false, 'deepAnalytics'), upgrade: true },
+        HttpStatus.PAYMENT_REQUIRED
+      );
+    }
+    const custom = from || to ? customWindow(from, to) : null;
+    if ((from || to) && !custom) {
+      throw new BadRequestException('Choose a valid date range');
+    }
+    const report = await this.analyticsReport(record, custom || rangeWindow(range));
+    return analyticsToCsv(report.deep);
   }
 
   async leads(org: PlanOrg, status: string, query: string) {
@@ -275,6 +310,8 @@ export class LinkService {
         country: countryName(lead.country) || lead.country,
         source: lead.sourceBlock || 'Email capture',
         status: lead.status,
+        kind: lead.kind || 'subscribe',
+        message: lead.message || '',
         createdAt: lead.createdAt.toISOString(),
       })),
     };
@@ -291,8 +328,61 @@ export class LinkService {
         slug: record.slug,
         country: countryName(lead.country) || lead.country,
         referrer: lead.referrer,
+        kind: lead.kind || 'subscribe',
+        message: lead.message || '',
       }))
     );
+  }
+
+  async integrations(org: PlanOrg, body: UpdateLinkIntegrationsDto) {
+    const record = await this.ensure(org);
+    const paid = isPaidPlan(record.organization.subscription);
+    const writesSecret =
+      !!body.mailchimpKey ||
+      !!body.convertkitKey ||
+      !!body.webhookUrl ||
+      !!body.webhookSecret ||
+      body.mailchimpAudience !== undefined ||
+      body.convertkitForm !== undefined;
+    if (!paid && writesSecret && !body.clearMailchimp && !body.clearConvertkit && !body.clearWebhook) {
+      throw new HttpException(
+        { message: paidFeatureProblem(false, 'integrations'), upgrade: true },
+        HttpStatus.PAYMENT_REQUIRED
+      );
+    }
+    if (!paid && (body.mailchimpKey || body.convertkitKey || body.webhookUrl || body.webhookSecret)) {
+      throw new HttpException(
+        { message: paidFeatureProblem(false, 'integrations'), upgrade: true },
+        HttpStatus.PAYMENT_REQUIRED
+      );
+    }
+    if (body.webhookUrl && !body.clearWebhook) {
+      const problem = webhookProblem(body.webhookUrl);
+      if (problem) {
+        throw new BadRequestException(problem);
+      }
+    }
+    const next = await this._repository.update(record.id, {
+      ...(body.clearMailchimp
+        ? { mailchimpKey: '', mailchimpAudience: '' }
+        : {
+            ...(body.mailchimpKey ? { mailchimpKey: sealIntegrationSecret(body.mailchimpKey.trim()) } : {}),
+            ...(body.mailchimpAudience !== undefined ? { mailchimpAudience: body.mailchimpAudience.trim() } : {}),
+          }),
+      ...(body.clearConvertkit
+        ? { convertkitKey: '', convertkitForm: '' }
+        : {
+            ...(body.convertkitKey ? { convertkitKey: sealIntegrationSecret(body.convertkitKey.trim()) } : {}),
+            ...(body.convertkitForm !== undefined ? { convertkitForm: body.convertkitForm.trim() } : {}),
+          }),
+      ...(body.clearWebhook
+        ? { leadWebhookUrl: '', leadWebhookSecret: '' }
+        : {
+            ...(body.webhookUrl !== undefined ? { leadWebhookUrl: body.webhookUrl.trim() } : {}),
+            ...(body.webhookSecret ? { leadWebhookSecret: sealIntegrationSecret(body.webhookSecret.trim()) } : {}),
+          }),
+    });
+    return this.toEditor(next);
   }
 
   async connectDomain(org: PlanOrg, domain: string) {
@@ -416,7 +506,7 @@ export class LinkService {
     return this.toPublic(record);
   }
 
-  async track(kind: 'VIEW' | 'CLICK', body: PublicLinkTrackDto, countryHeader: string) {
+  async track(kind: 'VIEW' | 'CLICK', body: PublicLinkTrackDto, countryHeader: string, userAgent = '') {
     const record = await this._repository.findBySlug(body.slug.trim().toLowerCase());
     if (!record || !record.isPublic || record.organization.deletedAt) {
       return { ok: true };
@@ -428,6 +518,8 @@ export class LinkService {
       }
     }
     const now = new Date();
+    const client = clientLabel(userAgent);
+    const utm = captureUtm(body);
     await this._repository.insertEvent({
       pageId: record.id,
       blockId: kind === 'CLICK' ? body.blockId : null,
@@ -435,6 +527,9 @@ export class LinkService {
       country: cleanCountry(countryHeader),
       source: sourceLabel(body),
       referrer: sanitizeReferrer(body.referrer || ''),
+      device: client.device,
+      browser: client.browser,
+      ...utm,
       day: utcDay(now),
     });
     return { ok: true };
@@ -482,6 +577,9 @@ export class LinkService {
     if (record.captureNotify && !record.captureDoubleOptIn) {
       await this.notify(record, email);
     }
+    if (!record.captureDoubleOptIn) {
+      await this.fanout(record, { email, name: record.captureAskName ? (body.name || '').trim() : '', source: block.title || 'Email capture', kind: 'subscribe' });
+    }
     return { status: record.captureDoubleOptIn ? ('pending' as const) : ('confirmed' as const), emailed };
   }
 
@@ -496,8 +594,285 @@ export class LinkService {
       if (record?.captureNotify) {
         await this.notify(record, lead.email);
       }
+      if (record) {
+        await this.fanout(record, {
+          email: lead.email,
+          name: lead.name,
+          source: lead.sourceBlock || 'Email capture',
+          kind: lead.kind || 'subscribe',
+        });
+      }
     }
     return { slug: lead.page.slug, name: lead.page.name };
+  }
+
+  async unlock(body: PublicLinkUnlockDto, countryHeader: string) {
+    const record = await this._repository.findBySlug(body.slug.trim().toLowerCase());
+    const block = record?.blocks.find((item) => item.id === body.blockId && item.type === 'LINK' && blockState(item) === 'live');
+    if (!record || !record.isPublic || !block || block.lockType === 'NONE') {
+      throw new NotFoundException('This link is not locked');
+    }
+    if (block.lockType === 'AGE') {
+      if (!body.age) {
+        throw new BadRequestException('Confirm you are 18 or older');
+      }
+      return { url: block.url };
+    }
+    if (block.lockType === 'EMAIL') {
+      const problem = emailProblem(body.email || '');
+      if (problem) {
+        throw new BadRequestException(problem);
+      }
+      const email = (body.email || '').trim().toLowerCase();
+      const existing = await this._repository.findLead(record.id, email);
+      if (!existing) {
+        try {
+          await this._repository.createLead({
+            pageId: record.id,
+            blockId: block.id,
+            email,
+            name: (body.name || '').trim().slice(0, 80),
+            country: cleanCountry(countryHeader),
+            referrer: sanitizeReferrer(body.referrer || ''),
+            sourceBlock: block.title || 'Locked link',
+            message: '',
+            kind: 'unlock',
+            status: 'CONFIRMED',
+            confirmToken: null,
+          });
+          await this.fanout(record, { email, name: (body.name || '').trim(), source: block.title || 'Locked link', kind: 'unlock' });
+        } catch (error) {
+          if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+            throw error;
+          }
+        }
+      }
+      return { url: block.url };
+    }
+    if (!body.password || !block.lockHash || !AuthService.comparePassword(body.password, block.lockHash)) {
+      throw new BadRequestException('That password is not right');
+    }
+    return { url: block.url };
+  }
+
+  async contact(body: PublicLinkContactDto, countryHeader: string) {
+    const record = await this._repository.findBySlug(body.slug.trim().toLowerCase());
+    const block = record?.blocks.find(
+      (item) => item.id === body.blockId && item.type === 'CONTACT_FORM' && blockState(item) === 'live'
+    );
+    if (!record || !record.isPublic || !block) {
+      throw new NotFoundException('This form is not available');
+    }
+    const decision = contactDecision(body);
+    if (decision === 'drop') {
+      return { ok: true };
+    }
+    if (decision === 'invalid') {
+      throw new BadRequestException('Check the email and message');
+    }
+    const email = body.email.trim().toLowerCase();
+    const message = body.message.trim().slice(0, 2000);
+    const name = (body.name || '').trim().slice(0, 80);
+    const existing = await this._repository.findLead(record.id, email);
+    if (existing) {
+      await this._repository.updateLead(existing.id, { message, ...(name ? { name } : {}) });
+      return { ok: true, already: true };
+    }
+    try {
+      await this._repository.createLead({
+        pageId: record.id,
+        blockId: block.id,
+        email,
+        name,
+        country: cleanCountry(countryHeader),
+        referrer: sanitizeReferrer(body.referrer || ''),
+        sourceBlock: block.title || 'Contact form',
+        message,
+        kind: 'contact',
+        status: 'CONFIRMED',
+        confirmToken: null,
+      });
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+        throw error;
+      }
+      const again = await this._repository.findLead(record.id, email);
+      if (again) {
+        await this._repository.updateLead(again.id, { message, ...(name ? { name } : {}) });
+      }
+      return { ok: true, already: true };
+    }
+    await this.fanout(record, { email, name, source: block.title || 'Contact form', kind: 'contact' });
+    return { ok: true };
+  }
+
+  private async analyticsReport(
+    record: LinkPageRecord,
+    window: { from: Date; to: Date; previousFrom: Date }
+  ) {
+    const paid = isPaidPlan(record.organization.subscription);
+    const [views, clicks, subscribers, previousViews, previousClicks, previousSubscribers, series, countries, sources, linkClicks, devices, browsers, utm] =
+      await Promise.all([
+        this._repository.countEvents(record.id, 'VIEW', window.from, window.to),
+        this._repository.countEvents(record.id, 'CLICK', window.from, window.to),
+        this._repository.countSubscribers(record.id, window.from, window.to),
+        this._repository.countEvents(record.id, 'VIEW', window.previousFrom, window.from),
+        this._repository.countEvents(record.id, 'CLICK', window.previousFrom, window.from),
+        this._repository.countSubscribers(record.id, window.previousFrom, window.from),
+        this._repository.series(record.id, utcDay(window.from), utcDay(window.to)),
+        this._repository.grouped(record.id, 'country', window.from, window.to),
+        this._repository.grouped(record.id, 'source', window.from, window.to),
+        this._repository.clicksByBlock(record.id, window.from, window.to),
+        paid ? this._repository.grouped(record.id, 'device', window.from, window.to) : Promise.resolve([]),
+        paid ? this._repository.grouped(record.id, 'browser', window.from, window.to) : Promise.resolve([]),
+        paid ? this._repository.utmBreakdown(record.id, window.from, window.to) : Promise.resolve([]),
+      ]);
+    const clicksById = new Map(linkClicks.filter((row) => row.blockId).map((row) => [row.blockId || '', row._count._all]));
+    const summary = buildAnalytics({
+      views,
+      clicks,
+      subscribers,
+      previousViews,
+      previousClicks,
+      previousSubscribers,
+      series: fillDays(
+        window.from,
+        window.to,
+        series.map((row) => ({ day: row.day, type: row.type, count: row._count._all }))
+      ),
+      links: linkClicks
+        .filter((row) => row.blockId)
+        .map((row) => ({
+          id: row.blockId || '',
+          title: record.blocks.find((block) => block.id === row.blockId)?.title || 'Deleted link',
+          clicks: row._count._all,
+        })),
+      countries: countries
+        .filter((row) => row.country)
+        .map((row) => ({ code: row.country, views: row._count._all })),
+      sources: sources.map((row) => ({ source: row.source, views: row._count._all })),
+    });
+    const links = record.blocks
+      .filter((block) => block.type === 'LINK')
+      .map((block) => ({
+        id: block.id,
+        title: block.title || 'Link',
+        clicks: clicksById.get(block.id) || 0,
+        ctr: views ? ((clicksById.get(block.id) || 0) / views) * 100 : 0,
+      }));
+    const utmRows = utm
+      .map((row) => ({
+        label: [row.utmSource, row.utmMedium, row.utmCampaign].filter(Boolean).join(' / '),
+        views: row._count._all,
+      }))
+      .filter((row) => row.label);
+    return {
+      summary,
+      deep: {
+        links,
+        devices: shareRows(devices.map((row) => ({ label: row.device, views: row._count._all }))),
+        browsers: shareRows(browsers.map((row) => ({ label: row.browser, views: row._count._all }))),
+        utm: shareRows(utmRows),
+      },
+    };
+  }
+
+  private hint(stored: string) {
+    if (!stored) {
+      return '';
+    }
+    try {
+      return secretHint(openIntegrationSecret(stored));
+    } catch {
+      return '';
+    }
+  }
+
+  private async fanout(
+    record: LinkPageRecord,
+    lead: { email: string; name: string; source: string; kind: string }
+  ) {
+    if (!isPaidPlan(record.organization.subscription)) {
+      return;
+    }
+    const jobs: Array<Promise<unknown>> = [];
+    if (record.mailchimpKey && record.mailchimpAudience) {
+      jobs.push(this.pushMailchimp(record, lead));
+    }
+    if (record.convertkitKey && record.convertkitForm) {
+      jobs.push(this.pushConvertkit(record, lead));
+    }
+    if (record.leadWebhookUrl) {
+      jobs.push(this.pushWebhook(record, lead));
+    }
+    await Promise.allSettled(jobs);
+  }
+
+  private async pushMailchimp(record: LinkPageRecord, lead: { email: string; name: string }) {
+    const key = openIntegrationSecret(record.mailchimpKey);
+    const datacenter = key.split('-').pop() || '';
+    if (!/^[a-z0-9]+$/i.test(datacenter)) {
+      return;
+    }
+    const response = await fetch(
+      `https://${datacenter}.api.mailchimp.com/3.0/lists/${encodeURIComponent(record.mailchimpAudience)}/members`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${Buffer.from(`crea8:${key}`).toString('base64')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email_address: lead.email,
+          status: 'subscribed',
+          merge_fields: lead.name ? { FNAME: lead.name.slice(0, 80) } : {},
+        }),
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!response.ok && response.status !== 400) {
+      return;
+    }
+  }
+
+  private async pushConvertkit(record: LinkPageRecord, lead: { email: string; name: string }) {
+    const key = openIntegrationSecret(record.convertkitKey);
+    await fetch(`https://api.convertkit.com/v3/forms/${encodeURIComponent(record.convertkitForm)}/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: key,
+        email: lead.email,
+        first_name: lead.name.slice(0, 80),
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+  }
+
+  private async pushWebhook(record: LinkPageRecord, lead: { email: string; name: string; source: string; kind: string }) {
+    if (webhookProblem(record.leadWebhookUrl)) {
+      return;
+    }
+    const payload = JSON.stringify({
+      event: 'lead.created',
+      email: lead.email,
+      name: lead.name,
+      source: lead.source,
+      kind: lead.kind,
+      slug: record.slug,
+      createdAt: new Date().toISOString(),
+    });
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (record.leadWebhookSecret) {
+      const secret = openIntegrationSecret(record.leadWebhookSecret);
+      headers['X-Crea8-Signature'] = `sha256=${createHmac('sha256', secret).update(payload).digest('hex')}`;
+    }
+    await fetch(record.leadWebhookUrl, {
+      method: 'POST',
+      headers,
+      body: payload,
+      signal: AbortSignal.timeout(8000),
+    });
   }
 
   private async notify(record: LinkPageRecord, email: string) {
@@ -559,26 +934,97 @@ export class LinkService {
     return block;
   }
 
-  private async blockData(orgId: string, timeZone: string, type: string, body: SaveLinkBlockDto) {
+  private async blockData(
+    orgId: string,
+    timeZone: string,
+    type: string,
+    body: SaveLinkBlockDto,
+    subscription: LinkPageRecord['organization']['subscription'],
+    current: { lockHash: string; lockType: string; spotlight: boolean } | null
+  ) {
     const title = (body.title || '').trim();
     const url = (body.url || '').trim();
     if (type === 'LINK') {
       if (body.title !== undefined && !title) {
         throw new BadRequestException('Add a title');
       }
-      if (!body.title && !url) {
-        throw new BadRequestException('Add a title');
+      if (body.url !== undefined && !url) {
+        throw new BadRequestException('Add a URL');
       }
       if (url && urlProblem(url)) {
         throw new BadRequestException(urlProblem(url));
-      }
-      if (body.url !== undefined && !url) {
-        throw new BadRequestException('Add a URL');
       }
     }
     if (type === 'HEADING' && body.title !== undefined && !title) {
       throw new BadRequestException('Add a heading');
     }
+    if (type === 'EMBED' && body.url !== undefined && embedProblem(url)) {
+      throw new BadRequestException(embedProblem(url));
+    }
+    if (type === 'TEXT' && body.body !== undefined && !(body.body || '').trim()) {
+      throw new BadRequestException('Add some text');
+    }
+    if (body.thumbnail && imagePathProblem(body.thumbnail)) {
+      throw new BadRequestException('Use an uploaded image');
+    }
+    const paid = isPaidPlan(subscription);
+    if (body.spotlight && type === 'LINK' && !paid && !current?.spotlight) {
+      throw new HttpException(
+        { message: paidFeatureProblem(false, 'spotlight'), upgrade: true },
+        HttpStatus.PAYMENT_REQUIRED
+      );
+    }
+    if (
+      body.lockType &&
+      body.lockType !== 'NONE' &&
+      type === 'LINK' &&
+      !paid &&
+      current?.lockType !== body.lockType
+    ) {
+      throw new HttpException(
+        { message: paidFeatureProblem(false, 'lock'), upgrade: true },
+        HttpStatus.PAYMENT_REQUIRED
+      );
+    }
+    if (type === 'LINK' && body.lockType) {
+      const problem = lockProblem({
+        lockType: body.lockType,
+        password: body.password,
+        hasHash: !!current?.lockHash && current.lockHash.length > 0,
+      });
+      if (problem) {
+        throw new BadRequestException(problem);
+      }
+    }
+    if (type === 'FAQ' && body.faq && !normalizeFaq(body.faq).length) {
+      throw new BadRequestException('Add at least one question');
+    }
+    if (type === 'IMAGE_CAROUSEL' && body.images) {
+      for (const image of body.images) {
+        const problem = imagePathProblem(image.path);
+        if (problem) {
+          throw new BadRequestException(problem);
+        }
+      }
+      if (!normalizeImages({ images: body.images }).length) {
+        throw new BadRequestException('Add at least one image');
+      }
+    }
+    const lockHash =
+      type !== 'LINK' || body.lockType === undefined
+        ? undefined
+        : body.lockType === 'PASSWORD' && body.password
+        ? AuthService.hashPassword(body.password)
+        : body.lockType === 'PASSWORD'
+        ? undefined
+        : '';
+    const payload = body.faq
+      ? { items: normalizeFaq(body.faq) }
+      : body.images
+      ? { images: normalizeImages({ images: body.images }) }
+      : body.formButton !== undefined || body.formAskName !== undefined
+      ? { button: (body.formButton || 'Send').trim() || 'Send', askName: !!body.formAskName }
+      : undefined;
     if (type === 'FEATURED_POST' && body.postId) {
       const post = await this._repository.findPost(orgId, body.postId);
       if (!post) {
@@ -608,6 +1054,15 @@ export class LinkService {
       ...(body.startsLocal !== undefined ? { startsAt } : {}),
       ...(body.endsLocal !== undefined ? { endsAt } : {}),
       ...(body.postId ? { postId: body.postId } : {}),
+      ...(body.thumbnail !== undefined ? { thumbnail: (body.thumbnail || '').trim() } : {}),
+      ...(body.iconMode !== undefined ? { iconMode: type === 'LINK' ? body.iconMode : '' } : {}),
+      ...(body.spotlight !== undefined ? { spotlight: type === 'LINK' ? body.spotlight : false } : {}),
+      ...(body.body !== undefined ? { body: (body.body || '').trim() } : {}),
+      ...(body.lockType !== undefined
+        ? { lockType: (type === 'LINK' ? body.lockType : 'NONE') as Prisma.LinkBlockUpdateInput['lockType'] }
+        : {}),
+      ...(lockHash !== undefined ? { lockHash } : {}),
+      ...(payload ? { payload: payload as Prisma.InputJsonValue } : {}),
     };
   }
 
@@ -662,6 +1117,22 @@ export class LinkService {
         notify: record.captureNotify,
       },
       socials: this.socials(record.socials),
+      integrations: {
+        mailchimp: {
+          connected: !!record.mailchimpKey,
+          audience: record.mailchimpAudience,
+          hint: this.hint(record.mailchimpKey),
+        },
+        convertkit: {
+          connected: !!record.convertkitKey,
+          form: record.convertkitForm,
+          hint: this.hint(record.convertkitKey),
+        },
+        webhook: {
+          url: record.leadWebhookUrl,
+          hasSecret: !!record.leadWebhookSecret,
+        },
+      },
       blocks: record.blocks.map((block) => ({
         id: block.id,
         type: block.type,
@@ -676,6 +1147,14 @@ export class LinkService {
         postId: block.postId,
         state: blockState(block),
         clicks: byBlock.get(block.id) || 0,
+        thumbnail: block.thumbnail,
+        iconMode: block.iconMode,
+        spotlight: block.spotlight,
+        body: block.body,
+        lock: { type: block.lockType, hasPassword: !!block.lockHash },
+        faq: block.type === 'FAQ' ? normalizeFaq(block.payload) : [],
+        images: block.type === 'IMAGE_CAROUSEL' ? normalizeImages(block.payload) : [],
+        form: block.type === 'CONTACT_FORM' ? normalizeForm(block) : null,
         post: block.post ? this.postCard(block.post, record.timezone) : null,
       })),
     };
@@ -719,14 +1198,18 @@ export class LinkService {
             askName: record.captureAskName,
           }
         : null,
-      blocks: visible.map((block) => ({
-        id: block.id,
-        type: block.type,
-        title: block.title,
-        url: block.url,
-        priority: block.priority,
-        post: block.post ? this.postCard(block.post, record.timezone, true) : null,
-      })),
+      blocks: visible.map((block) => {
+        const view = presentPublicBlock(block, paid);
+        return {
+          ...view,
+          thumbnail: view.thumbnail.startsWith('http') ? view.thumbnail : publicAsset(view.thumbnail),
+          images: view.images.map((image) => ({
+            ...image,
+            path: image.path.startsWith('http') ? image.path : publicAsset(image.path),
+          })),
+          post: block.post ? this.postCard(block.post, record.timezone, true) : null,
+        };
+      }),
     };
   }
 

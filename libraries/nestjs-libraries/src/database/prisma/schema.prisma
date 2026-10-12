@@ -2185,6 +2185,18 @@ enum LinkBlockType {
   FEATURED_POST
   EMAIL_CAPTURE
   HEADING
+  EMBED
+  TEXT
+  FAQ
+  IMAGE_CAROUSEL
+  CONTACT_FORM
+}
+
+enum LinkLockType {
+  NONE
+  AGE
+  EMAIL
+  PASSWORD
 }
 
 enum LinkDomainStatus {
@@ -2240,6 +2252,12 @@ model LinkPage {
   captureDoubleOptIn Boolean          @default(true)
   captureNotify      Boolean          @default(false)
   socials            Json             @default("[]")
+  mailchimpKey       String           @default("")
+  mailchimpAudience  String           @default("")
+  convertkitKey      String           @default("")
+  convertkitForm     String           @default("")
+  leadWebhookUrl     String           @default("")
+  leadWebhookSecret  String           @default("")
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   organization       Organization     @relation(fields: [organizationId], references: [id])
@@ -2263,6 +2281,13 @@ model LinkBlock {
   startsAt   DateTime?
   endsAt     DateTime?
   postId     String?
+  thumbnail  String        @default("")
+  iconMode   String        @default("")
+  spotlight  Boolean       @default(false)
+  body       String        @default("")
+  payload    Json          @default("{}")
+  lockType   LinkLockType  @default(NONE)
+  lockHash   String        @default("")
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
   deletedAt  DateTime?
@@ -2283,10 +2308,17 @@ model LinkEvent {
   pageId    String
   blockId   String?
   type      LinkEventType
-  country   String        @default("")
-  source    String        @default("")
-  referrer  String        @default("")
-  day       DateTime
+  country     String        @default("")
+  source      String        @default("")
+  referrer    String        @default("")
+  device      String        @default("")
+  browser     String        @default("")
+  utmSource   String        @default("")
+  utmMedium   String        @default("")
+  utmCampaign String        @default("")
+  utmContent  String        @default("")
+  utmTerm     String        @default("")
+  day         DateTime
   createdAt DateTime      @default(now())
   page      LinkPage      @relation(fields: [pageId], references: [id], onDelete: Cascade)
   block     LinkBlock?    @relation(fields: [blockId], references: [id], onDelete: SetNull)
@@ -2306,6 +2338,8 @@ model LinkLead {
   country      String         @default("")
   referrer     String         @default("")
   sourceBlock  String         @default("Email capture")
+  message      String         @default("")
+  kind         String         @default("subscribe")
   status       LinkLeadStatus @default(PENDING)
   confirmToken String?        @unique
   createdAt    DateTime       @default(now())
