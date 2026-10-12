@@ -1519,7 +1519,6 @@ body :focus-visible {
   }
 
   .post-now-tray {
-    display: flex !important;
     position: static !important;
     width: 100% !important;
     left: auto !important;
@@ -1534,6 +1533,7 @@ body :focus-visible {
     width: auto !important;
     max-width: none !important;
     top: calc(70px + env(safe-area-inset-top)) !important;
+    bottom: auto !important;
     transform: none !important;
     min-width: 0 !important;
   }
@@ -7481,10 +7481,20 @@ body :focus-visible {
   }
 }
 
-/* Post composer, part 1. Presentation only. */
+/* Post composer, part 1. The launcher stays out of the chrome; the open panel is part 3. */
 body.composer-open .copilotKitButton,
+.composer .copilotKitButton {
+  position: fixed !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  opacity: 0 !important;
+}
+
 body.composer-open .copilotKitWindow,
-.composer .copilotKitButton,
 .composer .copilotKitWindow {
   display: none !important;
 }
@@ -7936,10 +7946,54 @@ body.composer-open .copilotKitWindow,
   color: var(--new-textColor);
 }
 
+.app-toast {
+  right: 24px;
+  bottom: 24px;
+  left: auto;
+  top: auto;
+  transform: none;
+}
+
+.app-toast-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.app-toast-icon.is-ok {
+  color: var(--arc-success);
+  background: color-mix(in srgb, var(--arc-success) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--arc-success) 40%, transparent);
+}
+
+.app-toast-icon.is-bad {
+  color: var(--arc-danger);
+  background: color-mix(in srgb, var(--arc-danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--arc-danger) 40%, transparent);
+}
+
+.app-toast-icon.is-warn {
+  color: #f5b942;
+  background: color-mix(in srgb, #f5b942 14%, transparent);
+  border: 1px solid color-mix(in srgb, #f5b942 40%, transparent);
+}
+
+.app-toast-text {
+  min-width: 0;
+  padding-top: 5px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .app-toast.is-error {
   color: var(--new-textColor);
 }
 
+.app-toast .app-toast-close,
 .app-toast.is-error .app-toast-close {
   width: 22px;
   height: 22px;
@@ -8146,12 +8200,13 @@ body.composer-open .copilotKitWindow,
   white-space: nowrap;
 }
 
-body.composer-open .app-toast.is-warning {
+body.composer-open .app-toast.is-warning,
+body.composer-open .app-toast.is-error {
   top: auto;
-  bottom: 96px;
-  left: 36px;
-  right: auto;
-  max-width: min(420px, 46vw);
+  bottom: 24px;
+  left: auto;
+  right: 24px;
+  max-width: min(400px, calc(100vw - 48px));
   transform: none;
 }
 
@@ -8453,7 +8508,9 @@ body.composer-open .app-toast.is-warning {
     padding-right: 16px !important;
   }
 
-  body.composer-open .app-toast.is-warning {
+  body.composer-open .app-toast.is-warning,
+  body.composer-open .app-toast.is-error,
+  body.composer-open .app-toast.is-success {
     top: calc(64px + env(safe-area-inset-top)) !important;
     bottom: auto !important;
     left: 16px !important;
@@ -8580,5 +8637,464 @@ body.composer-open .app-toast.is-warning {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* Post composer, part 3. Presentation only. */
+@keyframes po-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.po-spin {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: po-spin 0.7s linear infinite;
+}
+
+.arc-dialog.po-sure-danger,
+.arc-dialog.po-edit-modal {
+  padding: 0 !important;
+  gap: 0 !important;
+  height: auto !important;
+  max-height: calc(100vh - 80px) !important;
+  position: fixed !important;
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  border-radius: 26px !important;
+}
+
+.arc-dialog.po-sure-danger {
+  width: min(440px, calc(100vw - 32px)) !important;
+  min-width: 0 !important;
+  max-width: 440px !important;
+}
+
+.arc-dialog.po-edit-modal {
+  width: min(500px, calc(100vw - 32px)) !important;
+}
+
+.po-sure-danger .arc-dialog-head {
+  display: none;
+}
+
+.po-sure-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 24px 8px;
+}
+
+.po-sure-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.po-sure-mark.is-bad {
+  color: var(--arc-danger);
+  background: color-mix(in srgb, var(--arc-danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--arc-danger) 36%, var(--new-border));
+}
+
+.po-sure-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.po-sure-copy {
+  margin-top: 4px;
+  color: var(--new-textItemBlur);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.po-sure-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 24px 22px;
+}
+
+.po-sure-danger .po-sure-yes,
+.po-sure-danger .po-sure-no {
+  flex: none;
+}
+
+.po-sure-danger .po-sure-yes {
+  background: color-mix(in srgb, var(--arc-danger) 10%, transparent) !important;
+  color: var(--arc-danger) !important;
+  border: 1px solid color-mix(in srgb, var(--arc-danger) 36%, var(--new-border)) !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+}
+
+.po-edit-modal .arc-dialog-head {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--new-border);
+  min-height: 0;
+}
+
+.po-edit-modal .arc-dialog-body {
+  padding: 0;
+  max-height: none;
+}
+
+.po-edit-modal .mantine-Modal-close {
+  position: static !important;
+  top: auto !important;
+  inset-inline-end: auto !important;
+  width: 32px;
+  height: 32px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--new-border);
+  border-radius: 12px;
+  background: var(--arc-muted, var(--new-bgColor));
+  color: var(--new-textItemBlur);
+}
+
+.po-edit-copy {
+  margin: 0;
+  padding: 0 24px;
+  color: var(--new-textItemBlur);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.po-edit-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 16px 24px 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--arc-selected-border);
+  background: var(--arc-selected);
+  color: var(--new-textColor);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.po-edit-note svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--arc-accent-text);
+}
+
+.po-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--new-border);
+}
+
+.po-edit-actions button {
+  white-space: nowrap;
+  flex: none;
+}
+
+.po-edit-republish {
+  background: #00d9ff !important;
+  color: #0a0a0a !important;
+  border-color: transparent !important;
+}
+
+.composer .po-split:has(.po-spin) .post-now-tray,
+.composer .group.po-split:hover:has(.po-spin) .post-now-tray {
+  display: none !important;
+}
+
+.composer .po-split .po-split-main:disabled + .po-split-chevron {
+  display: flex !important;
+  opacity: 1 !important;
+  background: #00d9ff !important;
+  color: #0a0a0a !important;
+}
+
+.po-split:has(.po-spin) .po-split-main,
+.po-split:has(.po-spin) .po-split-chevron {
+  opacity: 1 !important;
+}
+
+.po-split:has(.po-spin) .po-split-chevron {
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.po-split:has(.po-spin) .po-split-chevron svg {
+  transform: none !important;
+}
+
+.po-assist,
+.po-assist.copilotKitPopup,
+.po-assist.copilotKitPopup * {
+  font-family: 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.po-assist.copilotKitPopup {
+  z-index: 640 !important;
+}
+
+body.composer-open .po-assist .copilotKitWindow.open,
+.composer .po-assist .copilotKitWindow.open {
+  display: flex !important;
+  flex-direction: column !important;
+  position: fixed !important;
+  top: 24px !important;
+  right: 24px !important;
+  bottom: 24px !important;
+  left: auto !important;
+  width: 400px !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 18px !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-left: 1px solid var(--new-border) !important;
+  background: var(--new-bgColorInner) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+  z-index: 420 !important;
+  color: var(--new-textColor);
+  gap: 12px;
+}
+
+.po-assist .copilotKitHeader {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--new-textColor) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  border-radius: 0 !important;
+}
+
+.po-assist .copilotKitDevConsole,
+.po-assist .copilotKitDebugMenu,
+.po-assist .copilotKitDebugMenuTriggerButton,
+.po-assist .poweredBy,
+.po-assist .copilotKitMessageControls,
+.po-assist .copilotKitMessagesFooter {
+  display: none !important;
+}
+
+.po-assist .copilotKitHeaderCloseButton {
+  width: 32px !important;
+  height: 32px !important;
+  border: 1px solid var(--new-border) !important;
+  border-radius: 12px !important;
+  background: var(--arc-muted, var(--new-bgColor)) !important;
+  color: var(--new-textItemBlur) !important;
+  position: static !important;
+  transform: none !important;
+}
+
+.po-assist .copilotKitHeaderControls {
+  margin-left: auto;
+}
+
+.po-assist .copilotKitChat,
+.po-assist .copilotKitChatBody,
+.po-assist .copilotKitMessages {
+  flex: 1 1 auto;
+  min-height: 0;
+  background: transparent !important;
+  color: var(--new-textColor) !important;
+}
+
+.po-assist .copilotKitMessages {
+  justify-content: flex-start !important;
+}
+
+.po-assist .copilotKitMessagesContainer {
+  padding: 0 !important;
+  gap: 12px;
+}
+
+.po-assist .copilotKitMessage.copilotKitAssistantMessage,
+.po-assist .copilotKitMessagesContainer > .copilotKitMessage:only-child {
+  background: var(--arc-muted, var(--new-bgColor)) !important;
+  border: 1px solid var(--new-border) !important;
+  border-radius: 22px 22px 22px 8px !important;
+  padding: 14px 16px !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  color: var(--new-textColor) !important;
+  box-shadow: none !important;
+  line-height: 1.55;
+}
+
+.po-assist .copilotKitMessage.copilotKitUserMessage {
+  background: var(--arc-selected) !important;
+  border: 1px solid var(--arc-selected-border) !important;
+  color: var(--new-textColor) !important;
+  border-radius: 22px 22px 8px 22px !important;
+  margin-left: auto !important;
+  padding: 14px 16px !important;
+  box-shadow: none !important;
+}
+
+.po-assist .copilotKitInputContainer {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.po-assist .copilotKitInput {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
+  padding: 0 8px 0 16px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--new-border) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.po-assist .copilotKitInput > textarea {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 22px !important;
+  height: 22px !important;
+  padding: 0 !important;
+  color: var(--new-textColor) !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  background: transparent !important;
+}
+
+.po-assist .copilotKitInput > textarea::placeholder {
+  color: var(--new-textItemBlur) !important;
+}
+
+.po-assist .copilotKitInputControls {
+  flex: none;
+}
+
+.po-assist .copilotKitInputControls > div,
+.po-assist .copilotKitInputControls button:not([data-testid='copilot-send-button']) {
+  display: none !important;
+}
+
+.po-assist .copilotKitInputControlButton {
+  color: var(--new-textItemBlur) !important;
+  width: 28px;
+  height: 28px;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  body.composer-open .po-assist .copilotKitWindow.open,
+  .composer .po-assist .copilotKitWindow.open {
+    width: 340px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .arc-dialog.po-sure-danger,
+  .arc-dialog.po-edit-modal {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important;
+    border-radius: 30px 30px 0 0 !important;
+    max-height: 92vh !important;
+  }
+
+  .arc-dialog.po-sure-danger .arc-grab,
+  .arc-dialog.po-edit-modal .arc-grab {
+    display: block;
+    margin: 12px auto 0;
+  }
+
+  .po-sure-actions {
+    flex-wrap: nowrap;
+  }
+
+  .po-sure-actions button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: auto !important;
+    min-height: 44px;
+    white-space: nowrap;
+    padding: 8px 10px !important;
+  }
+
+  .po-edit-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .po-edit-actions button {
+    flex: none;
+    width: 100%;
+    height: 44px !important;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .po-edit-actions button > div {
+    white-space: nowrap;
+  }
+
+  .composer-foot .po-split {
+    max-width: 100%;
+  }
+
+  body.composer-open .po-assist.copilotKitPopup:has(.copilotKitWindow.open) {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    background: var(--new-bgColorInner) !important;
+    z-index: 640 !important;
+  }
+
+  .po-edit-copy,
+  .po-sure-copy {
+    overflow-wrap: anywhere;
+  }
+
+  body.composer-open .po-assist .copilotKitWindow.open,
+  .composer .po-assist .copilotKitWindow.open {
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+    padding: 16px 16px 20px !important;
   }
 }
