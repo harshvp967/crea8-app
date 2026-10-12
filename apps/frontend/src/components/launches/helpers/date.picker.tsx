@@ -1,9 +1,8 @@
 import { FC, useCallback, useState } from 'react';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { Calendar, TimeInput } from '@mantine/dates';
 import { useClickOutside } from '@mantine/hooks';
-import { Button } from '@gitroom/react/form/button';
-import { isUSCitizen } from './isuscitizen.utils';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { displayDayjs, displayNow, isPastCalendarDay } from '@gitroom/frontend/components/layout/set.timezone';
 import { CalendarIcon } from '@gitroom/frontend/components/ui/icons';
@@ -46,62 +45,71 @@ export const DatePicker: FC<{
   );
   return (
     <div
-      className="px-[16px] border border-newTextColor/10 rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1"
+      className={clsx(
+        'po-date-chip px-[16px] border rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1',
+        open ? 'border-[#00D9FF] bg-[#00D9FF]/10' : 'border-newTextColor/10'
+      )}
       onClick={changeShow}
       ref={ref}
     >
       <div className="cursor-pointer">
         <CalendarIcon />
       </div>
-      <div className="cursor-pointer">
-        {wall.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}
+      <div className="po-date-label cursor-pointer whitespace-nowrap">
+        {wall.format('ddd, MMM D · h:mm A')}
       </div>
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="animate-fadeIn absolute bottom-[100%] mb-[16px] start-[50%] -translate-x-[50%] bg-sixth border border-tableBorder text-textColor rounded-[16px] z-[300] p-[16px] flex flex-col"
+          className="po-date-pop animate-fadeIn absolute bottom-[calc(100%+8px)] end-0 z-[300] flex flex-col"
         >
           <Calendar
             onChange={changeDate('date')}
             value={pickerValue}
+            hideOutsideDates
+            allowLevelChange={false}
+            weekendDays={[]}
             excludeDate={(day) => isPastCalendarDay(day, displayNow())}
             dayClassName={(cell, modifiers) => {
+              if (modifiers.outside) {
+                return 'po-day-out';
+              }
               if (modifiers.selected) {
-                return '!text-[#0a0a0a] !bg-seventh !outline-none';
+                return 'po-day-on';
+              }
+              if (modifiers.disabled) {
+                return 'po-day-past';
               }
               if (
                 dayjs(cell).format('YYYY-MM-DD') ===
                 displayNow().format('YYYY-MM-DD')
               ) {
-                return '!text-[#00D9FF]';
+                return 'po-day-today';
               }
-              if (modifiers.weekend) {
-                return '!text-customColor28';
-              }
-              if (modifiers.outside) {
-                return '!text-gray';
-              }
-              return '!text-textColor';
+              return 'po-day';
             }}
             classNames={{
-              day: 'hover:bg-seventh',
-              calendarHeaderControl: 'text-textColor hover:bg-third',
-              calendarHeaderLevel: 'text-textColor hover:bg-third', // cell: 'child:!text-textColor'
+              calendarHeaderControl: 'text-textColor',
+              calendarHeaderLevel: 'text-textColor',
             }}
           />
-          <TimeInput
-            onChange={changeDate('time')}
-            label="Pick time"
-            classNames={{
-              label: 'text-textColor py-[12px]',
-              input:
-                'bg-sixth h-[40px] border border-tableBorder text-textColor rounded-[4px] outline-none',
-            }}
-            defaultValue={pickerValue}
-          />
-          <Button className="mt-[12px]" onClick={changeShow}>
-            {t('close', 'Close')}
-          </Button>
+          <div className="po-date-time">
+            <label className="po-date-clock">
+              <CalendarIcon />
+              <span>{wall.format('h:mm A')}</span>
+              <TimeInput
+                onChange={changeDate('time')}
+                classNames={{
+                  wrapper: 'po-date-native-wrap',
+                  input: 'po-date-native',
+                }}
+                defaultValue={pickerValue}
+              />
+            </label>
+            <button type="button" className="po-date-close" onClick={changeShow}>
+              {t('close', 'Close')}
+            </button>
+          </div>
         </div>
       )}
     </div>

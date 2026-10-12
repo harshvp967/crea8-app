@@ -62,6 +62,7 @@ export const TagsComponentInner: FC<{
   const fetch = useFetch();
   const [isOpen, setIsOpen] = useState(false);
   const [allowClose, setAllowClose] = useState(true);
+  const [tagQuery, setTagQuery] = useState('');
   const [tagValue, setTagValue] = useState<any[]>(
     (initial?.slice(0) || []).map((p: any) => {
       return data?.tags.find((a: any) => a.name === p.value) || p;
@@ -80,6 +81,7 @@ export const TagsComponentInner: FC<{
     const val: string | undefined = await new Promise((resolve) => {
       modals.openModal({
         title: t('add_new_tag', 'Add New Tag'),
+        classNames: { modal: 'po-tag-modal' },
         children: (close) => (
           <ShowModal tag="" close={close} resolve={resolve} />
         ),
@@ -161,8 +163,8 @@ export const TagsComponentInner: FC<{
     <div
       ref={ref}
       className={clsx(
-        'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
-        isOpen ? 'border-[#00D9FF]' : 'border-newTextColor/10'
+        'po-tags border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
+        isOpen ? 'border-[#00D9FF] bg-[#00D9FF]/10' : 'border-newTextColor/10'
       )}
     >
       <div
@@ -172,19 +174,16 @@ export const TagsComponentInner: FC<{
         <div className="cursor-pointer">
           <TagIcon />
         </div>
-        <div className="cursor-pointer flex gap-[4px]">
+        <div className="cursor-pointer flex gap-[6px] items-center min-w-0">
           {tagValue.length === 0 ? (
             label
           ) : (
             <>
-              <div
-                className="h-full flex justify-center items-center px-[8px] rounded-[4px]"
-                style={{ backgroundColor: tagValue[0].color }}
-              >
-                <span className="text-shadow-tags text-[#fff]">
-                  {tagValue[0].name}
-                </span>
-              </div>
+              <span
+                className="po-tag-dot"
+                style={{ background: tagValue[0].color }}
+              />
+              <span className="whitespace-nowrap">{tagValue[0].name}</span>
               {tagValue.length > 1 ? <span>+{tagValue.length - 1}</span> : null}
             </>
           )}
@@ -194,63 +193,114 @@ export const TagsComponentInner: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="z-[300] absolute start-0 bottom-[100%] w-[240px] bg-newBgColorInner p-[12px] menu-shadow -translate-y-[10px] flex flex-col">
-          {(data?.tags || []).map((p: any) => (
-            <div
-              onClick={() => {
-                const exists = !!tagValue.find((a) => a.id === p.id);
-                let modify = [];
-                if (exists) {
-                  modify = tagValue.filter((a) => a.id !== p.id);
-                } else {
-                  modify = [...tagValue, p];
-                }
-                setTagValue(modify);
-                onChange({
-                  target: {
-                    value: modify.map((p: any) => ({
-                      label: p.name,
-                      value: p.name,
-                    })),
-                    name,
-                  },
-                });
-              }}
-              key={p.name}
-              className="min-h-[40px] py-[8px] px-[20px] -mx-[12px] flex gap-[8px] items-center group"
-            >
-              <Check
-                onChange={() => {}}
-                value={!!tagValue.find((a) => a.id === p.id)}
-              />
-              <div className="h-full flex items-center flex-1 break-all">
-                <span
-                  className="text-[#fff] px-[8px] rounded-[8px] text-shadow-tags"
-                  style={{ backgroundColor: p.color }}
-                >
-                  {p.name}
-                </span>
-              </div>
-              {!tagValue.find((a) => a.id === p.id) && (
+        <div className="po-tags-menu z-[300] absolute start-0 bottom-[calc(100%+8px)] flex flex-col">
+          <label className="po-tag-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M16 16.5L20 20.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            <input
+              value={tagQuery}
+              onChange={(e) => setTagQuery(e.target.value)}
+              placeholder={t('add_a_tag', 'Add a tag')}
+            />
+          </label>
+          {(data?.tags || [])
+            .filter((p: any) =>
+              p.name.toLowerCase().includes(tagQuery.trim().toLowerCase())
+            )
+            .map((p: any) => {
+              const selected = !!tagValue.find((a) => a.id === p.id);
+              return (
                 <div
-                  onClick={(e) => deleteTag(p, e)}
-                  className="ms-auto transition-opacity cursor-pointer text-red-500 text-[14px] font-[600]"
+                  onClick={() => {
+                    const modify = selected
+                      ? tagValue.filter((a) => a.id !== p.id)
+                      : [...tagValue, p];
+                    setTagValue(modify);
+                    onChange({
+                      target: {
+                        value: modify.map((item: any) => ({
+                          label: item.name,
+                          value: item.name,
+                        })),
+                        name,
+                      },
+                    });
+                  }}
+                  key={p.name}
+                  className={clsx('po-menu-row', selected && 'is-on')}
                 >
-                  ×
+                  <span className="po-tag-dot" style={{ background: p.color }} />
+                  <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                  {selected && <CheckmarkIcon className="text-[#00D9FF]" />}
+                  <button
+                    type="button"
+                    className="po-tag-pen"
+                    aria-label={t('edit', 'Edit')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAllowClose(false);
+                      new Promise((resolve) => {
+                        modals.openModal({
+                          title: t('add_new_tag', 'Add New Tag'),
+                          classNames: { modal: 'po-tag-modal' },
+                          children: (close) => (
+                            <ShowModal
+                              tag={p.name}
+                              color={p.color}
+                              id={p.id}
+                              close={close}
+                              resolve={resolve as (value: string) => void}
+                            />
+                          ),
+                        });
+                      }).then(async (val) => {
+                        const next = await mutate();
+                        if (val && selected) {
+                          const renamed = (next?.tags || []).find(
+                            (item: any) => item.name === val
+                          );
+                          if (renamed) {
+                            const modify = tagValue.map((item) =>
+                              item.id === p.id ? renamed : item
+                            );
+                            setTagValue(modify);
+                            onChange({
+                              target: {
+                                value: modify.map((item: any) => ({
+                                  label: item.name,
+                                  value: item.name,
+                                })),
+                                name,
+                              },
+                            });
+                          }
+                        }
+                        setTimeout(() => setAllowClose(true), 500);
+                      });
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {!selected && (
+                    <button
+                      type="button"
+                      className="po-tag-pen"
+                      aria-label={t('delete', 'Delete')}
+                      onClick={(e) => deleteTag(p, e)}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-          <div
-            onClick={addTag}
-            className="cursor-pointer gap-[8px] flex w-full h-[34px] rounded-[8px] mt-[12px] px-[16px] justify-center items-center bg-[#00D9FF] text-[#0a0a0a]"
-          >
-            <div>
-              <PlusIcon />
-            </div>
-            <div className="text-[13px] font-[600]">
-              {t('add_new_tag', 'Add New Tag')}
-            </div>
+              );
+            })}
+          <div onClick={addTag} className="po-menu-row po-add-tag">
+            <PlusIcon />
+            <span>{t('add_new_tag', 'Add New Tag')}</span>
           </div>
         </div>
       )}
@@ -258,22 +308,6 @@ export const TagsComponentInner: FC<{
   );
 };
 
-const Check: FC<{ value: boolean; onChange: (value: boolean) => void }> = ({
-  value,
-  onChange,
-}) => {
-  return (
-    <div
-      onClick={() => onChange(!value)}
-      className={clsx(
-        'text-[10px] font-[500] text-center flex border border-btnSimple rounded-[6px] min-w-[20px] min-h-[20px] w-[20px] h-[20px] justify-center items-center',
-        value && 'bg-[#00D9FF]'
-      )}
-    >
-      {value ? <CheckmarkIcon className="text-white" /> : ''}
-    </div>
-  );
-};
 export const TagsComponentA: FC<{
   name: string;
   label: string;
@@ -535,8 +569,9 @@ const ShowModal: FC<{
     resolve(tagName);
     close();
   }, [tagName, color, id]);
+  const swatches = ['#00D9FF', '#4ADE80', '#FBBF24', '#F87171', '#A78BFA', '#F472B6'];
   return (
-    <div>
+    <div className="po-new-tag">
       <Input
         name="name"
         disableForm={true}
@@ -544,17 +579,43 @@ const ShowModal: FC<{
         value={tagName}
         onChange={(e) => setTagName(e.target.value)}
       />
+      <div className="po-swatches">
+        <div className="text-[14px] mb-[8px]">{t('label_tag_color', 'Tag Color')}</div>
+        <div className="flex gap-[8px] flex-wrap">
+          {swatches.map((swatch) => (
+            <button
+              type="button"
+              key={swatch}
+              aria-label={swatch}
+              onClick={() => setColor(swatch)}
+              className={clsx('po-swatch', color.toLowerCase() === swatch.toLowerCase() && 'is-on')}
+              style={{ background: swatch }}
+            />
+          ))}
+        </div>
+      </div>
       <ColorPicker
         onChange={(e) => setColor(e.target.value)}
-        label={t('label_tag_color', 'Tag Color')}
+        label=""
         name="color"
         value={color}
         enabled={true}
         canBeCancelled={false}
       />
-      <Button onClick={save} className="mt-[16px]">
-        {t('save', 'Save')}
-      </Button>
+      <div className="po-tag-actions">
+        <Button
+          secondary
+          onClick={() => {
+            resolve('');
+            close();
+          }}
+        >
+          {t('cancel', 'Cancel')}
+        </Button>
+        <Button onClick={save} className="po-tag-save">
+          {t('save', 'Save')}
+        </Button>
+      </div>
     </div>
   );
 };

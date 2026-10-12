@@ -346,6 +346,7 @@ export const DecisionModal: FC<{
       <div className="max-w-[600px]">{description}</div>
       <div className="flex gap-[12px] mt-[16px]">
         <Button
+          className="po-sure-yes"
           onClick={() => {
             resolution(true);
             closeCurrent();
@@ -356,6 +357,7 @@ export const DecisionModal: FC<{
         {!onlyApprove && (
           <Button
             secondary
+            className="po-sure-no"
             onClick={() => {
               resolution(false);
               closeCurrent();
