@@ -69,7 +69,8 @@
 }
 
 .lib-settings,
-.lib-analytics {
+.lib-analytics,
+.lib-leads {
   min-height: 0;
   flex: 1 1 auto;
 }
@@ -111,7 +112,8 @@
   }
 
   .lib-settings,
-  .lib-analytics {
+  .lib-analytics,
+  .lib-leads {
     padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
@@ -166,6 +168,69 @@
   color: #f07178;
   background: rgba(240, 113, 120, 0.12);
   border-color: rgba(240, 113, 120, 0.4);
+}
+
+.lib-lead-status {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lib-lead-ok {
+  color: var(--arc-success);
+  background: color-mix(in srgb, var(--arc-success) 10%, transparent);
+  border-color: color-mix(in srgb, var(--arc-success) 32%, transparent);
+}
+
+.lib-lead-pending {
+  color: #a16207;
+  background: #faf3e5;
+  border-color: #ead7ae;
+}
+
+.dark .lib-lead-pending {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.14);
+  border-color: rgba(251, 191, 36, 0.32);
+}
+
+.lib-leads-cards {
+  display: none;
+}
+
+.lib-leads-table th,
+.lib-leads-table td {
+  white-space: nowrap;
+}
+
+@media (max-width: 1199px) {
+  .lib-leads-table {
+    table-layout: fixed;
+  }
+
+  .lib-leads-table th,
+  .lib-leads-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 767px) {
+  .lib-leads-table-wrap {
+    display: none;
+  }
+
+  .lib-leads-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 }
 
 .lib-bar {
