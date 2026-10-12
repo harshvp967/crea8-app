@@ -854,16 +854,26 @@
 }
 
 .lib-editor-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
+  padding-left: 28px !important;
+}
+
+.lib-shell .lib-editor-row {
+  padding-left: 28px !important;
 }
 
 .lib-editor-drag {
+  position: absolute;
+  left: 8px;
+  top: 50%;
   display: grid;
   width: 16px;
-  flex: 0 0 16px;
+  height: 16px;
+  margin-top: -8px;
   place-items: center;
 }
 
@@ -1044,8 +1054,16 @@
     margin-top: 8px;
   }
 
-  .lib-editor-row.is-feature .lib-editor-name {
+  .lib-editor-titleline {
+    flex-wrap: wrap;
+  }
+
+  .lib-editor-name {
     flex: 0 0 auto;
+    max-width: 100%;
+  }
+
+  .lib-editor-row.is-feature .lib-editor-name {
     overflow: visible;
     text-overflow: clip;
   }
