@@ -49,6 +49,7 @@ import {
   VerticalDividerIcon,
   NoMediaIcon,
 } from '@gitroom/frontend/components/ui/icons';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
@@ -428,9 +429,7 @@ export const MediaBox: FC<{
             <div className="animate-spin h-[20px] w-[20px] border-4 border-[#00D9FF] border-t-transparent rounded-full" />
           </div>
         ) : standalone ? (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 16V4M12 4l-4 4M12 4l4 4M5 20h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <HugeIcon name="upload" size={16} />
         ) : (
           <PlusIcon size={14} />
         )}
@@ -472,10 +471,7 @@ export const MediaBox: FC<{
             <h1>{t('media_library', 'Media Library')}</h1>
             <div className="media-tools">
               <label className="media-search">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
-                  <path d="M16 16.5L20 20.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
+                <HugeIcon name="search" size={16} />
                 <input
                   type="text"
                   value={search}
@@ -671,12 +667,7 @@ export const MediaBox: FC<{
                             onClick={maximize(media)}
                             aria-label={t('preview', 'Preview')}
                           >
-                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
-                              <path
-                                d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
-                                fill="currentColor"
-                              />
-                            </svg>
+                            <HugeIcon name="expand" size={12} />
                           </button>
                           <button
                             type="button"
@@ -684,9 +675,7 @@ export const MediaBox: FC<{
                             onClick={deleteImage(media)}
                             aria-label={t('delete', 'Delete')}
                           >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
-                              <path d="M4 7h16M9.5 7V5.5h5V7M8 7l.8 12h6.4L16 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
+                            <HugeIcon name="trash" size={12} />
                           </button>
                         </div>
                         {kind === 'image' ? (
@@ -704,14 +693,9 @@ export const MediaBox: FC<{
                             aria-hidden
                           >
                             {kind === 'video' ? (
-                              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M9 7.2v9.6l8.2-4.8L9 7.2z" />
-                              </svg>
+                              <HugeIcon name="play" size={24} />
                             ) : (
-                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                                <path d="M7 3.5h7l5 5V20a1.5 1.5 0 0 1-1.5 1.5h-10.5A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5z" />
-                                <path d="M14 3.5V9h5" />
-                              </svg>
+                              <HugeIcon name="file" size={24} />
                             )}
                           </span>
                         )}
@@ -726,9 +710,7 @@ export const MediaBox: FC<{
                           onClick={deleteImage(media)}
                           aria-label={t('delete', 'Delete')}
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                            <path d="M4 7h16M9.5 7V5.5h5V7M8 7l.8 12h6.4L16 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                          <HugeIcon name="trash" size={14} />
                         </button>
                       </div>
                     </div>
@@ -753,15 +735,7 @@ export const MediaBox: FC<{
                       <div className="po-media-thumb">
                         {picked ? (
                           <div className="po-media-check" aria-hidden>
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <path
-                                d="M2.2 6.2 4.7 8.8 9.8 3.2"
-                                stroke="currentColor"
-                                strokeWidth="1.8"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
+                            <HugeIcon name="check" size={12} />
                           </div>
                         ) : (
                           <DeleteCircleIcon
@@ -770,11 +744,7 @@ export const MediaBox: FC<{
                           />
                         )}
                         <div className="po-media-ph" aria-hidden>
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                            <rect x="3.5" y="5" width="17" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
-                            <circle cx="9" cy="10" r="1.3" fill="currentColor" />
-                            <path d="M4 16.5 8.2 12l3.3 3 2.8-2.2L20 16.5" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                          </svg>
+                          <HugeIcon name="image" size={24} />
                         </div>
                         <button
                           type="button"
@@ -782,12 +752,7 @@ export const MediaBox: FC<{
                           onClick={maximize(media)}
                           aria-label={t('preview', 'Preview')}
                         >
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-                            <path
-                              d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
-                              fill="currentColor"
-                            />
-                          </svg>
+                          <HugeIcon name="expand" size={14} />
                         </button>
                         {hasExtension(media.path, 'mp4') ? (
                           <VideoFrame url={mediaDirectory.set(media.path)} />

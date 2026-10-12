@@ -3,6 +3,7 @@
 import { FC, useCallback } from 'react';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 const underlineMap = {
   a: 'a̲',
   b: 'b̲',
@@ -86,21 +87,7 @@ export const UText: FC<{
       onClick={mark}
       className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-      >
-        <path
-          d="M11.9993 2.66699V7.33366C11.9993 9.5428 10.2085 11.3337 7.99935 11.3337C5.79021 11.3337 3.99935 9.5428 3.99935 7.33366V2.66699M2.66602 14.0003H13.3327"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <HugeIcon name="underline" size={18} />
     </div>
   );
 };

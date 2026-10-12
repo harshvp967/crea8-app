@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -117,11 +118,7 @@ export const MobileTabBar = () => {
           aria-label="More"
           onClick={() => setMore((value) => !value)}
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden>
-            <circle cx="3.5" cy="9" r="1.35" />
-            <circle cx="9" cy="9" r="1.35" />
-            <circle cx="14.5" cy="9" r="1.35" />
-          </svg>
+          <HugeIcon name="more" size={18} />
           <span>More</span>
         </button>
       </nav>

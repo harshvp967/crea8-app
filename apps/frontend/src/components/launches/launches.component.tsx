@@ -30,6 +30,7 @@ import { useIntegrationList } from '@gitroom/frontend/components/launches/helper
 import useCookie from 'react-use-cookie';
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export const SVGLine = () => {
   return (
@@ -93,22 +94,14 @@ export const OpenClose: FC<{
 }> = (props) => {
   const { isOpen } = props;
   return (
-    <svg
-      width="11"
-      height="6"
-      viewBox="0 0 22 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+    <HugeIcon
+      name="chevron-up"
+      size={12}
       className={clsx(
         'rotate-180 transition-all',
         isOpen ? 'rotate-180' : 'rotate-90'
       )}
-    >
-      <path
-        d="M21.9245 11.3823C21.8489 11.5651 21.7207 11.7213 21.5563 11.8312C21.3919 11.9411 21.1986 11.9998 21.0008 11.9998H1.00079C0.802892 12 0.609399 11.9414 0.444805 11.8315C0.280212 11.7217 0.151917 11.5654 0.076165 11.3826C0.000412494 11.1998 -0.0193921 10.9986 0.0192583 10.8045C0.0579087 10.6104 0.153276 10.4322 0.293288 10.2923L10.2933 0.29231C10.3862 0.199333 10.4964 0.125575 10.6178 0.0752506C10.7392 0.0249263 10.8694 -0.000976562 11.0008 -0.000976562C11.1322 -0.000976562 11.2623 0.0249263 11.3837 0.0752506C11.5051 0.125575 11.6154 0.199333 11.7083 0.29231L21.7083 10.2923C21.8481 10.4322 21.9433 10.6105 21.9818 10.8045C22.0202 10.9985 22.0003 11.1996 21.9245 11.3823Z"
-        fill="currentColor"
-      />
-    </svg>
+    />
   );
 };
 export const MenuGroupComponent: FC<
@@ -586,21 +579,7 @@ export const LaunchesComponent = () => {
                 }
                 className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-textItemBlur bg-transparent border border-transparent rounded-[14px] w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none hover:bg-newBoxHover hover:text-newTextColor transition-colors"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="7"
-                  height="13"
-                  viewBox="0 0 7 13"
-                  fill="none"
-                >
-                  <path
-                    d="M6 11.5L1 6.5L6 1.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <HugeIcon name="chevron-left" size={16} />
               </div>
             </div>
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">

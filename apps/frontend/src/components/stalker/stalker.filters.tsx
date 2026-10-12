@@ -2,6 +2,7 @@
 
 import { ReactNode, useState } from 'react';
 import clsx from 'clsx';
+import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
@@ -212,43 +213,20 @@ const parseDate = (value: string) => {
   return `${pretty[3]}-${pretty[1].padStart(2, '0')}-${pretty[2].padStart(2, '0')}`;
 };
 
+const chipIcons: Record<string, HugeIconName> = {
+  cal: 'calendar',
+  globe: 'globe',
+  smile: 'smile',
+  tag: 'tag',
+  check: 'check',
+  hash: 'hashtag',
+  user: 'user',
+  plus: 'plus',
+  down: 'chevron-down',
+};
+
 const ChipIcon = ({ name }: { name: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    {name === 'cal' ? (
-      <>
-        <rect x="4" y="5" width="16" height="15" rx="2" />
-        <path d="M8 3v4M16 3v4M4 10h16" />
-      </>
-    ) : null}
-    {name === 'globe' ? (
-      <>
-        <circle cx="12" cy="12" r="8" />
-        <path d="M4 12h16M12 4c2.4 2.6 2.4 13.4 0 16M12 4c-2.4 2.6-2.4 13.4 0 16" />
-      </>
-    ) : null}
-    {name === 'smile' ? (
-      <>
-        <circle cx="12" cy="12" r="8" />
-        <path d="M8 14c1.1 1.3 2.4 2 4 2s2.9-.7 4-2M9 10h.01M15 10h.01" />
-      </>
-    ) : null}
-    {name === 'tag' ? (
-      <>
-        <path d="M4 12V5h7l8 8-7 7-8-8z" />
-        <circle cx="8.5" cy="8.5" r="1" fill="currentColor" stroke="none" />
-      </>
-    ) : null}
-    {name === 'check' ? <path d="M5 12.5l4.2 4.2L19 7" /> : null}
-    {name === 'hash' ? <path d="M9 4L7 20M17 4l-2 16M4 9h16M5 15h16" /> : null}
-    {name === 'user' ? (
-      <>
-        <circle cx="12" cy="8" r="3" />
-        <path d="M5.5 19c1.4-2.8 3.4-4.2 6.5-4.2s5.1 1.4 6.5 4.2" />
-      </>
-    ) : null}
-    {name === 'plus' ? <path d="M12 5v14M5 12h14" /> : null}
-    {name === 'down' ? <path d="M6 9l6 6 6-6" /> : null}
-  </svg>
+  <HugeIcon name={chipIcons[name] || 'plus'} size={16} />
 );
 
 const chipClass = (on: boolean) => (on ? stkChipOn : stkChip);

@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useRef, useState } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export const HeaderOverflow = ({ children }: { children: ReactNode }) => {
   const [open, setOpen] = useState(false);
@@ -29,11 +30,7 @@ export const HeaderOverflow = ({ children }: { children: ReactNode }) => {
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden>
-          <circle cx="3.5" cy="9" r="1.35" />
-          <circle cx="9" cy="9" r="1.35" />
-          <circle cx="14.5" cy="9" r="1.35" />
-        </svg>
+        <HugeIcon name="more" size={18} />
       </button>
       {open ? (
         <div className="arc-menu" role="menu">

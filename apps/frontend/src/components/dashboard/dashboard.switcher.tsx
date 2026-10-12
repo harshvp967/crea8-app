@@ -11,6 +11,7 @@ import {
   LinkIcon,
   StalkerIcon,
 } from '@gitroom/frontend/components/ui/icons';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 // Add a future dashboard by appending an item and a flag check.
 // Schedule and Link-in-Bio are always on. Stalker is on only when STALKER_ENABLED=true.
@@ -77,9 +78,7 @@ export const DashboardSwitcher = () => {
           onClick={() => setOpen((value) => !value)}
         >
           {current.label}
-          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
-            <path d="M2 3.5 L5 6.5 L8 3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
+          <HugeIcon name="chevron-down" size={16} />
         </button>
         {open ? (
           <div className="arc-menu dash-mswitch-menu" role="menu">

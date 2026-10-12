@@ -4,6 +4,7 @@ import { Button } from '@gitroom/react/form/button';
 import React, { FC } from 'react';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 export const AddPostButton: FC<{
   onClick: () => void;
   num: number;
@@ -19,21 +20,7 @@ export const AddPostButton: FC<{
         className="po-add-row select-none cursor-pointer flex text-textColor gap-[8px] items-center py-[4px] text-[14px] font-[500]"
       >
         <div>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M8.00065 3.33301V12.6663M3.33398 7.99967H12.6673"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <HugeIcon name="plus" size={16} />
         </div>
         <div>
           {t(

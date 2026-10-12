@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import DrawChart from 'chart.js/auto';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import {
   useStalkerAnalytics,
   useStalkerAuthors,
@@ -156,12 +157,7 @@ const dayTotal = (row: DayRow) => row.positive + row.negative + row.neutral;
 
 const chartIsEmpty = (rows: DayRow[]) => !rows.length || rows.every((row) => dayTotal(row) === 0);
 
-const ChartMark = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M4 19V5M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    <path d="M7 15l4-5 3 3 5-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+const ChartMark = () => <HugeIcon name="chart-line" size={24} />;
 
 const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
   const ref = useRef<HTMLCanvasElement>(null);

@@ -7,27 +7,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { stkMenu, stkMenuItem } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { chooseVisibleTabs, pill } from '@gitroom/frontend/components/layout/nav.pill';
-
-const Icon = ({ children }: { children: ReactNode }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    aria-hidden
-  >
-    {children}
-  </svg>
-);
-
-const TabGlyph = ({ children }: { children: ReactNode }) => (
-  <span className="stk-tab-glyph" aria-hidden>
-    {children}
-  </span>
-);
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 type StalkerLink = {
   label: string;
@@ -40,71 +20,38 @@ const links: StalkerLink[] = [
   {
     label: 'Mentions',
     path: '/stalker/mentions',
-    icon: (
-      <Icon>
-        <path d="M5 6h14M5 12h14M5 18h9" />
-      </Icon>
-    ),
-    tabIcon: <TabGlyph>@</TabGlyph>,
+    icon: <HugeIcon name="at" size={18} />,
+    tabIcon: <HugeIcon name="at" size={18} />,
   },
   {
     label: 'Analytics',
     path: '/stalker/analytics',
-    icon: (
-      <Icon>
-        <path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3" />
-      </Icon>
-    ),
-    tabIcon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden>
-        <rect x="1.5" y="9" width="3.2" height="7" rx="0.8" />
-        <rect x="7.4" y="5" width="3.2" height="11" rx="0.8" />
-        <rect x="13.3" y="2" width="3.2" height="14" rx="0.8" />
-      </svg>
-    ),
+    icon: <HugeIcon name="chart" size={18} />,
+    tabIcon: <HugeIcon name="chart" size={18} />,
   },
   {
     label: 'Keywords',
     path: '/stalker/keywords',
-    icon: (
-      <Icon>
-        <path d="M5 9h6M5 15h10M15 7l4 4-4 4" />
-      </Icon>
-    ),
-    tabIcon: <TabGlyph>#</TabGlyph>,
+    icon: <HugeIcon name="hashtag" size={18} />,
+    tabIcon: <HugeIcon name="hashtag" size={18} />,
   },
   {
     label: 'Alerts',
     path: '/stalker/alerts',
-    icon: (
-      <Icon>
-        <path d="M6 16h12l-1.2-2.2A6 6 0 0012 4a6 6 0 00-4.8 9.8L6 16zM10 18a2 2 0 004 0" />
-      </Icon>
-    ),
-    tabIcon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M6 16h12l-1.2-2.2A6 6 0 0012 4a6 6 0 00-4.8 9.8L6 16zM10 19a2 2 0 004 0" />
-      </svg>
-    ),
+    icon: <HugeIcon name="bell" size={18} />,
+    tabIcon: <HugeIcon name="bell" size={18} />,
   },
   {
     label: 'API',
     path: '/stalker/api',
-    icon: (
-      <Icon>
-        <path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13 6l-2 12" />
-      </Icon>
-    ),
+    icon: <HugeIcon name="code" size={18} />,
+    tabIcon: <HugeIcon name="code" size={18} />,
   },
   {
     label: 'Settings',
     path: '/stalker/settings',
-    icon: (
-      <Icon>
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 3v2M12 19v2M3 12h2M19 12h2" />
-      </Icon>
-    ),
+    icon: <HugeIcon name="settings" size={18} />,
+    tabIcon: <HugeIcon name="settings" size={18} />,
   },
 ];
 
@@ -134,18 +81,7 @@ export const StalkerProjectMenu = ({ onPick }: { onPick?: () => void }) => {
                 />
                 <span className="stk-proj-name">{item.name}</span>
                 {active ? (
-                  <svg
-                    className="stk-proj-check"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    aria-label="Active"
-                  >
-                    <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <HugeIcon name="check" size={16} className="stk-proj-check" aria-label="Active" />
                 ) : null}
               </button>
             </li>
@@ -160,7 +96,7 @@ export const StalkerProjectMenu = ({ onPick }: { onPick?: () => void }) => {
           setShowWizard(true);
         }}
       >
-        <span aria-hidden>+</span>
+        <HugeIcon name="plus" size={16} />
         Create project
       </button>
     </>
@@ -268,9 +204,7 @@ export const StalkerTopNav = ({
           ) : (
             <span className="truncate">{project?.name || 'New project'}</span>
           )}
-          <span className="text-textItemBlur" aria-hidden>
-            ▾
-          </span>
+          <HugeIcon name="chevron-down" size={16} className="text-textItemBlur" />
         </button>
         {open ? (
           <div className={`${stkMenu} stk-proj-menu absolute start-0 top-[calc(100%+8px)] overflow-hidden`} role="listbox">
@@ -298,7 +232,8 @@ export const StalkerTopNav = ({
             </span>
           ))}
           <span data-more className={pill(false)}>
-            More ▾
+            More
+            <HugeIcon name="chevron-down" size={16} />
           </span>
         </div>
         {links.map((link, index) => {
@@ -320,7 +255,7 @@ export const StalkerTopNav = ({
                   className="arc-icon-btn stk-add ms-[2px] rounded-[14px] border border-newBorder text-[18px]"
                   onClick={() => requestAddKeyword()}
                 >
-                  +
+                  <HugeIcon name="plus" size={18} />
                 </button>
               </span>
             );
@@ -341,7 +276,8 @@ export const StalkerTopNav = ({
               aria-expanded={moreOpen}
               onClick={() => setMoreOpen((value) => !value)}
             >
-              More ▾
+              More
+              <HugeIcon name="chevron-down" size={16} />
             </button>
             {moreOpen ? (
               <div

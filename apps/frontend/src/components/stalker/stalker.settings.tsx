@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
@@ -45,11 +46,7 @@ const CATEGORY_DOT: Record<string, string> = {
 
 const categoryDot = (name: string) => CATEGORY_DOT[name] || '#71717a';
 
-const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-  </svg>
-);
+const PlusIcon = () => <HugeIcon name="plus" size={16} />;
 
 export const StalkerSettings = () => {
   const fetch = useFetch();
@@ -185,11 +182,7 @@ export const StalkerSettings = () => {
       {dirty ? (
         <div className="stk-set-dirtybar">
           <p className="stk-set-dirty-label">
-            <svg className="stk-set-info" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 11v5" strokeLinecap="round" />
-              <circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none" />
-            </svg>
+            <HugeIcon name="info" size={16} className="stk-set-info" />
             Unsaved changes
           </p>
           <div className="stk-set-actions">
@@ -390,11 +383,7 @@ export const StalkerSettings = () => {
           <div className={`${stkDialog} stk-del max-w-[440px]`}>
             <div className={`${stkDialogHead} stk-del-head`}>
               <span className="stk-ic-bad stk-del-mark" aria-hidden>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M12 4.2L21 19.2H3L12 4.2z" strokeLinejoin="round" />
-                  <path d="M12 10v4.2" strokeLinecap="round" />
-                  <circle cx="12" cy="16.6" r="0.8" fill="currentColor" stroke="none" />
-                </svg>
+                <HugeIcon name="alert" size={20} />
               </span>
               <div className="min-w-0">
                 <h2 id="stk-del-title" className="text-[18px] font-[600]">
