@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -8,17 +8,24 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import {
   CalendarIcon,
+  LinkIcon,
   StalkerIcon,
 } from '@gitroom/frontend/components/ui/icons';
 
 // Add a future dashboard by appending an item and a flag check.
-// Schedule is always on. Stalker is on only when STALKER_ENABLED=true.
+// Schedule and Link-in-Bio are always on. Stalker is on only when STALKER_ENABLED=true.
 export const DASHBOARDS = [
   {
     id: 'schedule',
     label: 'Schedule',
     href: '/launches',
     Icon: CalendarIcon,
+  },
+  {
+    id: 'link',
+    label: 'Link-in-Bio',
+    href: '/link',
+    Icon: LinkIcon,
   },
   {
     id: 'stalker',
@@ -32,15 +39,22 @@ export const DashboardSwitcher = () => {
   const pathname = usePathname() || '';
   const { stalkerEnabled } = useVariables();
   const [open, setOpen] = useState(false);
-  useEffect(() => {
+  const [seenPath, setSeenPath] = useState(pathname);
+  if (seenPath !== pathname) {
+    setSeenPath(pathname);
     setOpen(false);
-  }, [pathname]);
-  if (!stalkerEnabled) {
+  }
+  const items = DASHBOARDS.filter((item) => item.id !== 'stalker' || stalkerEnabled);
+  if (items.length < 2) {
     return null;
   }
 
-  const active = pathname.startsWith('/stalker') ? 'stalker' : 'schedule';
-  const current = DASHBOARDS.find((item) => item.id === active) || DASHBOARDS[0];
+  const active = pathname.startsWith('/stalker')
+    ? 'stalker'
+    : pathname === '/link' || pathname.startsWith('/link/')
+    ? 'link'
+    : 'schedule';
+  const current = items.find((item) => item.id === active) || items[0];
 
   return (
     <>
@@ -69,7 +83,7 @@ export const DashboardSwitcher = () => {
         </button>
         {open ? (
           <div className="arc-menu dash-mswitch-menu" role="menu">
-            {DASHBOARDS.map((item) => (
+            {items.map((item) => (
               <Link
                 key={item.id}
                 href={item.href}
@@ -88,9 +102,9 @@ export const DashboardSwitcher = () => {
           aria-label="Dashboards"
           size="sm"
           className="shrink-0"
-          compactBelow1440={pathname.startsWith('/stalker')}
+          compactBelow1440={items.length > 2}
           value={active}
-          options={DASHBOARDS.map((item) => ({
+          options={items.map((item) => ({
             value: item.id,
             label: item.label,
             href: item.href,

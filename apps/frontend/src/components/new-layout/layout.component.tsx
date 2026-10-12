@@ -48,6 +48,7 @@ import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component'
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
 import { DashboardSwitcher } from '@gitroom/frontend/components/dashboard/dashboard.switcher';
 import { StalkerTopNav } from '@gitroom/frontend/components/stalker/stalker.nav';
+import { LinkTopNav } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settings.component';
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
 import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
@@ -99,10 +100,12 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [accountOpen, setAccountOpen] = useState(false);
-  const accountRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  const [seenPath, setSeenPath] = useState(pathname);
+  if (seenPath !== pathname) {
+    setSeenPath(pathname);
     setAccountOpen(false);
-  }, [pathname]);
+  }
+  const accountRef = useRef<HTMLDivElement>(null);
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, [fetch]);
@@ -120,8 +123,11 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     );
   }, [user]);
 
+  const stalker = !!pathname?.startsWith('/stalker');
+  const link = pathname === '/link' || !!pathname?.startsWith('/link/');
+
   if (!user) {
-    if (pathname?.startsWith('/stalker')) {
+    if (stalker || link) {
       return (
         <div
           className={clsx(
@@ -135,7 +141,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             </span>
             <div className="w-[1px] self-stretch my-[8px] bg-blockSeparator hidden sm:block shrink-0" />
             <DashboardSwitcher />
-            <StalkerTopNav />
+            {stalker ? <StalkerTopNav /> : <LinkTopNav />}
             <div className="ms-auto flex shrink-0 items-center gap-[8px]" aria-hidden>
               <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
               <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
@@ -200,15 +206,11 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     className="app-header flex items-center min-h-[64px] h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder gap-[8px] ps-[18px] pe-[12px] shrink-0"
                   >
                     <span className="app-logo">
-                      <Logo compact={!!pathname?.startsWith('/stalker')} />
+                      <Logo compact={stalker || link} />
                     </span>
                     <DashboardSwitcher />
                     <div className="navsep w-[1px] h-[24px] bg-blockSeparator hidden sm:block shrink-0" />
-                    {pathname?.startsWith('/stalker') ? (
-                      <StalkerTopNav />
-                    ) : (
-                      <TopMenu />
-                    )}
+                    {stalker ? <StalkerTopNav /> : link ? <LinkTopNav /> : <TopMenu />}
                     <div className="header-tools flex items-center text-textItemBlur shrink-0 ms-auto gap-[8px]">
                       <div className="header-account relative flex items-center" ref={accountRef}>
                         <HeaderAvatar

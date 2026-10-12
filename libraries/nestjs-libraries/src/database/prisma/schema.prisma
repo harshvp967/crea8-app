@@ -53,6 +53,7 @@ model Organization {
   stalkerAlerts       StalkerAlert[]
   stalkerAlertRules   StalkerAlertRule[]
   stalkerScanRuns     StalkerScanRun[]
+  linkPage            LinkPage?
 
   @@index([apiKey])
   @@index([streakSince])
@@ -488,6 +489,7 @@ model Post {
   submittedForOrder          Orders?                   @relation(fields: [submittedForOrderId], references: [id])
   submittedForOrganization   Organization?             @relation("submittedForOrg", fields: [submittedForOrganizationId], references: [id])
   tags                       TagsPosts[]
+  linkBlocks                 LinkBlock[]
 
   @@index([group])
   @@index([deletedAt])
@@ -2175,4 +2177,143 @@ model StalkerSearchCache {
 
   @@unique([platform, phrase])
   @@index([fetchedAt])
+}
+
+enum LinkBlockType {
+  LINK
+  FEATURED_POST
+  EMAIL_CAPTURE
+  HEADING
+}
+
+enum LinkDomainStatus {
+  NONE
+  WAITING
+  VERIFYING
+  LIVE
+  ERROR
+}
+
+enum LinkLeadStatus {
+  PENDING
+  CONFIRMED
+}
+
+enum LinkEventType {
+  VIEW
+  CLICK
+}
+
+// One public link-in-bio page per organization. Times on blocks are UTC;
+// `timezone` is the IANA zone used to edit them.
+model LinkPage {
+  id                 String           @id @default(uuid())
+  organizationId     String           @unique
+  slug               String           @unique
+  name               String           @default("")
+  bio                String           @default("")
+  avatarPath         String           @default("")
+  theme              String           @default("midnight")
+  buttonStyle        String           @default("pill")
+  font               String           @default("Plus Jakarta Sans")
+  backgroundMode     String           @default("colour")
+  backgroundColor    String           @default("")
+  backgroundImage    String           @default("")
+  seoTitle           String           @default("")
+  seoDescription     String           @default("")
+  isPublic           Boolean          @default(true)
+  sensitive          Boolean          @default(false)
+  hideBadge          Boolean          @default(false)
+  timezone           String           @default("Asia/Kolkata")
+  customDomain       String?          @unique
+  domainStatus       LinkDomainStatus @default(NONE)
+  domainHostnameId   String           @default("")
+  domainError        String           @default("")
+  domainTxtName      String           @default("")
+  domainTxtValue     String           @default("")
+  domainCheckedAt    DateTime?
+  captureHeading     String           @default("Get one creator tip a week")
+  captureButton      String           @default("Subscribe")
+  captureConsent     String           @default("I agree to get emails from crea8.one. Unsubscribe anytime.")
+  captureAskName     Boolean          @default(false)
+  captureDoubleOptIn Boolean          @default(true)
+  captureNotify      Boolean          @default(false)
+  socials            Json             @default("[]")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  organization       Organization     @relation(fields: [organizationId], references: [id])
+  blocks             LinkBlock[]
+  events             LinkEvent[]
+  leads              LinkLead[]
+
+  @@index([domainStatus])
+}
+
+model LinkBlock {
+  id         String        @id @default(uuid())
+  pageId     String
+  type       LinkBlockType
+  position   Int           @default(0)
+  enabled    Boolean       @default(true)
+  title      String        @default("")
+  url        String        @default("")
+  priority   Boolean       @default(false)
+  scheduleOn Boolean       @default(false)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  postId     String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  deletedAt  DateTime?
+  page       LinkPage      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  post       Post?         @relation(fields: [postId], references: [id], onDelete: SetNull)
+  events     LinkEvent[]
+  leads      LinkLead[]
+
+  @@index([pageId, position])
+  @@index([pageId, deletedAt])
+  @@index([postId])
+  @@index([deletedAt])
+}
+
+// Anonymous counts only. No IP, no cookie id, no user id.
+model LinkEvent {
+  id        String        @id @default(uuid())
+  pageId    String
+  blockId   String?
+  type      LinkEventType
+  country   String        @default("")
+  source    String        @default("")
+  referrer  String        @default("")
+  day       DateTime
+  createdAt DateTime      @default(now())
+  page      LinkPage      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  block     LinkBlock?    @relation(fields: [blockId], references: [id], onDelete: SetNull)
+
+  @@index([pageId, day, type])
+  @@index([pageId, type, createdAt])
+  @@index([blockId, type])
+  @@index([createdAt])
+}
+
+model LinkLead {
+  id           String         @id @default(uuid())
+  pageId       String
+  blockId      String?
+  email        String
+  name         String         @default("")
+  country      String         @default("")
+  referrer     String         @default("")
+  sourceBlock  String         @default("Email capture")
+  status       LinkLeadStatus @default(PENDING)
+  confirmToken String?        @unique
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  page         LinkPage       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  block        LinkBlock?     @relation(fields: [blockId], references: [id], onDelete: SetNull)
+
+  @@unique([pageId, email])
+  @@index([pageId, createdAt])
+  @@index([pageId, status])
+  @@index([blockId])
 }

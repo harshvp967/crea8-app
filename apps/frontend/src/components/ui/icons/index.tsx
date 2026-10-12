@@ -322,6 +322,37 @@ export const ListCalendarIcon: FC<IconProps> = ({
   </svg>
 );
 
+export const LinkIcon: FC<IconProps> = ({
+  size = 16,
+  className,
+  ...props
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    {...props}
+  >
+    <path
+      d="M6.6 8.7a2.6 2.6 0 0 0 3.9.3l1.6-1.6a2.6 2.6 0 0 0-3.7-3.7L7.5 4.6"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9.4 7.3a2.6 2.6 0 0 0-3.9-.3L3.9 8.6a2.6 2.6 0 0 0 3.7 3.7l.9-.9"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export const StalkerIcon: FC<IconProps> = ({
   size = 16,
   className,

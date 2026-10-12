@@ -58,6 +58,8 @@ import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.pr
 import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
 import { StalkerController } from '@gitroom/backend/api/routes/stalker.controller';
 import { StalkerPublicController } from '@gitroom/backend/api/routes/stalker.public.controller';
+import { LinkController } from '@gitroom/backend/api/routes/link.controller';
+import { LinkPublicController } from '@gitroom/backend/api/routes/link.public.controller';
 
 const authenticatedController = [
   UsersController,
@@ -81,6 +83,7 @@ const authenticatedController = [
   AnnouncementsController,
   AdminController,
   StalkerController,
+  LinkController,
 ];
 @Module({
   imports: [UploadModule],
@@ -98,6 +101,7 @@ const authenticatedController = [
         AuthController,
         PublicController,
         StalkerPublicController,
+        LinkPublicController,
         MonitorController,
         EnterpriseController,
         NoAuthIntegrationsController,

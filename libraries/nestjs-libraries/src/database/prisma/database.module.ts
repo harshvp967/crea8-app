@@ -53,6 +53,9 @@ import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/adm
 import { StalkerRepository } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
 import { StalkerService } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
 import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.source.manager';
+import { LinkRepository } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.repository';
+import { LinkService } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.service';
+import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/services/cloudflare.custom-hostname.service';
 
 @Global()
 @Module({
@@ -115,6 +118,9 @@ import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.
     StalkerRepository,
     StalkerService,
     StalkerSourceManager,
+    LinkRepository,
+    LinkService,
+    CloudflareCustomHostnameService,
   ],
   get exports() {
     return this.providers;

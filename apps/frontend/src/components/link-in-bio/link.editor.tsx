@@ -1,0 +1,576 @@
+'use client';
+
+import { useState } from 'react';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import {
+  LinkEditor,
+  LinkBlock,
+  linkSend,
+  toPublic,
+  useLinkPage,
+  useLinkPosts,
+} from '@gitroom/frontend/components/link-in-bio/link.api';
+import { LinkField, LinkModal, LinkToggle, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
+import { LinkPublicView } from '@gitroom/frontend/components/link-in-bio/link.public-view';
+import { scheduleLabel, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+
+type Modal =
+  | { kind: 'link'; block?: LinkBlock }
+  | { kind: 'heading'; block?: LinkBlock }
+  | { kind: 'post'; block?: LinkBlock }
+  | { kind: 'delete'; block: LinkBlock }
+  | { kind: 'capture' }
+  | null;
+
+const emptyLink = { title: '', url: '', scheduleOn: false, startsLocal: '', endsLocal: '', priority: false };
+
+export const LinkEditorScreen = () => {
+  const fetch = useFetch();
+  const toast = useToaster();
+  const { data, error, isLoading, mutate } = useLinkPage();
+  const posts = useLinkPosts();
+  const [modal, setModal] = useState<Modal>(null);
+  const [menu, setMenu] = useState('');
+  const [addOpen, setAddOpen] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const [draft, setDraft] = useState(emptyLink);
+  const [heading, setHeading] = useState('');
+  const [postId, setPostId] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const save = async (path: string, method: string, body?: unknown, note?: string, close = true) => {
+    setBusy(true);
+    try {
+      const next = await linkSend(fetch, path, method, body);
+      await mutate(next, { revalidate: false });
+      if (close) {
+        setModal(null);
+        setMenu('');
+        setAddOpen(false);
+      }
+      if (note) {
+        toast.show(note, 'success');
+      }
+      return true;
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : 'Something went wrong', 'warning');
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openLink = (block?: LinkBlock) => {
+    setDraft(
+      block
+        ? {
+            title: block.title,
+            url: block.url,
+            scheduleOn: block.scheduleOn,
+            startsLocal: block.startsAt ? utcToZonedInput(new Date(block.startsAt), data?.timezone || 'UTC') : '',
+            endsLocal: block.endsAt ? utcToZonedInput(new Date(block.endsAt), data?.timezone || 'UTC') : '',
+            priority: block.priority,
+          }
+        : emptyLink
+    );
+    setModal({ kind: 'link', block });
+  };
+
+  if (isLoading || !data) {
+    return (
+      <div className="p-[8px] text-[14px] text-textItemBlur">
+        {error ? 'Could not load your page.' : 'Loading your page…'}
+      </div>
+    );
+  }
+
+  const reorder = (fromId: string, toId: string) => {
+    if (!fromId || fromId === toId) {
+      return;
+    }
+    const ids = data.blocks.map((block) => block.id);
+    const from = ids.indexOf(fromId);
+    const to = ids.indexOf(toId);
+    if (from < 0 || to < 0) {
+      return;
+    }
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    save('/link-in-bio/blocks/reorder', 'PUT', { ids });
+  };
+
+  return (
+    <LinkSplit
+      previewOpen={preview}
+      preview={
+        <LinkPreview
+          onCopy={() => {
+            navigator.clipboard?.writeText(data.publicUrl);
+            toast.show('Link copied', 'success');
+          }}
+        >
+          <LinkPublicView key={`${data.slug}-${data.isPublic}-${data.sensitive}`} data={toPublic(data)} mode="preview" />
+        </LinkPreview>
+      }
+    >
+      <div className="flex flex-col gap-[12px] pb-[24px]">
+        <div className="flex flex-wrap items-start justify-between gap-[12px]">
+          <div>
+            <h1 className="text-[22px] font-[600]">Editor</h1>
+            <p className="text-[14px] text-textItemBlur">
+              {data.publicOrigin.replace(/^https?:\/\//, '')}/{data.slug}
+            </p>
+          </div>
+          <div className="flex items-center gap-[8px]">
+            <button type="button" className={`${linkSecondary} xl:hidden`} onClick={() => setPreview((value) => !value)}>
+              Preview
+            </button>
+            <div className="relative">
+              <button type="button" className={linkSecondary} onClick={() => setAddOpen((value) => !value)}>
+                + Add block
+              </button>
+              {addOpen ? (
+                <div className="lib-menu">
+                  <button type="button" onClick={() => openLink()}>
+                    Link
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPostId('');
+                      setModal({ kind: 'post' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Featured post
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModal({ kind: 'capture' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Email capture
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeading('');
+                      setModal({ kind: 'heading' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Heading
+                  </button>
+                </div>
+              ) : null}
+            </div>
+            <button type="button" className={linkPrimary} onClick={() => openLink()}>
+              + Add link
+            </button>
+          </div>
+        </div>
+
+        {!data.blocks.length ? (
+          <div className="flex flex-col items-center gap-[8px] py-[80px] text-center">
+            <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
+              ↗
+            </div>
+            <h2 className="text-[16px] font-[600]">No links yet</h2>
+            <p className="max-w-[320px] text-[14px] text-textItemBlur">Add your first link or block to start your page.</p>
+            <button type="button" className={linkPrimary} onClick={() => openLink()}>
+              + Add link
+            </button>
+          </div>
+        ) : (
+          data.blocks.map((block) => (
+            <article
+              key={block.id}
+              className="flex items-center gap-[10px] rounded-[18px] border border-newBorder px-[12px] py-[12px]"
+              draggable
+              onDragStart={(event) => event.dataTransfer.setData('text/plain', block.id)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault();
+                reorder(event.dataTransfer.getData('text/plain'), block.id);
+              }}
+            >
+              <span className="cursor-grab text-textItemBlur" aria-hidden>
+                ⋮⋮
+              </span>
+              {block.type === 'FEATURED_POST' ? (
+                <div className="h-[42px] w-[42px] overflow-hidden rounded-[10px] bg-newBgLineColor">
+                  {block.post?.image ? <img src={block.post.image} alt="" className="h-full w-full object-cover" /> : null}
+                </div>
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-[6px]">
+                  <strong className="truncate text-[14px] font-[600]">
+                    {block.type === 'FEATURED_POST'
+                      ? 'Featured post'
+                      : block.type === 'EMAIL_CAPTURE'
+                      ? block.title || 'Email capture'
+                      : block.title || 'Heading'}
+                  </strong>
+                  {block.type === 'FEATURED_POST' ? <span className="lib-pill lib-pill-cyan">From Schedule</span> : null}
+                  {block.priority ? <span className="lib-pill lib-pill-cyan">Priority</span> : null}
+                  {block.state === 'scheduled' ? <span className="lib-pill lib-pill-amber">Scheduled</span> : null}
+                  {block.state === 'ended' ? <span className="lib-pill">Ended</span> : null}
+                  {block.state === 'hidden' ? <span className="lib-pill">Hidden</span> : null}
+                </div>
+                <p className="truncate text-[13px] text-textItemBlur">
+                  {block.type === 'FEATURED_POST'
+                    ? block.post
+                      ? `${block.post.title} · ${block.post.platform} · ${block.post.dateLabel}`
+                      : 'Pick a published post'
+                    : block.type === 'LINK'
+                    ? block.url
+                    : block.type === 'EMAIL_CAPTURE'
+                    ? 'Collects subscribers on your page'
+                    : 'Heading'}
+                </p>
+                {block.scheduleOn && block.startsAt && block.state === 'scheduled' ? (
+                  <p className="text-[13px] text-textItemBlur">
+                    {scheduleLabel('Starts', new Date(block.startsAt), data.timezone)}
+                  </p>
+                ) : null}
+              </div>
+              {block.type === 'LINK' ? (
+                <span className="hidden text-[13px] text-textItemBlur sm:inline">
+                  {block.clicks.toLocaleString('en-US')} clicks
+                </span>
+              ) : null}
+              {block.type === 'FEATURED_POST' ? (
+                <button
+                  type="button"
+                  className={linkSecondary}
+                  onClick={() => {
+                    setPostId(block.postId || '');
+                    setModal({ kind: 'post', block });
+                  }}
+                >
+                  Change post
+                </button>
+              ) : (
+                <LinkToggle
+                  checked={block.enabled}
+                  label={block.enabled ? 'Hide block' : 'Show block'}
+                  onChange={(enabled) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled })}
+                />
+              )}
+              <div className="relative">
+                <button type="button" className="px-[6px] text-[18px]" aria-label="Block actions" onClick={() => setMenu(menu === block.id ? '' : block.id)}>
+                  …
+                </button>
+                {menu === block.id ? (
+                  <div className="lib-menu">
+                    {block.type === 'LINK' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(block.url);
+                            toast.show('Link copied', 'success');
+                            setMenu('');
+                          }}
+                        >
+                          Copy link
+                        </button>
+                        <button type="button" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { priority: !block.priority })}>
+                          {block.priority ? 'Remove priority' : 'Make priority'}
+                        </button>
+                        <button type="button" onClick={() => openLink(block)}>
+                          Schedule
+                        </button>
+                        <button type="button" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
+                          {block.enabled ? 'Hidden' : 'Show'}
+                        </button>
+                      </>
+                    ) : null}
+                    {block.type === 'HEADING' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHeading(block.title);
+                          setModal({ kind: 'heading', block });
+                        }}
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                    {block.type === 'FEATURED_POST' ? (
+                      <button type="button" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
+                        {block.enabled ? 'Hidden' : 'Show'}
+                      </button>
+                    ) : null}
+                    {block.type === 'EMAIL_CAPTURE' ? (
+                      <button type="button" onClick={() => setModal({ kind: 'capture' })}>
+                        Edit
+                      </button>
+                    ) : null}
+                    <button type="button" className="danger" onClick={() => setModal({ kind: 'delete', block })}>
+                      Delete
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      {modal?.kind === 'link' ? (
+        <LinkModal title={modal.block ? 'Edit link' : 'Add link'} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-[14px]">
+            <LinkField label="Title">
+              <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} />
+            </LinkField>
+            <LinkField label="URL">
+              <input value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} placeholder="https://" />
+            </LinkField>
+            <div className="flex items-center justify-between gap-[12px]">
+              <div>
+                <div className="text-[14px] font-[500]">Schedule</div>
+                <p className="text-[13px] text-textItemBlur">Hidden until it starts, removed after it ends · {data.timezone}</p>
+              </div>
+              <LinkToggle checked={draft.scheduleOn} label="Schedule" onChange={(scheduleOn) => setDraft({ ...draft, scheduleOn })} />
+            </div>
+            {draft.scheduleOn ? (
+              <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2">
+                <LinkField label="Starts">
+                  <input type="datetime-local" value={draft.startsLocal} onChange={(event) => setDraft({ ...draft, startsLocal: event.target.value })} />
+                </LinkField>
+                <LinkField label="Ends">
+                  <input type="datetime-local" value={draft.endsLocal} onChange={(event) => setDraft({ ...draft, endsLocal: event.target.value })} />
+                </LinkField>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-between gap-[12px]">
+              <div>
+                <div className="text-[14px] font-[500]">Priority</div>
+                <p className="text-[13px] text-textItemBlur">Highlight this link at the top</p>
+              </div>
+              <LinkToggle checked={draft.priority} label="Priority" onChange={(priority) => setDraft({ ...draft, priority })} />
+            </div>
+            <div className="flex justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() =>
+                  save(
+                    modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                    modal.block ? 'PUT' : 'POST',
+                    modal.block ? draft : { type: 'LINK', ...draft },
+                    modal.block ? 'Link saved' : 'Link added'
+                  )
+                }
+              >
+                {modal.block ? 'Save changes' : 'Add link'}
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'heading' ? (
+        <LinkModal title={modal.block ? 'Edit heading' : 'Add heading'} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-[14px]">
+            <LinkField label="Heading">
+              <input value={heading} onChange={(event) => setHeading(event.target.value)} />
+            </LinkField>
+            <div className="flex justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() =>
+                  save(
+                    modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                    modal.block ? 'PUT' : 'POST',
+                    modal.block ? { title: heading } : { type: 'HEADING', title: heading },
+                    'Heading saved'
+                  )
+                }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'post' ? (
+        <LinkModal title="Change post" onClose={() => setModal(null)}>
+          <p className="mb-[10px] text-[14px] text-textItemBlur">Pick a published post from Schedule</p>
+          <div className="flex max-h-[320px] flex-col gap-[8px] overflow-auto">
+            {(posts.data || []).map((post) => (
+              <button
+                key={post.id}
+                type="button"
+                className={postId === post.id ? 'rounded-[16px] border border-[rgba(0,217,255,.45)] bg-[rgba(0,217,255,.08)] px-[12px] py-[10px] text-left' : 'rounded-[16px] border border-newBorder px-[12px] py-[10px] text-left'}
+                onClick={() => setPostId(post.id)}
+              >
+                <strong className="block text-[14px]">{post.title}</strong>
+                <span className="text-[13px] text-textItemBlur">
+                  {post.platform} · {post.dateLabel}
+                </span>
+              </button>
+            ))}
+            {!posts.data?.length ? <p className="text-[14px] text-textItemBlur">No published posts yet.</p> : null}
+          </div>
+          <p className="mt-[8px] text-[13px] text-textItemBlur">Posts are from your Schedule.</p>
+          <div className="mt-[12px] flex justify-end gap-[8px]">
+            <button type="button" className={linkSecondary} onClick={() => setModal(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={linkPrimary}
+              disabled={busy || !postId}
+              onClick={() =>
+                save(
+                  modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                  modal.block ? 'PUT' : 'POST',
+                  modal.block ? { postId } : { type: 'FEATURED_POST', postId },
+                  'Featured post updated'
+                )
+              }
+            >
+              Change post
+            </button>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'delete' ? (
+        <LinkModal title="Delete link?" onClose={() => setModal(null)}>
+          <p className="text-[14px]">“{modal.block.title || 'This block'}” will be removed from your page.</p>
+          <div className="mt-[16px] flex justify-end gap-[8px]">
+            <button type="button" className={linkSecondary} onClick={() => setModal(null)}>
+              No, cancel!
+            </button>
+            <button
+              type="button"
+              className={linkDanger}
+              disabled={busy}
+              onClick={() => save(`/link-in-bio/blocks/${modal.block.id}`, 'DELETE', undefined, 'Deleted')}
+            >
+              Yes, delete it!
+            </button>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'capture' ? <CaptureModal page={data} busy={busy} onClose={() => setModal(null)} onSave={save} /> : null}
+    </LinkSplit>
+  );
+};
+
+const CaptureModal = ({
+  page,
+  busy,
+  onClose,
+  onSave,
+}: {
+  page: LinkEditor;
+  busy: boolean;
+  onClose: () => void;
+  onSave: (path: string, method: string, body?: unknown, note?: string, close?: boolean) => Promise<boolean>;
+}) => {
+  const [form, setForm] = useState(page.capture);
+  const existing = page.blocks.find((block) => block.type === 'EMAIL_CAPTURE');
+  const [placement, setPlacement] = useState<'above' | 'below'>(
+    existing && page.blocks[0]?.id === existing.id ? 'above' : 'below'
+  );
+  return (
+    <LinkModal title="Email capture" onClose={onClose}>
+      <div className="flex flex-col gap-[12px]">
+        <LinkField label="Form heading">
+          <input value={form.heading} onChange={(event) => setForm({ ...form, heading: event.target.value })} />
+        </LinkField>
+        <LinkField label="Button label">
+          <input value={form.button} onChange={(event) => setForm({ ...form, button: event.target.value })} />
+        </LinkField>
+        <LinkField label="Consent text">
+          <textarea value={form.consent} onChange={(event) => setForm({ ...form, consent: event.target.value })} />
+        </LinkField>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[14px] font-[500]">Ask for name</div>
+            <p className="text-[13px] text-textItemBlur">Optional field above email</p>
+          </div>
+          <LinkToggle checked={form.askName} label="Ask for name" onChange={(askName) => setForm({ ...form, askName })} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[14px] font-[500]">Confirm by email</div>
+            <p className="text-[13px] text-textItemBlur">Double opt-in before adding</p>
+          </div>
+          <LinkToggle
+            checked={form.doubleOptIn}
+            label="Confirm by email"
+            onChange={(doubleOptIn) => setForm({ ...form, doubleOptIn })}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[14px] font-[500]">Notify me</div>
+            <p className="text-[13px] text-textItemBlur">Email me for each new lead</p>
+          </div>
+          <LinkToggle checked={form.notify} label="Notify me" onChange={(notify) => setForm({ ...form, notify })} />
+        </div>
+        <LinkField label="Placement on page">
+          <select value={placement} onChange={(event) => setPlacement(event.target.value === 'above' ? 'above' : 'below')}>
+            <option value="below">Below links</option>
+            <option value="above">Above links</option>
+          </select>
+        </LinkField>
+        <div className="flex justify-end gap-[8px]">
+          <button type="button" className={linkSecondary} onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={linkPrimary}
+            disabled={busy}
+            onClick={async () => {
+              const copy = {
+                captureHeading: form.heading,
+                captureButton: form.button,
+                captureConsent: form.consent,
+                captureAskName: form.askName,
+                captureDoubleOptIn: form.doubleOptIn,
+                captureNotify: form.notify,
+              };
+              const saved = await onSave('/link-in-bio', 'PUT', copy, undefined, false);
+              if (!saved) {
+                return;
+              }
+              if (existing) {
+                await onSave(`/link-in-bio/blocks/${existing.id}`, 'PUT', { placement }, 'Email capture saved');
+                return;
+              }
+              await onSave(
+                '/link-in-bio/blocks',
+                'POST',
+                { type: 'EMAIL_CAPTURE', title: 'Email capture', placement },
+                'Email capture saved'
+              );
+            }}
+          >
+            Save changes
+          </button>
+        </div>
+      </div>
+    </LinkModal>
+  );
+};
