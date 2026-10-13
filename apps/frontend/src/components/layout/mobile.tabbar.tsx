@@ -36,6 +36,13 @@ export const MobileTabBar = () => {
     onClick: item.onClick,
   });
 
+  const openComposer = () => {
+    document
+      .querySelector<HTMLButtonElement>(
+        '.strip-create button, .sidebar-create button, .phone-create button'
+      )
+      ?.click();
+  };
   const tabs = link
     ? linkNavLinks
         .slice(0, 4)
@@ -44,9 +51,18 @@ export const MobileTabBar = () => {
     ? stalkerNavLinks
         .slice(0, 4)
         .map((item) => asItem({ ...item, icon: item.tabIcon || item.icon }))
-    : primary.slice(0, 4).map(asItem);
+    : [
+        ...primary.slice(0, 1).map(asItem),
+        {
+          name: 'Composer',
+          path: '#',
+          icon: <HugeIcon name="pencil" size={18} />,
+          onClick: openComposer,
+        },
+        ...primary.slice(1, 3).map(asItem),
+      ];
   const overflow = (
-    link ? linkNavLinks.slice(4) : stalker ? stalkerNavLinks.slice(4) : [...primary.slice(4), ...extra]
+    link ? linkNavLinks.slice(4) : stalker ? stalkerNavLinks.slice(4) : [...primary.slice(3), ...extra]
   ).map(asItem);
 
   const active = (path: string) =>
@@ -99,17 +115,24 @@ export const MobileTabBar = () => {
         </div>
       ) : null}
       <nav className="mobile-tabbar" aria-label="Primary">
-        {tabs.map((item) => (
-          <Link
-            key={item.path + item.name}
-            href={item.path}
-            className={clsx(active(item.path) && 'arc-selected')}
-            aria-current={active(item.path) ? 'page' : undefined}
-          >
-            {item.icon}
-            <span>{item.name}</span>
-          </Link>
-        ))}
+        {tabs.map((item) =>
+          item.onClick ? (
+            <button key={item.name} type="button" onClick={item.onClick}>
+              {item.icon}
+              <span>{item.name}</span>
+            </button>
+          ) : (
+            <Link
+              key={item.path + item.name}
+              href={item.path}
+              className={clsx(active(item.path) && 'arc-selected')}
+              aria-current={active(item.path) ? 'page' : undefined}
+            >
+              {item.icon}
+              <span>{item.name}</span>
+            </Link>
+          )
+        )}
         <button
           type="button"
           className={clsx((more || moreActive) && 'arc-selected')}
