@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
 const api = (process.env.CRE8_API_URL || 'https://api.crea8.one').replace(/\/$/, '');
-const key = process.env.CRE8_API_KEY || '';
+const key = process.env.CREA8_API_KEY || '';
+const legacyKey = process.env.CRE8_API_KEY || '';
+const apiKey = key || legacyKey;
 
 const usage = `crea8 — crea8.one agent CLI
 
-Set CRE8_API_KEY. Optional CRE8_API_URL (default https://api.crea8.one).
+Set CREA8_API_KEY. CRE8_API_KEY still works but is deprecated. Optional CRE8_API_URL (default https://api.crea8.one).
 
   crea8 integrations:list [--group id]
   crea8 groups:list
@@ -45,8 +47,11 @@ const fail = (message) => {
   process.exit(1);
 };
 
-if (!key) {
-  fail('CRE8_API_KEY is not set');
+if (!apiKey) {
+  fail('CREA8_API_KEY is not set. CRE8_API_KEY is a deprecated fallback.');
+}
+if (!key && legacyKey) {
+  console.error('CRE8_API_KEY is deprecated. Set CREA8_API_KEY.');
 }
 
 const [command, ...rest] = process.argv.slice(2);
@@ -78,7 +83,7 @@ for (let i = 0; i < rest.length; i++) {
 }
 
 const request = async (path, options = {}) => {
-  const headers = { Authorization: key, ...(options.headers || {}) };
+  const headers = { Authorization: apiKey, ...(options.headers || {}) };
   const response = await fetch(`${api}${path}`, { ...options, headers });
   const text = await response.text();
   let body = text;
@@ -166,7 +171,7 @@ const run = async () => {
       if (flags.media) {
         const uploaded = await fetch(`${api}/public/v1/upload-from-url`, {
           method: 'POST',
-          headers: { Authorization: key, 'Content-Type': 'application/json' },
+          headers: { Authorization: apiKey, 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: flags.media }),
         });
         const media = await uploaded.json();

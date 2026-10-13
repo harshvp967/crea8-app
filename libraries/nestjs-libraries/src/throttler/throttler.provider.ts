@@ -56,6 +56,7 @@ export function publicApiRateLimit(method: string) {
 export const LINK_PUBLIC_LIMITS = {
   click: { ttl: 60 * 60 * 1000, limit: 240 },
   view: { ttl: 60 * 60 * 1000, limit: 240 },
+  list: { ttl: 60 * 60 * 1000, limit: 120 },
   subscribe: { ttl: 60 * 60 * 1000, limit: 30 },
   contact: { ttl: 60 * 60 * 1000, limit: 10 },
   unlock: { ttl: 60 * 60 * 1000, limit: 20 },

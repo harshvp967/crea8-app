@@ -161,6 +161,20 @@ describe('Link-in-Bio public page and lead capture', () => {
     );
   });
 
+  it('returns only public slugs that can be a page address', async () => {
+    const repository = {
+      publicSlugs: jest.fn().mockResolvedValue([
+        { slug: 'ada' },
+        { slug: 'privacy' },
+        { slug: 'crea8.one' },
+        { slug: '' },
+      ]),
+    };
+    const service = new LinkService(repository as never, {} as never, {} as never, {} as never);
+    await expect(service.publicSlugs()).resolves.toEqual({ slugs: ['ada', 'crea8.one'] });
+    expect(repository.publicSlugs).toHaveBeenCalledTimes(1);
+  });
+
   it('drops a honeypot contact and stores a real message once', async () => {
     const { service, repository } = leadService();
     await expect(

@@ -1,11 +1,5 @@
 import type { MetadataRoute } from 'next';
-
-function siteOrigin() {
-  return (process.env.FRONTEND_URL || 'http://localhost:4200').replace(
-    /\/+$/,
-    ''
-  );
-}
+import { publicSiteOrigin } from '@gitroom/frontend/components/layout/site.origin';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -14,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: ['/p/', '/privacy', '/terms', '/data-deletion'],
       disallow: ['/'],
     },
-    sitemap: `${siteOrigin()}/sitemap.xml`,
+    sitemap: `${publicSiteOrigin()}/sitemap.xml`,
   };
 }
