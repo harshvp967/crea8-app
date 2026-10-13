@@ -1,0 +1,476 @@
+.font-c8-heading {
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c8-btn,
+  .c8-segment button,
+  .c8-schedule .cal-post-body {
+    transition-duration: 80ms !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+body.c8-schedule {
+  background: var(--c8-bg) !important;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .calendar-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(320px, 1fr);
+  grid-template-areas:
+    'head actions'
+    'filters filters'
+    'empty empty'
+    'well well';
+  align-items: stretch;
+  gap: 16px 20px;
+  border-color: var(--c8-line);
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font-family: var(--font-body), Inter, sans-serif;
+  box-shadow: none;
+}
+
+body.c8-schedule .c8-cal-head {
+  grid-area: head;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+body.c8-schedule .c8-cal-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+body.c8-schedule .c8-cal-sticker {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c8-app-schedule);
+  color: #121016;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+  transform: rotate(2deg);
+}
+
+body.c8-schedule .c8-cal-when {
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+body.c8-schedule .c8-cal-title {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1.05;
+  letter-spacing: -0.56px;
+}
+
+body.c8-schedule .channel-strip {
+  grid-area: actions;
+  align-self: end;
+  justify-content: flex-end;
+}
+
+body.c8-schedule .filters-bar {
+  grid-area: filters;
+  align-items: center;
+}
+
+body.c8-schedule .channel-empty-phone {
+  grid-area: empty;
+}
+
+body.c8-schedule .calendar-well {
+  grid-area: well;
+  background: transparent;
+}
+
+body.c8-schedule .channel-add,
+body.c8-schedule .channel-invite {
+  height: 46px;
+  min-height: 46px;
+  border-radius: 999px;
+  border: 1.5px solid var(--c8-btn-secondary-stroke);
+  background: var(--c8-btn-secondary);
+  color: var(--c8-ink);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+body.c8-schedule .strip-create button,
+body.c8-schedule .phone-create button,
+body.c8-schedule .sidebar-create button:first-child {
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  border-radius: 999px;
+  border: 1.5px solid var(--c8-hard);
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+body.c8-schedule .cal-mode {
+  display: none !important;
+}
+
+body.c8-schedule .cal-view {
+  height: auto;
+  min-height: 0;
+  gap: 6px;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+body.c8-schedule .cal-view > button {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 8px 14px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--c8-line);
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 13px !important;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+body.c8-schedule .cal-view > button[aria-checked='true'],
+body.c8-schedule .cal-view > button[aria-pressed='true'] {
+  border-color: var(--c8-ink);
+  background: var(--c8-ink);
+  color: var(--c8-on-ink);
+  font-weight: 600;
+}
+
+body.c8-schedule .cal-view > button svg,
+body.c8-schedule .cal-view > button [aria-hidden='true']:not(:last-child) {
+  display: none;
+}
+
+body.c8-schedule .cal-view > button > span.absolute {
+  display: none !important;
+}
+
+body.c8-schedule .cal-nav,
+body.c8-schedule .cal-list-pager {
+  height: 40px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  overflow: hidden;
+}
+
+body.c8-schedule .cal-nav-arrow,
+body.c8-schedule .cal-range-label,
+body.c8-schedule .cal-list-pager > div {
+  background: transparent !important;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .cal-today > div > div,
+body.c8-schedule .cal-list-states {
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  box-shadow: none;
+}
+
+body.c8-schedule .cal-list-states .arc-selected,
+body.c8-schedule .cal-view .arc-selected {
+  background: var(--c8-ink);
+  color: var(--c8-on-ink);
+}
+
+body.c8-schedule .week-grid,
+body.c8-schedule .day-grid,
+body.c8-schedule .month-grid {
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+}
+
+body.c8-schedule .week-grid {
+  grid-auto-rows: minmax(41px, auto);
+  align-content: start;
+  grid-template-columns: 64px repeat(7, minmax(0, 1fr));
+}
+
+body.c8-schedule .week-corner,
+body.c8-schedule .week-head,
+body.c8-schedule .week-time,
+body.c8-schedule .day-time,
+body.c8-schedule .month-head {
+  background: var(--c8-surface);
+  border-color: var(--c8-line);
+  color: var(--c8-muted);
+}
+
+body.c8-schedule .week-head.is-today,
+body.c8-schedule .week-cell.is-today {
+  background: var(--c8-soft);
+  background-image: none;
+}
+
+body.c8-schedule .week-head.is-today .week-num,
+body.c8-schedule .month-cell .text-c8-schedule {
+  color: var(--c8-schedule);
+}
+
+body.c8-schedule .week-cell,
+body.c8-schedule .day-cell,
+body.c8-schedule .month-cell {
+  border-color: var(--c8-line);
+  background: var(--c8-surface);
+  min-height: 41px;
+  height: auto;
+}
+
+body.c8-schedule .day-time,
+body.c8-schedule .week-time {
+  min-height: 41px;
+  color: var(--c8-muted);
+}
+
+body.c8-schedule .day-cell:not(:has(.cal-post)) .cal-col::before,
+body.c8-schedule .week-cell:not(:has(.cal-post)) .cal-col::before {
+  content: '';
+  display: block;
+  flex: 1;
+  margin: 4px;
+  min-height: 32px;
+  border-radius: 10px;
+  background: var(--c8-soft);
+}
+
+body.c8-schedule .cal-post-body,
+body.c8-schedule .cal-post:not(.is-draft) .cal-post-body,
+body.c8-schedule .cal-post.is-draft .cal-post-body {
+  min-height: 30px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 10px !important;
+  background: var(--c8-surface) !important;
+  background-image: none !important;
+  color: var(--c8-ink) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+body.c8-schedule .cal-post.is-draft .cal-post-body {
+  border-style: dashed !important;
+}
+
+body.c8-schedule .day-cell .cal-post-avatar,
+body.c8-schedule .week-cell .cal-post-avatar,
+body.c8-schedule .month-cell .cal-post-avatar,
+body.c8-schedule .phone-slot .cal-post-avatar,
+body.c8-schedule .day-cell .cal-post-mark,
+body.c8-schedule .week-cell .cal-post-mark,
+body.c8-schedule .month-cell .cal-post-mark,
+body.c8-schedule .phone-slot .cal-post-mark {
+  display: none;
+}
+
+body.c8-schedule .day-cell .cal-post-icon,
+body.c8-schedule .week-cell .cal-post-icon,
+body.c8-schedule .month-cell .cal-post-icon,
+body.c8-schedule .phone-slot .cal-post-icon {
+  width: 8px;
+  min-width: 8px;
+  height: 8px;
+}
+
+body.c8-schedule .day-cell .cal-post-icon::before,
+body.c8-schedule .week-cell .cal-post-icon::before,
+body.c8-schedule .month-cell .cal-post-icon::before,
+body.c8-schedule .phone-slot .cal-post-icon::before {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--c8-app-schedule);
+}
+
+body.c8-schedule .cal-post-bar {
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 16px;
+  background: var(--c8-surface) !important;
+  box-shadow: 0 6px 0 var(--c8-hard);
+}
+
+body.c8-schedule .cal-list .cal-post .cal-post-body,
+body.c8-schedule .cal-list .cal-post:not(.is-draft) .cal-post-body,
+body.c8-schedule .cal-list .cal-post.is-draft .cal-post-body {
+  grid-template-columns: 36px minmax(0, 1fr) auto auto;
+  min-height: 68px;
+  padding: 12px 14px;
+  border-radius: 16px !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-color: var(--c8-line) !important;
+}
+
+body.c8-schedule .cal-list .cal-post-avatar {
+  display: block;
+}
+
+body.c8-schedule .cal-list .cal-post-mark {
+  display: block;
+}
+
+body.c8-schedule .cal-list-status.is-scheduled {
+  color: #121016;
+  background: var(--c8-app-schedule);
+  border-color: var(--c8-hard);
+}
+
+body.c8-schedule .cal-list-day {
+  display: block;
+  color: var(--c8-ink);
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-weight: 700;
+}
+
+body.c8-schedule .c8-week-phone-nav {
+  display: none;
+}
+
+body.c8-schedule .phone-week-arrow,
+body.c8-schedule .phone-day-strip button {
+  color: var(--c8-muted);
+}
+
+body.c8-schedule .phone-day-strip button.arc-selected {
+  background: var(--c8-ink);
+  color: var(--c8-on-ink);
+}
+
+@media (min-width: 1200px) {
+  body.c8-schedule .c8-cal-title {
+    font-size: 48px;
+    letter-spacing: -0.96px;
+  }
+}
+
+@media (max-width: 1199px) {
+  body.c8-schedule .calendar-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'head'
+      'actions'
+      'filters'
+      'empty'
+      'well';
+  }
+
+  body.c8-schedule .channel-strip {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 639px) {
+  body.c8-schedule .app-shell {
+    padding: 61px 0 76px;
+    gap: 0;
+  }
+
+  body.c8-schedule .app-header {
+    position: fixed;
+    z-index: 60;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 61px;
+    min-height: 61px;
+    border-width: 0 0 1px;
+    border-radius: 0;
+    border-color: var(--c8-line);
+    background: var(--c8-surface);
+    box-shadow: none;
+  }
+
+  body.c8-schedule .mobile-tabbar {
+    position: fixed;
+    z-index: 70;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 76px;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 10px 18px;
+    border: 0;
+    border-top: 1px solid var(--c8-line);
+    border-radius: 0;
+    background: var(--c8-surface);
+    box-shadow: none;
+  }
+
+  body.c8-schedule .mobile-tabbar a,
+  body.c8-schedule .mobile-tabbar button {
+    border-radius: 14px;
+    color: var(--c8-muted);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  body.c8-schedule .mobile-tabbar a.arc-selected,
+  body.c8-schedule .mobile-tabbar button.arc-selected {
+    background: var(--c8-ink);
+    background-image: none;
+    color: var(--c8-on-ink);
+  }
+
+  body.c8-schedule .c8-week-phone-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  body.c8-schedule .week-grid {
+    grid-template-columns: 48px repeat(7, calc((100% - 48px) / 3));
+  }
+
+  body.c8-schedule .week-time,
+  body.c8-schedule .week-corner {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: var(--c8-surface);
+  }
+
+  body.c8-schedule .calendar-panel {
+    border: 0;
+    border-radius: 0;
+    padding: 16px 16px 0;
+    background: var(--c8-bg);
+  }
+}

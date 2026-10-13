@@ -261,3 +261,62 @@
     --color-modalCustom: transparent;
   }
 }
+
+:root {
+  --c8-bg: #f7f6f2;
+  --c8-surface: #ffffff;
+  --c8-ink: #121016;
+  --c8-muted: #6b6875;
+  --c8-line: #e4e1d8;
+  --c8-soft: #efede6;
+  --c8-hard: #121016;
+  --c8-btn-secondary: #ffffff;
+  --c8-btn-hover: #efede6;
+  --c8-on-ink: #ffffff;
+  --c8-toggle-off: #e4e1d8;
+  --c8-btn-secondary-stroke: #121016;
+  --c8-cyan: #00d9ff;
+  --c8-cyan-hover: #33e3ff;
+  --c8-cyan-pressed: #00c2e6;
+  --c8-on-cyan: #06121a;
+  --c8-warn: #f59e0b;
+  --c8-danger: #ff5a5f;
+  --c8-pro: #e9e5dc;
+  --c8-on-pro: #121016;
+  --c8-pro-stroke: transparent;
+  --c8-app-schedule: #ff8a4c;
+  --c8-app-stalker: #b197fc;
+  --c8-app-lib: #c2f23d;
+  --c8-sentiment-pos: #d9f99d;
+  --c8-scrim: rgb(18 16 22 / 0.5);
+  --c8-scrim-sheet: rgb(18 16 22 / 0.6);
+  --c8-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --c8-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --c8-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --c8-dur-press: 80ms;
+  --c8-dur-hover: 180ms;
+  --c8-dur-release: 200ms;
+  --c8-dur-toggle: 250ms;
+  --c8-dur-loading: 300ms;
+  --c8-dur-nav: 350ms;
+  --c8-dur-app: 450ms;
+  --c8-dur-exit: 150ms;
+}
+
+.dark {
+  --c8-bg: #0f0e13;
+  --c8-surface: #1a1920;
+  --c8-ink: #f5f3ee;
+  --c8-muted: #a29fae;
+  --c8-line: #2c2a33;
+  --c8-soft: #24222b;
+  --c8-hard: #000000;
+  --c8-btn-secondary: #1c1a22;
+  --c8-btn-hover: #2a2732;
+  --c8-on-ink: #121016;
+  --c8-toggle-off: #2c2a33;
+  --c8-btn-secondary-stroke: #f5f3ee;
+  --c8-pro: #24222b;
+  --c8-on-pro: #f5f3ee;
+  --c8-pro-stroke: #2c2a33;
+}

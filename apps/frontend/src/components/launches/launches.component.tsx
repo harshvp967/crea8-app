@@ -517,6 +517,10 @@ export const LaunchesComponent = () => {
     []
   );
   useEffect(() => {
+    document.body.classList.add('c8-schedule');
+    return () => document.body.classList.remove('c8-schedule');
+  }, []);
+  useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -641,7 +645,7 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
-        <div className="calendar-panel bg-newBgColorInner border border-newBorder rounded-[26px] flex-1 flex-col flex p-[16px] gap-[12px] min-w-0">
+        <div className="calendar-panel bg-c8-bg border border-c8-line rounded-c8-card flex-1 flex-col flex p-[16px] gap-[12px] min-w-0 font-c8-body text-c8-ink">
           <div className="channel-strip">
             <div className="strip-create">
               {sortedIntegrations?.length > 0 && <NewPost />}

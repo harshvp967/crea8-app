@@ -14,7 +14,7 @@ export const Crea8oneWordmark = ({
     <span className={`inline-flex items-center ${className}`}>
       <Image
         src={LIGHT_SRC}
-        alt="Crea8one"
+        alt="crea8.one"
         width={877}
         height={263}
         unoptimized

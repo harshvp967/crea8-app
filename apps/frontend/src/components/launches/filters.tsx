@@ -1,13 +1,7 @@
 'use client';
 
 import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
-import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
-import {
-  DayCalendarIcon,
-  ListCalendarIcon,
-  MonthCalendarIcon,
-  WeekCalendarIcon,
-} from '@gitroom/frontend/components/ui/icons';
+import { C8Chip } from '@gitroom/react/c8/chip';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
@@ -310,7 +304,22 @@ export const Filters = () => {
     }
   }, [calendar]);
 
+  const viewOptions = [
+    { value: 'day', label: t('day', 'Day') },
+    { value: 'week', label: t('week', 'Week') },
+    { value: 'month', label: t('month', 'Month') },
+    { value: 'list', label: t('list', 'List') },
+  ];
+
   return (
+    <>
+    <div className="c8-cal-head">
+      <div className="c8-cal-kicker">
+        <span className="c8-cal-sticker">{t('schedule', 'Schedule')}</span>
+        {!isListView ? <span className="c8-cal-when">{getDisplayText()}</span> : null}
+      </div>
+      <h1 className="c8-cal-title">{t('calendar', 'Calendar')}</h1>
+    </div>
     <div
       className={clsx(
         'filters-bar text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0',
@@ -422,23 +431,21 @@ export const Filters = () => {
         integrations={calendar.integrations}
       />
       </div>
-      <SegmentedControl
+      <div
+        className="cal-view flex shrink-0 flex-wrap gap-[6px]"
+        role="radiogroup"
         aria-label={t('calendar_view', 'Calendar view')}
-        size="sm"
-        className="cal-view shrink-0"
-        value={calendar.display}
-        onValueChange={setDisplay}
-        options={[
-          { value: 'day', label: t('day', 'Day'), icon: <DayCalendarIcon /> },
-          { value: 'week', label: t('week', 'Week'), icon: <WeekCalendarIcon /> },
-          {
-            value: 'month',
-            label: t('month', 'Month'),
-            icon: <MonthCalendarIcon />,
-          },
-          { value: 'list', label: t('list', 'List'), icon: <ListCalendarIcon /> },
-        ]}
-      />
+      >
+        {viewOptions.map((option) => (
+          <C8Chip
+            key={option.value}
+            active={calendar.display === option.value}
+            onClick={() => setDisplay(option.value)}
+          >
+            {option.label}
+          </C8Chip>
+        ))}
+      </div>
       <div className="cal-mode flex flex-row shrink-0 p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
         <div
           onClick={setCalendarView}
@@ -464,5 +471,6 @@ export const Filters = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
