@@ -67,7 +67,11 @@ export function allowedRequestOrigins(
   backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL
 ) {
   const origins = new Set<string>();
-  for (const value of [frontendUrl, mainUrl, backendUrl]) {
+  const extra = (process.env.EXTRA_CORS_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  for (const value of [frontendUrl, mainUrl, backendUrl, ...extra]) {
     const origin = originOf(value || '');
     if (origin) {
       origins.add(origin);
