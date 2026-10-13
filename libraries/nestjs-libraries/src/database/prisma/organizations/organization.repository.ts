@@ -5,6 +5,7 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
 
 @Injectable()
 export class OrganizationRepository {
@@ -431,6 +432,7 @@ export class OrganizationRepository {
       });
 
     if (
+      !isBillingEnforced(orgId) &&
       process.env.STRIPE_PUBLISHABLE_KEY &&
       checkForSubscription?.subscription?.subscriptionTier ===
         SubscriptionTier.STANDARD

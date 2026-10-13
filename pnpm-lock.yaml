@@ -380,6 +380,9 @@ importers:
       dayjs:
         specifier: ^1.11.10
         version: 1.11.19
+      dodopayments:
+        specifier: ^2.54.2
+        version: 2.54.2
       dompurify:
         specifier: ^3.4.16
         version: 3.4.16
@@ -8184,6 +8187,9 @@ packages:
     peerDependencies:
       '@solana/web3.js': '*'
 
+  '@stablelib/base64@1.0.1':
+    resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
+
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
@@ -11809,6 +11815,10 @@ packages:
     resolution: {integrity: sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w==}
     engines: {node: '>=6.0.0'}
 
+  dodopayments@2.54.2:
+    resolution: {integrity: sha512-xL0Q3lxgGWT9TBq59sWFsUA4B6GiBd7aHUoLv5n72W5JeGJb3wzV6Y3GSomh35cqJIp+q15CkoRFW+1a3t9/aw==}
+    hasBin: true
+
   dom-accessibility-api@0.5.16:
     resolution: {integrity: sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==}
 
@@ -12427,6 +12437,9 @@ packages:
 
   fast-safe-stringify@2.1.1:
     resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
+
+  fast-sha256@1.3.0:
+    resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
 
   fast-stable-stringify@1.0.0:
     resolution: {integrity: sha512-wpYMUmFu5f00Sm0cj2pfivpmawLZ0NKdviQ4w9zJeR8JVtOpOxHmLaJuj0vxvGqMJQWyP/COUkF75/57OKyRag==}
@@ -17536,6 +17549,9 @@ packages:
 
   standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
+
+  standardwebhooks@1.1.1:
+    resolution: {integrity: sha512-bCbX9ZEyFkWPsRz7Bl3NuQUJohmwGSev/yhr7vhaGPlc4AfIrspIRa6cPTBuI1ItmrTDJ4d/S2hCsfe4+vQGnQ==}
 
   statuses@1.5.0:
     resolution: {integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==}
@@ -28558,6 +28574,8 @@ snapshots:
       eventemitter3: 5.0.4
       uuid: 9.0.1
 
+  '@stablelib/base64@1.0.1': {}
+
   '@standard-schema/spec@1.1.0': {}
 
   '@stripe/react-stripe-js@5.6.1(@stripe/stripe-js@8.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
@@ -33183,6 +33201,10 @@ snapshots:
     dependencies:
       esutils: 2.0.3
 
+  dodopayments@2.54.2:
+    dependencies:
+      standardwebhooks: 1.1.1
+
   dom-accessibility-api@0.5.16: {}
 
   dom-helpers@5.2.1:
@@ -34152,6 +34174,8 @@ snapshots:
   fast-redact@3.5.0: {}
 
   fast-safe-stringify@2.1.1: {}
+
+  fast-sha256@1.3.0: {}
 
   fast-stable-stringify@1.0.0: {}
 
@@ -40779,6 +40803,11 @@ snapshots:
       type-fest: 0.7.1
 
   standard-as-callback@2.1.0: {}
+
+  standardwebhooks@1.1.1:
+    dependencies:
+      '@stablelib/base64': 1.0.1
+      fast-sha256: 1.3.0
 
   statuses@1.5.0: {}
 

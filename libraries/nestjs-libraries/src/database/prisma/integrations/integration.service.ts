@@ -15,6 +15,8 @@ import { Integration, Organization } from '@prisma/client';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 const ANALYTICS_CALL_TIMEOUT_MS = 20000;
 
@@ -59,7 +61,8 @@ export class IntegrationService {
     private _notificationService: NotificationService,
     @Inject(forwardRef(() => RefreshIntegrationService))
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _entitlements: EntitlementService
   ) {}
 
   async changeActiveCron(orgId: string) {
@@ -389,6 +392,10 @@ export class IntegrationService {
   }
 
   async enableChannel(org: string, totalChannels: number, id: string) {
+    if (isBillingEnforced(org)) {
+      await this._entitlements.assertCanConnect(org);
+      return this._integrationRepository.enableChannel(org, id);
+    }
     const integrations = (
       await this._integrationRepository.getIntegrationsList(org)
     ).filter((f) => !f.disabled);

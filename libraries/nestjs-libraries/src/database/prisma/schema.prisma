@@ -55,6 +55,8 @@ model Organization {
   stalkerAlertRules   StalkerAlertRule[]
   stalkerScanRuns     StalkerScanRun[]
   linkPage            LinkPage?
+  creditBalance       CreditBalance?
+  creditLedger        CreditLedger[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -351,6 +353,10 @@ model Subscription {
   period           Period
   totalChannels    Int
   isLifetime       Boolean          @default(false)
+  status           String           @default("active")
+  currentPeriodEnd DateTime?
+  pendingTier      SubscriptionTier?
+  pendingPeriod    Period?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   deletedAt        DateTime?
@@ -2360,4 +2366,52 @@ model LinkLead {
   @@index([pageId, createdAt])
   @@index([pageId, status])
   @@index([blockId])
+}
+
+// Append-only credit grants and spends. Rows are never updated.
+model CreditLedger {
+  id             String          @id @default(cuid())
+  organizationId String
+  amount         Int
+  bucket         CreditBucket
+  type           CreditEntryType
+  reason         String
+  cycleKey       String?
+  idempotencyKey String          @unique
+  createdAt      DateTime        @default(now())
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, bucket, cycleKey])
+}
+
+// Current balance, updated in the same transaction as a ledger row.
+model CreditBalance {
+  organizationId   String       @id
+  monthlyRemaining Int          @default(0)
+  packRemaining    Int          @default(0)
+  cycleKey         String?
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id])
+}
+
+// One row per accepted Dodo webhook id. A replay hits the unique id and is ignored.
+model ProcessedWebhookEvent {
+  id        String   @id
+  provider  String
+  eventType String
+  createdAt DateTime @default(now())
+
+  @@index([provider, createdAt])
+}
+
+enum CreditBucket {
+  MONTHLY
+  PACK
+}
+
+enum CreditEntryType {
+  GRANT
+  SPEND
+  EXPIRE
 }
