@@ -211,10 +211,10 @@ body.c8-schedule .month-grid {
 body.c8-schedule .week-grid,
 body.c8-schedule .day-grid {
   padding: 8px 12px;
+  grid-auto-rows: minmax(41px, auto);
 }
 
 body.c8-schedule .week-grid {
-  grid-auto-rows: minmax(41px, auto);
   align-content: start;
   grid-template-columns: 64px repeat(7, minmax(0, 1fr));
 }
@@ -249,13 +249,99 @@ body.c8-schedule .month-cell {
 
 body.c8-schedule .week-cell,
 body.c8-schedule .day-cell {
+  display: flex;
+  flex-direction: column;
   min-height: 41px;
   height: auto;
 }
 
-body.c8-schedule .week-cell > .cal-col {
+body.c8-schedule .phone-slot-posts {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Fill the hour when this is the only column, and still grow when posts are taller. */
+body.c8-schedule .week-cell > .cal-col,
+body.c8-schedule .day-cell > .cal-col:only-child,
+body.c8-schedule .phone-slot-posts > .cal-col:only-child {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 100%;
+}
+
+body.c8-schedule .phone-slot-posts > .cal-col:only-child {
+  min-height: 100% !important;
+}
+
+body.c8-schedule .day-cell .cal-col,
+body.c8-schedule .week-cell .cal-col,
+body.c8-schedule .phone-slot .cal-col {
+  display: grid;
+  height: auto;
+}
+
+/* The pill stays on .cal-col::before and does not take the hit target.
+   Empty slots paint it across the cell. Occupied slots paint it in the
+   leftover row under the posts. The composer click div already lives there. */
+body.c8-schedule .day-cell .cal-col::before,
+body.c8-schedule .week-cell .cal-col::before,
+body.c8-schedule .phone-slot .cal-col::before {
+  content: '';
+  display: block;
+  pointer-events: none;
+  z-index: 0;
+  margin: 4px;
+  min-height: 32px;
+  border-radius: var(--c8-radius-10);
+  background: var(--c8-soft);
+}
+
+body.c8-schedule .day-cell:not(:has(.cal-post)) .cal-col,
+body.c8-schedule .week-cell:not(:has(.cal-post)) .cal-col,
+body.c8-schedule .phone-slot:not(:has(.cal-post)) .cal-col {
+  grid-template-rows: minmax(32px, 1fr);
+}
+
+body.c8-schedule .day-cell:not(:has(.cal-post)) .cal-col::before,
+body.c8-schedule .week-cell:not(:has(.cal-post)) .cal-col::before,
+body.c8-schedule .phone-slot:not(:has(.cal-post)) .cal-col::before {
+  grid-area: 1 / 1;
+}
+
+body.c8-schedule .day-cell:not(:has(.cal-post)) .cal-col > div,
+body.c8-schedule .week-cell:not(:has(.cal-post)) .cal-col > div,
+body.c8-schedule .phone-slot:not(:has(.cal-post)) .cal-col > div {
+  grid-area: 1 / 1;
+  z-index: 1;
   height: 100%;
   min-height: 100%;
+  background: transparent;
+}
+
+body.c8-schedule .day-cell:has(.cal-post) .cal-col,
+body.c8-schedule .week-cell:has(.cal-post) .cal-col,
+body.c8-schedule .phone-slot:has(.cal-post) .cal-col {
+  grid-template-rows: auto minmax(40px, 1fr);
+}
+
+body.c8-schedule .day-cell:has(.cal-post) .cal-col::before,
+body.c8-schedule .week-cell:has(.cal-post) .cal-col::before,
+body.c8-schedule .phone-slot:has(.cal-post) .cal-col::before {
+  grid-area: 2 / 1;
+}
+
+body.c8-schedule .day-cell:has(.cal-post) .cal-col > div,
+body.c8-schedule .week-cell:has(.cal-post) .cal-col > div,
+body.c8-schedule .phone-slot:has(.cal-post) .cal-col > div {
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  display: grid;
+  grid-template-rows: subgrid;
+  z-index: 1;
+  min-height: 0;
+  height: auto;
+  background: transparent;
 }
 
 body.c8-schedule .month-cell {
@@ -267,17 +353,6 @@ body.c8-schedule .day-time,
 body.c8-schedule .week-time {
   min-height: 41px;
   color: var(--c8-muted);
-}
-
-body.c8-schedule .day-cell:not(:has(.cal-post)) .cal-col::before,
-body.c8-schedule .week-cell:not(:has(.cal-post)) .cal-col::before {
-  content: '';
-  display: block;
-  flex: 1;
-  margin: 4px;
-  min-height: 32px;
-  border-radius: var(--c8-radius-10);
-  background: var(--c8-soft);
 }
 
 body.c8-schedule .cal-post-body,
