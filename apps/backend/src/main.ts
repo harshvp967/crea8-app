@@ -23,6 +23,7 @@ import { PostValidationExceptionFilter } from '@gitroom/backend/api/routes/posts
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
+import { mcpCorsOrigins } from '@gitroom/nestjs-libraries/chat/mcp.public.origin';
 
 async function start() {
   const app = await NestFactory.create(AppModule, {
@@ -53,6 +54,7 @@ async function start() {
         process.env.FRONTEND_URL,
         'http://localhost:6274',
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
+        ...mcpCorsOrigins(),
       ],
     },
   });

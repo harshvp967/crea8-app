@@ -69,6 +69,8 @@ export class LoadToolsService {
         - Show global analytics about socials
         - List integrations (channels)
         - List groups (customers) and filter the channels by a group
+        - List Stalker projects, read mentions, and manage keywords and alerts when those tools are available
+        - Read and edit the Link-in-Bio page, its blocks, analytics, and leads
 
       - We schedule posts to different integration like facebook, instagram, etc. but to the user we don't say integrations we say channels as integration is the technical name
       - When scheduling a post, you must follow the social media rules and best practices.

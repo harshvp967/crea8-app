@@ -17,6 +17,14 @@ import { PostSettingsTool } from '@gitroom/nestjs-libraries/chat/tools/post.sett
 import { UploadWidgetTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.tool';
 import { UploadWidgetTicketTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.ticket.tool';
 import { UploadWidgetStatusTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.status.tool';
+import { StalkerProjectsTool } from '@gitroom/nestjs-libraries/chat/tools/stalker.projects.tool';
+import { StalkerMentionsTool } from '@gitroom/nestjs-libraries/chat/tools/stalker.mentions.tool';
+import { StalkerKeywordsTool } from '@gitroom/nestjs-libraries/chat/tools/stalker.keywords.tool';
+import { StalkerAlertsTool } from '@gitroom/nestjs-libraries/chat/tools/stalker.alerts.tool';
+import { LinkPageTool } from '@gitroom/nestjs-libraries/chat/tools/link.page.tool';
+import { LinkBlocksTool } from '@gitroom/nestjs-libraries/chat/tools/link.blocks.tool';
+import { LinkAnalyticsTool } from '@gitroom/nestjs-libraries/chat/tools/link.analytics.tool';
+import { LinkLeadsTool } from '@gitroom/nestjs-libraries/chat/tools/link.leads.tool';
 
 export const toolList = [
   IntegrationListTool,
@@ -38,4 +46,12 @@ export const toolList = [
   UploadWidgetTool,
   UploadWidgetTicketTool,
   UploadWidgetStatusTool,
+  StalkerProjectsTool,
+  StalkerMentionsTool,
+  StalkerKeywordsTool,
+  StalkerAlertsTool,
+  LinkPageTool,
+  LinkBlocksTool,
+  LinkAnalyticsTool,
+  LinkLeadsTool,
 ];
