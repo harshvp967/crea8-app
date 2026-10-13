@@ -88,7 +88,12 @@ const nextConfig = {
   // Enable production sourcemaps for Sentry
   productionBrowserSourceMaps: true,
 
-  // Custom webpack config to ensure sourcemaps are generated properly
+  // Custom webpack config to ensure sourcemaps are generated properly.
+  // Next.js 16 builds with Turbopack by default and exits when a webpack
+  // hook is present without a turbopack key. The empty key keeps DSN-less
+  // CI and preview builds working. When a DSN is set, withSentryConfig
+  // replaces this key with its own Turbopack setup.
+  turbopack: {},
   webpack: (config, { buildId, dev, isServer, defaultLoaders }) => {
     // Enable sourcemaps for both client and server in production
     if (!dev) {
