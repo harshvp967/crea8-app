@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -11,6 +11,7 @@ import {
   useVisibleMenuItems,
 } from '@gitroom/frontend/components/layout/top.menu';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
+import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
 import dynamic from 'next/dynamic';
 
 const ModeComponent = dynamic(
@@ -38,7 +39,7 @@ export const C8Sidebar = ({
   onAccount: () => void;
 }) => {
   const pathname = usePathname() || '';
-  const router = useRouter();
+  const openComposer = useOpenComposer();
   const { stalkerEnabled } = useVariables();
   const { firstMenu, secondMenu } = useMenuItem();
   const primary = useVisibleMenuItems(firstMenu);
@@ -79,17 +80,6 @@ export const C8Sidebar = ({
     : pathname === '/link' || pathname.startsWith('/link/')
     ? 'link'
     : 'schedule';
-
-  const openComposer = () => {
-    const button = document.querySelector<HTMLButtonElement>(
-      '.strip-create button, .sidebar-create button, .phone-create button'
-    );
-    if (button) {
-      button.click();
-      return;
-    }
-    router.push('/launches');
-  };
 
   const rows = [
     ...primary.slice(0, 1),

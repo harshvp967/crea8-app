@@ -260,7 +260,7 @@ export const MenuComponent: FC<
         : {})}
         className={clsx(
         'flex gap-[10px] items-center min-h-[48px] bg-transparent hover:bg-boxHover group/profile transition-all rounded-[16px] border border-transparent px-[8px]',
-        variant === 'chip' && 'channel-chip',
+        variant === 'chip' ? 'channel-chip' : 'channel-row',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
@@ -397,7 +397,16 @@ export const LaunchesComponent = () => {
   const modal = useModals();
   const [reload, setReload] = useState(false);
   const [channelsOpen, setChannelsOpen] = useState(false);
-  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '1');
+  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
+  useEffect(() => {
+    const open = () => setChannelsOpen(true);
+    if (sessionStorage.getItem('c8-open-channels') === '1') {
+      sessionStorage.removeItem('c8-open-channels');
+      setChannelsOpen(true);
+    }
+    window.addEventListener('c8-open-channels', open);
+    return () => window.removeEventListener('c8-open-channels', open);
+  }, []);
   const [mode] = useCookie('mode', 'dark');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
 
