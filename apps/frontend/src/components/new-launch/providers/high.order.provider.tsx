@@ -186,7 +186,7 @@ export const withProvider = function <T extends object>(params: {
         ? params.inlineImages(watched)
         : !!params.inlineImages;
     useEffect(() => {
-      if (current !== props.id) {
+      if (!current) {
         return;
       }
       setInlineImages(inlineImages);
@@ -340,7 +340,7 @@ export const withProvider = function <T extends object>(params: {
                 document.querySelector('#social-settings') ||
                   document.createElement('div')
               )}
-            {current === props.id &&
+            {current &&
               !SettingsComponent &&
               createPortal(
                 <style>{`#wrapper-settings {display: none !important;} #social-empty {display: block !important;}`}</style>,
