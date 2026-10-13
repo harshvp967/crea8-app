@@ -3,8 +3,18 @@ import { Redis } from 'ioredis';
 // Create a mock Redis implementation for testing environments
 class MockRedis {
   private data: Map<string, any> = new Map();
+  private expiry: Map<string, number> = new Map();
+
+  private sweep(key: string) {
+    const at = this.expiry.get(key);
+    if (at !== undefined && at <= Date.now()) {
+      this.data.delete(key);
+      this.expiry.delete(key);
+    }
+  }
 
   async get(key: string) {
+    this.sweep(key);
     return this.data.get(key);
   }
 
@@ -15,7 +25,29 @@ class MockRedis {
 
   async del(key: string) {
     this.data.delete(key);
+    this.expiry.delete(key);
     return 1;
+  }
+
+  async incr(key: string) {
+    this.sweep(key);
+    const next = Number(this.data.get(key) || 0) + 1;
+    this.data.set(key, String(next));
+    return next;
+  }
+
+  async pexpire(key: string, ms: number) {
+    this.expiry.set(key, Date.now() + ms);
+    return 1;
+  }
+
+  async pttl(key: string) {
+    this.sweep(key);
+    const at = this.expiry.get(key);
+    if (at === undefined || !this.data.has(key)) {
+      return -1;
+    }
+    return Math.max(0, at - Date.now());
   }
 
   async rpush(key: string, value: any) {

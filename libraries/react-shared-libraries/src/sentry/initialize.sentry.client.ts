@@ -6,10 +6,7 @@ export const setSentryUser = (
 ) => {
   try {
     if (user?.id) {
-      Sentry.setUser({
-        id: user.id,
-        ...(user.email ? { email: user.email } : {}),
-      });
+      Sentry.setUser({ id: user.id });
       Sentry.setTag('organization.id', user.orgId);
     } else {
       Sentry.setUser(null);

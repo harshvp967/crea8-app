@@ -88,7 +88,12 @@ const nextConfig = {
   // Enable production sourcemaps for Sentry
   productionBrowserSourceMaps: true,
 
-  // Custom webpack config to ensure sourcemaps are generated properly
+  // Custom webpack config to ensure sourcemaps are generated properly.
+  // Next.js 16 builds with Turbopack by default and exits when a webpack
+  // hook is present without a turbopack key. The empty key keeps DSN-less
+  // CI and preview builds working. When a DSN is set, withSentryConfig
+  // replaces this key with its own Turbopack setup.
+  turbopack: {},
   webpack: (config, { buildId, dev, isServer, defaultLoaders }) => {
     // Enable sourcemaps for both client and server in production
     if (!dev) {
@@ -122,14 +127,21 @@ const nextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const sentryDsn = (
+  process.env.SENTRY_DSN ||
+  process.env.NEXT_PUBLIC_SENTRY_DSN ||
+  ''
+).trim();
+
+export default sentryDsn
+  ? withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
 
   // Sourcemap configuration optimized for monorepo
   sourcemaps: {
-    disable: false,
+    disable: !process.env.SENTRY_AUTH_TOKEN,
     // More comprehensive asset patterns for monorepo
     assets: [
       '.next/static/**/*.js',
@@ -174,4 +186,5 @@ export default withSentryConfig(nextConfig, {
     // Don't fail the build if Sentry upload fails in monorepo context
     return;
   },
-});
+})
+  : nextConfig;

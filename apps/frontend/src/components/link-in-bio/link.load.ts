@@ -1,12 +1,26 @@
 import type { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
 
-export async function loadPublicLink(path: string, revalidate?: number): Promise<PublicLink | null> {
+export function publicLinkCacheSeconds() {
+  if (process.env.PUBLIC_LINK_CACHE_SECONDS === '0') {
+    return 0;
+  }
+  const value = Number(process.env.PUBLIC_LINK_CACHE_SECONDS || 60);
+  if (!Number.isFinite(value) || value < 0) {
+    return 60;
+  }
+  return Math.min(Math.floor(value), 3600);
+}
+
+export async function loadPublicLink(path: string, revalidate = publicLinkCacheSeconds()): Promise<PublicLink | null> {
   const base = (process.env.BACKEND_INTERNAL_URL || '').replace(/\/$/, '');
   if (!base) {
     return null;
   }
   try {
-    const response = await fetch(`${base}${path}`, revalidate ? { next: { revalidate } } : { cache: 'no-store' });
+    const init = (
+      revalidate > 0 ? { next: { revalidate, tags: ['public-link'] } } : { cache: 'no-store' }
+    ) as RequestInit;
+    const response = await fetch(`${base}${path}`, init);
     if (!response.ok) {
       return null;
     }

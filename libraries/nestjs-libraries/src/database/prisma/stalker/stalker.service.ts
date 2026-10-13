@@ -64,6 +64,7 @@ import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { randomUUID } from 'crypto';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { TemporalService } from 'nestjs-temporal-core';
 import { WorkflowIdConflictPolicy } from '@temporalio/client';
 
@@ -72,6 +73,62 @@ export const isStalkerEnabled = () => process.env.STALKER_ENABLED === 'true';
 const MAX_KEYWORDS = 10;
 const POLL_HOURS = 3;
 const MANUAL_SCAN_GAP_MS = 5 * 60 * 1000;
+
+export function stalkerScanCacheSeconds() {
+  if (process.env.STALKER_SCAN_CACHE_SECONDS === '0') {
+    return 0;
+  }
+  const value = Number(process.env.STALKER_SCAN_CACHE_SECONDS || 20);
+  if (!Number.isFinite(value) || value < 0) {
+    return 20;
+  }
+  return Math.min(Math.floor(value), 300);
+}
+
+export function stalkerScanCacheKey(organizationId: string, projectId: string) {
+  return `stalker:scan:${organizationId}:${projectId}`;
+}
+
+export async function clearStalkerScanCache(organizationId: string, projectId: string) {
+  try {
+    await ioRedis.del(stalkerScanCacheKey(organizationId, projectId));
+  } catch (err) {
+    /* a cache miss must not fail the scan */
+  }
+}
+
+async function readStalkerScanCache(organizationId: string, projectId: string) {
+  if (!stalkerScanCacheSeconds()) {
+    return null;
+  }
+  try {
+    const raw = await ioRedis.get(stalkerScanCacheKey(organizationId, projectId));
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function writeStalkerScanCache(
+  organizationId: string,
+  projectId: string,
+  payload: { status?: string }
+) {
+  const seconds = stalkerScanCacheSeconds();
+  if (!seconds || payload.status === 'queued' || payload.status === 'running') {
+    return;
+  }
+  try {
+    await ioRedis.set(
+      stalkerScanCacheKey(organizationId, projectId),
+      JSON.stringify(payload),
+      'EX',
+      seconds
+    );
+  } catch (err) {
+    /* serving the database result is enough */
+  }
+}
 
 export const stalkerPollMinutes = () => {
   const value = Number(process.env.STALKER_POLL_MINUTES || 60);
@@ -1612,6 +1669,7 @@ export class StalkerService {
   ) {
     this.assertEnabled();
     await this.requireProject(organizationId, projectId);
+    await clearStalkerScanCache(organizationId, projectId);
     // A click while a scan is running joins that scan instead of failing.
     const active = await this._repository.activeScan(projectId);
     if (active) {
@@ -1674,21 +1732,27 @@ export class StalkerService {
   async latestScan(organizationId: string, projectId: string) {
     this.assertEnabled();
     await this.requireProject(organizationId, projectId);
+    const cached = await readStalkerScanCache(organizationId, projectId);
+    if (cached) {
+      return cached;
+    }
     const run = await this._repository.latestScan(projectId);
     if (!run) {
-      return {
-        runId: null,
+      const idle = {
+        runId: null as string | null,
         status: 'idle',
-        trigger: null,
-        startedAt: null,
-        finishedAt: null,
+        trigger: null as string | null,
+        startedAt: null as string | null,
+        finishedAt: null as string | null,
         error: '',
-        sources: [],
+        sources: [] as [],
         totals: emptyTotals(),
       };
+      await writeStalkerScanCache(organizationId, projectId, idle);
+      return idle;
     }
     const result = this.readScanResult(run.result);
-    return {
+    const payload = {
       runId: run.id,
       status: run.status,
       trigger: run.trigger,
@@ -1698,6 +1762,8 @@ export class StalkerService {
       sources: result.sources,
       totals: result.totals,
     };
+    await writeStalkerScanCache(organizationId, projectId, payload);
+    return payload;
   }
 
   async executeProjectScan(input: {
@@ -1747,6 +1813,7 @@ export class StalkerService {
         error
       );
       await this._repository.touchLastScan(input.projectId);
+      await clearStalkerScanCache(input.organizationId, input.projectId);
       return result;
     } catch (err) {
       console.error('Stalker scan project failed', input.projectId, err);
@@ -1757,6 +1824,7 @@ export class StalkerService {
         safeProviderError(err)
       );
       await this._repository.touchLastScan(input.projectId);
+      await clearStalkerScanCache(input.organizationId, input.projectId);
       throw err;
     }
   }

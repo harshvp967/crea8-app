@@ -4,7 +4,11 @@ import {
   NotFoundException,
   ValidationPipe,
 } from '@nestjs/common';
-import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
+import {
+  PostsRepository,
+  postWorkflowPlan,
+  scheduledPublishDate,
+} from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -736,7 +740,7 @@ export class PostsService {
       }
     } catch (err) {}
 
-    if (state === 'DRAFT') {
+    if (postWorkflowPlan('schedule', state) === 'stop-only') {
       return;
     }
 
@@ -980,7 +984,7 @@ export class PostsService {
       const { posts } = await this._postRepository.createOrUpdatePost(
         body.type,
         orgId,
-        body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
+        scheduledPublishDate(body.type, body.date),
         post,
         body.tags,
         creationMethod,
@@ -992,7 +996,7 @@ export class PostsService {
         return [] as any[];
       }
 
-      if (body.type !== 'update') {
+      if (postWorkflowPlan(body.type, posts[0].state) !== 'skip') {
         this.startWorkflow(
           post.settings.__type.split('-')[0].toLowerCase(),
           posts[0].id,

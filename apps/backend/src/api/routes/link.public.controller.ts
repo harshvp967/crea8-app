@@ -1,7 +1,10 @@
 import { Body, Controller, Get, Headers, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
+import {
+  LINK_PUBLIC_LIMITS,
+  ThrottlerRealIpGuard,
+} from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { LinkService } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.service';
 import {
   PublicLinkContactDto,
@@ -44,7 +47,7 @@ export class LinkPublicController {
 
   @Post('/view')
   @UseGuards(ThrottlerRealIpGuard)
-  @Throttle({ default: { ttl: 3600000, limit: 240 } })
+  @Throttle({ default: LINK_PUBLIC_LIMITS.view })
   view(
     @Body() body: PublicLinkTrackDto,
     @Headers('x-link-country') country = '',
@@ -55,7 +58,7 @@ export class LinkPublicController {
 
   @Post('/click')
   @UseGuards(ThrottlerRealIpGuard)
-  @Throttle({ default: { ttl: 3600000, limit: 240 } })
+  @Throttle({ default: LINK_PUBLIC_LIMITS.click })
   click(
     @Body() body: PublicLinkTrackDto,
     @Headers('x-link-country') country = '',
@@ -66,21 +69,21 @@ export class LinkPublicController {
 
   @Post('/subscribe')
   @UseGuards(ThrottlerRealIpGuard)
-  @Throttle({ default: { ttl: 3600000, limit: 30 } })
+  @Throttle({ default: LINK_PUBLIC_LIMITS.subscribe })
   subscribe(@Body() body: PublicLinkSubscribeDto, @Headers('x-link-country') country = '') {
     return this._linkService.subscribe(body, country);
   }
 
   @Post('/unlock')
   @UseGuards(ThrottlerRealIpGuard)
-  @Throttle({ default: { ttl: 3600000, limit: 20 } })
+  @Throttle({ default: LINK_PUBLIC_LIMITS.unlock })
   unlock(@Body() body: PublicLinkUnlockDto, @Headers('x-link-country') country = '') {
     return this._linkService.unlock(body, country);
   }
 
   @Post('/contact')
   @UseGuards(ThrottlerRealIpGuard)
-  @Throttle({ default: { ttl: 3600000, limit: 10 } })
+  @Throttle({ default: LINK_PUBLIC_LIMITS.contact })
   contact(@Body() body: PublicLinkContactDto, @Headers('x-link-country') country = '') {
     return this._linkService.contact(body, country);
   }
