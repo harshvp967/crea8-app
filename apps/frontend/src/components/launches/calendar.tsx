@@ -440,10 +440,44 @@ export const DayView = () => {
     root.scrollTop = top;
   }, [narrow, scrollHour, startDate]);
 
+  const shiftDay = (direction: number) => {
+    const nextDay = displayDayjs(startDate).add(direction, 'day');
+    calendar.setFilters({
+      startDate: nextDay.format('YYYY-MM-DD'),
+      endDate: nextDay.format('YYYY-MM-DD'),
+      display: 'day',
+      customer: calendar.customer,
+    });
+  };
+
+  const dayPager = (
+    <div className="c8-day-phone-nav">
+      <button
+        type="button"
+        className="phone-week-arrow"
+        aria-label="Previous day"
+        onClick={() => shiftDay(-1)}
+      >
+        <HugeIcon name="chevron-left" size={12} />
+      </button>
+      <span className="c8-week-phone-span">{currentDay.format('MMM D')}</span>
+      <button
+        type="button"
+        className="phone-week-arrow"
+        aria-label="Next day"
+        onClick={() => shiftDay(1)}
+      >
+        <HugeIcon name="chevron-right" size={12} />
+      </button>
+    </div>
+  );
+
   if (narrow) {
     const hours = Array.from({ length: 24 }, (_, hour) => hour);
     return (
-      <div className="flex flex-col gap-[8px] flex-1 min-h-0">
+      <div className="c8-day flex flex-col gap-[8px] flex-1 min-h-0">
+        {dayPager}
+        <div className="c8-day-body flex flex-col gap-[8px] flex-1 min-h-0">
         <PhoneDayStrip />
         <div ref={listRef} className="phone-day-list flex-1 min-h-0">
           {hours.map((hour) => {
@@ -478,12 +512,15 @@ export const DayView = () => {
             );
           })}
         </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-[8px] flex-1 min-h-0">
+    <div className="c8-day flex flex-col gap-[8px] flex-1 min-h-0">
+      {dayPager}
+      <div className="c8-day-body flex flex-col gap-[8px] flex-1 min-h-0">
       <PhoneDayStrip />
       <div className="relative flex-1 min-h-0">
         <div className="day-scroll absolute start-0 top-0 w-full h-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
@@ -512,6 +549,7 @@ export const DayView = () => {
             })}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
