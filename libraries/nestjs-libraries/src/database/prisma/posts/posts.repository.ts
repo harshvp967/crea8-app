@@ -22,6 +22,38 @@ dayjs.extend(weekOfYear);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(utc);
 
+export function scheduledPostState(
+  type: 'draft' | 'schedule' | 'now' | 'update'
+): 'DRAFT' | 'QUEUE' | null {
+  if (type === 'update') {
+    return null;
+  }
+  if (type === 'draft') {
+    return 'DRAFT';
+  }
+  return 'QUEUE';
+}
+
+export function scheduledPublishDate(type: string, date: string, now = new Date()) {
+  if (type === 'now') {
+    return dayjs(now).format('YYYY-MM-DDTHH:mm:00');
+  }
+  return date;
+}
+
+export function postWorkflowPlan(
+  type: string,
+  state: string
+): 'start' | 'stop-only' | 'skip' {
+  if (type === 'update') {
+    return 'skip';
+  }
+  if (state === 'DRAFT') {
+    return 'stop-only';
+  }
+  return 'start';
+}
+
 @Injectable()
 export class PostsRepository {
   constructor(
@@ -474,7 +506,7 @@ export class PostsRepository {
         // update: don't change the state
         ...(action === 'schedule'
           ? {
-              state: isDraft ? 'DRAFT' : 'QUEUE',
+              state: scheduledPostState(isDraft ? 'draft' : 'schedule'),
               releaseId: null,
               releaseURL: null,
             }
@@ -521,6 +553,7 @@ export class PostsRepository {
     const posts: Post[] = [];
     const uuid = uuidv4();
     const group = keepGroup && body.group ? body.group : uuid;
+    const nextState = scheduledPostState(state);
 
     for (const value of body.value) {
       const updateData = (type: 'create' | 'update') => ({
@@ -552,12 +585,7 @@ export class PostsRepository {
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         ...(type === 'create' ? { creationMethod } : {}),
-        ...(state === 'update'
-          ? {}
-          : {
-              state:
-                state === 'draft' ? ('DRAFT' as const) : ('QUEUE' as const),
-            }),
+        ...(nextState ? { state: nextState } : {}),
         image: JSON.stringify(value.image),
         settings: JSON.stringify(body.settings),
         organization: {

@@ -6,11 +6,18 @@ import { MCPServer } from '@mastra/mcp';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { runWithContext } from './async.storage';
-import { createOAuthMiddleware } from './oauth-middleware';
+import { createOAuthMiddleware, resolveMcpOrganization } from './oauth-middleware';
 import { UPLOAD_WIDGET_URI, uploadWidgetHtml } from '@gitroom/nestjs-libraries/chat/ui/upload.widget';
 import { CLIPPING_WIDGET_URI, clippingWidgetHtml } from '@gitroom/nestjs-libraries/chat/ui/clipping.widget';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { mcpCorsPath, mcpPublicOrigin } from '@gitroom/nestjs-libraries/chat/mcp.public.origin';
+import {
+  clientIp,
+  consumeFixedWindow,
+  isMcpTraffic,
+  mcpRateLimit,
+  rateLimitKey,
+} from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 const fixAcceptHeader = (req: Request) => {
   const value = 'application/json, text/event-stream';
   req.headers.accept = value;
@@ -58,19 +65,42 @@ export const startMcp = async (app: INestApplication) => {
     stack.unshift(stack.pop());
   }
 
+  http.use(async (req: Request, res: Response, next: () => void) => {
+    if (req.method === 'OPTIONS' || !isMcpTraffic(req.originalUrl || req.url || '')) {
+      next();
+      return;
+    }
+    const token = String(req.headers.authorization || '')
+      .replace(/^Bearer\s+/i, '')
+      .trim();
+    const { limit, ttl } = mcpRateLimit();
+    const result = await consumeFixedWindow(
+      rateLimitKey('mcp', token || clientIp(req)),
+      limit,
+      ttl
+    );
+    if (!result.ok) {
+      res.setHeader('Retry-After', String(result.retryAfter));
+      res.status(429).json({
+        statusCode: 429,
+        message: 'Too many requests',
+        retryAfter: result.retryAfter,
+      });
+      return;
+    }
+    next();
+  });
+
   const mastraService = app.get(MastraService, { strict: false });
   const organizationService = app.get(OrganizationService, { strict: false });
   const oauthService = app.get(OAuthService, { strict: false });
   const loadToolsService = app.get(LoadToolsService, { strict: false });
 
-  const resolveAuth = async (token: string) => {
-    if (token.startsWith('pos_')) {
-      const authorization = await oauthService.getOrgByOAuthToken(token);
-      if (!authorization) return null;
-      return authorization.organization;
-    }
-    return organizationService.getOrgByApiKey(token);
-  };
+  const resolveAuth = (token: string) =>
+    resolveMcpOrganization(token, {
+      getOrgByOAuthToken: (value) => oauthService.getOrgByOAuthToken(value),
+      getOrgByApiKey: (value) => organizationService.getOrgByApiKey(value),
+    });
 
   const mastra = await mastraService.mastra();
   const agent = mastra.getAgent('postiz');

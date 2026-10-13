@@ -1,75 +1,77 @@
-This project is Postiz, a tool to schedule social media and chat posts to 28+ channels.
-You can add posts to the calendar, they will be added into a workflow and posted at the right time.
-You can find things like:
-- Schedule posts
-- Calendar view
-- Analytics
-- Team management
-- Media library
+# Project: Crea8
 
-This project is a monorepo with a root only package.json of dependencies.
-Made with PNPM.
-We have 3 important folders
+Crea8 is a Postiz fork. It schedules social posts to 28+ channels, watches mentions in Stalker, hosts a public Link-in-Bio page with lead capture, and exposes the same actions over MCP.
 
-- apps/backend - this is where the API code is (NESTJS)
-- apps/orchestrator - this is temporal, it's for background jobs (NESTJS) it contains all the workflows and activities
-- apps/frontend - this is the code of the frontend (Vite ReactJS)
-- /libraries contains a lot of services shared between backend and orchestrator and frontend components.
+The customer is an organization. Users belong to organizations through `UserOrganization`. A request acts on the organization selected for that session. One customer's posts, channels, media, Stalker projects, and link page stay separate from another's.
 
-We are using only pnpm, don't use any other dependency manager.
-Never install frontend components from npmjs, focus on writing native components.
+## Stack (do not change without asking)
 
-The project uses tailwind 3, before writing any component look at:
-- /apps/frontend/src/app/colors.scss
-- /apps/frontend/src/app/global.scss
-- /apps/frontend/tailwind.config.js
+- Frontend: Next.js (App Router) + TypeScript + Tailwind, hosted on Vercel. The browser extension is a separate Vite app.
+- Backend: NestJS API, hosted on Railway (project tranquil-bravery, backend service).
+- Background jobs: NestJS orchestrator on Temporal, hosted on Railway (orchestrator service). Workflows and activities live in `apps/orchestrator`.
+- Database: Postgres via Prisma 6.5. The running schema path is `prisma db push`. There is no applied migration history. See `docs/prisma-migration-baseline-proposal.md`.
+- Auth: JWT in an httpOnly cookie, passwords hashed with bcrypt. Not a third-party auth host.
+- Storage: Cloudflare R2 when `STORAGE_PROVIDER=cloudflare`, local disk otherwise.
+- Cache and rate limits: Redis (`REDIS_URL`).
+- Errors: Sentry, no-op unless `SENTRY_DSN` or `NEXT_PUBLIC_SENTRY_DSN` is set.
 
-All the --color-custom* are deprecated, don't use them.
+## Layout
 
-And check other components in the system before to get the right design.
+Monorepo. Dependencies live in the root `package.json`. Use pnpm only.
 
-When working on the backend we need to pass the 3 layers:
-DTO >> Controller >> Service >> Repository (no shortcuts)
-In some cases we will have
-DTO >> Controller >> Manager >> Service >> Repository.
+- `apps/backend` — NestJS controllers. Domain logic stays in `libraries/nestjs-libraries`.
+- `apps/orchestrator` — Temporal worker. Workflows and activities.
+- `apps/frontend` — Next.js app.
+- `libraries/nestjs-libraries` — services shared by the backend and the orchestrator.
+- `libraries/helpers` — shared helpers, including auth and fetch.
+- `libraries/react-shared-libraries` — shared React and i18n.
 
-Most of the server logic should be inside of libs/server.
-The backend repository is mostly used to write controller, and import files from libs.server.
+## Rules
 
-For the frontend follow this:
-- Many of the UI components lives in /apps/frontend/src/components/ui
-- Routing is in /apps/frontend/src/app
-- Components are in /apps/frontend/src/components
-- always use SWR to fetch stuff, and use "useFetch" hook from /libraries/helpers/src/utils/custom.fetch.tsx
+- Never commit secrets. Document every variable in `.env.example`.
+- Every new API endpoint needs input validation, an auth check, an authorization check, and tests.
+- Never use raw SQL. Use Prisma.
+- Do not add a dependency without asking.
+- Prefer a small change. One feature per branch.
+- Linting runs from the repo root.
+- Do not install frontend component packages. Write native components.
+- Tailwind 3. Before a component, read `apps/frontend/src/app/colors.scss`, `apps/frontend/src/app/global.scss`, and `apps/frontend/tailwind.config.js`. Do not use `--color-custom*`.
+- Backend shape is DTO, then Controller, then Service, then Repository. Some flows add a Manager between Controller and Service.
+- Frontend UI lives in `apps/frontend/src/components/ui`. Routes live in `apps/frontend/src/app`. Fetch with SWR and `useFetch` from `libraries/helpers/src/utils/custom.fetch.tsx`. Each SWR hook is its own hook. Do not call `useSWR` inside a function returned from another hook.
+- Provider-specific logic stays inside that provider. A shared file calls the provider interface. Do not branch on Facebook or Instagram inside generic code.
+- This system is in production. A change that touches stored data needs a migration plan and must not break existing users.
 
-When using SWR, each one have to be in a separate hook and must comply with react-hooks/rules-of-hooks, never put eslint-disable-next-line on it.
+## Production database
 
-It means that this is valid:
-const useCommunity = () => {
-   return useSWR....
-}
+Do not read or change production data. Do not change the production schema. Both require Harsh's approval first.
 
-This is not valid:
-const useCommunity = () => {
-  return {
-    communities: () => useSWR<CommunitiesListResponse>("communities", getCommunities),
-    providers: () => useSWR<ProvidersListResponse>("providers", getProviders),
-  };
-}
+When a production schema change is approved, run it from a temporary Railway Function on the backend service, using the private `DATABASE_URL` already on that service. Never open a public TCP proxy to Postgres. Delete the function when it finishes. Do not run `prisma db push --accept-data-loss` against production.
 
-- Linting of the project can run only from the root.
-- Use only pnpm.
-- Never use RAW SQL queries, always use Prisma.
-- The system is in production with many users, if you want to change something, you need to be sure that you are not breaking anything for existing users and a migration might be needed
-- Whenever you generate a PR, PR description, or similar, **always** follow the PR Template (.github/PULL_REQUEST_TEMPLATE.md)
-- Every PR description **must** contain a `# QA` section with real, numbered steps a reviewer can follow to verify the change (setup, action, expected result), written so they can be run without asking the author anything. This is not optional and applies to humans and agents alike, including one-line fixes. The section is extracted verbatim and shown on the review board, so:
-  - Use the exact heading `# QA` (`# Testing`, `# Test plan`, `# How to test`, `# How to verify`, `# Verification`, `# Steps to test` and `# Manual testing` are also recognised, but prefer `# QA`). The whole heading must match, so something like `## Testing philosophy` is not picked up.
-  - Never leave the template placeholder in place, and never write `N/A`, `TBD`, `todo`, `none` or a bare empty checkbox as the whole section - those all count as no QA at all and the board will show the PR as missing testing notes.
-  - Steps inside a fenced code block are ignored, so keep them as plain numbered lines. Write each step as a numbered checkbox (`1. [ ] step`) so a reviewer can tick it off while working through it - the numbering is what the board extracts, the checkbox is for the reviewer.
-- Every PR description **must** answer `# What kind of change does this PR introduce?` with actual detail, not just a category. `Bug fix.` / `Feature.` on its own is not acceptable. State the type, the area it touches (backend, frontend, orchestrator, a specific provider or screen), and in one to three sentences what concretely changed and where - the key function, endpoint, file or field - plus what deliberately stayed the same. A reader should understand the change from this section alone, without opening the diff.
-- Avoid as much as possible creating new files with pure logic of algorithms, it's usually wrong
-- When you write code, make sure that what you add looks like something similar somewhere else in the code, don't make weird patterns
-- When you finished running, run another agents that matches the new code with the existing system code, to see that it looks similar and is not a weird pattern.
-- Workflows files can never be changed if they are already in origin/main, because changing a workflow will fail all its activities, instead create a new workflow with the version, and everywhere the workflow being called, change it to the new workflow version.
-- Workflows activities parameters cannot be changed, as it will break the workflow, if we need to change the parameters, if we need to change the parameters, we need to create a new activity with the new parameters, and then create a new workflow that uses the new activity.
-- Code must always be generic, there can't be a way that a specific logic, let's say facebook or instagram, appear in a file that use a generic logic, instead, we need to edit the interface of the provider, add another function, and then generically call it from the generic code, and then implement the specific logic in the provider implementation. we can't have something like if(facebookProvider) {} inside a non facebook provider file. 
+## Commands
+
+- Dev: `pnpm dev`
+- Backend and frontend only: `pnpm dev-backend`
+- Test: `pnpm test`
+- Lint: `pnpm run lint`
+- Typecheck: `pnpm run typecheck`
+- Build: `pnpm run build`
+- Generate Prisma client: `pnpm run prisma-generate`
+- Schema push (local only, not production): `pnpm run prisma-db-push`
+
+## Architecture decisions
+
+- Tenancy is the organization id on tenant tables. Public Link-in-Bio pages are keyed by slug. Stalker scan cache keys include the organization id.
+- Background work is Temporal. Do not change a workflow file that is already on `origin/main`. Changing a workflow fails its in-flight activities. Add a new versioned workflow and switch callers to it.
+- Do not change an activity's parameters. Add a new activity and a new workflow that calls it.
+- Rate limits and the Stalker scan cache use Redis so more than one API instance shares them.
+- Sentry is optional. Unset DSNs are a no-op. Bugs Team owns alerting, so this repo wires the SDK only.
+
+## Pull requests
+
+Follow `.github/PULL_REQUEST_TEMPLATE.md`.
+
+Every PR description must contain a `# QA` section with real numbered steps a reviewer can run without asking the author. Use the heading `# QA`. Write steps as numbered checkboxes (`1. [ ] step`). Do not put the steps in a fenced code block. Do not leave `N/A`, `TBD`, `todo`, `none`, or an empty checkbox as the whole section.
+
+`# What kind of change does this PR introduce?` must say the type, the area (backend, frontend, orchestrator, a provider, or a screen), what changed (function, endpoint, file, or field), and what stayed the same. A category alone is not enough.
+
+Commit messages should say what changed and why.

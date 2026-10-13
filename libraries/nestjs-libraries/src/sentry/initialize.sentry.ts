@@ -1,6 +1,9 @@
 import * as Sentry from '@sentry/nestjs';
 import { capitalize } from 'lodash';
 
+export const sentryDsn = () =>
+  (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || '').trim();
+
 export const setSentryUserContext = (params: {
   userId?: string;
   email?: string;
@@ -8,11 +11,8 @@ export const setSentryUserContext = (params: {
   paymentId?: string | null;
 }) => {
   try {
-    Sentry.setUser(
-      params.userId
-        ? { id: params.userId, ...(params.email ? { email: params.email } : {}) }
-        : null
-    );
+    // id and org only. Email stays out of the error tracker.
+    Sentry.setUser(params.userId ? { id: params.userId } : null);
     if (params.orgId) {
       Sentry.setTag('organization.id', params.orgId);
     }
@@ -25,7 +25,8 @@ export const setSentryUserContext = (params: {
 };
 
 export const initializeSentry = (appName: string, allowLogs = false) => {
-  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  const dsn = sentryDsn();
+  if (!dsn) {
     return null;
   }
 
@@ -53,7 +54,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         },
       },
       environment: process.env.NODE_ENV || 'development',
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      dsn,
       spotlight: process.env.SENTRY_SPOTLIGHT === '1',
       integrations: [
         // Add our Profiling integration

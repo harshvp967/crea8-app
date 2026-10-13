@@ -33,6 +33,25 @@ export interface OAuthMiddlewareResult {
   tokenValidation?: TokenValidationResult;
 }
 
+export async function resolveMcpOrganization(
+  token: string,
+  lookup: {
+    getOrgByOAuthToken: (
+      token: string
+    ) => Promise<{ organization: { id: string } } | null | undefined>;
+    getOrgByApiKey: (token: string) => Promise<{ id: string } | null | undefined>;
+  }
+) {
+  if (!token) {
+    return null;
+  }
+  if (token.startsWith('pos_')) {
+    const authorization = await lookup.getOrgByOAuthToken(token);
+    return authorization?.organization || null;
+  }
+  return (await lookup.getOrgByApiKey(token)) || null;
+}
+
 export function createOAuthMiddleware(options: OAuthMiddlewareOptions) {
   const { oauth, mcpPath = '/mcp', logger } = options;
 

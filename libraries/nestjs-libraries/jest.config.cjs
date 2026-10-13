@@ -8,6 +8,7 @@ module.exports = {
     '^@gitroom/helpers/(.*)$': '<rootDir>/../helpers/src/$1',
     '^@gitroom/react/(.*)$': '<rootDir>/../react-shared-libraries/src/$1',
     '^@gitroom/backend/(.*)$': '<rootDir>/../../apps/backend/src/$1',
+    '^@gitroom/frontend/(.*)$': '<rootDir>/../../apps/frontend/src/$1',
   },
   transform: {
     '^.+\\.ts$': [
@@ -18,10 +19,14 @@ module.exports = {
           experimentalDecorators: true,
           emitDecoratorMetadata: true,
           strict: false,
+          noImplicitReturns: false,
           skipLibCheck: true,
           module: 'commonjs',
           target: 'ES2020',
           moduleResolution: 'node',
+        },
+        diagnostics: {
+          ignoreCodes: [7030],
         },
       },
     ],

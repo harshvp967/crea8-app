@@ -10,7 +10,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
+import {
+  AuthRateLimitGuard,
+  ThrottlerRealIpGuard,
+} from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { Response, Request } from 'express';
 
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -44,6 +47,7 @@ export class AuthController {
     };
   }
 
+  @UseGuards(AuthRateLimitGuard)
   @Post('/register')
   async register(
     @Req() req: Request,
@@ -118,6 +122,7 @@ export class AuthController {
     }
   }
 
+  @UseGuards(AuthRateLimitGuard)
   @Post('/login')
   async login(
     @Req() req: Request,
@@ -182,6 +187,7 @@ export class AuthController {
     }
   }
 
+  @UseGuards(AuthRateLimitGuard)
   @Post('/forgot')
   async forgot(@Body() body: ForgotPasswordDto) {
     try {
@@ -196,6 +202,7 @@ export class AuthController {
     }
   }
 
+  @UseGuards(AuthRateLimitGuard)
   @Post('/forgot-return')
   async forgotReturn(@Body() body: ForgotReturnPasswordDto) {
     const reset = await this._authService.forgotReturn(body);
