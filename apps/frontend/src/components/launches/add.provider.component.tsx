@@ -114,7 +114,7 @@ export const AddProviderButton: FC<{
           <HugeIcon name="plus" size={20} />
         </div>
         <div className="text-start text-[14px] group-[.sidebar]:hidden">
-          {t('add_channel', 'Add Channel')}
+          {t('add_channel', 'Add channel')}
         </div>
       </button>
       <button

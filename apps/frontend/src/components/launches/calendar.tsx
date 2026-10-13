@@ -547,7 +547,7 @@ export const WeekView = () => {
   };
 
   return (
-    <div className="flex flex-col text-textColor flex-1 min-h-0">
+    <div className="c8-week flex flex-col text-textColor flex-1 min-h-0">
       <div className="c8-week-phone-nav">
         <button
           type="button"
@@ -557,6 +557,7 @@ export const WeekView = () => {
         >
           <HugeIcon name="chevron-left" size={12} />
         </button>
+        <span className="c8-week-phone-span">3 days</span>
         <button
           type="button"
           className="phone-week-arrow"
@@ -1373,6 +1374,14 @@ const CalendarItem: FC<{
             alt=""
           />
         </div>
+        {!showTime ? (
+          <span className="cal-chip-when">
+            {dayjs
+              .utc(post.publishDate)
+              .tz(getTimezone())
+              .format(isUSCitizen() ? 'h:mm A' : 'HH:mm')}
+          </span>
+        ) : null}
         <div className="w-full flex-1 min-w-0">
             <div className="w-full text-ellipsis break-words line-clamp-2 text-start leading-[1.3]">
             {state === 'DRAFT' ? (

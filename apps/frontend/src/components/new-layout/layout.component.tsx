@@ -52,6 +52,7 @@ import { LinkTopNav } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settings.component';
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
 import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
+import { C8Sidebar } from '@gitroom/frontend/components/layout/c8.sidebar';
 
 const HeaderAvatar = ({
   name,
@@ -192,6 +193,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <div
               className={clsx(
                 'app-shell flex flex-col min-h-screen min-w-screen text-newTextColor p-[16px] gap-[12px]',
+                !stalker && !link && 'c8-shell',
                 jakartaSans.className
               )}
             >
@@ -202,6 +204,16 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                 <>
                   <AnnouncementBanner />
                   <Support />
+                  <div className="c8-frame">
+                  {!stalker && !link ? (
+                    <C8Sidebar
+                      name={user?.name || ''}
+                      email={user?.email || ''}
+                      accountOpen={accountOpen}
+                      onAccount={() => setAccountOpen((value) => !value)}
+                    />
+                  ) : null}
+                  <div className="c8-main">
                   <header
                     className="app-header flex items-center min-h-[64px] h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder gap-[8px] ps-[18px] pe-[12px] shrink-0"
                   >
@@ -243,6 +255,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <div className="app-main flex flex-1 gap-[12px] min-h-0 overflow-hidden">
                       {children}
                     </div>
+                  </div>
+                  </div>
                   </div>
                   <MobileTabBar />
                 </>

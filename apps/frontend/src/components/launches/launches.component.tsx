@@ -397,7 +397,7 @@ export const LaunchesComponent = () => {
   const modal = useModals();
   const [reload, setReload] = useState(false);
   const [channelsOpen, setChannelsOpen] = useState(false);
-  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
+  const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '1');
   const [mode] = useCookie('mode', 'dark');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
 
@@ -647,10 +647,10 @@ export const LaunchesComponent = () => {
         </div>
         <div className="calendar-panel bg-c8-bg border border-c8-line rounded-c8-card flex-1 flex-col flex p-[16px] gap-[12px] min-w-0 font-c8-body text-c8-ink">
           <div className="channel-strip">
+            <AddProviderButton update={() => update(true)} />
             <div className="strip-create">
               {sortedIntegrations?.length > 0 && <NewPost />}
             </div>
-            <AddProviderButton update={() => update(true)} />
             {sortedIntegrations.length === 0 ? (
               <span className="channel-empty-label">
                 {t('no_channels', 'No channels yet')}

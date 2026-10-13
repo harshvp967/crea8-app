@@ -86,7 +86,7 @@ export const NewPost = ({ presentation = 'inline' }: { presentation?: 'inline' |
     >
       <HugeIcon name="plus" size={20} className="min-w-[21px] min-h-[20px]" />
       <div className="flex-1 text-start text-[14px] group-[.sidebar]:hidden">
-        {t('create_new_post', 'Create Post')}
+        {t('create_new_post', 'Create post')}
       </div>
     </button>
   );
