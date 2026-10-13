@@ -5,19 +5,19 @@ metadata:
   openclaw:
     requires:
       env:
-        - CREA8_API_KEY
+        - CRE8_API_KEY
       bins:
         - crea8
 ---
 
 # crea8one-agent
 
-This skill drives the crea8.one public API with the `crea8` command. It reads `CREA8_API_KEY` from the environment, then `CRE8_API_KEY` if the new name is unset. Do not ask the user to paste the key into the chat if it is already in the environment. Do not print the key.
+This skill drives the crea8.one public API with the `crea8` command. It reads `CRE8_API_KEY` from the environment. Do not ask the user to paste the key into the chat if it is already in the environment. Do not print the key.
 
 The command lives in this repository at `skills/crea8one-agent/bin/crea8.mjs`. Run it with Node 22:
 
 ```bash
-export CREA8_API_KEY=your_api_key
+export CRE8_API_KEY=your_api_key
 node skills/crea8one-agent/bin/crea8.mjs integrations:list
 ```
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 const api = (process.env.CRE8_API_URL || 'https://api.crea8.one').replace(/\/$/, '');
-const key = process.env.CREA8_API_KEY || process.env.CRE8_API_KEY || '';
+const key = process.env.CRE8_API_KEY || '';
 
 const usage = `crea8 — crea8.one agent CLI
 
-Set CREA8_API_KEY (CRE8_API_KEY still works). Optional CRE8_API_URL (default https://api.crea8.one).
+Set CRE8_API_KEY. Optional CRE8_API_URL (default https://api.crea8.one).
 
   crea8 integrations:list [--group id]
   crea8 groups:list
@@ -46,7 +46,7 @@ const fail = (message) => {
 };
 
 if (!key) {
-  fail('CREA8_API_KEY is not set');
+  fail('CRE8_API_KEY is not set');
 }
 
 const [command, ...rest] = process.argv.slice(2);

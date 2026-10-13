@@ -162,14 +162,32 @@ export const Filters = () => {
     });
   }, [calendar]);
 
+  const setCalendarView = useCallback(() => {
+    if (calendar.display !== 'list') {
+      return;
+    }
+
+    const range = getDateRange('week');
+    calendar.setFilters({
+      startDate: range.startDate,
+      endDate: range.endDate,
+      display: 'week',
+      customer: calendar.customer,
+    });
+  }, [calendar]);
+
   const setDisplay = useCallback(
     (next: string) => {
+      if (next === 'week' && calendar.display === 'list') {
+        setCalendarView();
+        return;
+      }
       if (next === 'day') setDay();
       else if (next === 'week') setWeek();
       else if (next === 'month') setMonth();
       else if (next === 'list') setList();
     },
-    [setDay, setWeek, setMonth, setList]
+    [calendar.display, setCalendarView, setDay, setWeek, setMonth, setList]
   );
 
   const setCustomer = useCallback(

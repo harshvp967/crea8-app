@@ -2,7 +2,7 @@
   "name": "crea8one-agent",
   "version": "1.0.0",
   "private": true,
-  "description": "CLI and agent skill for the crea8.one API. Reads CREA8_API_KEY, then CRE8_API_KEY.",
+  "description": "CLI and agent skill for the crea8.one API. Reads CRE8_API_KEY.",
   "bin": {
     "crea8": "./bin/crea8.mjs"
   },

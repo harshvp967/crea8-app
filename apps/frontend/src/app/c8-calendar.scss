@@ -208,6 +208,11 @@ body.c8-schedule .month-grid {
   background: var(--c8-surface);
 }
 
+body.c8-schedule .week-grid,
+body.c8-schedule .day-grid {
+  padding: 8px 12px;
+}
+
 body.c8-schedule .week-grid {
   grid-auto-rows: minmax(41px, auto);
   align-content: start;
@@ -246,7 +251,11 @@ body.c8-schedule .week-cell,
 body.c8-schedule .day-cell {
   min-height: 41px;
   height: auto;
-  padding: 8px 12px;
+}
+
+body.c8-schedule .week-cell > .cal-col {
+  height: 100%;
+  min-height: 100%;
 }
 
 body.c8-schedule .month-cell {
@@ -275,7 +284,7 @@ body.c8-schedule .cal-post-body,
 body.c8-schedule .cal-post:not(.is-draft) .cal-post-body,
 body.c8-schedule .cal-post.is-draft .cal-post-body {
   min-height: 30px;
-  padding: 8px 12px;
+  padding: 6px 8px;
   border: 1.5px solid var(--c8-hard) !important;
   border-radius: var(--c8-radius-10) !important;
   background: var(--c8-surface) !important;
