@@ -16,7 +16,7 @@ Long: crea8.one lets Claude list connected channels, schedule or publish posts, 
 
 `https://mcp.crea8.one/mcp-oauth-claude`
 
-This path uses dynamic client registration and the Claude-safe tool list. Issuer metadata: `https://mcp.crea8.one/.well-known/oauth-authorization-server/mcp-oauth-dynamic` (this path's authorization server is the dynamic issuer). Protected resource metadata: `https://mcp.crea8.one/.well-known/oauth-protected-resource/mcp-oauth-claude`.
+This path uses dynamic client registration and the Claude-safe tool list. Issuer metadata: `https://mcp.crea8.one/.well-known/oauth-authorization-server/mcp-oauth-claude`. Protected resource metadata: `https://mcp.crea8.one/.well-known/oauth-protected-resource/mcp-oauth-claude`. The same documents are served on `api.crea8.one` with that host in the issuer, token, and registration URLs.
 
 Custom connector for the full tool list, including media generation and clipping: `https://mcp.crea8.one/mcp-oauth-dynamic`.
 
