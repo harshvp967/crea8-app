@@ -30,6 +30,12 @@ import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
 import { LocalUploadPathDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import { deliverStoredMedia } from '@gitroom/nestjs-libraries/upload/media.deliver';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import {
+  BillingBlocked,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import { CREDIT_COSTS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -37,7 +43,8 @@ export class MediaController {
   private storage = UploadFactory.createStorage();
   constructor(
     private _mediaService: MediaService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
+    private _credits: CreditsService
   ) {}
 
   @Delete('/:id')
@@ -61,6 +68,28 @@ export class MediaController {
     @Body('prompt') prompt: string,
     isPicturePrompt = false
   ) {
+    if (isBillingEnforced(org.id)) {
+      const key = `ai:${org.id}:${Date.now()}`;
+      try {
+        await this._credits.spend(org.id, CREDIT_COSTS.aiImage, 'ai_image', key);
+      } catch (err) {
+        if (err instanceof BillingBlocked) {
+          return false;
+        }
+        throw err;
+      }
+      try {
+        return {
+          output:
+            'data:image/png;base64,' +
+            (await this._mediaService.generateImage(prompt, org, isPicturePrompt)),
+        };
+      } catch (err) {
+        await this._credits.refund(org.id, key, 'ai_image_refund');
+        throw err;
+      }
+    }
+
     const total = await this._subscriptionService.checkCredits(org);
     if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
       return false;

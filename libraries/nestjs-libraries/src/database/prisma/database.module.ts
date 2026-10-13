@@ -6,6 +6,9 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users/users.repository';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { SubscriptionRepository } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.repository';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
+import { BillingReadService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.read.service';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
@@ -23,6 +26,7 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
 import { PaymentProviderManager } from '@gitroom/nestjs-libraries/services/payment/payment.provider.manager';
 import { RevenueCatProvider } from '@gitroom/nestjs-libraries/services/payment/providers/revenuecat.provider';
+import { DodoProvider } from '@gitroom/nestjs-libraries/services/payment/providers/dodo.provider';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { DeepgramService } from '@gitroom/nestjs-libraries/deepgram/deepgram.service';
@@ -89,6 +93,10 @@ import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/servi
     PaymentService,
     PaymentProviderManager,
     RevenueCatProvider,
+    DodoProvider,
+    CreditsService,
+    EntitlementService,
+    BillingReadService,
     SignatureRepository,
     AutopostRepository,
     AutopostService,

@@ -6,6 +6,10 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import { BillingBlocked } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import { CREDIT_COSTS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 
 @Injectable()
 export class GenerateImageTool implements AgentToolInterface {
@@ -13,7 +17,8 @@ export class GenerateImageTool implements AgentToolInterface {
 
   constructor(
     private _mediaService: MediaService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
+    private _credits: CreditsService
   ) {}
   name = 'generateImageTool';
 
@@ -46,14 +51,30 @@ export class GenerateImageTool implements AgentToolInterface {
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
         const org = JSON.parse((context?.requestContext as any)?.get('organization') as string);
+        let creditKey = '';
         try {
-          // Same credit gate as the dashboard's /media/generate-image route -
-          // only enforced when billing is enabled (cloud), self-hosted is free
-          const total = await this._subscriptionService.checkCredits(org);
-          if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
-            return {
-              error: 'No AI image credits are available on this account.',
-            };
+          if (isBillingEnforced(org.id)) {
+            creditKey = `ai:${org.id}:${Date.now()}`;
+            try {
+              await this._credits.spend(
+                org.id,
+                CREDIT_COSTS.aiImage,
+                'ai_image',
+                creditKey
+              );
+            } catch (err) {
+              if (err instanceof BillingBlocked) {
+                return { error: err.message };
+              }
+              throw err;
+            }
+          } else {
+            const total = await this._subscriptionService.checkCredits(org);
+            if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
+              return {
+                error: 'No AI image credits are available on this account.',
+              };
+            }
           }
 
           const image = await this._mediaService.generateImage(
@@ -71,6 +92,9 @@ export class GenerateImageTool implements AgentToolInterface {
             file
           );
         } catch (err) {
+          if (creditKey) {
+            await this._credits.refund(org.id, creditKey, 'ai_image_refund').catch(() => undefined);
+          }
           return {
             error: `Image generation failed: ${
               err instanceof Error ? err.message : String(err)

@@ -30,6 +30,7 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -39,7 +40,8 @@ export class NoAuthIntegrationsController {
     private _integrationService: IntegrationService,
     private _refreshIntegrationService: RefreshIntegrationService,
     private _organizationService: OrganizationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _entitlements: EntitlementService
   ) {}
 
   // The callback is public. A cookie is optional: invite links are opened by
@@ -284,6 +286,10 @@ export class NoAuthIntegrationsController {
         integration,
         { id: String(id), username }
       );
+    }
+
+    if (!refresh) {
+      await this._entitlements.assertCanConnect(org.id, String(id));
     }
 
     const createUpdate =

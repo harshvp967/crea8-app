@@ -8,6 +8,8 @@ import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/in
 import dayjs from 'dayjs';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { AuthorizationActions, Sections } from './permission.exception.class';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { accessTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
 export type AppAbility = Ability<[AuthorizationActions, Sections]>;
 
@@ -20,17 +22,23 @@ export class PermissionsService {
     private _webhooksService: WebhooksService
   ) {}
   async getPackageOptions(orgId: string) {
-    const subscription =
-      await this._subscriptionService.getSubscriptionByOrganizationId(orgId);
+    const enforced = isBillingEnforced(orgId);
+    const subscription = enforced
+      ? await this._subscriptionService.getSubscriptionByOrganizationId(orgId)
+      : !process.env.STRIPE_PUBLISHABLE_KEY
+      ? null
+      : await this._subscriptionService.getSubscriptionByOrganizationId(orgId);
 
-    const tier = subscription?.subscriptionTier || defaultPlanTier();
+    const tier = enforced
+      ? accessTier(orgId, subscription?.subscriptionTier)
+      : subscription?.subscriptionTier || defaultPlanTier();
 
     const { channel, ...all } = pricing[tier];
     return {
       subscription,
       options: {
         ...all,
-        ...{ channel: tier === 'FREE' ? channel : -10 },
+        channel: enforced || tier === 'FREE' ? channel : -10,
       },
     };
   }
@@ -46,9 +54,10 @@ export class PermissionsService {
       Ability<[AuthorizationActions, Sections]>
     >(Ability as AbilityClass<AppAbility>);
 
+    const enforced = isBillingEnforced(orgId);
     if (
       requestedPermission.length === 0 ||
-      !process.env.STRIPE_PUBLISHABLE_KEY
+      (!enforced && !process.env.STRIPE_PUBLISHABLE_KEY)
     ) {
       for (const [action, section] of requestedPermission) {
         can(action, section);
@@ -83,10 +92,11 @@ export class PermissionsService {
           await this._integrationService.getIntegrationsList(orgId)
         ).filter((f) => !f.refreshNeeded).length;
 
-        if (
-          (options.channel && options.channel > totalChannels) ||
-          (subscription?.totalChannels || 0) > totalChannels
-        ) {
+        const allowed = enforced
+          ? totalChannels < options.channel
+          : (options.channel && options.channel > totalChannels) ||
+            (subscription?.totalChannels || 0) > totalChannels;
+        if (allowed) {
           can(action, section);
           continue;
         }
@@ -120,7 +130,7 @@ export class PermissionsService {
         }
       }
 
-      if (section === Sections.TEAM_MEMBERS && options.team_members) {
+      if (section === Sections.TEAM_MEMBERS && (enforced || options.team_members)) {
         can(action, section);
         continue;
       }

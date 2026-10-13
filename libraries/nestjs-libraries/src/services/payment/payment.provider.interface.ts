@@ -49,7 +49,19 @@ export abstract class PaymentProviderAbstract {
     return this.notSupported();
   }
 
-  // Embedded checkout (client secret rendered inside our page)
+  async buyPack(
+    organizationId: string,
+    userId: string,
+    packKey: string,
+    country?: string
+  ): Promise<{ url: string }> {
+    void organizationId;
+    void userId;
+    void packKey;
+    void country;
+    return this.notSupported();
+  }
+
   async embedded(
     uniqueId: string,
     organizationId: string,

@@ -497,7 +497,7 @@ export class StalkerRepository {
         keywords: { some: {} },
         OR: [{ lastScanAt: null }, { lastScanAt: { lt: cutoff } }],
       },
-      select: { id: true, organizationId: true },
+      select: { id: true, organizationId: true, lastScanAt: true },
       orderBy: { lastScanAt: 'asc' },
     });
   }
@@ -572,6 +572,12 @@ export class StalkerRepository {
     return this._scan.model.stalkerScanRun.findFirst({
       where: { projectId, trigger: 'manual', startedAt: { gt: since } },
       orderBy: { startedAt: 'desc' },
+    });
+  }
+
+  countManualScans(projectId: string, since: Date) {
+    return this._scan.model.stalkerScanRun.count({
+      where: { projectId, trigger: 'manual', startedAt: { gte: since } },
     });
   }
 

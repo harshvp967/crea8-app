@@ -20,6 +20,8 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
 import { BillingSyncDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.sync.dto';
+import { BillingPackDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.pack.dto';
+import { BillingReadService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.read.service';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -28,8 +30,15 @@ export class BillingController {
     private _subscriptionService: SubscriptionService,
     private _notificationService: NotificationService,
     private _usersService: UsersService,
-    private _paymentService: PaymentService
+    private _paymentService: PaymentService,
+    private _billingRead: BillingReadService
   ) {}
+
+  private country(body: BillingSubscribeDto, req: Request) {
+    const header = req.headers['x-vercel-ip-country'];
+    const fromHeader = Array.isArray(header) ? header[0] : header;
+    return { ...body, country: body.country || fromHeader || '' };
+  }
 
   // Billing routes are the web platform; the org's own provider (or the web
   // default when it has none) handles the action.
@@ -103,7 +112,7 @@ export class BillingController {
       uniqueId,
       org.id,
       user.id,
-      body,
+      this.country(body, req),
       org.allowTrial
     );
   }
@@ -124,9 +133,37 @@ export class BillingController {
       uniqueId,
       org.id,
       user.id,
-      body,
+      this.country(body, req),
       org.allowTrial
     );
+  }
+
+  @Get('/overview')
+  overview(@GetOrgFromRequest() org: Organization) {
+    return this._billingRead.overview(org);
+  }
+
+  @Get('/invoices')
+  async invoices(@GetOrgFromRequest() org: Organization) {
+    const overview = await this._billingRead.overview(org);
+    return overview.invoices;
+  }
+
+  @Post('/packs')
+  async packs(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Body() body: BillingPackDto,
+    @Req() req: Request
+  ) {
+    const header = req.headers['x-vercel-ip-country'];
+    const country = Array.isArray(header) ? header[0] : header;
+    return (await this.provider(org)).buyPack(org.id, user.id, body.pack, country || '');
+  }
+
+  @Post('/resume')
+  async resume(@GetOrgFromRequest() org: Organization) {
+    return (await this.provider(org)).setToCancel(org.id);
   }
 
   @Post('/sync')
