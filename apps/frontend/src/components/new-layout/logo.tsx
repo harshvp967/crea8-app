@@ -9,7 +9,7 @@ export const Logo = ({ compact = false }: { compact?: boolean }) => {
       href="/launches"
       prefetch={true}
       className="app-logo flex items-center shrink-0 ps-[4px] pe-[8px]"
-      title="Crea8one"
+      title="crea8.one"
     >
       <img
         src="/crea8one-icon-cyan.svg"

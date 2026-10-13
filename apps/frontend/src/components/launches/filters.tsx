@@ -1,13 +1,6 @@
 'use client';
 
 import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
-import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
-import {
-  DayCalendarIcon,
-  ListCalendarIcon,
-  MonthCalendarIcon,
-  WeekCalendarIcon,
-} from '@gitroom/frontend/components/ui/icons';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
@@ -169,16 +162,6 @@ export const Filters = () => {
     });
   }, [calendar]);
 
-  const setDisplay = useCallback(
-    (next: string) => {
-      if (next === 'day') setDay();
-      else if (next === 'week') setWeek();
-      else if (next === 'month') setMonth();
-      else if (next === 'list') setList();
-    },
-    [setDay, setWeek, setMonth, setList]
-  );
-
   const setCalendarView = useCallback(() => {
     if (calendar.display !== 'list') {
       return;
@@ -192,6 +175,20 @@ export const Filters = () => {
       customer: calendar.customer,
     });
   }, [calendar]);
+
+  const setDisplay = useCallback(
+    (next: string) => {
+      if (next === 'week' && calendar.display === 'list') {
+        setCalendarView();
+        return;
+      }
+      if (next === 'day') setDay();
+      else if (next === 'week') setWeek();
+      else if (next === 'month') setMonth();
+      else if (next === 'list') setList();
+    },
+    [calendar.display, setCalendarView, setDay, setWeek, setMonth, setList]
+  );
 
   const setCustomer = useCallback(
     (customer: string) => {
@@ -310,7 +307,22 @@ export const Filters = () => {
     }
   }, [calendar]);
 
+  const viewOptions = [
+    { value: 'day', label: t('day', 'Day') },
+    { value: 'week', label: t('week', 'Week') },
+    { value: 'month', label: t('month', 'Month') },
+    { value: 'list', label: t('list', 'List') },
+  ];
+
   return (
+    <>
+    <div className="c8-cal-head">
+      <div className="c8-cal-kicker">
+        <span className="c8-cal-sticker">{t('schedule', 'Schedule')}</span>
+        {!isListView ? <span className="c8-cal-when">{getDisplayText()}</span> : null}
+      </div>
+      <h1 className="c8-cal-title">{t('calendar', 'Calendar')}</h1>
+    </div>
     <div
       className={clsx(
         'filters-bar text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0',
@@ -422,47 +434,49 @@ export const Filters = () => {
         integrations={calendar.integrations}
       />
       </div>
-      <SegmentedControl
+      <div
+        className="cal-mode"
+        role="radiogroup"
         aria-label={t('calendar_view', 'Calendar view')}
-        size="sm"
-        className="cal-view shrink-0"
-        value={calendar.display}
-        onValueChange={setDisplay}
-        options={[
-          { value: 'day', label: t('day', 'Day'), icon: <DayCalendarIcon /> },
-          { value: 'week', label: t('week', 'Week'), icon: <WeekCalendarIcon /> },
-          {
-            value: 'month',
-            label: t('month', 'Month'),
-            icon: <MonthCalendarIcon />,
-          },
-          { value: 'list', label: t('list', 'List'), icon: <ListCalendarIcon /> },
-        ]}
-      />
-      <div className="cal-mode flex flex-row shrink-0 p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
-        <div
-          onClick={setCalendarView}
-          className={clsx(
-            'h-[30px] cursor-pointer flex justify-center items-center w-[36px] text-center rounded-[14px] transition-colors',
-            !isListView
-              ? 'arc-selected'
-              : 'text-textItemBlur hover:text-newTextColor'
-          )}
-        >
-          <HugeIcon name="calendar" size={18} />
-        </div>
-        <div
-          onClick={setList}
-          className={clsx(
-            'h-[30px] flex justify-center items-center cursor-pointer w-[36px] text-center rounded-[14px] transition-colors',
-            isListView
-              ? 'arc-selected'
-              : 'text-textItemBlur hover:text-newTextColor'
-          )}
-        >
-          <HugeIcon name="list-bullet" size={18} />
-        </div>
+        onKeyDown={(event) => {
+          if (
+            event.key !== 'ArrowRight' &&
+            event.key !== 'ArrowLeft' &&
+            event.key !== 'ArrowDown' &&
+            event.key !== 'ArrowUp'
+          ) {
+            return;
+          }
+          event.preventDefault();
+          const current = viewOptions.findIndex(
+            (option) => option.value === calendar.display
+          );
+          const delta =
+            event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+          const next =
+            viewOptions[
+              (current + delta + viewOptions.length) % viewOptions.length
+            ];
+          setDisplay(next.value);
+        }}
+      >
+        {viewOptions.map((option) => {
+          const selected = calendar.display === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setDisplay(option.value)}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
     </div>
+    </>
   );
 };

@@ -537,10 +537,40 @@ export const WeekView = () => {
     return days;
   }, [i18next.resolvedLanguage, startDate]);
 
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const shiftVisibleDays = (direction: number) => {
+    const root = scrollerRef.current;
+    if (!root) return;
+    const column = root.querySelector<HTMLElement>('.week-head');
+    const width = column?.getBoundingClientRect().width || root.clientWidth / 3;
+    root.scrollBy({ left: direction * width, behavior: 'smooth' });
+  };
+
   return (
-    <div className="flex flex-col text-textColor flex-1">
-      <div className="flex-1 relative">
-        <div className="week-grid grid [grid-template-columns:64px_repeat(7,minmax(0,1fr))] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+    <div className="flex flex-col text-textColor flex-1 min-h-0">
+      <div className="c8-week-phone-nav">
+        <button
+          type="button"
+          className="phone-week-arrow"
+          aria-label="Previous days"
+          onClick={() => shiftVisibleDays(-1)}
+        >
+          <HugeIcon name="chevron-left" size={12} />
+        </button>
+        <button
+          type="button"
+          className="phone-week-arrow"
+          aria-label="Next days"
+          onClick={() => shiftVisibleDays(1)}
+        >
+          <HugeIcon name="chevron-right" size={12} />
+        </button>
+      </div>
+      <div className="flex-1 relative min-h-0">
+        <div
+          ref={scrollerRef}
+          className="week-grid grid [grid-template-columns:64px_repeat(7,minmax(0,1fr))] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor"
+        >
           <div className="week-corner sticky top-0 z-10" />
           {localizedDays.map((day) => (
             <div
@@ -1024,7 +1054,8 @@ export const CalendarColumn: FC<{
   return (
     <div
       className={clsx(
-        'cal-col flex flex-col w-full min-h-full relative transition-colors',
+        'cal-col flex flex-col w-full relative transition-colors',
+        display === 'month' ? 'min-h-[max(70px,100%)]' : 'min-h-full',
         display === 'week' || display === 'month' ? 'cal-col-week' : 'rounded-[12px]',
         isBeforeNow && 'is-past repeated-strip',
         loading && 'animate-pulse',
@@ -1041,8 +1072,8 @@ export const CalendarColumn: FC<{
           className={clsx(
             'pt-[8px] pb-[2px] text-[13px] font-[600]',
             getDate.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD')
-              ? 'text-[#00D9FF]'
-              : 'text-[#c0c0c0]'
+              ? 'text-c8-schedule'
+              : 'text-c8-muted'
           )}
         >
           {getDate.date()}
@@ -1050,8 +1081,9 @@ export const CalendarColumn: FC<{
       )}
       <div
         className={clsx(
-          'relative flex flex-col flex-1 text-white rounded-[12px] min-h-[70px]',
-          canDrop && 'ring-1 ring-[#00D9FF] border border-[#00D9FF]'
+          'relative flex flex-col flex-1 text-c8-ink rounded-[12px]',
+          display === 'month' ? 'min-h-[70px]' : 'min-h-0',
+          canDrop && 'ring-1 ring-c8-schedule border border-c8-schedule'
         )}
       >
         <div
@@ -1130,7 +1162,7 @@ export const CalendarColumn: FC<{
                   )}
                 >
                   <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-full transition-all group-hover:bg-[#00D9FF] group-hover:text-[#0a0a0a] w-full h-full max-w-[36px] max-h-[36px]`}
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-full transition-all group-hover:bg-c8-ink group-hover:text-c8-on-ink w-full h-full max-w-[36px] max-h-[36px]`}
                   />
                 </div>
               )}
