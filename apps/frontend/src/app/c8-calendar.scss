@@ -114,6 +114,19 @@ body.c8-schedule .channel-invite {
   box-shadow: 0 3px 0 var(--c8-hard);
   font-size: 15px;
   font-weight: 600;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  body.c8-schedule .channel-strip .channel-add {
+    width: 162px;
+    padding: 0 16px;
+  }
+
+  body.c8-schedule .channel-strip .strip-create button {
+    width: 156px;
+    padding: 0 16px;
+  }
 }
 
 body.c8-schedule .strip-create button,
@@ -167,7 +180,7 @@ body.c8-schedule .cal-mode > button[aria-checked='true'] {
   border-color: var(--c8-ink);
   background: var(--c8-ink);
   color: var(--c8-on-ink);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 body.c8-schedule .cal-nav,
@@ -216,7 +229,7 @@ body.c8-schedule .day-grid {
 
 body.c8-schedule .week-grid {
   align-content: start;
-  grid-template-columns: 64px repeat(7, minmax(0, 1fr));
+  grid-template-columns: 60px repeat(7, minmax(0, 1fr));
 }
 
 body.c8-schedule .week-corner,
@@ -304,6 +317,13 @@ body.c8-schedule .phone-slot .cal-col::before {
   background: var(--c8-soft);
   opacity: 0;
   transition: opacity 180ms ease;
+}
+
+body.c8-schedule .day-cell:not(:has(.cal-post)) .cal-col::before,
+body.c8-schedule .week-cell:not(:has(.cal-post)) .cal-col::before,
+body.c8-schedule .phone-slot:not(:has(.cal-post)) .cal-col::before {
+  opacity: 0;
+  border-radius: 10px;
 }
 
 body.c8-schedule .day-cell:hover .cal-col::before,
@@ -489,8 +509,9 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 
 @media (min-width: 640px) {
   body.c8-schedule .c8-cal-title {
-    font-size: 38px;
-    letter-spacing: -0.76px;
+    font-size: 40px;
+    line-height: 1;
+    letter-spacing: -0.8px;
   }
 }
 
@@ -737,6 +758,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   flex: none;
   display: flex;
   flex-direction: column;
+  gap: 4px;
   height: 100%;
   overflow: auto;
   background: var(--c8-bg);
@@ -749,7 +771,8 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   display: flex;
   align-items: center;
   gap: 2px;
-  min-height: 36px;
+  min-height: 29px;
+  padding: 0 0 18px 6px;
   color: var(--c8-ink);
   text-decoration: none;
 }
@@ -760,7 +783,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   font-weight: 800;
   font-size: 28px;
   letter-spacing: -0.56px;
-  line-height: 1;
+  line-height: 1.05;
 }
 
 .c8-side-mark {
@@ -779,11 +802,12 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 }
 
 .c8-side-kicker {
-  margin: 18px 0 8px;
+  margin: 0;
   color: var(--c8-muted);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.88px;
+  line-height: 13px;
   text-transform: uppercase;
 }
 
@@ -798,15 +822,13 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 .c8-side-link {
   display: flex;
   align-items: center;
-  gap: 10px;
+  box-sizing: border-box;
   width: 100%;
   border: 1.5px solid transparent;
   border-radius: 14px;
   background: transparent;
   color: var(--c8-ink);
   font-family: var(--font-body), Inter, sans-serif;
-  font-size: 15px;
-  font-weight: 600;
   line-height: 1.2;
   text-align: start;
   text-decoration: none;
@@ -814,17 +836,21 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 }
 
 .c8-side-app {
+  gap: 10px;
   min-height: 42px;
   padding: 6px 8px;
   color: var(--c8-muted);
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .c8-side-app.is-active {
+  min-height: 45px;
   background: var(--c8-surface);
   border-color: var(--c8-hard);
   box-shadow: 0 3px 0 var(--c8-hard);
   color: var(--c8-ink);
+  font-weight: 700;
 }
 
 .c8-side-tile {
@@ -851,18 +877,22 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 
 .c8-side-rule {
   height: 1px;
-  margin: 12px 0 0;
+  margin: 0;
   background: var(--c8-line);
 }
 
 .c8-side-link {
+  gap: 12px;
   min-height: 40px;
   padding: 10px 12px;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .c8-side-link.is-active {
   background: var(--c8-ink);
   color: var(--c8-on-ink);
+  font-weight: 700;
 }
 
 .c8-side-link .c8-side-dot {
@@ -942,14 +972,29 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 .c8-side-foot > .relative,
 .c8-shell .c8-side-foot .arc-icon-btn {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   flex: none;
+  color: var(--c8-ink);
+}
+
+.c8-side-foot > .relative {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.c8-shell .c8-side-foot .arc-icon-btn {
   border: 1px solid var(--c8-line);
   border-radius: 12px;
-  background: transparent;
-  color: var(--c8-ink);
+  background: var(--c8-surface);
+}
+
+.c8-side-foot > .relative svg,
+.c8-shell .c8-side-foot .arc-icon-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 @media (max-width: 1199px) {
@@ -970,6 +1015,11 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 
   .c8-side-mark {
     display: block;
+  }
+
+  .c8-side-logo {
+    padding: 0;
+    min-height: 0;
   }
 
   .c8-side-logo,
@@ -1072,7 +1122,9 @@ body.c8-schedule .channel-rail .sidebar-create button:first-child {
   display: none;
 }
 
-body.c8-schedule .cal-range-label {
+body.c8-schedule[data-c8-view='week'] .date-range,
+body.c8-schedule[data-c8-view='day'] .date-range,
+body.c8-schedule:not([data-c8-view]) .date-range {
   display: none !important;
 }
 
@@ -1080,7 +1132,9 @@ body.c8-schedule .filters-bar {
   gap: 8px;
 }
 
-body.c8-schedule .cal-mode {
+body.c8-schedule[data-c8-view='week'] .cal-mode,
+body.c8-schedule[data-c8-view='day'] .cal-mode,
+body.c8-schedule:not([data-c8-view]) .cal-mode {
   order: -1;
   margin-right: auto;
 }
@@ -1173,20 +1227,36 @@ body.c8-schedule .phone-slot .cal-post {
 
 body.c8-schedule .week-cell .cal-post-body,
 body.c8-schedule .day-cell .cal-post-body,
-body.c8-schedule .month-cell .cal-post-body,
 body.c8-schedule .phone-slot .cal-post-body,
 body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
 body.c8-schedule .day-cell .cal-post:not(.is-draft) .cal-post-body,
 body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body,
 body.c8-schedule .day-cell .cal-post.is-draft .cal-post-body {
+  height: 30px;
+  min-height: 30px;
+  padding: 6px 8px;
+  border-width: 1.5px !important;
+  border-radius: 10px !important;
+  align-items: center;
+  overflow: hidden;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+body.c8-schedule .month-cell .cal-post-body,
+body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
+body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
   height: 26px;
   min-height: 26px;
-  padding: 4px 6px 4px 5px;
+  padding: 4px 6px;
   border-width: 1.2px !important;
   border-radius: 8px !important;
   align-items: center;
   overflow: hidden;
   gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 body.c8-schedule .cal-chip-when {
@@ -1277,4 +1347,447 @@ body.c8-schedule .day-cell:has(.cal-col.is-past),
 body.c8-schedule .phone-slot:has(.cal-col.is-past) {
   background: transparent !important;
   background-image: none !important;
+}
+
+body.c8-schedule .week-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+body.c8-schedule .week-dow,
+body.c8-schedule .week-num {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+body.c8-schedule .c8-day-label {
+  grid-column: 1 / -1;
+  padding: 10px 16px 6px;
+  color: var(--c8-ink);
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.32px;
+  line-height: 1.05;
+}
+
+@media (min-width: 768px) {
+  body.c8-schedule .phone-week {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  body.c8-schedule .app-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'head actions'
+      'filters filters'
+      'well well';
+    align-items: end;
+    column-gap: 20px;
+    row-gap: 16px;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    padding: 30px 28px 20px;
+  }
+
+  body.c8-schedule .calendar-panel {
+    display: contents;
+  }
+
+  body.c8-schedule .c8-cal-head {
+    grid-area: head;
+    align-self: end;
+    margin-bottom: 6px;
+  }
+
+  body.c8-schedule .channel-strip {
+    grid-area: actions;
+    align-self: end;
+    margin-bottom: 6px;
+  }
+
+  body.c8-schedule .filters-bar {
+    grid-area: filters;
+    align-self: start;
+  }
+
+  body.c8-schedule .calendar-well {
+    grid-area: well;
+    align-self: stretch;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+  }
+
+  body.c8-schedule .calendar-well > .c8-week,
+  body.c8-schedule .calendar-well > .flex,
+  body.c8-schedule .calendar-well > div {
+    height: 100%;
+    min-height: 0;
+  }
+
+  body.c8-schedule .phone-create,
+  body.c8-schedule .channel-empty-phone {
+    display: none;
+  }
+
+  body.c8-schedule .week-grid,
+  body.c8-schedule .day-grid {
+    padding: 9px 13px 8px;
+  }
+
+  body.c8-schedule .cal-range-phone {
+    display: none !important;
+  }
+
+  body.c8-schedule .cal-range-desktop {
+    padding: 0;
+    font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+    font-variation-settings: 'opsz' 14, 'wdth' 100;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.48px;
+    color: var(--c8-ink);
+  }
+}
+
+@media (min-width: 1200px) {
+  body.c8-schedule .app-main {
+    padding: 36px 40px 24px;
+    row-gap: 16px;
+  }
+
+  body.c8-schedule .c8-cal-head,
+  body.c8-schedule .channel-strip {
+    margin-bottom: 18px;
+  }
+
+  body.c8-schedule .filters-bar {
+    margin-top: 0;
+  }
+
+  body.c8-schedule[data-c8-view='week'] .channel-rail:not(.is-open),
+  body.c8-schedule[data-c8-view='day'] .channel-rail:not(.is-open) {
+    display: none !important;
+  }
+
+  body.c8-schedule[data-c8-view='week'] .channel-avatars,
+  body.c8-schedule[data-c8-view='day'] .channel-avatars {
+    display: contents !important;
+  }
+
+  body.c8-schedule[data-c8-view='week'] .cal-customer,
+  body.c8-schedule[data-c8-view='day'] .cal-customer {
+    position: fixed;
+    z-index: 20;
+    left: 20px;
+    top: 620px;
+    bottom: auto;
+    width: 216px;
+    max-width: 216px;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .cal-customer,
+  body.c8-schedule[data-c8-view='list'] .cal-customer {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    bottom: 0;
+    width: 236px;
+    max-width: 236px;
+    margin: 0;
+  }
+
+  body.c8-schedule[data-c8-view='week'] .channels-trigger,
+  body.c8-schedule[data-c8-view='day'] .channels-trigger {
+    display: inline-flex !important;
+    position: fixed;
+    z-index: 20;
+    left: 20px;
+    top: 580px;
+    bottom: auto;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--c8-line);
+    border-radius: 10px;
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .app-main,
+  body.c8-schedule[data-c8-view='list'] .app-main {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'head head actions'
+      'filters filters filters'
+      'rail well well';
+    column-gap: 16px;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .channel-rail,
+  body.c8-schedule[data-c8-view='list'] .channel-rail {
+    grid-area: rail;
+    display: flex !important;
+    position: relative;
+    width: 236px !important;
+    height: auto;
+    align-self: start;
+    max-height: 100%;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .channel-rail.sidebar,
+  body.c8-schedule[data-c8-view='list'] .channel-rail.sidebar {
+    width: 72px !important;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .channel-rail > div,
+  body.c8-schedule[data-c8-view='list'] .channel-rail > div {
+    position: relative;
+    height: auto;
+    max-height: 100%;
+    border: 1px solid var(--c8-line);
+    border-radius: 24px;
+    background: var(--c8-surface);
+    padding: 16px;
+    gap: 4px;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .channel-rail h2,
+  body.c8-schedule[data-c8-view='list'] .channel-rail h2 {
+    font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+    font-variation-settings: 'opsz' 14, 'wdth' 100;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    line-height: 1.05;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .channel-rail .channel-add,
+  body.c8-schedule[data-c8-view='list'] .channel-rail .channel-add {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: var(--c8-soft);
+    box-shadow: none;
+    flex: none;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .channel-rail .channel-add > div:last-child,
+  body.c8-schedule[data-c8-view='list'] .channel-rail .channel-add > div:last-child,
+  body.c8-schedule[data-c8-view='month'] .channel-rail .mt-auto,
+  body.c8-schedule[data-c8-view='list'] .channel-rail .mt-auto {
+    display: none;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .channels-trigger,
+  body.c8-schedule[data-c8-view='list'] .channels-trigger {
+    display: none !important;
+  }
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-nav,
+body.c8-schedule[data-c8-view='list'] .cal-list-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-nav > .cal-nav-arrow:first-child {
+  order: 1;
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-nav > .cal-nav-arrow:last-child {
+  order: 2;
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-range-label {
+  order: 3;
+  display: flex !important;
+  width: auto;
+  min-width: 0;
+  height: auto;
+  border: 0;
+  background: transparent !important;
+}
+
+body.c8-schedule[data-c8-view='month'] .date-range,
+body.c8-schedule[data-c8-view='list'] .date-range {
+  gap: 8px;
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-nav-arrow,
+body.c8-schedule[data-c8-view='list'] .cal-list-pager > div:first-child,
+body.c8-schedule[data-c8-view='list'] .cal-list-pager > div:last-child {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--c8-line);
+  background: var(--c8-surface) !important;
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-today > div > div {
+  height: 34px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-mode,
+body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode .cal-mode,
+body.c8-schedule[data-c8-view='list'] .cal-mode {
+  order: 3;
+  margin: 0 0 0 auto;
+  height: 38px;
+  padding: 4px !important;
+  gap: 2px;
+  border-radius: 999px;
+  background: var(--c8-soft) !important;
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-mode > button,
+body.c8-schedule[data-c8-view='list'] .cal-mode > button {
+  height: 30px;
+  min-height: 30px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c8-muted);
+  font-weight: 500;
+}
+
+body.c8-schedule[data-c8-view='month'] .cal-mode > button[aria-checked='true'],
+body.c8-schedule[data-c8-view='list'] .cal-mode > button[aria-checked='true'] {
+  border: 0;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-weight: 600;
+  box-shadow: 0 1px 1.5px rgba(18, 16, 22, 0.12);
+}
+
+body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 12px;
+}
+
+body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode .date-range {
+  display: contents;
+}
+
+body.c8-schedule[data-c8-view='list'] .cal-list-pager {
+  order: 1;
+}
+
+body.c8-schedule[data-c8-view='list'] .cal-customer,
+body.c8-schedule[data-c8-view='month'] .cal-customer {
+  order: 2;
+  flex: none;
+  max-width: 168px;
+}
+
+body.c8-schedule[data-c8-view='list'] .cal-list-states {
+  order: 4;
+  flex: 1 0 100%;
+  gap: 6px;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body.c8-schedule[data-c8-view='list'] .cal-list-states > div {
+  height: 34px;
+  min-width: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+body.c8-schedule[data-c8-view='list'] .cal-list-states .arc-selected {
+  border-color: var(--c8-ink);
+  background: var(--c8-ink);
+  color: var(--c8-on-ink);
+}
+
+body.c8-schedule[data-c8-view='list'] .date-range > .flex-1 {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .channels-trigger {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 20;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+    border: 1px solid var(--c8-line);
+    border-radius: 12px;
+    background: var(--c8-surface);
+  }
+}
+
+body.c8-schedule[data-c8-view='week'] .channel-rail.is-open,
+body.c8-schedule[data-c8-view='day'] .channel-rail.is-open {
+  display: flex !important;
+  position: fixed;
+  z-index: 80;
+  top: 36px;
+  left: 276px;
+  width: 320px !important;
+  height: calc(100vh - 72px);
+}
+
+body.c8-schedule .channels-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  border: 0;
+  background: rgba(18, 16, 22, 0.35);
+}
+
+body.c8-schedule[data-c8-view='list'] .cal-list-pager > div:nth-child(2) {
+  min-width: 0;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: transparent !important;
+  color: var(--c8-ink);
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.48px;
+  line-height: 1.05;
 }

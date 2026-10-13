@@ -488,6 +488,7 @@ export const DayView = () => {
       <div className="relative flex-1 min-h-0">
         <div className="day-scroll absolute start-0 top-0 w-full h-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
           <div className="day-grid">
+            <div className="c8-day-label">{currentDay.format('ddd, MMM D')}</div>
             {dayHours.map((hour) => {
               const rows = options.filter(
                 (option) => Math.floor(option[0].time / 60) === hour
@@ -570,7 +571,7 @@ export const WeekView = () => {
       <div className="flex-1 relative min-h-0">
         <div
           ref={scrollerRef}
-          className="week-grid grid [grid-template-columns:64px_repeat(7,minmax(0,1fr))] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor"
+          className="week-grid grid [grid-template-columns:60px_repeat(7,minmax(0,1fr))] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor"
         >
           <div className="week-corner sticky top-0 z-10" />
           {localizedDays.map((day) => (
@@ -784,6 +785,12 @@ export const ListView = () => {
 
 export const Calendar = () => {
   const { display } = useCalendar();
+  useEffect(() => {
+    document.body.dataset.c8View = display;
+    return () => {
+      delete document.body.dataset.c8View;
+    };
+  }, [display]);
   return (
     <>
       {display === 'list' ? (
@@ -1379,7 +1386,7 @@ const CalendarItem: FC<{
             {dayjs
               .utc(post.publishDate)
               .tz(getTimezone())
-              .format(isUSCitizen() ? 'h:mm A' : 'HH:mm')}
+              .format('h:mm')}
           </span>
         ) : null}
         <div className="w-full flex-1 min-w-0">

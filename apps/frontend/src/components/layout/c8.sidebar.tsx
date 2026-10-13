@@ -182,9 +182,7 @@ export const C8Sidebar = ({
           <span className="c8-side-avatar">{initialsOf(name || email)}</span>
           <span className="c8-side-user-copy">
             <span className="c8-side-user-name">{name || email}</span>
-            <span className="c8-side-user-handle">
-              {email ? email.split('@')[0] : 'crea8.one'}
-            </span>
+            <span className="c8-side-user-handle">crea8.one</span>
           </span>
         </button>
         <NotificationComponent />

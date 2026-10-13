@@ -291,8 +291,8 @@ export const Filters = () => {
   const listStateOptions: { value: ListStateFilter; label: string }[] = [
     { value: 'all', label: t('all', 'All') },
     { value: 'scheduled', label: t('scheduled', 'Scheduled') },
-    { value: 'draft', label: t('draft', 'Draft') },
     { value: 'published', label: t('published', 'Published') },
+    { value: 'draft', label: t('drafts', 'Drafts') },
   ];
 
   const previousPage = useCallback(() => {
@@ -319,7 +319,11 @@ export const Filters = () => {
     <div className="c8-cal-head">
       <div className="c8-cal-kicker">
         <span className="c8-cal-sticker">{t('schedule', 'Schedule')}</span>
-        {!isListView ? <span className="c8-cal-when">{getDisplayText()}</span> : null}
+        <span className="c8-cal-when">
+          {isListView
+            ? t('upcoming_posts', 'Upcoming posts')
+            : getDisplayText()}
+        </span>
       </div>
       <h1 className="c8-cal-title">{t('calendar', 'Calendar')}</h1>
     </div>
