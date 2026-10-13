@@ -55,6 +55,21 @@ export type McpAuth = 'oauth' | 'apikey';
 export const getMcpOauthUrl = (mcpBase: string) =>
   `${mcpBase}/mcp-oauth-dynamic`;
 
+export const resolveMcpBase = (
+  mcpUrl: string | undefined,
+  backendUrl: string,
+  frontEndUrl: string
+) => {
+  const configured = (mcpUrl || '').replace(/\/$/, '');
+  if (configured) {
+    return configured;
+  }
+  if ((frontEndUrl || '').includes('crea8.one')) {
+    return 'https://mcp.crea8.one';
+  }
+  return backendUrl;
+};
+
 export const isRemoteMcpClient = (client: string): client is RemoteMcpClient =>
   client in remoteMcpClients;
 
@@ -445,7 +460,7 @@ const PublicApiContent = () => {
     return null;
   }
 
-  const mcpBase = mcpUrl || backendUrl;
+  const mcpBase = resolveMcpBase(mcpUrl, backendUrl, frontEndUrl);
 
   return (
     <div className="settings-stack">
@@ -518,6 +533,28 @@ const PublicApiContent = () => {
               {t('rotate_key', 'Rotate Key')}
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="settings-card">
+        <div className="p-[20px] flex flex-col gap-[12px]">
+          <div className="text-[15px] font-[600]">MCP</div>
+          <code className="text-[14px] break-all">{`${mcpBase}/mcp`}</code>
+          <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all leading-[1.6]">{`Bearer
+${mcpBase}/mcp
+Authorization: Bearer <API key>
+
+Key in the URL
+${mcpBase}/mcp/<API key>
+
+OAuth
+${mcpBase}/mcp-oauth-dynamic
+
+ChatGPT
+${mcpBase}/mcp-oauth-chatgpt
+
+Claude directory
+${mcpBase}/mcp-oauth-claude`}</pre>
         </div>
       </div>
 

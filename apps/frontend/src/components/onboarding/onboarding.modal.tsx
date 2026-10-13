@@ -21,6 +21,7 @@ import {
   McpAuth,
   McpClient,
   mcpClients,
+  resolveMcpBase,
 } from '@gitroom/frontend/components/public-api/public.component';
 import { McpClientIcon } from '@gitroom/frontend/components/public-api/mcp.client.icons';
 
@@ -275,7 +276,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
 }) => {
   const t = useT();
   const user = useUser();
-  const { backendUrl, mcpUrl } = useVariables();
+  const { backendUrl, frontEndUrl, mcpUrl } = useVariables();
   const [tab, setTab] = useState<OnboardingTab>('Claude');
   const [otherAgent, setOtherAgent] = useState<McpClient>(otherAgents[0]);
   // The client the cards describe: the tab itself, or the pick inside "Other agents"
@@ -283,7 +284,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
     tab === otherTab ? otherAgent : tab;
   const [auth, setAuth] = useState<McpAuth>('oauth');
   const [revealed, setRevealed] = useState(false);
-  const mcpBase = mcpUrl || backendUrl;
+  const mcpBase = resolveMcpBase(mcpUrl, backendUrl, frontEndUrl);
   const apiKey = user?.publicApi || '';
   const available = !!apiKey && !!user?.tier?.public_api;
 
