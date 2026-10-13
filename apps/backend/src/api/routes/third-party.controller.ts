@@ -162,7 +162,7 @@ export class ThirdPartyController {
         item.name || file.split('/').pop(),
         file
       );
-      results.push(saved);
+      results.push(await this._mediaService.toClient(saved));
     }
 
     return results;

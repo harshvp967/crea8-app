@@ -24,6 +24,7 @@ import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exceptio
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 import { mcpCorsOrigins } from '@gitroom/nestjs-libraries/chat/mcp.public.origin';
+import { csrfGuard } from '@gitroom/nestjs-libraries/security/csrf';
 
 async function start() {
   const app = await NestFactory.create(AppModule, {
@@ -42,11 +43,14 @@ async function start() {
         'x-postiz-org',
         'x-postiz-include-deleted',
         'x-copilotkit-runtime-client-gql-version',
+        'x-csrf-token',
       ],
       exposedHeaders: [
         'reload',
         'onboarding',
         'activate',
+        'x-csrf-token',
+        'x-csrf-required',
         'x-copilotkit-runtime-client-gql-version',
         ...(process.env.NOT_SECURED ? ['auth', 'showorg', 'impersonate'] : []),
       ],
@@ -96,6 +100,7 @@ async function start() {
   });
 
   app.use(cookieParser());
+  app.use(csrfGuard);
   app.use(compression());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
   app.useGlobalFilters(new PostValidationExceptionFilter());

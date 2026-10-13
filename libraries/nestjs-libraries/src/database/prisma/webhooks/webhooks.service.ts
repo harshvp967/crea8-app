@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { WebhooksRepository } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.repository';
 import { WebhooksDto } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
+import { postWebhookSecret } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhook.signature';
 
 @Injectable()
 export class WebhooksService {
@@ -10,8 +11,12 @@ export class WebhooksService {
     return this._webhooksRepository.getTotal(orgId);
   }
 
-  getWebhooks(orgId: string) {
-    return this._webhooksRepository.getWebhooks(orgId);
+  async getWebhooks(orgId: string) {
+    const rows = await this._webhooksRepository.getWebhooks(orgId);
+    return rows.map((row) => ({
+      ...row,
+      signingSecret: postWebhookSecret(row.id) || null,
+    }));
   }
 
   createWebhook(orgId: string, body: WebhooksDto) {

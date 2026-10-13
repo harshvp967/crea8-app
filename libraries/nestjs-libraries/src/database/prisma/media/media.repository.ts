@@ -1,10 +1,20 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import {
+  canonicalizeStoredMedia,
+  isSafeUploadRelative,
+  mentionsUploadRelative,
+} from '@gitroom/nestjs-libraries/upload/media.access';
 
 @Injectable()
 export class MediaRepository {
-  constructor(private _media: PrismaRepository<'media'>) {}
+  constructor(
+    private _media: PrismaRepository<'media'>,
+    private _post: PrismaRepository<'post'>,
+    private _linkPage: PrismaRepository<'linkPage'>,
+    private _linkBlock: PrismaRepository<'linkBlock'>
+  ) {}
 
   saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
     return this._media.model.media.create({
@@ -15,7 +25,7 @@ export class MediaRepository {
           },
         },
         name: fileName,
-        path: filePath,
+        path: canonicalizeStoredMedia(filePath),
         originalName: originalName || null,
       },
       select: {
@@ -169,5 +179,74 @@ export class MediaRepository {
       pages,
       results,
     };
+  }
+
+  // The file name is unguessable. Match it against this org's media, posts,
+  // and link page so a logged-in member of another org cannot read it.
+  async orgOwnsLocalPath(orgId: string, relative: string) {
+    if (!isSafeUploadRelative(relative)) {
+      return false;
+    }
+    const owns = (value: string | null | undefined) =>
+      mentionsUploadRelative(value, relative);
+    const media = await this._media.model.media.findMany({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+        OR: [
+          { path: { contains: `/${relative}` } },
+          { path: relative },
+          { thumbnail: { contains: `/${relative}` } },
+          { thumbnail: relative },
+        ],
+      },
+      select: { path: true, thumbnail: true },
+      take: 20,
+    });
+    if (media.some((row) => owns(row.path) || owns(row.thumbnail))) {
+      return true;
+    }
+    const posts = await this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+        image: { contains: `/${relative}` },
+      },
+      select: { image: true },
+      take: 20,
+    });
+    if (posts.some((row) => owns(row.image))) {
+      return true;
+    }
+    const pages = await this._linkPage.model.linkPage.findMany({
+      where: {
+        organizationId: orgId,
+        OR: [
+          { avatarPath: { contains: `/${relative}` } },
+          { avatarPath: relative },
+          { backgroundImage: { contains: `/${relative}` } },
+          { backgroundImage: relative },
+        ],
+      },
+      select: { avatarPath: true, backgroundImage: true },
+      take: 20,
+    });
+    if (pages.some((row) => owns(row.avatarPath) || owns(row.backgroundImage))) {
+      return true;
+    }
+    const blocks = await this._linkBlock.model.linkBlock.findMany({
+      where: {
+        deletedAt: null,
+        page: { organizationId: orgId },
+        OR: [
+          { thumbnail: { contains: `/${relative}` } },
+          { thumbnail: relative },
+          { body: { contains: `/${relative}` } },
+        ],
+      },
+      select: { thumbnail: true, body: true },
+      take: 20,
+    });
+    return blocks.some((row) => owns(row.thumbnail) || owns(row.body));
   }
 }

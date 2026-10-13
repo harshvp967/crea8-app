@@ -60,6 +60,8 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { countLength } from '@gitroom/helpers/utils/count.length';
+import { canonicalizeImageList } from '@gitroom/nestjs-libraries/upload/media.access';
+import { deliverStoredMedia } from '@gitroom/nestjs-libraries/upload/media.deliver';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -352,7 +354,12 @@ export class PostsService {
     );
   }
 
-  async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
+  async updateMedia(
+    id: string,
+    imagesList: any[],
+    convertToJPEG = false,
+    access: 'private' | 'public' = 'private'
+  ) {
     try {
       let imageUpdateNeeded = false;
       const getImageList = await Promise.all(
@@ -450,15 +457,32 @@ export class PostsService {
           })
       );
 
+      const canonicalList = canonicalizeImageList(getImageList);
       if (imageUpdateNeeded) {
         await this._postRepository.updateImages(
           id,
-          JSON.stringify(getImageList)
+          JSON.stringify(canonicalList)
         );
       }
 
-      return getImageList;
+      return Promise.all(
+        (Array.isArray(canonicalList) ? canonicalList : []).map(async (item) => {
+          if (!item || typeof item !== 'object') {
+            return item;
+          }
+          const row = item as { path?: string; url?: string };
+          if (typeof row.path !== 'string' || row.path.indexOf('http') === -1) {
+            return item;
+          }
+          const readable = await deliverStoredMedia(row.path, access);
+          return { ...row, path: readable, url: readable };
+        })
+      );
     } catch (err: any) {
+      // A failed private signature must not hand back the stored public URL.
+      if (err?.name === 'PrivateMediaSignError') {
+        throw err;
+      }
       return imagesList;
     }
   }

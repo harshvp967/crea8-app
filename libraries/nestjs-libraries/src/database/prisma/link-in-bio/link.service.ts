@@ -1,4 +1,6 @@
 import { createHmac, randomBytes } from 'crypto';
+import { canonicalizeStoredMedia } from '@gitroom/nestjs-libraries/upload/media.access';
+import { deliverStoredMedia } from '@gitroom/nestjs-libraries/upload/media.deliver';
 import {
   BadRequestException,
   HttpException,
@@ -149,13 +151,17 @@ export class LinkService {
     const next = await this._repository.update(record.id, {
       ...(body.name !== undefined ? { name: body.name.trim().slice(0, 30) } : {}),
       ...(body.bio !== undefined ? { bio: body.bio.trim() } : {}),
-      ...(body.avatarPath !== undefined ? { avatarPath: body.avatarPath.trim() } : {}),
+      ...(body.avatarPath !== undefined
+        ? { avatarPath: canonicalizeStoredMedia(body.avatarPath.trim()) }
+        : {}),
       ...(body.theme !== undefined ? { theme: body.theme } : {}),
       ...(body.buttonStyle !== undefined ? { buttonStyle: body.buttonStyle } : {}),
       ...(body.font !== undefined ? { font: body.font } : {}),
       ...(body.backgroundMode !== undefined ? { backgroundMode: body.backgroundMode } : {}),
       ...(body.backgroundColor !== undefined ? { backgroundColor: body.backgroundColor.trim() } : {}),
-      ...(body.backgroundImage !== undefined ? { backgroundImage: body.backgroundImage.trim() } : {}),
+      ...(body.backgroundImage !== undefined
+        ? { backgroundImage: canonicalizeStoredMedia(body.backgroundImage.trim()) }
+        : {}),
       ...(body.seoTitle !== undefined ? { seoTitle: body.seoTitle.trim() } : {}),
       ...(body.seoDescription !== undefined ? { seoDescription: body.seoDescription.trim() } : {}),
       ...(body.isPublic !== undefined ? { isPublic: body.isPublic } : {}),
@@ -208,7 +214,12 @@ export class LinkService {
   async posts(org: PlanOrg) {
     const record = await this.ensure(org);
     const rows = await this._repository.publishedPosts(org.id);
-    return rows.map((post) => this.postCard(post, record.timezone));
+    return Promise.all(
+      rows.map(async (post) => {
+        const card = this.postCard(post, record.timezone);
+        return { ...card, image: await this.readable(card.image, 'private') };
+      })
+    );
   }
 
   async saveBlock(org: PlanOrg, id: string | null, body: SaveLinkBlockDto) {
@@ -1144,7 +1155,14 @@ export class LinkService {
     const payload = body.faq
       ? { items: normalizeFaq(body.faq) }
       : body.images
-      ? { images: normalizeImages({ images: body.images }) }
+      ? {
+          images: normalizeImages({
+            images: body.images.map((image) => ({
+              ...image,
+              path: canonicalizeStoredMedia(image.path || ''),
+            })),
+          }),
+        }
       : body.formButton !== undefined || body.formAskName !== undefined
       ? { button: (body.formButton || 'Send').trim() || 'Send', askName: !!body.formAskName }
       : type === 'CONTACT_DETAILS' && (body.detailEmail !== undefined || !current)
@@ -1187,7 +1205,9 @@ export class LinkService {
       ...(body.startsLocal !== undefined ? { startsAt } : {}),
       ...(body.endsLocal !== undefined ? { endsAt } : {}),
       ...(body.postId ? { postId: body.postId } : {}),
-      ...(body.thumbnail !== undefined ? { thumbnail: (body.thumbnail || '').trim() } : {}),
+      ...(body.thumbnail !== undefined
+        ? { thumbnail: canonicalizeStoredMedia((body.thumbnail || '').trim()) }
+        : {}),
       ...(body.iconMode !== undefined ? { iconMode: type === 'LINK' ? body.iconMode : '' } : {}),
       ...(body.spotlight !== undefined ? { spotlight: type === 'LINK' ? body.spotlight : false } : {}),
       ...(body.body !== undefined ? { body: (body.body || '').trim() } : {}),
@@ -1197,6 +1217,21 @@ export class LinkService {
       ...(lockHash !== undefined ? { lockHash } : {}),
       ...(payload ? { payload: payload as Prisma.InputJsonValue } : {}),
     };
+  }
+
+  private async readable(value: string, access: 'private' | 'public') {
+    const raw = (value || '').trim();
+    if (!raw) {
+      return '';
+    }
+    const next = await deliverStoredMedia(raw, access);
+    if (!next) {
+      return raw.startsWith('http') || raw.startsWith('/') ? publicAsset(raw) : raw;
+    }
+    if (next === raw && !raw.startsWith('http') && !raw.startsWith('/uploads')) {
+      return publicAsset(raw);
+    }
+    return next;
   }
 
   private async toEditor(record: LinkPageRecord) {
@@ -1213,13 +1248,13 @@ export class LinkService {
       slug: record.slug,
       name: record.name.slice(0, 30),
       bio: record.bio,
-      avatarPath: record.avatarPath,
+      avatarPath: await this.readable(record.avatarPath, 'private'),
       theme: record.theme,
       buttonStyle: record.buttonStyle,
       font: record.font,
       backgroundMode: record.backgroundMode,
       backgroundColor: record.backgroundColor,
-      backgroundImage: record.backgroundImage,
+      backgroundImage: await this.readable(record.backgroundImage, 'private'),
       seoTitle: record.seoTitle,
       seoDescription: record.seoDescription,
       isPublic: record.isPublic,
@@ -1272,7 +1307,10 @@ export class LinkService {
           hasSecret: !!record.leadWebhookSecret,
         },
       },
-      blocks: record.blocks.map((block) => ({
+      blocks: await Promise.all(record.blocks.map(async (block) => {
+        const images = block.type === 'IMAGE_CAROUSEL' ? normalizeImages(block.payload) : [];
+        const post = block.post ? this.postCard(block.post, record.timezone) : null;
+        return {
         id: block.id,
         type: block.type,
         position: block.position,
@@ -1286,19 +1324,23 @@ export class LinkService {
         postId: block.postId,
         state: blockState(block),
         clicks: byBlock.get(block.id) || 0,
-        thumbnail: block.thumbnail,
+        thumbnail: await this.readable(block.thumbnail, 'private'),
         iconMode: block.iconMode,
         spotlight: block.spotlight,
         body: block.body,
         lock: { type: block.lockType, hasPassword: !!block.lockHash },
         faq: block.type === 'FAQ' ? normalizeFaq(block.payload) : [],
-        images: block.type === 'IMAGE_CAROUSEL' ? normalizeImages(block.payload) : [],
+        images: await Promise.all(images.map(async (image) => ({
+          ...image,
+          path: await this.readable(image.path, 'private'),
+        }))),
         form: block.type === 'CONTACT_FORM' ? normalizeForm(block) : null,
         details: block.type === 'CONTACT_DETAILS' ? normalizeDetails(block.payload) : null,
         discount: block.type === 'DISCOUNT' ? normalizeDiscount(block) : null,
         events: block.type === 'EVENTS' ? normalizeEvents(block.payload) : [],
         ...normalizeLinkExtras(block.type === 'LINK' ? block.payload : {}),
-        post: block.post ? this.postCard(block.post, record.timezone) : null,
+        post: post ? { ...post, image: await this.readable(post.image, 'private') } : null,
+        };
       })),
     };
   }
@@ -1319,18 +1361,19 @@ export class LinkService {
         })
       : [];
     const capture = visible.some((block) => block.type === 'EMAIL_CAPTURE');
-    const blocks = visible.map((block) => {
+    const blocks = await Promise.all(visible.map(async (block) => {
       const view = presentPublicBlock(block, open, visitor);
+      const post = block.post ? this.postCard(block.post, record.timezone, true) : null;
       return {
         ...view,
-        thumbnail: view.thumbnail.startsWith('http') ? view.thumbnail : publicAsset(view.thumbnail),
-        images: view.images.map((image) => ({
+        thumbnail: await this.readable(view.thumbnail, 'public'),
+        images: await Promise.all(view.images.map(async (image) => ({
           ...image,
-          path: image.path.startsWith('http') ? image.path : publicAsset(image.path),
-        })),
-        post: block.post ? this.postCard(block.post, record.timezone, true) : null,
+          path: await this.readable(image.path, 'public'),
+        }))),
+        post: post ? { ...post, image: await this.readable(post.image, 'public') } : null,
       };
-    });
+    }));
     const redirect = open
       ? visible.find((block) => block.type === 'LINK' && block.lockType === 'NONE' && normalizeLinkExtras(block.payload).priorityMode === 'redirect')
       : undefined;
@@ -1338,13 +1381,13 @@ export class LinkService {
       slug: record.slug,
       name: record.name.slice(0, 30),
       bio: record.bio,
-      avatarPath: publicAsset(record.avatarPath),
+      avatarPath: await this.readable(record.avatarPath, 'public'),
       theme: record.theme,
       buttonStyle: record.buttonStyle,
       font: record.font,
       backgroundMode: record.backgroundMode,
       backgroundColor: record.backgroundColor,
-      backgroundImage: publicAsset(record.backgroundImage),
+      backgroundImage: await this.readable(record.backgroundImage, 'public'),
       design,
       seoTitle: record.seoTitle,
       seoDescription: record.seoDescription,

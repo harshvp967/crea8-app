@@ -21,7 +21,7 @@ export interface IUploadProvider {
   removeFile(filePath: string): Promise<void>;
   // Presigned URLs handed to the media processor, which has no storage
   // credentials; only cloud storage can mint them
-  signDownloadUrl?(fileName: string): Promise<string>;
+  signDownloadUrl?(fileName: string, expiresIn?: number): Promise<string>;
   signUploadUrl?(fileName: string, contentType: string): Promise<string>;
   // Public URL of a key the media processor wrote through a presigned upload
   publicUrl?(fileName: string): string;

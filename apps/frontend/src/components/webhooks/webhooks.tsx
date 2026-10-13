@@ -89,6 +89,11 @@ export const Webhooks: FC = () => {
               <b>{p.name}</b>
               <span className="settings-muted" data-label={t('url', 'URL')}>
                 {p.url}
+                {p.signingSecret ? (
+                  <span className="block">
+                    {t('signing_secret', 'Signing secret')}: {p.signingSecret}
+                  </span>
+                ) : null}
               </span>
               <div className="settings-item-actions">
                 <Button secondary className="settings-mini" onClick={addWebhook(p)}>

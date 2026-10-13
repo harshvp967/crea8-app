@@ -18,6 +18,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { Request, Response } from 'express';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -104,7 +105,7 @@ export class PublicController {
               httpOnly: true,
             }
           : {}),
-        sameSite: 'none',
+        sameSite: authCookieSameSite(),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
     }
@@ -118,7 +119,7 @@ export class PublicController {
               httpOnly: true,
             }
           : {}),
-        sameSite: 'none',
+        sameSite: authCookieSameSite(),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
       });
     }

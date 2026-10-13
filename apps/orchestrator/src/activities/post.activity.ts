@@ -18,6 +18,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { postWebhookHeaders } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhook.signature';
 import { TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
@@ -247,7 +248,8 @@ export class PostActivity {
               media: await this._postService.updateMedia(
                 p.id,
                 JSON.parse(p.image || '[]'),
-                getIntegration?.convertToJPEG || false
+                getIntegration?.convertToJPEG || false,
+                'public'
               ),
             }))
           ),
@@ -369,7 +371,8 @@ export class PostActivity {
         media: await this._postService.updateMedia(
           p.id,
           JSON.parse(p.image || '[]'),
-          getIntegration?.convertToJPEG || false
+          getIntegration?.convertToJPEG || false,
+          'public'
         ),
       }))
     );
@@ -510,12 +513,14 @@ export class PostActivity {
             // webhook.url is validated at save time, but DNS can change
             // between then and now - pin resolution like every other
             // user-influenced outbound request.
+            const payload = JSON.stringify(post);
             await fetch(webhook.url, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
+                ...postWebhookHeaders(payload, webhook.id),
               },
-              body: JSON.stringify(post),
+              body: payload,
               // @ts-ignore — undici option, not in lib.dom fetch types
               dispatcher: getSsrfSafeDispatcher(),
             });

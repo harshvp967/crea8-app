@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Post,
   Query,
@@ -26,6 +27,8 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
+import { LocalUploadPathDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
+import { deliverStoredMedia } from '@gitroom/nestjs-libraries/upload/media.deliver';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -82,7 +85,9 @@ export class MediaController {
 
     const file = await this.storage.uploadSimple(image.output);
 
-    return this._mediaService.saveFile(org.id, file.split('/').pop(), file);
+    return this._mediaService.toClient(
+      await this._mediaService.saveFile(org.id, file.split('/').pop(), file)
+    );
   }
 
   @Post('/upload-server')
@@ -94,12 +99,26 @@ export class MediaController {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
-    return this._mediaService.saveFile(
-      org.id,
-      file.filename,
-      file.path,
-      file.originalname
+    return this._mediaService.toClient(
+      await this._mediaService.saveFile(
+        org.id,
+        file.filename,
+        file.path,
+        file.originalname
+      )
     );
+  }
+
+  @Get('/authorize-local')
+  async authorizeLocal(
+    @GetOrgFromRequest() org: Organization,
+    @Query() query: LocalUploadPathDto
+  ) {
+    const owned = await this._mediaService.orgOwnsLocalPath(org.id, query.path);
+    if (!owned) {
+      throw new NotFoundException();
+    }
+    return { ok: true };
   }
 
   @Post('/save-media')
@@ -112,20 +131,24 @@ export class MediaController {
     if (!name) {
       return false;
     }
-    return this._mediaService.saveFile(
-      org.id,
-      name,
-      mediaPublicUrl(name),
-      originalName || undefined
+    return this._mediaService.toClient(
+      await this._mediaService.saveFile(
+        org.id,
+        name,
+        mediaPublicUrl(name),
+        originalName || undefined
+      )
     );
   }
 
   @Post('/information')
-  saveMediaInformation(
+  async saveMediaInformation(
     @GetOrgFromRequest() org: Organization,
     @Body() body: SaveMediaInformationDto
   ) {
-    return this._mediaService.saveMediaInformation(org.id, body);
+    return this._mediaService.toClient(
+      await this._mediaService.saveMediaInformation(org.id, body)
+    );
   }
 
   @Post('/upload-simple')
@@ -140,14 +163,16 @@ export class MediaController {
     }
 
     if (preventSave === 'true') {
-      return { path: file.path };
+      return { path: await deliverStoredMedia(file.path, 'private') };
     }
 
-    return this._mediaService.saveFile(
-      org.id,
-      file.filename,
-      file.path,
-      file.originalname
+    return this._mediaService.toClient(
+      await this._mediaService.saveFile(
+        org.id,
+        file.filename,
+        file.path,
+        file.originalname
+      )
     );
   }
 
@@ -176,7 +201,12 @@ export class MediaController {
       originalName || undefined
     );
 
-    res.status(200).json({ ...upload, saved: saveFile });
+    const location = (upload as { Location?: string }).Location;
+    res.status(200).json({
+      ...upload,
+      Location: saveFile?.path || location,
+      saved: saveFile,
+    });
   }
 
   @Get('/:id/status')

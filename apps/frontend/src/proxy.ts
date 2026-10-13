@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import acceptLanguage from 'accept-language';
 import {
@@ -196,7 +197,7 @@ export async function proxy(request: NextRequest) {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: false,
+            sameSite: authCookieSameSite(),
           }
         : {}),
       maxAge: -1,
@@ -244,7 +245,7 @@ export async function proxy(request: NextRequest) {
               path: '/',
               secure: true,
               httpOnly: true,
-              sameSite: false,
+              sameSite: authCookieSameSite(),
               domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
             }
           : {}),
@@ -274,7 +275,7 @@ export async function proxy(request: NextRequest) {
                 path: '/',
                 secure: true,
                 httpOnly: true,
-                sameSite: false,
+                sameSite: authCookieSameSite(),
                 domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
               }
             : {}),
