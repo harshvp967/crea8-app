@@ -118,13 +118,21 @@ body.c8-schedule .channel-invite {
 }
 
 @media (min-width: 640px) {
+  body.c8-schedule .channel-strip .channel-add,
+  body.c8-schedule .channel-strip .strip-create,
+  body.c8-schedule .channel-strip .strip-create button {
+    flex: none;
+  }
+
   body.c8-schedule .channel-strip .channel-add {
     width: 162px;
+    min-width: 162px;
     padding: 0 16px;
   }
 
   body.c8-schedule .channel-strip .strip-create button {
     width: 156px;
+    min-width: 156px;
     padding: 0 16px;
   }
 }
@@ -632,7 +640,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
     min-height: 980px;
     overflow-x: hidden !important;
     overflow-y: visible !important;
-    grid-template-columns: 48px repeat(3, minmax(0, 1fr));
+    grid-template-columns: 58px repeat(3, minmax(0, 1fr));
   }
 
   body.c8-schedule .week-time,
@@ -1444,6 +1452,10 @@ body.c8-schedule .c8-day-label {
   body.c8-schedule .channel-strip {
     grid-area: actions;
     align-self: end;
+    justify-self: end;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
     margin-bottom: 6px;
   }
 
@@ -1514,8 +1526,12 @@ body.c8-schedule .c8-day-label {
   }
 
   body.c8-schedule[data-c8-view='week'] .channel-avatars,
-  body.c8-schedule[data-c8-view='day'] .channel-avatars {
-    display: contents !important;
+  body.c8-schedule[data-c8-view='day'] .channel-avatars,
+  body.c8-schedule:not([data-c8-view]) .channel-avatars,
+  body.c8-schedule[data-c8-view='week'] .channel-strip .channel-chip,
+  body.c8-schedule[data-c8-view='day'] .channel-strip .channel-chip,
+  body.c8-schedule:not([data-c8-view]) .channel-strip .channel-chip {
+    display: none !important;
   }
 
   body.c8-schedule[data-c8-view='week'] .cal-customer,
@@ -1903,6 +1919,11 @@ body.c8-schedule .week-time,
 body.c8-schedule .day-time {
   border-top: 1px solid var(--c8-line);
   align-items: flex-start;
+  white-space: nowrap;
+}
+
+body.c8-schedule .phone-slot-time {
+  white-space: nowrap;
 }
 
 body.c8-schedule .phone-week-arrow:disabled {
@@ -1922,7 +1943,17 @@ body.c8-schedule .phone-week-arrow:disabled {
   body.c8-schedule .week-grid.is-phone-slice {
     width: 100% !important;
     overflow-x: hidden !important;
-    grid-template-columns: 48px repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: 58px repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  body.c8-schedule .week-time,
+  body.c8-schedule .day-time,
+  body.c8-schedule .phone-slot-time {
+    white-space: nowrap !important;
+    padding: 4px 0 0 !important;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0;
   }
 }
 
