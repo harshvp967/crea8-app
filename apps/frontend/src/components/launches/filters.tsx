@@ -1,7 +1,6 @@
 'use client';
 
 import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
-import { C8Chip } from '@gitroom/react/c8/chip';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
@@ -172,20 +171,6 @@ export const Filters = () => {
     },
     [setDay, setWeek, setMonth, setList]
   );
-
-  const setCalendarView = useCallback(() => {
-    if (calendar.display !== 'list') {
-      return;
-    }
-
-    const range = getDateRange('week');
-    calendar.setFilters({
-      startDate: range.startDate,
-      endDate: range.endDate,
-      display: 'week',
-      customer: calendar.customer,
-    });
-  }, [calendar]);
 
   const setCustomer = useCallback(
     (customer: string) => {
@@ -432,43 +417,46 @@ export const Filters = () => {
       />
       </div>
       <div
-        className="cal-view flex shrink-0 flex-wrap gap-[6px]"
+        className="cal-mode"
         role="radiogroup"
         aria-label={t('calendar_view', 'Calendar view')}
+        onKeyDown={(event) => {
+          if (
+            event.key !== 'ArrowRight' &&
+            event.key !== 'ArrowLeft' &&
+            event.key !== 'ArrowDown' &&
+            event.key !== 'ArrowUp'
+          ) {
+            return;
+          }
+          event.preventDefault();
+          const current = viewOptions.findIndex(
+            (option) => option.value === calendar.display
+          );
+          const delta =
+            event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+          const next =
+            viewOptions[
+              (current + delta + viewOptions.length) % viewOptions.length
+            ];
+          setDisplay(next.value);
+        }}
       >
-        {viewOptions.map((option) => (
-          <C8Chip
-            key={option.value}
-            active={calendar.display === option.value}
-            onClick={() => setDisplay(option.value)}
-          >
-            {option.label}
-          </C8Chip>
-        ))}
-      </div>
-      <div className="cal-mode flex flex-row shrink-0 p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
-        <div
-          onClick={setCalendarView}
-          className={clsx(
-            'h-[30px] cursor-pointer flex justify-center items-center w-[36px] text-center rounded-[14px] transition-colors',
-            !isListView
-              ? 'arc-selected'
-              : 'text-textItemBlur hover:text-newTextColor'
-          )}
-        >
-          <HugeIcon name="calendar" size={18} />
-        </div>
-        <div
-          onClick={setList}
-          className={clsx(
-            'h-[30px] flex justify-center items-center cursor-pointer w-[36px] text-center rounded-[14px] transition-colors',
-            isListView
-              ? 'arc-selected'
-              : 'text-textItemBlur hover:text-newTextColor'
-          )}
-        >
-          <HugeIcon name="list-bullet" size={18} />
-        </div>
+        {viewOptions.map((option) => {
+          const selected = calendar.display === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setDisplay(option.value)}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
     </div>
     </>

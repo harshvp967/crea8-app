@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 
@@ -27,6 +27,7 @@ export function C8Dialog({
   titleSize?: 'h1' | 'h2';
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +78,7 @@ export function C8Dialog({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="c8-dialog-title"
+        aria-labelledby={titleId}
         tabIndex={-1}
         className={clsx(
           'relative z-[1] flex w-full flex-col gap-[18px] border-c8-sticker border-c8-hard bg-c8-surface outline-none',
@@ -90,7 +91,7 @@ export function C8Dialog({
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1.5">
             <h2
-              id="c8-dialog-title"
+              id={titleId}
               className={clsx(
                 'font-c8-heading text-c8-ink',
                 titleSize === 'h1' ? 'text-c8-h1' : 'text-c8-h2'

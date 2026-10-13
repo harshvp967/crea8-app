@@ -131,14 +131,15 @@ body.c8-schedule .sidebar-create button:first-child {
   font-weight: 600;
 }
 
-body.c8-schedule .cal-mode {
-  display: none !important;
-}
-
-body.c8-schedule .cal-view {
+body.c8-schedule .cal-mode,
+body.c8-schedule .filters-bar.is-list-mode .cal-mode {
+  display: flex !important;
+  flex-flow: row wrap;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
   height: auto;
   min-height: 0;
-  gap: 6px;
   padding: 0 !important;
   border: 0 !important;
   border-radius: 0;
@@ -146,34 +147,27 @@ body.c8-schedule .cal-view {
   box-shadow: none;
 }
 
-body.c8-schedule .cal-view > button {
-  height: 34px !important;
-  min-height: 34px !important;
-  padding: 8px 14px !important;
-  border-radius: 999px !important;
+body.c8-schedule .cal-mode > button {
+  height: 34px;
+  min-height: 34px;
+  padding: 8px 14px;
+  border-radius: 999px;
   border: 1px solid var(--c8-line);
   background: var(--c8-surface);
   color: var(--c8-ink);
-  font-size: 13px !important;
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 13px;
   font-weight: 500;
+  line-height: normal;
   box-shadow: none;
+  cursor: pointer;
 }
 
-body.c8-schedule .cal-view > button[aria-checked='true'],
-body.c8-schedule .cal-view > button[aria-pressed='true'] {
+body.c8-schedule .cal-mode > button[aria-checked='true'] {
   border-color: var(--c8-ink);
   background: var(--c8-ink);
   color: var(--c8-on-ink);
   font-weight: 600;
-}
-
-body.c8-schedule .cal-view > button svg,
-body.c8-schedule .cal-view > button [aria-hidden='true']:not(:last-child) {
-  display: none;
-}
-
-body.c8-schedule .cal-view > button > span.absolute {
-  display: none !important;
 }
 
 body.c8-schedule .cal-nav,
@@ -201,8 +195,7 @@ body.c8-schedule .cal-list-states {
   box-shadow: none;
 }
 
-body.c8-schedule .cal-list-states .arc-selected,
-body.c8-schedule .cal-view .arc-selected {
+body.c8-schedule .cal-list-states .arc-selected {
   background: var(--c8-ink);
   color: var(--c8-on-ink);
 }
@@ -247,7 +240,17 @@ body.c8-schedule .day-cell,
 body.c8-schedule .month-cell {
   border-color: var(--c8-line);
   background: var(--c8-surface);
+}
+
+body.c8-schedule .week-cell,
+body.c8-schedule .day-cell {
   min-height: 41px;
+  height: auto;
+  padding: 8px 12px;
+}
+
+body.c8-schedule .month-cell {
+  min-height: 70px;
   height: auto;
 }
 
@@ -264,7 +267,7 @@ body.c8-schedule .week-cell:not(:has(.cal-post)) .cal-col::before {
   flex: 1;
   margin: 4px;
   min-height: 32px;
-  border-radius: 10px;
+  border-radius: var(--c8-radius-10);
   background: var(--c8-soft);
 }
 
@@ -272,9 +275,9 @@ body.c8-schedule .cal-post-body,
 body.c8-schedule .cal-post:not(.is-draft) .cal-post-body,
 body.c8-schedule .cal-post.is-draft .cal-post-body {
   min-height: 30px;
-  padding: 6px 8px;
+  padding: 8px 12px;
   border: 1.5px solid var(--c8-hard) !important;
-  border-radius: 10px !important;
+  border-radius: var(--c8-radius-10) !important;
   background: var(--c8-surface) !important;
   background-image: none !important;
   color: var(--c8-ink) !important;
@@ -284,6 +287,16 @@ body.c8-schedule .cal-post.is-draft .cal-post-body {
 
 body.c8-schedule .cal-post.is-draft .cal-post-body {
   border-style: dashed !important;
+}
+
+body.c8-schedule .month-cell .cal-post-body,
+body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
+body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
+  height: 26px;
+  min-height: 26px;
+  padding: 4px 6px 4px 5px;
+  border-width: 1.2px !important;
+  border-radius: 8px !important;
 }
 
 body.c8-schedule .day-cell .cal-post-avatar,
@@ -370,6 +383,13 @@ body.c8-schedule .phone-day-strip button {
 body.c8-schedule .phone-day-strip button.arc-selected {
   background: var(--c8-ink);
   color: var(--c8-on-ink);
+}
+
+@media (min-width: 640px) {
+  body.c8-schedule .c8-cal-title {
+    font-size: 38px;
+    letter-spacing: -0.76px;
+  }
 }
 
 @media (min-width: 1200px) {

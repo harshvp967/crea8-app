@@ -2,7 +2,7 @@ import clsx from 'clsx';
 
 export function C8ProBadge({
   className,
-  label = 'PRO',
+  label = 'Pro',
 }: {
   className?: string;
   label?: string;

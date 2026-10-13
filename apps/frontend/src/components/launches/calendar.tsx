@@ -1054,7 +1054,8 @@ export const CalendarColumn: FC<{
   return (
     <div
       className={clsx(
-        'cal-col flex flex-col w-full min-h-full relative transition-colors',
+        'cal-col flex flex-col w-full relative transition-colors',
+        display === 'month' ? 'min-h-[max(70px,100%)]' : 'min-h-full',
         display === 'week' || display === 'month' ? 'cal-col-week' : 'rounded-[12px]',
         isBeforeNow && 'is-past repeated-strip',
         loading && 'animate-pulse',
@@ -1080,7 +1081,8 @@ export const CalendarColumn: FC<{
       )}
       <div
         className={clsx(
-          'relative flex flex-col flex-1 text-c8-ink rounded-[12px] min-h-0',
+          'relative flex flex-col flex-1 text-c8-ink rounded-[12px]',
+          display === 'month' ? 'min-h-[70px]' : 'min-h-0',
           canDrop && 'ring-1 ring-c8-schedule border border-c8-schedule'
         )}
       >

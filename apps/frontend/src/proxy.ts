@@ -132,6 +132,16 @@ export async function proxy(request: NextRequest) {
   }
 
   const requestHost = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '').split(',')[0].trim();
+  const appHostNoindex = requestHost.split(':')[0].trim().toLowerCase() === 'app.crea8.one';
+  const answer = (response: NextResponse) => {
+    if (appHostNoindex) {
+      response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    }
+    return response;
+  };
+  if (appHostNoindex) {
+    topResponse.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
   if ((nextUrl.pathname === '/' || nextUrl.pathname === '') && !isAppHost(requestHost)) {
     const rewriteUrl = nextUrl.clone();
     rewriteUrl.pathname = '/bio-host';

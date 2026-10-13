@@ -39,9 +39,11 @@ export function C8Button({
         'transition-[background-color,box-shadow,transform] duration-c8-hover ease-c8-out',
         'active:duration-c8-press active:ease-c8-in',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-c8-ink',
-        variantClass[variant],
+        !inert && variantClass[variant],
         inert &&
-          'bg-c8-soft text-c8-muted border-c8-line shadow-c8-none cursor-not-allowed hover:translate-y-0 active:translate-y-0 hover:shadow-c8-none hover:bg-c8-soft',
+          'border border-c8-line bg-c8-soft text-c8-muted shadow-c8-none hover:translate-y-0 hover:bg-c8-soft hover:shadow-c8-none active:translate-y-0 active:bg-c8-soft active:shadow-c8-none',
+        disabled && 'cursor-not-allowed',
+        loading && 'cursor-wait',
         className
       )}
     >

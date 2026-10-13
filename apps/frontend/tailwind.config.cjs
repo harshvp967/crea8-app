@@ -189,6 +189,7 @@ module.exports = {
         'c8-item': '14px',
         'c8-tile': '12px',
         'c8-sm': '9px',
+        'c8-10': 'var(--c8-radius-10)',
         'c8-xs': '8px',
       },
       borderWidth: {

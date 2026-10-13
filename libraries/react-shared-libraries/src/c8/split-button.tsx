@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  KeyboardEvent as ReactKeyboardEvent,
   ReactNode,
   useCallback,
   useEffect,
@@ -25,6 +26,7 @@ export function C8SplitButton({
   label = 'Add to calendar',
   icon,
   items = defaultItems,
+  onClick,
   onSelect,
   loading = false,
   disabled = false,
@@ -33,6 +35,7 @@ export function C8SplitButton({
   label?: string;
   icon?: ReactNode;
   items?: C8SplitItem[];
+  onClick?: () => void;
   onSelect?: (id: string) => void;
   loading?: boolean;
   disabled?: boolean;
@@ -40,8 +43,10 @@ export function C8SplitButton({
 }) {
   const [open, setOpen] = useState(false);
   const [upward, setUpward] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<HTMLButtonElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const menuId = useId();
   const inert = disabled || loading;
 
@@ -63,19 +68,46 @@ export function C8SplitButton({
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close(true);
     };
+    setActiveIndex(0);
     document.addEventListener('mousedown', onPointer);
     document.addEventListener('keydown', onKey);
+    const frame = requestAnimationFrame(() => itemRefs.current[0]?.focus());
     return () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener('mousedown', onPointer);
       document.removeEventListener('keydown', onKey);
     };
   }, [open, close]);
 
+  const moveActive = (next: number) => {
+    const count = items.length;
+    if (!count) return;
+    const index = (next + count) % count;
+    setActiveIndex(index);
+    itemRefs.current[index]?.focus();
+  };
+
+  const onMenuKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      moveActive(activeIndex + 1);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveActive(activeIndex - 1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      moveActive(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      moveActive(items.length - 1);
+    }
+  };
+
   return (
     <div
       ref={rootRef}
       className={clsx(
-        'relative inline-flex h-[46px] w-full max-w-[230px] overflow-visible c8-tablet:w-[230px]',
+        'relative inline-flex h-[46px] w-full overflow-visible c8-tablet:w-[230px]',
         className
       )}
     >
@@ -90,6 +122,7 @@ export function C8SplitButton({
         <button
           type="button"
           disabled={inert}
+          onClick={onClick}
           className={clsx(
             'relative inline-flex min-w-0 flex-1 items-center gap-2 pl-5 pr-[18px] font-c8-body text-c8-button whitespace-nowrap',
             'transition-colors duration-c8-hover ease-c8-out active:duration-c8-press active:ease-c8-in',
@@ -101,7 +134,12 @@ export function C8SplitButton({
             {label}
           </span>
           {loading ? (
-            <span className="pointer-events-none absolute left-5 h-5 w-5 rounded-full border-[2.5px] border-current border-t-transparent animate-c8-spin" />
+            <span
+              className="pointer-events-none absolute inset-0 flex items-center justify-center"
+              aria-hidden
+            >
+              <span className="h-5 w-5 rounded-full border-[2.5px] border-current border-t-transparent animate-c8-spin" />
+            </span>
           ) : null}
         </button>
         <span className={clsx('w-[1.5px] self-stretch', inert ? 'bg-c8-line' : 'bg-c8-hard')} />
@@ -134,16 +172,21 @@ export function C8SplitButton({
         <div
           id={menuId}
           role="menu"
+          onKeyDown={onMenuKey}
           className={clsx(
             'absolute right-0 z-30 flex min-w-[240px] flex-col gap-0.5 rounded-c8-row border-c8-sticker border-c8-hard bg-c8-surface p-1.5 shadow-c8-hard-lg animate-c8-menu',
             upward ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]'
           )}
         >
-          {items.map((item) => (
+          {items.map((item, index) => (
             <button
               key={item.id}
+              ref={(node) => {
+                itemRefs.current[index] = node;
+              }}
               type="button"
               role="menuitem"
+              tabIndex={index === activeIndex ? 0 : -1}
               className="flex h-10 items-center gap-3 rounded-c8-item px-3 py-2.5 text-left font-c8-body text-c8-body-lg font-medium text-c8-ink hover:bg-c8-soft"
               onClick={() => {
                 onSelect?.(item.id);
