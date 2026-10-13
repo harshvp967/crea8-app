@@ -11,6 +11,8 @@ import {
   ProcessorFailure,
 } from '@gitroom/nestjs-libraries/upload/clipping.processor.interface';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
@@ -77,7 +79,8 @@ export class ClippingService {
     private _mediaService: MediaService,
     private _openAi: OpenaiService,
     private _deepgram: DeepgramService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _entitlements: EntitlementService
   ) {}
 
   // Every intermediate file is a flat key, because removeFile only keeps the
@@ -156,6 +159,13 @@ export class ClippingService {
   // Minutes the organization can still spend. An install without billing has no
   // plans to meter against, the same way image generation treats it
   private async balance(organizationId: string) {
+    if (isBillingEnforced(organizationId)) {
+      const tier = await this._entitlements.tier(organizationId);
+      if (tier === 'FREE') {
+        return 0;
+      }
+      return MAX_SOURCE_MINUTES;
+    }
     if (!process.env.STRIPE_PUBLISHABLE_KEY) {
       return MAX_SOURCE_MINUTES;
     }

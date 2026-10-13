@@ -11,6 +11,14 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Integration, Post, State } from '@prisma/client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { stripLinks } from '@gitroom/helpers/utils/strip.links';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import {
+  BillingBlocked,
+  xPostCost,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
@@ -18,7 +26,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
-import { TypedSearchAttributes } from '@temporalio/common';
+import { ApplicationFailure, TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
   postId as postIdSearchParam,
@@ -103,8 +111,17 @@ export class PostActivity {
     private _refreshIntegrationService: RefreshIntegrationService,
     private _webhookService: WebhooksService,
     private _temporalService: TemporalService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
+    private _entitlements: EntitlementService,
+    private _credits: CreditsService
   ) {}
+
+  private blocked(err: unknown): never {
+    if (err instanceof BillingBlocked) {
+      throw ApplicationFailure.nonRetryable(err.message);
+    }
+    throw err;
+  }
 
   @ActivityMethod()
   async getIntegrationById(orgId: string, id: string) {
@@ -153,7 +170,11 @@ export class PostActivity {
 
   @ActivityMethod()
   async getPost(orgId: string, postId: string) {
-    if (process.env.STRIPE_SECRET_KEY) {
+    if (isBillingEnforced(orgId)) {
+      if ((await this._entitlements.tier(orgId)) === 'FREE') {
+        return false;
+      }
+    } else if (process.env.STRIPE_SECRET_KEY) {
       const subscription = await this._subscriptionService.getSubscription(
         orgId
       );
@@ -171,7 +192,11 @@ export class PostActivity {
 
   @ActivityMethod()
   async getPostsList(orgId: string, postId: string) {
-    if (process.env.STRIPE_SECRET_KEY) {
+    if (isBillingEnforced(orgId)) {
+      if ((await this._entitlements.tier(orgId)) === 'FREE') {
+        return [];
+      }
+    } else if (process.env.STRIPE_SECRET_KEY) {
       const subscription = await this._subscriptionService.getSubscription(
         orgId
       );
@@ -332,7 +357,13 @@ export class PostActivity {
     // the ones on their own HTTP client (x, youtube, bluesky) are still
     // narrowed down to the step they hung on.
     setHeartbeatDetails('subscription lookup');
-    if (process.env.STRIPE_SECRET_KEY) {
+    if (isBillingEnforced(integration.organizationId)) {
+      if ((await this._entitlements.tier(integration.organizationId)) === 'FREE') {
+        throw ApplicationFailure.nonRetryable(
+          'No active subscription found for this organization.'
+        );
+      }
+    } else if (process.env.STRIPE_SECRET_KEY) {
       const subscription = await this._subscriptionService.getSubscription(
         integration.organizationId
       );
@@ -373,6 +404,60 @@ export class PostActivity {
         ),
       }))
     );
+
+    if (
+      isBillingEnforced(integration.organizationId) &&
+      integration.providerIdentifier === 'x'
+    ) {
+      setHeartbeatDetails('x credits');
+      const keeps =
+        typeof (getIntegration as { keepsLinks?: (settings?: object) => boolean })
+          .keepsLinks === 'function'
+          ? (getIntegration as { keepsLinks: (settings?: object) => boolean }).keepsLinks.bind(
+              getIntegration
+            )
+          : () => true;
+      const cost = mappedPosts.reduce(
+        (sum, post) =>
+          sum + xPostCost(keeps(post.settings) ? post.message : stripLinks(post.message)),
+        0
+      );
+      if (cost > 0) {
+        const key = `xpost:${[...mappedPosts.map((post) => post.id)].sort().join(',')}`;
+        try {
+          await this._entitlements.assertCanPost(
+            integration.organizationId,
+            integration.id
+          );
+          await this._credits.spend(
+            integration.organizationId,
+            cost,
+            'x_post',
+            key
+          );
+        } catch (err) {
+          this.blocked(err);
+        }
+      } else {
+        try {
+          await this._entitlements.assertCanPost(
+            integration.organizationId,
+            integration.id
+          );
+        } catch (err) {
+          this.blocked(err);
+        }
+      }
+    } else if (isBillingEnforced(integration.organizationId)) {
+      try {
+        await this._entitlements.assertCanPost(
+          integration.organizationId,
+          integration.id
+        );
+      } catch (err) {
+        this.blocked(err);
+      }
+    }
 
     setHeartbeatDetails(`${integration.providerIdentifier}: publish`);
     const postNow =

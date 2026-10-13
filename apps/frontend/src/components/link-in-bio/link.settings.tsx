@@ -7,6 +7,8 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
   LinkEditor,
   LinkRequestError,
+  badgeLocked,
+  domainLocked,
   linkLocked,
   linkSend,
   useLinkPage,
@@ -14,6 +16,7 @@ import {
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { LockedFeature } from '@gitroom/frontend/components/billing/billing.ui';
 
 const fieldClass =
   'h-[44px] min-h-[44px] w-full rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none';
@@ -167,7 +170,7 @@ export const LinkSettingsScreen = () => {
         isPublic,
         sensitive,
       };
-      if (!linkLocked(data) && hideBadge !== data.hideBadge) {
+      if (!badgeLocked(data) && hideBadge !== data.hideBadge) {
         body.hideBadge = hideBadge;
       }
       current = await linkSend(fetch, '/link-in-bio', 'PUT', body);
@@ -185,7 +188,7 @@ export const LinkSettingsScreen = () => {
       setDomainNote('unavailable');
       return;
     }
-    if (data.gating && !data.customDomainAddon) {
+    if (domainLocked(data)) {
       setDomainNote('upgrade');
       return;
     }
@@ -315,19 +318,19 @@ export const LinkSettingsScreen = () => {
                 className={`${fieldClass} ps-[38px]`}
                 value={domain}
                 placeholder="links.yourdomain.com"
-                disabled={!!data.gating && !data.customDomainAddon}
+                disabled={domainLocked(data)}
                 onChange={(event) => setDomain(event.target.value)}
                 aria-label="Custom domain"
               />
             </div>
-            {!data.gating || data.customDomainAddon ? (
+            {domainLocked(data) ? (
+              <Link href="/billing" className={linkSecondary}>
+                Upgrade
+              </Link>
+            ) : (
               <button type="button" className={linkSecondary} disabled={busy || !domain.trim()} onClick={connect}>
                 Connect domain
               </button>
-            ) : (
-              <Link href="/billing" className={linkSecondary}>
-                Get the add-on
-              </Link>
             )}
           </div>
         ) : (
@@ -374,20 +377,10 @@ export const LinkSettingsScreen = () => {
         {domainNote === 'unavailable' ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">Custom domains are unavailable until Cloudflare is configured.</p>
         ) : null}
-        {!data.customDomainAddon ? (
-          <p className="mt-[8px] text-[13px] text-textItemBlur">
-            Custom domains are a separate add-on. They are not included in a plan.{' '}
-            <Link href="/billing" className="text-[#00D9FF]">
-              Get the add-on
-            </Link>
-          </p>
-        ) : domainNote === 'upgrade' ? (
-          <p className="mt-[8px] text-[13px] text-textItemBlur">
-            Custom domains are a separate add-on. They are not included in a plan.{' '}
-            <Link href="/billing" className="text-[#00D9FF]">
-              Get the add-on
-            </Link>
-          </p>
+        {domainLocked(data) || domainNote === 'upgrade' ? (
+          <div className="mt-[8px]">
+            <LockedFeature title="Custom domain" detail="A custom domain is included on every paid plan." />
+          </div>
         ) : null}
       </section>
 
@@ -412,14 +405,17 @@ export const LinkSettingsScreen = () => {
             <div className="min-w-0">
               <div className="text-[14px] font-[500]">Show “made with crea8.one”</div>
               <p className="text-[13px] text-textItemBlur">
-                {linkLocked(data) ? 'Hiding the badge is on a paid plan' : data.paid ? 'Paid plans can hide the badge' : 'Paid plans can hide the badge. It stays open while plan gating is off.'}
+                {badgeLocked(data) ? 'Hiding the badge is on a paid plan' : 'Paid plans can hide the badge'}
               </p>
+              {badgeLocked(data) ? (
+                <LockedFeature title="Badge removal" detail="Removing the made with crea8.one badge is included on every paid plan." />
+              ) : null}
             </div>
             <LinkToggle
               checked={!hideBadge}
               label="Show made with crea8.one"
               onChange={(show) => {
-                if (!show && linkLocked(data)) {
+                if (!show && badgeLocked(data)) {
                   setDomainNote('');
                   toast.show('Removing the badge is on a paid plan', 'warning');
                   return;

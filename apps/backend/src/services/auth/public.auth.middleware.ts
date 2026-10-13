@@ -5,6 +5,8 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 @Injectable()
 export class PublicAuthMiddleware implements NestMiddleware {
@@ -12,8 +14,28 @@ export class PublicAuthMiddleware implements NestMiddleware {
 
   constructor(
     private _organizationService: OrganizationService,
-    private _oauthService: OAuthService
+    private _oauthService: OAuthService,
+    private _entitlements: EntitlementService
   ) {}
+
+  private async rejectWithoutSubscription(
+    res: Response,
+    org: Organization & { subscription?: unknown }
+  ) {
+    if (isBillingEnforced(org.id)) {
+      const tier = await this._entitlements.tier(org.id);
+      if (tier === 'FREE') {
+        res.status(HttpStatus.UNAUTHORIZED).json({ msg: 'No subscription found' });
+        return true;
+      }
+      return false;
+    }
+    if (!!process.env.STRIPE_SECRET_KEY && !org.subscription) {
+      res.status(HttpStatus.UNAUTHORIZED).json({ msg: 'No subscription found' });
+      return true;
+    }
+    return false;
+  }
 
   private setOrg(req: Request, org: Organization) {
     // @ts-ignore
@@ -54,10 +76,7 @@ export class PublicAuthMiddleware implements NestMiddleware {
         }
       }
 
-      if (!!process.env.STRIPE_SECRET_KEY && !org.subscription) {
-        res
-          .status(HttpStatus.UNAUTHORIZED)
-          .json({ msg: 'No subscription found' });
+      if (await this.rejectWithoutSubscription(res, org)) {
         return;
       }
 
@@ -89,6 +108,10 @@ export class PublicAuthMiddleware implements NestMiddleware {
           res
             .status(HttpStatus.NOT_FOUND)
             .json({ msg: 'Organization not found' });
+          return;
+        }
+
+        if (await this.rejectWithoutSubscription(res, overrideOrg)) {
           return;
         }
 

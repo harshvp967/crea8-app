@@ -47,7 +47,8 @@ import {
   isValidTimeZone,
   knownRange,
   leadsToCsv,
-  linkDomainOpen,
+  badgeRemovalOpen,
+  customDomainBillingOpen,
   linkFeatureOpen,
   linkIsHidden,
   linkProKind,
@@ -120,7 +121,10 @@ export class LinkService {
 
   async update(org: PlanOrg, body: UpdateLinkPageDto) {
     const record = await this.ensure(org);
-    if (body.hideBadge && !linkFeatureOpen(record.organization.subscription)) {
+    if (
+      body.hideBadge &&
+      !badgeRemovalOpen(record.organizationId, record.organization.subscription)
+    ) {
       throw new HttpException(
         { message: 'Removing the badge is on a paid plan', upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
@@ -443,7 +447,13 @@ export class LinkService {
 
   async connectDomain(org: PlanOrg, domain: string) {
     const record = await this.ensure(org);
-    if (!linkDomainOpen(record.organization)) {
+    if (
+      !customDomainBillingOpen(
+        record.organizationId,
+        record.organization.subscription,
+        record.organization
+      )
+    ) {
       throw new HttpException(
         { message: 'Custom domains are a separate add-on', upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
@@ -1204,6 +1214,15 @@ export class LinkService {
     const byBlock = new Map(clicks.filter((row) => row.blockId).map((row) => [row.blockId, row._count._all]));
     const paid = isPaidPlan(record.organization.subscription);
     const open = linkFeatureOpen(record.organization.subscription);
+    const badgePaid = badgeRemovalOpen(
+      record.organizationId,
+      record.organization.subscription
+    );
+    const domainPaid = customDomainBillingOpen(
+      record.organizationId,
+      record.organization.subscription,
+      record.organization
+    );
     const customDomainAddon = hasCustomDomainAddon(record.organization);
     const design = normalizeDesign(record.design);
     const accounts = await this.accounts(record.organizationId, design);
@@ -1224,7 +1243,9 @@ export class LinkService {
       seoDescription: record.seoDescription,
       isPublic: record.isPublic,
       sensitive: record.sensitive,
-      hideBadge: record.hideBadge && open,
+      hideBadge: record.hideBadge && badgePaid,
+      badgePaid,
+      domainPaid,
       gating: LINK_PLAN_GATING_ENABLED,
       design,
       timezone: record.timezone,
@@ -1350,7 +1371,10 @@ export class LinkService {
       seoDescription: record.seoDescription,
       isPublic: record.isPublic,
       sensitive: record.sensitive,
-      showBadge: showBadge(record.hideBadge, open),
+      showBadge: showBadge(
+        record.hideBadge,
+        badgeRemovalOpen(record.organizationId, record.organization.subscription)
+      ),
       socials: this.mergedSocials(record.socials, accounts),
       redirectUrl: redirect && !urlProblem(redirect.url) ? redirect.url : '',
       capture: capture

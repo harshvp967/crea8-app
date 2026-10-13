@@ -21,6 +21,12 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  isBillingEnforced,
+  isGrandfatheredOrg,
+} from '@gitroom/helpers/utils/billing.enabled';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
@@ -45,7 +51,9 @@ export class UsersController {
     private _authService: AuthService,
     private _orgService: OrganizationService,
     private _userService: UsersService,
-    private _trackService: TrackService
+    private _trackService: TrackService,
+    private _entitlements: EntitlementService,
+    private _credits: CreditsService
   ) {}
 
   @Get('/chatbase-token')
@@ -107,27 +115,55 @@ export class UsersController {
     }
 
     const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    const enforced = isBillingEnforced(organization.id);
+    const grandfathered = isGrandfatheredOrg(organization.id);
+    let tier: string;
+    let totalChannels: number;
+    let isTrailing: boolean;
+    let credits: {
+      monthlyRemaining: number;
+      packRemaining: number;
+      total: number;
+    } | null = null;
+    if (enforced) {
+      tier = await this._entitlements.tier(organization.id);
+      totalChannels = pricing[tier as 'FREE'].channel;
+      isTrailing = tier !== 'FREE' && !!organization.isTrailing;
+      const balance = await this._credits.balance(organization.id);
+      credits = {
+        monthlyRemaining: balance.monthlyRemaining,
+        packRemaining: balance.packRemaining,
+        total: balance.total,
+      };
+    } else if (!process.env.STRIPE_PUBLISHABLE_KEY) {
+      tier = 'ULTIMATE';
+      totalChannels = 10000;
+      isTrailing = false;
+    } else {
+      tier =
+        // @ts-ignore
+        organization?.subscription?.subscriptionTier || 'FREE';
+      totalChannels =
+        // @ts-ignore
+        organization?.subscription?.totalChannels || pricing.FREE.channel;
+      isTrailing = !!organization.isTrailing;
+    }
     // @ts-ignore
     return {
       ...user,
       orgId: organization.id,
-      totalChannels: !process.env.STRIPE_PUBLISHABLE_KEY
-        ? 10000
-        : // @ts-ignore
-          organization?.subscription?.totalChannels || pricing.FREE.channel,
-      tier:
-        // @ts-ignore
-        organization?.subscription?.subscriptionTier ||
-        (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
+      totalChannels,
+      tier,
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore
-      isLifetime: !!organization?.subscription?.isLifetime,
+      isLifetime: grandfathered || !!organization?.subscription?.isLifetime,
       admin: !!user.isSuperAdmin,
       impersonate: !!impersonate,
-      isTrailing: !process.env.STRIPE_PUBLISHABLE_KEY
-        ? false
-        : organization?.isTrailing,
+      isTrailing,
+      billingEnabled: enforced,
+      grandfathered,
+      credits,
       allowTrial: organization?.allowTrial,
       streakSince: organization?.streakSince || null,
       publicApi:

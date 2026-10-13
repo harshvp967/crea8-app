@@ -107,6 +107,8 @@ export type LinkEditor = {
   cnameTarget: string;
   domainRecords: LinkRecord[];
   paid: boolean;
+  badgePaid?: boolean;
+  domainPaid?: boolean;
   customDomainAddon: boolean;
   publicOrigin: string;
   publicUrl: string;
@@ -281,6 +283,26 @@ export async function linkSend(
 
 export function linkLocked(page?: { gating?: boolean; paid?: boolean } | null) {
   return !!page?.gating && !page.paid;
+}
+
+export function badgeLocked(page?: { badgePaid?: boolean; gating?: boolean; paid?: boolean } | null) {
+  if (page?.badgePaid === false) {
+    return true;
+  }
+  if (page?.badgePaid === true) {
+    return false;
+  }
+  return linkLocked(page);
+}
+
+export function domainLocked(page?: { domainPaid?: boolean; gating?: boolean; customDomainAddon?: boolean } | null) {
+  if (page?.domainPaid === false) {
+    return true;
+  }
+  if (page?.domainPaid === true) {
+    return false;
+  }
+  return !!page?.gating && !page?.customDomainAddon;
 }
 
 export function toPublic(page: LinkEditor, visitor?: VisitorContext): PublicLink {

@@ -196,7 +196,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               )}
             >
               <div>{user?.admin ? <Impersonate /> : <div />}</div>
-              {user.tier === 'FREE' && isGeneral && billingEnabled ? (
+              {user.tier === 'FREE' && isGeneral && (billingEnabled || user.billingEnabled) ? (
                 <FirstBillingComponent />
               ) : (
                 <>

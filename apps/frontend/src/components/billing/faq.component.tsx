@@ -19,7 +19,7 @@ const useFaqList = () => {
             ),
             description: t(
               'faq_to_confirm_credit_card_information_postiz_will_hold',
-              'To confirm credit card information Crea8one will hold $2 and release it immediately, you can cancel your subscription anytime from settings without talking to a person'
+              'Checkout is handled by Dodo Payments, the merchant of record. Tax is added there. You can pay by card or UPI where Dodo offers it, and cancel anytime from billing. Email support@crea8.one if you need help.'
             ),
           },
         ]

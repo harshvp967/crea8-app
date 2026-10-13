@@ -5,6 +5,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  isBillingEnforced,
+  isBillingFlagOn,
+} from '@gitroom/helpers/utils/billing.enabled';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import {
+  keywordUpgradeMessage,
+  manualCheckMessage,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import {
   Integration,
   Prisma,
   StalkerAlertChannel,
@@ -543,8 +553,21 @@ export class StalkerService {
     private _openaiService: OpenaiService,
     private _emailService: EmailService,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _entitlements: EntitlementService,
+    private _credits: CreditsService
   ) {}
+
+  private async keywordLimit(organizationId: string) {
+    if (!isBillingEnforced(organizationId)) {
+      return { cap: MAX_KEYWORDS, tier: null as string | null };
+    }
+    const limits = await this._entitlements.limits(organizationId);
+    return {
+      cap: limits?.plan.stalkerKeywords ?? MAX_KEYWORDS,
+      tier: limits?.tier || 'FREE',
+    };
+  }
 
   assertEnabled() {
     if (!isStalkerEnabled()) {
@@ -596,12 +619,16 @@ export class StalkerService {
         suggestedHandles[field] = handle;
       }
     }
+    const keywords = await this.keywordLimit(organizationId);
+    const limits = isBillingEnforced(organizationId)
+      ? await this._entitlements.limits(organizationId)
+      : null;
     return {
       enabled: true,
-      pollHours: POLL_HOURS,
+      pollHours: limits?.plan.stalkerScanHours || POLL_HOURS,
       pollMinutes: stalkerPollMinutes(),
-      maxKeywords: MAX_KEYWORDS,
-      keywordsSearchedPerRun: MAX_KEYWORDS,
+      maxKeywords: keywords.cap,
+      keywordsSearchedPerRun: keywords.cap,
       openAi: this._openaiService.hasApiKey(),
       sources,
       commentSources,
@@ -626,6 +653,7 @@ export class StalkerService {
     }
     const seenPhrases = new Set<string>();
     const keywords = [];
+    const keywordCap = (await this.keywordLimit(organizationId)).cap;
     for (const keyword of body.keywords || []) {
       const phrase = keyword.phrase.trim().replace(/\s+/g, ' ');
       const key = phrase.toLowerCase();
@@ -633,7 +661,7 @@ export class StalkerService {
         continue;
       }
       seenPhrases.add(key);
-      if (keywords.length >= MAX_KEYWORDS) {
+      if (keywords.length >= keywordCap) {
         break;
       }
       keywords.push({
@@ -732,7 +760,21 @@ export class StalkerService {
   async mentions(organizationId: string, query: StalkerMentionQueryDto) {
     this.assertEnabled();
     await this.requireProject(organizationId, query.projectId);
-    return this._repository.listMentions(organizationId, query);
+    let next = query;
+    if (isBillingEnforced(organizationId)) {
+      const limits = await this._entitlements.limits(organizationId);
+      const days = limits?.plan.mentionRetentionDays;
+      if (days) {
+        const earliest = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
+        const openEnded = !query.date || query.date === 'all';
+        if ((query.start && query.start < earliest) || (!query.start && openEnded)) {
+          next = { ...query, start: earliest };
+        }
+      }
+    }
+    return this._repository.listMentions(organizationId, next);
   }
 
   async setMentionStatus(
@@ -1010,9 +1052,12 @@ export class StalkerService {
       organizationId,
       body.projectId
     );
-    if (total >= MAX_KEYWORDS) {
+    const limit = await this.keywordLimit(organizationId);
+    if (total >= limit.cap) {
       throw new BadRequestException(
-        `You can save up to ${MAX_KEYWORDS} keywords`
+        limit.tier
+          ? keywordUpgradeMessage(limit.tier as 'FREE')
+          : `You can save up to ${MAX_KEYWORDS} keywords`
       );
     }
     await this._repository.ensureGroups(body.projectId);
@@ -1637,7 +1682,10 @@ export class StalkerService {
         trigger: StalkerScanTrigger;
       }[];
     }
-    const cutoff = new Date(Date.now() - stalkerProjectIntervalMs());
+    const flagOn = isBillingFlagOn();
+    const cutoff = flagOn
+      ? new Date(Date.now() - 60 * 60 * 1000)
+      : new Date(Date.now() - stalkerProjectIntervalMs());
     const due = await this._repository.listDueProjects(cutoff);
     const ready: {
       organizationId: string;
@@ -1649,6 +1697,13 @@ export class StalkerService {
         const active = await this._repository.activeScan(project.id);
         if (active) {
           continue;
+        }
+        if (flagOn && project.lastScanAt) {
+          const limits = await this._entitlements.limits(project.organizationId);
+          const hours = limits?.plan.stalkerScanHours || 12;
+          if (Date.now() - project.lastScanAt.getTime() < hours * 60 * 60 * 1000) {
+            continue;
+          }
         }
         ready.push({
           organizationId: project.organizationId,
@@ -1691,6 +1746,21 @@ export class StalkerService {
           },
           429
         );
+      }
+      if (isBillingEnforced(organizationId)) {
+        const limits = await this._entitlements.limits(organizationId);
+        const cap = limits?.plan.stalkerManualChecksPerDay;
+        if (cap != null) {
+          const start = new Date();
+          start.setUTCHours(0, 0, 0, 0);
+          const count = await this._repository.countManualScans(projectId, start);
+          if (count >= cap) {
+            throw new HttpException(
+              { statusCode: 429, message: manualCheckMessage(cap), upgrade: true },
+              429
+            );
+          }
+        }
       }
     }
     const run = await this._repository.createScanRun({
@@ -2217,6 +2287,15 @@ export class StalkerService {
           return;
         }
         stat.searched += 1;
+        if (source.id === 'x') {
+          const hour = new Date().toISOString().slice(0, 13);
+          const charge = await this._credits.spendStalkerReads(
+            organizationId,
+            outcome.drafts.length,
+            `stalker:${organizationId}:${project.id}:${source.id}:${phraseKey}:${hour}`
+          );
+          outcome.drafts = outcome.drafts.slice(0, charge.kept);
+        }
         stat.found += outcome.drafts.length;
         collected.push(
           ...tagDrafts(

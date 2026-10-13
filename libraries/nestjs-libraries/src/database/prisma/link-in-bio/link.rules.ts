@@ -1,4 +1,8 @@
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  isBillingEnforced,
+  isGrandfatheredOrg,
+} from '@gitroom/helpers/utils/billing.enabled';
 
 export const LINK_BLOCK_CAP = 2000;
 
@@ -272,6 +276,34 @@ export function linkFeatureOpen(subscription?: LinkPlan) {
 
 export function linkDomainOpen(org?: { customDomainAddon?: boolean | null } | null) {
   return !LINK_PLAN_GATING_ENABLED || hasCustomDomainAddon(org);
+}
+
+function paidByBilling(organizationId: string, subscription?: LinkPlan) {
+  if (isGrandfatheredOrg(organizationId)) {
+    return true;
+  }
+  const tier = subscription?.deletedAt ? null : subscription?.subscriptionTier;
+  return tier === 'STANDARD' || tier === 'TEAM' || tier === 'PRO' || tier === 'ULTIMATE';
+}
+
+// Badge removal and custom domains follow the billing flag. Themes stay on
+// LINK_PLAN_GATING_ENABLED, which stays off.
+export function badgeRemovalOpen(organizationId: string, subscription?: LinkPlan) {
+  if (!isBillingEnforced(organizationId)) {
+    return linkFeatureOpen(subscription);
+  }
+  return paidByBilling(organizationId, subscription);
+}
+
+export function customDomainBillingOpen(
+  organizationId: string,
+  subscription?: LinkPlan,
+  org?: { customDomainAddon?: boolean | null } | null
+) {
+  if (!isBillingEnforced(organizationId)) {
+    return linkDomainOpen(org);
+  }
+  return paidByBilling(organizationId, subscription);
 }
 
 export function themeIsPro(id: string) {

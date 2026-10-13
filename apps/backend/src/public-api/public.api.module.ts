@@ -1,6 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { DodoProvider } from '@gitroom/nestjs-libraries/services/payment/providers/dodo.provider';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
 import { PermissionsService } from '@gitroom/backend/services/auth/permissions/permissions.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -20,6 +21,7 @@ const authenticatedController = [PublicIntegrationsController, PublicAgentContro
   providers: [
     AuthService,
     StripeService,
+    DodoProvider,
     OpenaiService,
     ExtractContentService,
     PoliciesGuard,
