@@ -3,14 +3,17 @@
 import React, { useState } from 'react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { useMenuItem, useVisibleMenuItems } from '@gitroom/frontend/components/layout/top.menu';
 import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
+import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
 
-export const MobileTabBar = () => {
+export const MobileTabBar = ({ onAccount }: { onAccount?: () => void }) => {
   const pathname = (usePathname() || '').replace(/^\/stalker-preview/, '/stalker');
+  const router = useRouter();
+  const openComposer = useOpenComposer();
   const stalker = pathname.startsWith('/stalker');
   const link = pathname === '/link' || pathname.startsWith('/link/');
   const { firstMenu, secondMenu } = useMenuItem();
@@ -36,12 +39,13 @@ export const MobileTabBar = () => {
     onClick: item.onClick,
   });
 
-  const openComposer = () => {
-    document
-      .querySelector<HTMLButtonElement>(
-        '.strip-create button, .sidebar-create button, .phone-create button'
-      )
-      ?.click();
+  const openChannels = () => {
+    if (pathname.startsWith('/launches')) {
+      window.dispatchEvent(new Event('c8-open-channels'));
+      return;
+    }
+    sessionStorage.setItem('c8-open-channels', '1');
+    router.push('/launches');
   };
   const tabs = link
     ? linkNavLinks
@@ -83,6 +87,30 @@ export const MobileTabBar = () => {
       ) : null}
       {more ? (
         <div className="mobile-sheet" role="menu">
+          {!link && !stalker && onAccount ? (
+            <button
+              type="button"
+              onClick={() => {
+                onAccount();
+                setMore(false);
+              }}
+            >
+              <HugeIcon name="user" size={18} />
+              <span>Account</span>
+            </button>
+          ) : null}
+          {!link && !stalker ? (
+            <button
+              type="button"
+              onClick={() => {
+                openChannels();
+                setMore(false);
+              }}
+            >
+              <HugeIcon name="plug" size={18} />
+              <span>Channels</span>
+            </button>
+          ) : null}
           {overflow.map((item) => {
             const click = item.onClick;
             if (click) {

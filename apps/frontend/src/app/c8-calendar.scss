@@ -118,13 +118,21 @@ body.c8-schedule .channel-invite {
 }
 
 @media (min-width: 640px) {
+  body.c8-schedule .channel-strip .channel-add,
+  body.c8-schedule .channel-strip .strip-create,
+  body.c8-schedule .channel-strip .strip-create button {
+    flex: none;
+  }
+
   body.c8-schedule .channel-strip .channel-add {
     width: 162px;
+    min-width: 162px;
     padding: 0 16px;
   }
 
   body.c8-schedule .channel-strip .strip-create button {
     width: 156px;
+    min-width: 156px;
     padding: 0 16px;
   }
 }
@@ -287,7 +295,7 @@ body.c8-schedule .day-cell > .cal-col:only-child,
 body.c8-schedule .phone-slot-posts > .cal-col:only-child {
   flex: 1 1 auto;
   height: auto;
-  min-height: 100%;
+  min-height: #{"max(100%, min-content)"};
 }
 
 body.c8-schedule .phone-slot-posts > .cal-col:only-child {
@@ -374,11 +382,12 @@ body.c8-schedule .week-cell:has(.cal-post) .cal-col > div,
 body.c8-schedule .phone-slot:has(.cal-post) .cal-col > div {
   grid-row: 1 / span 2;
   grid-column: 1;
-  display: grid;
-  grid-template-rows: subgrid;
+  display: flex;
+  flex-direction: column;
   z-index: 1;
-  min-height: 0;
+  min-height: min-content;
   height: auto;
+  overflow: visible;
   background: transparent;
 }
 
@@ -493,7 +502,8 @@ body.c8-schedule .cal-list-day {
   font-weight: 700;
 }
 
-body.c8-schedule .c8-week-phone-nav {
+body.c8-schedule .c8-week-phone-nav,
+body.c8-schedule .c8-day-phone-nav {
   display: none;
 }
 
@@ -620,6 +630,40 @@ body.c8-schedule .phone-day-strip button.arc-selected {
     margin: 0;
   }
 
+  body.c8-schedule .calendar-panel:has(.c8-day) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto auto auto;
+    grid-template-areas:
+      'head head'
+      'actions actions'
+      'filters pager'
+      'empty empty'
+      'well well';
+  }
+
+  body.c8-schedule .calendar-well:has(.c8-day),
+  body.c8-schedule .c8-day {
+    display: contents;
+  }
+
+  body.c8-schedule .c8-day-phone-nav {
+    display: flex;
+    grid-area: pager;
+    align-items: center;
+    align-self: center;
+    justify-content: flex-end;
+    gap: 6px;
+    height: 34px;
+    margin: 0;
+  }
+
+  body.c8-schedule .c8-day-body {
+    grid-area: well;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
   body.c8-schedule .week-grid {
     position: relative !important;
     inset: auto !important;
@@ -630,9 +674,9 @@ body.c8-schedule .phone-day-strip button.arc-selected {
     max-width: 100%;
     min-width: 0;
     min-height: 980px;
-    overflow-x: auto !important;
+    overflow-x: hidden !important;
     overflow-y: visible !important;
-    grid-template-columns: 48px repeat(7, minmax(96px, 1fr));
+    grid-template-columns: 58px repeat(3, minmax(0, 1fr));
   }
 
   body.c8-schedule .week-time,
@@ -689,7 +733,8 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   body.c8-schedule .header-gear,
   body.c8-schedule .header-overflow,
   body.c8-schedule .app-header .navsep,
-  body.c8-schedule .phone-create {
+  body.c8-schedule .phone-create,
+  .c8-shell .header-account {
     display: none !important;
   }
 
@@ -1125,6 +1170,14 @@ body.c8-schedule .channel-rail .sidebar-create button:first-child {
 body.c8-schedule[data-c8-view='week'] .date-range,
 body.c8-schedule[data-c8-view='day'] .date-range,
 body.c8-schedule:not([data-c8-view]) .date-range {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+}
+
+body.c8-schedule[data-c8-view='week'] .cal-range-label,
+body.c8-schedule[data-c8-view='day'] .cal-range-label,
+body.c8-schedule:not([data-c8-view]) .cal-range-label {
   display: none !important;
 }
 
@@ -1136,7 +1189,7 @@ body.c8-schedule[data-c8-view='week'] .cal-mode,
 body.c8-schedule[data-c8-view='day'] .cal-mode,
 body.c8-schedule:not([data-c8-view]) .cal-mode {
   order: -1;
-  margin-right: auto;
+  margin-right: 0;
 }
 
 body.c8-schedule .date-range {
@@ -1177,6 +1230,28 @@ body.c8-schedule .cal-today > div {
 body.c8-schedule .cal-today > div > div {
   height: 34px;
   border-radius: 999px;
+}
+
+body.c8-schedule[data-c8-view='week'] .cal-nav-arrow,
+body.c8-schedule[data-c8-view='day'] .cal-nav-arrow,
+body.c8-schedule:not([data-c8-view]) .cal-nav-arrow,
+body.c8-schedule[data-c8-view='week'] .cal-today > div > div,
+body.c8-schedule[data-c8-view='day'] .cal-today > div > div,
+body.c8-schedule:not([data-c8-view]) .cal-today > div > div {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+body.c8-schedule[data-c8-view='week'] .cal-today > div > div,
+body.c8-schedule[data-c8-view='day'] .cal-today > div > div,
+body.c8-schedule:not([data-c8-view]) .cal-today > div > div {
+  width: auto;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 body.c8-schedule .c8-week-phone-span {
@@ -1413,6 +1488,10 @@ body.c8-schedule .c8-day-label {
   body.c8-schedule .channel-strip {
     grid-area: actions;
     align-self: end;
+    justify-self: end;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
     margin-bottom: 6px;
   }
 
@@ -1483,19 +1562,20 @@ body.c8-schedule .c8-day-label {
   }
 
   body.c8-schedule[data-c8-view='week'] .channel-avatars,
-  body.c8-schedule[data-c8-view='day'] .channel-avatars {
-    display: contents !important;
+  body.c8-schedule[data-c8-view='day'] .channel-avatars,
+  body.c8-schedule:not([data-c8-view]) .channel-avatars,
+  body.c8-schedule[data-c8-view='week'] .channel-strip .channel-chip,
+  body.c8-schedule[data-c8-view='day'] .channel-strip .channel-chip,
+  body.c8-schedule:not([data-c8-view]) .channel-strip .channel-chip {
+    display: none !important;
   }
 
   body.c8-schedule[data-c8-view='week'] .cal-customer,
   body.c8-schedule[data-c8-view='day'] .cal-customer {
-    position: fixed;
-    z-index: 20;
-    left: 20px;
-    top: 620px;
-    bottom: auto;
-    width: 216px;
-    max-width: 216px;
+    position: static;
+    width: auto;
+    max-width: none;
+    flex: none;
   }
 
   body.c8-schedule[data-c8-view='month'] .cal-customer,
@@ -1511,20 +1591,7 @@ body.c8-schedule .c8-day-label {
 
   body.c8-schedule[data-c8-view='week'] .channels-trigger,
   body.c8-schedule[data-c8-view='day'] .channels-trigger {
-    display: inline-flex !important;
-    position: fixed;
-    z-index: 20;
-    left: 20px;
-    top: 580px;
-    bottom: auto;
-    height: 32px;
-    padding: 0 10px;
-    border: 1px solid var(--c8-line);
-    border-radius: 10px;
-    background: var(--c8-surface);
-    color: var(--c8-ink);
-    font-size: 12px;
-    font-weight: 600;
+    display: none !important;
   }
 
   body.c8-schedule[data-c8-view='month'] .app-main,
@@ -1578,15 +1645,24 @@ body.c8-schedule .c8-day-label {
   body.c8-schedule[data-c8-view='month'] .channel-rail .channel-add,
   body.c8-schedule[data-c8-view='list'] .channel-rail .channel-add {
     display: flex;
-    width: 32px;
-    height: 32px;
-    min-height: 32px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
     padding: 0;
     border: 0;
-    border-radius: 10px;
+    border-radius: 8px;
     background: var(--c8-soft);
     box-shadow: none;
     flex: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .channel-rail .channel-add svg,
+  body.c8-schedule[data-c8-view='list'] .channel-rail .channel-add svg {
+    width: 14px;
+    height: 14px;
   }
 
   body.c8-schedule[data-c8-view='month'] .channel-rail .channel-add > div:last-child,
@@ -1778,16 +1854,207 @@ body.c8-schedule .channels-scrim {
   background: rgba(18, 16, 22, 0.35);
 }
 
-body.c8-schedule[data-c8-view='list'] .cal-list-pager > div:nth-child(2) {
+body.c8-schedule[data-c8-view='list'] .cal-list-pager > div:nth-child(2),
+body.c8-schedule[data-c8-view='list'] .cal-page-caption,
+body.c8-schedule[data-c8-view='list'] .cal-page-caption > div {
   min-width: 0;
   width: auto;
   height: auto;
   border: 0;
   background: transparent !important;
+  color: var(--c8-muted) !important;
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.2;
+}
+
+body.c8-schedule .c8-inline-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 14px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
   color: var(--c8-ink);
-  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.48px;
-  line-height: 1.05;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body.c8-schedule[data-c8-view='week'] .cal-customer > div > div,
+body.c8-schedule[data-c8-view='day'] .cal-customer > div > div,
+body.c8-schedule:not([data-c8-view]) .cal-customer > div > div {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  gap: 6px;
+}
+
+body.c8-schedule[data-c8-view='month'] .channel-rail .channel-row,
+body.c8-schedule[data-c8-view='list'] .channel-rail .channel-row {
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 6px;
+  border-radius: 12px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+body.c8-schedule[data-c8-view='month'] .channel-rail .channel-row > div:first-child img:first-of-type,
+body.c8-schedule[data-c8-view='list'] .channel-rail .channel-row > div:first-child img:first-of-type {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+body.c8-schedule .channel-rail .channel-row .channel-meta {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+body.c8-schedule .week-grid,
+body.c8-schedule .day-grid {
+  grid-auto-rows: minmax(41px, auto);
+}
+
+body.c8-schedule .week-head,
+body.c8-schedule .week-corner {
+  box-sizing: border-box;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+}
+
+body.c8-schedule .week-cell,
+body.c8-schedule .day-cell {
+  box-sizing: border-box;
+  height: auto !important;
+  min-height: 41px !important;
+  max-height: none !important;
+  overflow: visible;
+}
+
+body.c8-schedule .week-time,
+body.c8-schedule .day-time {
+  box-sizing: border-box;
+  height: auto !important;
+  min-height: 41px !important;
+  max-height: none !important;
+  overflow: hidden;
+  align-self: stretch;
+}
+
+/* min-height:41px replaces the grid item's content minimum, so a stacked
+   hour stays 41px and the posts spill out. Occupied cells have to opt
+   back into the content size or the row cannot grow. */
+body.c8-schedule .week-cell:has(.cal-post),
+body.c8-schedule .day-cell:has(.cal-post),
+body.c8-schedule .phone-slot:has(.cal-post) {
+  height: auto !important;
+  min-height: #{"max(41px, fit-content)"} !important;
+  max-height: none !important;
+  overflow: visible;
+}
+
+/* One column holds every post in the hour. A grid track collapses that
+   stack to the row minimum, so the column has to be a flex stack whose
+   height is the posts. */
+body.c8-schedule .week-cell:has(.cal-post) > .cal-col,
+body.c8-schedule .day-cell:has(.cal-post) > .cal-col,
+body.c8-schedule .phone-slot:has(.cal-post) > .cal-col {
+  display: flex !important;
+  flex-direction: column;
+  height: auto !important;
+  min-height: min-content;
+  overflow: visible;
+}
+
+body.c8-schedule .week-cell:has(.cal-post) > .cal-col::before,
+body.c8-schedule .day-cell:has(.cal-post) > .cal-col::before,
+body.c8-schedule .phone-slot:has(.cal-post) > .cal-col::before {
+  order: 2;
+  flex: 1 0 32px;
+}
+
+body.c8-schedule .week-cell:has(.cal-post) > .cal-col > div,
+body.c8-schedule .day-cell:has(.cal-post) > .cal-col > div,
+body.c8-schedule .phone-slot:has(.cal-post) > .cal-col > div {
+  order: 1;
+  flex: 0 0 auto;
+  height: auto !important;
+  min-height: min-content;
+  overflow: visible;
+}
+
+body.c8-schedule .week-time,
+body.c8-schedule .day-time {
+  border-top: 1px solid var(--c8-line);
+  align-items: flex-start;
+  white-space: nowrap;
+}
+
+body.c8-schedule .phone-slot-time {
+  white-space: nowrap;
+}
+
+body.c8-schedule .phone-week-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (max-width: 639px) {
+  body.c8-schedule[data-c8-view='week'] .date-range,
+  body.c8-schedule[data-c8-view='day'] .date-range,
+  body.c8-schedule:not([data-c8-view]) .date-range,
+  body.c8-schedule .c8-inline-chip,
+  body.c8-schedule .channels-trigger {
+    display: none !important;
+  }
+
+  body.c8-schedule .week-grid.is-phone-slice {
+    width: 100% !important;
+    overflow-x: hidden !important;
+    grid-template-columns: 58px repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  body.c8-schedule .week-time,
+  body.c8-schedule .day-time,
+  body.c8-schedule .phone-slot-time {
+    white-space: nowrap !important;
+    padding: 4px 0 0 !important;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0;
+  }
+}
+
+body.c8-schedule[data-c8-view='week'] .channels-trigger,
+body.c8-schedule[data-c8-view='day'] .channels-trigger,
+body.c8-schedule:not([data-c8-view]) .channels-trigger {
+  display: none !important;
+}
+
+@media (min-width: 640px) {
+  /* A definite height collapses auto rows to the 41px minimum, so the
+     week grid has to size to its rows and scroll inside the well. */
+  body.c8-schedule .week-grid {
+    height: auto !important;
+    min-height: 100%;
+    max-height: 100%;
+  }
 }

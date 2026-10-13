@@ -319,13 +319,13 @@ export const Filters = () => {
     <div className="c8-cal-head">
       <div className="c8-cal-kicker">
         <span className="c8-cal-sticker">{t('schedule', 'Schedule')}</span>
-        <span className="c8-cal-when">
-          {isListView
-            ? t('upcoming_posts', 'Upcoming posts')
-            : getDisplayText()}
-        </span>
+        {!isListView && (
+          <span className="c8-cal-when">{getDisplayText()}</span>
+        )}
       </div>
-      <h1 className="c8-cal-title">{t('calendar', 'Calendar')}</h1>
+      <h1 className="c8-cal-title">
+        {isListView ? t('upcoming', 'Upcoming') : t('calendar', 'Calendar')}
+      </h1>
     </div>
     <div
       className={clsx(
@@ -395,7 +395,7 @@ export const Filters = () => {
             >
               <HugeIcon name="chevron-left" size={12} />
             </div>
-            <div className="min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
+            <div className="cal-page-caption min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
                 {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
               </div>
@@ -430,6 +430,16 @@ export const Filters = () => {
           </div>
           <div className="flex-1" />
         </div>
+      )}
+      {calendar.display !== 'month' && calendar.display !== 'list' && (
+        <button
+          type="button"
+          className="c8-inline-chip"
+          onClick={() => window.dispatchEvent(new Event('c8-open-channels'))}
+        >
+          {t('channels', 'Channels')} · {(calendar.integrations || []).length}
+          <HugeIcon name="chevron-down" size={14} />
+        </button>
       )}
       <div className="cal-customer">
       <SelectCustomer

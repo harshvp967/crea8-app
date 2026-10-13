@@ -258,7 +258,13 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   </div>
                   </div>
                   </div>
-                  <MobileTabBar />
+                  <MobileTabBar
+                    onAccount={
+                      !stalker && !link
+                        ? () => setAccountOpen((value) => !value)
+                        : undefined
+                    }
+                  />
                 </>
               )}
             </div>

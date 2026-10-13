@@ -440,10 +440,44 @@ export const DayView = () => {
     root.scrollTop = top;
   }, [narrow, scrollHour, startDate]);
 
+  const shiftDay = (direction: number) => {
+    const nextDay = displayDayjs(startDate).add(direction, 'day');
+    calendar.setFilters({
+      startDate: nextDay.format('YYYY-MM-DD'),
+      endDate: nextDay.format('YYYY-MM-DD'),
+      display: 'day',
+      customer: calendar.customer,
+    });
+  };
+
+  const dayPager = (
+    <div className="c8-day-phone-nav">
+      <button
+        type="button"
+        className="phone-week-arrow"
+        aria-label="Previous day"
+        onClick={() => shiftDay(-1)}
+      >
+        <HugeIcon name="chevron-left" size={12} />
+      </button>
+      <span className="c8-week-phone-span">{currentDay.format('MMM D')}</span>
+      <button
+        type="button"
+        className="phone-week-arrow"
+        aria-label="Next day"
+        onClick={() => shiftDay(1)}
+      >
+        <HugeIcon name="chevron-right" size={12} />
+      </button>
+    </div>
+  );
+
   if (narrow) {
     const hours = Array.from({ length: 24 }, (_, hour) => hour);
     return (
-      <div className="flex flex-col gap-[8px] flex-1 min-h-0">
+      <div className="c8-day flex flex-col gap-[8px] flex-1 min-h-0">
+        {dayPager}
+        <div className="c8-day-body flex flex-col gap-[8px] flex-1 min-h-0">
         <PhoneDayStrip />
         <div ref={listRef} className="phone-day-list flex-1 min-h-0">
           {hours.map((hour) => {
@@ -478,12 +512,15 @@ export const DayView = () => {
             );
           })}
         </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-[8px] flex-1 min-h-0">
+    <div className="c8-day flex flex-col gap-[8px] flex-1 min-h-0">
+      {dayPager}
+      <div className="c8-day-body flex flex-col gap-[8px] flex-1 min-h-0">
       <PhoneDayStrip />
       <div className="relative flex-1 min-h-0">
         <div className="day-scroll absolute start-0 top-0 w-full h-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
@@ -513,12 +550,27 @@ export const DayView = () => {
           </div>
         </div>
       </div>
+      </div>
     </div>
   );
 };
 export const WeekView = () => {
   const { startDate } = useCalendar();
   const visibleHours = hours;
+  const [phoneWeek, setPhoneWeek] = useState(false);
+  const [phonePage, setPhonePage] = useState(0);
+
+  useLayoutEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)');
+    const sync = () => setPhoneWeek(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    setPhonePage(0);
+  }, [startDate]);
 
   // Use dayjs to get localized day names
   const localizedDays = useMemo(() => {
@@ -538,14 +590,15 @@ export const WeekView = () => {
     return days;
   }, [i18next.resolvedLanguage, startDate]);
 
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const shiftVisibleDays = (direction: number) => {
-    const root = scrollerRef.current;
-    if (!root) return;
-    const column = root.querySelector<HTMLElement>('.week-head');
-    const width = column?.getBoundingClientRect().width || root.clientWidth / 3;
-    root.scrollBy({ left: direction * width, behavior: 'smooth' });
-  };
+  const shownDays = useMemo(() => {
+    if (!phoneWeek) {
+      return localizedDays;
+    }
+    const offset = phonePage * 3;
+    return [0, 1, 2].map((index) => localizedDays[offset + index] || null);
+  }, [localizedDays, phonePage, phoneWeek]);
+
+  const today = displayNow().format('YYYY-MM-DD');
 
   return (
     <div className="c8-week flex flex-col text-textColor flex-1 min-h-0">
@@ -554,7 +607,8 @@ export const WeekView = () => {
           type="button"
           className="phone-week-arrow"
           aria-label="Previous days"
-          onClick={() => shiftVisibleDays(-1)}
+          disabled={phonePage === 0}
+          onClick={() => setPhonePage((page) => Math.max(0, page - 1))}
         >
           <HugeIcon name="chevron-left" size={12} />
         </button>
@@ -563,56 +617,70 @@ export const WeekView = () => {
           type="button"
           className="phone-week-arrow"
           aria-label="Next days"
-          onClick={() => shiftVisibleDays(1)}
+          disabled={phonePage >= 2}
+          onClick={() => setPhonePage((page) => Math.min(2, page + 1))}
         >
           <HugeIcon name="chevron-right" size={12} />
         </button>
       </div>
       <div className="flex-1 relative min-h-0">
         <div
-          ref={scrollerRef}
-          className="week-grid grid [grid-template-columns:60px_repeat(7,minmax(0,1fr))] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor"
+          className={clsx(
+            'week-grid grid [grid-template-columns:60px_repeat(7,minmax(0,1fr))] absolute h-full start-0 top-0 w-full overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor',
+            phoneWeek && 'is-phone-slice'
+          )}
         >
           <div className="week-corner sticky top-0 z-10" />
-          {localizedDays.map((day) => (
-            <div
-              key={day.name}
-              className={clsx(
-                'week-head sticky top-0 z-[20]',
-                day.date.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD') && 'is-today'
-              )}
-            >
-              <div className="week-dow text-[13px] font-[500] text-textItemBlur">
-                {day.name}
-              </div>
+          {shownDays.map((day, index) =>
+            day ? (
               <div
+                key={day.date.format('YYYY-MM-DD')}
                 className={clsx(
-                  'week-num text-[14px] font-[600]',
-                  day.date.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD') && 'is-today'
+                  'week-head sticky top-0 z-[20]',
+                  day.date.format('YYYY-MM-DD') === today && 'is-today'
                 )}
               >
-                {day.day}
+                <div className="week-dow text-[13px] font-[500] text-textItemBlur">
+                  {day.name}
+                </div>
+                <div
+                  className={clsx(
+                    'week-num text-[14px] font-[600]',
+                    day.date.format('YYYY-MM-DD') === today && 'is-today'
+                  )}
+                >
+                  {day.day}
+                </div>
               </div>
-            </div>
-          ))}
+            ) : (
+              <div key={`empty-head-${index}`} className="week-head is-empty" />
+            )
+          )}
           {visibleHours.map((hour) => (
             <Fragment key={hour}>
               <div className="week-time">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
-              {localizedDays.map((day) => (
-                <div
-                  key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
-                  className={clsx(
-                    'week-cell',
-                    day.date.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD') && 'is-today'
-                  )}
-                >
-                  <CalendarColumn
-                    getDate={day.date.hour(hour).startOf('hour')}
+              {shownDays.map((day, index) =>
+                day ? (
+                  <div
+                    key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
+                    className={clsx(
+                      'week-cell',
+                      day.date.format('YYYY-MM-DD') === today && 'is-today'
+                    )}
+                  >
+                    <CalendarColumn
+                      getDate={day.date.hour(hour).startOf('hour')}
+                    />
+                  </div>
+                ) : (
+                  <div
+                    key={`empty-${hour}-${index}`}
+                    className="week-cell is-empty"
                   />
-                </div>
-              ))}
+                )
+              )}
             </Fragment>
           ))}
         </div>
