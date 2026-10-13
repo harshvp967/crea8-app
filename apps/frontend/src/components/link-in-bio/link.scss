@@ -488,7 +488,7 @@
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding: 56px 16px 28px;
+  padding: 56px 20px 32px;
   background: radial-gradient(120% 70% at 50% -10%, var(--lib-glow), var(--lib-bg) 60%);
   color: var(--lib-text);
 }
@@ -523,8 +523,8 @@
   --lib-text: #161616;
   --lib-muted: #5e6266;
   --lib-card: #ffffff;
-  --lib-btn: #171717;
-  --lib-btn-text: #f7f7f5;
+  --lib-btn: #ffffff;
+  --lib-btn-text: #161616;
   --lib-line: rgba(0, 0, 0, 0.08);
   --lib-accent: #111111;
   --lib-accent-text: #ffffff;
@@ -577,7 +577,7 @@
 }
 
 .lib-stack {
-  width: min(360px, 100%);
+  width: min(400px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -585,8 +585,8 @@
 }
 
 .lib-avatar {
-  width: 76px;
-  height: 76px;
+  width: 72px;
+  height: 72px;
   border-radius: 999px;
   overflow: hidden;
   display: grid;
@@ -620,26 +620,27 @@
 
 .lib-socials {
   display: flex;
-  gap: 8px;
+  gap: 14px;
 }
 
 .lib-socials a,
 .lib-socials span {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid var(--lib-line);
+  border: 0;
+  background: transparent;
   color: var(--lib-text);
   text-decoration: none;
 }
 
 .lib-socials .lib-social-mark {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
   display: block;
 }
 
@@ -660,7 +661,7 @@
 
 .lib-link {
   position: relative;
-  min-height: 48px;
+  min-height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -731,6 +732,8 @@
 }
 
 .lib-feature {
+  width: 100%;
+  align-self: stretch;
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid var(--lib-line);
@@ -741,8 +744,9 @@
 }
 
 .lib-feature-media {
-  height: 132px;
-  background: linear-gradient(180deg, #8d97a3, #2a3138);
+  width: 100%;
+  height: 154px;
+  background: linear-gradient(180deg, #b7ab9d, #7d7368);
 }
 
 .lib-feature-media img {
@@ -773,6 +777,11 @@
   border-radius: 18px;
   padding: 14px;
   text-align: left;
+}
+
+.lib-soon,
+.lib-sensitive {
+  text-align: center;
 }
 
 .lib-capture p,
@@ -822,15 +831,92 @@
 }
 
 .lib-continue {
-  width: 100%;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 14px;
+  padding: 0 22px;
   border-radius: 999px;
 }
 
 .lib-ok {
-  color: #3dd68c;
+  color: var(--lib-text);
   font-size: 14px;
   font-weight: 600;
+}
+
+.lib-confirm {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: linear-gradient(180deg, #dff1f4 0%, #eef6f8 46%, #f3f8f9 100%);
+  color: #161616;
+}
+
+.dark .lib-confirm {
+  background: linear-gradient(180deg, #12282d 0%, #10181c 58%, #121416 100%);
+  color: #f4f4f5;
+}
+
+.lib-confirm-card {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 36px 22px;
+  border-radius: 28px;
+  border: 1px solid rgba(10, 40, 48, 0.08);
+  background: #f4fcff;
+  box-shadow: 0 8px 28px rgba(16, 40, 48, 0.06);
+  text-align: center;
+}
+
+.dark .lib-confirm-card {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: #12262c;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  color: #f4f4f5;
+}
+
+.lib-confirm-card h1 {
+  margin: 8px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.lib-confirm-card p {
+  margin: 0;
+  max-width: 420px;
+  color: var(--new-textItemBlur, #5e6266);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.lib-confirm-go {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: #00d9ff;
+  color: #0a0a0a;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lib-confirm-made {
+  margin-top: 8px;
+  color: var(--new-textItemBlur, #6b6b6b);
+  font-size: 13px;
+  text-decoration: none;
 }
 
 .lib-made {

@@ -423,7 +423,7 @@ export const LinkPublicView = ({
         {data.showBadge ? (
           <footer className="lib-footer">
             <a className="lib-made" href="https://crea8.one">
-              Made with crea8.one
+              made with crea8.one
             </a>
             <p>
               Want to schedule posts and track competitors? <a href="https://crea8.one">Try crea8.one</a>

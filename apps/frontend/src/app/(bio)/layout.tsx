@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ReactNode } from 'react';
 import clsx from 'clsx';
@@ -18,10 +19,12 @@ export const metadata: Metadata = {
   icons: crea8oneIcons,
 };
 
-export default function BioLayout({ children }: { children: ReactNode }) {
+export default async function BioLayout({ children }: { children: ReactNode }) {
+  const cookieStore = await cookies();
+  const mode = cookieStore.get('mode')?.value === 'light' ? 'light' : 'dark';
   return (
     <html lang="en">
-      <body className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}>{children}</body>
+      <body className={clsx(jakartaSans.className, mode, 'text-primary !bg-primary')}>{children}</body>
     </html>
   );
 }
