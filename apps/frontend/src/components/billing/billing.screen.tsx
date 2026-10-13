@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 import { BillingShell } from '@gitroom/frontend/components/billing/billing.shell';
@@ -23,6 +23,8 @@ const activeEnough = new Set(['active', 'trialing', 'past_due', 'on_hold', 'canc
 
 export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
   const fetch = useFetch();
+  const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const checkout = params.get('checkout');
   const load = useCallback(async (path: string) => {
@@ -41,6 +43,7 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
   const [packError, setPackError] = useState('');
   const [note, setNote] = useState('');
   const [showPlans, setShowPlans] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(false);
   const [upgrade, setUpgrade] = useState<{ plan: BillingPlanCard; detail: string } | null>(null);
 
   useEffect(() => {
@@ -48,20 +51,6 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
       setPeriod(data.subscription.period);
     }
   }, [data?.subscription.period]);
-
-  const checkoutState = (() => {
-    if (checkout === 'failure') {
-      return 'failure' as const;
-    }
-    const status = data?.subscription.status;
-    if ((checkout === 'pending' || checkout === 'success') && status && activeEnough.has(status)) {
-      return 'success' as const;
-    }
-    if (checkout === 'pending' || checkout === 'success') {
-      return 'pending' as const;
-    }
-    return null;
-  })();
 
   const choose = async (plan: BillingPlanCard) => {
     const hasPlan = data && activeEnough.has(data.subscription.status) && !data.grandfathered;
@@ -159,67 +148,114 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
     );
   }
 
-  const picker = (data.screen === 'plan_picker' || showPlans || mode === 'paywall') && !data.grandfathered ? (
+  const status = data.subscription.status;
+  const screen = (() => {
+    if (checkout === 'failure') return 'checkout_failure';
+    if ((checkout === 'pending' || checkout === 'success') && !activeEnough.has(status)) {
+      return 'checkout_pending';
+    }
+    if ((checkout === 'pending' || checkout === 'success') && activeEnough.has(status)) {
+      return 'checkout_success';
+    }
+    if (mode === 'paywall' && data.subscription.tier === 'FREE') return 'paywall';
+    if (status === 'trial_ended') return 'trial_ended';
+    if (status === 'cancelled') return 'cancelled';
+    if (showPlans || data.screen === 'plan_picker') return 'plan_picker';
+    if (status === 'trialing') return 'trial_active';
+    if (status === 'past_due' || status === 'on_hold') return 'past_due';
+    if (data.subscription.pendingDisplayName) return 'downgrade_pending';
+    return 'billing_settings';
+  })();
+  const shown = creditsOpen && screen !== 'paywall' && !screen.startsWith('checkout_') ? 'credits' : screen;
+
+  const picker = !data.grandfathered ? (
     <PlanPicker
       plans={data.plans}
       period={period}
       trialDays={data.trialDays}
-      allowTrial={data.allowTrial && data.subscription.status !== 'trial_ended'}
+      allowTrial={data.allowTrial && status !== 'trial_ended'}
       busy={busy}
       onPeriod={setPeriod}
       onSelect={choose}
     />
   ) : null;
 
-  const body = (
-    <>
-      {checkoutState ? <CheckoutStatus state={checkoutState} onRetry={() => setShowPlans(true)} /> : null}
-      <StatusBanners overview={data} />
-      {note ? <p className="m-0">{note}</p> : null}
-      {mode === 'paywall' && data.subscription.tier === 'FREE' ? <Paywall>{picker}</Paywall> : picker}
-      {data.screen === 'billing_settings' || data.grandfathered ? (
-        <BillingSettings
-          overview={data}
-          busy={busy}
-          onChangePlan={() => setShowPlans(true)}
-          onPortal={async () => {
-            setBusy(true);
-            try {
-              const response = await fetch('/billing/portal');
-              const body = await response.json();
-              if (body.portal) {
-                window.location.href = body.portal;
-              }
-            } finally {
-              setBusy(false);
-            }
-          }}
-          onResume={async () => {
-            setBusy(true);
-            try {
-              await fetch('/billing/resume', { method: 'POST' });
-              await mutate();
-            } finally {
-              setBusy(false);
-            }
-          }}
-          onCancel={async (feedback) => {
-            setBusy(true);
-            try {
-              await fetch('/billing/cancel', { method: 'POST', body: JSON.stringify({ feedback }) });
-              await mutate();
-            } finally {
-              setBusy(false);
-            }
-          }}
-        />
-      ) : null}
+  const settings = (
+    <BillingSettings
+      overview={data}
+      busy={busy}
+      onChangePlan={() => setShowPlans(true)}
+      onPortal={async () => {
+        setBusy(true);
+        try {
+          const response = await fetch('/billing/portal');
+          const body = await response.json();
+          if (body.portal) window.location.href = body.portal;
+        } finally {
+          setBusy(false);
+        }
+      }}
+      onResume={async () => {
+        setBusy(true);
+        try {
+          await fetch('/billing/resume', { method: 'POST' });
+          await mutate();
+        } finally {
+          setBusy(false);
+        }
+      }}
+      onCancel={async (feedback) => {
+        setBusy(true);
+        try {
+          await fetch('/billing/cancel', { method: 'POST', body: JSON.stringify({ feedback }) });
+          await mutate();
+        } finally {
+          setBusy(false);
+        }
+      }}
+    />
+  );
+
+  const credits = (
+    <div data-billing-screen="credits" className="flex flex-col gap-[12px]">
+      <button type="button" onClick={() => setCreditsOpen(false)}>Back to plan</button>
       <CreditsMeter overview={data} />
       {!data.grandfathered ? (
         <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
       ) : null}
       <InvoiceList invoices={data.invoices} />
-      <FAQComponent />
+    </div>
+  );
+
+  return (
+    <BillingShell>
+      <div data-billing-screen={shown} className="flex flex-col gap-[12px]">
+        {note ? <p className="m-0">{note}</p> : null}
+        {shown === 'checkout_failure' ? (
+          <CheckoutStatus state="failure" onRetry={() => router.replace(pathname)} />
+        ) : null}
+        {shown === 'checkout_pending' ? <CheckoutStatus state="pending" /> : null}
+        {shown === 'checkout_success' ? (
+          <CheckoutStatus state="success" onRetry={() => router.replace(pathname)} />
+        ) : null}
+        {shown === 'paywall' ? <Paywall>{picker}</Paywall> : null}
+        {shown === 'trial_ended' || shown === 'cancelled' ? (
+          <>
+            <StatusBanners overview={data} />
+            {picker}
+          </>
+        ) : null}
+        {shown === 'plan_picker' ? picker : null}
+        {shown === 'trial_active' || shown === 'past_due' || shown === 'downgrade_pending' || shown === 'billing_settings' ? (
+          <>
+            <StatusBanners overview={data} />
+            {settings}
+            <button type="button" onClick={() => setCreditsOpen(true)}>Credits and invoices</button>
+          </>
+        ) : null}
+        {shown === 'credits' ? credits : null}
+        {shown !== 'credits' && shown !== 'checkout_pending' ? <FAQComponent /> : null}
+      </div>
       <UpgradeModal
         open={!!upgrade}
         title="Confirm plan change"
@@ -228,8 +264,6 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
         onClose={() => setUpgrade(null)}
         onConfirm={() => upgrade && subscribe(upgrade.plan)}
       />
-    </>
+    </BillingShell>
   );
-
-  return <BillingShell>{body}</BillingShell>;
 }

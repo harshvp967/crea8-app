@@ -123,16 +123,14 @@ export class DodoProvider extends PaymentProviderAbstract {
         ? new Date(source.next_billing_date)
         : null;
     const customerId = source?.customer?.customer_id || null;
-    if (customerId) {
-      await tx.organization.update({
-        where: { id: organizationId },
-        data: {
-          paymentId: customerId,
-          isTrailing: !ended && inTrial,
-          allowTrial: false,
-        },
-      });
-    }
+    await tx.organization.update({
+      where: { id: organizationId },
+      data: {
+        ...(customerId ? { paymentId: customerId } : {}),
+        isTrailing: !ended && inTrial,
+        allowTrial: false,
+      },
+    });
     await tx.subscription.upsert({
       where: { organizationId },
       create: {
