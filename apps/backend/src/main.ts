@@ -58,6 +58,10 @@ async function start() {
         process.env.FRONTEND_URL,
         'http://localhost:6274',
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
+        ...(process.env.EXTRA_CORS_ORIGINS || '')
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean),
         ...mcpCorsOrigins(),
       ],
     },
