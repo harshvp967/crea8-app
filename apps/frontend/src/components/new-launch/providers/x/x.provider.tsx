@@ -147,9 +147,13 @@ export default withProvider({
   CustomPreviewComponent: undefined,
   dto: XDto,
   maximumCharacters: (settings) => {
+    if (!Array.isArray(settings) && settings?.post_type === 'article') {
+      return 100000;
+    }
     if (settings?.[0]?.value) {
       return 4000;
     }
     return 280;
   },
+  inlineImages: (values) => values?.post_type === 'article',
 });

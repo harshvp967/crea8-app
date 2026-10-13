@@ -1,7 +1,9 @@
 import {
+  channelPublishDate,
   postWorkflowPlan,
   scheduledPostState,
   scheduledPublishDate,
+  siblingPostGroups,
 } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 
 describe('post scheduling', () => {
@@ -24,5 +26,36 @@ describe('post scheduling', () => {
     expect(postWorkflowPlan('now', 'QUEUE')).toBe('start');
     expect(postWorkflowPlan('draft', 'DRAFT')).toBe('stop-only');
     expect(postWorkflowPlan('update', 'QUEUE')).toBe('skip');
+  });
+
+  it('uses a channel date when one is set and the post date otherwise', () => {
+    expect(
+      channelPublishDate('schedule', '2026-11-02T09:30:00', '2026-11-03T11:00:00')
+    ).toBe('2026-11-03T11:00:00');
+    expect(channelPublishDate('schedule', '2026-11-02T09:30:00')).toBe(
+      '2026-11-02T09:30:00'
+    );
+    expect(
+      channelPublishDate(
+        'now',
+        '2026-11-02T09:30:00',
+        '2026-11-03T11:00:00',
+        new Date('2026-11-01T15:07:42.000Z')
+      )
+    ).toBe('2026-11-01T15:07:00');
+  });
+
+  it('keeps sibling channels that share the opened post repeat interval', () => {
+    const groups = [
+      [{ integrationId: 'a', intervalInDays: 1 }],
+      [{ integrationId: 'b', intervalInDays: 1 }],
+      [{ integrationId: 'b', intervalInDays: 1 }],
+      [{ integrationId: 'c', intervalInDays: 7 }],
+      [],
+    ];
+
+    expect(
+      siblingPostGroups('a', 1, groups).map((group) => group[0].integrationId)
+    ).toEqual(['b']);
   });
 });
