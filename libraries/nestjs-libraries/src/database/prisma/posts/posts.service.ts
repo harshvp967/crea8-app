@@ -6,8 +6,9 @@ import {
 } from '@nestjs/common';
 import {
   PostsRepository,
+  channelPublishDate,
   postWorkflowPlan,
-  scheduledPublishDate,
+  siblingPostGroups,
 } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
@@ -22,7 +23,8 @@ import {
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
-import { shuffle } from 'lodash';
+import { groupBy, shuffle } from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -509,19 +511,60 @@ export class PostsService {
   }
 
   async getPostsByGroup(orgId: string, group: string) {
-    const convertToJPEG = false;
     const loadAll = await this._postRepository.getPostsByGroup(orgId, group);
     const posts = this.arrangePostsByGroup(loadAll, undefined);
+    if (!posts.length) {
+      throw new NotFoundException('Post not found');
+    }
 
+    const batch = posts[0].batchId
+      ? await this._postRepository.getPostsByBatch(
+          orgId,
+          posts[0].batchId,
+          group
+        )
+      : [];
+
+    // the other channels the post was created with, the editor holds one
+    // post per channel, and a channel that repeats differently is its own post
+    const siblings = siblingPostGroups(
+      posts[0].integrationId,
+      posts[0].intervalInDays,
+      Object.values(groupBy(batch, (post) => post.group)).map((batchPosts) =>
+        this.arrangePostsByGroup(batchPosts, undefined)
+      )
+    );
+
+    return {
+      ...(await this.groupForEditor(posts)),
+      siblings: await Promise.all(
+        siblings.map((batchPosts) => this.groupForEditor(batchPosts))
+      ),
+    };
+  }
+
+  // the post as the editor loads it, its channel without the tokens
+  private async groupForEditor(posts: PostWithConditionals[]) {
     return {
       group: posts?.[0]?.group,
       posts: await Promise.all(
-        (posts || []).map(async (post) => ({
+        (posts || []).map(async ({ integration, ...post }) => ({
           ...post,
+          ...(integration
+            ? {
+                integration: {
+                  id: integration.id,
+                  name: integration.name,
+                  picture: integration.picture,
+                  providerIdentifier: integration.providerIdentifier,
+                  profile: integration.profile,
+                },
+              }
+            : {}),
           image: await this.updateMedia(
             post.id,
             JSON.parse(post.image || '[]'),
-            convertToJPEG
+            false
           ),
         }))
       ),
@@ -950,6 +993,7 @@ export class PostsService {
     keepGroup = false
   ): Promise<any[]> {
     const postList = [];
+    const batchId = uuidv4();
     for (const post of body.posts) {
       if (
         (body.type === 'schedule' || body.type === 'now') &&
@@ -984,12 +1028,13 @@ export class PostsService {
       const { posts } = await this._postRepository.createOrUpdatePost(
         body.type,
         orgId,
-        scheduledPublishDate(body.type, body.date),
+        channelPublishDate(body.type, body.date, post.date),
         post,
         body.tags,
         creationMethod,
         body.inter,
-        keepGroup
+        keepGroup,
+        batchId
       );
 
       if (!posts?.length) {

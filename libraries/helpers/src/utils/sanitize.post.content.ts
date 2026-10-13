@@ -13,6 +13,7 @@ const ALLOWED_TAGS = [
   'h2',
   'h3',
   'span',
+  'img',
 ];
 
 const ALLOWED_ATTR = [
@@ -22,6 +23,8 @@ const ALLOWED_ATTR = [
   'class',
   'data-mention-id',
   'data-mention-label',
+  'src',
+  'alt',
 ];
 
 // isomorphic-dompurify pulls jsdom 29, whose html-encoding-sniffer require()s

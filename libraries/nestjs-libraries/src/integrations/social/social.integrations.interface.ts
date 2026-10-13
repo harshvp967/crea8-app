@@ -224,6 +224,8 @@ export interface SocialProvider
   isChromeExtension?: boolean;
   extensionCookies?: { name: string; domain: string }[];
   editor: 'none' | 'normal' | 'markdown' | 'html';
+  // pictures belong in the post body (an X article, WordPress, Listmonk)
+  inlineImages?: (settings?: any) => boolean;
   customFields?: () => Promise<
     {
       key: string;

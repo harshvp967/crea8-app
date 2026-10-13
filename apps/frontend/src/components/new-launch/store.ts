@@ -133,6 +133,11 @@ interface StoreState {
   setChars: (id: string, chars: number) => void;
   chars: Record<string, number>;
   setComments: (comments: boolean | 'no-media') => void;
+  inlineImages: boolean;
+  // the other channels of an existing post, each with its own date
+  channelDates: Record<string, dayjs.Dayjs>;
+  setChannelDate: (integrationId: string, date: dayjs.Dayjs) => void;
+  setInlineImages: (inlineImages: boolean) => void;
 }
 
 const initialState = {
@@ -155,6 +160,8 @@ const initialState = {
   global: [] as Values[],
   internal: [] as Internal[],
   chars: {},
+  inlineImages: false,
+  channelDates: {} as Record<string, dayjs.Dayjs>,
 };
 
 export const useLaunchStore = create<StoreState>()((set) => ({
@@ -187,6 +194,7 @@ export const useLaunchStore = create<StoreState>()((set) => ({
             ? {
                 current: 'global',
                 editor: 'normal',
+                inlineImages: false,
               }
             : {}),
         };
@@ -532,6 +540,17 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setDate: (date: dayjs.Dayjs) =>
     set((state) => ({
       date,
+    })),
+  setChannelDate: (integrationId: string, date: dayjs.Dayjs) =>
+    set((state) => ({
+      channelDates: {
+        ...state.channelDates,
+        [integrationId]: date,
+      },
+    })),
+  setInlineImages: (inlineImages: boolean) =>
+    set((state) => ({
+      inlineImages,
     })),
   setRepeater: (repeater: number) =>
     set((state) => ({

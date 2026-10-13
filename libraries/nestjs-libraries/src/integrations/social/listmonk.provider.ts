@@ -26,6 +26,10 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
     return 100000000;
   }
 
+  inlineImages() {
+    return true;
+  }
+
   async customFields() {
     return [
       {

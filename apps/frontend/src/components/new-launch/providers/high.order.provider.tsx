@@ -8,7 +8,7 @@ import React, {
   useImperativeHandle,
   useMemo,
 } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, useWatch, FormProvider } from 'react-hook-form';
 import { IsOptional } from 'class-validator';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
@@ -21,6 +21,7 @@ import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 class Empty {
   @IsOptional()
   empty: string;
@@ -47,6 +48,7 @@ export const withProvider = function <T extends object>(params: {
   }>;
   dto?: any;
   maximumCharacters?: number | ((settings: any) => number);
+  inlineImages?: boolean | ((values: any) => boolean);
 }) {
   const {
     postComment,
@@ -73,13 +75,14 @@ export const withProvider = function <T extends object>(params: {
       allIntegrations,
       setPostComment,
       setEditor,
+      setInlineImages,
       dummy,
       setChars,
       setComments,
       setHide,
     } = useLaunchStore(
       useShallow((state) => ({
-        date: state.date,
+        date: state.channelDates[props.id] || state.date,
         tab: state.tab,
         global: state.global,
         dummy: state.dummy,
@@ -95,6 +98,7 @@ export const withProvider = function <T extends object>(params: {
         setTotalChars: state.setTotalChars,
         setPostComment: state.setPostComment,
         setEditor: state.setEditor,
+        setInlineImages: state.setInlineImages,
         setChars: state.setChars,
         selectedIntegration: state.selectedIntegrations.find(
           (p) => p.integration.id === props.id
@@ -102,27 +106,31 @@ export const withProvider = function <T extends object>(params: {
       }))
     );
 
+    const characterLimit = (formValues?: any) => {
+      if (typeof maximumCharacters === 'number') {
+        return maximumCharacters;
+      }
+      if (formValues?.post_type === 'article') {
+        return maximumCharacters(formValues);
+      }
+      return maximumCharacters(
+        JSON.parse(selectedIntegration.integration.additionalSettings || '[]')
+      );
+    };
+
     useEffect(() => {
       if (!setTotalChars) {
         return;
       }
 
-      setChars(
-        props.id,
-        typeof maximumCharacters === 'number'
-          ? maximumCharacters
-          : maximumCharacters(
-              JSON.parse(
-                selectedIntegration.integration.additionalSettings || '[]'
-              )
-            )
-      );
+      setChars(props.id, characterLimit());
 
       if (isGlobal) {
         setComments(true);
         setPostComment(PostComment.ALL);
         setTotalChars(0);
         setEditor('normal');
+        setInlineImages(false);
       }
 
       if (current) {
@@ -131,15 +139,7 @@ export const withProvider = function <T extends object>(params: {
         );
         setEditor(selectedIntegration?.integration.editor);
         setPostComment(postComment);
-        setTotalChars(
-          typeof maximumCharacters === 'number'
-            ? maximumCharacters
-            : maximumCharacters(
-                JSON.parse(
-                  selectedIntegration.integration.additionalSettings || '[]'
-                )
-              )
-        );
+        setTotalChars(characterLimit());
       }
     }, [justCurrent, current, isGlobal, setTotalChars]);
 
@@ -176,6 +176,24 @@ export const withProvider = function <T extends object>(params: {
       reValidateMode: 'onChange',
     });
 
+    // the post settings can turn inline images on, like an X article
+    const watched = useWatch({
+      control: form.control,
+      disabled: typeof params.inlineImages !== 'function',
+    });
+    const inlineImages =
+      typeof params.inlineImages === 'function'
+        ? params.inlineImages(watched)
+        : !!params.inlineImages;
+    useEffect(() => {
+      if (!current) {
+        return;
+      }
+      setInlineImages(inlineImages);
+      setChars(props.id, characterLimit(watched));
+      setTotalChars(characterLimit(watched));
+    }, [current, inlineImages, watched?.post_type]);
+
     useImperativeHandle(
       ref,
       () => ({
@@ -189,17 +207,11 @@ export const withProvider = function <T extends object>(params: {
             err: form.formState.errors,
             settings,
             values: value,
-            maximumCharacters:
-              typeof maximumCharacters === 'number'
-                ? maximumCharacters
-                : maximumCharacters(
-                    JSON.parse(
-                      selectedIntegration.integration.additionalSettings || '[]'
-                    )
-                  ),
+            maximumCharacters: characterLimit(settings),
             fix: () => {
               setCurrent(props.id);
               setHide(true);
+              form.trigger();
             },
             preview: () => {
               setCurrent(props.id);
@@ -286,7 +298,40 @@ export const withProvider = function <T extends object>(params: {
               ))}
             {(SettingsComponent || !!data?.internalPlugs?.length) &&
               createPortal(
-                <div data-id={props.id} className="hidden px-[12px] pb-[12px]">
+                <div
+                  data-id={props.id}
+                  className={
+                    isGlobal
+                      ? 'px-[12px] pb-[12px]'
+                      : 'hidden px-[12px] pb-[12px]'
+                  }
+                >
+                  {isGlobal && (
+                    <style>{`#wrapper-settings {display: block !important}`}</style>
+                  )}
+                  {isGlobal && (
+                    <div className="flex items-center gap-[12px] py-[12px]">
+                      <div className="relative">
+                        <SafeImage
+                          alt={selectedIntegration?.integration.name!}
+                          width={36}
+                          height={36}
+                          className="min-w-[36px] min-h-[36px] w-[36px] h-[36px] rounded-full"
+                          src={selectedIntegration?.integration.picture}
+                        />
+                        <SafeImage
+                          alt={selectedIntegration?.integration.identifier}
+                          width={14}
+                          height={14}
+                          className="rounded-[4px] min-w-[14px] min-h-[14px] w-[14px] h-[14px] absolute bottom-0 end-0"
+                          src={`/icons/platforms/${selectedIntegration?.integration.identifier}.png`}
+                        />
+                      </div>
+                      <div className="text-[14px] font-[600]">
+                        {selectedIntegration?.integration.name}
+                      </div>
+                    </div>
+                  )}
                   <SettingsComponent />
                   {!!data?.internalPlugs?.length && !dummy && (
                     <InternalChannels plugs={data?.internalPlugs} />

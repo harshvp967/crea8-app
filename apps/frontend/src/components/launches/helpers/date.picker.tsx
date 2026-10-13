@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { Calendar, TimeInput } from '@mantine/dates';
 import { useClickOutside } from '@mantine/hooks';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { displayDayjs, displayNow, isPastCalendarDay } from '@gitroom/frontend/components/layout/set.timezone';
+import { displayDayjs, displayNow, getTimezone, isPastCalendarDay } from '@gitroom/frontend/components/layout/set.timezone';
 import { CalendarIcon } from '@gitroom/frontend/components/ui/icons';
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
@@ -94,6 +94,9 @@ export const DatePicker: FC<{
             }}
           />
           <div className="po-date-time">
+            <div className="text-[12px] font-[500] text-textItemBlur px-[4px]">
+              {getTimezone()}
+            </div>
             <label className="po-date-clock">
               <CalendarIcon />
               <span>{wall.format('h:mm A')}</span>
