@@ -12,6 +12,15 @@ import { CLIPPING_WIDGET_URI, clippingWidgetHtml } from '@gitroom/nestjs-librari
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { mcpCorsPath, mcpPublicOrigin } from '@gitroom/nestjs-libraries/chat/mcp.public.origin';
 import {
+  handleMcpAuthorizationServerMetadata,
+  handleMcpProtectedResourceMetadata,
+  mcpAuthorizationServerMetadata,
+  mcpAuthorizationServers,
+  mcpOauthScopes,
+  mcpOidcEmailClaimsEnabled,
+  mcpProtectedResourceServers,
+} from '@gitroom/nestjs-libraries/chat/mcp.oauth.metadata';
+import {
   clientIp,
   consumeFixedWindow,
   isMcpTraffic,
@@ -28,14 +37,6 @@ const fixAcceptHeader = (req: Request) => {
     req.rawHeaders.push('Accept', value);
   }
 };
-
-const openAiOAuthClientId = process.env.OPENAI_OAUTH_CLIENT_ID?.trim();
-const enableOidcEmailClaims = Boolean(openAiOAuthClientId);
-const oauthScopes = [
-  ...(enableOidcEmailClaims ? ['openid', 'email'] : []),
-  'mcp:read',
-  'mcp:write',
-];
 
 export const startMcp = async (app: INestApplication) => {
   const http = app.getHttpAdapter().getInstance() as any;
@@ -201,57 +202,15 @@ export const startMcp = async (app: INestApplication) => {
     appResources: claudeAppResources,
   });
 
-  // Two RFC 8414 path-based issuers backed by the same endpoints and code.
-  // /mcp-oauth-chatgpt is what the ChatGPT app submission points at: it does
-  // not advertise a registration_endpoint, so the OpenAI builder defaults to
-  // the pre-defined client credentials instead of DCR (a fresh path, because
-  // OpenAI kept serving its cached copy of the old /mcp-oauth metadata).
-  // /mcp-oauth-dynamic keeps DCR for Claude, Cursor and every other
-  // self-registering client
-  // Path-based issuers. The origin is the host that received the request
-  // (mcp.crea8.one or the API host), not a single env URL baked in at boot.
-  const authorizationServers: Record<string, { path: string; registration: boolean }> = {
-    '/mcp-oauth-chatgpt': {
-      path: '/mcp-oauth-chatgpt',
-      registration: false,
-    },
-    '/mcp-oauth-dynamic': {
-      path: '/mcp-oauth-dynamic',
-      registration: true,
-    },
-  };
-
-  const authorizationServerMetadata = (
-    origin: string,
-    server: { path: string; registration: boolean }
-  ) => ({
-    // RFC 8414: metadata served at /.well-known/oauth-authorization-server/<path>
-    // belongs to the path-based issuer <origin>/<path>
-    issuer: new URL(server.path, origin).toString(),
-    authorization_endpoint: `${process.env.FRONTEND_URL}/oauth/authorize`,
-    token_endpoint: `${origin}/oauth/token`,
-    ...(server.registration && {
-      registration_endpoint: `${origin}/oauth/register`,
-    }),
-    ...(enableOidcEmailClaims && {
-      userinfo_endpoint: `${origin}/oauth/userinfo`,
-    }),
-    response_types_supported: ['code'],
-    grant_types_supported: ['authorization_code'],
-    token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post', 'none'],
-    code_challenge_methods_supported: ['S256'],
-    scopes_supported: oauthScopes,
-  });
-
-  // Every OAuth-protected MCP path is its own RFC 9728 protected resource
-  // (the token endpoint ignores the RFC 8707 resource param, so the issuers
-  // above cover all of them)
+  // Every OAuth-protected MCP path is its own RFC 9728 protected resource.
+  // The token endpoint ignores the RFC 8707 resource param, so the path-based
+  // issuers in mcp.oauth.metadata cover all of them.
   const createResourceMiddleware = (mcpPath: string, authorizationServer: string, origin: string) =>
     createOAuthMiddleware({
       oauth: {
         resource: new URL(mcpPath, origin).toString(),
         authorizationServers: [new URL(authorizationServer, origin).toString()],
-        scopesSupported: oauthScopes,
+        scopesSupported: mcpOauthScopes(),
         validateToken: async (token: string) => {
           const org = await resolveAuth(token);
           if (!org) {
@@ -265,14 +224,26 @@ export const startMcp = async (app: INestApplication) => {
 
   const oauthResources: Record<string, { authorizationServer: string; mcpServer: MCPServer }> = {
     // ChatGPT app submission (pre-defined client credentials, no DCR)
-    '/mcp-oauth-chatgpt': { authorizationServer: '/mcp-oauth-chatgpt', mcpServer: oauthServer },
+    '/mcp-oauth-chatgpt': {
+      authorizationServer: mcpProtectedResourceServers['/mcp-oauth-chatgpt'],
+      mcpServer: oauthServer,
+    },
     // Former ChatGPT path, kept for connectors that were created against it
-    '/mcp-oauth': { authorizationServer: '/mcp-oauth-dynamic', mcpServer: oauthServer },
-    // Claude connector directory submission
-    '/mcp-oauth-claude': { authorizationServer: '/mcp-oauth-dynamic', mcpServer: claudeOauthServer },
+    '/mcp-oauth': {
+      authorizationServer: mcpProtectedResourceServers['/mcp-oauth'],
+      mcpServer: oauthServer,
+    },
+    // Claude connector directory submission (DCR, media-generation tools hidden)
+    '/mcp-oauth-claude': {
+      authorizationServer: mcpProtectedResourceServers['/mcp-oauth-claude'],
+      mcpServer: claudeOauthServer,
+    },
     // Clients that register themselves through DCR (/oauth/register) - not
     // directory-reviewed, so they get the full toolset (media generation included)
-    '/mcp-oauth-dynamic': { authorizationServer: '/mcp-oauth-dynamic', mcpServer: oauthServer },
+    '/mcp-oauth-dynamic': {
+      authorizationServer: mcpProtectedResourceServers['/mcp-oauth-dynamic'],
+      mcpServer: oauthServer,
+    },
   };
 
   if (process.env.OPENAI_APP_CHALLANGE) {
@@ -282,44 +253,15 @@ export const startMcp = async (app: INestApplication) => {
     });
   }
 
-  app.use('/.well-known/oauth-protected-resource', async (req: Request, res: Response, next: () => void) => {
-    // Only the paths in oauthResources are OAuth-protected.
-    // Answering discovery on any other path (including the root, which clients
-    // fall back to) makes them demand OAuth for /mcp/:id too
-    const resource = oauthResources[req.path];
-    if (!resource) {
-      next();
-      return;
-    }
-
-    const origin = mcpPublicOrigin(req);
-    const url = new URL('/.well-known/oauth-protected-resource', origin);
-    await createResourceMiddleware(req.path, resource.authorizationServer, origin)(req, res, url);
-  });
-
-  app.use('/.well-known/oauth-authorization-server', async (req: Request, res: Response, next: () => void) => {
-    const server = authorizationServers[req.path];
-    if (!server) {
-      next();
-      return;
-    }
-
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    if (req.method === 'OPTIONS') {
-      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', 'max-age=3600');
-    res.json(authorizationServerMetadata(mcpPublicOrigin(req), server));
-  });
+  // Only the paths in mcpProtectedResourceServers are OAuth-protected.
+  // Answering discovery on any other path (including the root, which clients
+  // fall back to) makes them demand OAuth for /mcp/:id too.
+  app.use('/.well-known/oauth-protected-resource', handleMcpProtectedResourceMetadata);
+  app.use('/.well-known/oauth-authorization-server', handleMcpAuthorizationServerMetadata);
 
   app.use('/.well-known/openid-configuration', async (req: Request, res: Response, next: () => void) => {
-    const server = authorizationServers[req.path];
-    if (!server || !enableOidcEmailClaims) {
+    const server = mcpAuthorizationServers[req.path];
+    if (!server || !mcpOidcEmailClaimsEnabled()) {
       next();
       return;
     }
@@ -335,7 +277,7 @@ export const startMcp = async (app: INestApplication) => {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'max-age=3600');
     res.json({
-      ...authorizationServerMetadata(mcpPublicOrigin(req), server),
+      ...mcpAuthorizationServerMetadata(mcpPublicOrigin(req), server),
       subject_types_supported: ['public'],
       claims_supported: ['sub', 'email', 'email_verified'],
     });
