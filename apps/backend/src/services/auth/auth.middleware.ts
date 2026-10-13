@@ -5,6 +5,7 @@ import { User } from '@prisma/client';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
@@ -16,7 +17,7 @@ export const removeAuth = (res: Response) => {
       ? {
           secure: true,
           httpOnly: true,
-          sameSite: 'none',
+          sameSite: authCookieSameSite(),
         }
       : {}),
     expires: new Date(0),

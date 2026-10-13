@@ -24,6 +24,7 @@ import { ForgotPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot.pa
 import { ResendActivationDto } from '@gitroom/nestjs-libraries/dtos/auth/resend-activation.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
@@ -84,7 +85,7 @@ export class AuthController {
           ? {
               secure: true,
               httpOnly: true,
-              sameSite: 'none',
+              sameSite: authCookieSameSite(),
             }
           : {}),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -101,7 +102,7 @@ export class AuthController {
             ? {
                 secure: true,
                 httpOnly: true,
-                sameSite: 'none',
+                sameSite: authCookieSameSite(),
               }
             : {}),
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -150,7 +151,7 @@ export class AuthController {
           ? {
               secure: true,
               httpOnly: true,
-              sameSite: 'none',
+              sameSite: authCookieSameSite(),
             }
           : {}),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -167,7 +168,7 @@ export class AuthController {
             ? {
                 secure: true,
                 httpOnly: true,
-                sameSite: 'none',
+                sameSite: authCookieSameSite(),
               }
             : {}),
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -237,7 +238,7 @@ export class AuthController {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: 'none',
+            sameSite: authCookieSameSite(),
           }
         : {}),
       expires: new Date(Date.now() + 1000 * 60 * 10),
@@ -266,7 +267,7 @@ export class AuthController {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: 'none',
+            sameSite: authCookieSameSite(),
           }
         : {}),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -373,7 +374,7 @@ export class AuthController {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: 'none',
+            sameSite: authCookieSameSite(),
           }
         : {}),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),

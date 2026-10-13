@@ -26,6 +26,7 @@ import {
   getMaxSize,
   uploadStreamToStorage,
 } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
+import { presentMediaRecord } from '@gitroom/nestjs-libraries/upload/media.deliver';
 
 // What every upload is normalized to before a provider ever sees it. The
 // service applies exactly these, so a platform-specific need belongs in the
@@ -160,7 +161,15 @@ export class MediaService {
       response.body,
       declaredSize
     );
-    return this.saveFile(org, uploaded.originalname, uploaded.path);
+    return this.toClient(await this.saveFile(org, uploaded.originalname, uploaded.path));
+  }
+
+  toClient<T>(row: T) {
+    return presentMediaRecord(row as T & { path?: string | null; thumbnail?: string | null });
+  }
+
+  orgOwnsLocalPath(orgId: string, relative: string) {
+    return this._mediaRepository.orgOwnsLocalPath(orgId, relative);
   }
 
   saveFile(
@@ -192,7 +201,7 @@ export class MediaService {
       !PROCESSABLE[extname(fileName).toLowerCase()] ||
       !client
     ) {
-      return media;
+      return this.toClient(media);
     }
 
     await this._mediaRepository.startProcessing(org, media.id);
@@ -213,7 +222,7 @@ export class MediaService {
       return this.releaseUnprocessed(org, media.id, media.name);
     }
 
-    return { ...media, status: 'processing' };
+    return this.toClient({ ...media, status: 'processing' });
   }
 
   // Lets go of a media the normalizer will not touch. A source the platforms
@@ -226,7 +235,7 @@ export class MediaService {
         ? { error: 'No media processor is available to convert this file' }
         : {}),
     });
-    return this._mediaRepository.getMediaStatus(org, id);
+    return this.toClient(await this._mediaRepository.getMediaStatus(org, id));
   }
 
   // Upload widget (MCP Apps): the session id is what the model sees and polls,
@@ -288,17 +297,21 @@ export class MediaService {
     // a list, so parallel uploads of the same session can't overwrite each other
     await ioRedis.rpush(`uploadSessionMedia:${sessionId}`, media.id);
     await ioRedis.expire(`uploadSessionMedia:${sessionId}`, 3600);
-    return media;
+    return this.toClient(media);
   }
 
   async getUploadSession(org: string, sessionId: string) {
     await this.checkUploadSession(org, sessionId);
     const list = await ioRedis.lrange(`uploadSessionMedia:${sessionId}`, 0, -1);
-    return (
-      await Promise.all(
-        list.map((id) => this._mediaRepository.getMediaStatus(org, id))
+    return Promise.all(
+      (
+        await Promise.all(
+          list.map((id) => this._mediaRepository.getMediaStatus(org, id))
+        )
       )
-    ).filter((f) => f);
+        .filter((row) => row)
+        .map((row) => this.toClient(row))
+    );
   }
 
   async getMediaStatus(org: string, id: string) {
@@ -307,7 +320,7 @@ export class MediaService {
       throw new HttpException('Media not found', 404);
     }
 
-    return media;
+    return this.toClient(media);
   }
 
   // The normalized file overwrites the original in place; only a container
@@ -458,8 +471,12 @@ export class MediaService {
     );
   }
 
-  getMedia(org: string, page: number, search?: string) {
-    return this._mediaRepository.getMedia(org, page, search);
+  async getMedia(org: string, page: number, search?: string) {
+    const data = await this._mediaRepository.getMedia(org, page, search);
+    return {
+      pages: data.pages,
+      results: await Promise.all(data.results.map((row) => this.toClient(row))),
+    };
   }
 
   saveMediaInformation(org: string, data: SaveMediaInformationDto) {

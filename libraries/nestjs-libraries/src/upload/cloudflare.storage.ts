@@ -200,11 +200,11 @@ class CloudflareStorage implements IUploadProvider {
     }
   }
 
-  async signDownloadUrl(fileName: string) {
+  async signDownloadUrl(fileName: string, expiresIn = 3 * 3600) {
     return getSignedUrl(
       this._client,
       new GetObjectCommand({ Bucket: this._bucketName, Key: fileName }),
-      { expiresIn: 3 * 3600 }
+      { expiresIn }
     );
   }
 

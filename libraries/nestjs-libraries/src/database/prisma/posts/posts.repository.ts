@@ -16,6 +16,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { canonicalizeImageList } from '@gitroom/nestjs-libraries/upload/media.access';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -672,7 +673,7 @@ export class PostsRepository {
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         ...(type === 'create' ? { creationMethod } : {}),
         ...(nextState ? { state: nextState } : {}),
-        image: JSON.stringify(value.image),
+        image: JSON.stringify(canonicalizeImageList(value.image)),
         settings: JSON.stringify(body.settings),
         organization: {
           connect: {

@@ -20,6 +20,7 @@ import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -173,7 +174,7 @@ export class UsersController {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: 'none',
+            sameSite: authCookieSameSite(),
           }
         : {}),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -314,7 +315,7 @@ export class UsersController {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: 'none',
+            sameSite: authCookieSameSite(),
           }
         : {}),
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
@@ -373,7 +374,7 @@ export class UsersController {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: 'none',
+            sameSite: authCookieSameSite(),
           }
         : {}),
       maxAge: -1,
@@ -386,7 +387,7 @@ export class UsersController {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: 'none',
+            sameSite: authCookieSameSite(),
           }
         : {}),
       maxAge: -1,
@@ -399,7 +400,7 @@ export class UsersController {
         ? {
             secure: true,
             httpOnly: true,
-            sameSite: 'none',
+            sameSite: authCookieSameSite(),
           }
         : {}),
       maxAge: -1,
@@ -437,7 +438,7 @@ export class UsersController {
           ? {
               secure: true,
               httpOnly: true,
-              sameSite: 'none',
+              sameSite: authCookieSameSite(),
             }
           : {}),
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),

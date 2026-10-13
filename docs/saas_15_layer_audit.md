@@ -6,7 +6,7 @@ Status values: **fixed in this PR**, **proposed**, **owner decision**.
 
 ## Critical
 
-1. **Production schema is applied with `prisma db push --accept-data-loss`.** `package.json` script `prisma-db-push` and `pm2-run`. Docker boot in `var/docker/backend-start.sh` also runs `db push`. `prisma migrate deploy` is not wired up. A push can drop columns on a live database that already has customers. **Proposed.** The steps are in `docs/prisma-migration-baseline-proposal.md` and were not executed. Owner: Harsh must approve before any production schema change, and that change runs only from a temporary Railway Function, never a public TCP proxy.
+1. **Production schema is applied with `prisma db push --accept-data-loss`.** `package.json` script `prisma-db-push` and `pm2-run`. Docker boot in `var/docker/backend-start.sh` also runs `db push`. `prisma migrate deploy` is not wired up. A push can drop columns on a live database that already has customers. **Proposed.** `docs/prisma-migration-baseline-proposal.md` is now a full unexecuted plan (`migrate diff`, `migrate resolve --applied` only from a temporary Railway Function, `PRISMA_MIGRATE=1` before swapping deploy scripts, rollback, verification). The deploy scripts were not changed. Owner: Harsh must approve before any production schema change, and that change runs only from a temporary Railway Function, never a public TCP proxy.
 
 ## High
 
@@ -26,15 +26,15 @@ Status values: **fixed in this PR**, **proposed**, **owner decision**.
 
 9. **Stripe webhooks are verified but not idempotent.** `libraries/nestjs-libraries/src/services/stripe.service.ts` calls `constructEvent` and does not store the event id. A replay can apply the same subscription change twice. **Proposed.** Persist processed event ids and ignore duplicates. Not done here (no schema change).
 
-10. **Outbound publish webhooks are unsigned.** `apps/orchestrator/src/activities/post.activity.ts` POSTs JSON with no HMAC. Link-in-Bio lead webhooks already sign with `X-Crea8-Signature`. **Proposed.** Sign post webhooks the same way.
+10. **Outbound publish webhooks are unsigned.** `apps/orchestrator/src/activities/post.activity.ts` POSTs JSON with no HMAC. Link-in-Bio lead webhooks already sign with `X-Crea8-Signature`. **Fixed in this PR.** `sendWebhooks` adds `X-Crea8-Signature` (`sha256=` HMAC-SHA256 of `timestamp.body`) and `X-Crea8-Timestamp` when `POST_WEBHOOK_SECRET` is set. The per-webhook key is `HMAC(root, webhookId)` and is shown as `signingSecret`. Receivers verify it as documented in `docs/post-webhooks.md`. Headers are omitted until the secret is set. No webhook secret column was added.
 
-11. **Cookie session plus credentialed CORS, and no CSRF token.** `apps/backend/src/main.ts` CORS, auth cookie `sameSite: 'none'` in `apps/backend/src/services/auth/auth.middleware.ts`. **Proposed.** A CSRF token or a same-site session cookie for first-party calls.
+11. **Cookie session plus credentialed CORS, and no CSRF token.** `apps/backend/src/main.ts` CORS, auth cookie `sameSite: 'none'` in `apps/backend/src/services/auth/auth.middleware.ts`. **Fixed in this PR.** Cookie-authenticated `POST`/`PUT`/`PATCH`/`DELETE` need an allowlisted `Origin` or `Referer` (`FRONTEND_URL`, `MAIN_URL`, backend URL) and a double-submit `csrf` cookie matching `x-csrf-token`. `/public`, MCP, and payment webhook paths are exempt, as is any request with no `auth` cookie. `sameSite` is `lax` when the frontend and API share a registrable domain, and stays `none` otherwise. The frontend fetch layer sends the header and retries once.
 
 12. **Plan checks allow every action when Stripe is unset.** `apps/backend/src/services/auth/permissions/permissions.service.ts` treats a missing `STRIPE_PUBLISHABLE_KEY` as PRO. **Owner decision** for self-hosted installs. Production must keep the Stripe key set.
 
-13. **Uploaded files can be world-readable.** `libraries/nestjs-libraries/src/upload/media.public.url.ts` builds a public `CLOUDFLARE_BUCKET_URL`. Local storage is served by `apps/frontend/src/app/(app)/api/uploads/[[...path]]/route.ts` with a path check and no auth. **Proposed.** Private R2 objects and short-lived signed download URLs after an organization check.
+13. **Uploaded files can be world-readable.** `libraries/nestjs-libraries/src/upload/media.public.url.ts` builds a public `CLOUDFLARE_BUCKET_URL`. Local storage is served by `apps/frontend/src/app/(app)/api/uploads/[[...path]]/route.ts` with a path check and no auth. **Fixed in this PR.** API responses sign private R2 keys (`MEDIA_SIGNED_URL_TTL_SECONDS`, default 900s) after the row was loaded for that organization. Published posts and public Link-in-Bio assets use a long signature or `/uploads/public/:path?exp&sig`. Local `/uploads` requires the session and `GET /media/authorize-local`. Stored values stay canonical bucket or `/uploads` URLs. The bucket ACL was not changed, so a previously shared `CLOUDFLARE_BUCKET_URL` still works until public access is turned off.
 
-14. **No backup or restore runbook.** The only retention text is the legal page `apps/frontend/src/app/(legal)/data-deletion/page.tsx`. **Owner decision** for Railway Postgres backups. A restore drill is still required before launch.
+14. **No backup or restore runbook.** The only retention text is the legal page `apps/frontend/src/app/(legal)/data-deletion/page.tsx`. **Fixed in this PR.** `docs/backup-restore-runbook.md` covers Railway Postgres backups, a `pg_dump` fallback from a temporary Railway Function, restore into a fresh Railway Postgres, a quarterly drill, and R2 versioning. Enabling the backups on the Railway project is still an owner action. No production data was read.
 
 ## Medium
 

@@ -1,3 +1,29 @@
+import { CSRF_HEADER, CSRF_REQUIRED_HEADER } from '@gitroom/helpers/auth/cookie.policy';
+
+const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+let csrfMemory = '';
+
+function readCsrfToken() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  if (csrfMemory) {
+    return csrfMemory;
+  }
+  const row = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('csrf='));
+  return row ? decodeURIComponent(row.slice('csrf='.length)) : '';
+}
+
+function rememberCsrf(token: string | null) {
+  if (typeof window === 'undefined' || !token) {
+    return;
+  }
+  csrfMemory = token;
+}
+
 export interface Params {
   baseUrl: string;
   beforeRequest?: (url: string, options: RequestInit) => Promise<RequestInit>;
@@ -13,7 +39,7 @@ export const customFetch = (
   showorg?: string,
   secured: boolean = true
 ) => {
-  return async function newFetch(url: string, options: RequestInit = {}) {
+  return async function newFetch(url: string, options: RequestInit = {}, retried = false) {
     const loggedAuth =
       typeof window === 'undefined'
         ? undefined
@@ -66,12 +92,25 @@ export const customFetch = (
         ...(authNonSecuredImpersonate
           ? { impersonate: authNonSecuredImpersonate }
           : {}),
+        ...(UNSAFE.has((options.method || 'GET').toUpperCase()) && readCsrfToken()
+          ? { [CSRF_HEADER]: readCsrfToken() }
+          : {}),
       },
       // @ts-ignore
       ...(!options.next && options.cache !== 'force-cache'
         ? { cache: options.cache || 'no-store' }
         : {}),
     });
+
+    rememberCsrf(fetchRequest.headers.get(CSRF_HEADER));
+    if (
+      !retried &&
+      fetchRequest.status === 403 &&
+      fetchRequest.headers.get(CSRF_REQUIRED_HEADER) === '1'
+    ) {
+      rememberCsrf(fetchRequest.headers.get(CSRF_HEADER));
+      return newFetch(url, options, true);
+    }
 
     if (
       !params?.afterRequest ||

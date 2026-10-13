@@ -83,7 +83,9 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'No file provided' }, 400);
     }
 
-    return this._mediaService.saveFile(org.id, file.filename, file.path);
+    return this._mediaService.toClient(
+      await this._mediaService.saveFile(org.id, file.filename, file.path)
+    );
   }
 
   @Post('/upload-from-url')
