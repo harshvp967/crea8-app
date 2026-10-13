@@ -86,7 +86,8 @@ export function CheckoutStatus({
   if (state === 'success') {
     return (
       <BillingBanner state="checkout_success" title="Checkout complete">
-        Your plan is active. You can manage it from billing settings.
+        <p className="m-0">Your plan is active. You can manage it from billing settings.</p>
+        {onRetry ? <div className="mt-[8px]"><BillingButton kind="primary" onClick={onRetry}>Continue</BillingButton></div> : null}
       </BillingBanner>
     );
   }
