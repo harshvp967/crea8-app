@@ -45,7 +45,6 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 const c8Heading = Bricolage_Grotesque({
-  weight: ['700', '800'],
   subsets: ['latin'],
   display: 'swap',
   preload: false,
@@ -53,7 +52,6 @@ const c8Heading = Bricolage_Grotesque({
 });
 
 const c8Body = Inter({
-  weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   display: 'swap',
   preload: false,
