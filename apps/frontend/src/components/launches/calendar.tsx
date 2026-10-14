@@ -1481,25 +1481,23 @@ const CalendarItem: FC<{
         onClick={editPost}
         className="cal-post-body gap-[6px] w-full flex h-full flex-1 p-[6px] text-[13px] relative"
       >
-        <div className="cal-post-icon relative min-w-[20px]">
+        <div className="cal-post-icon">
           <img
-            className="cal-post-avatar w-[20px] h-[20px] rounded-[6px]"
+            className="cal-post-avatar"
             src={post.integration.picture! || '/no-picture.jpg'}
             alt=""
           />
           {post.integration?.providerIdentifier === 'youtube' ? (
             <img
               src="/icons/platforms/youtube.svg"
-              className="cal-post-mark absolute z-10 bottom-[5px] -end-[5px]"
-              width={20}
+              className="cal-post-mark"
+              alt=""
             />
           ) : (
             <SafeImage
               src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-              className="cal-post-mark rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
+              className="cal-post-mark"
               alt={post.integration?.providerIdentifier || ''}
-              width={18.41}
-              height={18.41}
             />
           )}
         </div>
