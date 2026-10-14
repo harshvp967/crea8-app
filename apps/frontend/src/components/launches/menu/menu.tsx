@@ -73,19 +73,20 @@ export const Menu: FC<{
   });
   const showRef = useRef(undefined);
 
-  // The menu opens 6px under its row. Near the bottom of the viewport,
-  // sit it 6px above the row instead. No extra state: this only rewrites
-  // the position the click already stored.
+  // Adjust menu position if it would overflow viewport
   useLayoutEffect(() => {
     if (show && menuRef.current) {
       const menuRect = menuRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const padding = 10;
 
+      // Check if menu overflows bottom of viewport
       if (menuRect.bottom > viewportHeight - padding) {
-        const row = menuRef.current.closest('.channel-row, .channel-chip');
-        const rowTop = row?.getBoundingClientRect().top ?? menuRect.top;
-        const newY = Math.max(padding, rowTop - menuRect.height - 6);
+        const newY = Math.max(
+          padding,
+          viewportHeight - menuRect.height - padding
+        );
+        // Only update if position actually changed significantly to avoid infinite loop
         if (Math.abs(show.y - newY) > 1) {
           setShow((prev) => (prev ? { ...prev, y: newY } : false));
         }
@@ -111,19 +112,11 @@ export const Menu: FC<{
     (e) => {
       e.stopPropagation();
       // @ts-ignore
-      const trigger = showRef?.current?.getBoundingClientRect();
-      const row = e.currentTarget
-        .closest('.channel-row, .channel-chip')
-        ?.getBoundingClientRect();
+      const boundBox = showRef?.current?.getBoundingClientRect();
       setShow(
         show
           ? false
-          : {
-              x: trigger?.left ?? row?.left ?? 0,
-              y:
-                (row?.bottom ??
-                  (trigger?.top ?? 0) + (trigger?.height ?? 0)) + 6,
-            }
+          : { x: boundBox?.left, y: boundBox?.top + boundBox?.height }
       );
     },
     [show]

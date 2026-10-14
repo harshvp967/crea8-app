@@ -439,7 +439,7 @@ body.c8-schedule .phone-slot .cal-post-icon {
   min-width: 16px;
   height: 16px;
   flex: none;
-  overflow: visible;
+  overflow: hidden;
 }
 
 body.c8-schedule .day-cell .cal-post-icon::before,
@@ -469,8 +469,8 @@ body.c8-schedule .phone-slot .cal-post-mark {
   z-index: 10;
   top: auto;
   left: auto;
-  right: -3px;
-  bottom: -3px;
+  right: 0;
+  bottom: 0;
   width: 9px !important;
   height: 9px !important;
   min-width: 9px !important;
@@ -1377,12 +1377,16 @@ body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
 body.c8-schedule .day-cell .cal-post:not(.is-draft) .cal-post-body,
 body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body,
 body.c8-schedule .day-cell .cal-post.is-draft .cal-post-body {
+  box-sizing: border-box;
   height: 30px;
   min-height: 30px;
-  padding: 6px 8px;
+  max-height: 30px;
+  padding: 4px 8px;
   border-width: 1.5px !important;
   border-radius: 10px !important;
   align-items: center;
+  overflow: hidden;
+  line-height: 16px;
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -1391,12 +1395,16 @@ body.c8-schedule .day-cell .cal-post.is-draft .cal-post-body {
 body.c8-schedule .month-cell .cal-post-body,
 body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
 body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
+  box-sizing: border-box;
   height: 26px;
   min-height: 26px;
-  padding: 4px 6px;
+  max-height: 26px;
+  padding: 2px 6px;
   border-width: 1.2px !important;
   border-radius: 8px !important;
   align-items: center;
+  overflow: hidden;
+  line-height: 16px;
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -1404,9 +1412,12 @@ body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
 
 body.c8-schedule .cal-chip-when {
   flex: none;
+  max-height: 16px;
+  overflow: hidden;
   color: var(--c8-ink);
   font-size: 12px;
   font-weight: 600;
+  line-height: 16px;
   white-space: nowrap;
 }
 
@@ -1430,6 +1441,8 @@ body.c8-schedule .month-cell .line-clamp-2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 16px;
+  max-height: 16px;
   -webkit-line-clamp: 1;
   line-clamp: 1;
 }
@@ -1447,7 +1460,9 @@ body.c8-schedule .phone-slot .cal-post-more {
   body.c8-schedule .phone-slot .cal-post-body {
     height: auto;
     min-height: 26px;
+    max-height: none;
     align-items: flex-start;
+    overflow: hidden;
     white-space: normal;
   }
 
@@ -2079,9 +2094,17 @@ body.c8-schedule .channel-menu-pop {
   font-weight: 500;
   z-index: 400;
   max-width: min(280px, calc(100vw - 16px));
-  /* Horizontal shift only. The top is the row's bottom plus 6px, set
-     where the menu opens, and flipped above the row near the viewport edge. */
+  /* The click still records the trigger. Anchor the card 6px under the
+     row so that offset does not depend on the trigger's height. */
+  position-anchor: --c8-menu-row;
+  top: calc(anchor(bottom) + 6px) !important;
   transform: translateX(calc(-100% + 12px));
+}
+
+body.c8-schedule .channel-row,
+body.c8-schedule .channel-chip {
+  anchor-scope: --c8-menu-row;
+  anchor-name: --c8-menu-row;
 }
 
 body.c8-schedule .channel-rail.sidebar .channel-menu-pop {
@@ -2101,13 +2124,15 @@ body.c8-schedule:has(.channel-menu-pop) .react-tooltip {
 }
 
 body.c8-schedule .channel-menu-item {
+  align-items: center;
   gap: 12px;
   min-height: 38px;
-  padding: 8px 10px;
+  height: auto;
+  padding: 8px 10px !important;
   border-radius: 16px;
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 20px;
 }
 
 body.c8-schedule .channel-menu-item svg {
