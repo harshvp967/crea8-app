@@ -468,7 +468,7 @@ body.c8-schedule .cal-post-bar {
   border: 1px solid var(--new-border);
   border-radius: 22px;
   background: var(--new-bgColorInner) !important;
-  box-shadow: var(--menu-shadow);
+  box-shadow: 0 6px 0 var(--c8-hard);
 }
 
 body.c8-schedule .cal-post-action {
