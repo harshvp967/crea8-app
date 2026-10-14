@@ -1395,16 +1395,16 @@ body.c8-schedule .month-cell .cal-post-body,
 body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
 body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
   box-sizing: border-box;
-  height: 26px;
-  min-height: 26px;
-  max-height: 26px;
-  padding: 2px 6px;
+  height: 14px;
+  min-height: 14px;
+  max-height: 14px;
+  padding: 0 4px;
   border-width: 1.2px !important;
   border-radius: 8px !important;
   align-items: center;
   overflow: hidden;
-  line-height: 16px;
-  gap: 6px;
+  line-height: 14px;
+  gap: 4px;
   font-size: 12px;
   font-weight: 600;
 }
@@ -1431,6 +1431,35 @@ body.c8-schedule .month-cell .cal-post-body > .min-w-0,
 body.c8-schedule .phone-slot .cal-post-body > .min-w-0 {
   min-width: 0;
   overflow: hidden;
+}
+
+body.c8-schedule .week-cell .cal-post-body,
+body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
+body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body {
+  padding: 3px 2px;
+  gap: 0;
+}
+
+body.c8-schedule .week-cell .cal-post-body > .min-w-0 {
+  flex: 1 1 16px;
+  width: auto;
+  min-width: 16px;
+}
+
+body.c8-schedule .week-cell .cal-post-more {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+}
+
+body.c8-schedule .week-cell .cal-post-more svg {
+  width: 14px;
+  height: 14px;
+}
+
+body.c8-schedule .month-cell .text-textColor,
+body.c8-schedule .month-cell .text-textColor > .relative {
+  padding: 0;
 }
 
 body.c8-schedule .week-cell .line-clamp-2,
