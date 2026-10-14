@@ -485,7 +485,7 @@ body.c8-schedule .cal-post-action svg {
 }
 
 body.c8-schedule .cal-post-action.is-danger {
-  color: #f97066;
+  color: var(--c8-danger);
 }
 
 body.c8-schedule .cal-list .cal-post .cal-post-body,
@@ -1911,7 +1911,12 @@ body.c8-schedule .channel-rail .channel-row {
   overflow: hidden;
   border-color: transparent;
   outline: none;
-  transition: background-color 140ms ease;
+  transition: background-color 180ms ease-out;
+}
+
+body.c8-schedule .channel-rail .channel-row:active {
+  transition-duration: 80ms;
+  transition-timing-function: ease-in;
 }
 
 body.c8-schedule .channel-rail .channel-row:hover,
@@ -2001,18 +2006,14 @@ body.c8-schedule .phone-slot:has(.cal-post) > .cal-col {
 body.c8-schedule .week-cell:has(.cal-post) > .cal-col::before,
 body.c8-schedule .day-cell:has(.cal-post) > .cal-col::before,
 body.c8-schedule .phone-slot:has(.cal-post) > .cal-col::before {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
+  order: 2;
+  flex: 1 0 32px;
   z-index: 0;
-  order: 0;
-  flex: none;
-  height: 40px;
 }
 
 body.c8-schedule .cal-add {
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 /* Day keeps the channel pictures in the empty part of a slot. The shared
@@ -2091,8 +2092,7 @@ body.c8-schedule:not([data-c8-view]) .channels-trigger {
 }
 
 /* Button variants in the Crea8 file: rest shadow 3px, hover lifts to 5px,
-   press drops the shadow to 0. The file has no keyframe duration, so the
-   move uses a short ease across that same shadow distance. */
+   press drops the shadow to 0. Hover eases out; the press eases in. */
 body.c8-schedule .channel-add,
 body.c8-schedule .channel-invite,
 body.c8-schedule .strip-create button,
@@ -2104,11 +2104,11 @@ body.c8-schedule .cal-mode > button,
 body.c8-schedule .channel-menu-item,
 body.c8-schedule .cal-post-action {
   transition:
-    background-color 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease,
-    border-color 160ms ease;
+    background-color 180ms ease-out,
+    color 180ms ease-out,
+    box-shadow 180ms ease-out,
+    transform 180ms ease-out,
+    border-color 180ms ease-out;
 }
 
 body.c8-schedule .channel-add:hover,
@@ -2130,4 +2130,18 @@ body.c8-schedule .channel-menu-item:active,
 body.c8-schedule .cal-post-action:active {
   transform: translateY(3px);
   box-shadow: 0 0 0 var(--c8-hard);
+}
+
+body.c8-schedule .channel-add:active,
+body.c8-schedule .channel-invite:active,
+body.c8-schedule .strip-create button:active,
+body.c8-schedule .phone-create button:active,
+body.c8-schedule .sidebar-create button:active,
+body.c8-schedule .cal-today > div > div:active,
+body.c8-schedule .cal-nav-arrow:active,
+body.c8-schedule .cal-mode > button:active,
+body.c8-schedule .channel-menu-item:active,
+body.c8-schedule .cal-post-action:active {
+  transition-duration: 80ms;
+  transition-timing-function: ease-in;
 }
