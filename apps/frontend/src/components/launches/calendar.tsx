@@ -204,7 +204,11 @@ const usePostActions = (onMutate?: () => void) => {
           t(
             'are_you_sure_you_want_to_delete_post',
             'Are you sure you want to delete post?'
-          )
+          ),
+          t('yes', 'Yes'),
+          t('delete_post', 'Delete Post'),
+          t('no_cancel', 'No, cancel!'),
+          'danger'
         ))
       ) {
         return;
@@ -1404,6 +1408,7 @@ const CalendarItem: FC<{
       className={clsx(
         'cal-post w-full flex h-full flex-1 flex-col group',
         'relative',
+        !isBeforeNow && 'is-draggable',
         actionsOpen && 'is-open',
         state === 'DRAFT' && 'is-draft',
         state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'

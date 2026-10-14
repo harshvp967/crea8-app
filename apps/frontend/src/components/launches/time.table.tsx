@@ -4,8 +4,8 @@ import React, { FC, useCallback, useMemo, useState } from 'react';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
+import { C8Dropdown } from '@gitroom/react/c8';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -128,7 +128,7 @@ export const TimeTable: FC<{
   }, [currentTimes]);
 
   return (
-    <div className="relative w-full max-w-[400px] mx-auto">
+    <div className="c8-slots relative w-full max-w-[400px] mx-auto">
       {/* Add Time Slot Section */}
       <div className="bg-newBgColorInner rounded-[12px] p-[20px] border border-newTableBorder">
         <div className="text-[15px] font-semibold mb-[16px] flex items-center gap-[8px]">
@@ -138,41 +138,33 @@ export const TimeTable: FC<{
 
         <div className="flex gap-[12px] items-end">
           <div className="flex-1">
-            <Select
+            <C8Dropdown
               label={t('hour', 'Hour')}
               name="hour"
-              disableForm={true}
-              hideErrors={true}
               value={hour}
               onChange={(e) => setHour(Number(e.target.value))}
-            >
-              {hours.map((h) => (
-                <option key={h.value} value={h.value}>
-                  {h.value.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </Select>
+              options={hours.map((h) => ({
+                value: h.value,
+                label: h.value.toString().padStart(2, '0'),
+              }))}
+            />
           </div>
           <div className="flex-1">
-            <Select
+            <C8Dropdown
               label={t('minutes', 'Minutes')}
               name="minutes"
-              disableForm={true}
-              hideErrors={true}
               value={minute}
               onChange={(e) => setMinute(Number(e.target.value))}
-            >
-              {minutes.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.value.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </Select>
+              options={minutes.map((m) => ({
+                value: m.value,
+                label: m.value.toString().padStart(2, '0'),
+              }))}
+            />
           </div>
           <button
             type="button"
             onClick={addHour}
-            className="h-[44px] px-[16px] bg-btnPrimary hover:brightness-95 rounded-[18px] flex items-center gap-[6px] text-[#0A0A0A] text-[14px] font-[600]"
+            className="c8-slot-add flex items-center gap-[6px]"
           >
             <PlusIcon size={14} />
             {t('add', 'Add')}
@@ -196,10 +188,7 @@ export const TimeTable: FC<{
               <div
                 key={`${timeSlot.value}-${index}`}
                 className={clsx(
-                  'group flex items-center justify-between',
-                  'h-[48px] px-[16px] rounded-[8px]',
-                  'bg-newBgColorInner border border-newTableBorder',
-                  'hover:border-[#00D9FF]/40 transition-colors'
+                  'c8-slot-row group flex items-center justify-between'
                 )}
               >
                 <div className="flex items-center gap-[12px]">
@@ -223,7 +212,7 @@ export const TimeTable: FC<{
 
       {/* Save Button */}
       <div className="mt-[24px]">
-        <Button type="button" className="w-full rounded-[8px]" onClick={save}>
+        <Button type="button" secondary className="c8-slot-save" onClick={save}>
           {t('save_changes', 'Save Changes')}
         </Button>
       </div>

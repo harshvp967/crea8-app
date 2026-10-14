@@ -8,3 +8,5 @@ export { C8Card } from './card';
 export { C8Chip } from './chip';
 export { C8Toggle } from './toggle';
 export { C8Dialog } from './dialog';
+export { C8Dropdown } from './dropdown';
+export type { C8DropdownOption } from './dropdown';
