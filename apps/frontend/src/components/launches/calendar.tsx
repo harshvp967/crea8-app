@@ -44,6 +44,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { groupBy, random, sortBy } from 'lodash';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
 import { useInterval } from '@mantine/hooks';
@@ -1230,15 +1231,66 @@ export const CalendarColumn: FC<{
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
             >
-              <div
-                className={clsx(
-                  'cal-add group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
-                )}
-              >
+              {display === 'day' ? (
+                <div className="group flex w-full h-full items-center justify-center gap-[20px]">
+                  <div
+                    className={`flex-1 min-w-0 h-full rounded-[10px] py-[10px] flex-wrap hover:border hover:border-seventh flex justify-center items-center gap-[20px] opacity-30 grayscale hover:grayscale-0 hover:opacity-100`}
+                  >
+                    {integrations.map((selectedIntegrations) => (
+                      <div
+                        className="relative"
+                        key={selectedIntegrations.identifier}
+                      >
+                        <div
+                          className={clsx(
+                            'relative w-[34px] h-[34px] rounded-[8px] flex justify-center items-center filter transition-all duration-500'
+                          )}
+                        >
+                          <SafeImage
+                            src={
+                              selectedIntegrations.picture || '/no-picture.jpg'
+                            }
+                            className="rounded-[8px]"
+                            alt={selectedIntegrations.identifier}
+                            width={32}
+                            height={32}
+                          />
+                          {selectedIntegrations.identifier === 'youtube' ? (
+                            <img
+                              src="/icons/platforms/youtube.svg"
+                              className="absolute z-10 -bottom-[5px] -end-[5px]"
+                              width={20}
+                            />
+                          ) : (
+                            <SafeImage
+                              src={`/icons/platforms/${selectedIntegrations.identifier}.png`}
+                              className="rounded-[8px] absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
+                              alt={selectedIntegrations.identifier}
+                              width={20}
+                              height={20}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="cal-add hover:before:h-[30px] flex-none w-[36px] h-[36px] rounded-[10px] flex justify-center items-center text-white">
+                    <div
+                      className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-full transition-all group-hover:bg-c8-ink group-hover:text-c8-on-ink w-full h-full max-w-[36px] max-h-[36px]`}
+                    />
+                  </div>
+                </div>
+              ) : (
                 <div
-                  className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-full transition-all group-hover:bg-c8-ink group-hover:text-c8-on-ink w-full h-full max-w-[36px] max-h-[36px]`}
-                />
-              </div>
+                  className={clsx(
+                    'cal-add group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
+                  )}
+                >
+                  <div
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-full transition-all group-hover:bg-c8-ink group-hover:text-c8-on-ink w-full h-full max-w-[36px] max-h-[36px]`}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

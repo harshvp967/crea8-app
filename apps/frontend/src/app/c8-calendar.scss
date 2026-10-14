@@ -2015,6 +2015,13 @@ body.c8-schedule .cal-add {
   z-index: 2;
 }
 
+/* Day keeps the channel pictures in the empty part of a slot. The shared
+   calendar sheet hides that grayscale row; show it again beside the add button. */
+body.c8-schedule .day-cell .grayscale,
+body.c8-schedule .phone-slot .grayscale {
+  display: flex;
+}
+
 body.c8-schedule .week-cell:has(.cal-post) > .cal-col > div,
 body.c8-schedule .day-cell:has(.cal-post) > .cal-col > div,
 body.c8-schedule .phone-slot:has(.cal-post) > .cal-col > div {
