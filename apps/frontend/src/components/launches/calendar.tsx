@@ -1358,11 +1358,18 @@ const CalendarItem: FC<{
       }
       setActionsOpen(false);
     };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActionsOpen(false);
+      }
+    };
     document.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('keydown', onKeyDown);
     };
   }, [actionsOpen]);
   const preview = useCallback(() => {
