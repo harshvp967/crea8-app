@@ -132,7 +132,7 @@ export function withContinueProvider<TItem, TSelection>(
               key={getItemId(item)}
               className={clsx(
                 'flex flex-col w-full text-center gap-[10px] border border-input p-[10px] hover:bg-seventh rounded-[8px]',
-                isSelected(item, selection) && 'bg-seventh border-primary'
+                isSelected(item, selection) && 'bg-seventh border-primary is-selected'
               )}
               onClick={handleSelect(item)}
             >
@@ -141,7 +141,12 @@ export function withContinueProvider<TItem, TSelection>(
           ))}
         </div>
         <div>
-          <Button disabled={!selection || isSaving} loading={isSaving} onClick={handleSave}>
+          <Button
+            className="cc-save"
+            disabled={!selection || isSaving}
+            loading={isSaving}
+            onClick={handleSave}
+          >
             {t('save', 'Save')}
           </Button>
         </div>
