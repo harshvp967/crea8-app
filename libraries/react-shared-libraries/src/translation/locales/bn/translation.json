@@ -332,6 +332,7 @@
   "sunday": "রবিবার",
   "can_t_change_date_remove_post_from_publication": "তারিখ পরিবর্তন করা যাবে না, প্রকাশনা থেকে পোস্ট সরান",
   "predicted_github_trending_change": "পূর্বাভাসিত GitHub ট্রেন্ডিং পরিবর্তন",
+  "post_actions": "পোস্ট অ্যাকশন",
   "duplicate_post": "পোস্ট ডুপ্লিকেট করুন",
   "preview_post": "পোস্ট প্রিভিউ",
   "post_statistics": "পোস্ট পরিসংখ্যান",

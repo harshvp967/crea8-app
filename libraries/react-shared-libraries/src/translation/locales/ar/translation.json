@@ -332,6 +332,7 @@
   "sunday": "الأحد",
   "can_t_change_date_remove_post_from_publication": "لا يمكن تغيير التاريخ، أزل المنشور من النشر",
   "predicted_github_trending_change": "التغير المتوقع في ترند GitHub",
+  "post_actions": "إجراءات المنشور",
   "duplicate_post": "منشور مكرر",
   "preview_post": "معاينة المنشور",
   "post_statistics": "إحصائيات المنشور",

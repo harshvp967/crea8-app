@@ -332,6 +332,7 @@
   "sunday": "יום ראשון",
   "can_t_change_date_remove_post_from_publication": "לא ניתן לשנות את התאריך, הסר את הפוסט מהפרסום",
   "predicted_github_trending_change": "שינוי מגמה חזוי ב-GitHub",
+  "post_actions": "פעולות הפוסט",
   "duplicate_post": "פוסט כפול",
   "preview_post": "תצוגה מקדימה של הפוסט",
   "post_statistics": "סטטיסטיקות פוסט",

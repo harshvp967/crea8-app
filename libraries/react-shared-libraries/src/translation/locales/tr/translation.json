@@ -332,6 +332,7 @@
   "sunday": "Pazar",
   "can_t_change_date_remove_post_from_publication": "Tarihi değiştiremiyorsunuz, gönderiyi yayından kaldırın",
   "predicted_github_trending_change": "Tahmini GitHub Trend Değişimi",
+  "post_actions": "Gönderi işlemleri",
   "duplicate_post": "Yinelenen Gönderi",
   "preview_post": "Gönderiyi Önizle",
   "post_statistics": "Gönderi İstatistikleri",

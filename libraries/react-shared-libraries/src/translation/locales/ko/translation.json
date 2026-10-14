@@ -332,6 +332,7 @@
   "sunday": "일요일",
   "can_t_change_date_remove_post_from_publication": "날짜를 변경할 수 없습니다. 게시물에서 제거해 주세요.",
   "predicted_github_trending_change": "예상 GitHub 트렌드 변화",
+  "post_actions": "게시물 작업",
   "duplicate_post": "중복 게시물",
   "preview_post": "게시물 미리보기",
   "post_statistics": "게시물 통계",

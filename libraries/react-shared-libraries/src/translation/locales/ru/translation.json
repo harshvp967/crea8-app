@@ -332,6 +332,7 @@
   "sunday": "Воскресенье",
   "can_t_change_date_remove_post_from_publication": "Нельзя изменить дату, удалите пост из публикации",
   "predicted_github_trending_change": "Прогнозируемое изменение трендов GitHub",
+  "post_actions": "Действия с постом",
   "duplicate_post": "Дублировать пост",
   "preview_post": "Предпросмотр поста",
   "post_statistics": "Статистика поста",

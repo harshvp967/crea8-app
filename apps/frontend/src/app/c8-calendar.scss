@@ -1378,7 +1378,7 @@ body.c8-schedule .week-cell .cal-post-more,
 body.c8-schedule .day-cell .cal-post-more,
 body.c8-schedule .month-cell .cal-post-more,
 body.c8-schedule .phone-slot .cal-post-more {
-  display: none;
+  display: inline-flex;
 }
 
 @media (max-width: 639px) {
@@ -2144,4 +2144,40 @@ body.c8-schedule .channel-menu-item:active,
 body.c8-schedule .cal-post-action:active {
   transition-duration: 80ms;
   transition-timing-function: ease-in;
+}
+
+body.c8-schedule .cal-post-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  margin-inline-start: auto;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--c8-muted);
+  cursor: pointer;
+}
+
+body.c8-schedule .cal-post:hover .cal-post-bar,
+body.c8-schedule .cal-post:focus-within .cal-post-bar {
+  display: none;
+}
+
+body.c8-schedule .cal-post.is-open .cal-post-bar {
+  display: flex;
+}
+
+/* Phone paints the menu with position:fixed, but the hour column is a
+   higher stacking context, so the card sits under the grid. Lift the open
+   post above that column; the menu still closes when the page scrolls. */
+@media (max-width: 767px) {
+  body.c8-schedule .week-cell:has(.cal-post.is-open) .cal-col > div,
+  body.c8-schedule .day-cell:has(.cal-post.is-open) .cal-col > div,
+  body.c8-schedule .month-cell:has(.cal-post.is-open) .cal-col > div,
+  body.c8-schedule .phone-slot:has(.cal-post.is-open) .cal-col > div {
+    z-index: 30;
+  }
 }
