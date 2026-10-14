@@ -9885,6 +9885,10 @@ body.composer-open .po-assist .copilotKitWindow.open,
   box-sizing: border-box;
 }
 
+.dark .channel-return .cc-pages .grid > div:not(.is-selected):not(.border-primary)::after {
+  border-color: var(--c8-muted);
+}
+
 .channel-return .cc-pages .grid > div.border-primary::after,
 .channel-return .cc-pages .grid > div.is-selected::after {
   border-color: var(--c8-cyan);
