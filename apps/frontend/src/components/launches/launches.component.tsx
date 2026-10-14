@@ -4,10 +4,12 @@ import {
   AddProviderButton,
   CustomVariables,
 } from '@gitroom/frontend/components/launches/add.provider.component';
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize, groupBy, orderBy } from 'lodash';
-import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
+import { CalendarWeekProvider, useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
+import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { SelectChannels } from '@gitroom/frontend/components/launches/select.channels';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
@@ -385,6 +387,27 @@ export const MenuComponent: FC<
     </div>
   );
 };
+const ChannelSheetCustomer = () => {
+  const calendar = useCalendar();
+  return (
+    <div className="channel-sheet-customer">
+      <SelectCustomer
+        customer={calendar.customer as string}
+        onChange={(customer: string) => {
+          calendar.setFilters({
+            startDate: calendar.startDate,
+            endDate: calendar.endDate,
+            display: calendar.display as 'day' | 'week' | 'month' | 'list',
+            customer,
+          });
+        }}
+        integrations={calendar.integrations}
+      />
+      <SelectChannels />
+    </div>
+  );
+};
+
 export const LaunchesComponent = () => {
   const fetch = useFetch();
   const user = useUser();
@@ -397,6 +420,7 @@ export const LaunchesComponent = () => {
   const modal = useModals();
   const [reload, setReload] = useState(false);
   const [channelsOpen, setChannelsOpen] = useState(false);
+  const sheetDrag = useRef<number | null>(null);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   useEffect(() => {
     const open = () => setChannelsOpen(true);
@@ -581,7 +605,32 @@ export const LaunchesComponent = () => {
             className={clsx(
               'bg-newBgColorInner border border-newBorder rounded-[26px] p-[18px] flex flex-col gap-[14px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
+            onPointerDown={(event) => {
+              const handle = (event.target as HTMLElement).closest(
+                '.channel-sheet-grab'
+              );
+              if (!handle) {
+                return;
+              }
+              sheetDrag.current = event.clientY;
+            }}
+            onPointerUp={(event) => {
+              if (sheetDrag.current == null) {
+                return;
+              }
+              const delta = event.clientY - sheetDrag.current;
+              sheetDrag.current = null;
+              if (delta > 48) {
+                setChannelsOpen(false);
+              }
+            }}
           >
+            <button
+              type="button"
+              className="channel-sheet-grab"
+              aria-label={t('close', 'Close')}
+              onClick={() => setChannelsOpen(false)}
+            />
             <div className="flex items-center">
               <h2 className="group-[.sidebar]:hidden flex-1 text-[18px] font-[600] tracking-[-0.02em]">
                 {t('channels')}
@@ -595,6 +644,7 @@ export const LaunchesComponent = () => {
                 <HugeIcon name="chevron-left" size={16} />
               </div>
             </div>
+            <ChannelSheetCustomer />
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
               <div className="sidebar-create flex gap-[8px] group-[.sidebar]:flex-col">

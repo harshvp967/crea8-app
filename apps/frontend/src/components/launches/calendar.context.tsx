@@ -8,9 +8,7 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import dayjs from 'dayjs';
@@ -22,7 +20,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
-import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
 extend(isoWeek);
@@ -31,8 +29,8 @@ extend(weekOfYear);
 export type ListStateFilter = 'all' | 'scheduled' | 'draft' | 'published';
 
 export const CalendarContext = createContext({
-  startDate: displayDayjs().startOf('isoWeek').format('YYYY-MM-DD'),
-  endDate: displayDayjs().endOf('isoWeek').format('YYYY-MM-DD'),
+  startDate: newDayjs().startOf('isoWeek').format('YYYY-MM-DD'),
+  endDate: newDayjs().endOf('isoWeek').format('YYYY-MM-DD'),
   customer: null as string | null,
   loading: true,
   sets: [] as { name: string; id: string; content: string[] }[],
@@ -86,6 +84,11 @@ export const CalendarContext = createContext({
   setListState: (state: ListStateFilter) => {
     /** empty **/
   },
+  selectedChannels: null as string[] | null,
+  setSelectedChannels: (channels: string[] | null) => {
+    /** empty **/
+  },
+  currentHour: newDayjs().startOf('hour'),
 });
 
 export interface Integrations {
@@ -113,7 +116,7 @@ export interface Integrations {
 
 // Helper function to get start and end dates based on display type
 function getDateRange(display: string, referenceDate?: string) {
-  const date = referenceDate ? displayDayjs(referenceDate) : displayDayjs();
+  const date = referenceDate ? newDayjs(referenceDate) : newDayjs();
 
   switch (display) {
     case 'day':
@@ -139,6 +142,22 @@ function getDateRange(display: string, referenceDate?: string) {
   }
 }
 
+// The current time rounded down to the unit. It checks on every minute, so it
+// also catches up within a minute after the computer wakes up from sleep.
+export const useNow = (unit: 'minute' | 'hour' = 'minute') => {
+  const [now, setNow] = useState(() => newDayjs().startOf(unit).valueOf());
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    const tick = () => {
+      setNow(newDayjs().startOf(unit).valueOf());
+      timeout = setTimeout(tick, 60000 - (Date.now() % 60000));
+    };
+    tick();
+    return () => clearTimeout(timeout);
+  }, [unit]);
+  return useMemo(() => newDayjs(now), [now]);
+};
+
 export const CalendarWeekProvider: FC<{
   children: ReactNode;
   integrations: Integrations[];
@@ -147,7 +166,14 @@ export const CalendarWeekProvider: FC<{
   const [internalData, setInternalData] = useState([] as any[]);
   const [trendings] = useState<string[]>([]);
   const searchParams = useSearchParams();
-  const [displaySaved, setDisplaySaved] = useCookie('calendar-display', 'week');
+  // A 7-column week doesn't fit a phone, so default small screens to the day view.
+  const [displaySaved, setDisplaySaved] = useCookie(
+    'calendar-display',
+    typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 1025px)').matches
+      ? 'day'
+      : 'week'
+  );
   const display = searchParams.get('display') || displaySaved;
 
   // List view state
@@ -168,6 +194,14 @@ export const CalendarWeekProvider: FC<{
       ? { startDate: initStartDate, endDate: initEndDate }
       : getDateRange(display);
 
+  const [selectedChannels, setSelectedChannelsRaw] = useState<
+    string[] | null
+  >(null);
+  const setSelectedChannels = useCallback((next: string[] | null) => {
+    setSelectedChannelsRaw(next);
+    setListPage(0);
+  }, []);
+
   const [filters, setFilters] = useState({
     startDate: initialRange.startDate,
     endDate: initialRange.endDate,
@@ -176,24 +210,8 @@ export const CalendarWeekProvider: FC<{
   });
 
   useEffect(() => {
-    if (searchParams.get('startDate') && searchParams.get('endDate')) {
-      return;
-    }
-    const range = getDateRange(filters.display);
-    setFilters((current) => {
-      if (
-        current.startDate === range.startDate &&
-        current.endDate === range.endDate
-      ) {
-        return current;
-      }
-      return {
-        ...current,
-        startDate: range.startDate,
-        endDate: range.endDate,
-      };
-    });
-  }, []);
+    setSelectedChannels(null);
+  }, [filters.customer]);
 
   const params = useMemo(() => {
     return new URLSearchParams({
@@ -209,8 +227,8 @@ export const CalendarWeekProvider: FC<{
     const modifiedParams = new URLSearchParams({
       display: filters.display,
       customer: filters?.customer?.toString() || '',
-      startDate: displayDayjs(filters.startDate).startOf('day').utc().format(),
-      endDate: displayDayjs(filters.endDate).endOf('day').utc().format(),
+      startDate: newDayjs(filters.startDate).startOf('day').utc().format(),
+      endDate: newDayjs(filters.endDate).endOf('day').utc().format(),
     }).toString();
 
     const data = await (await fetch(`/posts?${modifiedParams}`)).json();
@@ -224,8 +242,9 @@ export const CalendarWeekProvider: FC<{
       limit: '100',
       customer: filters?.customer?.toString() || '',
       state: listState,
+      ...(selectedChannels ? { integrations: selectedChannels.join(',') } : {}),
     }).toString();
-  }, [listPage, filters.customer, listState]);
+  }, [listPage, filters.customer, listState, selectedChannels]);
 
   const loadListData = useCallback(async () => {
     const response = await fetch(`/posts/list?${listParams}`);
@@ -316,6 +335,14 @@ export const CalendarWeekProvider: FC<{
     []
   );
 
+  const filterByChannels = useCallback(
+    (list: any[]) =>
+      selectedChannels
+        ? list.filter((p) => selectedChannels.includes(p.integration.id))
+        : list,
+    [selectedChannels]
+  );
+
   const posts = useMemo(() => calendarData?.posts || [], [calendarData?.posts]);
   const comments = useMemo(() => calendarData?.comments || [], [calendarData?.comments]);
 
@@ -347,40 +374,6 @@ export const CalendarWeekProvider: FC<{
     }
   }, [posts]);
 
-  // Phone opens on Day. A display query param is an explicit choice and wins.
-  // This writes filters in memory only, so opening the page does not change
-  // the calendar-display cookie desktop reads. Later navigation goes through
-  // setFiltersWrapper, the same handler desktop uses.
-  const phoneDefaulted = useRef(false);
-  useLayoutEffect(() => {
-    if (phoneDefaulted.current) {
-      return;
-    }
-    if (!window.matchMedia('(max-width: 767px)').matches) {
-      return;
-    }
-    phoneDefaulted.current = true;
-    if (searchParams.get('display')) {
-      return;
-    }
-    const range = getDateRange('day');
-    setFilters((current) => {
-      if (
-        current.display === 'day' &&
-        current.startDate === range.startDate &&
-        current.endDate === range.endDate
-      ) {
-        return current;
-      }
-      return {
-        ...current,
-        display: 'day',
-        startDate: range.startDate,
-        endDate: range.endDate,
-      };
-    });
-  }, [searchParams]);
-
   // Combined reload function that handles both calendar and list views
   const reloadCalendarView = useCallback(() => {
     mutateCalendar();
@@ -390,13 +383,15 @@ export const CalendarWeekProvider: FC<{
   // Determine loading state based on current view
   const loading = filters.display === 'list' ? listIsLoading : calendarIsLoading;
 
+  const currentHour = useNow('hour');
+
   return (
     <CalendarContext.Provider
       value={{
         trendings,
         reloadCalendarView,
         ...filters,
-        posts: calendarIsLoading ? [] : internalData,
+        posts: calendarIsLoading ? [] : filterByChannels(internalData),
         loading,
         integrations,
         setFilters: setFiltersWrapper,
@@ -411,6 +406,9 @@ export const CalendarWeekProvider: FC<{
         setListPage,
         listState,
         setListState,
+        selectedChannels,
+        setSelectedChannels,
+        currentHour,
       }}
     >
       {children}
