@@ -125,7 +125,10 @@ export const Menu: FC<{
     if (
       !(await deleteDialog(
         t('are_you_sure_disable_channel', 'Are you sure you want to disable this channel?'),
-        t('disable_channel_title', 'Disable Channel')
+        t('disable_channel_title', 'Disable Channel'),
+        t('disable_channel_title', 'Disable Channel'),
+        t('no_cancel', 'No, cancel!'),
+        'danger'
       ))
     ) {
       return;
@@ -144,7 +147,10 @@ export const Menu: FC<{
     if (
       !(await deleteDialog(
         t('are_you_sure_delete_channel', 'Are you sure you want to delete this channel?'),
-        t('delete_channel_title', 'Delete Channel')
+        t('delete_channel_title', 'Delete Channel'),
+        t('delete_channel_title', 'Delete Channel'),
+        t('no_cancel', 'No, cancel!'),
+        'danger'
       ))
     ) {
       return;

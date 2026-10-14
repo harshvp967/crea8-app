@@ -430,36 +430,48 @@ body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
   border-radius: 8px !important;
 }
 
-body.c8-schedule .day-cell .cal-post-avatar,
-body.c8-schedule .week-cell .cal-post-avatar,
-body.c8-schedule .month-cell .cal-post-avatar,
-body.c8-schedule .phone-slot .cal-post-avatar,
-body.c8-schedule .day-cell .cal-post-mark,
-body.c8-schedule .week-cell .cal-post-mark,
-body.c8-schedule .month-cell .cal-post-mark,
-body.c8-schedule .phone-slot .cal-post-mark {
-  display: none;
-}
-
 body.c8-schedule .day-cell .cal-post-icon,
 body.c8-schedule .week-cell .cal-post-icon,
 body.c8-schedule .month-cell .cal-post-icon,
 body.c8-schedule .phone-slot .cal-post-icon {
-  width: 8px;
-  min-width: 8px;
-  height: 8px;
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  flex: none;
 }
 
 body.c8-schedule .day-cell .cal-post-icon::before,
 body.c8-schedule .week-cell .cal-post-icon::before,
 body.c8-schedule .month-cell .cal-post-icon::before,
 body.c8-schedule .phone-slot .cal-post-icon::before {
-  content: '';
+  content: none;
+}
+
+body.c8-schedule .day-cell .cal-post-avatar,
+body.c8-schedule .week-cell .cal-post-avatar,
+body.c8-schedule .month-cell .cal-post-avatar,
+body.c8-schedule .phone-slot .cal-post-avatar {
   display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+body.c8-schedule .day-cell .cal-post-mark,
+body.c8-schedule .week-cell .cal-post-mark,
+body.c8-schedule .month-cell .cal-post-mark,
+body.c8-schedule .phone-slot .cal-post-mark {
+  display: block;
+  position: absolute;
+  right: 0;
+  bottom: 0;
   width: 8px;
   height: 8px;
-  border-radius: 999px;
-  background: var(--c8-app-schedule);
+  border-radius: 2px;
+  border: 1px solid var(--c8-surface);
+  background: var(--c8-surface);
+  object-fit: cover;
 }
 
 body.c8-schedule .cal-post-bar {
@@ -1049,6 +1061,33 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   background: transparent;
 }
 
+/* The bell is at the bottom of the sidebar. Open the panel upward, just
+   to the right of the sidebar, so it stays inside the viewport. */
+.c8-shell .c8-side-foot .notify-panel {
+  position: fixed !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: 72px !important;
+  left: 264px !important;
+  width: min(360px, calc(100vw - 280px)) !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  animation: none !important;
+  transform: none !important;
+  z-index: 200 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 6px 0 var(--c8-hard) !important;
+  max-height: min(480px, calc(100vh - 96px));
+  overflow: auto;
+}
+
+@media (max-width: 1199px) {
+  .c8-shell .c8-side-foot .notify-panel {
+    left: 96px !important;
+    width: min(360px, calc(100vw - 112px)) !important;
+  }
+}
+
 .c8-shell .c8-side-foot .arc-icon-btn {
   border: 1px solid var(--c8-line);
   border-radius: 12px;
@@ -1443,9 +1482,21 @@ body.c8-schedule .week-cell.is-today {
 
 body.c8-schedule .week-cell:has(.cal-col.is-past),
 body.c8-schedule .day-cell:has(.cal-col.is-past),
-body.c8-schedule .month-cell:has(.cal-col.is-past),
 body.c8-schedule .phone-slot:has(.cal-col.is-past) {
-  background: color-mix(in srgb, var(--c8-muted) 18%, var(--c8-surface)) !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+body.c8-schedule .week-cell .cal-col.is-past,
+body.c8-schedule .day-cell .cal-col.is-past,
+body.c8-schedule .phone-slot .cal-col.is-past {
+  background: color-mix(in srgb, var(--c8-muted) 10%, var(--c8-surface)) !important;
+  border-radius: 10px;
+  cursor: not-allowed;
+}
+
+body.c8-schedule .month-cell:has(.cal-col.is-past) {
+  background: color-mix(in srgb, var(--c8-muted) 7%, var(--c8-surface)) !important;
   background-image: none !important;
   cursor: not-allowed;
 }
@@ -1946,6 +1997,109 @@ body.c8-schedule .channel-rail .channel-row .channel-meta {
   line-height: 1.2;
 }
 
+/* Collapsed rail: the badge hangs off the avatar's end. Give that pair
+   room inside the column and center it so neither edge clips it. */
+body.c8-schedule .channel-rail.sidebar:not(.is-open) {
+  width: 88px !important;
+}
+
+body.c8-schedule .channel-rail.sidebar > div {
+  align-items: center;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+body.c8-schedule .channel-rail.sidebar > div > .flex.flex-col {
+  width: auto !important;
+  align-items: center;
+}
+
+body.c8-schedule .channel-rail.sidebar .channel-row {
+  position: relative;
+  justify-content: center;
+  width: 52px;
+  margin-inline: auto;
+  overflow: visible;
+  padding: 6px 12px 6px 4px;
+}
+
+body.c8-schedule .channel-rail.sidebar .channel-row > div:first-child {
+  margin-inline: auto;
+}
+
+body.c8-schedule .channel-rail.sidebar .channel-row > .cursor-pointer {
+  position: absolute;
+  top: 2px;
+  inset-inline-end: 0;
+  opacity: 0;
+}
+
+body.c8-schedule .channel-rail.sidebar .channel-row:hover > .cursor-pointer,
+body.c8-schedule .channel-rail.sidebar .channel-row:focus-within > .cursor-pointer {
+  opacity: 1;
+}
+
+/* Channel row menu copies the post menu: 22px card, 8px padding, 14px type,
+   18px icons, 16px rows, and the same 6px hard shadow. */
+body.c8-schedule .channel-menu-pop {
+  padding: 8px;
+  gap: 2px;
+  border: 1px solid var(--new-border);
+  border-radius: 22px;
+  background: var(--new-bgColorInner) !important;
+  box-shadow: 0 6px 0 var(--c8-hard) !important;
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 400;
+  max-width: min(280px, calc(100vw - 16px));
+  /* The rail sits on the left. Opening toward the rail keeps the card off
+     the calendar, which otherwise covers the right edge. */
+  transform: translateX(calc(-100% + 12px));
+}
+
+body.c8-schedule .channel-rail.sidebar .channel-menu-pop {
+  transform: none;
+}
+
+body.c8-schedule .app-main:has(.channel-menu-pop),
+body.c8-schedule .channel-rail:has(.channel-menu-pop),
+body.c8-schedule .channel-rail:has(.channel-menu-pop) > div {
+  overflow: visible;
+  z-index: 80;
+}
+
+body.c8-schedule:has(.channel-menu-pop) #tooltip,
+body.c8-schedule:has(.channel-menu-pop) .react-tooltip {
+  display: none !important;
+}
+
+body.c8-schedule .channel-menu-item {
+  gap: 12px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+body.c8-schedule .channel-menu-item svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+body.c8-schedule .channel-menu-item.is-danger {
+  color: var(--c8-danger);
+}
+
+@media (max-width: 767px) {
+  body.c8-schedule .channel-menu-pop {
+    transform: none;
+  }
+}
+
 body.c8-schedule .week-grid,
 body.c8-schedule .day-grid {
   grid-auto-rows: minmax(41px, auto);
@@ -2014,13 +2168,6 @@ body.c8-schedule .phone-slot:has(.cal-post) > .cal-col::before {
 body.c8-schedule .cal-add {
   position: relative;
   z-index: 1;
-}
-
-/* Day keeps the channel pictures in the empty part of a slot. The shared
-   calendar sheet hides that grayscale row; show it again beside the add button. */
-body.c8-schedule .day-cell .grayscale,
-body.c8-schedule .phone-slot .grayscale {
-  display: flex;
 }
 
 body.c8-schedule .week-cell:has(.cal-post) > .cal-col > div,
@@ -2161,6 +2308,19 @@ body.c8-schedule .cal-post-more {
   cursor: pointer;
 }
 
+body.c8-schedule .cal-post-more:focus:not(:focus-visible) {
+  outline: none;
+}
+
+body.c8-schedule .cal-post:not(.is-open) .cal-post-more:focus {
+  outline: none;
+}
+
+body.c8-schedule .cal-post-more:focus-visible {
+  outline: 2px solid var(--arc-focus);
+  outline-offset: 2px;
+}
+
 body.c8-schedule .cal-post:hover .cal-post-bar,
 body.c8-schedule .cal-post:focus-within .cal-post-bar {
   display: none;
@@ -2180,4 +2340,196 @@ body.c8-schedule .cal-post.is-open .cal-post-bar {
   body.c8-schedule .phone-slot:has(.cal-post.is-open) .cal-col > div {
     z-index: 30;
   }
+}
+
+body.c8-schedule .cal-post {
+  cursor: grab;
+}
+
+body.c8-schedule .cal-post:active {
+  cursor: grabbing;
+}
+
+body.c8-schedule .cal-post-body {
+  transition:
+    transform 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+
+body.c8-schedule .cal-post:hover .cal-post-body {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 var(--c8-hard) !important;
+}
+
+body.c8-schedule .cal-post-more,
+body.c8-schedule .cal-post-action {
+  cursor: pointer;
+}
+
+body.c8-schedule .arc-dialog-wrap,
+body.c8-schedule .mantine-Overlay-root,
+body.c8-schedule .mantine-Modal-inner {
+  background: rgb(18 16 22 / 0.86) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.c8-schedule .blurMe.blur-xs {
+  filter: none !important;
+}
+
+body.c8-schedule .arc-dialog.po-sure-modal,
+body.c8-schedule .arc-dialog.po-sure-danger,
+body.c8-schedule .arc-dialog:has(.c8-slots) {
+  border-radius: 28px !important;
+  box-shadow: 0 6px 0 var(--c8-hard) !important;
+  background: var(--c8-surface) !important;
+  font-family: var(--font-body), Inter, sans-serif;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .po-sure-title,
+body.c8-schedule .arc-dialog:has(.c8-slots) .arc-dialog-head,
+body.c8-schedule .arc-dialog.po-sure-modal .arc-dialog-head {
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .po-sure-copy,
+body.c8-schedule .po-sure-modal .arc-dialog-body {
+  font-family: var(--font-body), Inter, sans-serif;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .po-sure-danger .po-sure-yes {
+  background: var(--c8-danger) !important;
+  color: #fff !important;
+  border: 1px solid var(--c8-hard) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  font-family: var(--font-body), Inter, sans-serif;
+  font-weight: 600 !important;
+}
+
+body.c8-schedule .po-sure-no {
+  border-radius: 16px !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+body.c8-schedule .app-toast {
+  border-radius: 16px !important;
+  box-shadow: 0 6px 0 var(--c8-hard) !important;
+  font-family: var(--font-body), Inter, sans-serif;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .c8-slots {
+  font-family: var(--font-body), Inter, sans-serif;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .c8-slots > .bg-newBgColorInner {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+body.c8-schedule .c8-slots select {
+  height: 44px;
+  width: 100%;
+  border: 1px solid var(--c8-hard);
+  border-radius: 16px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 14px;
+  padding: 0 12px;
+}
+
+body.c8-schedule .c8-slots .c8-slot-add {
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--c8-hard);
+  border-radius: 16px;
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+body.c8-schedule .c8-slots .c8-slot-row {
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--c8-line);
+  border-radius: 16px;
+  background: var(--c8-surface);
+  box-shadow: none;
+}
+
+body.c8-schedule .c8-slots .c8-slot-save {
+  width: 100%;
+  height: 44px;
+  border-radius: 16px !important;
+  border: 1px solid var(--c8-hard) !important;
+  background: var(--c8-ink) !important;
+  color: var(--c8-on-ink) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+.c8-preview {
+  min-height: 100vh;
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+.c8-preview .c8-preview-bar,
+.c8-preview .c8-preview-card,
+.c8-preview .c8-preview-comments {
+  background: var(--c8-surface);
+  border: 1px solid var(--c8-line);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 var(--c8-hard);
+  color: var(--c8-ink);
+}
+
+.c8-preview h2,
+.c8-preview h3,
+.c8-preview .c8-preview-bar {
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+}
+
+.c8-preview a,
+.c8-preview .text-white,
+.c8-preview .text-gray-400,
+.c8-preview .text-gray-500 {
+  color: var(--c8-ink);
+}
+
+.c8-preview .text-gray-400,
+.c8-preview .text-gray-500 {
+  color: var(--c8-muted);
+}
+
+.c8-preview textarea {
+  background: var(--c8-bg) !important;
+  color: var(--c8-ink) !important;
+  border: 1px solid var(--c8-hard) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+.c8-preview img {
+  background: var(--c8-soft);
+  border-color: var(--c8-line);
 }

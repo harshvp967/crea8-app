@@ -119,7 +119,7 @@ export default async function Auth(
   }
   return (
     <div>
-      <div className="mx-auto w-full max-w-[1346px] py-3 text-white">
+      <div className="c8-preview-bar mx-auto w-full max-w-[1346px] my-3 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -148,13 +148,13 @@ export default async function Auth(
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row text-white w-full max-w-[1346px] mx-auto">
+      <div className="flex flex-col lg:flex-row w-full max-w-[1346px] mx-auto gap-4 px-4 pb-8">
         <div className="flex-1">
           <div className="gap-[20px] flex flex-col">
             {post.map((p: any, index: number) => (
               <div
                 key={String(p.id)}
-                className="relative px-4 py-4 bg-third border border-tableBorder"
+                className="c8-preview-card relative px-4 py-4"
               >
                 <div className="flex space-x-3">
                   <div>
@@ -219,7 +219,7 @@ export default async function Auth(
           </div>
         </div>
         <div className="w-full lg:w-96 lg:flex-shrink-0">
-          <div className="p-4 pt-0">
+          <div className="c8-preview-comments p-4">
             <CommentsComponents postId={id} />
           </div>
         </div>
