@@ -72,27 +72,35 @@ export const Menu: FC<{
     setShow(false);
   });
   const showRef = useRef(undefined);
+  const menuGap = 6;
 
-  // Adjust menu position if it would overflow viewport
+  const menuAnchor = useCallback(() => {
+    // @ts-ignore
+    const node = showRef?.current as HTMLElement | undefined;
+    const row = node?.closest?.('.channel-row, .channel-chip');
+    return (row || node)?.getBoundingClientRect();
+  }, []);
+
+  // Place the card 6px under the row. When that runs off the viewport,
+  // flip it the same 6px above the row. Open, close, and item actions stay put.
   useLayoutEffect(() => {
     if (show && menuRef.current) {
       const menuRect = menuRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const padding = 10;
 
-      // Check if menu overflows bottom of viewport
       if (menuRect.bottom > viewportHeight - padding) {
-        const newY = Math.max(
-          padding,
-          viewportHeight - menuRect.height - padding
-        );
-        // Only update if position actually changed significantly to avoid infinite loop
+        const anchor = menuAnchor();
+        const flipped = anchor
+          ? anchor.top - menuGap - menuRect.height
+          : viewportHeight - menuRect.height - padding;
+        const newY = Math.max(padding, flipped);
         if (Math.abs(show.y - newY) > 1) {
           setShow((prev) => (prev ? { ...prev, y: newY } : false));
         }
       }
     }
-  }, [show]);
+  }, [show, menuAnchor, menuGap]);
   useEffect(() => {
     if (!show) {
       return;
@@ -113,13 +121,19 @@ export const Menu: FC<{
       e.stopPropagation();
       // @ts-ignore
       const boundBox = showRef?.current?.getBoundingClientRect();
+      const anchor = menuAnchor();
       setShow(
         show
           ? false
-          : { x: boundBox?.left, y: boundBox?.top + boundBox?.height }
+          : {
+              x: boundBox?.left,
+              y:
+                (anchor?.bottom ??
+                  (boundBox?.top ?? 0) + (boundBox?.height ?? 0)) + menuGap,
+            }
       );
     },
-    [show]
+    [show, menuAnchor, menuGap]
   );
   const disableChannel = useCallback(async () => {
     if (

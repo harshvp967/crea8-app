@@ -1481,17 +1481,25 @@ const CalendarItem: FC<{
         onClick={editPost}
         className="cal-post-body gap-[6px] w-full flex h-full flex-1 p-[6px] text-[13px] relative"
       >
-        <div className="cal-post-icon relative min-w-[20px]">
+        <div className="cal-post-icon">
           <img
-            className="cal-post-avatar w-[20px] h-[20px] rounded-[6px]"
+            className="cal-post-avatar"
             src={post.integration.picture! || '/no-picture.jpg'}
             alt=""
           />
-          <img
-            className="cal-post-mark"
-            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-            alt=""
-          />
+          {post.integration?.providerIdentifier === 'youtube' ? (
+            <img
+              src="/icons/platforms/youtube.svg"
+              className="cal-post-mark"
+              alt=""
+            />
+          ) : (
+            <SafeImage
+              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+              className="cal-post-mark"
+              alt={post.integration?.providerIdentifier || ''}
+            />
+          )}
         </div>
         {!showTime ? (
           <span className="cal-chip-when">
