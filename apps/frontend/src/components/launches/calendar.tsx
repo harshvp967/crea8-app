@@ -43,11 +43,10 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { groupBy, random, sortBy } from 'lodash';
+import { groupBy, sortBy } from 'lodash';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
-import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -58,12 +57,8 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import {
-  displayDayjs,
-  displayNow,
-  getTimezone,
-  isPastHour,
-} from '@gitroom/frontend/components/layout/set.timezone';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
@@ -122,12 +117,17 @@ const usePostActions = (onMutate?: () => void) => {
       };
 
       const data = await (await fetch(`/posts/group/${post.group}`)).json();
+      if (!data?.posts?.length) {
+        toaster.show(t('post_not_found', 'Post not found'), 'warning');
+        mutate();
+        return;
+      }
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
       const publishDate = dayjs
         .utc(date || data.posts[0].publishDate)
-        .tz(getTimezone());
+        .local();
       const ExistingData = !isDuplicate
         ? ExistingDataContextProvider
         : Fragment;
@@ -178,7 +178,7 @@ const usePostActions = (onMutate?: () => void) => {
         title: ``,
       });
     },
-    [integrations, fetch, modal, mutate]
+    [integrations, fetch, modal, mutate, toaster, t]
   );
 
   const copyDebugJson = useCallback(
@@ -260,7 +260,61 @@ const usePostActions = (onMutate?: () => void) => {
     [modal, t, mutate]
   );
 
-  return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease };
+  const openPost = useCallback(
+    (post: Post) => async () => {
+      const tab = window.open('', '_blank');
+      if (!tab) {
+        return;
+      }
+      tab.opener = null;
+      let release = {
+        releaseURL: '',
+        pending: true,
+        unavailable: false,
+        reconnect: false,
+      };
+      try {
+        release = await Promise.race([
+          fetch(`/posts/${post.id}/release-url`).then((r) => r.json()),
+          timer(5000).then(() => release),
+        ]);
+      } catch (e) {}
+      if (release.unavailable) {
+        tab.close();
+        toaster.show(
+          t('post_has_no_public_link', 'This post has no public link'),
+          'warning'
+        );
+        return;
+      }
+      if (release.reconnect) {
+        tab.close();
+        toaster.show(
+          t(
+            'post_link_reconnect_channel',
+            'Reconnect this channel to open the post link'
+          ),
+          'warning'
+        );
+        return;
+      }
+      if (release.pending) {
+        tab.close();
+        toaster.show(
+          t(
+            'post_link_not_ready',
+            'The post link is not available yet, please try again in a minute'
+          ),
+          'warning'
+        );
+        return;
+      }
+      tab.location.href = (release.releaseURL || (post as { releaseURL?: string }).releaseURL || '').split(',')[0];
+    },
+    [fetch, toaster, t]
+  );
+
+  return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost };
 };
 
 const useNarrowLayout = () => {
@@ -277,10 +331,10 @@ const useNarrowLayout = () => {
 
 const PhoneDayStrip = () => {
   const calendar = useCalendar();
-  const weekStart = displayDayjs(calendar.startDate).startOf('isoWeek');
+  const weekStart = newDayjs(calendar.startDate).startOf('isoWeek');
   const days = Array.from({ length: 7 }, (_, index) => weekStart.add(index, 'day'));
   const shiftWeek = (direction: number) => {
-    const nextDay = displayDayjs(calendar.startDate).add(direction, 'week');
+    const nextDay = newDayjs(calendar.startDate).add(direction, 'week');
     calendar.setFilters({
       startDate: nextDay.format('YYYY-MM-DD'),
       endDate: nextDay.format('YYYY-MM-DD'),
@@ -348,19 +402,18 @@ export const DayView = () => {
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale(currentLanguage);
 
-  const currentDay = displayDayjs(startDate);
+  const currentDay = newDayjs(startDate);
 
   const options = useMemo(() => {
-    const zone = getTimezone();
     const createdPosts = posts.map((post) => {
-      const zoned = dayjs.utc(post.publishDate).tz(zone);
+      const local = dayjs.utc(post.publishDate).local();
       return {
         integration: [integrations.find((i) => i.id === post.integration.id)!],
         image: post?.integration?.picture || '',
         identifier: post?.integration?.providerIdentifier || '',
         id: post?.integration?.id || '',
         name: post?.integration?.name || '',
-        time: zoned.diff(zoned.startOf('day'), 'minute'),
+        time: local.diff(local.startOf('day'), 'minute'),
       };
     });
     return sortBy(
@@ -370,18 +423,18 @@ export const DayView = () => {
             ...createdPosts,
             ...integrations.flatMap((p) =>
               p.time.flatMap((t) => {
-                const zoned = dayjs
+                const local = dayjs
                   .utc(startDate)
                   .startOf('day')
                   .add(t?.time || 0, 'minute')
-                  .tz(zone);
+                  .local();
                 return {
                   integration: p,
                   identifier: p?.identifier,
                   name: p?.name,
                   id: p?.id,
                   image: p?.picture,
-                  time: zoned.diff(zoned.startOf('day'), 'minute'),
+                  time: local.diff(local.startOf('day'), 'minute'),
                 };
               })
             ),
@@ -408,15 +461,14 @@ export const DayView = () => {
   );
 
   const scrollHour = useMemo(() => {
-    const zone = getTimezone();
-    if (displayDayjs(startDate).format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD')) {
-      return displayNow().hour();
+    if (newDayjs(startDate).format('YYYY-MM-DD') === newDayjs().format('YYYY-MM-DD')) {
+      return newDayjs().hour();
     }
     if (!posts.length) {
       return 0;
     }
     return Math.min(
-      ...posts.map((post) => dayjs.utc(post.publishDate).tz(zone).hour())
+      ...posts.map((post) => dayjs.utc(post.publishDate).local().hour())
     );
   }, [posts, startDate]);
 
@@ -441,7 +493,7 @@ export const DayView = () => {
   }, [narrow, scrollHour, startDate]);
 
   const shiftDay = (direction: number) => {
-    const nextDay = displayDayjs(startDate).add(direction, 'day');
+    const nextDay = newDayjs(startDate).add(direction, 'day');
     calendar.setFilters({
       startDate: nextDay.format('YYYY-MM-DD'),
       endDate: nextDay.format('YYYY-MM-DD'),
@@ -578,7 +630,7 @@ export const WeekView = () => {
     dayjs.locale(currentLanguage);
 
     const days = [];
-    const weekStart = displayDayjs(startDate);
+    const weekStart = newDayjs(startDate);
     for (let i = 0; i < 7; i++) {
       const day = weekStart.add(i, 'day');
       days.push({
@@ -598,7 +650,7 @@ export const WeekView = () => {
     return [0, 1, 2].map((index) => localizedDays[offset + index] || null);
   }, [localizedDays, phonePage, phoneWeek]);
 
-  const today = displayNow().format('YYYY-MM-DD');
+  const today = newDayjs().format('YYYY-MM-DD');
 
   return (
     <div className="c8-week flex flex-col text-textColor flex-1 min-h-0">
@@ -689,9 +741,39 @@ export const WeekView = () => {
   );
 };
 export const MonthView = () => {
-  const { startDate } = useCalendar();
+  const calendar = useCalendar();
+  const { startDate, posts } = calendar;
   const t = useT();
   const narrow = useNarrowLayout();
+  const user = useUser();
+  const [phoneMonth, setPhoneMonth] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(startDate);
+  const {
+    editPost,
+    deletePost,
+    copyDebugJson,
+    openStatistics,
+    openMissingRelease,
+    openPost,
+  } = usePostActions();
+
+  useLayoutEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)');
+    const sync = () => setPhoneMonth(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    const monthStart = newDayjs(startDate).startOf('month');
+    const today = newDayjs();
+    setSelectedDay(
+      today.isSame(monthStart, 'month')
+        ? today.format('YYYY-MM-DD')
+        : monthStart.format('YYYY-MM-DD')
+    );
+  }, [startDate]);
 
   // Use dayjs to get localized day names. Phone cells are too narrow for full names.
   const localizedDays = useMemo(() => {
@@ -701,17 +783,17 @@ export const MonthView = () => {
     const days = [];
     // Starting from Monday (1) to Sunday (7)
     for (let i = 1; i <= 7; i++) {
-      days.push(displayNow().day(i).format(narrow ? 'ddd' : 'dddd'));
+      days.push(newDayjs().day(i).format(narrow ? 'ddd' : 'dddd'));
     }
     return days;
   }, [i18next.resolvedLanguage, narrow]);
 
   const calendarDays = useMemo(() => {
-    const monthStart = displayDayjs(startDate);
+    const monthStart = newDayjs(startDate);
     const currentMonth = monthStart.month();
     const currentYear = monthStart.year();
 
-    const startOfMonth = displayDayjs(
+    const startOfMonth = newDayjs(
       `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`
     );
 
@@ -739,6 +821,93 @@ export const MonthView = () => {
     }
     return calendarDays;
   }, [startDate]);
+
+  const postedDays = useMemo(() => {
+    return new Set(
+      posts.map((post) => dayjs.utc(post.publishDate).local().format('YYYY-MM-DD'))
+    );
+  }, [posts]);
+
+  const selectedPosts = useMemo(() => {
+    return posts
+      .filter(
+        (post) =>
+          dayjs.utc(post.publishDate).local().format('YYYY-MM-DD') === selectedDay
+      )
+      .sort(
+        (a, b) =>
+          dayjs.utc(a.publishDate).valueOf() - dayjs.utc(b.publishDate).valueOf()
+      );
+  }, [posts, selectedDay]);
+
+  if (phoneMonth) {
+    return (
+      <div className="phone-month flex flex-col gap-[14px] flex-1 min-h-0">
+        <div className="phone-month-card">
+          <div className="phone-month-heads">
+            {localizedDays.map((day, index) => (
+              <div key={index} className="phone-month-dow">
+                {day.charAt(0)}
+              </div>
+            ))}
+          </div>
+          <div className="phone-month-grid">
+            {calendarDays.map((date, index) => {
+              const iso = date.day.format('YYYY-MM-DD');
+              const selected = iso === selectedDay;
+              return (
+                <div
+                  key={index}
+                  className={clsx(
+                    'phone-month-day',
+                    date.label !== 'current-month' && 'is-outside',
+                    selected && 'is-selected',
+                    postedDays.has(iso) && 'has-posts'
+                  )}
+                  onClick={() => setSelectedDay(iso)}
+                >
+                  <span>{date.day.format('D')}</span>
+                  <span className="phone-month-dot" />
+                  <div className="phone-month-hit">
+                    <CalendarColumn
+                      getDate={date.day.endOf('day')}
+                      randomHour={true}
+                      hitOnly
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="phone-month-agenda">
+          <div className="phone-month-agenda-title">
+            {newDayjs(selectedDay).format('ddd, MMM D')}
+          </div>
+          {selectedPosts.map((post) => (
+            <CalendarItem
+              key={post.id}
+              display="day"
+              agenda
+              isBeforeNow={false}
+              date={dayjs.utc(post.publishDate).local()}
+              state={post.state}
+              statistics={openStatistics(post.id)}
+              missingRelease={openMissingRelease(post.id)}
+              openPost={openPost(post)}
+              editPost={editPost(post, false)}
+              duplicatePost={editPost(post, true)}
+              copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
+              post={post}
+              integrations={calendar.integrations}
+              deletePost={deletePost(post)}
+              showTime={true}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col text-textColor flex-1">
@@ -775,6 +944,15 @@ export const ListView = () => {
   const t = useT();
   const user = useUser();
   const { integrations, loading, listPosts, listState } = useCalendar();
+  const [phoneList, setPhoneList] = useState(false);
+
+  useLayoutEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)');
+    const sync = () => setPhoneList(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
   const emptyMessage =
     listState === 'scheduled'
       ? t('no_upcoming_posts', 'No upcoming posts scheduled')
@@ -785,13 +963,13 @@ export const ListView = () => {
       : t('no_posts', 'No posts');
 
   // Use shared post actions hook
-  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost } = usePostActions();
 
   // Group posts by date
   const groupedPosts = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     listPosts.forEach((post) => {
-      const dateKey = dayjs.utc(post.publishDate).tz(getTimezone()).format('YYYY-MM-DD');
+      const dateKey = dayjs.utc(post.publishDate).local().format('YYYY-MM-DD');
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
@@ -819,10 +997,26 @@ export const ListView = () => {
   return (
     <div className="cal-list flex flex-col gap-[10px] flex-1 relative">
       <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        {groupedPosts.map(([dateKey, datePosts]) => (
+        {groupedPosts.map(([dateKey, datePosts]) => {
+          const dayLabel = newDayjs(dateKey);
+          const isToday = dateKey === newDayjs().format('YYYY-MM-DD');
+          const isEarlier = dayLabel.isBefore(newDayjs(), 'day');
+          return (
           <Fragment key={dateKey}>
-            <div className="cal-list-day text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]">
-              {displayDayjs(dateKey).format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
+            <div
+              className={clsx(
+                'cal-list-day text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]',
+                phoneList && isToday && 'is-today',
+                phoneList && isEarlier && 'is-earlier'
+              )}
+            >
+              {phoneList
+                ? isToday
+                  ? `${t('today', 'Today')} · ${dayLabel.format('ddd, MMM D')}`
+                  : isEarlier
+                  ? `${t('earlier', 'Earlier')} · ${dayLabel.format('ddd, MMM D')}`
+                  : dayLabel.format('ddd, MMM D')
+                : dayLabel.format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
             </div>
             <div className="cal-list-group flex flex-col gap-[10px] mb-[20px] px-[10px]">
               {datePosts.map((post) => (
@@ -830,10 +1024,11 @@ export const ListView = () => {
                   key={post.id}
                   display="day"
                   isBeforeNow={false}
-                  date={dayjs.utc(post.publishDate).tz(getTimezone())}
+                  date={dayjs.utc(post.publishDate).local()}
                   state={post.state}
                   statistics={openStatistics(post.id)}
                   missingRelease={openMissingRelease(post.id)}
+                  openPost={openPost(post)}
                   editPost={editPost(post, false)}
                   duplicatePost={editPost(post, true)}
                   copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
@@ -841,11 +1036,22 @@ export const ListView = () => {
                   integrations={integrations}
                   deletePost={deletePost(post)}
                   showTime={true}
+                  meta={
+                    phoneList
+                      ? `${dayjs
+                          .utc(post.publishDate)
+                          .local()
+                          .format(isUSCitizen() ? 'h:mm A' : 'HH:mm')} · ${
+                          post.integration?.name || ''
+                        }`
+                      : undefined
+                  }
                 />
               ))}
             </div>
           </Fragment>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -876,11 +1082,11 @@ export const Calendar = () => {
 export const CalendarColumn: FC<{
   getDate: dayjs.Dayjs;
   randomHour?: boolean;
+  hitOnly?: boolean;
 }> = memo((props) => {
   const t = useT();
 
-  const { getDate, randomHour } = props;
-  const [num, setNum] = useState(0);
+  const { getDate, randomHour, hitOnly } = props;
   const user = useUser();
   const {
     integrations,
@@ -891,15 +1097,16 @@ export const CalendarColumn: FC<{
     sets,
     signature,
     loading,
+    currentHour,
   } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
 
   // Use shared post actions hook
-  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost } = usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
-      const pList = dayjs.utc(post.publishDate).tz(getTimezone());
+      const pList = dayjs.utc(post.publishDate).local();
       const check =
         display === 'day'
           ? pList.format('YYYY-MM-DD HH:mm') ===
@@ -925,26 +1132,11 @@ export const CalendarColumn: FC<{
     return postList.slice(0, 3);
   }, [postList, showAll]);
 
-  const isBeforeNow = useMemo(() => {
-    return isPastHour(getDate, displayNow());
-  }, [getDate, num]);
-
-  const { start, stop } = useInterval(
-    useCallback(() => {
-      if (isBeforeNow) {
-        return;
-      }
-      setNum(num + 1);
-    }, [isBeforeNow]),
-    random(120000, 150000)
+  const isBeforeNow = useMemo(
+    () => getDate.startOf('hour').isBefore(currentHour),
+    [getDate, currentHour]
   );
 
-  useEffect(() => {
-    start();
-    return () => {
-      stop();
-    };
-  }, []);
   const [{ canDrop }, drop] = useDrop(() => ({
     accept: 'post',
     drop: async (item: any) => {
@@ -1046,7 +1238,7 @@ export const CalendarColumn: FC<{
     collect: (monitor) => ({
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
     }),
-  }), [posts]);
+    }), [posts, isBeforeNow]);
 
   const addModal = useCallback(async () => {
     if (isBeforeNow) {
@@ -1114,8 +1306,8 @@ export const CalendarColumn: FC<{
             randomHour
               ? getDate.hour(Math.floor(Math.random() * 24))
               : getDate.format('YYYY-MM-DDTHH:mm:ss') ===
-                displayNow().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
-              ? displayNow().add(10, 'minute')
+                newDayjs().startOf('hour').format('YYYY-MM-DDTHH:mm:ss')
+              ? newDayjs().add(10, 'minute')
               : getDate
           }
           {...(set?.content ? { set: JSON.parse(set.content) } : {})}
@@ -1143,11 +1335,11 @@ export const CalendarColumn: FC<{
       )}
       ref={drop as any}
     >
-      {display === 'month' && (
+      {display === 'month' && !hitOnly && (
         <div
           className={clsx(
             'pt-[8px] pb-[2px] text-[13px] font-[600]',
-            getDate.format('YYYY-MM-DD') === displayNow().format('YYYY-MM-DD')
+            getDate.format('YYYY-MM-DD') === newDayjs().format('YYYY-MM-DD')
               ? 'text-c8-schedule'
               : 'text-c8-muted'
           )}
@@ -1174,7 +1366,7 @@ export const CalendarColumn: FC<{
               <div className="h-full w-full bg-newSettings rounded-[10px]" />
             </div>
           )}
-          {list.map((post) => (
+          {!hitOnly && list.map((post) => (
             <div
               key={post.id}
               className={clsx(
@@ -1189,6 +1381,7 @@ export const CalendarColumn: FC<{
                   state={post.state}
                   statistics={openStatistics(post.id)}
                   missingRelease={openMissingRelease(post.id)}
+                  openPost={openPost(post)}
                   editPost={editPost(post, false)}
                   duplicatePost={editPost(post, true)}
                   copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
@@ -1199,7 +1392,7 @@ export const CalendarColumn: FC<{
               </div>
             </div>
           ))}
-          {!showAll && postList.length > 3 && (
+          {!hitOnly && !showAll && postList.length > 3 && (
             <div
               className="text-center hover:underline py-[5px] text-textColor"
               onClick={showAllFunc}
@@ -1207,7 +1400,7 @@ export const CalendarColumn: FC<{
               {t('show_more', '+ Show more')} ({postList.length - 3})
             </div>
           )}
-          {showAll && postList.length > 3 && (
+          {!hitOnly && showAll && postList.length > 3 && (
             <div
               className="text-center hover:underline py-[5px]"
               onClick={showLessFunc}
@@ -1308,10 +1501,13 @@ const CalendarItem: FC<{
   deletePost: () => void;
   statistics: () => void;
   missingRelease?: () => void;
+  openPost?: () => void;
   integrations: Integrations[];
   state: State;
   display: 'day' | 'week' | 'month';
   showTime?: boolean;
+  agenda?: boolean;
+  meta?: string;
   post: Post & {
     integration: Integration;
     tags: {
@@ -1332,7 +1528,10 @@ const CalendarItem: FC<{
     display,
     deletePost,
     showTime,
+    agenda,
+    meta,
     missingRelease,
+    openPost,
   } = props;
   const { disableXAnalytics } = useVariables();
   const user = useUser();
@@ -1365,6 +1564,7 @@ const CalendarItem: FC<{
       className={clsx(
         'cal-post w-full flex h-full flex-1 flex-col group',
         'relative',
+        agenda && 'is-agenda',
         actionsOpen && 'is-open',
         state === 'DRAFT' && 'is-draft',
         state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
@@ -1413,6 +1613,15 @@ const CalendarItem: FC<{
           <Preview />
           <span>{t('preview_post', 'Preview Post')}</span>
         </div>{' '}
+        {(state === 'PUBLISHED' || state === 'ERROR') &&
+          !post.intervalInDays &&
+          post.releaseURL?.startsWith('http') &&
+          openPost && (
+            <div className="cal-post-action" onClick={openPost}>
+              <OpenPost />
+              <span>{t('open_post', 'Open Post')}</span>
+            </div>
+          )}{' '}
         {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
           <></>
         ) : post.releaseId === 'missing' && missingRelease ? (
@@ -1453,11 +1662,16 @@ const CalendarItem: FC<{
           <span className="cal-chip-when">
             {dayjs
               .utc(post.publishDate)
-              .tz(getTimezone())
+              .local()
               .format('h:mm')}
           </span>
         ) : null}
         <div className="w-full flex-1 min-w-0">
+          {agenda && (
+            <div className="cal-agenda-time">
+              {date.format(isUSCitizen() ? 'h:mm A' : 'HH:mm')}
+            </div>
+          )}
             <div className="w-full text-ellipsis break-words line-clamp-2 text-start leading-[1.3]">
             {state === 'DRAFT' ? (
               <span className="cal-draft-prefix text-textItemBlur">{t('draft', 'Draft')}: </span>
@@ -1465,12 +1679,13 @@ const CalendarItem: FC<{
             {stripHtmlValidation('none', post.content, false, true, false) ||
               t('no_content', 'no content')}
           </div>
-          {showTime && (
+          {showTime && !agenda && (
             <div className="cal-list-when">
-              {dayjs
-                .utc(post.publishDate)
-                .tz(getTimezone())
-                .format(isUSCitizen() ? 'ddd, MMM D · h:mm A' : 'ddd, D MMM · HH:mm')}
+              {meta ||
+                dayjs
+                  .utc(post.publishDate)
+                  .local()
+                  .format(isUSCitizen() ? 'ddd, MMM D · h:mm A' : 'ddd, D MMM · HH:mm')}
             </div>
           )}
         </div>
@@ -1571,6 +1786,18 @@ const Duplicate = () => {
       data-tooltip-content={t('duplicate_post', 'Duplicate Post')}
     >
       <HugeIcon name="copy" size={16} />
+    </span>
+  );
+};
+const OpenPost = () => {
+  const t = useT();
+  return (
+    <span
+      className="inline-flex"
+      data-tooltip-id="tooltip"
+      data-tooltip-content={t('open_post', 'Open Post')}
+    >
+      <HugeIcon name="external" size={16} />
     </span>
   );
 };

@@ -1870,6 +1870,10 @@ body.c8-schedule[data-c8-view='list'] .cal-page-caption > div {
   line-height: 1.2;
 }
 
+body.c8-schedule .c8-chip-row {
+  display: contents;
+}
+
 body.c8-schedule .c8-inline-chip {
   display: inline-flex;
   align-items: center;
@@ -2056,5 +2060,706 @@ body.c8-schedule:not([data-c8-view]) .channels-trigger {
     height: auto !important;
     min-height: 100%;
     max-height: 100%;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .c8-inline-chip,
+  body.c8-schedule[data-c8-view='list'] .c8-inline-chip {
+    display: none !important;
+  }
+}
+
+body.c8-schedule .c8-title-list,
+body.c8-schedule .c8-cal-when-list,
+body.c8-schedule .c8-list-phone-label,
+body.c8-schedule .channel-sheet-grab,
+body.c8-schedule .channel-sheet-customer {
+  display: none;
+}
+
+body.c8-schedule[data-c8-view='list'] .c8-title-calendar {
+  display: none;
+}
+
+body.c8-schedule[data-c8-view='list'] .c8-title-list {
+  display: inline;
+}
+
+@keyframes c8-sheet-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0.6;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 639px) {
+  body.c8-schedule .c8-cal-title {
+    font-size: 32px;
+    line-height: 1.05;
+    letter-spacing: -0.64px;
+    font-weight: 800;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .c8-title-calendar {
+    display: inline;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .c8-title-list {
+    display: none;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .c8-cal-when-list {
+    display: inline;
+  }
+
+  body.c8-schedule .calendar-panel,
+  body.c8-schedule .calendar-panel:has(.c8-week),
+  body.c8-schedule .calendar-panel:has(.c8-day) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'head head'
+      'actions actions'
+      'label mode'
+      'chips chips'
+      'empty empty'
+      'well well';
+    align-items: start;
+    row-gap: 0 !important;
+    column-gap: 8px;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .calendar-panel {
+    grid-template-areas:
+      'head head'
+      'actions actions'
+      'label mode'
+      'states states'
+      'chips chips'
+      'pages pages'
+      'empty empty'
+      'well well';
+  }
+
+  body.c8-schedule .c8-cal-head {
+    grid-area: head;
+    align-self: end;
+    margin-bottom: 16px;
+  }
+
+  body.c8-schedule .channel-strip {
+    grid-area: actions;
+    align-self: end;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  body.c8-schedule .channel-strip > .flex,
+  body.c8-schedule .strip-create,
+  body.c8-schedule .strip-create button,
+  body.c8-schedule .channel-add {
+    flex: none;
+  }
+
+  body.c8-schedule .channel-empty-phone {
+    grid-area: empty;
+  }
+
+  body.c8-schedule .calendar-well {
+    grid-area: well;
+    align-self: stretch;
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  body.c8-schedule .week-grid,
+  body.c8-schedule .c8-day-body {
+    margin-top: 14px;
+  }
+
+  body.c8-schedule .filters-bar {
+    display: contents;
+  }
+
+  body.c8-schedule .filters-bar .cal-customer {
+    display: none !important;
+  }
+
+  body.c8-schedule .filters-bar .c8-chip-row {
+    display: flex;
+    grid-area: chips;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  body.c8-schedule .filters-bar .c8-inline-chip,
+  body.c8-schedule .filters-bar .c8-chip-row .c8-inline-chip {
+    display: inline-flex !important;
+    grid-area: auto;
+    justify-self: start;
+    height: 36px;
+    margin-top: 0;
+  }
+
+  body.c8-schedule .filters-bar .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode .cal-mode,
+  body.c8-schedule[data-c8-view='week'] .cal-mode,
+  body.c8-schedule[data-c8-view='day'] .cal-mode,
+  body.c8-schedule[data-c8-view='month'] .cal-mode,
+  body.c8-schedule[data-c8-view='list'] .cal-mode,
+  body.c8-schedule:not([data-c8-view]) .cal-mode {
+    display: flex !important;
+    grid-area: mode;
+    order: 0;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-self: end;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 4px !important;
+    gap: 2px;
+    border: 0 !important;
+    border-radius: 999px;
+    background: var(--c8-soft) !important;
+    box-shadow: none;
+  }
+
+  body.c8-schedule .filters-bar .cal-mode > button,
+  body.c8-schedule[data-c8-view='month'] .cal-mode > button,
+  body.c8-schedule[data-c8-view='list'] .cal-mode > button,
+  body.c8-schedule[data-c8-view='week'] .cal-mode > button,
+  body.c8-schedule[data-c8-view='day'] .cal-mode > button {
+    flex: none;
+    height: auto;
+    min-height: 0;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--c8-muted);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: normal;
+    box-shadow: none;
+  }
+
+  body.c8-schedule .filters-bar .cal-mode > button[aria-checked='true'],
+  body.c8-schedule[data-c8-view='month'] .cal-mode > button[aria-checked='true'],
+  body.c8-schedule[data-c8-view='list'] .cal-mode > button[aria-checked='true'],
+  body.c8-schedule[data-c8-view='week'] .cal-mode > button[aria-checked='true'],
+  body.c8-schedule[data-c8-view='day'] .cal-mode > button[aria-checked='true'] {
+    border: 0;
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    font-weight: 600;
+    box-shadow: 0 1px 1.5px rgba(18, 16, 22, 0.12);
+  }
+
+  body.c8-schedule .c8-week-phone-nav,
+  body.c8-schedule .c8-day-phone-nav {
+    grid-area: label;
+    justify-content: flex-start;
+    align-self: center;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .date-range {
+    display: flex !important;
+    grid-area: label;
+    align-self: center;
+    flex: none;
+    min-width: 0;
+    gap: 0;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .cal-nav {
+    display: flex;
+    width: auto;
+    height: auto;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .cal-nav-arrow,
+  body.c8-schedule[data-c8-view='month'] .cal-today {
+    display: none !important;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .cal-range-label {
+    display: flex !important;
+    min-width: 0 !important;
+    width: auto;
+    height: auto;
+    border: 0;
+    background: transparent !important;
+    justify-content: flex-start;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .cal-range-desktop {
+    display: none !important;
+  }
+
+  body.c8-schedule[data-c8-view='month'] .cal-range-phone {
+    display: block !important;
+    padding: 0;
+    color: var(--c8-ink);
+    font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+    font-variation-settings: 'opsz' 14, 'wdth' 100;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.44px;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .c8-list-phone-label {
+    display: block;
+    grid-area: label;
+    align-self: center;
+    color: var(--c8-ink);
+    font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+    font-variation-settings: 'opsz' 14, 'wdth' 100;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.44px;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .date-range {
+    display: contents !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states {
+    grid-area: states;
+    margin-top: 12px;
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states > div {
+    flex: none;
+    height: auto;
+    min-width: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--c8-line);
+    border-radius: 999px;
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states .arc-selected {
+    border-color: var(--c8-ink);
+    background: var(--c8-ink);
+    color: var(--c8-on-ink);
+    font-weight: 600;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-pager.is-single {
+    display: none !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-pager {
+    grid-area: pages;
+    justify-self: start;
+    width: auto;
+    height: auto;
+    gap: 4px;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-pager > div:first-child,
+  body.c8-schedule[data-c8-view='list'] .cal-list-pager > div:last-child {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+  }
+
+  body.c8-schedule .phone-month {
+    width: 100%;
+    gap: 14px;
+  }
+
+  body.c8-schedule .phone-month-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--c8-line);
+    border-radius: 24px;
+    background: var(--c8-surface);
+  }
+
+  body.c8-schedule .phone-month-heads,
+  body.c8-schedule .phone-month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 2px;
+    width: 100%;
+  }
+
+  body.c8-schedule .phone-month-dow {
+    text-align: center;
+    color: var(--c8-muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: normal;
+  }
+
+  body.c8-schedule .phone-month-day {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 46px;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--c8-ink);
+    font-family: var(--font-body), Inter, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: normal;
+    cursor: pointer;
+  }
+
+  body.c8-schedule .phone-month-day.is-outside {
+    color: var(--c8-line);
+  }
+
+  body.c8-schedule.dark .phone-month-day.is-outside {
+    color: color-mix(in srgb, var(--c8-muted) 55%, transparent);
+  }
+
+  body.c8-schedule .phone-month-day.is-selected {
+    background: var(--c8-ink);
+    color: var(--c8-on-ink);
+  }
+
+  body.c8-schedule .phone-month-hit {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  body.c8-schedule .phone-month-hit .cal-col {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    opacity: 0;
+  }
+
+  body.c8-schedule .phone-month-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--c8-line);
+  }
+
+  body.c8-schedule .phone-month-day.has-posts .phone-month-dot {
+    background: var(--c8-cyan);
+  }
+
+  body.c8-schedule .phone-month-day.is-selected .phone-month-dot {
+    background: var(--c8-on-ink);
+  }
+
+  body.c8-schedule .phone-month-day.is-outside .phone-month-dot {
+    opacity: 0.45;
+  }
+
+  body.c8-schedule .phone-month-agenda {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  body.c8-schedule .phone-month-agenda-title {
+    color: var(--c8-ink);
+    font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+    font-variation-settings: 'opsz' 14, 'wdth' 100;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.36px;
+  }
+
+  body.c8-schedule .phone-month .cal-post.is-agenda {
+    height: auto;
+    flex: none;
+  }
+
+  body.c8-schedule .phone-month .cal-post.is-agenda .cal-post-body,
+  body.c8-schedule .phone-month .cal-post.is-agenda.is-draft .cal-post-body,
+  body.c8-schedule .phone-month .cal-post.is-agenda:not(.is-draft) .cal-post-body {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: auto;
+    min-height: 0;
+    padding: 10px;
+    border: 1.5px solid var(--c8-hard) !important;
+    border-radius: 14px !important;
+    background: var(--c8-surface);
+    box-shadow: 0 2px 0 var(--c8-hard);
+  }
+
+  body.c8-schedule .phone-month .cal-post-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+  }
+
+  body.c8-schedule .phone-month .cal-post-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+
+  body.c8-schedule .phone-month .cal-agenda-time {
+    order: -1;
+    color: var(--c8-muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: normal;
+  }
+
+  body.c8-schedule .phone-month .cal-post.is-agenda .w-full.flex-1 {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  body.c8-schedule .phone-month .cal-post.is-agenda .line-clamp-2 {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    color: var(--c8-ink);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: normal;
+  }
+
+  body.c8-schedule .phone-month .cal-list-status,
+  body.c8-schedule .phone-month .cal-post-more,
+  body.c8-schedule .phone-month .cal-draft-prefix,
+  body.c8-schedule .phone-month .cal-post-bar {
+    display: none !important;
+  }
+
+  body.c8-schedule .cal-list,
+  body.c8-schedule .cal-list > div {
+    position: relative;
+    inset: auto;
+    height: auto;
+    overflow: visible;
+  }
+
+  body.c8-schedule .cal-list-day {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 4px;
+    padding: 0 2px;
+    text-align: start;
+    color: var(--c8-muted);
+    font-family: var(--font-body), Inter, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: normal;
+  }
+
+  body.c8-schedule .cal-list-day.is-today {
+    color: var(--c8-ink);
+  }
+
+  body.c8-schedule .cal-list-day.is-today::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--c8-cyan);
+    flex: none;
+  }
+
+  body.c8-schedule .cal-list-group {
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 0;
+  }
+
+  body.c8-schedule .cal-list .cal-post .cal-post-body,
+  body.c8-schedule .cal-list .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .cal-list .cal-post.is-draft .cal-post-body {
+    grid-template-columns: 32px minmax(0, 1fr) auto auto;
+    min-height: 0;
+    padding: 12px;
+    gap: 12px;
+    border-radius: 16px !important;
+    border-width: 1px !important;
+    border-color: var(--c8-line) !important;
+    background: var(--c8-surface);
+    box-shadow: none;
+  }
+
+  body.c8-schedule .cal-list .cal-post-icon,
+  body.c8-schedule .cal-list .cal-post-avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 10px;
+  }
+
+  body.c8-schedule .cal-list .line-clamp-2 {
+    color: var(--c8-ink);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  body.c8-schedule .cal-list .cal-list-when {
+    margin-top: 2px;
+    color: var(--c8-muted);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.3;
+  }
+
+  body.c8-schedule .cal-list .cal-list-status {
+    height: auto;
+    padding: 4px 10px;
+    border: 0;
+    border-radius: 999px;
+    color: #121016;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  body.c8-schedule .cal-list .cal-list-status.is-scheduled {
+    background: #bff4ff;
+    border-color: transparent;
+    color: #121016;
+  }
+
+  body.c8-schedule .cal-list .cal-list-status.is-draft {
+    background: #e9e5dc;
+    color: #121016;
+  }
+
+  body.c8-schedule .cal-list .cal-list-status.is-published {
+    background: #d9f99d;
+    color: #121016;
+  }
+
+  body.c8-schedule .cal-list .cal-post-more {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    color: var(--c8-muted);
+    font-size: 16px;
+  }
+
+  body.c8-schedule .channel-rail.is-open,
+  body.c8-schedule[data-c8-view='week'] .channel-rail.is-open,
+  body.c8-schedule[data-c8-view='day'] .channel-rail.is-open,
+  body.c8-schedule[data-c8-view='month'] .channel-rail.is-open,
+  body.c8-schedule[data-c8-view='list'] .channel-rail.is-open {
+    display: flex !important;
+    position: fixed;
+    z-index: 80;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100% !important;
+    height: auto;
+    max-height: min(78vh, 720px);
+  }
+
+  body.c8-schedule .channel-rail.is-open > div {
+    position: relative !important;
+    height: auto;
+    max-height: min(78vh, 720px);
+    border-radius: 28px 28px 0 0;
+    border-bottom: 0;
+    background: var(--c8-surface);
+    animation: c8-sheet-up 220ms var(--c8-ease-out);
+  }
+
+  body.c8-schedule .channel-rail.is-open .channel-sheet-grab {
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 4px auto 2px;
+    padding: 0;
+    border: 0;
+    border-radius: 9px;
+    background: var(--c8-line);
+    cursor: grab;
+  }
+
+  body.c8-schedule .channel-rail.is-open h2 + div {
+    display: none;
+  }
+
+  body.c8-schedule .channel-rail.is-open .channel-sheet-customer {
+    display: block;
+  }
+
+  body.c8-schedule .channel-rail.is-open .channel-sheet-customer > div > div {
+    width: 100%;
+    height: 44px;
+    border-radius: 14px;
+    border-color: var(--c8-line);
+    background: var(--c8-bg);
+    color: var(--c8-ink);
+  }
+
+  body.c8-schedule .channel-rail.is-open .channel-add {
+    display: flex !important;
+    width: 100%;
+  }
+
+  body.c8-schedule .channel-rail.is-open .sidebar-create {
+    display: none;
+  }
+
+  body.c8-schedule .channel-rail.is-open .channel-row {
+    box-sizing: border-box;
+    height: 44px;
+    min-height: 44px;
+    padding: 6px;
+    border-radius: 12px;
+    gap: 10px;
+  }
+
+  body.c8-schedule .channels-scrim {
+    display: block;
+    z-index: 75;
+    background: var(--c8-scrim-sheet);
   }
 }

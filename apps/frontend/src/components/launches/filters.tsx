@@ -5,9 +5,10 @@ import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { SelectChannels } from '@gitroom/frontend/components/launches/select.channels';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
-import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 // Helper function to get start and end dates based on display type
@@ -15,7 +16,7 @@ function getDateRange(
   display: 'day' | 'week' | 'month' | 'list',
   referenceDate?: string
 ) {
-  const date = referenceDate ? displayDayjs(referenceDate) : displayDayjs();
+  const date = referenceDate ? newDayjs(referenceDate) : newDayjs();
 
   switch (display) {
     case 'day':
@@ -51,8 +52,8 @@ export const Filters = () => {
 
   // Calculate display date range text
   const getDisplayText = () => {
-    const startDate = displayDayjs(calendar.startDate);
-    const endDate = displayDayjs(calendar.endDate);
+    const startDate = newDayjs(calendar.startDate);
+    const endDate = newDayjs(calendar.endDate);
 
     switch (calendar.display) {
       case 'day':
@@ -73,7 +74,7 @@ export const Filters = () => {
   };
 
   const setToday = useCallback(() => {
-    const today = displayDayjs();
+    const today = newDayjs();
     const currentRange = getDateRange(
       calendar.display as 'day' | 'week' | 'month'
     );
@@ -206,7 +207,7 @@ export const Filters = () => {
   );
 
   const next = useCallback(() => {
-    const currentStart = displayDayjs(calendar.startDate);
+    const currentStart = newDayjs(calendar.startDate);
     let nextStart: dayjs.Dayjs;
 
     switch (calendar.display) {
@@ -236,7 +237,7 @@ export const Filters = () => {
   }, [calendar]);
 
   const previous = useCallback(() => {
-    const currentStart = displayDayjs(calendar.startDate);
+    const currentStart = newDayjs(calendar.startDate);
     let prevStart: dayjs.Dayjs;
 
     switch (calendar.display) {
@@ -322,9 +323,17 @@ export const Filters = () => {
         {!isListView && (
           <span className="c8-cal-when">{getDisplayText()}</span>
         )}
+        {isListView && (
+          <span className="c8-cal-when c8-cal-when-list">
+            {t('upcoming_posts', 'Upcoming posts')}
+          </span>
+        )}
       </div>
       <h1 className="c8-cal-title">
-        {isListView ? t('upcoming', 'Upcoming') : t('calendar', 'Calendar')}
+        <span className="c8-title-calendar">{t('calendar', 'Calendar')}</span>
+        {isListView && (
+          <span className="c8-title-list">{t('upcoming', 'Upcoming')}</span>
+        )}
       </h1>
     </div>
     <div
@@ -352,7 +361,7 @@ export const Filters = () => {
                 {calendar.display === 'month'
                   ? getDisplayText()
                   : (() => {
-                      const start = displayDayjs(calendar.startDate).startOf('isoWeek');
+                      const start = newDayjs(calendar.startDate).startOf('isoWeek');
                       const end = start.endOf('isoWeek');
                       return start.month() === end.month()
                         ? `${start.format('MMM D')} – ${end.format('D, YYYY')}`
@@ -383,7 +392,12 @@ export const Filters = () => {
       )}
       {isListView && (
           <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
-          <div className="cal-list-pager border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
+          <div
+            className={clsx(
+              'cal-list-pager border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden',
+              calendar.listTotalPages <= 1 && 'is-single'
+            )}
+          >
             <div
               onClick={previousPage}
               className={clsx(
@@ -431,16 +445,20 @@ export const Filters = () => {
           <div className="flex-1" />
         </div>
       )}
-      {calendar.display !== 'month' && calendar.display !== 'list' && (
-        <button
-          type="button"
-          className="c8-inline-chip"
-          onClick={() => window.dispatchEvent(new Event('c8-open-channels'))}
-        >
-          {t('channels', 'Channels')} · {(calendar.integrations || []).length}
-          <HugeIcon name="chevron-down" size={14} />
-        </button>
+      {isListView && (
+        <span className="c8-list-phone-label">{t('upcoming', 'Upcoming')}</span>
       )}
+      <div className="c8-chip-row">
+      <button
+        type="button"
+        className="c8-inline-chip"
+        onClick={() => window.dispatchEvent(new Event('c8-open-channels'))}
+      >
+        {t('channels', 'Channels')} · {(calendar.integrations || []).length}
+        <HugeIcon name="chevron-down" size={14} />
+      </button>
+      <SelectChannels />
+      </div>
       <div className="cal-customer">
       <SelectCustomer
         customer={calendar.customer as string}
