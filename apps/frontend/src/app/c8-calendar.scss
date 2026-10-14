@@ -439,7 +439,6 @@ body.c8-schedule .phone-slot .cal-post-icon {
   min-width: 16px;
   height: 16px;
   flex: none;
-  overflow: hidden;
 }
 
 body.c8-schedule .day-cell .cal-post-icon::before,
@@ -2094,17 +2093,9 @@ body.c8-schedule .channel-menu-pop {
   font-weight: 500;
   z-index: 400;
   max-width: min(280px, calc(100vw - 16px));
-  /* The click still records the trigger. Anchor the card 6px under the
-     row so that offset does not depend on the trigger's height. */
-  position-anchor: --c8-menu-row;
-  top: calc(anchor(bottom) + 6px) !important;
+  /* Horizontal only. menu.tsx sets `top` to 6px under the row and flips
+     that top near the viewport bottom, which Firefox and Safari follow too. */
   transform: translateX(calc(-100% + 12px));
-}
-
-body.c8-schedule .channel-row,
-body.c8-schedule .channel-chip {
-  anchor-scope: --c8-menu-row;
-  anchor-name: --c8-menu-row;
 }
 
 body.c8-schedule .channel-rail.sidebar .channel-menu-pop {
