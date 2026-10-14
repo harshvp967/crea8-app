@@ -1341,6 +1341,37 @@ const CalendarItem: FC<{
     post.creationMethod &&
     post.creationMethod !== 'UNKNOWN';
   const [actionsOpen, setActionsOpen] = useState(false);
+  const postRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!actionsOpen) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (!postRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false);
+      }
+    };
+    const onScroll = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Node && postRef.current?.contains(target)) {
+        return;
+      }
+      setActionsOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActionsOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [actionsOpen]);
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
@@ -1360,8 +1391,10 @@ const CalendarItem: FC<{
   );
   return (
     <div
-      // @ts-ignore
-      ref={dragRef}
+      ref={(node) => {
+        postRef.current = node;
+        dragRef(node);
+      }}
       className={clsx(
         'cal-post w-full flex h-full flex-1 flex-col group',
         'relative',
@@ -1488,13 +1521,14 @@ const CalendarItem: FC<{
         <button
           type="button"
           className="cal-post-more"
-          aria-label={t('post', 'Post')}
+          aria-expanded={actionsOpen}
+          aria-label={t('post_actions', 'Post actions')}
           onClick={(event) => {
             event.stopPropagation();
             setActionsOpen((open) => !open);
           }}
         >
-          ···
+          <HugeIcon name="more-v" size={18} />
         </button>
       </div>
     </div>

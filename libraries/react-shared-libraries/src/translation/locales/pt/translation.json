@@ -332,6 +332,7 @@
   "sunday": "Domingo",
   "can_t_change_date_remove_post_from_publication": "Não é possível alterar a data, remova o post da publicação",
   "predicted_github_trending_change": "Mudança prevista no Trending do GitHub",
+  "post_actions": "Ações da publicação",
   "duplicate_post": "Post duplicado",
   "preview_post": "Visualizar post",
   "post_statistics": "Estatísticas do post",

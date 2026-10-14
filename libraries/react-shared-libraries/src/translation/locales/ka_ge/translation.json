@@ -330,6 +330,7 @@
     "sunday": "კვირა",
     "can_t_change_date_remove_post_from_publication": "თარიღის შეცვლა შეუძლებელია — მოხსენით პოსტი გამოქვეყნებიდან",
     "predicted_github_trending_change": "პროგნოზირებული ცვლილება GitHub Trending-ში",
+    "post_actions": "პოსტის მოქმედებები",
     "duplicate_post": "პოსტის დუბლირება",
     "preview_post": "პოსტზე წინასწარი გადახედვა",
     "post_statistics": "პოსტის სტატისტიკა",
