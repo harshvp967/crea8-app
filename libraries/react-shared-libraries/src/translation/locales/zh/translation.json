@@ -332,6 +332,7 @@
   "sunday": "星期日",
   "can_t_change_date_remove_post_from_publication": "无法更改日期，请先将帖子从发布中移除",
   "predicted_github_trending_change": "预测 GitHub 趋势变化",
+  "post_actions": "帖子操作",
   "duplicate_post": "重复帖子",
   "preview_post": "预览帖子",
   "post_statistics": "帖子统计",

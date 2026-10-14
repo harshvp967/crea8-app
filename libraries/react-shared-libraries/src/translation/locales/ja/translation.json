@@ -332,6 +332,7 @@
   "sunday": "日曜日",
   "can_t_change_date_remove_post_from_publication": "日付を変更できません。投稿を公開から削除してください。",
   "predicted_github_trending_change": "GitHubトレンド予測の変化",
+  "post_actions": "投稿の操作",
   "duplicate_post": "重複した投稿",
   "preview_post": "投稿をプレビュー",
   "post_statistics": "投稿の統計",
