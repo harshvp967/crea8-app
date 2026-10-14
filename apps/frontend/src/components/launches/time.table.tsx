@@ -4,8 +4,8 @@ import React, { FC, useCallback, useMemo, useState } from 'react';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { Select } from '@gitroom/react/form/select';
 import { Button } from '@gitroom/react/form/button';
+import { C8Dropdown } from '@gitroom/react/c8';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -138,36 +138,28 @@ export const TimeTable: FC<{
 
         <div className="flex gap-[12px] items-end">
           <div className="flex-1">
-            <Select
+            <C8Dropdown
               label={t('hour', 'Hour')}
               name="hour"
-              disableForm={true}
-              hideErrors={true}
               value={hour}
               onChange={(e) => setHour(Number(e.target.value))}
-            >
-              {hours.map((h) => (
-                <option key={h.value} value={h.value}>
-                  {h.value.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </Select>
+              options={hours.map((h) => ({
+                value: h.value,
+                label: h.value.toString().padStart(2, '0'),
+              }))}
+            />
           </div>
           <div className="flex-1">
-            <Select
+            <C8Dropdown
               label={t('minutes', 'Minutes')}
               name="minutes"
-              disableForm={true}
-              hideErrors={true}
               value={minute}
               onChange={(e) => setMinute(Number(e.target.value))}
-            >
-              {minutes.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.value.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </Select>
+              options={minutes.map((m) => ({
+                value: m.value,
+                label: m.value.toString().padStart(2, '0'),
+              }))}
+            />
           </div>
           <button
             type="button"
@@ -220,7 +212,7 @@ export const TimeTable: FC<{
 
       {/* Save Button */}
       <div className="mt-[24px]">
-        <Button type="button" className="c8-slot-save" onClick={save}>
+        <Button type="button" secondary className="c8-slot-save" onClick={save}>
           {t('save_changes', 'Save Changes')}
         </Button>
       </div>

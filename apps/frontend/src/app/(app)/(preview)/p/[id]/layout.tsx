@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { PreviewWrapper } from '@gitroom/frontend/components/preview/preview.wrapper';
+import '../../../../c8-calendar.scss';
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   return (

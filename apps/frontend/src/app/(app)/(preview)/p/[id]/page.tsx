@@ -126,7 +126,7 @@ export default async function Auth(
               <div className="min-w-[55px]">
                 <Link
                   href="/"
-                  className="text-2xl flex items-center justify-center gap-[10px] text-textColor order-1"
+                  className="c8-preview-title text-2xl flex items-center justify-center gap-[10px] text-textColor order-1"
                   title="Crea8one"
                 >
                   <Crea8oneWordmark className="h-[40px] w-auto object-contain object-left" />
