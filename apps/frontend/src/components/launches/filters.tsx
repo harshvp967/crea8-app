@@ -412,6 +412,16 @@ export const Filters = () => {
               <HugeIcon name="chevron-right" size={12} />
             </div>
           </div>
+          <div className="cal-today flex-1 text-[14px] font-[500]">
+            <div className="text-center flex h-[40px]">
+              <div
+                onClick={setToday}
+                className="hover:text-newTextColor hover:bg-newBoxHover h-[36px] px-[12px] flex justify-center items-center rounded-[18px] transition-all cursor-pointer text-[14px] font-[500] bg-newBgColorInner border border-newBorder text-textItemBlur shadow-[var(--arc-shadow-resting)]"
+              >
+                {t('today', 'Today')}
+              </div>
+            </div>
+          </div>
           <div className="cal-list-states flex flex-row p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
             {listStateOptions.map((option) => (
               <div
@@ -430,16 +440,6 @@ export const Filters = () => {
           </div>
           <div className="flex-1" />
         </div>
-      )}
-      {calendar.display !== 'month' && calendar.display !== 'list' && (
-        <button
-          type="button"
-          className="c8-inline-chip"
-          onClick={() => window.dispatchEvent(new Event('c8-open-channels'))}
-        >
-          {t('channels', 'Channels')} · {(calendar.integrations || []).length}
-          <HugeIcon name="chevron-down" size={14} />
-        </button>
       )}
       <div className="cal-customer">
       <SelectCustomer
