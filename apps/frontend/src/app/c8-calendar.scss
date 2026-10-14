@@ -2124,9 +2124,12 @@ body.c8-schedule .channel-menu-pop {
   font-weight: 500;
   z-index: 400;
   max-width: min(280px, calc(100vw - 16px));
-  /* Horizontal only. menu.tsx sets `top` to 6px under the row and flips
-     that top near the viewport bottom, which Firefox and Safari follow too. */
-  transform: translateX(calc(-100% + 12px));
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+  /* menu.tsx places this with position:fixed, to the right of the
+     three-dots and top-aligned with the row, then shifts it up if the
+     viewport would cut it off. No transform, so that left/top is the box. */
+  transform: none;
 }
 
 body.c8-schedule .channel-rail.sidebar .channel-menu-pop {
