@@ -16,7 +16,7 @@ export const CopyClient = () => {
     copy(window.location.href.split?.('?')?.shift()!);
   }, []);
   return (
-    <Button onClick={copyToClipboard}>
+    <Button secondary className="c8-preview-share" onClick={copyToClipboard}>
       {t('share_with_a_client', 'Share with a client')}
     </Button>
   );

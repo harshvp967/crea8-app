@@ -1487,11 +1487,21 @@ const CalendarItem: FC<{
             src={post.integration.picture! || '/no-picture.jpg'}
             alt=""
           />
-          <img
-            className="cal-post-mark"
-            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-            alt=""
-          />
+          {post.integration?.providerIdentifier === 'youtube' ? (
+            <img
+              src="/icons/platforms/youtube.svg"
+              className="cal-post-mark absolute z-10 bottom-[5px] -end-[5px]"
+              width={20}
+            />
+          ) : (
+            <SafeImage
+              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+              className="cal-post-mark rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
+              alt={post.integration?.providerIdentifier || ''}
+              width={18.41}
+              height={18.41}
+            />
+          )}
         </div>
         {!showTime ? (
           <span className="cal-chip-when">
