@@ -2682,8 +2682,9 @@ body :focus-visible {
 }
 
 .channel-return {
-  background: var(--arc-canvas, var(--new-bgColor));
-  color: var(--new-btn-text);
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font-family: var(--font-body), Inter, sans-serif;
 }
 
 .channel-return > .text-center,
@@ -9686,8 +9687,9 @@ body.composer-open .po-assist .copilotKitWindow.open,
   justify-content: center;
   gap: 28px;
   padding: 24px;
-  background: var(--arc-canvas, var(--new-bgColor));
-  color: var(--new-btn-text);
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font-family: var(--font-body), Inter, sans-serif;
 }
 
 .cc-return-logo {
@@ -9728,16 +9730,18 @@ body.composer-open .po-assist .copilotKitWindow.open,
   width: min(100%, 560px);
   box-sizing: border-box;
   padding: 40px 36px;
-  border: 1px solid var(--new-border);
-  border-radius: 34px;
-  background-color: var(--new-bgColorInner);
-  background-image: var(--arc-wave-v), linear-gradient(var(--new-bgColorInner), var(--new-bgColorInner));
-  box-shadow: var(--arc-shadow-raised);
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 28px;
+  background: var(--c8-surface);
+  background-image: none;
+  box-shadow: 0 6px 0 var(--c8-hard);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
   text-align: center;
+  font-family: var(--font-body), Inter, sans-serif;
+  color: var(--c8-ink);
 }
 
 .cc-return-card.is-wide {
@@ -9747,10 +9751,12 @@ body.composer-open .po-assist .copilotKitWindow.open,
 
 .cc-return-card h1 {
   margin: 0;
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
   font-size: 28px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+  color: var(--c8-ink);
 }
 
 .cc-return-card.is-wide > h1,
@@ -9762,8 +9768,10 @@ body.composer-open .po-assist .copilotKitWindow.open,
 .cc-return-card p {
   margin: 0;
   max-width: 420px;
-  color: var(--new-textItemBlur);
+  color: var(--c8-muted);
+  font-family: var(--font-body), Inter, sans-serif;
   font-size: 14px;
+  font-weight: 500;
   line-height: 1.5;
 }
 
@@ -9774,8 +9782,8 @@ body.composer-open .po-assist .copilotKitWindow.open,
 .cc-spin {
   width: 36px;
   height: 36px;
-  border: 3px solid color-mix(in srgb, #00d9ff 28%, transparent);
-  border-top-color: #00d9ff;
+  border: 3px solid color-mix(in srgb, var(--c8-cyan) 28%, transparent);
+  border-top-color: var(--c8-cyan);
   border-radius: 50%;
   animation: po-spin 0.8s linear infinite;
 }
@@ -9808,8 +9816,10 @@ body.composer-open .po-assist .copilotKitWindow.open,
 }
 
 .channel-return .cc-pages > div:first-child {
+  font-family: var(--font-body), Inter, sans-serif;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--c8-ink);
 }
 
 .channel-return .cc-pages .grid {
@@ -9825,18 +9835,24 @@ body.composer-open .po-assist .copilotKitWindow.open,
   justify-content: flex-start;
   text-align: left;
   height: auto !important;
-  min-height: 64px;
+  min-height: 56px;
   width: 100%;
-  border-radius: 20px !important;
-  padding: 12px 14px !important;
+  border-radius: 16px !important;
+  padding: 10px 14px !important;
   gap: 12px !important;
-  border: 1px solid var(--new-border) !important;
-  background: var(--new-bgColorInner) !important;
+  border: 1.5px solid var(--c8-line) !important;
+  background: var(--c8-surface) !important;
+  background-image: none !important;
+  color: var(--c8-ink);
+  font-family: var(--font-body), Inter, sans-serif;
+  box-shadow: none;
 }
 
-.channel-return .cc-pages .grid > div.border-primary {
-  background-image: var(--arc-wave), linear-gradient(var(--new-bgColorInner), var(--new-bgColorInner)) !important;
-  border-color: var(--arc-selected-border, rgba(0, 217, 255, 0.45)) !important;
+.channel-return .cc-pages .grid > div.border-primary,
+.channel-return .cc-pages .grid > div.is-selected {
+  background: color-mix(in srgb, var(--c8-cyan) 14%, var(--c8-surface)) !important;
+  background-image: none !important;
+  border-color: var(--c8-cyan) !important;
 }
 
 .channel-return .cc-pages .grid > div > div:first-child {
@@ -9863,21 +9879,32 @@ body.composer-open .po-assist .copilotKitWindow.open,
   height: 18px;
   margin-left: auto;
   border-radius: 50%;
-  border: 1.5px solid var(--new-border);
+  border: 1.5px solid var(--c8-line);
+  background: transparent;
   flex: none;
   box-sizing: border-box;
 }
 
-.channel-return .cc-pages .grid > div.border-primary::after {
-  border-color: #00d9ff;
-  background: radial-gradient(circle, #00d9ff 0 5px, transparent 6px);
+.dark .channel-return .cc-pages .grid > div:not(.is-selected):not(.border-primary)::after {
+  border-color: var(--c8-muted);
 }
 
-.channel-return .cc-pages > div:last-child button {
+.channel-return .cc-pages .grid > div.border-primary::after,
+.channel-return .cc-pages .grid > div.is-selected::after {
+  border-color: var(--c8-cyan);
+  background: radial-gradient(circle, var(--c8-cyan) 0 5px, transparent 6px);
+}
+
+.channel-return .cc-pages > div:last-child button,
+.channel-return .cc-save {
   width: 100%;
-  background: #00d9ff !important;
-  color: #0a0a0a !important;
-  border-color: transparent !important;
+  height: 46px;
+  border-radius: 16px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  background: var(--c8-cyan) !important;
+  color: var(--c8-on-cyan) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  font-family: var(--font-body), Inter, sans-serif;
   font-weight: 600 !important;
 }
 

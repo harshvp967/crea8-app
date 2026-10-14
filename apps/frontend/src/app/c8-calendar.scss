@@ -487,6 +487,8 @@ body.c8-schedule .cal-post-bar {
   border-radius: 22px;
   background: var(--new-bgColorInner) !important;
   box-shadow: 0 6px 0 var(--c8-hard);
+  z-index: 20;
+  pointer-events: auto;
 }
 
 body.c8-schedule .cal-post-action {
@@ -2406,6 +2408,27 @@ body.c8-schedule .cal-post:focus-within .cal-post-bar {
 
 body.c8-schedule .cal-post.is-open .cal-post-bar {
   display: flex;
+}
+
+/* The menu hangs out of its hour into the next row. Later grid cells paint
+   on top of that overflow, and an empty slot is transparent, so the click
+   reached the composer instead of Delete. Lift the open cell above the grid. */
+body.c8-schedule .day-cell:has(.cal-post.is-open),
+body.c8-schedule .week-cell:has(.cal-post.is-open),
+body.c8-schedule .month-cell:has(.cal-post.is-open),
+body.c8-schedule .phone-slot:has(.cal-post.is-open) {
+  position: relative;
+  z-index: 40;
+  overflow: visible;
+}
+
+body.c8-schedule .cal-post.is-open {
+  position: relative;
+  z-index: 2;
+}
+
+body.c8-schedule .cal-post-action {
+  pointer-events: auto;
 }
 
 /* Phone paints the menu with position:fixed, but the hour column is a

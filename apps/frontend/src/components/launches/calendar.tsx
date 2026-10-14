@@ -1385,6 +1385,10 @@ const CalendarItem: FC<{
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
+  const runMenuAction = (action: () => void) => (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    action();
+  };
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -1434,7 +1438,11 @@ const CalendarItem: FC<{
           />
         </div>
       )}
-      <div className="cal-post-bar">
+      <div
+        className="cal-post-bar"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
+      >
         <div
           className={clsx(
             post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : '',
@@ -1444,35 +1452,35 @@ const CalendarItem: FC<{
           {post.tags.map((p) => p.tag.name).join(', ')}
         </div>
         {copyDebugJson && (
-          <div className="cal-post-action" onClick={copyDebugJson}>
+          <div className="cal-post-action" onClick={runMenuAction(copyDebugJson)}>
             <CopyDebug />
             <span>{t('copy_debug_json', 'Copy Debug JSON')}</span>
           </div>
         )}
-        <div className="cal-post-action" onClick={duplicatePost}>
+        <div className="cal-post-action" onClick={runMenuAction(duplicatePost)}>
           <Duplicate />
           <span>{t('duplicate_post', 'Duplicate Post')}</span>
         </div>
-        <div className="cal-post-action" onClick={preview}>
+        <div className="cal-post-action" onClick={runMenuAction(preview)}>
           <Preview />
           <span>{t('preview_post', 'Preview Post')}</span>
         </div>{' '}
         {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
           <></>
         ) : post.releaseId === 'missing' && missingRelease ? (
-          <div className="cal-post-action" onClick={missingRelease}>
+          <div className="cal-post-action" onClick={runMenuAction(missingRelease)}>
             <Statistics />
             <span>{t('post_statistics', 'Post Statistics')}</span>
           </div>
         ) : post.releaseId !== 'missing' ? (
-          <div className="cal-post-action" onClick={statistics}>
+          <div className="cal-post-action" onClick={runMenuAction(statistics)}>
             <Statistics />
             <span>{t('post_statistics', 'Post Statistics')}</span>
           </div>
         ) : (
           <></>
         )}{' '}
-        <div className="cal-post-action is-danger" onClick={deletePost}>
+        <div className="cal-post-action is-danger" onClick={runMenuAction(deletePost)}>
           <DeletePost />
           <span>{t('delete_post', 'Delete Post')}</span>
         </div>
