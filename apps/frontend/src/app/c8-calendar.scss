@@ -463,10 +463,29 @@ body.c8-schedule .phone-slot .cal-post-icon::before {
 }
 
 body.c8-schedule .cal-post-bar {
-  border: 1.5px solid var(--c8-hard);
-  border-radius: 16px;
-  background: var(--c8-surface) !important;
+  padding: 8px;
+  gap: 2px;
+  border: 1px solid var(--new-border);
+  border-radius: 22px;
+  background: var(--new-bgColorInner) !important;
   box-shadow: 0 6px 0 var(--c8-hard);
+}
+
+body.c8-schedule .cal-post-action {
+  gap: 12px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+body.c8-schedule .cal-post-action svg {
+  width: 18px;
+  height: 18px;
+}
+
+body.c8-schedule .cal-post-action.is-danger {
+  color: var(--c8-danger);
 }
 
 body.c8-schedule .cal-list .cal-post .cal-post-body,
@@ -1417,12 +1436,27 @@ body.c8-schedule .phone-slot .cal-post-more {
 
 body.c8-schedule .week-cell,
 body.c8-schedule .day-cell,
-body.c8-schedule .week-cell.is-today,
-body.c8-schedule .week-cell:has(.cal-col.is-past),
-body.c8-schedule .day-cell:has(.cal-col.is-past),
-body.c8-schedule .phone-slot:has(.cal-col.is-past) {
+body.c8-schedule .week-cell.is-today {
   background: transparent !important;
   background-image: none !important;
+}
+
+body.c8-schedule .week-cell:has(.cal-col.is-past),
+body.c8-schedule .day-cell:has(.cal-col.is-past),
+body.c8-schedule .month-cell:has(.cal-col.is-past),
+body.c8-schedule .phone-slot:has(.cal-col.is-past) {
+  background: color-mix(in srgb, var(--c8-muted) 18%, var(--c8-surface)) !important;
+  background-image: none !important;
+  cursor: not-allowed;
+}
+
+body.c8-schedule .day-time:has(+ .day-cell .cal-col.is-past),
+body.c8-schedule .week-time:has(+ .week-cell .cal-col.is-past) {
+  color: color-mix(in srgb, var(--c8-muted) 70%, var(--c8-line));
+}
+
+body.c8-schedule .month-cell:has(.cal-col.is-past) .cal-col > div:first-child {
+  color: var(--c8-muted) !important;
 }
 
 body.c8-schedule .week-head {
@@ -1875,6 +1909,26 @@ body.c8-schedule .channel-rail .channel-row {
   border-radius: 12px;
   gap: 10px;
   overflow: hidden;
+  border-color: transparent;
+  outline: none;
+  transition: background-color 180ms ease-out;
+}
+
+body.c8-schedule .channel-rail .channel-row:active {
+  transition-duration: 80ms;
+  transition-timing-function: ease-in;
+}
+
+body.c8-schedule .channel-rail .channel-row:hover,
+body.c8-schedule .channel-rail .channel-row:focus-within {
+  background: var(--c8-soft);
+  border-color: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+body.c8-schedule .channel-rail .channel-row .h-full.w-\[4px\] {
+  display: none !important;
 }
 
 body.c8-schedule .channel-rail .channel-row > div:first-child img:first-of-type {
@@ -1954,6 +2008,19 @@ body.c8-schedule .day-cell:has(.cal-post) > .cal-col::before,
 body.c8-schedule .phone-slot:has(.cal-post) > .cal-col::before {
   order: 2;
   flex: 1 0 32px;
+  z-index: 0;
+}
+
+body.c8-schedule .cal-add {
+  position: relative;
+  z-index: 1;
+}
+
+/* Day keeps the channel pictures in the empty part of a slot. The shared
+   calendar sheet hides that grayscale row; show it again beside the add button. */
+body.c8-schedule .day-cell .grayscale,
+body.c8-schedule .phone-slot .grayscale {
+  display: flex;
 }
 
 body.c8-schedule .week-cell:has(.cal-post) > .cal-col > div,
@@ -2022,6 +2089,61 @@ body.c8-schedule:not([data-c8-view]) .channels-trigger {
     min-height: 100%;
     max-height: 100%;
   }
+}
+
+/* Button variants in the Crea8 file: rest shadow 3px, hover lifts to 5px,
+   press drops the shadow to 0. Hover eases out; the press eases in. */
+body.c8-schedule .channel-add,
+body.c8-schedule .channel-invite,
+body.c8-schedule .strip-create button,
+body.c8-schedule .phone-create button,
+body.c8-schedule .sidebar-create button,
+body.c8-schedule .cal-today > div > div,
+body.c8-schedule .cal-nav-arrow,
+body.c8-schedule .cal-mode > button,
+body.c8-schedule .channel-menu-item,
+body.c8-schedule .cal-post-action {
+  transition:
+    background-color 180ms ease-out,
+    color 180ms ease-out,
+    box-shadow 180ms ease-out,
+    transform 180ms ease-out,
+    border-color 180ms ease-out;
+}
+
+body.c8-schedule .channel-add:hover,
+body.c8-schedule .strip-create button:hover,
+body.c8-schedule .phone-create button:hover,
+body.c8-schedule .sidebar-create button:first-child:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 var(--c8-hard);
+}
+
+body.c8-schedule .channel-add:active,
+body.c8-schedule .strip-create button:active,
+body.c8-schedule .phone-create button:active,
+body.c8-schedule .sidebar-create button:first-child:active,
+body.c8-schedule .cal-today > div > div:active,
+body.c8-schedule .cal-nav-arrow:active,
+body.c8-schedule .cal-mode > button:active,
+body.c8-schedule .channel-menu-item:active,
+body.c8-schedule .cal-post-action:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--c8-hard);
+}
+
+body.c8-schedule .channel-add:active,
+body.c8-schedule .channel-invite:active,
+body.c8-schedule .strip-create button:active,
+body.c8-schedule .phone-create button:active,
+body.c8-schedule .sidebar-create button:active,
+body.c8-schedule .cal-today > div > div:active,
+body.c8-schedule .cal-nav-arrow:active,
+body.c8-schedule .cal-mode > button:active,
+body.c8-schedule .channel-menu-item:active,
+body.c8-schedule .cal-post-action:active {
+  transition-duration: 80ms;
+  transition-timing-function: ease-in;
 }
 
 body.c8-schedule .cal-post-more {
