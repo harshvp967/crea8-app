@@ -166,10 +166,14 @@ async function readLayout() {
     };
     const sticker = document.querySelector('.c8-cal-sticker')?.getBoundingClientRect();
     const well = document.querySelector('.calendar-well')?.getBoundingClientRect();
+    const week = document.querySelector('.week-grid')?.getBoundingClientRect();
+    const day = document.querySelector('.day-grid, .phone-day-list, .month-grid')?.getBoundingClientRect();
+    const tab = document.querySelector('.mobile-tabbar')?.getBoundingClientRect();
     const rail = document.querySelector('.channel-rail');
     const railBox = rail?.getBoundingClientRect();
     return {
       tab: shown('.mobile-tabbar'),
+      tabW: tab ? Math.round(tab.width) : 0,
       side: shown('.c8-sidebar'),
       header: shown('.app-header'),
       phoneWeek: shown('.phone-week'),
@@ -177,6 +181,9 @@ async function readLayout() {
       phoneList: !!document.querySelector('.phone-day-list'),
       stickerY: sticker ? Math.round(sticker.y) : null,
       wellH: well ? Math.round(well.height) : null,
+      weekW: week ? Math.round(week.width) : 0,
+      weekH: week ? Math.round(week.height) : 0,
+      gridH: day ? Math.round(day.height) : 0,
       railW:
         rail && getComputedStyle(rail).display !== 'none' ? Math.round(railBox.width) : 0,
       docW: document.documentElement.scrollWidth,
@@ -196,6 +203,14 @@ function expectLayout(width, height, view, layout) {
     if (layout.tab !== 'flex') problems.push('phone missing tab bar');
     if (layout.side !== 'none') problems.push('phone showing sidebar');
     if (layout.header === 'none') problems.push('phone missing header');
+    if (height <= 500) {
+      if (view === 'day' || view === 'week' || view === 'month') {
+        const gridH = Math.max(layout.weekH || 0, layout.gridH || 0, layout.wellH || 0);
+        if (gridH < Math.round(height * 0.7)) problems.push('short calendar has no height');
+      }
+      if (view === 'week' && layout.weekW < width - 80) problems.push('week grid not full width');
+      if (layout.tabW < width - 8) problems.push('tab bar not full width');
+    }
   } else if (desktop) {
     if (layout.tab !== 'none') problems.push('desktop showing tab bar');
     if (layout.side === 'none') problems.push('desktop missing sidebar');
@@ -205,7 +220,7 @@ function expectLayout(width, height, view, layout) {
     if (layout.side === 'none') problems.push('tablet missing sidebar');
     if (layout.header !== 'none') problems.push('tablet showing phone header');
     if (layout.phoneWeek === 'flex') problems.push('tablet day strip visible');
-    if (view === 'day' && layout.phoneList) problems.push('tablet using phone day list');
+    if (view === 'day' && layout.phoneList && width >= 768) problems.push('tablet using phone day list');
     if (layout.railW < 100) problems.push('tablet channels column missing');
     if (layout.stickerY != null && layout.stickerY < 8) problems.push('tablet missing top padding');
   }
