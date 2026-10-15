@@ -4939,6 +4939,23 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
     grid-template-columns: 56px repeat(7, minmax(0, 1fr)) !important;
   }
 
+  /* The Schedule title plus the stacked rows pushed the grid under the tab
+     bar, so the first screen looked empty. Keep the phone controls and let
+     the grid start while it is still on screen. */
+  body.c8-schedule .c8-cal-head {
+    display: none !important;
+  }
+
+  body.c8-schedule .calendar-panel,
+  body.c8-schedule .calendar-panel:has(.c8-week),
+  body.c8-schedule .calendar-panel:has(.c8-day),
+  body.c8-schedule .calendar-panel:has(.cal-customer > div),
+  body.c8-schedule .calendar-panel:has(.cal-customer > div):has(.c8-week),
+  body.c8-schedule .calendar-panel:has(.cal-customer > div):has(.c8-day) {
+    row-gap: 4px !important;
+    padding-top: 8px !important;
+  }
+
   body.c8-schedule .mobile-tabbar {
     position: fixed !important;
     left: 0 !important;
