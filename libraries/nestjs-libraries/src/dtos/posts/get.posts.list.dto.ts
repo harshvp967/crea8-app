@@ -5,6 +5,7 @@ import {
   Min,
   Max,
   IsIn,
+  IsDateString,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -31,4 +32,10 @@ export class GetPostsListDto {
   @IsOptional()
   @IsIn(['all', 'scheduled', 'draft', 'published'])
   state?: PostListStateFilter = 'all';
+
+  // All tab only. Start of today in the user's timezone, as a UTC instant.
+  // Scheduled, published, and drafts ignore it.
+  @IsOptional()
+  @IsDateString()
+  from?: string;
 }

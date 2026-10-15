@@ -22,7 +22,8 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
-import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { displayDayjs, getTimezone } from '@gitroom/frontend/components/layout/set.timezone';
+import { listPostsSearch } from '@gitroom/frontend/components/launches/list.query';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
 import { integrationsForCustomer } from '@gitroom/frontend/components/launches/customer.filter';
@@ -221,20 +222,28 @@ export const CalendarWeekProvider: FC<{
     return expandPosts(data);
   }, [filters, params]);
 
-  // List view data fetcher
+  // List view data fetcher. The cache key omits `from` so a refresh
+  // recomputes the start of today instead of reusing a stale midnight.
   const listParams = useMemo(() => {
-    return new URLSearchParams({
-      page: listPage.toString(),
-      limit: '100',
-      customer: filters?.customer?.toString() || '',
+    return listPostsSearch({
+      page: listPage,
+      customer: filters?.customer,
       state: listState,
-    }).toString();
+      includeFrom: false,
+    });
   }, [listPage, filters.customer, listState]);
 
   const loadListData = useCallback(async () => {
-    const response = await fetch(`/posts/list?${listParams}`);
+    const response = await fetch(
+      `/posts/list?${listPostsSearch({
+        page: listPage,
+        customer: filters?.customer,
+        state: listState,
+        timezone: getTimezone(),
+      })}`
+    );
     return expandPostsList(await response.json());
-  }, [listParams]);
+  }, [listPage, filters.customer, listState]);
 
   // SWR for calendar view
   const {

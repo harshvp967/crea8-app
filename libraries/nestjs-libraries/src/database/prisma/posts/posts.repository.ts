@@ -84,6 +84,74 @@ export function postWorkflowPlan(
   return 'start';
 }
 
+// List view filter. Scheduled, drafts, and published keep their own windows.
+// All is published, scheduled, and draft (plus error) from `from` onward,
+// with no end. `from` is the start of today in the user's timezone.
+export function postsListQuery(
+  orgId: string,
+  query: {
+    state?: 'all' | 'scheduled' | 'draft' | 'published';
+    from?: string;
+    customer?: string;
+  },
+  now: Date = new Date()
+) {
+  const stateFilter = query.state || 'all';
+  const state =
+    stateFilter === 'scheduled'
+      ? { state: State.QUEUE }
+      : stateFilter === 'draft'
+      ? { state: State.DRAFT }
+      : stateFilter === 'published'
+      ? { state: State.PUBLISHED }
+      : {
+          state: {
+            in: [State.QUEUE, State.DRAFT, State.PUBLISHED, State.ERROR],
+          },
+        };
+
+  const orderDirection: 'asc' | 'desc' =
+    stateFilter === 'published' ? 'desc' : 'asc';
+
+  const from = query.from ? dayjs.utc(query.from) : null;
+  let publishDate: { gte: Date } | undefined;
+  if (stateFilter === 'published') {
+    publishDate = undefined;
+  } else if (stateFilter === 'all' && from && from.isValid()) {
+    publishDate = { gte: from.toDate() };
+  } else {
+    publishDate = { gte: now };
+  }
+
+  const where = {
+    AND: [
+      {
+        OR: [
+          {
+            organizationId: orgId,
+          },
+        ],
+      },
+    ],
+    ...state,
+    ...(publishDate ? { publishDate } : {}),
+    deletedAt: null as Date | null,
+    parentPostId: null as string | null,
+    intervalInDays: null as number | null,
+    integration: {
+      deletedAt: null as any,
+      organizationId: orgId,
+      ...(query.customer
+        ? {
+            customerId: query.customer,
+          }
+        : {}),
+    },
+  };
+
+  return { where, orderDirection };
+}
+
 @Injectable()
 export class PostsRepository {
   constructor(
@@ -281,56 +349,7 @@ export class PostsRepository {
     const page = query.page || 0;
     const limit = query.limit || 20;
     const skip = page * limit;
-
-    const stateFilter = query.state || 'all';
-    const stateAndDate =
-      stateFilter === 'scheduled'
-        ? {
-            state: State.QUEUE,
-          }
-        : stateFilter === 'draft'
-        ? { state: State.DRAFT }
-        : stateFilter === 'published'
-        ? { state: State.PUBLISHED }
-        : {
-            state: {
-              in: [State.QUEUE, State.DRAFT, State.PUBLISHED, State.ERROR],
-            },
-          };
-
-    const orderDirection: 'asc' | 'desc' =
-      stateFilter === 'published' ? 'desc' : 'asc';
-
-    const where = {
-      AND: [
-        {
-          OR: [
-            {
-              organizationId: orgId,
-            },
-          ],
-        },
-      ],
-      ...stateAndDate,
-      // Published posts were already posted (publishDate in the past), so fetch
-      // all of them; everything else stays upcoming. Ordering handles the rest.
-      ...(stateFilter === 'published'
-        ? {}
-        : { publishDate: { gte: dayjs.utc().toDate() } }),
-      deletedAt: null as Date | null,
-      parentPostId: null as string | null,
-      intervalInDays: null as number | null,
-
-      integration: {
-        deletedAt: null as any,
-        organizationId: orgId,
-        ...(query.customer
-          ? {
-              customerId: query.customer,
-            }
-          : {}),
-      },
-    };
+    const { where, orderDirection } = postsListQuery(orgId, query);
 
     const [posts, total] = await Promise.all([
       this._post.model.post.findMany({
