@@ -177,6 +177,7 @@
   "month": "Month",
   "remove_from_customer": "Remove from customer",
   "show_more": "+ Show more",
+  "show_more_count": "+{{count}}",
   "show_less": "- Show less",
   "upload": "Upload",
   "ai": "AI",
