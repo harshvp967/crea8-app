@@ -21,11 +21,12 @@ import dayjs from 'dayjs';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 const FirstStep: FC = (props) => {
-  const { integrations, reloadCalendarView } = useCalendar();
+  const { allIntegrations, customer, reloadCalendarView } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
   const toaster = useToaster();
@@ -175,6 +176,10 @@ const FirstStep: FC = (props) => {
           };
         });
         setShowStep('');
+        const channels = composerChannels({
+          catalog: allIntegrations,
+          customer,
+        });
         modal.openModal({
           id: 'add-edit-modal',
           closeOnClickOutside: false,
@@ -188,12 +193,16 @@ const FirstStep: FC = (props) => {
           },
           children: (
             <AddEditModal
-              allIntegrations={integrations.map((p) => ({
+              allIntegrations={channels.allIntegrations.map((p) => ({
                 ...p,
               }))}
-              integrations={integrations.slice(0).map((p) => ({
+              integrations={channels.allIntegrations.slice(0).map((p) => ({
                 ...p,
               }))}
+              {...(channels.selectedChannels
+                ? { selectedChannels: channels.selectedChannels }
+                : {})}
+              customer={customer || undefined}
               mutate={reloadCalendarView}
               date={dayjs.utc(load.date).local()}
               reopenModal={() => ({})}
@@ -213,7 +222,7 @@ const FirstStep: FC = (props) => {
         setLoading(false);
       }
     },
-    [integrations, reloadCalendarView, fetch, generateStep, modal, toaster, t]
+    [allIntegrations, customer, reloadCalendarView, fetch, generateStep, modal, toaster, t]
   );
   return (
     <form
@@ -347,7 +356,7 @@ export const GeneratorComponent = () => {
       },
       size: 'xl',
       children: (
-        <CalendarWeekProvider {...all}>
+        <CalendarWeekProvider integrations={all.allIntegrations}>
           <GeneratorPopup />
         </CalendarWeekProvider>
       ),

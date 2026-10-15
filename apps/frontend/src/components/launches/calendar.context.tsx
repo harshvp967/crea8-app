@@ -25,6 +25,7 @@ import useCookie from 'react-use-cookie';
 import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
+import { integrationsForCustomer } from '@gitroom/frontend/components/launches/customer.filter';
 extend(isoWeek);
 extend(weekOfYear);
 
@@ -42,6 +43,9 @@ export const CalendarContext = createContext({
     total: number;
   }>,
   integrations: [] as (Integrations & {
+    refreshNeeded?: boolean;
+  })[],
+  allIntegrations: [] as (Integrations & {
     refreshNeeded?: boolean;
   })[],
   trendings: [] as string[],
@@ -389,6 +393,10 @@ export const CalendarWeekProvider: FC<{
 
   // Determine loading state based on current view
   const loading = filters.display === 'list' ? listIsLoading : calendarIsLoading;
+  const visibleIntegrations = useMemo(
+    () => integrationsForCustomer(integrations, filters.customer),
+    [integrations, filters.customer]
+  );
 
   return (
     <CalendarContext.Provider
@@ -398,7 +406,8 @@ export const CalendarWeekProvider: FC<{
         ...filters,
         posts: calendarIsLoading ? [] : internalData,
         loading,
-        integrations,
+        integrations: visibleIntegrations,
+        allIntegrations: integrations,
         setFilters: setFiltersWrapper,
         changeDate,
         comments,

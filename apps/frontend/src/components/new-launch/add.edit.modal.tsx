@@ -20,6 +20,7 @@ export interface AddEditModalProps {
   integrations: Integrations[];
   allIntegrations?: Integrations[];
   selectedChannels?: string[];
+  customer?: string;
   set?: any;
   focusedChannel?: string;
   addEditSets?: (data: any) => void;

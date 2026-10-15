@@ -1,8 +1,8 @@
 'use client';
 
-import { uniqBy } from 'lodash';
-import React, { FC, useCallback, useMemo, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import { namedCustomers } from '@gitroom/frontend/components/launches/customer.filter';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import clsx from 'clsx';
 import { useClickOutside } from '@mantine/hooks';
@@ -25,6 +25,9 @@ export const SelectCustomer: FC<{
   const toaster = useToaster();
   const t = useT();
   const [customer, setCustomer] = useState(currentCustomer || '');
+  useEffect(() => {
+    setCustomer(currentCustomer || '');
+  }, [currentCustomer]);
   const [pos, setPos] = useState<any>({});
   const [open, setOpen] = useState(false);
   const ref = useClickOutside(() => {
@@ -44,10 +47,23 @@ export const SelectCustomer: FC<{
     setOpen(true);
   }, [open]);
 
-  const totalCustomers = useMemo(() => {
-    return uniqBy(integrations, (i) => i?.customer?.id).length;
-  }, [integrations]);
-  if (totalCustomers <= 1) {
+  const customers = useMemo(() => namedCustomers(integrations), [integrations]);
+  const choose = useCallback(
+    (id: string) => {
+      toaster.show(
+        id
+          ? t('customer_socials_selected', 'Customer socials selected')
+          : t('all_customers_selected', 'All customers selected'),
+        'success'
+      );
+      setCustomer(id);
+      onChange(id);
+      setOpen(false);
+      setCurrent('global');
+    },
+    [onChange, setCurrent, t, toaster]
+  );
+  if (!customers.length) {
     return null;
   }
 
@@ -77,21 +93,18 @@ export const SelectCustomer: FC<{
           <div className="text-[14px] font-[600] px-[12px] mb-[5px]">
             {t('customers', 'Customers')}
           </div>
-          {uniqBy(integrations, (u) => u?.customer?.name)
-            .filter((f) => f.customer?.name)
-            .map((p) => (
+          <div
+            onClick={() => choose('')}
+            aria-selected={!customer}
+            className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
+          >
+            {t('all_customers', 'All customers')}
+          </div>
+          {customers.map((p) => (
               <div
-                onClick={() => {
-                  toaster.show(
-                    t('customer_socials_selected', 'Customer socials selected'),
-                    'success'
-                  );
-                  setCustomer(p.customer?.id);
-                  onChange(p.customer?.id);
-                  setOpen(false);
-                  setCurrent('global')
-                }}
+                onClick={() => choose(p.customer?.id || '')}
                 key={p.customer?.id}
+                aria-selected={customer === p.customer?.id}
                 className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
               >
                 {p.customer?.name}

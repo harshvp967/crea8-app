@@ -167,9 +167,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
   const changeCustomer = useCallback(
     (customer: string) => {
-      const neededIntegrations = integrations.filter(
-        (p) => p?.customer?.id === customer
-      );
+      const neededIntegrations = customer
+        ? integrations.filter((p) => p?.customer?.id === customer)
+        : integrations;
       setSelectedIntegrations(
         neededIntegrations.map((p) => ({
           settings: {},
@@ -867,6 +867,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         <SelectCustomer
                           onChange={changeCustomer}
                           integrations={integrations}
+                          customer={props.customer}
                         />
                       )}
                     </div>

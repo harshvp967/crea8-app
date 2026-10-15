@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
+import { customerFilterValue } from '@gitroom/frontend/components/launches/customer.filter';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
@@ -192,14 +193,15 @@ export const Filters = () => {
 
   const setCustomer = useCallback(
     (customer: string) => {
-      if (calendar.customer === customer) {
+      const next = customerFilterValue(customer);
+      if (customerFilterValue(calendar.customer) === next) {
         return; // No need to set the same customer
       }
       calendar.setFilters({
         startDate: calendar.startDate,
         endDate: calendar.endDate,
-        display: calendar.display as 'day' | 'week' | 'month',
-        customer: customer,
+        display: calendar.display as 'day' | 'week' | 'month' | 'list',
+        customer: next,
       });
     },
     [calendar]
@@ -443,9 +445,9 @@ export const Filters = () => {
       )}
       <div className="cal-customer">
       <SelectCustomer
-        customer={calendar.customer as string}
+        customer={calendar.customer || ''}
         onChange={(customer: string) => setCustomer(customer)}
-        integrations={calendar.integrations}
+        integrations={calendar.allIntegrations}
       />
       </div>
       <div

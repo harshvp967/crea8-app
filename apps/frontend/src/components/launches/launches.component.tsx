@@ -4,10 +4,14 @@ import {
   AddProviderButton,
   CustomVariables,
 } from '@gitroom/frontend/components/launches/add.provider.component';
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize, groupBy, orderBy } from 'lodash';
-import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
+import {
+  CalendarWeekProvider,
+  useCalendar,
+} from '@gitroom/frontend/components/launches/calendar.context';
+import { integrationsForCustomer } from '@gitroom/frontend/components/launches/customer.filter';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
@@ -385,6 +389,41 @@ export const MenuComponent: FC<
     </div>
   );
 };
+const CustomerChannelScope: FC<{
+  integrations: any[];
+  menus: Array<{
+    name: string;
+    id: string;
+    isEmpty: boolean;
+    values: any[];
+  }>;
+  children: (
+    integrations: any[],
+    menus: Array<{
+      name: string;
+      id: string;
+      isEmpty: boolean;
+      values: any[];
+    }>
+  ) => ReactNode;
+}> = ({ integrations, menus, children }) => {
+  const { customer } = useCalendar();
+  const visible = useMemo(
+    () => integrationsForCustomer(integrations, customer),
+    [integrations, customer]
+  );
+  const visibleMenus = useMemo(() => {
+    const ids = new Set(visible.map((item) => item.id));
+    return menus
+      .map((menu) => ({
+        ...menu,
+        values: menu.values.filter((value) => ids.has(value.id)),
+      }))
+      .filter((menu) => menu.values.length > 0);
+  }, [menus, visible]);
+  return <>{children(visible, visibleMenus)}</>;
+};
+
 export const LaunchesComponent = () => {
   const fetch = useFetch();
   const user = useUser();
@@ -570,6 +609,12 @@ export const LaunchesComponent = () => {
     <DNDProvider>
       <Onboarding />
       <CalendarWeekProvider integrations={sortedIntegrations}>
+        <CustomerChannelScope
+          integrations={sortedIntegrations}
+          menus={menuIntegrations}
+        >
+          {(channels, channelGroups) => (
+        <>
         <div
           className={clsx(
             'channel-rail flex relative flex-col',
@@ -598,14 +643,14 @@ export const LaunchesComponent = () => {
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
               <div className="sidebar-create flex gap-[8px] group-[.sidebar]:flex-col">
-                {sortedIntegrations?.length > 0 && <NewPost />}
-                {sortedIntegrations?.length > 0 &&
+                {channels?.length > 0 && <NewPost />}
+                {channels?.length > 0 &&
                   user?.tier?.ai &&
                   billingEnabled && <GeneratorComponent />}
               </div>
             </div>
             <div className="gap-[32px] flex flex-col select-none flex-1">
-              {sortedIntegrations.length === 0 && collapseMenu === '0' && (
+              {channels.length === 0 && collapseMenu === '0' && (
                 <div className="flex-1 max-h-[500px] justify-center items-center flex">
                     <div className="empty-state flex flex-col gap-[12px] text-center">
                     <img
@@ -626,7 +671,7 @@ export const LaunchesComponent = () => {
                   </div>
                 </div>
               )}
-              {menuIntegrations.map((menu) => (
+              {channelGroups.map((menu) => (
                 <MenuGroupComponent
                   collapsed={collapseMenu === '1'}
                   changeItemGroup={changeItemGroup}
@@ -658,9 +703,9 @@ export const LaunchesComponent = () => {
           <div className="channel-strip">
             <AddProviderButton update={() => update(true)} />
             <div className="strip-create">
-              {sortedIntegrations?.length > 0 && <NewPost />}
+              {channels?.length > 0 && <NewPost />}
             </div>
-            {sortedIntegrations.length === 0 ? (
+            {channels.length === 0 ? (
               <span className="channel-empty-label">
                 {t('no_channels', 'No channels yet')}
               </span>
@@ -679,7 +724,7 @@ export const LaunchesComponent = () => {
                   node.scrollLeft += horizontal ? event.deltaX : event.deltaY;
                 }}
               >
-                {sortedIntegrations.map((integration) => (
+                {channels.map((integration) => (
                   <MenuComponent
                     key={integration.id}
                     variant="chip"
@@ -697,7 +742,7 @@ export const LaunchesComponent = () => {
                   className="channels-trigger"
                   onClick={() => setChannelsOpen(true)}
                 >
-                  {t('channels', 'Channels')} · {sortedIntegrations.length}
+                  {t('channels', 'Channels')} · {channels.length}
                 </button>
               </div>
             )}
@@ -710,7 +755,7 @@ export const LaunchesComponent = () => {
               onClick={() => setChannelsOpen(false)}
             />
           )}
-          {sortedIntegrations.length === 0 && (
+          {channels.length === 0 && (
             <div className="channel-empty-phone">
               <img
                 src={
@@ -732,12 +777,15 @@ export const LaunchesComponent = () => {
           <div className="calendar-well flex-1 flex min-h-0 overflow-hidden">
             <Calendar />
           </div>
-          {sortedIntegrations?.length > 0 && (
+          {channels?.length > 0 && (
             <div className="phone-create">
               <NewPost presentation="floating" />
             </div>
           )}
         </div>
+        </>
+          )}
+        </CustomerChannelScope>
       </CalendarWeekProvider>
     </DNDProvider>
   );

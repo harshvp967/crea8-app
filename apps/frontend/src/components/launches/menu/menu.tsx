@@ -30,6 +30,7 @@ import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import dayjs from 'dayjs';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 import copy from 'copy-to-clipboard';
@@ -63,7 +64,7 @@ export const Menu: FC<{
   const fetch = useFetch();
   const router = useRouter();
   const { extensionId } = useVariables();
-  const { integrations, reloadCalendarView } = useCalendar();
+  const { integrations, allIntegrations, reloadCalendarView } = useCalendar();
   const toast = useToaster();
   const modal = useModals();
   const [show, setShow] = useState<false | { x: number; y: number }>(false);
@@ -319,6 +320,10 @@ export const Menu: FC<{
         await fetch(`/posts/find-slot/${integration.id}`)
       ).json();
 
+      const channels = composerChannels({
+        catalog: allIntegrations,
+        presetChannelIds: [integration.id],
+      });
       modal.openModal({
         id: 'add-edit-modal',
         closeOnClickOutside: false,
@@ -332,13 +337,13 @@ export const Menu: FC<{
         },
         children: (
           <AddEditModal
-            allIntegrations={integrations.map((p) => ({
+            allIntegrations={channels.allIntegrations.map((p) => ({
               ...p,
             }))}
             reopenModal={createPost(integration)}
             mutate={reloadCalendarView}
-            integrations={integrations}
-            selectedChannels={[integration.id]}
+            integrations={channels.allIntegrations}
+            selectedChannels={channels.selectedChannels}
             // focusedChannel={integration.id}
             date={dayjs.utc(date).local()}
           />
@@ -347,7 +352,7 @@ export const Menu: FC<{
         title: ``,
       });
     },
-    [integrations]
+    [allIntegrations]
   );
 
   const changeBotPicture = useCallback(() => {
