@@ -13,7 +13,8 @@ export function startOfTodayUtc(zone: string, now: Date = new Date()): string {
 }
 
 // /posts/list query. All adds `from` (start of today, no end).
-// Scheduled, published, and drafts keep the params they already sent.
+// Scheduled, published, and drafts do not send a date. Drafts are every
+// draft; the list request is the same at every screen width.
 export function listPostsSearch(input: {
   page: number;
   limit?: number;

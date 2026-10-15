@@ -106,7 +106,7 @@ function publishDateIncluded(
 }
 
 describe('list Scheduled, Published, and Drafts tabs', () => {
-  it('leaves Published and Drafts unchanged, including a passed from', () => {
+  it('leaves scheduled, drafts, and published without a publishDate bound', () => {
     expect(search('scheduled').toString()).toBe(
       'page=0&limit=100&customer=cust-9&state=scheduled'
     );
@@ -118,10 +118,21 @@ describe('list Scheduled, Published, and Drafts tabs', () => {
     );
 
     const from = '2020-01-01T00:00:00.000Z';
+    const scheduled = postsListQuery(
+      'org-1',
+      { state: 'scheduled', from, customer },
+      now
+    );
+    expect(scheduled.where.state).toBe('QUEUE');
+    expect(scheduled.where).not.toHaveProperty('publishDate');
+    expect(scheduled.orderDirection).toBe('asc');
+    expect(scheduled.where.integration).toMatchObject({ customerId: customer });
+
     const draft = postsListQuery('org-1', { state: 'draft', from, customer }, now);
     expect(draft.where.state).toBe('DRAFT');
-    expect(draft.where.publishDate).toEqual({ gte: now });
+    expect(draft.where).not.toHaveProperty('publishDate');
     expect(draft.orderDirection).toBe('asc');
+    expect(draft.where.integration).toMatchObject({ customerId: customer });
 
     const published = postsListQuery(
       'org-1',
@@ -160,6 +171,38 @@ describe('list Scheduled, Published, and Drafts tabs', () => {
     });
     expect(scheduled.where.parentPostId).toBeNull();
     expect(scheduled.where.intervalInDays).toBeNull();
+  });
+
+  it('includes a draft from earlier today, which All already shows, and older drafts too', () => {
+    const from = '2026-10-15T00:00:00.000Z';
+    const earlierToday = new Date('2026-10-15T08:00:00.000Z');
+    expect(earlierToday.getTime()).toBeGreaterThanOrEqual(new Date(from).getTime());
+    expect(earlierToday.getTime()).toBeLessThan(now.getTime());
+
+    const draft = postsListQuery('org-1', { state: 'draft', from }, now);
+    expect(draft.where.state).toBe('DRAFT');
+    expect(draft.where).not.toHaveProperty('publishDate');
+    expect(draft.where.deletedAt).toBeNull();
+    expect(draft.where.parentPostId).toBeNull();
+
+    const all = postsListQuery('org-1', { state: 'all', from }, now);
+    expect(all.where.state).toEqual({
+      in: ['QUEUE', 'DRAFT', 'PUBLISHED', 'ERROR'],
+    });
+    expect(all.where.publishDate).toEqual({ gte: new Date(from) });
+    expect(earlierToday.getTime()).toBeGreaterThanOrEqual(
+      (all.where.publishDate as { gte: Date }).gte.getTime()
+    );
+
+    const lastYear = postsListQuery(
+      'org-1',
+      { state: 'draft', from: '2025-01-01T00:00:00.000Z' },
+      now
+    );
+    expect(lastYear.where.state).toBe('DRAFT');
+    expect(lastYear.where).not.toHaveProperty('publishDate');
+
+    expect(search('draft').has('from')).toBe(false);
   });
 
   it('keeps the All cache key free of the day bound', () => {
