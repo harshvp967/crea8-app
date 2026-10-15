@@ -1078,8 +1078,9 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   top: auto !important;
   right: auto !important;
   bottom: 72px !important;
-  left: calc(var(--c8-side-w, 256px) + var(--c8-rail-w, 0px) + 8px) !important;
-  width: min(360px, calc(100vw - var(--c8-side-w, 256px) - var(--c8-rail-w, 0px) - 24px)) !important;
+  /* Clear the app sidebar, the schedule padding, and the channels column. */
+  left: calc(var(--c8-side-w, 256px) + var(--c8-main-pad, 0px) + var(--c8-rail-w, 0px) + 16px) !important;
+  width: min(360px, calc(100vw - var(--c8-side-w, 256px) - var(--c8-main-pad, 0px) - var(--c8-rail-w, 0px) - 32px)) !important;
   margin: 0 !important;
   z-index: 200 !important;
   border-radius: 16px !important;
@@ -1087,6 +1088,11 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   max-height: min(480px, calc(100vh - 96px));
   overflow: auto;
   animation: c8-menu 200ms cubic-bezier(0, 0, 0.2, 1) forwards !important;
+}
+
+/* Light mode's hard token is near-black, so the offset reads as a heavy border. */
+body.light .c8-shell .c8-side-foot .notify-panel {
+  box-shadow: none !important;
 }
 
 .c8-shell .c8-side-foot .arc-icon-btn {
@@ -1196,6 +1202,13 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   }
 }
 
+@media (min-width: 640px) {
+  body.c8-schedule {
+    --c8-rail-w: 240px;
+    --c8-main-pad: 28px;
+  }
+}
+
 @media (min-width: 1200px) {
   body.c8-schedule .channel-rail:not(.is-open) {
     display: flex;
@@ -1205,6 +1218,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
      rail so it does not cover that panel. */
   body.c8-schedule {
     --c8-rail-w: 236px;
+    --c8-main-pad: 40px;
   }
 
   body.c8-schedule:has(.channel-rail.sidebar) {
@@ -1681,7 +1695,12 @@ body.c8-schedule .c8-day-label {
     position: relative;
     height: 100%;
     max-height: 100%;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overflow-anchor: none;
+    overscroll-behavior: contain;
+    /* transition-all on this scroller animates height and snaps scrollTop to 0. */
+    transition: none;
     border: 1px solid var(--c8-line);
     border-radius: 24px;
     background: var(--c8-surface);
@@ -1689,12 +1708,29 @@ body.c8-schedule .c8-day-label {
     gap: 4px;
   }
 
+  /* The list is a flex child. Let it keep its height so scrolling the rail
+     cannot collapse the scrollport and jump back to the first channel. */
+  body.c8-schedule .channel-rail > div > .flex-1 {
+    flex: 1 0 auto;
+    min-height: min-content;
+  }
+
+  body.c8-schedule:has(.cal-customer > div) .channel-rail > div {
+    padding-bottom: 72px;
+  }
+
   body.c8-schedule .cal-customer {
     position: absolute;
-    z-index: 5;
-    left: 0;
-    bottom: 0;
+    z-index: 6;
+    left: 12px;
+    bottom: 16px;
+    width: calc(var(--c8-rail-w, 236px) - 24px);
+    max-width: calc(var(--c8-rail-w, 236px) - 24px);
     margin: 0;
+  }
+
+  body.c8-schedule .cal-customer:not(:has(> div)) {
+    display: none;
   }
 
   body.c8-schedule .calendar-well > .c8-week,
@@ -1755,8 +1791,8 @@ body.c8-schedule .c8-day-label {
   }
 
   body.c8-schedule .cal-customer {
-    width: 236px;
-    max-width: 236px;
+    width: calc(var(--c8-rail-w, 236px) - 24px);
+    max-width: calc(var(--c8-rail-w, 236px) - 24px);
   }
 
   body.c8-schedule[data-c8-view='week'] .channels-trigger,
@@ -1890,6 +1926,37 @@ body.c8-schedule .cal-mode > button[aria-checked='true'] {
   box-shadow: 0 1px 1.5px rgba(18, 16, 22, 0.12);
 }
 
+/* List rows live in a flex scroller. Shrink would flatten them to the pane,
+   so the wheel has nothing to move. Keep each row its own height and scroll
+   that pane, in the well beside the channels column. */
+body.c8-schedule .cal-list {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body.c8-schedule .cal-list > div {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+body.c8-schedule .cal-list > div > * {
+  flex: 0 0 auto;
+}
+
+body.c8-schedule[data-c8-view='list'] .channel-rail {
+  grid-area: rail;
+}
+
+body.c8-schedule[data-c8-view='list'] .calendar-well {
+  grid-area: well;
+  min-height: 0;
+  overflow: hidden;
+}
+
 body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode {
   display: flex;
   flex-wrap: wrap;
@@ -1926,7 +1993,6 @@ body.c8-schedule[data-c8-view='list'] .cal-customer,
 body.c8-schedule[data-c8-view='month'] .cal-customer {
   order: 2;
   flex: none;
-  max-width: 168px;
 }
 
 body.c8-schedule[data-c8-view='list'] .cal-list-states {
@@ -2007,17 +2073,18 @@ body.c8-schedule .c8-inline-chip {
   white-space: nowrap;
 }
 
-body.c8-schedule[data-c8-view='week'] .cal-customer > div > div,
-body.c8-schedule[data-c8-view='day'] .cal-customer > div > div,
-body.c8-schedule:not([data-c8-view]) .cal-customer > div > div {
-  height: 32px;
-  min-height: 32px;
+body.c8-schedule .cal-customer > div > div {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
   padding: 0 12px;
-  border: 1px solid var(--c8-line);
-  border-radius: 999px;
+  justify-content: space-between;
+  border: 1px solid var(--c8-hard);
+  border-radius: 16px;
   background: var(--c8-surface);
   color: var(--c8-ink);
-  gap: 6px;
+  box-shadow: 0 3px 0 var(--c8-hard);
+  gap: 8px;
 }
 
 body.c8-schedule .channel-rail .channel-row {
@@ -2136,12 +2203,8 @@ body.c8-schedule .channel-rail.sidebar .channel-menu-pop {
   transform: none;
 }
 
-body.c8-schedule .app-main:has(.channel-menu-pop),
-body.c8-schedule .channel-rail:has(.channel-menu-pop),
-body.c8-schedule .channel-rail:has(.channel-menu-pop) > div {
-  overflow: visible;
-  z-index: 80;
-}
+/* The menu is portaled to the body, so the rail must keep its scrollport.
+   overflow:visible here dropped scrollTop back to the first channel. */
 
 body.c8-schedule:has(.channel-menu-pop) #tooltip,
 body.c8-schedule:has(.channel-menu-pop) .react-tooltip {
@@ -2244,6 +2307,28 @@ body.c8-schedule .phone-slot:has(.cal-post) > .cal-col::before {
 body.c8-schedule .cal-add {
   position: relative;
   z-index: 1;
+}
+
+/* Light mode paints the plus white (on-ink) and the circle can read as the
+   slot. Keep the glyph ink so an empty day or week cell shows it. */
+body.light.c8-schedule .day-cell:hover .cal-add > div,
+body.light.c8-schedule .week-cell:hover .cal-add > div,
+body.light.c8-schedule .phone-slot:hover .cal-add > div,
+body.light.c8-schedule .day-cell:focus-within .cal-add > div,
+body.light.c8-schedule .week-cell:focus-within .cal-add > div,
+body.light.c8-schedule .phone-slot:focus-within .cal-add > div {
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  box-shadow: inset 0 0 0 1.5px var(--c8-ink);
+}
+
+body.light.c8-schedule .day-cell:hover .cal-add > div::before,
+body.light.c8-schedule .week-cell:hover .cal-add > div::before,
+body.light.c8-schedule .phone-slot:hover .cal-add > div::before,
+body.light.c8-schedule .day-cell:focus-within .cal-add > div::before,
+body.light.c8-schedule .week-cell:focus-within .cal-add > div::before,
+body.light.c8-schedule .phone-slot:focus-within .cal-add > div::before {
+  color: var(--c8-ink);
 }
 
 /* The day slot still renders the channel pictures. Hide that row so an
