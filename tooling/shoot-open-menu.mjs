@@ -144,7 +144,12 @@ for (const theme of themes) {
         }
         await page.mouse.click(point.x, point.y);
         await page.waitForTimeout(400);
-        const open = await page.evaluate(() => !!document.querySelector('.cal-post.is-open .cal-post-bar'));
+        const open = await page.evaluate(() => {
+          const bar = document.querySelector('.cal-post-bar.is-overlay, .cal-post.is-open .cal-post-bar');
+          if (!bar || !document.querySelector('.cal-post.is-open')) return false;
+          const box = bar.getBoundingClientRect();
+          return getComputedStyle(bar).display !== 'none' && box.width > 20 && box.height > 20;
+        });
         await page.mouse.move(2, Math.max(2, height - 2));
         await page.screenshot({ path: file });
         console.log(open ? 'ok' : 'CLOSED', name);
