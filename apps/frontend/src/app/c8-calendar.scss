@@ -696,6 +696,41 @@ body.c8-schedule .phone-day-strip button.arc-selected {
     margin: 0;
   }
 
+  /* The week arrows share the filter row. With the customer chip beside
+     the view switcher that row is too narrow, so the arrows drop below
+     and the chip stays on the switcher's row. */
+  body.c8-schedule .calendar-panel:has(.cal-customer > div):has(.c8-week),
+  body.c8-schedule .calendar-panel:has(.cal-customer > div):has(.c8-day) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto auto;
+    grid-template-areas:
+      'head'
+      'actions'
+      'filters'
+      'pager'
+      'empty'
+      'well';
+  }
+
+  body.c8-schedule .filters-bar:has(.cal-customer > div) {
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-customer {
+    order: 3;
+    margin-inline-start: auto;
+    flex: none;
+  }
+
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode:has(.cal-customer > div) .cal-mode {
+    order: 4;
+    flex: none;
+    width: auto;
+    margin-inline-start: 0;
+  }
+
   body.c8-schedule .c8-day-body {
     grid-area: well;
     display: flex;
