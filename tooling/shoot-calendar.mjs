@@ -74,6 +74,22 @@ const context = await browser.newContext({
 const page = await context.newPage();
 const failures = [];
 
+// Local channels have no customer, so the pill never renders. Attach one
+// in the intercepted list so the customer shots show "All customers".
+async function rewriteApi(pathname, body) {
+  if (pathname !== '/integrations/list') return body;
+  try {
+    const json = JSON.parse(body.toString('utf8'));
+    if (json?.integrations?.[0] && !json.integrations[0].customer) {
+      json.integrations[0].customer = { id: 'cust-qa', name: 'Northwind' };
+      return Buffer.from(JSON.stringify(json));
+    }
+  } catch {
+    return body;
+  }
+  return body;
+}
+
 function routeFor() {
   return async (route) => {
     const request = route.request();
@@ -94,21 +110,54 @@ function routeFor() {
       });
       return route.fulfill({ response });
     }
+    const apiHost = parsed.hostname === 'api.crea8.one';
     const isApi =
-      parsed.origin === preview &&
+      (parsed.origin === preview || apiHost) &&
       apiPrefixes.some(
         (prefix) => parsed.pathname === prefix || parsed.pathname.startsWith(prefix + '/')
       );
     if (isApi && !parsed.search.includes('_rsc=') && request.resourceType() !== 'document') {
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({
+          status: 204,
+          headers: {
+            'access-control-allow-origin': preview,
+            'access-control-allow-credentials': 'true',
+            'access-control-allow-headers':
+              request.headers()['access-control-request-headers'] || '*',
+            'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+          },
+        });
+      }
       const headers = { ...request.headers() };
       delete headers.host;
       headers.origin = 'http://localhost:4200';
       headers.cookie = apiCookie;
-      const response = await route.fetch({
-        url: 'http://127.0.0.1:3000' + parsed.pathname + parsed.search,
-        headers,
+      let response;
+      try {
+        response = await route.fetch({
+          url: 'http://127.0.0.1:3000' + parsed.pathname + parsed.search,
+          headers,
+        });
+      } catch (error) {
+        return route.fulfill({
+          status: 502,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'local api unavailable' }),
+        });
+      }
+      const body = await rewriteApi(parsed.pathname, await response.body());
+      if (!apiHost) {
+        return route.fulfill({ response, body });
+      }
+      const respHeaders = response.headers();
+      respHeaders['access-control-allow-origin'] = preview;
+      respHeaders['access-control-allow-credentials'] = 'true';
+      return route.fulfill({
+        status: response.status(),
+        headers: respHeaders,
+        body,
       });
-      return route.fulfill({ response });
     }
     return route.continue();
   };
@@ -285,6 +334,7 @@ for (const theme of themes) {
               ? ['horizontal overflow']
               : []
             : expectLayout(width, height, view, layout);
+        await page.mouse.move(2, Math.max(2, height - 2));
         await Promise.race([
           page.screenshot({ path: file }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('screenshot timeout')), 15000)),
@@ -298,7 +348,10 @@ for (const theme of themes) {
       } catch (error) {
         failures.push(`${name}: ${error.message.split('\n')[0]}`);
         console.log('FAIL', name, error.message.split('\n')[0]);
-        await page.screenshot({ path: file }).catch(() => {});
+        await Promise.race([
+          page.screenshot({ path: file }),
+          new Promise((resolve) => setTimeout(resolve, 8000)),
+        ]).catch(() => {});
       }
     }
   }
