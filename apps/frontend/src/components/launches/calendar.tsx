@@ -1394,6 +1394,28 @@ const CalendarItem: FC<{
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [actionsOpen]);
+  useLayoutEffect(() => {
+    const node = postRef.current;
+    const bar = node?.querySelector<HTMLElement>('.cal-post-bar');
+    if (!node || !bar) {
+      return;
+    }
+    bar.style.maxHeight = '';
+    node.classList.remove('is-raised');
+    if (!actionsOpen || window.innerWidth < 640) {
+      return;
+    }
+    const menu = bar.getBoundingClientRect();
+    const postBox = node.getBoundingClientRect();
+    if (menu.bottom <= window.innerHeight - 8) {
+      return;
+    }
+    node.classList.add('is-raised');
+    const spaceAbove = postBox.top - 8;
+    if (menu.height > spaceAbove) {
+      bar.style.maxHeight = `${Math.max(80, spaceAbove)}px`;
+    }
+  }, [actionsOpen]);
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
   }, [post]);
