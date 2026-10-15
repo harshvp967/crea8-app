@@ -5,7 +5,7 @@ const cli = path.resolve(__dirname, '../../../../skills/crea8one-agent/bin/crea8
 
 function run(env: Record<string, string | undefined>, args: string[] = ['--help']) {
   return spawnSync(process.execPath, [cli, ...args], {
-    env: { PATH: process.env.PATH, ...env } as NodeJS.ProcessEnv,
+    env: { PATH: process.env.PATH, ...env } as unknown as NodeJS.ProcessEnv,
     encoding: 'utf8',
   });
 }
