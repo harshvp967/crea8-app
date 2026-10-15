@@ -549,6 +549,13 @@ export class LinkService {
     return QRCode.toBuffer(url, { type: 'png', margin: 1, width: 512 });
   }
 
+  async publicSlugs() {
+    const rows = await this._repository.publicSlugs();
+    return {
+      slugs: rows.map((row) => row.slug).filter((slug) => !slugProblem(slug)),
+    };
+  }
+
   async publicBySlug(slug: string, visitor?: { country?: string; language?: string; platform?: string; referrer?: string }) {
     const normalized = slug.trim().toLowerCase();
     if (slugProblem(normalized)) {

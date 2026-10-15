@@ -84,6 +84,14 @@ export class LinkRepository {
     });
   }
 
+  publicSlugs() {
+    return this._page.model.linkPage.findMany({
+      where: { isPublic: true, organization: { deletedAt: null } },
+      select: { slug: true },
+      orderBy: { slug: 'asc' },
+    });
+  }
+
   countBlocks(pageId: string) {
     return this._block.model.linkBlock.count({
       where: { pageId, deletedAt: null },

@@ -60,6 +60,7 @@ import { StalkerController } from '@gitroom/backend/api/routes/stalker.controlle
 import { StalkerPublicController } from '@gitroom/backend/api/routes/stalker.public.controller';
 import { LinkController } from '@gitroom/backend/api/routes/link.controller';
 import { LinkPublicController } from '@gitroom/backend/api/routes/link.public.controller';
+import { PublicLinksController } from '@gitroom/backend/api/routes/public.links.controller';
 
 const authenticatedController = [
   UsersController,
@@ -102,6 +103,7 @@ const authenticatedController = [
         PublicController,
         StalkerPublicController,
         LinkPublicController,
+        PublicLinksController,
         MonitorController,
         EnterpriseController,
         NoAuthIntegrationsController,
