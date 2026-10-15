@@ -3,7 +3,7 @@
 import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { customerFilterValue } from '@gitroom/frontend/components/launches/customer.filter';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -359,58 +359,6 @@ export const Filters = () => {
     }
     return { title: name, small: '', full: true };
   })();
-
-  useEffect(() => {
-    if (calendar.display !== 'day' && calendar.display !== 'month') {
-      return;
-    }
-    const well = document.querySelector('.calendar-well');
-    if (!well) {
-      return;
-    }
-    let startX = 0;
-    let startY = 0;
-    let active = false;
-    const onStart = (event: Event) => {
-      if (!window.matchMedia('(max-width: 639px)').matches) {
-        return;
-      }
-      const touch = (event as TouchEvent).changedTouches[0];
-      const target = event.target as HTMLElement | null;
-      if (!touch || target?.closest('button, a, input, textarea, .cal-post-bar, .c8-phone-period')) {
-        return;
-      }
-      startX = touch.clientX;
-      startY = touch.clientY;
-      active = true;
-    };
-    const onEnd = (event: Event) => {
-      if (!active) {
-        return;
-      }
-      active = false;
-      const touch = (event as TouchEvent).changedTouches[0];
-      if (!touch) {
-        return;
-      }
-      const dx = touch.clientX - startX;
-      const dy = touch.clientY - startY;
-      if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.2) {
-        return;
-      }
-      if (dx < 0) {
-        next();
-      } else {
-        previous();
-      }
-    };
-    well.addEventListener('touchstart', onStart, { passive: true });
-    well.addEventListener('touchend', onEnd, { passive: true });
-    return () => {
-      well.removeEventListener('touchstart', onStart);
-      well.removeEventListener('touchend', onEnd);
-    };
-  }, [calendar.display, next, previous]);
 
   const viewOptions = [
     { value: 'day', label: t('day', 'Day') },

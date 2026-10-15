@@ -4215,15 +4215,48 @@ body.c8-schedule .cal-post-sheet-title {
     box-shadow: 0 6px 0 #000 !important;
   }
 
-  body.c8-schedule .filters-bar .customer-option {
-    min-height: 44px;
-    height: auto !important;
-    padding: 10px 12px;
+  body.c8-schedule .c8-cal-when {
+    display: none !important;
+  }
+
+  body.c8-schedule .customer-menu,
+  body.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
+    z-index: 80;
+    background: var(--c8-surface);
+    border: 1.5px solid #121016 !important;
+    border-radius: 16px;
+    box-shadow: 0 6px 0 #121016 !important;
+    padding: 8px;
+  }
+
+  body.dark.c8-schedule .customer-menu,
+  body.dark.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
+    border: 1.5px solid #000 !important;
+    box-shadow: 0 6px 0 #000 !important;
+  }
+
+  body.c8-schedule .customer-menu .customer-menu-title {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin-bottom: 0;
+    padding: 0 12px;
+  }
+
+  body.c8-schedule .customer-menu .customer-option,
+  body.c8-schedule .customer-menu .customer-option.h-\[32px\] {
+    box-sizing: border-box;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: none !important;
+    padding: 10px 12px !important;
     justify-content: space-between;
     gap: 8px;
   }
 
-  body.c8-schedule .filters-bar .customer-option[aria-selected='true'] .customer-option-check {
+  body.c8-schedule .customer-menu .customer-option[aria-selected='true'] .customer-option-check {
     display: inline-flex;
     align-items: center;
     margin-inline-start: auto;
