@@ -88,8 +88,25 @@ describe('list All tab', () => {
   });
 });
 
+function publishDateIncluded(
+  where: { publishDate?: { gte?: Date; lte?: Date } },
+  publishDate: Date
+) {
+  const bound = where.publishDate;
+  if (!bound) {
+    return true;
+  }
+  if (bound.gte && publishDate < bound.gte) {
+    return false;
+  }
+  if (bound.lte && publishDate > bound.lte) {
+    return false;
+  }
+  return true;
+}
+
 describe('list Scheduled, Published, and Drafts tabs', () => {
-  it('keeps scheduled upcoming and published unbounded, and does not date-bound drafts', () => {
+  it('leaves scheduled, drafts, and published without a publishDate bound', () => {
     expect(search('scheduled').toString()).toBe(
       'page=0&limit=100&customer=cust-9&state=scheduled'
     );
@@ -107,7 +124,7 @@ describe('list Scheduled, Published, and Drafts tabs', () => {
       now
     );
     expect(scheduled.where.state).toBe('QUEUE');
-    expect(scheduled.where.publishDate).toEqual({ gte: now });
+    expect(scheduled.where).not.toHaveProperty('publishDate');
     expect(scheduled.orderDirection).toBe('asc');
     expect(scheduled.where.integration).toMatchObject({ customerId: customer });
 
@@ -126,6 +143,34 @@ describe('list Scheduled, Published, and Drafts tabs', () => {
     expect(published.where).not.toHaveProperty('publishDate');
     expect(published.orderDirection).toBe('desc');
     expect(published.where.integration).toMatchObject({ customerId: customer });
+  });
+
+  it('includes overdue and upcoming unpublished QUEUE posts, oldest first', () => {
+    const overdue = new Date('2026-10-14T12:00:00.000Z');
+    const upcoming = new Date('2026-10-16T12:00:00.000Z');
+    const from = '2020-01-01T00:00:00.000Z';
+    const scheduled = postsListQuery(
+      'org-1',
+      { state: 'scheduled', from, customer },
+      now
+    );
+    const unbounded = postsListQuery('org-1', { state: 'scheduled' }, now);
+
+    expect(scheduled.where.state).toBe('QUEUE');
+    expect(scheduled.where.deletedAt).toBeNull();
+    expect(scheduled.where).not.toHaveProperty('publishDate');
+    expect(unbounded.where).not.toHaveProperty('publishDate');
+    expect(publishDateIncluded(scheduled.where, overdue)).toBe(true);
+    expect(publishDateIncluded(scheduled.where, now)).toBe(true);
+    expect(publishDateIncluded(scheduled.where, upcoming)).toBe(true);
+    expect(scheduled.orderDirection).toBe('asc');
+    expect(scheduled.where.integration).toMatchObject({
+      customerId: customer,
+      organizationId: 'org-1',
+      deletedAt: null,
+    });
+    expect(scheduled.where.parentPostId).toBeNull();
+    expect(scheduled.where.intervalInDays).toBeNull();
   });
 
   it('includes a draft from earlier today, which All already shows, and older drafts too', () => {
