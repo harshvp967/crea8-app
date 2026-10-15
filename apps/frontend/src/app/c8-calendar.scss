@@ -3456,6 +3456,8 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     border-radius: 28px 28px 0 0 !important;
     border: 1.5px solid var(--c8-hard);
     max-height: 90vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
   }
 }
@@ -4446,6 +4448,52 @@ body.c8-schedule .cal-post-sheet-title {
     min-width: 44px !important;
     height: 44px !important;
     min-height: 44px !important;
+  }
+
+  /* The 44px control is taller than a week or month chip, so the icon is
+     clipped and focusing it scrolls the grid. The scroll listener then
+     closes the menu. Sit a 24px target on the chip instead. */
+  body.c8-schedule .week-cell .cal-post-body,
+  body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body,
+  body.c8-schedule .day-cell .cal-post-body,
+  body.c8-schedule .day-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .day-cell .cal-post.is-draft .cal-post-body,
+  body.c8-schedule .phone-slot .cal-post-body,
+  body.c8-schedule .phone-slot .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .phone-slot .cal-post.is-draft .cal-post-body {
+    position: relative;
+    overflow: visible;
+    min-height: 30px;
+    padding-inline-end: 26px;
+  }
+
+  body.c8-schedule .month-cell .cal-post-body,
+  body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
+    position: relative;
+    overflow: visible;
+    height: auto;
+    min-height: 24px;
+    max-height: none;
+    padding-inline-end: 26px;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more,
+  body.c8-schedule .day-cell .cal-post-more,
+  body.c8-schedule .month-cell .cal-post-more,
+  body.c8-schedule .phone-slot .cal-post-more {
+    position: absolute;
+    z-index: 2;
+    inset-inline-end: 1px;
+    top: 50%;
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    margin: 0;
+    transform: translateY(-50%);
+    background: var(--c8-surface);
   }
 
   body.c8-schedule .cal-post-action {
