@@ -1105,15 +1105,14 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   background: transparent;
 }
 
-/* The bell is at the bottom of the sidebar. Open the panel just to the
-   right of the sidebar, using the sidebar's own width so a collapsed
-   rail does not need a second hard-coded offset. */
+/* Tablet keeps this offset (sidebar + padding + channels column).
+   Desktop overrides it below so the panel sits beside the bell.
+   Phone replaces the whole panel with the bottom sheet. */
 .c8-shell .c8-side-foot .notify-panel {
   position: fixed !important;
   top: auto !important;
   right: auto !important;
   bottom: 72px !important;
-  /* Clear the app sidebar, the schedule padding, and the channels column. */
   left: calc(var(--c8-side-w, 256px) + var(--c8-main-pad, 0px) + var(--c8-rail-w, 0px) + 16px) !important;
   width: min(360px, calc(100vw - var(--c8-side-w, 256px) - var(--c8-main-pad, 0px) - var(--c8-rail-w, 0px) - 32px)) !important;
   margin: 0 !important;
@@ -1250,8 +1249,6 @@ body.light .c8-shell .c8-side-foot .notify-panel {
     display: flex;
   }
 
-  /* The bell sits in the app sidebar. Shift the popup past the channels
-     rail so it does not cover that panel. */
   body.c8-schedule {
     --c8-rail-w: 236px;
     --c8-main-pad: 40px;
@@ -1259,6 +1256,15 @@ body.light .c8-shell .c8-side-foot .notify-panel {
 
   body.c8-schedule:has(.channel-rail.sidebar) {
     --c8-rail-w: 88px;
+  }
+
+  /* Beside the bell in the sidebar footer. The channels column is not
+     part of this offset, and the width stays inside the viewport. */
+  .c8-shell .c8-side-foot .notify-panel {
+    bottom: 16px !important;
+    left: calc(var(--c8-side-w, 256px) + 12px) !important;
+    width: min(360px, calc(100vw - var(--c8-side-w, 256px) - 28px)) !important;
+    max-height: min(480px, calc(100vh - 32px)) !important;
   }
 }
 
@@ -2002,11 +2008,11 @@ body.c8-schedule[data-c8-view='list'] .date-range > .cal-today {
   flex: none;
 }
 
-body.c8-schedule .cal-customer,
-body.c8-schedule[data-c8-view='day'] .cal-customer,
-body.c8-schedule[data-c8-view='week'] .cal-customer,
-body.c8-schedule[data-c8-view='list'] .cal-customer,
-body.c8-schedule[data-c8-view='month'] .cal-customer {
+body.c8-schedule .filters-bar .cal-customer,
+body.c8-schedule[data-c8-view='day'] .filters-bar .cal-customer,
+body.c8-schedule[data-c8-view='week'] .filters-bar .cal-customer,
+body.c8-schedule[data-c8-view='list'] .filters-bar .cal-customer,
+body.c8-schedule[data-c8-view='month'] .filters-bar .cal-customer {
   order: 2;
   flex: none;
   position: static;
@@ -2017,8 +2023,20 @@ body.c8-schedule[data-c8-view='month'] .cal-customer {
   background: transparent;
 }
 
-body.c8-schedule .cal-customer:not(:has(> div)) {
+/* No customers: SelectCustomer renders nothing, so the empty slot stays hidden. */
+body.c8-schedule .filters-bar .cal-customer:not(:has(> div)) {
   display: none;
+}
+
+/* The toolbar control is z-[500]. Drop it under any open dialog so it
+   cannot sit on the confirm scrim or the composer preview. */
+body.c8-schedule .filters-bar .cal-customer > .select-customer {
+  z-index: 80;
+}
+
+body.c8-schedule:has(.mantine-Overlay-root) .filters-bar .cal-customer,
+body.c8-schedule:has(.arc-dialog-wrap) .filters-bar .cal-customer {
+  visibility: hidden;
 }
 
 body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-customer {
@@ -2108,7 +2126,8 @@ body.c8-schedule .c8-inline-chip {
   white-space: nowrap;
 }
 
-body.c8-schedule .cal-customer > div > div:not(.fixed) {
+body.c8-schedule .filters-bar .cal-customer > div > div:not(.fixed),
+body.c8-schedule .composer-editor .select-customer > div:not(.fixed) {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -2130,7 +2149,16 @@ body.c8-schedule .cal-customer > div > div:not(.fixed) {
   white-space: nowrap;
 }
 
-body.c8-schedule .cal-customer > div > div.fixed {
+body.c8-schedule .filters-bar .select-customer-label,
+body.c8-schedule .composer-editor .select-customer-label {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.c8-schedule .filters-bar .cal-customer > div > div.fixed,
+body.c8-schedule .composer-editor .select-customer > div.fixed {
   width: auto;
   height: auto;
   min-height: 0;
@@ -2144,7 +2172,8 @@ body.c8-schedule .cal-customer > div > div.fixed {
   font-weight: 500;
 }
 
-body.dark.c8-schedule .cal-customer > div > div.fixed {
+body.dark.c8-schedule .filters-bar .cal-customer > div > div.fixed,
+body.dark.c8-schedule .composer-editor .select-customer > div.fixed {
   border-color: var(--c8-hard) !important;
   box-shadow: 0 6px 0 var(--c8-hard) !important;
 }
