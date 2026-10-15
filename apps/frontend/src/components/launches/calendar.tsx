@@ -269,12 +269,10 @@ const usePostActions = (onMutate?: () => void) => {
   return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease };
 };
 
-// Phone day list below 640px, and on short landscape (height <= 500).
-// Wider portrait, including 640–819, keeps the tablet day grid.
 const useNarrowLayout = () => {
   const [narrow, setNarrow] = useState(false);
   useLayoutEffect(() => {
-    const media = window.matchMedia('(max-width: 639px), (max-height: 500px)');
+    const media = window.matchMedia('(max-width: 767px)');
     const sync = () => setNarrow(media.matches);
     sync();
     media.addEventListener('change', sync);
@@ -570,7 +568,7 @@ export const WeekView = () => {
   const [phoneWeek, setPhoneWeek] = useState(false);
 
   useLayoutEffect(() => {
-    const media = window.matchMedia('(max-width: 639px), (max-height: 500px)');
+    const media = window.matchMedia('(max-width: 639px)');
     const sync = () => setPhoneWeek(media.matches);
     sync();
     media.addEventListener('change', sync);
@@ -913,7 +911,7 @@ export const CalendarColumn: FC<{
     return postList.slice(0, visibleCount);
   }, [postList, showAll, visibleCount]);
   useLayoutEffect(() => {
-    const media = window.matchMedia('(max-width: 639px), (max-height: 500px)');
+    const media = window.matchMedia('(max-width: 639px)');
     const sync = () => setPhoneMonth(media.matches);
     sync();
     media.addEventListener('change', sync);

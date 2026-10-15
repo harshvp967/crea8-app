@@ -360,7 +360,7 @@ export const CalendarWeekProvider: FC<{
     }
   }, [posts]);
 
-  // A short or narrow phone opens on Day. A display query param is an explicit choice and wins.
+  // Phone opens on Day. A display query param is an explicit choice and wins.
   // This writes filters in memory only, so opening the page does not change
   // the calendar-display cookie desktop reads. Later navigation goes through
   // setFiltersWrapper, the same handler desktop uses.
@@ -369,7 +369,7 @@ export const CalendarWeekProvider: FC<{
     if (phoneDefaulted.current) {
       return;
     }
-    if (!window.matchMedia('(max-width: 639px), (max-height: 500px)').matches) {
+    if (!window.matchMedia('(max-width: 767px)').matches) {
       return;
     }
     phoneDefaulted.current = true;

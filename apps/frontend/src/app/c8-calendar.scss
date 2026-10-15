@@ -4709,10 +4709,10 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
     align-items: center;
   }
 
-  /* The chip is z-500, so its menu covered the period arrow and the rail title.
-     Keep those two above the menu, and shift the menu into the calendar. */
-  body.c8-schedule .filters-bar .cal-customer > .select-customer {
-    z-index: 12;
+  /* Closed, the chip stays under the period arrow. Open, the menu is the
+     chip's own fixed box: no extra offset, solid, and above the grid. */
+  body.c8-schedule .filters-bar .cal-customer > .select-customer:has(> div.fixed) {
+    z-index: 80;
   }
 
   body.c8-schedule .c8-phone-period,
@@ -4723,10 +4723,10 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
 
   body.c8-schedule .customer-menu,
   body.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
-    z-index: 30;
-    margin-top: 68px;
-    margin-left: 212px;
-    background: var(--c8-surface);
+    z-index: 80;
+    margin: 0 !important;
+    background: var(--c8-surface) !important;
+    opacity: 1 !important;
     border: 1.5px solid #121016 !important;
     border-radius: 16px;
     box-shadow: 0 6px 0 #121016 !important;
@@ -4781,7 +4781,24 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
      Stretch the chip, let the title shrink, and keep the ⋮ on the chip. */
   body.c8-schedule .week-grid {
     padding-inline: 4px;
-    grid-template-columns: 40px repeat(7, minmax(0, 1fr));
+    grid-template-columns: 56px repeat(7, minmax(0, 1fr));
+  }
+
+  body.c8-schedule .week-time {
+    overflow: visible !important;
+    padding: 4px 4px 0 2px !important;
+    font-size: 11px;
+    line-height: 14px;
+  }
+
+  /* The hover slot is a 32px pill. At rest it sat in Mon 12 at 5 AM. */
+  body.c8-schedule .week-cell:not(:hover):not(:focus-within) .cal-col::before {
+    opacity: 0 !important;
+    flex: 0 0 0 !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
   }
 
   body.c8-schedule .week-cell {
@@ -4817,6 +4834,7 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
     gap: 3px;
     padding: 2px 2px 2px 3px;
     width: 100%;
+    min-width: 0;
   }
 
   body.c8-schedule .week-cell .cal-chip-when {
@@ -4829,6 +4847,7 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
     flex: 1 1 auto;
     width: auto;
     min-width: 0;
+    overflow: hidden;
   }
 
   body.c8-schedule .week-cell .line-clamp-2 {
@@ -4849,5 +4868,107 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
     margin: 0;
     transform: translateY(-50%);
     background: var(--c8-surface);
+    opacity: 0;
+  }
+
+  body.c8-schedule .week-cell .cal-post:hover .cal-post-more,
+  body.c8-schedule .week-cell .cal-post:focus-within .cal-post-more {
+    opacity: 1;
+  }
+}
+
+/* 820-wide day columns fit a time plus a short title once the avatar steps aside. */
+@media (min-width: 640px) and (max-width: 899px) and (min-height: 501px) {
+  body.c8-schedule .week-cell .cal-post-icon {
+    display: none !important;
+  }
+}
+
+/* Short landscape keeps the phone chrome from the max-height: 500 rules.
+   The day and week grids are absolutely positioned, so an auto-height shell
+   collapses them. Give them a real height, and keep the week and the tab
+   bar on the full viewport. The JS breakpoints stay at 767 and 639. */
+@media (max-height: 500px) and (min-width: 640px) {
+  body.c8-schedule .c8-shell,
+  .c8-shell {
+    height: auto !important;
+    min-height: 100vh;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body.c8-schedule .app-stage,
+  body.c8-schedule .app-main,
+  body.c8-schedule .calendar-panel,
+  body.c8-schedule .calendar-well,
+  body.c8-schedule .c8-week,
+  body.c8-schedule .c8-week > .relative,
+  body.c8-schedule .c8-day,
+  body.c8-schedule .c8-day-body,
+  body.c8-schedule .c8-day .relative,
+  body.c8-schedule .phone-day-list {
+    height: auto !important;
+    min-height: 70vh;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  body.c8-schedule .week-grid,
+  body.c8-schedule .week-grid.is-phone-slice,
+  body.c8-schedule .day-scroll,
+  body.c8-schedule .day-grid,
+  body.c8-schedule .month-grid {
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 70vh !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body.c8-schedule .week-grid,
+  body.c8-schedule .week-grid.is-phone-slice {
+    grid-template-columns: 56px repeat(7, minmax(0, 1fr)) !important;
+  }
+
+  body.c8-schedule .mobile-tabbar {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+  }
+
+  body.c8-schedule .mobile-tabbar a,
+  body.c8-schedule .mobile-tabbar button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 4px 2px;
+  }
+
+  body.c8-schedule .mobile-tabbar a span,
+  body.c8-schedule .mobile-tabbar button span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
