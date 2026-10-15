@@ -26,7 +26,12 @@ import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
-import { isProviderAuthFailure } from '@gitroom/nestjs-libraries/stalker/sources/youtube.stalker.source';
+import {
+  cachedYoutubeChannelComments,
+  isProviderAuthFailure,
+  isYoutubeQuotaError,
+  YoutubeChannelMiss,
+} from '@gitroom/nestjs-libraries/stalker/sources/youtube.stalker.source';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -1093,6 +1098,19 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     integration: Integration;
     keywords: string[];
   }): Promise<StalkerMentionDraft[]> {
+    const channelId = input.integration.internalId || '';
+    if (!channelId) {
+      return [];
+    }
+    return cachedYoutubeChannelComments(channelId, () =>
+      this.fetchChannelComments(input)
+    );
+  }
+
+  private async fetchChannelComments(input: {
+    accessToken: string;
+    integration: Integration;
+  }): Promise<StalkerMentionDraft[]> {
     const drafts: StalkerMentionDraft[] = [];
     const seenComments = new Set<string>();
     const { client, youtube } = clientAndYoutube();
@@ -1121,10 +1139,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         );
       }
     } catch (err) {
-      if (isProviderAuthFailure(err)) {
+      if (isProviderAuthFailure(err) || isYoutubeQuotaError(err)) {
         throw err;
       }
       console.error('Stalker YouTube channel comments failed', err);
+      throw new YoutubeChannelMiss();
     }
 
     return drafts;

@@ -25,6 +25,7 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
 import { mentionRange } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
 import { X_PLAN_ERROR } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
+import { stalkerKeywordCap } from '@gitroom/nestjs-libraries/stalker/stalker.match';
 
 const authError = () => {
   const error = new Error('Invalid Credentials') as Error & {
@@ -277,7 +278,8 @@ describe('StalkerService token refresh', () => {
     expect(source.search).toHaveBeenCalledWith(
       'brand',
       expect.any(Date),
-      undefined
+      undefined,
+      { projectId: 'proj', phraseKey: 'brand', backfill: false }
     );
     expect(result.sources[0].ok).toBe(true);
   });
@@ -669,6 +671,7 @@ describe('StalkerService keywords and scan status', () => {
     process.env.STALKER_ENABLED = 'true';
     delete process.env.STALKER_PROJECT_INTERVAL_HOURS;
     delete process.env.STALKER_POLL_MINUTES;
+    delete process.env.STALKER_MAX_KEYWORDS;
   });
   afterAll(() => {
     process.env.STALKER_ENABLED = previous;
@@ -805,6 +808,35 @@ describe('StalkerService keywords and scan status', () => {
     const { service, repository } = make();
     (repository as Record<string, jest.Mock>).deleteKeyword = jest.fn().mockResolvedValue({ count: 0 });
     await expect(service.deleteKeyword('org', 'nope')).rejects.toThrow('Keyword not found');
+  });
+
+  it('uses the env keyword cap and the plan hook', () => {
+    expect(stalkerKeywordCap({ organizationId: 'org', projectId: 'proj' })).toBe(10);
+    process.env.STALKER_MAX_KEYWORDS = '25';
+    expect(stalkerKeywordCap({ organizationId: 'org', projectId: 'proj' })).toBe(25);
+    process.env.STALKER_MAX_KEYWORDS = '1000';
+    expect(stalkerKeywordCap()).toBe(75);
+    expect(stalkerKeywordCap({ plan: 'free' })).toBe(3);
+    expect(stalkerKeywordCap({ plan: 'scale', organizationId: 'org' })).toBe(75);
+    expect(stalkerKeywordCap({ plan: 'enterprise' })).toBe(75);
+    delete process.env.STALKER_MAX_KEYWORDS;
+    expect(stalkerKeywordCap({ plan: 'nope' })).toBe(10);
+  });
+
+  it('rejects a keyword past the cap and allows it when the cap is raised', async () => {
+    const { service, repository } = make();
+    const repo = repository as Record<string, jest.Mock>;
+    repo.findKeyword = jest.fn().mockResolvedValue(null);
+    repo.countKeywords = jest.fn().mockResolvedValue(10);
+    repo.listGroups.mockResolvedValue([{ id: 'g-comp', name: 'Competitors' }]);
+    repo.createKeyword = jest.fn().mockResolvedValue({ id: 'new' });
+    jest.spyOn(service, 'requestScan').mockResolvedValue({} as never);
+    await expect(
+      service.createKeyword('org', { projectId: 'proj', phrase: 'extra' } as never)
+    ).rejects.toThrow('You can save up to 10 keywords');
+    process.env.STALKER_MAX_KEYWORDS = '25';
+    await service.createKeyword('org', { projectId: 'proj', phrase: 'extra' } as never);
+    expect(repo.createKeyword).toHaveBeenCalledTimes(1);
   });
 
   it('rejects a duplicate keyword with 409 and defaults non-brand keywords to Competitors', async () => {

@@ -24,7 +24,10 @@ import {
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.source.manager';
-import { StalkerSourceId } from '@gitroom/nestjs-libraries/stalker/stalker.source';
+import {
+  StalkerSearchScope,
+  StalkerSourceId,
+} from '@gitroom/nestjs-libraries/stalker/stalker.source';
 import { isProviderAuthFailure } from '@gitroom/nestjs-libraries/stalker/sources/youtube.stalker.source';
 import { formatXFailure } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
@@ -45,6 +48,7 @@ import {
   splitTerms,
   tagDrafts,
   matchRelevance,
+  stalkerKeywordCap,
   type StalkerAlertScopeName,
 } from '@gitroom/nestjs-libraries/stalker/stalker.match';
 import {
@@ -70,7 +74,6 @@ import { WorkflowIdConflictPolicy } from '@temporalio/client';
 
 export const isStalkerEnabled = () => process.env.STALKER_ENABLED === 'true';
 
-const MAX_KEYWORDS = 10;
 const POLL_HOURS = 3;
 const MANUAL_SCAN_GAP_MS = 5 * 60 * 1000;
 
@@ -596,12 +599,13 @@ export class StalkerService {
         suggestedHandles[field] = handle;
       }
     }
+    const keywordCap = stalkerKeywordCap({ organizationId });
     return {
       enabled: true,
       pollHours: POLL_HOURS,
       pollMinutes: stalkerPollMinutes(),
-      maxKeywords: MAX_KEYWORDS,
-      keywordsSearchedPerRun: MAX_KEYWORDS,
+      maxKeywords: keywordCap,
+      keywordsSearchedPerRun: keywordCap,
       openAi: this._openaiService.hasApiKey(),
       sources,
       commentSources,
@@ -626,6 +630,7 @@ export class StalkerService {
     }
     const seenPhrases = new Set<string>();
     const keywords = [];
+    const keywordCap = stalkerKeywordCap({ organizationId });
     for (const keyword of body.keywords || []) {
       const phrase = keyword.phrase.trim().replace(/\s+/g, ' ');
       const key = phrase.toLowerCase();
@@ -633,8 +638,10 @@ export class StalkerService {
         continue;
       }
       seenPhrases.add(key);
-      if (keywords.length >= MAX_KEYWORDS) {
-        break;
+      if (keywords.length >= keywordCap) {
+        throw new BadRequestException(
+          `You can save up to ${keywordCap} keywords`
+        );
       }
       keywords.push({
         phrase,
@@ -1010,9 +1017,13 @@ export class StalkerService {
       organizationId,
       body.projectId
     );
-    if (total >= MAX_KEYWORDS) {
+    const keywordCap = stalkerKeywordCap({
+      organizationId,
+      projectId: body.projectId,
+    });
+    if (total >= keywordCap) {
       throw new BadRequestException(
-        `You can save up to ${MAX_KEYWORDS} keywords`
+        `You can save up to ${keywordCap} keywords`
       );
     }
     await this._repository.ensureGroups(body.projectId);
@@ -2199,7 +2210,12 @@ export class StalkerService {
           scan.since,
           candidates,
           bag,
-          preferApiKey
+          preferApiKey,
+          {
+            projectId: project.id,
+            phraseKey,
+            backfill: scan.backfill,
+          }
         );
         if (outcome.error || !outcome.drafts) {
           const message =
@@ -2307,20 +2323,23 @@ export class StalkerService {
     source: {
       id: string;
       enabled: (auth?: { accessToken?: string }) => boolean;
+      cacheNamespace?: (scope: StalkerSearchScope) => string;
       search: (
         keyword: string,
         since: Date,
-        auth?: { accessToken?: string }
+        auth?: { accessToken?: string },
+        scope?: StalkerSearchScope
       ) => Promise<StalkerMentionDraft[]>;
     },
     phrase: string,
     since: Date,
     candidates: Integration[],
     bag: { fresh: Map<string, Integration>; blocked: Set<string> },
-    preferApiKey: boolean
+    preferApiKey: boolean,
+    scope?: StalkerSearchScope
   ) {
     if (preferApiKey || !candidates.length) {
-      return this.cachedSearch(source, phrase, since, undefined, bag);
+      return this.cachedSearch(source, phrase, since, undefined, bag, scope);
     }
     let last: { drafts: StalkerMentionDraft[] | null; error?: string } = {
       drafts: null,
@@ -2337,7 +2356,8 @@ export class StalkerService {
         phrase,
         since,
         current,
-        bag
+        bag,
+        scope
       );
       if (!outcome.error && outcome.drafts) {
         return outcome;
@@ -2356,20 +2376,25 @@ export class StalkerService {
     source: {
       id: string;
       enabled: (auth?: { accessToken?: string }) => boolean;
+      cacheNamespace?: (scope: StalkerSearchScope) => string;
       search: (
         keyword: string,
         since: Date,
-        auth?: { accessToken?: string }
+        auth?: { accessToken?: string },
+        scope?: StalkerSearchScope
       ) => Promise<StalkerMentionDraft[]>;
     },
     phrase: string,
     since: Date,
     integration: Integration | undefined,
-    bag: { fresh: Map<string, Integration>; blocked: Set<string> }
+    bag: { fresh: Map<string, Integration>; blocked: Set<string> },
+    scope?: StalkerSearchScope
   ): Promise<{ drafts: StalkerMentionDraft[] | null; error?: string }> {
-    const cachePhrase = `${phrase.toLowerCase()}|${Math.floor(
-      since.getTime() / (60 * 60 * 1000)
-    )}`;
+    const hour = Math.floor(since.getTime() / (60 * 60 * 1000));
+    const namespace = source.cacheNamespace?.(scope || {}) || '';
+    const cachePhrase = namespace
+      ? `${namespace}|${phrase.toLowerCase()}|${hour}`
+      : `${phrase.toLowerCase()}|${hour}`;
     const cached = await this._repository.readSearchCache(
       source.id,
       cachePhrase,
@@ -2387,7 +2412,7 @@ export class StalkerService {
           error: sourceFailure(source.id),
         };
       }
-      const drafts = await source.search(phrase, since, auth);
+      const drafts = await source.search(phrase, since, auth, scope);
       await this._repository.writeSearchCache(source.id, cachePhrase, drafts);
       return { drafts };
     };

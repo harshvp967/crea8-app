@@ -1,3 +1,4 @@
+import { STALKER_KEYWORD_CAP_MAX } from '@gitroom/nestjs-libraries/stalker/stalker.match';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -266,7 +267,7 @@ export class CreateStalkerProjectDto extends StalkerIdentityDto {
   color: string;
 
   @IsArray()
-  @ArrayMaxSize(10)
+  @ArrayMaxSize(STALKER_KEYWORD_CAP_MAX)
   @ValidateNested({ each: true })
   @Type(() => StalkerKeywordInputDto)
   keywords: StalkerKeywordInputDto[];

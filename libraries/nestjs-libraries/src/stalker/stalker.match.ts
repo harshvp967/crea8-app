@@ -402,6 +402,35 @@ export const shouldFireSentimentDrop = (input: {
 export const sentimentShare = (negative: number, total: number) =>
   total > 0 ? Math.round((negative / total) * 100) : 0;
 
+// Planned Stalker keyword caps. Applied only when a caller passes `plan`.
+// Billing is not wired up; organizationId and projectId are the lookup key
+// for that later change.
+export const STALKER_KEYWORD_CAP_DEFAULT = 10;
+export const STALKER_KEYWORD_CAP_MAX = 75;
+export const STALKER_KEYWORD_PLAN_CAPS: Record<string, number> = {
+  free: 3,
+  starter: 10,
+  growth: 25,
+  scale: 75,
+};
+
+export function stalkerKeywordCap(input: {
+  organizationId?: string;
+  projectId?: string;
+  plan?: string | null;
+} = {}) {
+  const plan = (input.plan || '').trim().toLowerCase();
+  const planned = plan ? STALKER_KEYWORD_PLAN_CAPS[plan] : undefined;
+  if (planned) {
+    return planned;
+  }
+  const raw = Number((process.env.STALKER_MAX_KEYWORDS || '').trim());
+  if (Number.isFinite(raw) && raw > 0) {
+    return Math.min(STALKER_KEYWORD_CAP_MAX, Math.max(1, Math.floor(raw)));
+  }
+  return STALKER_KEYWORD_CAP_DEFAULT;
+}
+
 export const matchRank = (kind?: string) => (kind ? RANK[kind] || 0 : 0);
 
 export const dedupeDrafts = (drafts: StalkerMentionDraft[]) => {

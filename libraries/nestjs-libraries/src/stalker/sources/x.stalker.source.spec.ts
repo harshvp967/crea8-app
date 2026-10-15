@@ -369,6 +369,106 @@ describe('XStalkerSource', () => {
     expect(second).toEqual(first);
   });
 
+  const snowflake = (ms: number) =>
+    ((BigInt(ms) - 1288834974657n) << 22n).toString();
+
+  it('keeps paging when each page only has the API default of 10 posts', async () => {
+    process.env.X_STALKER_BEARER_TOKEN = DEDICATED;
+    process.env.X_STALKER_MAX_RESULTS = '25';
+    const ten = (from: number) =>
+      Array.from({ length: 10 }, (_, index) => String(from + index));
+    fetchMock
+      .mockResolvedValueOnce(page(ten(1), 'page-2'))
+      .mockResolvedValueOnce(page(ten(11), 'page-3'))
+      .mockResolvedValueOnce(page(ten(21), 'page-4'));
+
+    const rows = await source().search('crea8one', new Date('2026-10-01T00:00:00.000Z'));
+
+    expect(rows).toHaveLength(25);
+    expect(rows[24].postExternalId).toBe('25');
+    expect(searchCalls()).toHaveLength(3);
+    expect(new URL(String(searchCalls()[1][0])).searchParams.get('next_token')).toBe('page-2');
+    expect(new URL(String(searchCalls()[2][0])).searchParams.get('next_token')).toBe('page-3');
+    expect(new URL(String(searchCalls()[0][0])).searchParams.get('max_results')).toBe('25');
+  });
+
+  it('retries a repeated page once with pagination_token and then stops', async () => {
+    process.env.X_STALKER_BEARER_TOKEN = DEDICATED;
+    process.env.X_STALKER_MAX_RESULTS = '30';
+    const first = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+    fetchMock
+      .mockResolvedValueOnce(page(first, 'same-page'))
+      .mockResolvedValueOnce(page(first, 'same-page'))
+      .mockResolvedValueOnce(page(['11', '12', '13', '14', '15', '16', '17', '18', '19', '20']));
+
+    const rows = await source().search('crea8one', new Date('2026-10-01T00:00:00.000Z'));
+
+    expect(rows.map((row) => row.postExternalId)).toEqual([
+      ...first,
+      '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
+    ]);
+    const retried = new URL(String(searchCalls()[2][0]));
+    expect(retried.searchParams.get('pagination_token')).toBe('same-page');
+    expect(retried.searchParams.has('next_token')).toBe(false);
+    expect(searchCalls()).toHaveLength(3);
+  });
+
+  it('sends since_id instead of start_time after a finished scan', async () => {
+    process.env.X_STALKER_BEARER_TOKEN = DEDICATED;
+    const newest = snowflake(Date.now() - 60_000);
+    const older = snowflake(Date.now() - 120_000);
+    const scope = { projectId: 'proj-since', phraseKey: 'crea8one' };
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        data: [
+          { id: newest, text: 'new', author_id: '7', public_metrics: { like_count: 1, reply_count: 0 } },
+          { id: older, text: 'old', author_id: '7', public_metrics: { like_count: 1, reply_count: 0 } },
+        ],
+        includes: { users: [{ id: '7', name: 'Ada', username: 'ada' }] },
+        meta: { newest_id: newest, oldest_id: older },
+      })
+    );
+
+    await source().search('crea8one', new Date('2026-10-01T00:00:00.000Z'), undefined, scope);
+    expect(await ioRedis.get('stalker:x:since:proj-since:crea8one')).toBe(newest);
+
+    const later = snowflake(Date.now() - 30_000);
+    fetchMock.mockResolvedValueOnce(page([later]));
+    await source().search('crea8one', new Date('2026-10-01T00:00:00.000Z'), undefined, scope);
+
+    const second = new URL(String(searchCalls()[1][0]));
+    expect(second.searchParams.get('since_id')).toBe(newest);
+    expect(second.searchParams.has('start_time')).toBe(false);
+    expect(await ioRedis.get('stalker:x:since:proj-since:crea8one')).toBe(later);
+  });
+
+  it('ignores since_id on a backfill and ignores a watermark older than the search window', async () => {
+    process.env.X_STALKER_BEARER_TOKEN = DEDICATED;
+    await ioRedis.set('stalker:x:since:proj-old:crea8one', '20');
+    fetchMock.mockResolvedValueOnce(searchOk());
+
+    await source().search('crea8one', new Date('2026-10-01T00:00:00.000Z'), undefined, {
+      projectId: 'proj-old',
+      phraseKey: 'crea8one',
+      backfill: true,
+    });
+
+    const called = new URL(String(searchCalls()[0][0]));
+    expect(called.searchParams.has('since_id')).toBe(false);
+    expect(called.searchParams.has('start_time')).toBe(true);
+
+    await resetXAppBearerCache();
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValueOnce(searchOk());
+    await source().search('crea8one', new Date('2026-10-01T00:00:00.000Z'), undefined, {
+      projectId: 'proj-old',
+      phraseKey: 'crea8one',
+    });
+    const live = new URL(String(searchCalls()[0][0]));
+    expect(live.searchParams.has('since_id')).toBe(false);
+    expect(live.searchParams.has('start_time')).toBe(true);
+  });
+
   it('retries a 429 once when reset is soon, and does not wait out a long window', async () => {
     process.env.X_STALKER_BEARER_TOKEN = DEDICATED;
     const soon = String(Math.floor(Date.now() / 1000) + 1);

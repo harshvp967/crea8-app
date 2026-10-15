@@ -12,6 +12,13 @@ export type StalkerSearchTerms = {
   subreddit?: string;
 };
 
+// Passed into every source. A source uses the fields it understands.
+export type StalkerSearchScope = {
+  projectId?: string;
+  phraseKey?: string;
+  backfill?: boolean;
+};
+
 // Keyword listening. Comment ingestion stays on the connected social provider.
 export interface StalkerSourceProvider {
   id: StalkerSourceId;
@@ -25,9 +32,13 @@ export interface StalkerSourceProvider {
   enabled(auth?: StalkerSourceAuth): boolean;
   statusDetail(available: boolean): string;
   buildQuery(input: StalkerSearchTerms): string;
+  // Non-empty salt keeps this source's search cache per project. Empty uses
+  // the shared phrase cache (YouTube quota is spent once per phrase).
+  cacheNamespace?(scope: StalkerSearchScope): string;
   search(
     keyword: string,
     since: Date,
-    auth?: StalkerSourceAuth
+    auth?: StalkerSourceAuth,
+    scope?: StalkerSearchScope
   ): Promise<StalkerMentionDraft[]>;
 }
