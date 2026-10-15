@@ -140,6 +140,55 @@ export const Menu: FC<{
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [show]);
+  // The menu is portaled, so keep it on its row while the rail or window
+  // moves. Escape and a click outside are still the only ways to close it.
+  useEffect(() => {
+    if (!show) {
+      return;
+    }
+    const place = () => {
+      const next = menuPlace();
+      const menu = menuRef.current;
+      if (!next || !menu) {
+        return;
+      }
+      let x = next.x;
+      let y = next.y;
+      const width = menu.offsetWidth;
+      const height = menu.offsetHeight;
+      if (y + height > window.innerHeight - menuPad) {
+        y = Math.max(menuPad, window.innerHeight - menuPad - height);
+      }
+      if (y < menuPad) {
+        y = menuPad;
+      }
+      if (x + width > window.innerWidth - menuPad) {
+        x = Math.max(menuPad, window.innerWidth - menuPad - width);
+      }
+      setShow((current) => {
+        if (!current) {
+          return current;
+        }
+        if (Math.abs(current.x - x) <= 1 && Math.abs(current.y - y) <= 1) {
+          return current;
+        }
+        return { x, y };
+      });
+    };
+    const onScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && menuRef.current?.contains(target)) {
+        return;
+      }
+      place();
+    };
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', place, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [show, menuPlace]);
   const findIntegration: any = useMemo(() => {
     return integrations.find((integration) => integration.id === id);
   }, [integrations, id]);
