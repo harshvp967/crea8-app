@@ -63,12 +63,15 @@ export const SelectCustomer: FC<{
     },
     [onChange, setCurrent, t, toaster]
   );
+  const selectedName =
+    customers.find((item) => item?.customer?.id === customer)?.customer?.name ||
+    t('all_customers', 'All customers');
   if (!customers.length) {
     return null;
   }
 
   return (
-    <div className="relative select-none z-[500]" ref={ref}>
+    <div className="select-customer relative select-none z-[500]" ref={ref}>
       <div
         data-tooltip-id="tooltip"
         data-tooltip-content={t('select_customer_tooltip', 'Select Customer')}
@@ -81,6 +84,9 @@ export const SelectCustomer: FC<{
         <div>
           <UserIcon />
         </div>
+        <span className="select-customer-label">
+          {selectedName}
+        </span>
         <div>
           <DropdownArrowIcon rotated={open} />
         </div>
