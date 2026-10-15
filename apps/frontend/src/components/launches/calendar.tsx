@@ -53,6 +53,7 @@ import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missi
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -107,7 +108,7 @@ const usePostActions = (onMutate?: () => void) => {
   const fetch = useFetch();
   const modal = useModals();
   const toaster = useToaster();
-  const { integrations, reloadCalendarView } = useCalendar();
+  const { allIntegrations, customer, reloadCalendarView } = useCalendar();
 
   const mutate = useCallback(() => {
     reloadCalendarView();
@@ -156,13 +157,14 @@ const usePostActions = (onMutate?: () => void) => {
                     ),
                   }
                 : {})}
-              allIntegrations={integrations.map((p) => ({ ...p }))}
+              allIntegrations={allIntegrations.map((p) => ({ ...p }))}
               reopenModal={editPost(post)}
               mutate={mutate}
+              customer={customer || undefined}
               integrations={
                 isDuplicate
-                  ? integrations
-                  : integrations
+                  ? allIntegrations
+                  : allIntegrations
                       .slice(0)
                       .filter((f) => f.id === data.integration)
                       .map((p) => ({
@@ -178,7 +180,7 @@ const usePostActions = (onMutate?: () => void) => {
         title: ``,
       });
     },
-    [integrations, fetch, modal, mutate]
+    [allIntegrations, customer, fetch, modal, mutate]
   );
 
   const copyDebugJson = useCallback(
@@ -397,6 +399,8 @@ export const DayView = () => {
     );
   }, [integrations, posts, startDate]);
 
+  // Icons in a filled row stay limited to that row. allIntegrations is left
+  // intact so the composer does not inherit the slot's posts.
   const slotRow = (option: (typeof options)[number]) => (
     <CalendarContext.Provider
       key={option[0].time}
@@ -907,6 +911,8 @@ export const CalendarColumn: FC<{
   const user = useUser();
   const {
     integrations,
+    allIntegrations,
+    customer,
     posts,
     changeDate,
     display,
@@ -1113,6 +1119,12 @@ export const CalendarColumn: FC<{
 
     if (set === 'exit') return;
 
+    const channels = composerChannels({
+      catalog: allIntegrations,
+      slotIntegrations: integrations,
+      customer: set ? null : customer,
+    });
+
     modal.openModal({
       id: 'add-edit-modal',
       closeOnClickOutside: false,
@@ -1126,12 +1138,16 @@ export const CalendarColumn: FC<{
       },
       children: (
         <AddEditModal
-          allIntegrations={integrations.map((p) => ({
+          allIntegrations={channels.allIntegrations.map((p) => ({
             ...p,
           }))}
-          integrations={integrations.slice(0).map((p) => ({
+          integrations={channels.allIntegrations.slice(0).map((p) => ({
             ...p,
           }))}
+          {...(channels.selectedChannels
+            ? { selectedChannels: channels.selectedChannels }
+            : {})}
+          customer={customer || undefined}
           mutate={reloadCalendarView}
           {...(signature?.id && !set
             ? {
@@ -1156,7 +1172,7 @@ export const CalendarColumn: FC<{
       ),
       size: '80%',
     });
-  }, [integrations, getDate, sets, signature, isBeforeNow]);
+  }, [integrations, allIntegrations, customer, getDate, sets, signature, isBeforeNow]);
 
   const addProvider = useAddProvider();
   return (

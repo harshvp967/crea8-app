@@ -651,6 +651,8 @@
   "no_content": "no content",
   "select_customer_tooltip": "Select Customer",
   "customers": "Customers",
+  "all_customers": "All customers",
+  "all_customers_selected": "All customers selected",
   "hour": "Hour",
   "minutes": "Minutes",
   "updated": "Updated",
