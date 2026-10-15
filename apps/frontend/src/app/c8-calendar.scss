@@ -1716,26 +1716,6 @@ body.c8-schedule .c8-day-label {
     min-height: min-content;
   }
 
-  body.c8-schedule:has(.cal-customer > div) .channel-rail > div {
-    padding-bottom: 88px;
-  }
-
-  body.c8-schedule .cal-customer {
-    position: absolute;
-    z-index: 20;
-    background: var(--c8-surface);
-    box-sizing: border-box;
-    left: calc(var(--c8-main-pad, 28px) + 16px);
-    bottom: 36px;
-    width: calc(var(--c8-rail-w, 240px) - 32px);
-    max-width: calc(var(--c8-rail-w, 240px) - 32px);
-    margin: 0;
-  }
-
-  body.c8-schedule .cal-customer:not(:has(> div)) {
-    display: none;
-  }
-
   body.c8-schedule .calendar-well > .c8-week,
   body.c8-schedule .calendar-well > .flex,
   body.c8-schedule .calendar-well > div {
@@ -1793,13 +1773,6 @@ body.c8-schedule .c8-day-label {
     display: none !important;
   }
 
-  body.c8-schedule .cal-customer {
-    left: calc(var(--c8-main-pad, 40px) + 16px);
-    bottom: 40px;
-    width: calc(var(--c8-rail-w, 236px) - 32px);
-    max-width: calc(var(--c8-rail-w, 236px) - 32px);
-  }
-
   body.c8-schedule[data-c8-view='week'] .channels-trigger,
   body.c8-schedule[data-c8-view='day'] .channels-trigger {
     display: none !important;
@@ -1828,10 +1801,6 @@ body.c8-schedule .c8-day-label {
     background: var(--c8-surface);
     padding: 16px;
     gap: 4px;
-  }
-
-  body.c8-schedule:has(.cal-customer > div) .channel-rail > div {
-    padding-bottom: 88px;
   }
 
   body.c8-schedule .channel-rail h2 {
@@ -1998,10 +1967,32 @@ body.c8-schedule[data-c8-view='list'] .date-range > .cal-today {
   flex: none;
 }
 
+body.c8-schedule .cal-customer,
+body.c8-schedule[data-c8-view='day'] .cal-customer,
+body.c8-schedule[data-c8-view='week'] .cal-customer,
 body.c8-schedule[data-c8-view='list'] .cal-customer,
 body.c8-schedule[data-c8-view='month'] .cal-customer {
   order: 2;
   flex: none;
+  position: static;
+  z-index: auto;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  background: transparent;
+}
+
+body.c8-schedule .cal-customer:not(:has(> div)) {
+  display: none;
+}
+
+body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-customer {
+  margin-inline-start: auto;
+}
+
+body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-mode,
+body.c8-schedule .filters-bar.is-list-mode:has(.cal-customer > div) .cal-mode {
+  margin-inline-start: 0;
 }
 
 body.c8-schedule[data-c8-view='list'] .cal-list-states {
@@ -2082,21 +2073,45 @@ body.c8-schedule .c8-inline-chip {
   white-space: nowrap;
 }
 
-body.c8-schedule .cal-customer > div > div {
+body.c8-schedule .cal-customer > div > div:not(.fixed) {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  width: 100%;
-  height: 46px;
-  min-height: 46px;
+  width: auto;
+  height: 34px;
+  min-height: 34px;
   padding: 0 12px;
-  justify-content: space-between;
-  border: 1px solid var(--c8-hard);
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  box-shadow: 0 1px 0 var(--c8-hard);
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body.c8-schedule .cal-customer > div > div.fixed {
+  width: auto;
+  height: auto;
+  min-height: 0;
+  border: 1.5px solid #121016 !important;
   border-radius: 16px;
   background: var(--c8-surface);
   color: var(--c8-ink);
-  box-shadow: 0 3px 0 var(--c8-hard);
-  gap: 8px;
+  box-shadow: 0 6px 0 #121016 !important;
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+body.dark.c8-schedule .cal-customer > div > div.fixed {
+  border-color: var(--c8-hard) !important;
+  box-shadow: 0 6px 0 var(--c8-hard) !important;
 }
 
 body.c8-schedule .channel-rail .channel-row {
