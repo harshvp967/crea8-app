@@ -3399,5 +3399,420 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     border-radius: 28px 28px 0 0 !important;
     border: 1.5px solid var(--c8-hard);
     max-height: 90vh;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Phone and tablet declutter. Desktop rules above stay as they are. */
+
+body.c8-schedule .cal-post-sheet-title {
+  display: none;
+}
+
+@media (max-width: 1199px) {
+  body.c8-schedule .channel-menu-item {
+    min-height: 44px;
+  }
+
+  body.c8-schedule .channel-rail.is-open .channel-meta,
+  body.c8-schedule .channel-rail.is-open h2,
+  body.c8-schedule .channel-rail.is-open .group-\[\.sidebar\]\:hidden {
+    display: block !important;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div > .flex.flex-col,
+  body.c8-schedule .channel-rail.is-open .group-\[\.sidebar\]\:w-\[44px\] {
+    width: auto !important;
+    max-width: none !important;
+    align-items: stretch !important;
+    margin-inline: 0 !important;
+  }
+
+  body.c8-schedule .channel-rail.is-open .channel-row,
+  body.c8-schedule .channel-rail.is-open.sidebar .channel-row {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 44px !important;
+    max-height: none !important;
+    justify-content: flex-start !important;
+    margin-inline: 0 !important;
+    padding: 6px 10px !important;
+  }
+
+  body.c8-schedule #tooltip,
+  body.c8-schedule .react-tooltip {
+    display: none !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .c8-shell .c8-side-foot .notify-panel {
+    bottom: 16px !important;
+    left: calc(var(--c8-side-w, 84px) + 12px) !important;
+    width: min(360px, calc(100vw - var(--c8-side-w, 84px) - 28px)) !important;
+    max-height: min(480px, calc(100vh - 32px)) !important;
+  }
+
+  body.c8-schedule .c8-cal-head {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    padding-inline-end: 16px;
+  }
+
+  body.c8-schedule .c8-cal-title {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* List toolbar is two rows: controls, then the status chips. */
+  body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode .date-range {
+    display: contents;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-pager,
+  body.c8-schedule[data-c8-view='list'] .date-range > .cal-today {
+    flex: none;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode:has(.cal-customer > div) .cal-customer {
+    order: 3;
+    margin-inline-start: 8px;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .filters-bar .cal-mode,
+  body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode:has(.cal-customer > div) .cal-mode {
+    order: 4;
+    flex: none;
+    gap: 4px !important;
+    margin-inline-start: auto !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .filters-bar .cal-mode > button {
+    padding: 6px 10px !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states {
+    order: 5;
+    flex: 1 0 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states > div {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 639px) {
+  body.c8-schedule .calendar-panel,
+  body.c8-schedule .calendar-panel:has(.c8-week),
+  body.c8-schedule .calendar-panel:has(.c8-day),
+  body.c8-schedule .calendar-panel:has(.cal-customer > div):has(.c8-week),
+  body.c8-schedule .calendar-panel:has(.cal-customer > div):has(.c8-day) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      'head'
+      'actions'
+      'filters'
+      'empty'
+      'well' !important;
+  }
+
+  body.c8-schedule .calendar-well:has(.c8-week),
+  body.c8-schedule .c8-week,
+  body.c8-schedule .c8-week > .relative,
+  body.c8-schedule .calendar-well:has(.c8-day),
+  body.c8-schedule .c8-day {
+    display: flex !important;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+  }
+
+  body.c8-schedule .c8-day-phone-nav {
+    display: none !important;
+  }
+
+  body.c8-schedule .c8-week-phone-nav {
+    display: flex;
+    align-self: flex-end;
+    align-items: center;
+    height: 44px !important;
+    min-height: 44px;
+    margin: 0 0 8px;
+    overflow: visible;
+  }
+
+  body.c8-schedule .channels-trigger,
+  body.c8-schedule[data-c8-view='week'] .channels-trigger,
+  body.c8-schedule[data-c8-view='day'] .channels-trigger,
+  body.c8-schedule[data-c8-view='month'] .channels-trigger,
+  body.c8-schedule[data-c8-view='list'] .channels-trigger,
+  body.c8-schedule:not([data-c8-view]) .channels-trigger {
+    display: inline-flex !important;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  body.c8-schedule .week-head,
+  body.c8-schedule .week-corner,
+  body.c8-schedule .week-time,
+  body.c8-schedule .day-time,
+  body.c8-schedule .filters-bar,
+  body.c8-schedule .c8-cal-head,
+  body.c8-schedule .channel-strip {
+    position: static !important;
+    top: auto !important;
+  }
+
+  body.c8-schedule .filters-bar,
+  body.c8-schedule .filters-bar.is-list-mode,
+  body.c8-schedule .filters-bar:has(.cal-customer > div) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  body.c8-schedule .filters-bar .date-range,
+  body.c8-schedule[data-c8-view='week'] .filters-bar .date-range,
+  body.c8-schedule[data-c8-view='day'] .filters-bar .date-range,
+  body.c8-schedule:not([data-c8-view]) .filters-bar .date-range,
+  body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode .date-range {
+    display: flex !important;
+    flex: 1 1 0;
+    flex-wrap: nowrap;
+    order: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+  }
+
+  body.c8-schedule .filters-bar .cal-customer,
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-customer {
+    order: 2;
+    flex: none;
+    margin-inline-start: 0;
+  }
+
+  body.c8-schedule .filters-bar .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode .cal-mode,
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode:has(.cal-customer > div) .cal-mode {
+    order: 2;
+    flex: 1 0 100%;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+  }
+
+  body.c8-schedule .cal-mode > button {
+    flex: 0 0 auto;
+    min-width: max-content;
+    height: 44px;
+    min-height: 44px;
+    padding: 8px 14px;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .cal-today,
+  body.c8-schedule[data-c8-view='week'] .cal-today,
+  body.c8-schedule[data-c8-view='day'] .cal-today,
+  body.c8-schedule[data-c8-view='list'] .date-range > .cal-today {
+    display: flex !important;
+    flex: none;
+    order: 2;
+  }
+
+  body.c8-schedule .cal-today > div,
+  body.c8-schedule .cal-today > div > div,
+  body.c8-schedule .cal-nav-arrow {
+    height: 44px !important;
+    min-height: 44px !important;
+    min-width: 44px;
+  }
+
+  body.c8-schedule .cal-nav,
+  body.c8-schedule .cal-list-pager {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body.c8-schedule .cal-range-label,
+  body.c8-schedule .cal-range-phone {
+    min-width: 0 !important;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .cal-list-pager.is-single-page {
+    display: none !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode .date-range {
+    display: contents !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states {
+    order: 3;
+    flex: 1 0 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states > div {
+    flex: 0 0 auto;
+    min-width: max-content;
+    height: 44px;
+  }
+
+  body.c8-schedule .filters-bar .cal-customer > div > div:not(.fixed) {
+    height: 44px;
+    min-height: 44px;
+  }
+
+  body.c8-schedule .filters-bar .cal-customer > .select-customer {
+    z-index: 1;
+  }
+
+  body.c8-schedule:has(.notify-panel) .filters-bar .cal-customer,
+  body.c8-schedule:has(.mobile-sheet) .filters-bar .cal-customer,
+  body.c8-schedule:has(.sheet-backdrop) .filters-bar .cal-customer,
+  body.c8-schedule:has(.dash-mswitch-menu) .filters-bar .cal-customer,
+  body.c8-schedule:has(.channels-scrim) .filters-bar .cal-customer,
+  body.c8-schedule:has(.channel-rail.is-open) .filters-bar .cal-customer,
+  body.c8-schedule:has(.cal-post.is-open) .filters-bar .cal-customer,
+  body.c8-schedule:has(.channel-menu-pop) .filters-bar .cal-customer {
+    visibility: hidden;
+  }
+
+  body.c8-schedule:has(.cal-post.is-open)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: color-mix(in srgb, var(--c8-hard) 72%, transparent);
+  }
+
+  body.c8-schedule .cal-post.is-open .cal-post-bar {
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-height: 80vh;
+    margin: 0;
+    padding: 8px 12px calc(20px + env(safe-area-inset-bottom));
+    border: 1.5px solid var(--c8-hard);
+    border-radius: 28px 28px 0 0;
+    background: var(--c8-surface);
+    box-shadow: none;
+    z-index: 100 !important;
+    overflow: auto;
+  }
+
+  body.c8-schedule .cal-post.is-open .cal-post-bar::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 4px auto 8px;
+    border-radius: 9px;
+    background: var(--c8-line);
+    flex: none;
+  }
+
+  body.c8-schedule .cal-post.is-open .cal-post-sheet-title {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0 4px 8px;
+    color: var(--c8-ink);
+    font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.44px;
+    line-height: 1.1;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  body.c8-schedule .cal-post-more,
+  body.c8-schedule .week-cell .cal-post-more,
+  body.c8-schedule .day-cell .cal-post-more,
+  body.c8-schedule .month-cell .cal-post-more,
+  body.c8-schedule .phone-slot .cal-post-more {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+  }
+
+  body.c8-schedule .cal-post-action {
+    min-height: 44px;
+  }
+
+  body.c8-schedule .cal-phone-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0 auto;
+  }
+
+  body.dark.c8-schedule .week-grid,
+  body.dark.c8-schedule .day-grid,
+  body.dark.c8-schedule .month-grid,
+  body.dark.c8-schedule .week-cell,
+  body.dark.c8-schedule .day-cell,
+  body.dark.c8-schedule .month-cell,
+  body.dark.c8-schedule .week-time,
+  body.dark.c8-schedule .day-time,
+  body.dark.c8-schedule .phone-slot {
+    border-color: #6e6a78 !important;
+  }
+
+  body.c8-schedule .arc-dialog:has(.c8-slots) .arc-dialog-head {
+    align-items: center;
+    min-height: 44px;
+  }
+
+  body.c8-schedule .arc-dialog:has(.c8-slots) .mantine-Modal-close {
+    position: static !important;
+    inset: auto !important;
+    width: 44px;
+    height: 44px;
+  }
+
+  body.c8-schedule .c8-slot-save {
+    margin-bottom: calc(8px + env(safe-area-inset-bottom));
   }
 }

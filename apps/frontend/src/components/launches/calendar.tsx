@@ -1500,6 +1500,10 @@ const CalendarItem: FC<{
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
       >
+        <div className="cal-post-sheet-title">
+          {stripHtmlValidation('none', post.content, false, true, false) ||
+            t('no_content', 'no content')}
+        </div>
         <div
           className={clsx(
             post?.tags?.[0]?.tag?.color ? 'mix-blend-difference' : '',
