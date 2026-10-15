@@ -84,9 +84,14 @@ export function postWorkflowPlan(
   return 'start';
 }
 
-// List view filter. Scheduled, drafts, and published keep their own windows.
-// All is published, scheduled, and draft (plus error) from `from` onward,
-// with no end. `from` is the start of today in the user's timezone.
+// List view filter.
+// All is published, scheduled, draft, and error from `from` onward, with no
+// end. `from` is the start of today in the user's timezone.
+// Scheduled stays upcoming (`publishDate >= now`). Published has no date bound.
+// Drafts have no date bound either. Upstream Postiz applies `publishDate >= now`
+// to drafts because its All tab uses that same cutoff. This All tab starts at
+// midnight, so that cutoff hid a draft All was already showing. A draft's
+// publish time is the composer date, often already in the past.
 export function postsListQuery(
   orgId: string,
   query: {
@@ -115,7 +120,7 @@ export function postsListQuery(
 
   const from = query.from ? dayjs.utc(query.from) : null;
   let publishDate: { gte: Date } | undefined;
-  if (stateFilter === 'published') {
+  if (stateFilter === 'published' || stateFilter === 'draft') {
     publishDate = undefined;
   } else if (stateFilter === 'all' && from && from.isValid()) {
     publishDate = { gte: from.toDate() };
