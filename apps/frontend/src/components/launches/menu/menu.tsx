@@ -10,7 +10,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useClickOutside } from '@mantine/hooks';
+import { createPortal } from 'react-dom';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -68,39 +68,66 @@ export const Menu: FC<{
   const modal = useModals();
   const [show, setShow] = useState<false | { x: number; y: number }>(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const ref = useClickOutside<HTMLDivElement>(() => {
-    setShow(false);
-  });
+  const ref = useRef<HTMLDivElement>(null);
   const showRef = useRef(undefined);
   const menuGap = 6;
+  const menuPad = 10;
 
-  const menuAnchor = useCallback(() => {
-    // @ts-ignore
-    const node = showRef?.current as HTMLElement | undefined;
-    const row = node?.closest?.('.channel-row, .channel-chip');
-    return (row || node)?.getBoundingClientRect();
-  }, []);
-
-  // Place the card 6px under the row. When that runs off the viewport,
-  // flip it the same 6px above the row. Open, close, and item actions stay put.
-  useLayoutEffect(() => {
-    if (show && menuRef.current) {
-      const menuRect = menuRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const padding = 10;
-
-      if (menuRect.bottom > viewportHeight - padding) {
-        const anchor = menuAnchor();
-        const flipped = anchor
-          ? anchor.top - menuGap - menuRect.height
-          : viewportHeight - menuRect.height - padding;
-        const newY = Math.max(padding, flipped);
-        if (Math.abs(show.y - newY) > 1) {
-          setShow((prev) => (prev ? { ...prev, y: newY } : false));
-        }
-      }
+  const menuPlace = useCallback(() => {
+    const trigger = ref.current?.getBoundingClientRect();
+    const row =
+      ref.current?.closest('.channel-row, .channel-chip')?.getBoundingClientRect() ||
+      trigger;
+    if (!trigger || !row) {
+      return null;
     }
-  }, [show, menuAnchor, menuGap]);
+    return {
+      x: trigger.right + menuGap,
+      y: row.top,
+    };
+  }, [ref]);
+
+  // Sit beside the three-dots, top-aligned with the row. If that runs off
+  // the viewport, shift the card up (and in from the right) until it fits.
+  // Open, close, and item actions stay put.
+  useLayoutEffect(() => {
+    if (!show || !menuRef.current) {
+      return;
+    }
+    const menuRect = menuRef.current.getBoundingClientRect();
+    let x = show.x;
+    let y = show.y;
+    if (menuRect.bottom > window.innerHeight - menuPad) {
+      y = Math.max(menuPad, window.innerHeight - menuPad - menuRect.height);
+    }
+    if (y < menuPad) {
+      y = menuPad;
+    }
+    if (menuRect.right > window.innerWidth - menuPad) {
+      x = Math.max(menuPad, window.innerWidth - menuPad - menuRect.width);
+    }
+    if (Math.abs(show.x - x) > 1 || Math.abs(show.y - y) > 1) {
+      setShow({ x, y });
+    }
+  }, [show]);
+  useEffect(() => {
+    const onOutside = (event: Event) => {
+      const target = event.target as Node | null;
+      if (!target) {
+        return;
+      }
+      if (ref.current?.contains(target) || menuRef.current?.contains(target)) {
+        return;
+      }
+      setShow(false);
+    };
+    document.addEventListener('mousedown', onOutside);
+    document.addEventListener('touchstart', onOutside);
+    return () => {
+      document.removeEventListener('mousedown', onOutside);
+      document.removeEventListener('touchstart', onOutside);
+    };
+  }, []);
   useEffect(() => {
     if (!show) {
       return;
@@ -113,27 +140,71 @@ export const Menu: FC<{
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [show]);
+  // The menu is portaled, so keep it on its row while the rail or window
+  // moves. Escape and a click outside are still the only ways to close it.
+  useEffect(() => {
+    if (!show) {
+      return;
+    }
+    const place = () => {
+      const next = menuPlace();
+      const menu = menuRef.current;
+      if (!next || !menu) {
+        return;
+      }
+      let x = next.x;
+      let y = next.y;
+      const width = menu.offsetWidth;
+      const height = menu.offsetHeight;
+      if (y + height > window.innerHeight - menuPad) {
+        y = Math.max(menuPad, window.innerHeight - menuPad - height);
+      }
+      if (y < menuPad) {
+        y = menuPad;
+      }
+      if (x + width > window.innerWidth - menuPad) {
+        x = Math.max(menuPad, window.innerWidth - menuPad - width);
+      }
+      setShow((current) => {
+        if (!current) {
+          return current;
+        }
+        if (Math.abs(current.x - x) <= 1 && Math.abs(current.y - y) <= 1) {
+          return current;
+        }
+        return { x, y };
+      });
+    };
+    const onScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && menuRef.current?.contains(target)) {
+        return;
+      }
+      place();
+    };
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', place, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [show, menuPlace]);
   const findIntegration: any = useMemo(() => {
     return integrations.find((integration) => integration.id === id);
   }, [integrations, id]);
   const changeShow: MouseEventHandler<HTMLDivElement> = useCallback(
     (e) => {
       e.stopPropagation();
-      // @ts-ignore
-      const boundBox = showRef?.current?.getBoundingClientRect();
-      const anchor = menuAnchor();
-      setShow(
-        show
-          ? false
-          : {
-              x: boundBox?.left,
-              y:
-                (anchor?.bottom ??
-                  (boundBox?.top ?? 0) + (boundBox?.height ?? 0)) + menuGap,
-            }
-      );
+      if (show) {
+        setShow(false);
+        return;
+      }
+      const next = menuPlace();
+      if (next) {
+        setShow(next);
+      }
     },
-    [show, menuAnchor, menuGap]
+    [show, menuPlace]
   );
   const disableChannel = useCallback(async () => {
     if (
@@ -373,9 +444,12 @@ export const Menu: FC<{
       <div>
         <div ref={showRef} />
       </div>
-      {show && (
+      {show &&
+        createPortal(
         <div
           ref={menuRef}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           style={{ left: show.x, top: show.y }}
           className="channel-menu-pop fixed p-[8px] bg-newBgColorInner shadow-menu flex flex-col gap-[2px] z-[100] rounded-[22px] border border-newBorder text-nowrap"
@@ -521,8 +595,9 @@ export const Menu: FC<{
             </div>
             <div className="text-[14px]">{t('delete', 'Delete')}</div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
     </div>
   );
 };
