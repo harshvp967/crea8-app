@@ -2314,7 +2314,9 @@ body.c8-schedule .channel-rail.sidebar .channel-menu-pop {
    overflow:visible here dropped scrollTop back to the first channel. */
 
 body.c8-schedule:has(.channel-menu-pop) #tooltip,
-body.c8-schedule:has(.channel-menu-pop) .react-tooltip {
+body.c8-schedule:has(.channel-menu-pop) .react-tooltip,
+body.c8-schedule:has(.customer-menu) #tooltip,
+body.c8-schedule:has(.customer-menu) .react-tooltip {
   display: none !important;
 }
 
@@ -4564,4 +4566,119 @@ body.c8-schedule .cal-post-sheet-title {
     margin-inline-start: auto;
     flex: none;
   }
+}
+
+/* Desktop calendar follow-ups. Phone (max 639) and tablet (640–1199) stay as they are.
+   The selected-customer check is left to the tablet fix, which shows it at every width. */
+
+@media (min-width: 1200px) {
+  /* The 14px month bar was covered by a 16px avatar and a 9px mark, so the
+     chip read as the mark. Fit both inside the bar, keep that bar inside the
+     day cell, and give the menu a 24px target without growing the bar. */
+  body.c8-schedule .month-cell .cal-post-body,
+  body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    height: 14px;
+    min-height: 14px;
+    max-height: 14px;
+    margin-inline: 0;
+    overflow: visible;
+  }
+
+  body.c8-schedule .month-cell .cal-post {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
+  body.c8-schedule .month-cell .cal-post-icon,
+  body.c8-schedule .month-cell .cal-post-avatar {
+    width: 10px;
+    min-width: 10px;
+    height: 10px;
+  }
+
+  body.c8-schedule .month-cell .cal-post-mark {
+    width: 6px !important;
+    height: 6px !important;
+    min-width: 6px !important;
+    min-height: 6px !important;
+  }
+
+  body.c8-schedule .month-cell .cal-post-body > .min-w-0,
+  body.c8-schedule .month-cell .line-clamp-2,
+  body.c8-schedule .month-cell .cal-chip-when {
+    overflow: hidden;
+    line-height: 12px;
+    max-height: 12px;
+  }
+
+  body.c8-schedule .month-cell .cal-post-more {
+    position: relative;
+    width: 14px;
+    min-width: 14px;
+    height: 14px;
+  }
+
+  body.c8-schedule .month-cell .cal-post-more svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  body.c8-schedule .month-cell .cal-post-more::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Edit Time Slots. The form is a centered 400px column, so its left edge
+     sits in from the dialog title. Stretch it to the title's edge. */
+  body.c8-schedule .arc-dialog:has(.c8-slots) .c8-slots {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+}
+
+@media (min-width: 640px) {
+  body.c8-schedule .cal-post.is-open.is-raised .cal-post-bar {
+    top: auto;
+    bottom: calc(100% + 8px);
+    max-height: calc(100vh - 16px);
+    overflow: auto;
+  }
+}
+
+body.c8-schedule .notify-panel a {
+  display: -webkit-box;
+  overflow: hidden;
+  word-break: break-all;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected'] {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: start;
+}
+
+body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: var(--c8-danger);
+  grid-row: 1 / span 2;
 }
