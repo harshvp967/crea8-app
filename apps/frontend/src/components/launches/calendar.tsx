@@ -1242,7 +1242,9 @@ export const CalendarColumn: FC<{
               onClick={showAllFunc}
             >
               {display === 'month' && phoneMonth ? (
-                `+${postList.length - visibleCount}`
+                t('show_more_count', '+{{count}}', {
+                  count: postList.length - visibleCount,
+                })
               ) : (
                 <>
                   {t('show_more', '+ Show more')} ({postList.length - 3})

@@ -2955,6 +2955,10 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
 }
 
 @media (max-width: 639px) {
+  body.c8-schedule .month-cell .cal-chip-when {
+    display: none;
+  }
+
   body.c8-schedule .month-grid {
     position: relative !important;
     inset: auto !important;
