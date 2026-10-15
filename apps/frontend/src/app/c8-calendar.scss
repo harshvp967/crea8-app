@@ -117,7 +117,7 @@ body.c8-schedule .channel-invite {
   box-sizing: border-box;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   body.c8-schedule .channel-strip .channel-add,
   body.c8-schedule .channel-strip .strip-create,
   body.c8-schedule .channel-strip .strip-create button {
@@ -556,7 +556,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   color: var(--c8-on-ink);
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   body.c8-schedule .c8-cal-title {
     font-size: 40px;
     line-height: 1;
@@ -564,14 +564,14 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (min-height: 501px) {
   body.c8-schedule .c8-cal-title {
     font-size: 48px;
     letter-spacing: -0.96px;
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639px), (max-height: 500px) {
   body.c8-schedule .calendar-panel {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto auto auto auto;
@@ -588,13 +588,14 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639px), (max-height: 500px) {
   body.c8-schedule .app-shell {
     padding: 61px 0 76px;
     gap: 0;
   }
 
   body.c8-schedule .app-header {
+    display: flex !important;
     position: fixed;
     z-index: 60;
     top: 0;
@@ -609,7 +610,13 @@ body.c8-schedule .phone-day-strip button.arc-selected {
     box-shadow: none;
   }
 
+  body.c8-schedule .app-header .desktop-nav,
+  body.c8-schedule .desktop-utilities {
+    display: none !important;
+  }
+
   body.c8-schedule .mobile-tabbar {
+    display: flex !important;
     position: fixed;
     z-index: 70;
     right: 0;
@@ -827,7 +834,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   color: var(--c8-ink);
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   .c8-shell {
     height: 100vh;
     max-height: 100vh;
@@ -852,7 +859,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   background: transparent;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   .c8-shell .app-header,
   .c8-shell .mobile-tabbar,
   .c8-shell .sheet-backdrop,
@@ -861,7 +868,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639px), (max-height: 500px) {
   .c8-sidebar {
     display: none !important;
   }
@@ -1205,7 +1212,7 @@ body.light .c8-shell .c8-side-foot .notify-panel {
   }
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   body.c8-schedule .calendar-panel {
     border: 0;
     border-radius: 0;
@@ -1237,14 +1244,14 @@ body.light .c8-shell .c8-side-foot .notify-panel {
   }
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   body.c8-schedule {
     --c8-rail-w: 240px;
     --c8-main-pad: 28px;
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (min-height: 501px) {
   body.c8-schedule .channel-rail:not(.is-open) {
     display: flex;
   }
@@ -1540,7 +1547,7 @@ body.c8-schedule .phone-slot .cal-post-more {
   display: inline-flex;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639px), (max-height: 500px) {
   body.c8-schedule .week-cell .cal-post-body,
   body.c8-schedule .day-cell .cal-post-body,
   body.c8-schedule .phone-slot .cal-post-body {
@@ -1579,7 +1586,7 @@ body.c8-schedule .phone-slot .cal-post-more {
   }
 }
 
-@media (min-width: 640px) and (max-width: 1199px) {
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
   body.c8-schedule .channels-trigger {
     display: inline-flex !important;
   }
@@ -1661,13 +1668,13 @@ body.c8-schedule .c8-day-label {
   line-height: 1.05;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (min-height: 501px) {
   body.c8-schedule .phone-week {
     display: none;
   }
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   body.c8-schedule .app-main {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1790,7 +1797,7 @@ body.c8-schedule .c8-day-label {
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (min-height: 501px) {
   body.c8-schedule .app-main {
     padding: 36px 40px 24px;
     row-gap: 16px;
@@ -2096,7 +2103,7 @@ body.c8-schedule[data-c8-view='list'] .date-range > .flex-1:not(.cal-today) {
   display: none;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   body.c8-schedule .channels-trigger {
     display: none !important;
   }
@@ -2473,7 +2480,7 @@ body.c8-schedule .phone-week-arrow:disabled {
   cursor: default;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639px), (max-height: 500px) {
   body.c8-schedule[data-c8-view='week'] .date-range,
   body.c8-schedule[data-c8-view='day'] .date-range,
   body.c8-schedule:not([data-c8-view]) .date-range,
@@ -2518,7 +2525,7 @@ body.c8-schedule:not([data-c8-view]) .channels-trigger {
   display: none !important;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   /* A definite height collapses auto rows to the 41px minimum, so the
      week grid has to size to its rows and scroll inside the well. */
   body.c8-schedule .week-grid {
@@ -3091,7 +3098,7 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
   }
 }
 
-@media (min-width: 640px) and (max-width: 1199px) {
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
   body.c8-schedule .cal-mode,
   body.c8-schedule .filters-bar.is-list-mode .cal-mode,
   body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-mode,
@@ -3179,7 +3186,7 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639px), (max-height: 500px) {
   body.c8-schedule .month-cell .cal-chip-when {
     display: none;
   }
@@ -3198,8 +3205,12 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     right: auto !important;
     bottom: auto !important;
     left: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     height: auto !important;
     min-height: 0;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
     grid-auto-rows: minmax(56px, auto);
   }
 
@@ -3498,7 +3509,7 @@ body.c8-schedule .cal-post-sheet-title {
   }
 }
 
-@media (min-width: 640px) and (max-width: 1199px) {
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
   body.c8-schedule .c8-shell .c8-side-foot .notify-panel {
     bottom: 16px !important;
     left: calc(var(--c8-side-w, 84px) + 12px) !important;
@@ -3841,7 +3852,7 @@ body.c8-schedule .cal-post-sheet-title {
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639px), (max-height: 500px) {
   /* Only the app header stays put. The toolbar is a normal grid row and scrolls away. */
   body.c8-schedule .app-header {
     position: fixed !important;
@@ -3858,6 +3869,9 @@ body.c8-schedule .cal-post-sheet-title {
   body.c8-schedule .calendar-panel:has(.cal-customer > div):has(.c8-week),
   body.c8-schedule .calendar-panel:has(.cal-customer > div):has(.c8-day) {
     display: grid !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     grid-template-columns: auto auto minmax(0, 1fr) !important;
     grid-template-areas:
       'head head head'
@@ -4572,7 +4586,7 @@ body.c8-schedule .cal-post-sheet-title {
 /* Desktop calendar follow-ups. Phone (max 639) and tablet (640–1199) stay as they are.
    The selected-customer check is left to the tablet fix, which shows it at every width. */
 
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (min-height: 501px) {
   /* The 14px month bar was covered by a 16px avatar and a 9px mark, so the
      chip read as the mark. Fit both inside the bar, keep that bar inside the
      day cell, and give the menu a 24px target without growing the bar. */
@@ -4648,7 +4662,7 @@ body.c8-schedule .cal-post-sheet-title {
   }
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
   body.c8-schedule .cal-post.is-open.is-raised .cal-post-bar {
     top: auto;
     bottom: calc(100% + 8px);
@@ -4685,7 +4699,7 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
 }
 
 /* Tablet QA. Phone (max-width 639) and desktop (min-width 1200) stay as they are. */
-@media (min-width: 640px) and (max-width: 1199px) {
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
   body.c8-schedule .channels-trigger,
   body.c8-schedule[data-c8-view='week'] .channels-trigger,
   body.c8-schedule[data-c8-view='day'] .channels-trigger,
@@ -4746,10 +4760,17 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
     gap: 8px;
   }
 
-  /* Give the seven day columns enough room for a time and a short title. */
+  /* Give the seven day columns enough room for a time and a short title.
+     Below 768 the shared shell zeroes this padding, which clips Schedule. */
   body.c8-schedule .app-main {
-    padding: 16px 12px 12px;
-    column-gap: 8px;
+    padding: 16px 12px 12px !important;
+    column-gap: 8px !important;
+    row-gap: 16px !important;
+  }
+
+  body.c8-schedule .phone-week,
+  body.c8-schedule .phone-day-strip {
+    display: none !important;
   }
 
   body.c8-schedule .channel-rail:not(.is-open) {
