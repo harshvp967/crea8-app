@@ -34,7 +34,7 @@ export class GetPostsListDto {
   state?: PostListStateFilter = 'all';
 
   // All tab only. Start of today in the user's timezone, as a UTC instant.
-  // Scheduled, published, and drafts ignore it.
+  // Scheduled has no date bound. Published and drafts ignore this field.
   @IsOptional()
   @IsDateString()
   from?: string;

@@ -759,7 +759,7 @@ export const ListView = () => {
   const { integrations, loading, listPosts, listState } = useCalendar();
   const emptyMessage =
     listState === 'scheduled'
-      ? t('no_upcoming_posts', 'No upcoming posts scheduled')
+      ? t('no_scheduled_posts', 'No scheduled posts')
       : listState === 'draft'
       ? t('no_draft_posts', 'No draft posts')
       : listState === 'published'

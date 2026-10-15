@@ -84,9 +84,11 @@ export function postWorkflowPlan(
   return 'start';
 }
 
-// List view filter. Scheduled, drafts, and published keep their own windows.
-// All is published, scheduled, and draft (plus error) from `from` onward,
-// with no end. `from` is the start of today in the user's timezone.
+// List view filter. Scheduled is every unpublished QUEUE post, including
+// overdue ones (no publishDate lower bound), oldest first. Drafts stay from
+// now on. Published has no date window. All is published, scheduled, and
+// draft (plus error) from `from` onward, with no end. `from` is the start of
+// today in the user's timezone. Scheduled, published, and drafts ignore it.
 export function postsListQuery(
   orgId: string,
   query: {
@@ -115,7 +117,7 @@ export function postsListQuery(
 
   const from = query.from ? dayjs.utc(query.from) : null;
   let publishDate: { gte: Date } | undefined;
-  if (stateFilter === 'published') {
+  if (stateFilter === 'published' || stateFilter === 'scheduled') {
     publishDate = undefined;
   } else if (stateFilter === 'all' && from && from.isValid()) {
     publishDate = { gte: from.toDate() };
