@@ -1972,7 +1972,7 @@ body.c8-schedule .channels-scrim {
   inset: 0;
   z-index: 70;
   border: 0;
-  background: rgba(18, 16, 22, 0.35);
+  background: var(--c8-hard);
 }
 
 body.c8-schedule[data-c8-view='list'] .cal-list-pager > div:nth-child(2),
@@ -2593,7 +2593,13 @@ body.c8-schedule .c8-slots .c8-dropdown-trigger {
 }
 
 body.c8-schedule .c8-slots .c8-dropdown-menu {
-  position: fixed;
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: auto !important;
   z-index: 500;
   max-height: 220px;
   overflow: auto;
@@ -2605,6 +2611,21 @@ body.c8-schedule .c8-slots .c8-dropdown-menu {
   border-radius: 16px;
   background: var(--c8-surface);
   box-shadow: 0 6px 0 var(--c8-hard);
+  scrollbar-width: thin;
+  scrollbar-color: var(--c8-muted) transparent;
+}
+
+body.c8-schedule .c8-slots .c8-dropdown-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.c8-schedule .c8-slots .c8-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body.c8-schedule .c8-slots .c8-dropdown-menu::-webkit-scrollbar-thumb {
+  background: var(--c8-line);
+  border-radius: 8px;
 }
 
 body.c8-schedule .c8-slots .c8-dropdown-option {
@@ -2645,6 +2666,11 @@ body.c8-schedule .c8-slots .c8-slot-row {
   border-radius: 16px;
   background: var(--c8-surface);
   box-shadow: none;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .c8-slots .c8-slot-row span {
+  color: var(--c8-ink);
 }
 
 body.c8-schedule .c8-slots .c8-slot-save {
@@ -2726,4 +2752,410 @@ body.c8-schedule .c8-slots .c8-slot-save {
 .c8-preview img {
   background: var(--c8-soft);
   border-color: var(--c8-line);
+}
+
+/* Tablet and phone calendar chrome. Display only. */
+
+body.c8-schedule .mantine-Overlay-root,
+body.c8-schedule .arc-dialog-wrap,
+body.c8-schedule .channels-scrim,
+body.c8-schedule .sheet-backdrop,
+body.c8-schedule .bg-c8-scrim,
+body.c8-schedule .bg-c8-scrim-sheet {
+  background: var(--c8-hard) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.c8-schedule .notify-panel,
+body.c8-schedule .arc-menu,
+body.c8-schedule .dash-mswitch-menu,
+body.c8-schedule .mobile-sheet,
+body.c8-schedule .channel-rail {
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+body.c8-schedule .po-sure-title,
+body.c8-schedule .arc-dialog .arc-dialog-head > div:first-child {
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif !important;
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.52px;
+  line-height: 1.05;
+  color: var(--c8-ink);
+}
+
+body.c8-schedule .arc-dialog .mantine-Modal-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+}
+
+@media (max-width: 1199px) {
+  body.c8-schedule .cal-mode > button[aria-checked='true'] {
+    box-shadow: 0 1px 0 var(--c8-hard);
+  }
+
+  body.c8-schedule .week-cell .cal-col.is-past,
+  body.c8-schedule .day-cell .cal-col.is-past,
+  body.c8-schedule .phone-slot .cal-col.is-past,
+  body.c8-schedule .month-cell:has(.cal-col.is-past) {
+    background: color-mix(in srgb, var(--c8-muted) 5%, var(--c8-surface)) !important;
+    border-radius: 0;
+  }
+
+  body.c8-schedule .c8-side-avatar {
+    display: none;
+  }
+
+  body.c8-schedule .c8-side-user {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  body.c8-schedule .c8-side-foot > .relative {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--c8-line);
+    border-radius: 12px;
+    background: var(--c8-surface);
+  }
+
+  body.c8-schedule .c8-shell .c8-side-foot .notify-panel {
+    border: 1.5px solid var(--c8-hard);
+    padding: 6px;
+    font-size: 14px;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.c8-schedule .c8-shell .c8-side-foot .notify-panel > div:last-child {
+    max-height: min(420px, calc(100vh - 180px)) !important;
+    min-height: 0;
+    flex: none;
+    overflow: auto;
+  }
+
+  body.c8-schedule .month-head {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open) {
+    display: none !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .channel-rail.is-open {
+    display: flex !important;
+    position: fixed !important;
+    z-index: 80;
+    inset: 48px;
+    width: min(420px, calc(100vw - 48px)) !important;
+    height: auto !important;
+    max-height: calc(100vh - 96px);
+    margin: auto;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div {
+    position: relative !important;
+    height: auto !important;
+    max-height: calc(100vh - 96px);
+    overflow: auto;
+    border: 1.5px solid var(--c8-hard);
+    border-radius: 28px;
+    background: var(--c8-surface);
+  }
+
+  body.c8-schedule .channel-rail.is-open > div::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 4px auto 8px;
+    border-radius: 9px;
+    background: var(--c8-line);
+    flex: none;
+  }
+
+  body.c8-schedule .channels-trigger,
+  body.c8-schedule[data-c8-view='week'] .channels-trigger,
+  body.c8-schedule[data-c8-view='day'] .channels-trigger,
+  body.c8-schedule[data-c8-view='month'] .channels-trigger,
+  body.c8-schedule[data-c8-view='list'] .channels-trigger,
+  body.c8-schedule:not([data-c8-view]) .channels-trigger {
+    display: inline-flex !important;
+  }
+}
+
+@media (max-width: 639px) {
+  body.c8-schedule .month-grid {
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    height: auto !important;
+    min-height: 0;
+    grid-auto-rows: minmax(56px, auto);
+  }
+
+  body.c8-schedule .calendar-well:has(.month-grid),
+  body.c8-schedule .calendar-well:has(.month-grid) > .flex,
+  body.c8-schedule .calendar-well:has(.month-grid) > .flex > .flex {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body.c8-schedule .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode .cal-mode {
+    height: auto;
+    margin: 0;
+    padding: 0 !important;
+    gap: 6px;
+    border-radius: 0;
+    background: transparent !important;
+  }
+
+  body.c8-schedule .cal-mode > button {
+    height: 34px;
+    min-height: 34px;
+    padding: 8px 14px;
+    border: 1px solid var(--c8-line);
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    box-shadow: none;
+  }
+
+  body.c8-schedule .cal-mode > button[aria-checked='true'] {
+    border-color: var(--c8-ink);
+    background: var(--c8-ink);
+    color: var(--c8-on-ink);
+    box-shadow: none;
+  }
+
+  body.c8-schedule .phone-week-arrow,
+  body.c8-schedule .cal-nav-arrow,
+  body.c8-schedule .cal-today > div > div,
+  body.c8-schedule .c8-day-phone-nav button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  body.c8-schedule .phone-week-arrow {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid var(--c8-line);
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    opacity: 1;
+  }
+
+  body.c8-schedule .app-logo,
+  body.c8-schedule .app-logo .logo-word,
+  body.c8-schedule .app-logo .logo-word svg {
+    height: 24px !important;
+    max-height: 24px !important;
+    width: auto !important;
+  }
+
+  body.c8-schedule .dash-mswitch-btn {
+    height: 37px;
+    padding: 0 12px 0 6px;
+    border: 1.5px solid var(--c8-hard);
+    border-radius: 999px;
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    box-shadow: 0 3px 0 var(--c8-hard);
+    font-family: var(--font-body), Inter, sans-serif;
+  }
+
+  body.c8-schedule .dash-mswitch-btn::before {
+    content: '';
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: var(--c8-app-schedule);
+    flex: none;
+  }
+
+  body.c8-schedule .dash-mswitch-menu {
+    border: 1.5px solid var(--c8-hard);
+    border-radius: 16px;
+    background: var(--c8-surface);
+    box-shadow: 0 6px 0 var(--c8-hard);
+  }
+
+  body.c8-schedule .dash-mswitch-menu a.arc-selected {
+    background: var(--c8-soft);
+    background-image: none;
+    color: var(--c8-ink);
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  body.c8-schedule .header-tools .header-theme,
+  body.c8-schedule .header-tools .relative.cursor-pointer {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--c8-line);
+    border-radius: 12px;
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+  }
+
+  body.c8-schedule .header-tools .rounded-full,
+  body.c8-schedule .c8-side-foot .rounded-full {
+    background: var(--c8-danger) !important;
+    border-color: var(--c8-surface) !important;
+  }
+
+  body.c8-schedule:has(.notify-panel) .app-header {
+    z-index: 200;
+  }
+
+  body.c8-schedule .c8-shell:has(.notify-panel)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: var(--c8-hard);
+  }
+
+  body.c8-schedule .notify-panel {
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    max-height: 80vh !important;
+    margin: 0 !important;
+    padding: 8px 12px 24px !important;
+    border: 1.5px solid var(--c8-hard) !important;
+    border-radius: 28px 28px 0 0 !important;
+    background: var(--c8-surface) !important;
+    box-shadow: none !important;
+    overflow: auto !important;
+    z-index: 5 !important;
+    font-size: 14px;
+    animation: c8-sheet 300ms cubic-bezier(0, 0, 0.2, 1) forwards !important;
+  }
+
+  body.c8-schedule .notify-panel::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 4px auto 8px;
+    border-radius: 9px;
+    background: var(--c8-line);
+    flex: none;
+  }
+
+  body.c8-schedule .notify-panel > div:last-child {
+    max-height: none !important;
+    min-height: auto;
+    flex: none;
+    overflow: visible !important;
+  }
+
+  body.c8-schedule .notify-panel a {
+    display: -webkit-box;
+    overflow: hidden;
+    word-break: break-all;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div {
+    border: 1.5px solid var(--c8-hard);
+    border-radius: 28px 28px 0 0 !important;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 8px auto 4px;
+    border-radius: 9px;
+    background: var(--c8-line);
+    flex: none;
+  }
+
+  body.c8-schedule .sheet-backdrop {
+    display: block !important;
+    z-index: 72;
+    background: var(--c8-hard) !important;
+  }
+
+  body.c8-schedule .mobile-sheet {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 80;
+    max-height: 80vh;
+    padding-top: 8px;
+    border: 1.5px solid var(--c8-hard);
+    border-radius: 28px 28px 0 0 !important;
+    background: var(--c8-surface);
+    box-shadow: none;
+    font-size: 14px;
+  }
+
+  body.c8-schedule .mobile-sheet::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 4px auto 8px;
+    border-radius: 9px;
+    background: var(--c8-line);
+    flex: none;
+  }
+
+  body.c8-schedule .arc-dialog-wrap:has(.c8-slots) {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  body.c8-schedule .arc-dialog-wrap:has(.c8-slots) .relative.flex-1 > div {
+    position: static !important;
+    display: flex;
+    align-items: flex-end;
+    min-height: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
+  body.c8-schedule .arc-dialog:has(.c8-slots) {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    border-radius: 28px 28px 0 0 !important;
+    border: 1.5px solid var(--c8-hard);
+    max-height: 90vh;
+  }
 }

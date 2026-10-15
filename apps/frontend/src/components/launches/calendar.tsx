@@ -558,6 +558,17 @@ export const DayView = () => {
     </div>
   );
 };
+const pageContainingToday = (weekStart: string) => {
+  const todayKey = displayNow().format('YYYY-MM-DD');
+  const start = displayDayjs(weekStart);
+  for (let index = 0; index < 7; index += 1) {
+    if (start.add(index, 'day').format('YYYY-MM-DD') === todayKey) {
+      return Math.min(2, Math.floor(index / 3));
+    }
+  }
+  return 0;
+};
+
 export const WeekView = () => {
   const { startDate } = useCalendar();
   const visibleHours = hours;
@@ -572,8 +583,8 @@ export const WeekView = () => {
     return () => media.removeEventListener('change', sync);
   }, []);
 
-  useEffect(() => {
-    setPhonePage(0);
+  useLayoutEffect(() => {
+    setPhonePage(pageContainingToday(startDate));
   }, [startDate]);
 
   // Use dayjs to get localized day names
@@ -695,9 +706,17 @@ export const WeekView = () => {
 export const MonthView = () => {
   const { startDate } = useCalendar();
   const t = useT();
-  const narrow = useNarrowLayout();
+  const [compactHeads, setCompactHeads] = useState(false);
 
-  // Use dayjs to get localized day names. Phone cells are too narrow for full names.
+  useLayoutEffect(() => {
+    const media = window.matchMedia('(max-width: 1199px)');
+    const sync = () => setCompactHeads(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+
+  // Use dayjs to get localized day names. Below 1200 the cells are too narrow for full names.
   const localizedDays = useMemo(() => {
     const currentLanguage = i18next.resolvedLanguage || 'en';
     dayjs.locale(currentLanguage);
@@ -705,10 +724,10 @@ export const MonthView = () => {
     const days = [];
     // Starting from Monday (1) to Sunday (7)
     for (let i = 1; i <= 7; i++) {
-      days.push(displayNow().day(i).format(narrow ? 'ddd' : 'dddd'));
+      days.push(displayNow().day(i).format(compactHeads ? 'ddd' : 'dddd'));
     }
     return days;
-  }, [i18next.resolvedLanguage, narrow]);
+  }, [i18next.resolvedLanguage, compactHeads]);
 
   const calendarDays = useMemo(() => {
     const monthStart = displayDayjs(startDate);

@@ -153,7 +153,7 @@ module.exports = {
         loginBg: 'url(/auth/bg-login.png)',
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'Helvetica Neue', 'sans-serif'],
+        sans: ['var(--font-body)', 'Inter', 'sans-serif'],
         'c8-heading': ['var(--font-heading)', 'Bricolage Grotesque', 'sans-serif'],
         'c8-body': ['var(--font-body)', 'Inter', 'sans-serif'],
       },
