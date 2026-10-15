@@ -1486,7 +1486,7 @@ body.c8-schedule .cal-chip-when {
 }
 
 body.c8-schedule .cal-chip-when::after {
-  content: ' ·';
+  content: ' · ';
   font-weight: 500;
 }
 
@@ -3449,14 +3449,42 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
   }
 
   body.c8-schedule .arc-dialog:has(.c8-slots) {
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    display: flex !important;
+    flex-direction: column;
     width: 100% !important;
     max-width: none !important;
     min-width: 0 !important;
     margin: 0 !important;
     border-radius: 28px 28px 0 0 !important;
     border: 1.5px solid var(--c8-hard);
-    max-height: 90vh;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+    max-height: calc(100vh - 8px);
+    overflow: hidden;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body.c8-schedule .arc-dialog:has(.c8-slots) .c8-slots {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: none;
+    max-height: calc(100vh - 128px);
+    margin-inline: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body.c8-schedule .arc-dialog:has(.c8-slots) .c8-slots > div:last-child {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 12px;
+    padding-top: 8px;
+    background: var(--c8-surface);
   }
 }
 
@@ -4448,6 +4476,77 @@ body.c8-schedule .cal-post-sheet-title {
     min-height: 44px !important;
   }
 
+  /* The 44px control is taller than a week or month chip, so the icon is
+     clipped and focusing it scrolls the grid. The scroll listener then
+     closes the menu. Sit a 24px target on the chip instead. */
+  body.c8-schedule .week-cell .cal-post-body,
+  body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body,
+  body.c8-schedule .day-cell .cal-post-body,
+  body.c8-schedule .day-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .day-cell .cal-post.is-draft .cal-post-body,
+  body.c8-schedule .phone-slot .cal-post-body,
+  body.c8-schedule .phone-slot .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .phone-slot .cal-post.is-draft .cal-post-body {
+    position: relative;
+    overflow: visible;
+    min-height: 30px;
+    padding-inline-end: 26px;
+  }
+
+  body.c8-schedule .month-cell .cal-post-body,
+  body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
+    position: relative;
+    overflow: visible;
+    height: auto;
+    min-height: 24px;
+    max-height: none;
+    padding-inline-end: 26px;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more,
+  body.c8-schedule .day-cell .cal-post-more,
+  body.c8-schedule .month-cell .cal-post-more,
+  body.c8-schedule .phone-slot .cal-post-more {
+    position: absolute;
+    z-index: 2;
+    inset-inline-end: 1px;
+    top: 50%;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    margin: 0;
+    transform: translateY(-50%);
+    background: transparent;
+    opacity: 1;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more svg,
+  body.c8-schedule .day-cell .cal-post-more svg,
+  body.c8-schedule .month-cell .cal-post-more svg,
+  body.c8-schedule .phone-slot .cal-post-more svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more::before,
+  body.c8-schedule .day-cell .cal-post-more::before,
+  body.c8-schedule .month-cell .cal-post-more::before,
+  body.c8-schedule .phone-slot .cal-post-more::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+
   body.c8-schedule .cal-post-action {
     min-height: 44px;
   }
@@ -4493,9 +4592,29 @@ body.c8-schedule .cal-post-sheet-title {
     overflow: hidden;
   }
 
+  /* The hour column is a grid. Its min-content track grew to the week-grid
+     width, so the chip ran past the screen and the ⋮ could not be tapped. */
+  body.c8-schedule .phone-slot .cal-col,
+  body.c8-schedule .phone-slot-posts > .cal-col {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body.c8-schedule .phone-slot .cal-col > div,
+  body.c8-schedule .phone-slot .cal-post,
+  body.c8-schedule .phone-slot .cal-post-body,
+  body.c8-schedule .phone-slot .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .phone-slot .cal-post.is-draft .cal-post-body {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   body.c8-schedule .phone-slot-posts {
-    overflow: hidden;
+    overflow: clip;
     min-height: 0;
+    min-width: 0;
+    max-width: 100%;
   }
 
   body.c8-schedule .phone-slot .cal-post-body,
@@ -4605,18 +4724,17 @@ body.c8-schedule .cal-post-sheet-title {
    The selected-customer check is left to the tablet fix, which shows it at every width. */
 
 @media (min-width: 1200px) and (min-height: 501px) {
-  /* The 14px month bar was covered by a 16px avatar and a 9px mark, so the
-     chip read as the mark. Fit both inside the bar, keep that bar inside the
-     day cell, and give the menu a 24px target without growing the bar. */
+  /* The chip has to stay readable, with the avatar inside the bar and the
+     menu icon large enough to see. The 44px hit area is a pseudo-element. */
   body.c8-schedule .month-cell .cal-post-body,
   body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
   body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
     box-sizing: border-box;
     width: 100%;
     max-width: 100%;
-    height: 14px;
-    min-height: 14px;
-    max-height: 14px;
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
     margin-inline: 0;
     overflow: visible;
   }
@@ -4629,36 +4747,38 @@ body.c8-schedule .cal-post-sheet-title {
 
   body.c8-schedule .month-cell .cal-post-icon,
   body.c8-schedule .month-cell .cal-post-avatar {
-    width: 10px;
-    min-width: 10px;
-    height: 10px;
+    width: 14px;
+    min-width: 14px;
+    height: 14px;
   }
 
   body.c8-schedule .month-cell .cal-post-mark {
-    width: 6px !important;
-    height: 6px !important;
-    min-width: 6px !important;
-    min-height: 6px !important;
+    width: 7px !important;
+    height: 7px !important;
+    min-width: 7px !important;
+    min-height: 7px !important;
+    right: -2px;
+    bottom: -2px;
   }
 
   body.c8-schedule .month-cell .cal-post-body > .min-w-0,
   body.c8-schedule .month-cell .line-clamp-2,
   body.c8-schedule .month-cell .cal-chip-when {
     overflow: hidden;
-    line-height: 12px;
-    max-height: 12px;
+    line-height: 16px;
+    max-height: 16px;
   }
 
   body.c8-schedule .month-cell .cal-post-more {
     position: relative;
-    width: 14px;
-    min-width: 14px;
-    height: 14px;
+    width: 18px;
+    min-width: 18px;
+    height: 18px;
   }
 
   body.c8-schedule .month-cell .cal-post-more svg {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
   }
 
   body.c8-schedule .month-cell .cal-post-more::before {
@@ -4666,8 +4786,8 @@ body.c8-schedule .cal-post-sheet-title {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 24px;
-    height: 24px;
+    width: 44px;
+    height: 44px;
     transform: translate(-50%, -50%);
   }
 
@@ -4876,28 +4996,49 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
     min-width: 0;
   }
 
-  body.c8-schedule .week-cell .cal-post-more {
+  body.c8-schedule .week-cell .cal-post-body,
+  body.c8-schedule .month-cell .cal-post-body {
+    position: relative;
+    overflow: visible;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more,
+  body.c8-schedule .month-cell .cal-post-more {
     position: absolute;
     inset-inline-end: 1px;
     top: 50%;
-    width: 14px;
-    min-width: 14px;
-    height: 14px;
+    display: inline-flex;
+    width: 18px;
+    min-width: 18px;
+    height: 18px;
     margin: 0;
     transform: translateY(-50%);
-    background: var(--c8-surface);
-    opacity: 0;
+    background: transparent;
+    opacity: 1;
   }
 
-  body.c8-schedule .week-cell .cal-post:hover .cal-post-more,
-  body.c8-schedule .week-cell .cal-post:focus-within .cal-post-more {
-    opacity: 1;
+  body.c8-schedule .week-cell .cal-post-more svg,
+  body.c8-schedule .month-cell .cal-post-more svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more::before,
+  body.c8-schedule .month-cell .cal-post-more::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
   }
 }
 
 /* 820-wide day columns fit a time plus a short title once the avatar steps aside. */
 @media (min-width: 640px) and (max-width: 899px) and (min-height: 501px) {
-  body.c8-schedule .week-cell .cal-post-icon {
+  body.c8-schedule .week-cell .cal-post-icon,
+  body.c8-schedule .month-cell .cal-post-icon {
     display: none !important;
   }
 }
@@ -5005,5 +5146,351 @@ body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::be
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+/* The platform mark sits on the corner of the avatar instead of covering it. */
+body.c8-schedule .week-cell .cal-post-icon {
+  overflow: visible;
+  width: 20px;
+  min-width: 20px;
+  height: 18px;
+}
+
+body.c8-schedule .week-cell .cal-post-avatar {
+  width: 16px;
+  height: 16px;
+}
+
+body.c8-schedule .week-cell .cal-post-mark {
+  right: -4px;
+  bottom: -2px;
+  width: 8px !important;
+  height: 8px !important;
+  min-width: 8px !important;
+  min-height: 8px !important;
+}
+
+body.c8-schedule .week-cell .cal-post-body,
+body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
+body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body {
+  gap: 4px;
+  overflow: visible;
+}
+
+body.c8-schedule .cal-show-more-short {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .month-cell .cal-show-more-full {
+    display: none;
+  }
+
+  body.c8-schedule .month-cell .cal-show-more-short {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .channel-rail:not(.sidebar) {
+    width: 252px !important;
+  }
+
+  body.c8-schedule .channel-rail:not(.sidebar) > div {
+    padding: 10px 8px;
+  }
+}
+
+@media (max-width: 412px) {
+  body.c8-schedule .cal-scope-row {
+    column-gap: 4px;
+  }
+
+  body.c8-schedule .filters-bar .cal-customer,
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-customer {
+    max-width: calc(100cqw - 148px);
+  }
+
+  body.c8-schedule .cal-mode > button {
+    padding: 0 6px;
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 500px) {
+  /* Dropdown under the customer chip. Inline top/left stay so it is not a full-width sheet. */
+  body.c8-schedule .customer-menu {
+    right: auto !important;
+    bottom: auto !important;
+    width: max-content !important;
+    min-width: 220px !important;
+    max-width: min(280px, calc(100vw - 24px)) !important;
+    max-height: calc(100vh - 250px) !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .calendar-panel,
+  body.c8-schedule[data-c8-view='list'] .calendar-panel:has(.cal-customer > div) {
+    grid-template-areas:
+      'actions actions actions'
+      'scope scope scope'
+      'states states states'
+      'well well well' !important;
+    row-gap: 4px !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states {
+    grid-area: states !important;
+    align-self: start;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .c8-phone-period {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .calendar-well {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  body.c8-schedule .arc-dialog:has(.c8-slots) {
+    padding-top: 8px !important;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body.c8-schedule .arc-dialog:has(.c8-slots) .c8-slots {
+    max-height: calc(100vh - 88px);
+  }
+
+  body.c8-schedule .c8-slots .c8-slot-row {
+    height: 36px;
+    padding: 0 12px;
+  }
+
+  body.c8-schedule .c8-slots .mt-\[20px\],
+  body.c8-schedule .c8-slots > div:last-child {
+    margin-top: 8px !important;
+  }
+
+  body.c8-schedule .c8-slots .gap-\[8px\] {
+    gap: 4px !important;
+  }
+
+  body.c8-schedule .c8-slots .mb-\[12px\],
+  body.c8-schedule .c8-slots .mb-\[16px\] {
+    margin-bottom: 6px !important;
+  }
+
+  body.c8-schedule .month-grid {
+    min-height: 0 !important;
+    grid-template-rows: 18px !important;
+    grid-auto-rows: 36px !important;
+  }
+
+  body.c8-schedule .month-cell .min-h-\[70px\],
+  body.c8-schedule .month-cell .cal-col > div {
+    min-height: 0 !important;
+  }
+
+  body.c8-schedule .month-head {
+    height: 18px !important;
+    min-height: 0 !important;
+    max-height: 18px !important;
+    padding: 0 !important;
+    font-size: 11px;
+    line-height: 14px;
+  }
+
+  body.c8-schedule .month-cell {
+    min-height: 28px !important;
+    padding: 1px 2px !important;
+  }
+
+  body.c8-schedule .c8-phone-period.is-full .c8-phone-period-title,
+  body.c8-schedule .c8-phone-period.is-relative .c8-phone-period-title {
+    font-size: 16px;
+  }
+
+  body.c8-schedule .c8-phone-period-small {
+    display: none;
+  }
+}
+
+/* The open menu is portaled so a week row stays the chip height. */
+body.c8-schedule .cal-post-bar.is-overlay {
+  display: flex !important;
+  position: fixed !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: max-content !important;
+  min-width: 188px;
+  max-width: min(280px, calc(100vw - 16px));
+  margin: 0 !important;
+  z-index: 80 !important;
+  overflow: auto;
+}
+
+/* Text stops before the ⋮. The 44px hit area hangs off the icon and does not take a layout slot. */
+@media (max-width: 639px) {
+  body.c8-schedule .week-cell .cal-post-icon,
+  body.c8-schedule .week-cell .cal-post-avatar {
+    width: 14px;
+    min-width: 14px;
+    height: 14px;
+  }
+
+  body.c8-schedule .week-cell .cal-post-body,
+  body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body {
+    box-sizing: border-box;
+    gap: 2px;
+    padding-inline-end: 24px !important;
+  }
+
+  body.c8-schedule .week-cell .cal-chip-when {
+    flex: 0 1 auto;
+    max-width: calc(100% - 2px);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .week-cell .cal-post-body > .min-w-0,
+  body.c8-schedule .week-cell .line-clamp-2 {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .week-cell .cal-post-body,
+  body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body,
+  body.c8-schedule .month-cell .cal-post-body,
+  body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
+    box-sizing: border-box;
+    padding-inline-end: 22px !important;
+  }
+
+  body.c8-schedule .week-cell .cal-chip-when,
+  body.c8-schedule .month-cell .cal-chip-when {
+    flex: 0 1 auto;
+    max-width: calc(100% - 2px);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .week-cell .cal-post-body > .min-w-0,
+  body.c8-schedule .month-cell .cal-post-body > .min-w-0,
+  body.c8-schedule .week-cell .line-clamp-2,
+  body.c8-schedule .month-cell .line-clamp-2 {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .month-cell .flex.flex-col.w-full {
+    gap: 2px;
+  }
+
+  body.c8-schedule .month-cell .flex.flex-col.w-full > .p-\[2\.5px\] {
+    padding: 0 !important;
+  }
+
+  body.c8-schedule .week-corner,
+  body.c8-schedule .week-head {
+    z-index: 30;
+    background: var(--c8-surface) !important;
+  }
+
+  body.c8-schedule .week-time {
+    z-index: 1;
+    overflow: hidden !important;
+  }
+
+  body.c8-schedule .week-cell:has(.cal-post.is-open),
+  body.c8-schedule .day-cell:has(.cal-post.is-open) {
+    min-height: 41px !important;
+  }
+
+  body.c8-schedule .week-cell:has(.cal-post.is-open) > .cal-col::before,
+  body.c8-schedule .day-cell:has(.cal-post.is-open) > .cal-col::before,
+  body.c8-schedule .week-cell:has(.cal-post.is-open) .cal-add,
+  body.c8-schedule .day-cell:has(.cal-post.is-open) .cal-add,
+  body.c8-schedule .week-cell:focus-within:not(:hover) > .cal-col::before,
+  body.c8-schedule .day-cell:focus-within:not(:hover) > .cal-col::before,
+  body.c8-schedule .day-cell:not(:hover) > .cal-col::before,
+  body.c8-schedule .week-cell:focus-within:not(:hover) .cal-add,
+  body.c8-schedule .day-cell:focus-within:not(:hover) .cal-add,
+  body.c8-schedule .day-cell:not(:hover) .cal-add {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    flex: 0 0 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    pointer-events: none;
+  }
+
+  body.c8-schedule .day-cell:not(:hover) .cal-add > div,
+  body.c8-schedule .day-cell:focus-within:not(:hover) .cal-add > div,
+  body.c8-schedule .week-cell:focus-within:not(:hover) .cal-add > div {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: transparent !important;
+  }
+
+  body.c8-schedule .day-cell:not(:hover) .cal-add > div::before,
+  body.c8-schedule .week-cell:not(:hover) .cal-add > div::before {
+    content: none !important;
+  }
+
+  body.c8-schedule .cal-list,
+  body.c8-schedule .cal-list > div,
+  body.c8-schedule .cal-list-group,
+  body.c8-schedule .cal-list .cal-post {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body.c8-schedule .cal-list .cal-post-body,
+  body.c8-schedule .cal-list .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .cal-list .cal-post.is-draft .cal-post-body {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    grid-template-columns: 36px minmax(0, 1fr) auto 28px;
+  }
+
+  body.c8-schedule .cal-list .cal-post-icon {
+    position: relative;
+  }
+
+  body.c8-schedule .cal-list .cal-post-mark {
+    right: -2px;
+    bottom: -2px;
+  }
+
+  body.c8-schedule .cal-list .cal-list-status {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

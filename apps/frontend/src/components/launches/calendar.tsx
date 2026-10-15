@@ -11,6 +11,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import {
   CalendarContext,
   Integrations,
@@ -1218,7 +1219,10 @@ export const CalendarColumn: FC<{
                 })
               ) : (
                 <>
-                  {t('show_more', '+ Show more')} ({postList.length - 3})
+                  <span className="cal-show-more-full">
+                    {t('show_more', '+ Show more')} ({postList.length - 3})
+                  </span>
+                  <span className="cal-show-more-short">+{postList.length - 3}</span>
                 </>
               )}
             </div>
@@ -1364,18 +1368,22 @@ const CalendarItem: FC<{
     post.creationMethod !== 'UNKNOWN';
   const [actionsOpen, setActionsOpen] = useState(false);
   const postRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuContains = (node: Node | null) =>
+    !!node &&
+    (!!postRef.current?.contains(node) || !!menuRef.current?.contains(node));
   useEffect(() => {
     if (!actionsOpen) {
       return;
     }
     const onPointerDown = (event: PointerEvent) => {
-      if (!postRef.current?.contains(event.target as Node)) {
+      if (!menuContains(event.target as Node)) {
         setActionsOpen(false);
       }
     };
     const onScroll = (event: Event) => {
       const target = event.target;
-      if (target instanceof Node && postRef.current?.contains(target)) {
+      if (target instanceof Node && menuContains(target)) {
         return;
       }
       setActionsOpen(false);
@@ -1395,26 +1403,40 @@ const CalendarItem: FC<{
     };
   }, [actionsOpen]);
   useLayoutEffect(() => {
-    const node = postRef.current;
-    const bar = node?.querySelector<HTMLElement>('.cal-post-bar');
-    if (!node || !bar) {
+    const post = postRef.current;
+    const bar = menuRef.current;
+    if (!bar) {
       return;
     }
-    bar.style.maxHeight = '';
-    node.classList.remove('is-raised');
-    if (!actionsOpen || window.innerWidth < 640) {
+    const overlay =
+      actionsOpen && window.innerWidth >= 640 && window.innerHeight > 500;
+    if (!overlay || !post) {
+      bar.style.top = '';
+      bar.style.left = '';
+      bar.style.right = '';
+      bar.style.bottom = '';
+      bar.style.maxHeight = '';
       return;
     }
-    const menu = bar.getBoundingClientRect();
-    const postBox = node.getBoundingClientRect();
-    if (menu.bottom <= window.innerHeight - 8) {
-      return;
+    const postBox = post.getBoundingClientRect();
+    const width = Math.max(bar.offsetWidth, 188);
+    const height = bar.scrollHeight;
+    let left = postBox.left;
+    if (left + width > window.innerWidth - 8) {
+      left = Math.max(8, window.innerWidth - width - 8);
     }
-    node.classList.add('is-raised');
-    const spaceAbove = postBox.top - 8;
-    if (menu.height > spaceAbove) {
-      bar.style.maxHeight = `${Math.max(80, spaceAbove)}px`;
+    const gap = 4;
+    let top = postBox.bottom + gap;
+    let maxHeight = Math.max(80, window.innerHeight - top - 8);
+    if (height > maxHeight && postBox.top > gap + 8) {
+      maxHeight = Math.max(80, postBox.top - 8);
+      top = Math.max(8, postBox.top - gap - Math.min(height, maxHeight));
     }
+    bar.style.top = `${Math.round(top)}px`;
+    bar.style.left = `${Math.round(left)}px`;
+    bar.style.right = 'auto';
+    bar.style.bottom = 'auto';
+    bar.style.maxHeight = `${Math.round(maxHeight)}px`;
   }, [actionsOpen]);
   const preview = useCallback(() => {
     window.open(`/p/` + post.id + '?share=true', '_blank');
@@ -1472,11 +1494,19 @@ const CalendarItem: FC<{
           />
         </div>
       )}
-      <div
-        className="cal-post-bar"
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
-      >
+      {(() => {
+        const overlay =
+          actionsOpen &&
+          typeof window !== 'undefined' &&
+          window.innerWidth >= 640 &&
+          window.innerHeight > 500;
+        const bar = (
+          <div
+            ref={menuRef}
+            className={clsx('cal-post-bar', overlay && 'is-overlay')}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
         <div className="cal-post-sheet-title">
           {stripHtmlValidation('none', post.content, false, true, false) ||
             t('no_content', 'no content')}
@@ -1522,7 +1552,10 @@ const CalendarItem: FC<{
           <DeletePost />
           <span>{t('delete_post', 'Delete Post')}</span>
         </div>
-      </div>
+          </div>
+        );
+        return overlay ? createPortal(bar, document.body) : bar;
+      })()}
       <div
         onClick={editPost}
         className="cal-post-body gap-[6px] w-full flex h-full flex-1 p-[6px] text-[13px] relative"
