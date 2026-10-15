@@ -10,6 +10,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { UserIcon, DropdownArrowIcon } from '@gitroom/frontend/components/ui/icons';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export const SelectCustomer: FC<{
   onChange: (value: string) => void;
@@ -94,26 +95,32 @@ export const SelectCustomer: FC<{
       {open && (
         <div
           style={pos}
-          className="flex flex-col fixed pt-[12px] bg-newBgColorInner menu-shadow min-w-[250px]"
+          className="customer-menu flex flex-col fixed pt-[12px] bg-newBgColorInner menu-shadow min-w-[250px]"
         >
-          <div className="text-[14px] font-[600] px-[12px] mb-[5px]">
+          <div className="customer-menu-title text-[14px] font-[600] px-[12px] mb-[5px]">
             {t('customers', 'Customers')}
           </div>
           <div
             onClick={() => choose('')}
             aria-selected={!customer}
-            className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
+            className="customer-option p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
           >
-            {t('all_customers', 'All customers')}
+            <span>{t('all_customers', 'All customers')}</span>
+            <span className="customer-option-check" aria-hidden="true">
+              <HugeIcon name="check" size={16} />
+            </span>
           </div>
           {customers.map((p) => (
               <div
                 onClick={() => choose(p.customer?.id || '')}
                 key={p.customer?.id}
                 aria-selected={customer === p.customer?.id}
-                className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
+                className="customer-option p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
               >
-                {p.customer?.name}
+                <span>{p.customer?.name}</span>
+                <span className="customer-option-check" aria-hidden="true">
+                  <HugeIcon name="check" size={16} />
+                </span>
               </div>
             ))}
         </div>

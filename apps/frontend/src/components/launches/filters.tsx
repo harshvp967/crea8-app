@@ -309,6 +309,57 @@ export const Filters = () => {
     }
   }, [calendar]);
 
+  const phonePeriod = (() => {
+    if (isListView) {
+      return null;
+    }
+    if (calendar.display === 'day') {
+      const start = displayDayjs(calendar.startDate);
+      const key = start.format('YYYY-MM-DD');
+      const small = start.format('ddd, MMM D');
+      if (key === displayDayjs().format('YYYY-MM-DD')) {
+        return { title: t('today', 'Today'), small, full: false };
+      }
+      if (key === displayDayjs().add(1, 'day').format('YYYY-MM-DD')) {
+        return { title: t('tomorrow', 'Tomorrow'), small, full: false };
+      }
+      if (key === displayDayjs().subtract(1, 'day').format('YYYY-MM-DD')) {
+        return { title: t('yesterday', 'Yesterday'), small, full: false };
+      }
+      return { title: start.format('dddd, MMM D'), small: '', full: true };
+    }
+    if (calendar.display === 'week') {
+      const weekStart = displayDayjs(calendar.startDate).startOf('isoWeek');
+      const weekEnd = displayDayjs(calendar.startDate).endOf('isoWeek');
+      const range = `${weekStart.format('MMM D')} - ${weekEnd.format('MMM D, YYYY')}`;
+      const diff = weekStart.diff(displayDayjs().startOf('isoWeek'), 'week');
+      if (diff === 0) {
+        return { title: t('this_week', 'This week'), small: range, full: false };
+      }
+      if (diff === 1) {
+        return { title: t('next_week', 'Next week'), small: range, full: false };
+      }
+      if (diff === -1) {
+        return { title: t('last_week', 'Last week'), small: range, full: false };
+      }
+      return { title: range, small: '', full: true };
+    }
+    const month = displayDayjs(calendar.startDate).startOf('month');
+    const thisMonth = displayDayjs().startOf('month');
+    const name = month.format('MMMM YYYY');
+    const diff = month.diff(thisMonth, 'month');
+    if (diff === 0) {
+      return { title: t('this_month', 'This month'), small: name, full: false };
+    }
+    if (diff === 1) {
+      return { title: t('next_month', 'Next month'), small: name, full: false };
+    }
+    if (diff === -1) {
+      return { title: t('last_month', 'Last month'), small: name, full: false };
+    }
+    return { title: name, small: '', full: true };
+  })();
+
   const viewOptions = [
     { value: 'day', label: t('day', 'Day') },
     { value: 'week', label: t('week', 'Week') },
@@ -335,6 +386,22 @@ export const Filters = () => {
         isListView && 'is-list-mode'
       )}
     >
+      {phonePeriod && (
+        <div className={clsx('c8-phone-period', phonePeriod.full ? 'is-full' : 'is-relative')}>
+          <button type="button" className="c8-phone-step" aria-label="Previous" onClick={previous}>
+            <HugeIcon name="chevron-left" size={16} />
+          </button>
+          <button type="button" className="c8-phone-period-label" onClick={setToday}>
+            <span className="c8-phone-period-title">{phonePeriod.title}</span>
+            {phonePeriod.small ? (
+              <span className="c8-phone-period-small">{phonePeriod.small}</span>
+            ) : null}
+          </button>
+          <button type="button" className="c8-phone-step" aria-label="Next" onClick={next}>
+            <HugeIcon name="chevron-right" size={16} />
+          </button>
+        </div>
+      )}
       {!isListView && (
           <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
           <div className="cal-nav border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">

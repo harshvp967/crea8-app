@@ -562,22 +562,10 @@ export const DayView = () => {
     </div>
   );
 };
-const pageContainingToday = (weekStart: string) => {
-  const todayKey = displayNow().format('YYYY-MM-DD');
-  const start = displayDayjs(weekStart);
-  for (let index = 0; index < 7; index += 1) {
-    if (start.add(index, 'day').format('YYYY-MM-DD') === todayKey) {
-      return Math.min(2, Math.floor(index / 3));
-    }
-  }
-  return 0;
-};
-
 export const WeekView = () => {
   const { startDate } = useCalendar();
   const visibleHours = hours;
   const [phoneWeek, setPhoneWeek] = useState(false);
-  const [phonePage, setPhonePage] = useState(0);
 
   useLayoutEffect(() => {
     const media = window.matchMedia('(max-width: 639px)');
@@ -586,10 +574,6 @@ export const WeekView = () => {
     media.addEventListener('change', sync);
     return () => media.removeEventListener('change', sync);
   }, []);
-
-  useLayoutEffect(() => {
-    setPhonePage(pageContainingToday(startDate));
-  }, [startDate]);
 
   // Use dayjs to get localized day names
   const localizedDays = useMemo(() => {
@@ -609,39 +593,10 @@ export const WeekView = () => {
     return days;
   }, [i18next.resolvedLanguage, startDate]);
 
-  const shownDays = useMemo(() => {
-    if (!phoneWeek) {
-      return localizedDays;
-    }
-    const offset = phonePage * 3;
-    return [0, 1, 2].map((index) => localizedDays[offset + index] || null);
-  }, [localizedDays, phonePage, phoneWeek]);
-
   const today = displayNow().format('YYYY-MM-DD');
 
   return (
     <div className="c8-week flex flex-col text-textColor flex-1 min-h-0">
-      <div className="c8-week-phone-nav">
-        <button
-          type="button"
-          className="phone-week-arrow"
-          aria-label="Previous days"
-          disabled={phonePage === 0}
-          onClick={() => setPhonePage((page) => Math.max(0, page - 1))}
-        >
-          <HugeIcon name="chevron-left" size={12} />
-        </button>
-        <span className="c8-week-phone-span">3 days</span>
-        <button
-          type="button"
-          className="phone-week-arrow"
-          aria-label="Next days"
-          disabled={phonePage >= 2}
-          onClick={() => setPhonePage((page) => Math.min(2, page + 1))}
-        >
-          <HugeIcon name="chevron-right" size={12} />
-        </button>
-      </div>
       <div className="flex-1 relative min-h-0">
         <div
           className={clsx(
@@ -650,7 +605,7 @@ export const WeekView = () => {
           )}
         >
           <div className="week-corner sticky top-0 z-10" />
-          {shownDays.map((day, index) =>
+          {localizedDays.map((day, index) =>
             day ? (
               <div
                 key={day.date.format('YYYY-MM-DD')}
@@ -680,7 +635,7 @@ export const WeekView = () => {
               <div className="week-time">
                 {convertTimeFormatBasedOnLocality(hour)}
               </div>
-              {shownDays.map((day, index) =>
+              {localizedDays.map((day, index) =>
                 day ? (
                   <div
                     key={`${startDate}-${day.date.format('YYYY-MM-DD')}-${hour}`}
@@ -1257,7 +1212,7 @@ export const CalendarColumn: FC<{
               )}
               onClick={showAllFunc}
             >
-              {display === 'month' && phoneMonth ? (
+              {(display === 'month' || display === 'day') && phoneMonth ? (
                 t('show_more_count', '+{{count}}', {
                   count: postList.length - visibleCount,
                 })
