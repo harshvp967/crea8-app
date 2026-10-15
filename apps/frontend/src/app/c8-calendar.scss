@@ -5236,7 +5236,12 @@ body.c8-schedule .cal-show-more-short {
   body.c8-schedule .month-grid {
     min-height: 0 !important;
     grid-template-rows: 18px !important;
-    grid-auto-rows: minmax(28px, auto) !important;
+    grid-auto-rows: 36px !important;
+  }
+
+  body.c8-schedule .month-cell .min-h-\[70px\],
+  body.c8-schedule .month-cell .cal-col > div {
+    min-height: 0 !important;
   }
 
   body.c8-schedule .month-head {
