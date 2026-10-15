@@ -3822,8 +3822,18 @@ body.c8-schedule .cal-post-sheet-title {
     content: '';
     position: fixed;
     inset: 0;
-    z-index: 1;
+    z-index: 12;
     background: var(--c8-hard);
+  }
+
+  /* Platform marks are z-index 10 on the cell, so they painted through the
+     sheet. Keep the open post above that scrim, and the sheet above its own mark. */
+  body.c8-schedule .cal-post.is-open {
+    z-index: 30;
+  }
+
+  body.c8-schedule:has(.cal-post.is-open) .cal-post:not(.is-open) .cal-post-icon {
+    visibility: hidden;
   }
 
   body.c8-schedule .cal-post.is-open .cal-post-bar {
@@ -3840,7 +3850,7 @@ body.c8-schedule .cal-post-sheet-title {
     border-radius: 28px 28px 0 0;
     background: var(--c8-surface);
     box-shadow: none;
-    z-index: 2 !important;
+    z-index: 30 !important;
     overflow: auto;
   }
 
