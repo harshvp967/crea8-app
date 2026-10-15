@@ -1717,12 +1717,13 @@ body.c8-schedule .c8-day-label {
   }
 
   body.c8-schedule:has(.cal-customer > div) .channel-rail > div {
-    padding-bottom: 72px;
+    padding-bottom: 88px;
   }
 
   body.c8-schedule .cal-customer {
     position: absolute;
-    z-index: 6;
+    z-index: 20;
+    background: var(--c8-surface);
     box-sizing: border-box;
     left: calc(var(--c8-main-pad, 28px) + 16px);
     bottom: 36px;
@@ -1827,6 +1828,10 @@ body.c8-schedule .c8-day-label {
     background: var(--c8-surface);
     padding: 16px;
     gap: 4px;
+  }
+
+  body.c8-schedule:has(.cal-customer > div) .channel-rail > div {
+    padding-bottom: 88px;
   }
 
   body.c8-schedule .channel-rail h2 {
