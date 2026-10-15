@@ -140,20 +140,6 @@ export const Menu: FC<{
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [show]);
-  useEffect(() => {
-    if (!show) {
-      return;
-    }
-    const onScroll = (event: Event) => {
-      const target = event.target as Node | null;
-      if (target && menuRef.current?.contains(target)) {
-        return;
-      }
-      setShow(false);
-    };
-    window.addEventListener('scroll', onScroll, true);
-    return () => window.removeEventListener('scroll', onScroll, true);
-  }, [show]);
   const findIntegration: any = useMemo(() => {
     return integrations.find((integration) => integration.id === id);
   }, [integrations, id]);
