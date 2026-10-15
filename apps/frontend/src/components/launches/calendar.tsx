@@ -935,18 +935,27 @@ export const CalendarColumn: FC<{
     });
   }, [posts, display, getDate]);
   const [showAll, setShowAll] = useState(false);
+  const [phoneMonth, setPhoneMonth] = useState(false);
   const showAllFunc = useCallback(() => {
     setShowAll(true);
   }, []);
   const showLessFunc = useCallback(() => {
     setShowAll(false);
   }, []);
+  const visibleCount = display === 'month' && phoneMonth ? 1 : 3;
   const list = useMemo(() => {
     if (showAll) {
       return postList;
     }
-    return postList.slice(0, 3);
-  }, [postList, showAll]);
+    return postList.slice(0, visibleCount);
+  }, [postList, showAll, visibleCount]);
+  useLayoutEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)');
+    const sync = () => setPhoneMonth(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
 
   const isBeforeNow = useMemo(() => {
     return isPastHour(getDate, displayNow());
@@ -1222,15 +1231,26 @@ export const CalendarColumn: FC<{
               </div>
             </div>
           ))}
-          {!showAll && postList.length > 3 && (
+          {!showAll && postList.length > visibleCount && (
             <div
-              className="text-center hover:underline py-[5px] text-textColor"
+              className={clsx(
+                'text-center hover:underline text-textColor',
+                display === 'month' && phoneMonth
+                  ? 'cal-phone-more py-0 text-[11px] leading-none font-[700]'
+                  : 'py-[5px]'
+              )}
               onClick={showAllFunc}
             >
-              {t('show_more', '+ Show more')} ({postList.length - 3})
+              {display === 'month' && phoneMonth ? (
+                `+${postList.length - visibleCount}`
+              ) : (
+                <>
+                  {t('show_more', '+ Show more')} ({postList.length - 3})
+                </>
+              )}
             </div>
           )}
-          {showAll && postList.length > 3 && (
+          {showAll && postList.length > visibleCount && (
             <div
               className="text-center hover:underline py-[5px]"
               onClick={showLessFunc}

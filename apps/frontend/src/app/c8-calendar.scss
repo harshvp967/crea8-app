@@ -2443,6 +2443,23 @@ body.c8-schedule .cal-post-action {
   }
 }
 
+/* The open-cell lift paints month pills through a confirm. Drop it while a
+   dialog is open, and keep the scrim above the grid. */
+body.c8-schedule:has(.arc-dialog-wrap) .day-cell:has(.cal-post.is-open),
+body.c8-schedule:has(.arc-dialog-wrap) .week-cell:has(.cal-post.is-open),
+body.c8-schedule:has(.arc-dialog-wrap) .month-cell:has(.cal-post.is-open),
+body.c8-schedule:has(.arc-dialog-wrap) .phone-slot:has(.cal-post.is-open),
+body.c8-schedule:has(.arc-dialog-wrap) .week-cell:has(.cal-post.is-open) .cal-col > div,
+body.c8-schedule:has(.arc-dialog-wrap) .day-cell:has(.cal-post.is-open) .cal-col > div,
+body.c8-schedule:has(.arc-dialog-wrap) .month-cell:has(.cal-post.is-open) .cal-col > div,
+body.c8-schedule:has(.arc-dialog-wrap) .phone-slot:has(.cal-post.is-open) .cal-col > div {
+  z-index: auto;
+}
+
+body.c8-schedule .arc-dialog-wrap {
+  z-index: 1000 !important;
+}
+
 body.c8-schedule .cal-post.is-draggable {
   cursor: grab;
 }
@@ -2891,10 +2908,14 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     box-shadow: none;
   }
 
+  body.c8-schedule:has(.channel-rail.is-open) .channels-scrim {
+    z-index: 210;
+  }
+
   body.c8-schedule .channel-rail.is-open {
     display: flex !important;
     position: fixed !important;
-    z-index: 80;
+    z-index: 220;
     inset: 48px;
     width: min(420px, calc(100vw - 48px)) !important;
     height: auto !important;
@@ -3086,7 +3107,7 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     background: var(--c8-surface) !important;
     box-shadow: none !important;
     overflow: auto !important;
-    z-index: 5 !important;
+    z-index: 100 !important;
     font-size: 14px;
     animation: c8-sheet 300ms cubic-bezier(0, 0, 0.2, 1) forwards !important;
   }
