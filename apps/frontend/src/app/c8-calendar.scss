@@ -2959,6 +2959,13 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     display: none;
   }
 
+  body.dark.c8-schedule .month-cell .cal-post-body,
+  body.dark.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.dark.c8-schedule .month-cell .cal-post.is-draft .cal-post-body,
+  body.dark.c8-schedule .month-cell .cal-post:hover .cal-post-body {
+    box-shadow: 0 1px 0 var(--c8-hard) !important;
+  }
+
   body.c8-schedule .month-grid {
     position: relative !important;
     inset: auto !important;
