@@ -4302,6 +4302,24 @@ body.c8-schedule .cal-post-sheet-title {
     padding-top: 52px !important;
   }
 
+  /* The desktop list is an absolute scroller inside a fixed-height well.
+     On the phone that well is only as tall as its in-flow content, so the
+     absolute rows collapse to nothing and overflow clips them. Put the rows
+     back in flow and let the page scroll, the same way the phone month does. */
+  body.c8-schedule .cal-list,
+  body.c8-schedule .cal-list > div {
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 100%;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   body.c8-schedule[data-c8-view='list'] .cal-list-states > div {
     flex: 0 0 auto;
     min-width: max-content;
