@@ -2084,6 +2084,8 @@ body.c8-schedule .c8-inline-chip {
 
 body.c8-schedule .cal-customer > div > div {
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
   width: 100%;
   height: 46px;
   min-height: 46px;
