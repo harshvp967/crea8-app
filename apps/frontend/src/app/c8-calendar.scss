@@ -3768,6 +3768,7 @@ body.c8-schedule .cal-post-sheet-title {
   body.c8-schedule[data-c8-view='list'] .channels-trigger,
   body.c8-schedule:not([data-c8-view]) .channels-trigger {
     display: inline-flex !important;
+    align-items: center;
     order: 1;
     box-sizing: border-box;
     height: 46px;
@@ -4563,5 +4564,152 @@ body.c8-schedule .cal-post-sheet-title {
     align-items: center;
     margin-inline-start: auto;
     flex: none;
+  }
+}
+
+/* Tablet QA. Phone (max-width 639) and desktop (min-width 1200) stay as they are. */
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .channels-trigger,
+  body.c8-schedule[data-c8-view='week'] .channels-trigger,
+  body.c8-schedule[data-c8-view='day'] .channels-trigger,
+  body.c8-schedule[data-c8-view='month'] .channels-trigger,
+  body.c8-schedule[data-c8-view='list'] .channels-trigger,
+  body.c8-schedule:not([data-c8-view]) .channels-trigger {
+    align-items: center;
+  }
+
+  /* The chip is z-500, so its menu covered the period arrow and the rail title.
+     Keep those two above the menu, and shift the menu into the calendar. */
+  body.c8-schedule .filters-bar .cal-customer > .select-customer {
+    z-index: 12;
+  }
+
+  body.c8-schedule .c8-phone-period,
+  body.c8-schedule .channel-rail {
+    position: relative;
+    z-index: 20;
+  }
+
+  body.c8-schedule .customer-menu,
+  body.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
+    z-index: 30;
+    margin-top: 68px;
+    margin-left: 212px;
+    background: var(--c8-surface);
+    border: 1.5px solid #121016 !important;
+    border-radius: 16px;
+    box-shadow: 0 6px 0 #121016 !important;
+    padding: 8px;
+  }
+
+  body.dark.c8-schedule .customer-menu,
+  body.dark.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
+    border-color: #000 !important;
+    box-shadow: 0 6px 0 #000 !important;
+  }
+
+  body.c8-schedule .customer-menu .customer-menu-title {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin-bottom: 0;
+    padding: 0 12px;
+  }
+
+  body.c8-schedule .customer-menu .customer-option,
+  body.c8-schedule .customer-menu .customer-option.h-\[32px\] {
+    box-sizing: border-box;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: none !important;
+    padding: 10px 12px !important;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  /* Give the seven day columns enough room for a time and a short title. */
+  body.c8-schedule .app-main {
+    padding: 16px 12px 12px;
+    column-gap: 8px;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open) {
+    width: 196px !important;
+  }
+
+  /* A 7-day column is too narrow for icon + time + title + the ⋮ in flow.
+     Stretch the chip, let the title shrink, and keep the ⋮ on the chip. */
+  body.c8-schedule .week-grid {
+    padding-inline: 4px;
+    grid-template-columns: 40px repeat(7, minmax(0, 1fr));
+  }
+
+  body.c8-schedule .week-cell {
+    padding: 2px 0 !important;
+  }
+
+  body.c8-schedule .week-cell .cal-col .p-\[2\.5px\],
+  body.c8-schedule .week-cell .cal-post {
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: 0 !important;
+  }
+
+  body.c8-schedule .week-cell .cal-post-icon,
+  body.c8-schedule .week-cell .cal-post-avatar {
+    width: 12px !important;
+    min-width: 12px !important;
+    height: 12px !important;
+  }
+
+  body.c8-schedule .week-cell .cal-post-mark {
+    width: 7px !important;
+    height: 7px !important;
+    min-width: 7px !important;
+    min-height: 7px !important;
+  }
+
+  body.c8-schedule .week-cell .cal-post-body,
+  body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body {
+    position: relative;
+    gap: 3px;
+    padding: 2px 2px 2px 3px;
+    width: 100%;
+  }
+
+  body.c8-schedule .week-cell .cal-chip-when {
+    flex: none;
+    min-width: 0;
+    font-size: 11px;
+  }
+
+  body.c8-schedule .week-cell .cal-post-body > .min-w-0 {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  body.c8-schedule .week-cell .line-clamp-2 {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more {
+    position: absolute;
+    inset-inline-end: 1px;
+    top: 50%;
+    width: 14px;
+    min-width: 14px;
+    height: 14px;
+    margin: 0;
+    transform: translateY(-50%);
+    background: var(--c8-surface);
   }
 }
