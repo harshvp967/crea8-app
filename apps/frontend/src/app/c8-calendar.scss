@@ -2008,6 +2008,10 @@ body.c8-schedule[data-c8-view='list'] .date-range > .cal-today {
   flex: none;
 }
 
+body.c8-schedule .cal-scope-row {
+  display: contents;
+}
+
 body.c8-schedule .filters-bar .cal-customer,
 body.c8-schedule[data-c8-view='day'] .filters-bar .cal-customer,
 body.c8-schedule[data-c8-view='week'] .filters-bar .cal-customer,
@@ -3562,7 +3566,7 @@ body.c8-schedule .cal-post-sheet-title {
       'head head head'
       'actions actions actions'
       'today arrows arrows'
-      'pill mode mode'
+      'scope scope scope'
       'states states states'
       'empty empty empty'
       'well well well' !important;
@@ -3776,44 +3780,91 @@ body.c8-schedule .cal-post-sheet-title {
     display: none !important;
   }
 
+  body.c8-schedule .cal-scope-row {
+    display: grid;
+    grid-area: scope;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    column-gap: 8px;
+    container-type: inline-size;
+    container-name: cal-scope;
+  }
+
   body.c8-schedule .filters-bar .cal-customer,
   body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-customer {
-    grid-area: pill;
+    grid-area: auto;
     justify-self: start;
     flex: none;
+    width: max-content;
+    min-width: 0;
+    max-width: calc(100cqw - 216px);
     margin-inline-start: 0;
+  }
+
+  body.c8-schedule .cal-scope-row .select-customer,
+  body.c8-schedule .cal-scope-row .select-customer > div:not(.fixed) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body.c8-schedule .cal-scope-row .select-customer > div:not(.fixed) {
+    overflow: hidden;
+  }
+
+  body.c8-schedule .cal-scope-row .select-customer-label {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @container cal-scope (max-width: 296px) {
+    .select-customer-label {
+      display: none !important;
+    }
   }
 
   body.c8-schedule .filters-bar .cal-mode,
   body.c8-schedule .filters-bar.is-list-mode .cal-mode,
   body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-mode,
   body.c8-schedule .filters-bar.is-list-mode:has(.cal-customer > div) .cal-mode {
-    grid-area: mode;
+    grid-area: auto;
     justify-self: end;
     width: auto;
     max-width: 100%;
     height: 38px;
-    margin: 0 0 0 auto !important;
+    margin: 0 !important;
     padding: 4px !important;
     gap: 2px;
     border-radius: 999px;
     background: var(--c8-soft) !important;
     flex-wrap: nowrap !important;
-    overflow: visible;
   }
 
   body.c8-schedule .cal-mode > button {
+    position: relative;
     flex: 0 0 auto;
     min-width: 0;
     height: 30px;
     min-height: 30px;
-    padding: 7px 14px;
+    padding: 7px 10px;
     border: 0;
     border-radius: 999px;
     background: transparent;
     color: var(--c8-muted);
+    font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
+  }
+
+  body.c8-schedule .cal-mode > button::after {
+    content: '';
+    position: absolute;
+    inset: -7px 0;
   }
 
   body.c8-schedule .cal-mode > button[aria-checked='true'] {
