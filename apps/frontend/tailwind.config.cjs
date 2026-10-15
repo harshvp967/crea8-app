@@ -153,9 +153,9 @@ module.exports = {
         loginBg: 'url(/auth/bg-login.png)',
       },
       fontFamily: {
-        sans: ['var(--font-body)', 'Inter', 'sans-serif'],
+        sans: ['var(--font-body, Inter)', 'sans-serif'],
         'c8-heading': ['var(--font-heading)', 'Bricolage Grotesque', 'sans-serif'],
-        'c8-body': ['var(--font-body)', 'Inter', 'sans-serif'],
+        'c8-body': ['var(--font-body, Inter)', 'sans-serif'],
       },
       fontSize: {
         'c8-display': ['48px', { lineHeight: '1.05', letterSpacing: '-0.96px', fontWeight: '800' }],

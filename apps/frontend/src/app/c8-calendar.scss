@@ -2786,7 +2786,7 @@ body.c8-schedule .arc-dialog .arc-dialog-head > div:first-child {
   color: var(--c8-ink);
 }
 
-body.c8-schedule .arc-dialog .mantine-Modal-close {
+body.c8-schedule .arc-dialog:not(.po-sure-modal) .mantine-Modal-close {
   display: grid;
   width: 36px;
   height: 36px;
@@ -2795,6 +2795,10 @@ body.c8-schedule .arc-dialog .mantine-Modal-close {
   border-radius: 12px;
   background: var(--c8-soft);
   color: var(--c8-ink);
+}
+
+body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
+  display: none;
 }
 
 @media (max-width: 1199px) {
@@ -2861,6 +2865,32 @@ body.c8-schedule .arc-dialog .mantine-Modal-close {
 }
 
 @media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode .cal-mode {
+    height: auto;
+    padding: 0 !important;
+    gap: 6px;
+    border-radius: 0;
+    background: transparent !important;
+  }
+
+  body.c8-schedule .cal-mode > button {
+    height: 34px;
+    min-height: 34px;
+    padding: 8px 14px;
+    border: 1px solid var(--c8-line);
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    box-shadow: none;
+  }
+
+  body.c8-schedule .cal-mode > button[aria-checked='true'] {
+    border-color: var(--c8-ink);
+    background: var(--c8-ink);
+    color: var(--c8-on-ink);
+    box-shadow: none;
+  }
+
   body.c8-schedule .channel-rail.is-open {
     display: flex !important;
     position: fixed !important;
