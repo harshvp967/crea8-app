@@ -1218,7 +1218,10 @@ export const CalendarColumn: FC<{
                 })
               ) : (
                 <>
-                  {t('show_more', '+ Show more')} ({postList.length - 3})
+                  <span className="cal-show-more-full">
+                    {t('show_more', '+ Show more')} ({postList.length - 3})
+                  </span>
+                  <span className="cal-show-more-short">+{postList.length - 3}</span>
                 </>
               )}
             </div>
