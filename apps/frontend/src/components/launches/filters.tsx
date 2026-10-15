@@ -385,7 +385,7 @@ export const Filters = () => {
       )}
       {isListView && (
           <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
-          <div className="cal-list-pager border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
+          <div className={clsx('cal-list-pager border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden', calendar.listTotalPages <= 1 && 'is-single-page')}>
             <div
               onClick={previousPage}
               className={clsx(
