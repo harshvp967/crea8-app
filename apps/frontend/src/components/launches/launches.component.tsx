@@ -742,7 +742,13 @@ export const LaunchesComponent = () => {
                   className="channels-trigger"
                   onClick={() => setChannelsOpen(true)}
                 >
-                  {t('channels', 'Channels')} · {channels.length}
+                  <span className="channels-trigger-name">
+                    {t('channels', 'Channels')}
+                  </span>
+                  <span className="channels-trigger-count">
+                    {' '}
+                    · {channels.length}
+                  </span>
                 </button>
               </div>
             )}

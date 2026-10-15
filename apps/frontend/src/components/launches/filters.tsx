@@ -443,6 +443,7 @@ export const Filters = () => {
           <div className="flex-1" />
         </div>
       )}
+      <div className="cal-scope-row">
       <div className="cal-customer">
       <SelectCustomer
         customer={calendar.customer || ''}
@@ -491,6 +492,7 @@ export const Filters = () => {
             </button>
           );
         })}
+      </div>
       </div>
     </div>
     </>
