@@ -73,6 +73,8 @@ export const TagsComponentInner: FC<{
       return data?.tags.find((a: any) => a.name === p.value) || p;
     })
   );
+  const tagValueRef = useRef(tagValue);
+  tagValueRef.current = tagValue;
   const modals = useModals();
 
   const ref = useClickOutside(() => {
@@ -101,7 +103,7 @@ export const TagsComponentInner: FC<{
 
     const newTag = newValues.tags.find((p: any) => p.name === val);
     if (newTag) {
-      const modify = [...tagValue, newTag];
+      const modify = [...tagValueRef.current, newTag];
       setTagValue(modify);
       onChange({
         target: {
@@ -110,7 +112,7 @@ export const TagsComponentInner: FC<{
         },
       });
     }
-  }, []);
+  }, [mutate, onChange, name, modals, t]);
 
   const deleteTag = useCallback(
     async (tag: any, e: React.MouseEvent) => {
