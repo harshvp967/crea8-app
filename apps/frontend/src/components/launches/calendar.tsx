@@ -936,7 +936,7 @@ export const CalendarColumn: FC<{
       if (isBeforeNow) {
         return;
       }
-      setNum(num + 1);
+      setNum((current) => current + 1);
     }, [isBeforeNow]),
     random(120000, 150000)
   );

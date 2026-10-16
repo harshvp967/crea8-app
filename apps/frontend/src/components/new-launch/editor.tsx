@@ -600,6 +600,26 @@ export const Editor: FC<{
   });
   const emojiSheetRef = useRef<HTMLDivElement>(null);
   useGrabToClose(emojiSheetRef, emojiPickerOpen, () => setEmojiPickerOpen(false));
+  useEffect(() => {
+    if (!emojiPickerOpen) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (
+        !target ||
+        emojiSheetRef.current?.contains(target) ||
+        emojiButtonRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setEmojiPickerOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, [emojiPickerOpen]);
   useLayoutEffect(() => {
     if (!emojiPickerOpen) {
       return;
@@ -1042,7 +1062,7 @@ export const Editor: FC<{
                   onChange={(value) => {
                     setImages(value.target.value);
                   }}
-                  onOpen={() => {}}
+                  onOpen={() => setEmojiPickerOpen(false)}
                   onClose={() => {}}
                 />
               )}

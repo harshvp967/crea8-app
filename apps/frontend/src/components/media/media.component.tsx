@@ -913,6 +913,7 @@ export const MultiMediaComponent: FC<{
     [insertInContent, mediaList]
   );
   const showModal = useCallback(() => {
+    props.onOpen?.();
     modals.openModal({
       title: t('media_library', 'Media Library'),
       askClose: false,
@@ -929,7 +930,7 @@ export const MultiMediaComponent: FC<{
         />
       ),
     });
-  }, [changeMedia, insertInContent, t]);
+  }, [changeMedia, insertInContent, t, props.onOpen]);
 
   const clearMedia = useCallback(
     (topIndex: number) => () => {
