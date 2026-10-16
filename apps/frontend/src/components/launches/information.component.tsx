@@ -210,7 +210,7 @@ export const InformationComponent: FC<{
                     )}
                   >
                     {p.integration.name} (
-                    {capitalize(p.integration.identifier.split('-')[0])}):
+                    {capitalize((p.integration?.identifier || '').split('-')[0])}):
                   </div>
                   <div
                     className={clsx(

@@ -6,6 +6,7 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { createRef, RefObject } from 'react';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/post-comment.enum';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { attachInternalValue } from '@gitroom/frontend/components/new-launch/existing.post';
 
 interface Values {
   id: string;
@@ -226,43 +227,7 @@ export const useLaunchStore = create<StoreState>()((set) => ({
     }),
   // Add value after index, similar to addGlobalValue, but for a speciic integration (index starts from 0)
   addInternalValue: (index: number, integrationId: string, value: Values[]) =>
-    set((state) => {
-      const integrationIndex = state.internal.findIndex(
-        (i) => i.integration.id === integrationId
-      );
-
-      if (integrationIndex === -1) {
-        return {
-          internal: [
-            ...state.internal,
-            {
-              integration: state.selectedIntegrations.find(
-                (i) => i.integration.id === integrationId
-              )!.integration,
-              integrationValue: value,
-            },
-          ],
-        };
-      }
-
-      const updatedIntegration = state.internal[integrationIndex];
-      const newValues = updatedIntegration.integrationValue.reduce(
-        (acc, item, i) => {
-          acc.push(item);
-          if (i === index) {
-            acc.push(...value);
-          }
-          return acc;
-        },
-        [] as Values[]
-      );
-
-      return {
-        internal: state.internal.map((i, idx) =>
-          idx === integrationIndex ? { ...i, integrationValue: newValues } : i
-        ),
-      };
-    }),
+    set((state) => attachInternalValue(state, index, integrationId, value)),
   deleteGlobalValue: (index: number) =>
     set((state) => {
       // Preserve the IDs at their current positions

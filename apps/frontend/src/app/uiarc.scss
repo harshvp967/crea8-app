@@ -8608,7 +8608,7 @@ body.composer-open .app-toast.is-error {
     white-space: nowrap;
   }
 
-  .composer .group:hover .post-now-tray {
+  .composer .po-split.is-open .post-now-tray {
     display: flex !important;
   }
 
@@ -9122,6 +9122,7 @@ body.composer-open .app-toast.is-error {
 }
 
 .composer .po-split:has(.po-spin) .post-now-tray,
+.composer .po-split.is-open:has(.po-spin) .post-now-tray,
 .composer .group.po-split:hover:has(.po-spin) .post-now-tray {
   display: none !important;
 }
