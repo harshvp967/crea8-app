@@ -1510,7 +1510,21 @@ const CalendarItem: FC<{
         const bar = (
           <div
             ref={menuRef}
-            className={clsx('cal-post-bar', overlay && 'is-overlay')}
+            className={clsx(
+              'cal-post-bar',
+              overlay && 'is-overlay',
+              showTime && 'is-list'
+            )}
+            style={
+              showTime
+                ? {
+                    positionAnchor: `--cal-more-${String(post.id).replace(
+                      /[^A-Za-z0-9_-]/g,
+                      '-'
+                    )}`,
+                  }
+                : undefined
+            }
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => event.stopPropagation()}
           >
@@ -1626,6 +1640,12 @@ const CalendarItem: FC<{
         <button
           type="button"
           className="cal-post-more"
+          style={{
+            anchorName: `--cal-more-${String(post.id).replace(
+              /[^A-Za-z0-9_-]/g,
+              '-'
+            )}`,
+          }}
           aria-expanded={actionsOpen}
           aria-label={t('post_actions', 'Post actions')}
           onClick={(event) => {
