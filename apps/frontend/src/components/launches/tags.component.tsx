@@ -296,7 +296,7 @@ export const TagsComponentInner: FC<{
             })}
           <div onClick={addTag} className="po-menu-row po-add-tag">
             <PlusIcon />
-            <span>{t('add_new_tag', 'Add New Tag')}</span>
+            <span>{t('add_a_tag', 'Add a tag')}</span>
           </div>
         </div>
       )}

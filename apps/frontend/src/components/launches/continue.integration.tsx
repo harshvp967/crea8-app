@@ -26,7 +26,7 @@ interface SuccessState {
 }
 
 const META_DEVELOPER_ROLE =
-  'Meta blocked this account (Insufficient developer role). The Crea8.one app is still unpublished, so this Facebook user must be added as an Admin, Developer, or Tester. After App Review, switch the app to Live to allow other accounts.';
+  'Meta blocked this account (Insufficient developer role). The crea8.one app is still unpublished, so this Facebook user must be added as an Admin, Developer, or Tester. After App Review, switch the app to Live to allow other accounts.';
 
 // Google approved YouTube verification for project crea8one (210129842261)
 // on 2026-10-03. Do not tell customers the consent screen is in Testing.
@@ -87,7 +87,7 @@ function oauthRedirectError(provider: string, searchParams: any) {
       provider
     )
   ) {
-    return 'Meta denied this login. While the Crea8.one app is unpublished, this Facebook account must be an Admin, Developer, or Tester on the app.';
+    return 'Meta denied this login. While the crea8.one app is unpublished, this Facebook account must be an Admin, Developer, or Tester on the app.';
   }
 
   if (code) {

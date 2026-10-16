@@ -103,15 +103,13 @@ export const SelectCurrent: FC = () => {
             locked && 'opacity-50 pointer-events-none'
           )}
         >
-          <div
+          <button
+            type="button"
             onClick={() => {
               setHide(true);
               setCurrent('global');
             }}
-            aria-label={t(
-              'you_are_in_global_editing_mode',
-              'You are in global editing mode'
-            )}
+            aria-label={t('all_channels', 'All channels')}
             data-tooltip-id="tooltip"
             data-tooltip-content={t(
               'you_are_in_global_editing_mode',
@@ -127,10 +125,10 @@ export const SelectCurrent: FC = () => {
             <GlobalIcon />
             {current === 'global' && (
               <span className="po-global-label text-[13px] font-[600] whitespace-nowrap">
-                {t('you_are_in_global_editing_mode', 'You are in global editing mode')}
+                {t('all_channels', 'All channels')}
               </span>
             )}
-          </div>
+          </button>
           {selectedIntegrations.map(({ integration }) => (
             <div
               onClick={() => {
@@ -141,17 +139,18 @@ export const SelectCurrent: FC = () => {
               className={clsx(
                 'po-selected border cursor-pointer relative flex gap-[8px] w-[44px] h-[44px] rounded-full items-center bg-newBgColorInner justify-center',
                 current === integration.id
-                  ? 'border-[#00D9FF] text-[#00D9FF]'
+                  ? 'is-on border-[#00D9FF] text-[#00D9FF]'
                   : 'border-newBorder'
               )}
             >
-              <div
+              <button
+                type="button"
                 onClick={removeSocial(integration)}
                 className="po-chip-remove"
                 aria-label={t('remove', 'Remove')}
               >
                 <span aria-hidden>×</span>
-              </div>
+              </button>
               <IsGlobal id={integration.id} />
               <div
                 {...{

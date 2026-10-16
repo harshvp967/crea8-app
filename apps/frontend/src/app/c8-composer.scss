@@ -1,0 +1,955 @@
+/* Composer on the calendar v2 tokens. Presentation only. */
+
+.c8-select-ui {
+  display: none;
+}
+
+.c8-composer {
+  color: var(--c8-ink);
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+.c8-composer,
+.c8-composer .composer-frame {
+  background: var(--c8-bg) !important;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.c8-composer .composer-frame {
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 20px;
+  box-shadow: none;
+}
+
+.c8-composer .composer-grab {
+  display: none !important;
+}
+
+.c8-composer .composer-tabs {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--c8-line);
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+}
+
+.c8-composer .composer-tabs-title {
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--c8-ink);
+}
+
+.c8-composer .composer-seg {
+  display: none;
+}
+
+.c8-composer .composer-close-phone {
+  display: flex !important;
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+}
+
+.c8-composer .composer-close-phone svg {
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .composer-editor > .bg-newBgColor,
+.c8-composer .composer-preview > .bg-newBgColor {
+  display: none !important;
+}
+
+.c8-composer .c8-preview-label {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.c8-composer .composer-preview {
+  width: auto !important;
+  flex: 0 1 460px;
+  max-width: 42%;
+  min-width: 0;
+  background: var(--c8-bg);
+}
+
+.c8-composer .composer-editor,
+.c8-composer .composer-split,
+.c8-composer .composer-frame {
+  min-width: 0;
+}
+
+.c8-composer .composer-editor {
+  border-color: var(--c8-line) !important;
+  background: var(--c8-bg);
+}
+
+.c8-composer .po-editor-card,
+.c8-composer .po-editor-tools,
+.c8-composer .po-editor-shell .bg-newBgColorInner {
+  background: var(--c8-surface) !important;
+  border-color: var(--c8-line) !important;
+  color: var(--c8-ink);
+}
+
+.c8-composer .c8-tool,
+.c8-composer .editor-toolbar > div,
+.c8-composer .editor-toolbar > button,
+.c8-composer .editor-toolbar .c8-tool {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--c8-ink) !important;
+  box-shadow: none !important;
+}
+
+.c8-composer .c8-tool:hover,
+.c8-composer .editor-toolbar > div:hover,
+.c8-composer .editor-toolbar > button:hover {
+  background: var(--c8-soft) !important;
+}
+
+.c8-composer button:focus-visible,
+.c8-composer [role='button']:focus-visible,
+.c8-composer .c8-tool:focus-visible,
+.po-sure-modal button:focus-visible,
+.po-media-modal button:focus-visible,
+.po-tag-modal button:focus-visible {
+  outline: 2px solid var(--c8-cyan) !important;
+  outline-offset: 2px !important;
+}
+
+.c8-composer .c8-emoji {
+  position: static;
+}
+
+.c8-composer .c8-emoji.is-open {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--c8-scrim);
+}
+
+.c8-composer .c8-emoji.is-open > div {
+  position: static !important;
+}
+
+.c8-composer .c8-emoji.is-open .EmojiPickerReact {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  width: min(360px, calc(100vw - 16px)) !important;
+  height: min(420px, calc(100vh - 24px)) !important;
+  margin-bottom: 8px;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 16px !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink) !important;
+  box-shadow: 4px 4px 0 var(--c8-hard) !important;
+  --epr-bg-color: var(--c8-surface);
+  --epr-text-color: var(--c8-ink);
+  --epr-search-input-bg-color: var(--c8-bg);
+  --epr-search-input-text-color: var(--c8-ink);
+  --epr-search-border-color: var(--c8-line);
+  --epr-category-label-bg-color: var(--c8-surface);
+  --epr-picker-border-color: transparent;
+  --epr-highlight-color: var(--c8-cyan);
+  --epr-hover-bg-color: var(--c8-soft);
+  --epr-focus-bg-color: var(--c8-soft);
+  --epr-emoji-size: 28px;
+}
+
+.c8-composer .group.rounded-\[6px\] {
+  height: 32px !important;
+  min-height: 32px;
+  padding: 0 8px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--c8-muted) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.c8-composer .group.rounded-\[6px\] .text-white,
+.c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\] {
+  background: transparent !important;
+  color: var(--c8-danger) !important;
+}
+
+.c8-composer .group.rounded-\[6px\] > div[class*='z-'] {
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink);
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 16px !important;
+  box-shadow: 4px 4px 0 var(--c8-hard) !important;
+}
+
+.c8-composer .po-attach .cursor-pointer,
+.c8-composer .po-attach button.c8-attach {
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 14px !important;
+  border: 1.5px solid var(--c8-btn-secondary-stroke) !important;
+  border-radius: 999px !important;
+  background: var(--c8-btn-secondary) !important;
+  color: var(--c8-ink) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+}
+
+.c8-composer .po-attach .text-newColColor,
+.c8-composer .po-attach .b1 > .text-newColColor {
+  display: none !important;
+}
+
+.c8-composer .po-current-row {
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-soft);
+}
+
+.c8-composer .po-global,
+.c8-composer .po-selected {
+  height: 44px !important;
+  min-height: 44px;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--c8-ink) !important;
+  box-shadow: none !important;
+}
+
+.c8-composer .po-global.po-global-on,
+.c8-composer .po-selected.is-on {
+  background: var(--c8-surface) !important;
+  box-shadow: 0 2px 0 var(--c8-hard) !important;
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .po-global-label {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 4px 0 0 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .po-pick,
+.c8-composer .po-pick img,
+.c8-composer .po-selected img,
+.c8-composer .po-selected .rounded-full {
+  border-radius: 10px !important;
+}
+
+.c8-composer .po-chip-remove {
+  width: 44px;
+  height: 44px;
+  top: -16px;
+  inset-inline-start: -16px;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+}
+
+.c8-composer .po-chip-remove span {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.c8-composer .po-lock {
+  position: absolute !important;
+  inset: 12px !important;
+  z-index: 30 !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0;
+  padding: 16px !important;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 16px;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink) !important;
+  text-align: start !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  box-shadow: 0 3px 0 var(--c8-hard);
+  backdrop-filter: none !important;
+}
+
+.c8-composer .po-lock,
+.c8-composer .po-lock .text-white {
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .po-lock .bg-newSettings {
+  display: none !important;
+}
+
+.c8-composer .po-lock-scrim {
+  display: block !important;
+  opacity: 1 !important;
+  background: var(--c8-bg) !important;
+  backdrop-filter: none !important;
+  z-index: 20 !important;
+}
+
+.c8-composer .c8-lock-btn {
+  height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--c8-btn-secondary-stroke);
+  border-radius: 999px;
+  background: var(--c8-btn-secondary);
+  color: var(--c8-ink);
+  font-weight: 600;
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
+.c8-composer .po-settings {
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 16px !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink);
+  overflow: visible !important;
+}
+
+.c8-composer .po-settings-toggle {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+  text-align: start;
+}
+
+.c8-composer #wrapper-settings .max-h-\[280px\] {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.c8-composer #social-settings input,
+.c8-composer #social-settings textarea,
+.c8-composer #social-settings .border-newBorder {
+  border-color: var(--c8-line) !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer #social-settings .bg-forth {
+  background: var(--c8-ink) !important;
+  color: var(--c8-on-ink) !important;
+  border-radius: 6px !important;
+}
+
+.c8-composer #social-settings button,
+.c8-composer #social-settings .bg-btnPrimary {
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  border: 1.5px solid var(--c8-hard);
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
+.c8-composer .c8-select-wrap {
+  position: relative;
+}
+
+.c8-composer .c8-native-select {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.c8-composer .c8-select-ui {
+  display: block;
+}
+
+.c8-composer .c8-select-face,
+.c8-select-menu button {
+  min-height: 44px;
+}
+
+.c8-composer .c8-select-face {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 14px;
+  text-align: start;
+}
+
+.c8-composer .c8-select-face::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-left: 12px;
+  border-right: 1.5px solid var(--c8-ink);
+  border-bottom: 1.5px solid var(--c8-ink);
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.c8-composer .c8-select-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: min(280px, calc(100vh - 24px));
+  overflow: auto;
+  padding: 6px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 16px;
+  background: var(--c8-surface);
+  box-shadow: 4px 4px 0 var(--c8-hard);
+}
+
+.c8-composer .c8-select-menu button {
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--c8-ink);
+  text-align: start;
+  padding: 0 12px;
+}
+
+.c8-composer .c8-select-menu button.is-on,
+.c8-composer .c8-select-menu button:hover {
+  background: var(--c8-soft);
+}
+
+.c8-composer .po-tags,
+.c8-composer .po-repeat,
+.c8-composer .po-date-chip {
+  height: 44px !important;
+  min-height: 44px;
+  border: 1.5px solid var(--c8-line) !important;
+  border-radius: 999px !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .po-tags:has(.po-tags-menu),
+.c8-composer .po-repeat:has(.po-repeat-menu),
+.c8-composer .po-date-chip:has(.po-date-pop) {
+  border-color: var(--c8-hard) !important;
+  background: var(--c8-soft) !important;
+}
+
+.c8-composer .po-date-trigger,
+.c8-composer .po-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.c8-composer .po-tags-menu,
+.c8-composer .po-repeat-menu,
+.c8-composer .po-date-pop,
+.c8-composer .po-post-menu {
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 16px !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink) !important;
+  box-shadow: 4px 4px 0 var(--c8-hard) !important;
+  max-height: min(420px, calc(100vh - 88px));
+  overflow: auto;
+}
+
+.c8-composer .po-menu-row,
+.c8-composer .po-post-menu button,
+.c8-composer .po-date-close {
+  min-height: 44px !important;
+  color: var(--c8-ink);
+}
+
+.c8-composer .po-tag-pen {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.c8-composer .po-date-pop .mantine-Calendar-calendarHeader,
+.c8-composer .po-date-pop .mantine-DatePicker-calendarHeader {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.c8-composer .po-date-pop .mantine-Calendar-calendarHeaderControl,
+.c8-composer .po-date-pop button.mantine-Calendar-calendarHeaderControl {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 999px !important;
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .po-date-pop .mantine-Calendar-calendarHeaderLevel {
+  color: var(--c8-ink) !important;
+  font-weight: 700;
+}
+
+.c8-composer .po-date-pop .po-day,
+.c8-composer .po-date-pop .po-day-today,
+.c8-composer .po-date-pop .po-day-on,
+.c8-composer .po-date-pop .po-day-past {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+}
+
+.c8-composer .po-date-pop .po-day-on {
+  background: var(--c8-ink) !important;
+  color: var(--c8-on-ink) !important;
+}
+
+.c8-composer .po-date-time,
+.c8-composer .po-date-clock {
+  color: var(--c8-ink);
+}
+
+.c8-composer .po-date-close {
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+  font-weight: 700;
+  padding: 0 16px;
+}
+
+.c8-composer .composer-foot {
+  min-height: 64px;
+  height: auto;
+  border-top: 1px solid var(--c8-line) !important;
+  background: var(--c8-surface) !important;
+}
+
+.c8-composer .po-split-main,
+.c8-composer .po-split-chevron,
+.c8-composer .composer-actions .bg-\[\#00D9FF\] {
+  background: var(--c8-cyan) !important;
+  color: var(--c8-on-cyan) !important;
+  border-color: var(--c8-hard) !important;
+}
+
+.c8-composer .po-split-main,
+.c8-composer .po-split-chevron {
+  border: 1.5px solid var(--c8-hard) !important;
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
+.c8-composer .po-split-main {
+  border-right-width: 0 !important;
+  border-radius: 999px 0 0 999px !important;
+}
+
+.c8-composer .po-split-chevron {
+  width: 44px !important;
+  min-width: 44px !important;
+  border-left: 0 !important;
+  border-radius: 0 999px 999px 0 !important;
+  box-shadow: 3px 3px 0 var(--c8-hard);
+}
+
+.c8-composer .po-split-main:only-child {
+  border-right-width: 1.5px !important;
+  border-radius: 999px !important;
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
+.c8-composer .po-split-main svg,
+.c8-composer .po-split-chevron svg,
+.c8-composer .po-split-main .text-\[\#0A0A0A\],
+.c8-composer .po-split-chevron .text-\[\#0A0A0A\] {
+  color: var(--c8-on-cyan) !important;
+}
+
+.c8-composer .composer-actions > button,
+.c8-composer .c8-draft {
+  height: 44px !important;
+  white-space: nowrap !important;
+  border: 1.5px solid var(--c8-btn-secondary-stroke) !important;
+  border-radius: 999px !important;
+  background: var(--c8-btn-secondary) !important;
+  color: var(--c8-ink) !important;
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
+.c8-composer .c8-draft-short {
+  display: none;
+}
+
+.c8-composer .c8-delete {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c8-danger) !important;
+  white-space: nowrap;
+}
+
+.c8-composer .c8-delete:hover {
+  background: var(--c8-soft);
+}
+
+.c8-composer .po-valid {
+  border: 1px solid var(--c8-danger) !important;
+  border-radius: 16px;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink);
+}
+
+.c8-composer .c8-valid-close {
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+}
+
+.c8-composer .sortable-container > div {
+  width: 96px !important;
+  height: 72px !important;
+}
+
+.c8-composer .overflow-y-scroll {
+  overflow-y: auto !important;
+}
+
+.c8-composer .c8-copilot,
+.c8-composer .copilotKitButton,
+.c8-composer .copilotKitWindow {
+  display: none !important;
+}
+
+.po-media-modal,
+.po-sure-modal,
+.po-tag-modal,
+.po-edit-modal {
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink) !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  box-shadow: 6px 6px 0 var(--c8-hard) !important;
+}
+
+.po-media-modal {
+  max-height: calc(100vh - 16px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.po-media-modal .po-media-grid,
+.po-media-modal .po-library {
+  min-height: 0;
+  overflow: auto;
+}
+
+.po-media-modal .po-library-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: auto;
+  padding-top: 12px;
+  background: var(--c8-surface);
+}
+
+.po-sure-yes,
+.po-media-modal .po-library-foot button:last-of-type {
+  background: var(--c8-cyan) !important;
+  color: var(--c8-on-cyan) !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 3px 0 var(--c8-hard);
+  min-height: 44px;
+}
+
+.po-sure-no,
+.po-media-modal .po-library-foot button:first-of-type {
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink) !important;
+  border: 1.5px solid var(--c8-btn-secondary-stroke) !important;
+  border-radius: 999px !important;
+  min-height: 44px;
+}
+
+.po-sure-danger .po-sure-yes {
+  background: var(--c8-danger) !important;
+  color: #fff !important;
+}
+
+@media (min-width: 640px) and (min-height: 501px) {
+  .c8-composer .c8-emoji.is-open {
+    align-items: center;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  .c8-composer {
+    padding: 12px !important;
+    overflow: hidden;
+  }
+
+  .c8-composer .composer-frame,
+  .c8-composer .composer-split {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .c8-composer .composer-preview {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    max-width: 46% !important;
+  }
+
+  .c8-composer .composer-editor {
+    flex: 1.15 1 0 !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .mantine-Modal-modal:has(.c8-composer) {
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  .c8-composer {
+    padding: 0 !important;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .c8-composer .composer-frame {
+    height: 100%;
+    min-height: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .c8-composer .composer-seg {
+    display: flex !important;
+    margin-left: auto;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--c8-line);
+    border-radius: 999px;
+    background: var(--c8-soft);
+  }
+
+  .c8-composer .composer-tabs button[role='tab'] {
+    height: 44px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--c8-muted);
+    font-weight: 600;
+  }
+
+  .c8-composer .composer-tabs button.on {
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    box-shadow: 0 2px 0 var(--c8-hard);
+  }
+
+  .c8-composer .composer-close-phone {
+    margin-left: 0;
+  }
+
+  .c8-composer .composer-split {
+    flex-direction: column !important;
+    min-height: 0;
+  }
+
+  .c8-composer .composer-preview {
+    display: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    flex: 1 1 auto;
+  }
+
+  .c8-composer .c8-preview-label {
+    display: none;
+  }
+
+  .c8-composer.composer-show-preview .composer-preview {
+    display: flex !important;
+  }
+
+  .c8-composer.composer-show-preview .composer-editor {
+    display: none !important;
+  }
+
+  .c8-composer .composer-editor {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .c8-composer .composer-editor > .flex-1 {
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .c8-composer .composer-foot {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    gap: 6px;
+    height: 64px !important;
+    max-height: 64px !important;
+    padding: 8px !important;
+    overflow: hidden;
+  }
+
+  .c8-composer .composer-foot > .flex-1,
+  .c8-composer .composer-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+    min-width: 0;
+    padding: 0 !important;
+    gap: 6px;
+  }
+
+  .c8-composer .composer-foot > .flex-1 {
+    flex: 0 0 auto;
+  }
+
+  .c8-composer .composer-actions {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+
+  .c8-composer .po-tags,
+  .c8-composer .po-repeat,
+  .c8-composer .po-date-chip {
+    width: 44px !important;
+    min-width: 44px !important;
+    flex: 0 0 44px !important;
+    margin: 0 !important;
+    overflow: hidden;
+  }
+
+  .c8-composer .po-menu-trigger > div:nth-child(2),
+  .c8-composer .po-date-label,
+  .c8-composer .po-menu-trigger > div:nth-child(3),
+  .c8-composer .po-date-trigger > div:nth-child(3) {
+    display: none !important;
+  }
+
+  .c8-composer .c8-draft-long,
+  .c8-composer .c8-delete span {
+    display: none;
+  }
+
+  .c8-composer .c8-draft-short {
+    display: inline;
+  }
+
+  .c8-composer .c8-delete {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .c8-composer .po-split {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  .c8-composer .po-date-pop,
+  .c8-composer .po-repeat-menu,
+  .c8-composer .po-tags-menu {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: 8px !important;
+    bottom: 72px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    z-index: 400 !important;
+  }
+
+  .po-media-modal,
+  .po-sure-modal,
+  .po-tag-modal {
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    width: auto !important;
+    max-height: calc(100vh - 16px) !important;
+    transform: none !important;
+  }
+
+  .c8-composer .po-attach .text-\[10px\],
+  .c8-composer .po-attach .maxMedia\:hidden,
+  .c8-composer .po-attach .iconBreak\:hidden {
+    display: none !important;
+  }
+
+  .c8-composer .po-global-label {
+    display: none !important;
+  }
+}
