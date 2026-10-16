@@ -224,10 +224,10 @@ export const ShowAllProviders = forwardRef((props, ref) => {
             integration:
               selectedIntegrations?.[0]?.integration || allIntegrations?.[0],
             allIntegrations: selectedIntegrations.map((p) => p.integration),
-            value: global.map((p) => ({
+            value: (global || []).map((p) => ({
               id: p.id,
-              content: p.content,
-              image: p.media,
+              content: typeof p?.content === 'string' ? p.content : '',
+              image: Array.isArray(p?.media) ? p.media : [],
             })),
           }}
         >
@@ -251,6 +251,9 @@ export const ShowAllProviders = forwardRef((props, ref) => {
         </IntegrationContext.Provider>
       )}
       {selectedIntegrations.map((integration) => {
+        if (!integration?.integration?.id || !integration.integration.identifier) {
+          return null;
+        }
         const { component: ProviderComponent } = Providers.find(
           (provider) =>
             provider.identifier === integration.integration.identifier

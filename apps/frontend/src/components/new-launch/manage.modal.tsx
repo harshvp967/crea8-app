@@ -47,6 +47,10 @@ import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
+const finePointer = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
@@ -59,6 +63,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const [showSettings, setShowSettings] = useState(false);
   const [phonePane, setPhonePane] = useState<'editor' | 'preview'>('editor');
   const [issue, setIssue] = useState<{ title: string; body: string } | null>(null);
+  const [postMenuPinned, setPostMenuPinned] = useState(false);
+  const [postMenuHover, setPostMenuHover] = useState(false);
+  const [postMenuFocus, setPostMenuFocus] = useState(0);
+  const postMenuOpen = postMenuPinned || postMenuHover;
+  const postSplitRef = useRef<HTMLDivElement>(null);
+  const postMenuRef = useRef<HTMLDivElement>(null);
+  const postChevronRef = useRef<HTMLButtonElement>(null);
+  const postMenuKeyboard = useRef(false);
+  const hoverSuppressed = useRef(false);
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
 
   const { addEditSets, mutate, customClose, dummy } = props;
@@ -132,6 +145,113 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       document.body.classList.remove('composer-open');
     };
   }, []);
+
+  const closePostMenu = useCallback((restoreFocus: boolean) => {
+    hoverSuppressed.current = true;
+    setPostMenuPinned(false);
+    setPostMenuHover(false);
+    if (restoreFocus) {
+      postChevronRef.current?.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!postMenuOpen) {
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!postSplitRef.current?.contains(event.target as Node)) {
+        hoverSuppressed.current = true;
+        setPostMenuPinned(false);
+        setPostMenuHover(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      hoverSuppressed.current = true;
+      setPostMenuPinned(false);
+      setPostMenuHover(false);
+      postChevronRef.current?.focus();
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [postMenuOpen]);
+
+  useEffect(() => {
+    if (!postMenuOpen || !postMenuKeyboard.current) {
+      return;
+    }
+    postMenuKeyboard.current = false;
+    postMenuRef.current
+      ?.querySelector<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')
+      ?.focus();
+  }, [postMenuFocus, postMenuOpen]);
+
+  const togglePostMenu = useCallback(
+    (keyboard: boolean) => {
+      if (postMenuPinned) {
+        hoverSuppressed.current = true;
+        setPostMenuPinned(false);
+        setPostMenuHover(false);
+        if (keyboard) {
+          queueMicrotask(() => postChevronRef.current?.focus());
+        }
+        return;
+      }
+
+      // A fine pointer already opened the menu on hover. The click pins it
+      // so the same press does not immediately close it.
+      if (postMenuHover && !keyboard) {
+        setPostMenuPinned(true);
+        return;
+      }
+
+      hoverSuppressed.current = false;
+      postMenuKeyboard.current = keyboard;
+      if (keyboard) {
+        setPostMenuFocus((tick) => tick + 1);
+      }
+      setPostMenuPinned(true);
+    },
+    [postMenuHover, postMenuPinned]
+  );
+
+  const onPostMenuKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const items = Array.from(
+        postMenuRef.current?.querySelectorAll<HTMLButtonElement>(
+          '[role="menuitem"]:not(:disabled)'
+        ) || []
+      );
+      const index = items.indexOf(document.activeElement as HTMLButtonElement);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!items.length) {
+          return;
+        }
+        const next =
+          event.key === 'ArrowDown'
+            ? items[(index + 1 + items.length) % items.length]
+            : items[(index - 1 + items.length) % items.length];
+        next?.focus();
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closePostMenu(true);
+      }
+    },
+    [closePostMenu]
+  );
 
   const currentIntegrationText = useMemo(() => {
     if (current === 'global') {
@@ -1020,7 +1140,31 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             {!addEditSets && (
-              <div className="group po-split cursor-pointer relative">
+              <div
+                ref={postSplitRef}
+                className={clsx(
+                  'group po-split cursor-pointer relative',
+                  postMenuOpen && 'is-open'
+                )}
+                onMouseEnter={() => {
+                  if (
+                    !finePointer() ||
+                    loading ||
+                    locked ||
+                    hoverSuppressed.current
+                  ) {
+                    return;
+                  }
+                  setPostMenuHover(true);
+                }}
+                onMouseLeave={() => {
+                  hoverSuppressed.current = false;
+                  if (postMenuRef.current?.contains(document.activeElement)) {
+                    return;
+                  }
+                  setPostMenuHover(false);
+                }}
+              >
                 <button
                   disabled={
                     selectedIntegrations.length === 0 || loading || locked
@@ -1047,19 +1191,52 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 </button>
                 {!dummy && (
                   <button
+                    ref={postChevronRef}
                     type="button"
                     className="po-split-chevron"
                     aria-label={t('post_now', 'Post Now')}
+                    aria-haspopup="menu"
+                    aria-expanded={postMenuOpen}
+                    aria-controls="post-now-menu"
                     disabled={loading || locked}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      togglePostMenu(event.detail === 0);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        postMenuKeyboard.current = true;
+                        setPostMenuFocus((tick) => tick + 1);
+                        setPostMenuPinned(true);
+                      }
+                    }}
                   >
-                    <DropdownArrowSmallIcon className="group-hover:rotate-180 text-[#0A0A0A]" />
+                    <DropdownArrowSmallIcon
+                      className={clsx(
+                        'text-[#0A0A0A]',
+                        postMenuOpen && 'rotate-180'
+                      )}
+                    />
                   </button>
                 )}
 
                 {!dummy && (
-                  <div className="post-now-tray po-post-menu hidden group-hover:flex">
+                  <div
+                    id="post-now-menu"
+                    ref={postMenuRef}
+                    role="menu"
+                    aria-label={t('post_now', 'Post Now')}
+                    onKeyDown={onPostMenuKeyDown}
+                    className={clsx(
+                      'post-now-tray po-post-menu',
+                      postMenuOpen ? 'flex' : 'hidden'
+                    )}
+                  >
                     <button
                       type="button"
+                      role="menuitem"
                       disabled={
                         selectedIntegrations.length === 0 || loading || locked
                       }
@@ -1071,6 +1248,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     </button>
                     <button
                       type="button"
+                      role="menuitem"
                       disabled={
                         selectedIntegrations.length === 0 || loading || locked
                       }

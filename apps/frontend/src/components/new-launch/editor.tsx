@@ -180,7 +180,7 @@ export const EditorWrapper: FC<{
     comments,
   } = useLaunchStore(
     useShallow((state) => ({
-      internal: state.internal.find((p) => p.integration.id === state.current),
+      internal: state.internal.find((p) => p.integration?.id === state.current),
       internalFromAll: state.integrations.find((p) => p.id === state.current),
       global: state.global,
       comments: state.comments,
@@ -983,7 +983,7 @@ export const OnlyEditor = forwardRef<
 
   const { internal } = useLaunchStore(
     useShallow((state) => ({
-      internal: state.internal.find((p) => p.integration.id === state.current),
+      internal: state.internal.find((p) => p.integration?.id === state.current),
     }))
   );
 
