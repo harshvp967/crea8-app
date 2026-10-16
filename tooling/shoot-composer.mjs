@@ -414,11 +414,11 @@ async function captureCreate(theme, width, height) {
   }
   if (wanted(`${width}x${height}-settings-${theme}.png`)) {
     await page.locator('.po-selected img').first().click();
-    await page.locator('.po-settings > div').first().click();
-    await page.waitForSelector('#social-settings :is(select, input, label)', { timeout: 8000 });
+    await page.locator('.po-settings-toggle, .po-settings > div').first().click();
+    await page.waitForSelector('#social-settings :is(select, input, label, .c8-select-face)', { timeout: 8000 });
     await settle();
     await shot(`${width}x${height}-settings-${theme}.png`);
-    await page.locator('.po-settings > div').first().click();
+    await page.locator('.po-settings-toggle, .po-settings > div').first().click();
   }
   if (wanted(`${width}x${height}-date-picker-${theme}.png`)) {
     await page.locator('.po-date-chip').click();
@@ -508,17 +508,17 @@ async function captureCreate(theme, width, height) {
     await page.waitForSelector('.po-media-modal', { timeout: 8000 });
     await settle();
     await shot(`${width}x${height}-media-dialog-${theme}.png`);
-    await page.keyboard.press('Escape');
+    const cancelMedia = page.locator('.po-media-modal button', { hasText: 'Cancel' });
+    if (await cancelMedia.isVisible().catch(() => false)) {
+      await cancelMedia.click();
+    } else {
+      await page.keyboard.press('Escape');
+    }
     await page.waitForTimeout(250);
     await dismissSure();
   }
   if (wanted(`${width}x${height}-close-confirm-${theme}.png`)) {
-    const phoneClose = page.locator('.composer-close-phone');
-    if (await phoneClose.isVisible().catch(() => false)) {
-      await phoneClose.click();
-    } else {
-      await page.locator('.composer-preview .cursor-pointer').first().click();
-    }
+    await page.locator('.composer-tabs .composer-close-phone').click();
     await page.waitForSelector('.po-sure-no', { timeout: 8000 });
     await settle();
     await shot(`${width}x${height}-close-confirm-${theme}.png`);
