@@ -426,7 +426,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     return;
   }, [existingData, existingPosts, channel, integrations, mutate, modal, fetch, t]);
 
-  const schedule = useCallback(
+  const saveWith = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'update') => async () => {
       let republish = false;
       // the channels saved as another type, the rest are saved as `type`
@@ -922,7 +922,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         if (!addEditSets) {
           mutate();
           toaster.show(
-            !existingData.integration
+            type === 'now'
+              ? t('post_is_being_published', 'Publishing your post now')
+              : !existingData.integration
               ? t('added_successfully', 'Added successfully')
               : t('updated_successfully', 'Updated successfully')
           );
@@ -960,6 +962,20 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       fetch,
       mutate,
     ]
+  );
+
+  // A thrown request would otherwise leave the save spinner running forever.
+  const schedule = useCallback(
+    (type: 'draft' | 'now' | 'schedule' | 'update') => async () => {
+      try {
+        await saveWith(type)();
+      } catch {
+        toaster.show(t('post_save_failed', 'Could not save the post'), 'warning');
+        setLoading(false);
+        setBusy(null);
+      }
+    },
+    [saveWith, toaster, t]
   );
 
   return (
@@ -1317,7 +1333,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       onClick={schedule('schedule')}
                     >
                       <CalendarIcon />
-                      <span>{t('add_to_calendar', 'Add to calendar')}</span>
+                      <span>
+                        {!existingData?.integration
+                          ? t('add_to_calendar', 'Add to calendar')
+                          : existingData?.posts?.[0]?.state === 'DRAFT'
+                          ? t('schedule', 'Schedule')
+                          : t('update', 'Update')}
+                      </span>
                       <CheckmarkIcon />
                     </button>
                     <button
