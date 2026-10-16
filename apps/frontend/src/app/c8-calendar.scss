@@ -2708,7 +2708,7 @@ body.c8-schedule .cal-post-action {
 }
 
 body.c8-schedule .mantine-Overlay-root {
-  background: var(--c8-hard) !important;
+  background: var(--c8-scrim) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -2991,7 +2991,13 @@ body.c8-schedule .c8-slots .c8-slot-save {
 /* Tablet and phone calendar chrome. Display only. */
 
 body.c8-schedule .mantine-Overlay-root,
-body.c8-schedule .arc-dialog-wrap,
+body.c8-schedule .arc-dialog-wrap {
+  background: var(--c8-scrim) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 body.c8-schedule .channels-scrim,
 body.c8-schedule .sheet-backdrop,
 body.c8-schedule .bg-c8-scrim,

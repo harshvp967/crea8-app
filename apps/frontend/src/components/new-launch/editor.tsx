@@ -585,6 +585,8 @@ export const Editor: FC<{
     sheet: false,
     top: 0,
     left: 0,
+    width: 360,
+    height: 420,
   });
   useLayoutEffect(() => {
     if (!emojiPickerOpen) {
@@ -595,17 +597,38 @@ export const Editor: FC<{
         '(max-width: 639px), (max-height: 500px)'
       ).matches;
       const rect = emojiButtonRef.current?.getBoundingClientRect();
+      const margin = 8;
+      if (sheet) {
+        const top = rect ? rect.bottom + margin : margin;
+        const available = window.innerHeight - top - margin;
+        const height = Math.min(280, Math.max(180, available));
+        setEmojiAnchor({
+          sheet: true,
+          top,
+          left: margin,
+          width: window.innerWidth - margin * 2,
+          height,
+        });
+        return;
+      }
       const width = 360;
-      const height = 420;
-      let left = rect ? rect.left : 8;
-      let top = rect ? rect.bottom + 8 : 8;
-      if (left + width > window.innerWidth - 8) {
-        left = Math.max(8, window.innerWidth - width - 8);
+      const height = Math.min(420, window.innerHeight - margin * 2);
+      let left = rect ? rect.right + margin : margin;
+      let top = rect ? rect.top : margin;
+      if (left + width > window.innerWidth - margin) {
+        left = rect ? rect.left - width - margin : margin;
       }
-      if (rect && top + height > window.innerHeight - 8) {
-        top = Math.max(8, rect.top - height - 8);
+      if (left < margin) {
+        left = Math.max(margin, (rect ? rect.left : margin));
+        top = rect ? rect.bottom + margin : margin;
+        if (left + width > window.innerWidth - margin) {
+          left = Math.max(margin, window.innerWidth - width - margin);
+        }
       }
-      setEmojiAnchor({ sheet, top, left });
+      if (top + height > window.innerHeight - margin) {
+        top = Math.max(margin, window.innerHeight - height - margin);
+      }
+      setEmojiAnchor({ sheet: false, top, left, width, height });
     };
     place();
     window.addEventListener('resize', place);
@@ -926,14 +949,10 @@ export const Editor: FC<{
                     >
                       <div
                         className="c8-emoji-pop"
-                        style={
-                          emojiAnchor.sheet
-                            ? undefined
-                            : { top: emojiAnchor.top, left: emojiAnchor.left }
-                        }
+                        style={{ top: emojiAnchor.top, left: emojiAnchor.left }}
                       >
                         <EmojiPicker
-                          height={emojiAnchor.sheet ? 360 : 400}
+                          height={emojiAnchor.height}
                           theme={
                             document.body.classList.contains('dark')
                               ? Theme.DARK

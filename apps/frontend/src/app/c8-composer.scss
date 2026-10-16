@@ -200,18 +200,14 @@
 }
 
 .c8-emoji.is-open.is-sheet {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  display: block;
   pointer-events: auto;
-  background: var(--c8-scrim-sheet);
+  background: transparent;
 }
 
 .c8-emoji.is-open.is-sheet .c8-emoji-pop {
-  position: relative;
-  top: auto !important;
-  left: auto !important;
-  width: 100%;
+  position: fixed;
+  width: calc(100vw - 16px);
   margin: 0;
 }
 
@@ -220,7 +216,7 @@
   top: auto !important;
   left: auto !important;
   width: min(360px, calc(100vw - 16px)) !important;
-  height: min(420px, calc(100vh - 24px)) !important;
+  max-height: min(420px, calc(100vh - 24px)) !important;
   margin-bottom: 8px;
   border: 1.5px solid var(--c8-hard) !important;
   border-radius: 16px !important;
@@ -1363,5 +1359,621 @@
   .c8-composer .composer-tabs button[role='tab'] {
     padding: 0 8px;
     font-size: 12px;
+  }
+}
+
+/* Composer layout pass. Placement and paint only. */
+
+body.c8-schedule .mantine-Overlay-root,
+body.c8-schedule .arc-dialog-wrap {
+  z-index: 800 !important;
+  background: var(--c8-scrim) !important;
+  background-image: none !important;
+}
+
+body.c8-schedule:has(.c8-composer) .filters-bar .cal-customer,
+body.c8-schedule:has(.mantine-Overlay-root) .filters-bar .cal-customer,
+body.c8-schedule:has(.arc-dialog-wrap) .filters-bar .cal-customer,
+body.c8-schedule:has(.c8-composer) .cal-scope-row .cal-customer {
+  visibility: hidden !important;
+}
+
+body.composer-open .app-toast,
+body.composer-open .app-toast.is-error,
+body.composer-open .app-toast.is-warning {
+  left: 8px !important;
+  right: 8px !important;
+  top: auto !important;
+  width: auto !important;
+  max-width: calc(100vw - 16px) !important;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
+.c8-composer #social-content {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-sizing: border-box;
+}
+
+.c8-composer #social-content > .flex,
+.c8-composer .innerComponent,
+.c8-composer .po-picks {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.c8-composer .po-picks {
+  flex: 1 1 auto;
+}
+
+.c8-composer .po-current {
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box;
+}
+
+.c8-composer .po-current-row {
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.c8-composer .po-current-row::-webkit-scrollbar {
+  display: none;
+}
+
+.c8-composer .po-global {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex: none;
+}
+
+.c8-composer .po-global:not(.po-global-on) {
+  background: var(--c8-soft) !important;
+}
+
+.c8-composer .po-current-spacer {
+  height: 56px;
+}
+
+.c8-composer .po-editor-shell,
+.c8-composer .po-editor-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.c8-composer .composer-preview,
+.c8-composer .composer-preview > .flex-1,
+.c8-composer .composer-preview .relative,
+.c8-composer .po-preview-empty,
+.c8-composer .composer-preview .preview {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.c8-composer .po-preview-empty,
+.c8-composer .composer-preview .preview {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap !important;
+}
+
+.c8-composer .composer-preview .min-w-\[40px\] > .relative {
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 999px;
+  flex: none;
+}
+
+.c8-composer .composer-preview .absolute.z-10[class*='-end-'],
+.c8-composer .composer-preview .absolute.z-10[class*='-bottom-'] {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  bottom: 0 !important;
+  inset-inline-end: 0 !important;
+  top: auto !important;
+}
+
+.c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\]:has(.text-sm) {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid var(--c8-line) !important;
+  color: var(--c8-muted) !important;
+  box-shadow: none !important;
+}
+
+.c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\]:has(.text-sm) .text-white,
+.c8-composer .group.rounded-\[6px\]:has(.text-sm) .text-\[\#FF3F3F\] {
+  color: var(--c8-muted) !important;
+}
+
+.c8-composer .po-tags,
+.c8-composer .po-repeat,
+.c8-composer .po-date-chip,
+.c8-composer .po-date-trigger,
+.c8-composer .po-menu-trigger,
+.c8-composer .po-split-chevron {
+  box-sizing: border-box;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  height: 44px !important;
+}
+
+.c8-composer .po-split-main:disabled,
+.c8-composer .po-split-main:disabled + .po-split-chevron,
+.composer .c8-composer .po-split .po-split-main:disabled + .po-split-chevron,
+.composer .po-split .po-split-main:disabled + .po-split-chevron {
+  background: var(--c8-soft) !important;
+  color: var(--c8-muted) !important;
+  border-color: var(--c8-line) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  cursor: not-allowed;
+}
+
+.c8-composer .po-split-main:disabled span,
+.c8-composer .po-split-main:disabled .text-\[\#0A0A0A\],
+.c8-composer .po-split-main:disabled + .po-split-chevron,
+.c8-composer .po-split-main:disabled + .po-split-chevron svg {
+  color: var(--c8-muted) !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+}
+
+.c8-emoji.is-open.is-sheet .EmojiPickerReact {
+  width: calc(100vw - 16px) !important;
+  max-width: calc(100vw - 16px) !important;
+}
+
+.c8-composer .po-repeat-menu {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.c8-composer .po-date-pop {
+  overflow: hidden !important;
+  scrollbar-width: none;
+}
+
+.c8-composer .po-date-pop::-webkit-scrollbar,
+.c8-composer .po-date-pop *::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none;
+}
+
+.c8-composer .relative:has(> .po-delay) > div.absolute {
+  width: min(280px, calc(100vw - 16px)) !important;
+  max-width: calc(100vw - 16px);
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 16px !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink);
+  box-shadow: 4px 4px 0 var(--c8-hard) !important;
+  box-sizing: border-box;
+}
+
+.c8-composer .relative:has(> .po-delay) .grid > div {
+  min-height: 36px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+}
+
+.c8-composer .relative:has(> .po-delay) .grid > div.arc-selected {
+  border-color: var(--c8-hard);
+  background: var(--c8-surface);
+  box-shadow: 0 2px 0 var(--c8-hard);
+}
+
+.c8-composer .relative:has(> .po-delay) .border-t .flex {
+  width: 100%;
+  align-items: center;
+}
+
+.c8-composer .relative:has(> .po-delay) input {
+  flex: 1 1 auto;
+  width: 100% !important;
+  min-width: 0;
+  height: 44px !important;
+  border-radius: 999px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  background: var(--c8-bg) !important;
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .relative:has(> .po-delay) .border-t button {
+  height: 44px !important;
+  border-radius: 999px !important;
+  flex: none;
+  background: var(--c8-cyan) !important;
+  color: var(--c8-on-cyan) !important;
+  border: 1.5px solid var(--c8-hard);
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
+.c8-composer .relative:has(> .po-delay) > div.absolute > button {
+  height: 44px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--c8-danger) !important;
+  box-shadow: none !important;
+}
+
+body.c8-schedule .customer-menu {
+  max-width: calc(100vw - 16px) !important;
+  box-sizing: border-box;
+}
+
+body.c8-schedule .customer-menu .customer-menu-title {
+  pointer-events: none !important;
+  cursor: default !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 0 4px !important;
+  padding: 2px 12px 6px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: var(--c8-muted) !important;
+  background: transparent !important;
+}
+
+.c8-composer .customer-menu .customer-option {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  overflow: visible;
+  gap: 8px;
+}
+
+.c8-composer .customer-menu .customer-option:not([aria-selected='true']) .customer-option-check {
+  display: none !important;
+}
+
+.c8-composer .customer-menu .customer-option[aria-selected='true'] .customer-option-check,
+body.c8-schedule .customer-menu .customer-option[aria-selected='true'] .customer-option-check {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: auto;
+  flex: none;
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  color: var(--c8-ink) !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.c8-composer .customer-menu .customer-option[aria-selected='true'] .customer-option-check svg {
+  display: block !important;
+  width: 16px !important;
+  height: 16px !important;
+  stroke: currentColor !important;
+  overflow: visible;
+}
+
+.arc-dialog-wrap:has(.settings-section) [class*='pt-'] {
+  padding-top: 16px !important;
+}
+
+.arc-dialog:has(.settings-section) {
+  width: min(480px, calc(100vw - 32px)) !important;
+  min-width: 0 !important;
+  padding: 8px 16px 16px !important;
+  gap: 8px !important;
+}
+
+.arc-dialog:has(.settings-section) .arc-dialog-head {
+  align-items: center;
+  min-height: 44px;
+}
+
+.arc-dialog:has(.settings-section) .mantine-Modal-close,
+.arc-dialog.po-media-modal .mantine-Modal-close {
+  position: static !important;
+  top: auto !important;
+  inset-inline-end: auto !important;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+}
+
+.arc-dialog:has(.settings-section) .settings-head h1 {
+  display: none;
+}
+
+.arc-dialog:has(.settings-section) .settings-head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.arc-dialog:has(.settings-section) .settings-head > button {
+  width: 100%;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sig-plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (min-width: 640px) {
+  .arc-dialog.po-sure-danger,
+  .arc-dialog.po-sure-modal.po-sure-danger {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: fit-content !important;
+    min-width: min(280px, calc(100vw - 32px)) !important;
+    max-width: min(440px, calc(100vw - 32px)) !important;
+    height: auto !important;
+    max-height: none !important;
+    transform: translate(-50%, -50%) !important;
+    border-radius: 26px !important;
+  }
+}
+
+@media (min-width: 744px) and (min-height: 501px) {
+  .c8-composer .po-tags,
+  .c8-composer .po-repeat {
+    width: auto !important;
+    max-width: none !important;
+    flex: 0 1 auto !important;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-tags > div:first-child,
+  .c8-composer .po-repeat > div:first-child {
+    width: auto !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
+    justify-content: center !important;
+  }
+
+  .c8-composer .po-tags > div:first-child > div:nth-child(n + 2),
+  .c8-composer .po-repeat > div:first-child > div:nth-child(n + 2) {
+    display: flex !important;
+  }
+
+  .c8-composer .composer-foot > .flex-1,
+  .c8-composer .composer-actions {
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-date-chip {
+    width: max-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-date-trigger {
+    width: max-content !important;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-date-label {
+    display: block !important;
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 800px) and (min-width: 640px) and (min-height: 501px) {
+  .c8-composer .c8-draft-long {
+    display: none !important;
+  }
+
+  .c8-composer .c8-draft-short {
+    display: inline !important;
+  }
+
+  .c8-composer .c8-draft {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .c8-composer .composer-foot > .flex-1 {
+    padding-left: 12px !important;
+  }
+
+  .c8-composer .composer-actions {
+    padding-right: 8px !important;
+    gap: 6px !important;
+  }
+
+  .c8-composer .po-date-chip {
+    margin-left: 0 !important;
+  }
+
+  .c8-composer .po-date-trigger {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .c8-composer .po-split-chevron {
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    min-width: 44px !important;
+  }
+
+  .c8-composer .po-split-main:disabled {
+    font-size: 12px !important;
+    padding: 0 8px !important;
+  }
+
+  .c8-composer .po-split-main:disabled span {
+    font-size: 12px !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  .c8-composer .po-date-pop,
+  .c8-composer .po-repeat > .po-repeat-menu,
+  .c8-composer .po-tags > .po-tags-menu {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    bottom: 68px !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: calc(100dvh - 80px) !important;
+    overflow: hidden !important;
+    z-index: 4500 !important;
+  }
+
+  .c8-composer .po-date-pop {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .c8-composer .po-date-pop > :first-child {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .c8-composer .po-date-time {
+    flex: none;
+  }
+
+  .c8-composer .po-repeat > .po-repeat-menu {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .c8-composer .po-repeat-menu .po-menu-row {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+  }
+
+  .c8-composer .relative:has(> .po-delay) > div.absolute {
+    position: absolute !important;
+    left: auto !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    width: min(280px, calc(100vw - 16px)) !important;
+    max-width: calc(100vw - 16px) !important;
+    transform: none !important;
+    z-index: 4500 !important;
+  }
+
+  .po-media-modal .po-library {
+    padding: 0 !important;
+  }
+
+  .po-media-modal .po-library .flex.items-center:not(.po-library-foot) {
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .po-media-modal .po-library .flex.items-center:not(.po-library-foot) > .flex-1 {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .po-media-modal .po-library input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .po-media-modal .po-library-foot {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .po-media-modal .po-library-foot button {
+    white-space: nowrap !important;
+    flex: none;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .po-media-modal .po-media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+  }
+
+  .arc-dialog.po-media-modal {
+    padding: 12px !important;
+    gap: 8px !important;
+  }
+
+  .arc-dialog.po-media-modal .arc-dialog-head {
+    align-items: center;
+    min-height: 44px;
+    padding-right: 0;
+  }
+}
+
+@media (max-height: 500px) {
+  .c8-composer .po-date-pop .po-day,
+  .c8-composer .po-date-pop .po-day-today,
+  .c8-composer .po-date-pop .po-day-on,
+  .c8-composer .po-date-pop .po-day-past {
+    width: 28px;
+    height: 28px;
+  }
+
+  .c8-composer .po-date-pop .mantine-Calendar-calendarHeader,
+  .c8-composer .po-date-pop .mantine-Calendar-calendarHeaderControl,
+  .c8-composer .po-date-pop button.mantine-Calendar-calendarHeaderControl {
+    min-height: 32px !important;
+    height: 32px !important;
+  }
+
+  .c8-composer .po-repeat-menu {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .c8-composer .po-repeat-menu .po-menu-title {
+    padding-top: 0;
+    padding-bottom: 2px;
+    line-height: 16px;
+  }
+
+  .c8-composer .po-repeat-menu .po-menu-row {
+    min-height: 26px !important;
+    height: 26px;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 }
