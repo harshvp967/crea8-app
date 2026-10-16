@@ -38,6 +38,7 @@ import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useDrag, useDrop } from 'react-dnd';
+import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 import { Integration, Post, State, Tags } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -1379,6 +1380,13 @@ const CalendarItem: FC<{
   const menuContains = (node: Node | null) =>
     !!node &&
     (!!postRef.current?.contains(node) || !!menuRef.current?.contains(node));
+  const sheet =
+    actionsOpen &&
+    !showTime &&
+    typeof window !== 'undefined' &&
+    window.innerWidth < 640;
+  const closeActions = useCallback(() => setActionsOpen(false), []);
+  useGrabToClose(menuRef, sheet, closeActions);
   useEffect(() => {
     if (!actionsOpen) {
       return;
@@ -1513,6 +1521,7 @@ const CalendarItem: FC<{
             className={clsx(
               'cal-post-bar',
               overlay && 'is-overlay',
+              sheet && 'is-sheet',
               showTime && 'is-list'
             )}
             style={
@@ -1528,6 +1537,7 @@ const CalendarItem: FC<{
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => event.stopPropagation()}
           >
+        {sheet && <div className="arc-grab" aria-hidden />}
         <div className="cal-post-sheet-title">
           {stripHtmlValidation('none', post.content, false, true, false) ||
             t('no_content', 'no content')}
@@ -1575,7 +1585,7 @@ const CalendarItem: FC<{
         </div>
           </div>
         );
-        return overlay ? createPortal(bar, document.body) : bar;
+        return overlay || sheet ? createPortal(bar, document.body) : bar;
       })()}
       <div
         onClick={editPost}
