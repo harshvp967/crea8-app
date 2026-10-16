@@ -1084,6 +1084,11 @@
     font-size: 16px;
   }
 
+  .c8-composer .composer-seg {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
   .c8-composer .composer-tabs button[role='tab'] {
     height: 44px;
     padding: 0 10px;
@@ -1337,5 +1342,21 @@
 
   .c8-composer .po-global-label {
     display: none !important;
+  }
+}
+
+@media (max-width: 420px), (max-height: 420px) {
+  .c8-composer .composer-tabs {
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .c8-composer .composer-tabs-title {
+    font-size: 15px;
+  }
+
+  .c8-composer .composer-tabs button[role='tab'] {
+    padding: 0 8px;
+    font-size: 12px;
   }
 }
