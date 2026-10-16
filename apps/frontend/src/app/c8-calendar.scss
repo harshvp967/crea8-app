@@ -4654,7 +4654,7 @@ body.c8-schedule .cal-post-sheet-title {
 
   body.c8-schedule .cal-scope-row:has(.select-customer > div.fixed) {
     position: relative;
-    z-index: 40;
+    z-index: 70;
   }
 
   body.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
@@ -4677,7 +4677,7 @@ body.c8-schedule .cal-post-sheet-title {
 
   body.c8-schedule .customer-menu,
   body.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
-    z-index: 80;
+    z-index: 80 !important;
     background: var(--c8-surface);
     border: 1.5px solid #121016 !important;
     border-radius: 16px;
@@ -5218,14 +5218,16 @@ body.c8-schedule .cal-show-more-short {
 }
 
 @media (max-height: 500px) {
-  /* Dropdown under the customer chip. Inline top/left stay so it is not a full-width sheet. */
+  /* Dropdown under the customer chip. Inline top/left stay so it is not a full-width sheet.
+     The 56px shift clears the 44px previous-period arrow under the chip's left edge. */
   body.c8-schedule .customer-menu {
     right: auto !important;
     bottom: auto !important;
     width: max-content !important;
-    min-width: 220px !important;
-    max-width: min(280px, calc(100vw - 24px)) !important;
+    min-width: 200px !important;
+    max-width: min(240px, calc(100vw - 84px)) !important;
     max-height: calc(100vh - 250px) !important;
+    margin-left: 56px !important;
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -5381,13 +5383,28 @@ body.c8-schedule .cal-post-bar.is-overlay {
     padding-inline-end: 22px !important;
   }
 
-  body.c8-schedule .week-cell .cal-chip-when,
-  body.c8-schedule .month-cell .cal-chip-when {
+  body.c8-schedule .week-cell .cal-chip-when {
     flex: 0 1 auto;
     max-width: calc(100% - 2px);
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The time stays whole. A column that cannot hold it drops the time so the title truncates instead. */
+  body.c8-schedule .month-cell .cal-post-body {
+    container-type: inline-size;
+    container-name: c8-month-chip;
+  }
+
+  body.c8-schedule .month-cell .cal-chip-when {
+    flex: 0 0 auto;
+    width: max-content;
+    max-width: none;
+    min-width: max-content;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
   }
 
@@ -5400,6 +5417,13 @@ body.c8-schedule .cal-post-bar.is-overlay {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* The title keeps about six characters. The time drops before the title is squeezed under that. */
+  body.c8-schedule .month-cell .cal-post-body > .min-w-0,
+  body.c8-schedule .month-cell .line-clamp-2 {
+    flex: 1 0 6ch;
+    min-width: 6ch;
   }
 
   body.c8-schedule .month-cell .flex.flex-col.w-full {
@@ -5492,5 +5516,116 @@ body.c8-schedule .cal-post-bar.is-overlay {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* Time plus about six title characters, the menu inset, and the chip padding.
+   Narrower than that, drop the time so the title is not cut to a couple of letters. */
+@container c8-month-chip (max-width: 136px) {
+  .cal-chip-when {
+    display: none !important;
+  }
+
+  /* Six letters plus the ellipsis do not fit at 12px beside the menu icon. */
+  .line-clamp-2 {
+    font-size: 10px;
+    line-height: 14px;
+  }
+}
+
+/* The day header stays above the hour labels when the week grid scrolls.
+   Short landscape (height <= 500) keeps the phone stack, where this header
+   would paint over the open customer menu. */
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  body.c8-schedule .week-grid > .week-head,
+  body.c8-schedule .week-grid > .week-corner {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 60 !important;
+    background: var(--c8-surface) !important;
+    background-color: var(--c8-surface) !important;
+    background-image: none !important;
+    box-shadow: 0 1px 0 var(--c8-surface);
+  }
+
+  body.c8-schedule .week-grid > .week-time {
+    position: relative;
+    z-index: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+/* List menus are portaled, so the card's left edge is not the ⋮. Anchor under the button. */
+@media (min-width: 640px) and (min-height: 501px) {
+  body.c8-schedule .cal-post-bar.is-overlay.is-list {
+    top: calc(anchor(bottom) + 4px) !important;
+    right: anchor(right) !important;
+    left: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+  }
+}
+
+/* The platform mark sits on the avatar, inside the card. */
+@media (max-width: 639px) {
+  body.c8-schedule .cal-list .cal-post,
+  body.c8-schedule .cal-list .cal-post-body,
+  body.c8-schedule .cal-list .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .cal-list .cal-post.is-draft .cal-post-body {
+    overflow: hidden;
+  }
+
+  body.c8-schedule .cal-list .cal-post-icon {
+    position: relative;
+    overflow: visible;
+  }
+
+  body.c8-schedule .cal-list .cal-post-mark {
+    position: absolute;
+    top: auto;
+    left: auto;
+    right: 0;
+    bottom: 0;
+  }
+}
+
+/* The slot pill is a hover affordance. Touch screens keep it hidden. */
+body.c8-schedule .day-cell .cal-col::before,
+body.c8-schedule .week-cell .cal-col::before,
+body.c8-schedule .phone-slot .cal-col::before {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.c8-schedule .day-cell:not(:hover) .cal-add > div,
+body.c8-schedule .week-cell:not(:hover) .cal-add > div,
+body.c8-schedule .phone-slot:not(:hover) .cal-add > div {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.c8-schedule .day-cell:not(:hover) .cal-add > div::before,
+body.c8-schedule .week-cell:not(:hover) .cal-add > div::before,
+body.c8-schedule .phone-slot:not(:hover) .cal-add > div::before {
+  content: none !important;
+}
+
+@media (hover: hover) {
+  body.c8-schedule .day-cell:hover .cal-col::before,
+  body.c8-schedule .week-cell:hover .cal-col::before,
+  body.c8-schedule .phone-slot:hover .cal-col::before {
+    opacity: 0.45 !important;
+    visibility: visible !important;
+    background: var(--c8-soft) !important;
+  }
+
+  body.light.c8-schedule .day-cell:hover .cal-add > div,
+  body.light.c8-schedule .week-cell:hover .cal-add > div,
+  body.light.c8-schedule .phone-slot:hover .cal-add > div {
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    box-shadow: inset 0 0 0 1.5px var(--c8-ink);
   }
 }
