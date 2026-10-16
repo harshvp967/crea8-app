@@ -51,6 +51,7 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useDebounce } from 'use-debounce';
@@ -871,6 +872,8 @@ export const MultiMediaComponent: FC<{
   const user = useUser();
   const modals = useModals();
   const t = useT();
+  const { plontoKey } = useVariables();
+  const designReady = !!plontoKey;
   useEffect(() => {
     if (value) {
       setCurrentMedia(value);
@@ -878,6 +881,7 @@ export const MultiMediaComponent: FC<{
   }, [value]);
 
   const [currentMedia, setCurrentMedia] = useState(value);
+  const mediaList = Array.isArray(currentMedia) ? currentMedia : [];
   const mediaDirectory = useMediaDirectory();
   const changeMedia = useCallback(
     (
@@ -897,7 +901,7 @@ export const MultiMediaComponent: FC<{
         return;
       }
 
-      const newMedia = [...(currentMedia || []), ...mediaArray];
+      const newMedia = [...mediaList, ...mediaArray];
       setCurrentMedia(newMedia);
       onChange({
         target: {
@@ -906,7 +910,7 @@ export const MultiMediaComponent: FC<{
         },
       });
     },
-    [currentMedia, insertInContent]
+    [insertInContent, mediaList]
   );
   const showModal = useCallback(() => {
     modals.openModal({
@@ -929,7 +933,7 @@ export const MultiMediaComponent: FC<{
 
   const clearMedia = useCallback(
     (topIndex: number) => () => {
-      const newMedia = currentMedia?.filter((f, index) => index !== topIndex);
+      const newMedia = mediaList.filter((_, index) => index !== topIndex);
       setCurrentMedia(newMedia);
       onChange({
         target: {
@@ -938,29 +942,30 @@ export const MultiMediaComponent: FC<{
         },
       });
     },
-    [currentMedia]
+    [mediaList]
   );
 
   const designMedia = useCallback(() => {
-    if (!!user?.tier?.ai && !dummy) {
-      modals.openModal({
-        askClose: false,
-        title: t('design_media', 'Design Media'),
-        size: '80%',
-        children: (close) => (
-          <Polonto setMedia={changeMedia} closeModal={close} />
-        ),
-      });
+    if (!designReady || !user?.tier?.ai || dummy) {
+      return;
     }
-  }, [changeMedia, t]);
+    modals.openModal({
+      askClose: false,
+      title: t('design_media', 'Design Media'),
+      size: '80%',
+      children: (close) => (
+        <Polonto setMedia={changeMedia} closeModal={close} />
+      ),
+    });
+  }, [changeMedia, designReady, dummy, t, user?.tier?.ai]);
 
   return (
     <>
       <div className="b1 flex flex-col gap-[8px] rounded-bl-[8px] select-none w-full">
         <div className="flex gap-[10px] px-[12px]">
-          {!!currentMedia && (
+          {mediaList.length > 0 && (
             <ReactSortable
-              list={currentMedia}
+              list={mediaList}
               setList={(value) =>
                 onChange({ target: { name: 'upload', value } })
               }
@@ -969,7 +974,7 @@ export const MultiMediaComponent: FC<{
               swap={true}
               handle=".dragging"
             >
-              {currentMedia.map((media, index) => (
+              {mediaList.map((media, index) => (
                   <div key={media.id} className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
                     <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
 
@@ -986,7 +991,7 @@ export const MultiMediaComponent: FC<{
                                   onChange({
                                     target: {
                                       name: 'upload',
-                                      value: currentMedia.map((p) => {
+                                      value: mediaList.map((p) => {
                                         if (p.id === media.id) {
                                           return {
                                             ...p,
@@ -1033,32 +1038,36 @@ export const MultiMediaComponent: FC<{
                   {label}
                 </div>
               )}
-              <div
+              <button
+                type="button"
                 onClick={showModal}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className="c8-attach cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
               >
                 <div className="flex gap-[8px] items-center">
                   <div>
                     <InsertMediaIcon />
                   </div>
                   <div className="text-[10px] font-[600] maxMedia:hidden block">
-                    {t('insert_media', 'Insert Media')}
+                    {t('insert_media', 'Insert media')}
                   </div>
                 </div>
-              </div>
-              <div
-                onClick={designMedia}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
-              >
-                <div className="flex gap-[5px] items-center">
-                  <div>
-                    <DesignMediaIcon />
+              </button>
+              {designReady && (
+                <button
+                  type="button"
+                  onClick={designMedia}
+                  className="c8-attach cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                >
+                  <div className="flex gap-[5px] items-center">
+                    <div>
+                      <DesignMediaIcon />
+                    </div>
+                    <div className="text-[10px] font-[600] iconBreak:hidden block">
+                      {t('design_media', 'Design media')}
+                    </div>
                   </div>
-                  <div className="text-[10px] font-[600] iconBreak:hidden block">
-                    {t('design_media', 'Design Media')}
-                  </div>
-                </div>
-              </div>
+                </button>
+              )}
 
               {!insertInContent && (
                 <ThirdPartyMedia allData={allData} onChange={changeMedia} />
@@ -1127,6 +1136,7 @@ export const MediaComponent: FC<{
     props;
   const { getValues } = useSettings();
   const user = useUser();
+  const { plontoKey } = useVariables();
   useEffect(() => {
     const settings = getValues()[props.name];
     if (settings) {
@@ -1138,6 +1148,9 @@ export const MediaComponent: FC<{
   const mediaDirectory = useMediaDirectory();
 
   const showDesignModal = useCallback(() => {
+    if (!plontoKey) {
+      return;
+    }
     modals.openModal({
       title: t('media_editor', 'Media Editor'),
       askClose: false,
@@ -1154,7 +1167,7 @@ export const MediaComponent: FC<{
         />
       ),
     });
-  }, [t]);
+  }, [plontoKey, t]);
   const changeMedia = useCallback((m: { path: string; id: string }[]) => {
     setCurrentMedia(m[0]);
     onChange({
@@ -1201,9 +1214,11 @@ export const MediaComponent: FC<{
       )}
       <div className="flex gap-[5px]">
         <Button onClick={showModal}>{t('select', 'Select')}</Button>
-        <Button onClick={showDesignModal} className="!bg-customColor45">
-          {t('editor', 'Editor')}
-        </Button>
+        {!!plontoKey && (
+          <Button onClick={showDesignModal} className="!bg-customColor45">
+            {t('editor', 'Editor')}
+          </Button>
+        )}
         <Button secondary={true} onClick={clearMedia}>
           {t('clear', 'Clear')}
         </Button>

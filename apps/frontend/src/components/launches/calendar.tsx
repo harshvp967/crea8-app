@@ -124,6 +124,13 @@ const usePostActions = (onMutate?: () => void) => {
       };
 
       const data = await (await fetch(`/posts/group/${post.group}`)).json();
+      if (!Array.isArray(data?.posts) || !data.posts.length) {
+        toaster.show(
+          t('could_not_open_post', 'Could not open this post'),
+          'warning'
+        );
+        return;
+      }
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
@@ -181,7 +188,7 @@ const usePostActions = (onMutate?: () => void) => {
         title: ``,
       });
     },
-    [allIntegrations, customer, fetch, modal, mutate]
+    [allIntegrations, customer, fetch, modal, mutate, toaster, t]
   );
 
   const copyDebugJson = useCallback(

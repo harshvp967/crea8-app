@@ -15,10 +15,12 @@ export const GeneralPreviewComponent: FC<{
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
 
-  const renderContent = topValue.map((p) => {
+  const renderContent = (Array.isArray(topValue) ? topValue : []).map((p) => {
+    const content = typeof p?.content === 'string' ? p.content : '';
+    const images = Array.isArray(p?.image) ? p.image : [];
     const newContent = stripHtmlValidation(
       'normal',
-      p.content.replace(
+      content.replace(
         /<span.*?data-mention-id="([.\s\S]*?)"[.\s\S]*?>([.\s\S]*?)<\/span>/gi,
         (match, match1, match2) => {
           return `[[[${match2}]]]`;
@@ -45,7 +47,7 @@ export const GeneralPreviewComponent: FC<{
       }) +
       `</mark>`;
 
-    return { text: finalValue, images: p.image };
+    return { text: finalValue, images };
   });
 
   return (
@@ -76,13 +78,13 @@ export const GeneralPreviewComponent: FC<{
                   <SafeImage
                     src={`/icons/platforms/${integration?.identifier}.png`}
                     className="min-w-[20px] min-h-[20px] rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
-                    alt={integration.identifier}
+                    alt={integration?.identifier || ''}
                     width={20}
                     height={20}
                   />
                 )}
               </div>
-              {index !== topValue.length - 1 && (
+              {index !== renderContent.length - 1 && (
                 <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-customColor25 absolute top-[10px] z-[1]" />
               )}
             </div>

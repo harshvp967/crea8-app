@@ -4,6 +4,7 @@ import React, {
   FC,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -11,6 +12,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import EmojiPicker from 'emoji-picker-react';
@@ -180,7 +182,7 @@ export const EditorWrapper: FC<{
     comments,
   } = useLaunchStore(
     useShallow((state) => ({
-      internal: state.internal.find((p) => p.integration.id === state.current),
+      internal: state.internal.find((p) => p.integration?.id === state.current),
       internalFromAll: state.integrations.find((p) => p.id === state.current),
       global: state.global,
       comments: state.comments,
@@ -411,13 +413,7 @@ export const EditorWrapper: FC<{
     >
       {isCreateSet && current !== 'global' && (
         <>
-          <div className="text-center absolute w-full h-full left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]">
-            <div>
-              <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
-                <LockIcon />
-              </div>
-              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
-            </div>
+          <div className="po-lock text-center absolute w-full h-full left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]">
             <div className="text-[14px] font-[600] text-white">
               {t(
                 'cant_edit_networks_when_creating_set',
@@ -425,37 +421,36 @@ export const EditorWrapper: FC<{
               )}
             </div>
           </div>
-          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+          <div className="po-lock-scrim absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
         </>
       )}
       {!canEdit && !isCreateSet && (
         <>
-          <div
-            onClick={() => {
-              setLoaded(false);
-              addRemoveInternal(current);
-            }}
-            className="text-center absolute w-full h-full p-[20px] left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]"
-          >
-            <div>
-              <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
-                <LockIcon />
+          <div className="po-lock c8-lock-banner">
+            <div className="c8-lock-copy">
+              <div className="text-[14px] font-[600]">
+                {t('editing_all_channels', 'Editing all channels')}
               </div>
-              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
-            </div>
-            <div className="text-[14px] font-[600] text-white">
-              {t(
-                'click_to_exit_global_editing',
-                'Click this button to exit global editing and customize the post for this channel'
-              )}
-            </div>
-            <div>
-              <div className="text-[#0A0A0A] rounded-[18px] h-[44px] px-[20px] bg-btnPrimary cursor-pointer flex justify-center items-center font-[600]">
-                {t('edit_content', 'Edit content')}
+              <div className="text-[13px] font-[500]">
+                {t(
+                  'customize_for_channel',
+                  'Customize for {{name}}',
+                  { name: internalFromAll?.name || t('this_channel', 'this channel') }
+                )}
               </div>
             </div>
+            <button
+              type="button"
+              className="c8-lock-btn"
+              onClick={() => {
+                setLoaded(false);
+                addRemoveInternal(current);
+              }}
+            >
+              {t('edit_content', 'Customize')}
+            </button>
           </div>
-          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+          <div className="po-lock-scrim absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
         </>
       )}
       {!!internal && !existingData?.integration && (
@@ -585,6 +580,41 @@ export const Editor: FC<{
   } = props;
   const [id] = useState(makeId(10));
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
+  const [emojiAnchor, setEmojiAnchor] = useState({
+    sheet: false,
+    top: 0,
+    left: 0,
+  });
+  useLayoutEffect(() => {
+    if (!emojiPickerOpen) {
+      return;
+    }
+    const place = () => {
+      const sheet = window.matchMedia(
+        '(max-width: 639px), (max-height: 500px)'
+      ).matches;
+      const rect = emojiButtonRef.current?.getBoundingClientRect();
+      const width = 360;
+      const height = 420;
+      let left = rect ? rect.left : 8;
+      let top = rect ? rect.bottom + 8 : 8;
+      if (left + width > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - width - 8);
+      }
+      if (rect && top + height > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - height - 8);
+      }
+      setEmojiAnchor({ sheet, top, left });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [emojiPickerOpen]);
   const t = useT();
   const toaster = useToaster();
   const editorRef = useRef<undefined | { editor: any }>(undefined);
@@ -867,30 +897,58 @@ export const Editor: FC<{
                       />
                     </>
                   )}
-                <div
+                <button
+                  ref={emojiButtonRef}
+                  type="button"
                   data-tooltip-id="tooltip"
-                  data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
-                  className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+                  data-tooltip-content={t('insert_emoji', 'Insert emoji')}
+                  aria-label={t('insert_emoji', 'Insert emoji')}
+                  aria-expanded={emojiPickerOpen}
+                  className="c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center"
                   onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                 >
                   <EmojiIcon />
-                </div>
+                </button>
                 <SignatureBox editor={editorRef?.current?.editor} />
-                <div className="relative">
-                  <div className="absolute z-[500] top-[40px] -start-[50px]">
-                    <EmojiPicker
-                      height={400}
-                      theme={
-                        (localStorage.getItem('mode') as Theme) || Theme.DARK
-                      }
-                      onEmojiClick={(e) => {
-                        addText(e.emoji);
-                        setEmojiPickerOpen(false);
+                {emojiPickerOpen &&
+                  typeof document !== 'undefined' &&
+                  createPortal(
+                    <div
+                      className={clsx(
+                        'c8-emoji is-open',
+                        emojiAnchor.sheet && 'is-sheet'
+                      )}
+                      onClick={(event) => {
+                        if (event.target === event.currentTarget) {
+                          setEmojiPickerOpen(false);
+                        }
                       }}
-                      open={emojiPickerOpen}
-                    />
-                  </div>
-                </div>
+                    >
+                      <div
+                        className="c8-emoji-pop"
+                        style={
+                          emojiAnchor.sheet
+                            ? undefined
+                            : { top: emojiAnchor.top, left: emojiAnchor.left }
+                        }
+                      >
+                        <EmojiPicker
+                          height={emojiAnchor.sheet ? 360 : 400}
+                          theme={
+                            document.body.classList.contains('dark')
+                              ? Theme.DARK
+                              : Theme.LIGHT
+                          }
+                          onEmojiClick={(e) => {
+                            addText(e.emoji);
+                            setEmojiPickerOpen(false);
+                          }}
+                          open={emojiPickerOpen}
+                        />
+                      </div>
+                    </div>,
+                    document.body
+                  )}
               </div>
               <div className="ms-auto">
                 <InformationComponent
@@ -983,7 +1041,7 @@ export const OnlyEditor = forwardRef<
 
   const { internal } = useLaunchStore(
     useShallow((state) => ({
-      internal: state.internal.find((p) => p.integration.id === state.current),
+      internal: state.internal.find((p) => p.integration?.id === state.current),
     }))
   );
 

@@ -22,6 +22,10 @@ import { InternalChannels } from '@gitroom/frontend/components/launches/internal
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import {
+  editorSettings,
+  parseAdditionalSettings,
+} from '@gitroom/frontend/components/new-launch/existing.post';
 class Empty {
   @IsOptional()
   empty: string;
@@ -86,7 +90,7 @@ export const withProvider = function <T extends object>(params: {
         tab: state.tab,
         global: state.global,
         dummy: state.dummy,
-        internal: state.internal.find((p) => p.integration.id === props.id),
+        internal: state.internal.find((p) => p.integration?.id === props.id),
         integrations: state.selectedIntegrations,
         setHide: state.setHide,
         allIntegrations: state.integrations,
@@ -101,21 +105,42 @@ export const withProvider = function <T extends object>(params: {
         setInlineImages: state.setInlineImages,
         setChars: state.setChars,
         selectedIntegration: state.selectedIntegrations.find(
-          (p) => p.integration.id === props.id
+          (p) => p.integration?.id === props.id
         ),
       }))
     );
+
+    const parsedAdditionalSettings = () =>
+      parseAdditionalSettings(
+        selectedIntegration?.integration?.additionalSettings
+      );
 
     const characterLimit = (formValues?: any) => {
       if (typeof maximumCharacters === 'number') {
         return maximumCharacters;
       }
+      // A missing limit used to throw. 0 would mark every post over the
+      // counter. /posts/valid uses the same ceiling when a provider limit
+      // is missing (`maximumCharacters || 1000000`).
+      if (typeof maximumCharacters !== 'function') {
+        return 1000000;
+      }
       if (formValues?.post_type === 'article') {
         return maximumCharacters(formValues);
       }
-      return maximumCharacters(
-        JSON.parse(selectedIntegration.integration.additionalSettings || '[]')
-      );
+      return maximumCharacters(parsedAdditionalSettings());
+    };
+
+    // The preview did not use the article form values. It always passed the
+    // channel's additional settings, so an X article preview stays 280/4000.
+    const previewCharacterLimit = () => {
+      if (typeof maximumCharacters === 'number') {
+        return maximumCharacters;
+      }
+      if (typeof maximumCharacters !== 'function') {
+        return undefined;
+      }
+      return maximumCharacters(parsedAdditionalSettings());
     };
 
     useEffect(() => {
@@ -143,15 +168,17 @@ export const withProvider = function <T extends object>(params: {
       }
     }, [justCurrent, current, isGlobal, setTotalChars]);
 
+    const providerIdentifier = selectedIntegration?.integration?.identifier;
     const getInternalPlugs = useCallback(async () => {
+      if (!providerIdentifier) {
+        return [];
+      }
       return (
-        await fetch(
-          `/integrations/${selectedIntegration.integration.identifier}/internal-plugs`
-        )
+        await fetch(`/integrations/${providerIdentifier}/internal-plugs`)
       ).json();
-    }, [selectedIntegration.integration.identifier]);
+    }, [providerIdentifier, fetch]);
     const { data, isLoading } = useSWR(
-      `internal-${selectedIntegration.integration.identifier}`,
+      providerIdentifier ? `internal-${providerIdentifier}` : null,
       getInternalPlugs,
       {
         revalidateOnReconnect: true,
@@ -166,10 +193,11 @@ export const withProvider = function <T extends object>(params: {
       return global;
     }, [internal, global, isGlobal]);
 
+    const savedSettings = editorSettings(selectedIntegration?.settings);
     const form = useForm({
       resolver: classValidatorResolver(dto || Empty),
-      ...(Object.keys(selectedIntegration.settings).length > 0
-        ? { values: { ...selectedIntegration.settings } }
+      ...(Object.keys(savedSettings).length > 0
+        ? { values: { ...savedSettings } }
         : {}),
       mode: 'all',
       criteriaMode: 'all',
@@ -201,8 +229,8 @@ export const withProvider = function <T extends object>(params: {
           const settings = form.getValues();
           return {
             id: props.id,
-            identifier: selectedIntegration.integration.identifier,
-            integration: selectedIntegration.integration,
+            identifier: selectedIntegration?.integration?.identifier,
+            integration: selectedIntegration?.integration,
             valid: await form.trigger(),
             err: form.formState.errors,
             settings,
@@ -222,7 +250,7 @@ export const withProvider = function <T extends object>(params: {
         getValues: () => {
           return {
             id: props.id,
-            identifier: selectedIntegration.integration.identifier,
+            identifier: selectedIntegration?.integration?.identifier,
             values: value,
             settings: form.getValues(),
           };
@@ -238,12 +266,12 @@ export const withProvider = function <T extends object>(params: {
       <IntegrationContext.Provider
         value={{
           date,
-          integration: selectedIntegration.integration,
+          integration: selectedIntegration?.integration,
           allIntegrations,
-          value: value.map((p) => ({
+          value: (value || []).map((p) => ({
             id: p.id,
-            content: p.content,
-            image: p.media,
+            content: typeof p?.content === 'string' ? p.content : '',
+            image: Array.isArray(p?.media) ? p.media : [],
           })),
         }}
       >
@@ -271,29 +299,11 @@ export const withProvider = function <T extends object>(params: {
               !!value?.[0]?.content?.length &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
-                  maximumCharacters={
-                    typeof maximumCharacters === 'number'
-                      ? maximumCharacters
-                      : maximumCharacters(
-                          JSON.parse(
-                            selectedIntegration.integration
-                              .additionalSettings || '[]'
-                          )
-                        )
-                  }
+                  maximumCharacters={previewCharacterLimit()}
                 />
               ) : (
                 <GeneralPreviewComponent
-                  maximumCharacters={
-                    typeof maximumCharacters === 'number'
-                      ? maximumCharacters
-                      : maximumCharacters(
-                          JSON.parse(
-                            selectedIntegration.integration
-                              .additionalSettings || '[]'
-                          )
-                        )
-                  }
+                  maximumCharacters={previewCharacterLimit()}
                 />
               ))}
             {(SettingsComponent || !!data?.internalPlugs?.length) &&

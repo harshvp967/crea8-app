@@ -46,18 +46,25 @@ export const DatePicker: FC<{
   return (
     <div
       className={clsx(
-        'po-date-chip px-[16px] border rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1',
+        'po-date-chip border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1',
         open ? 'border-[#00D9FF] bg-[#00D9FF]/10' : 'border-newTextColor/10'
       )}
-      onClick={changeShow}
       ref={ref}
     >
-      <div className="cursor-pointer">
-        <CalendarIcon />
-      </div>
-      <div className="po-date-label cursor-pointer whitespace-nowrap">
-        {wall.format('ddd, MMM D · h:mm A')}
-      </div>
+      <button
+        type="button"
+        className="po-date-trigger"
+        aria-expanded={open}
+        aria-label={t('date', 'Date')}
+        onClick={changeShow}
+      >
+        <div className="cursor-pointer">
+          <CalendarIcon />
+        </div>
+        <div className="po-date-label cursor-pointer whitespace-nowrap">
+          {wall.format('ddd, MMM D · h:mm A')}
+        </div>
+      </button>
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -110,7 +117,7 @@ export const DatePicker: FC<{
               />
             </label>
             <button type="button" className="po-date-close" onClick={changeShow}>
-              {t('close', 'Close')}
+              {t('done', 'Done')}
             </button>
           </div>
         </div>

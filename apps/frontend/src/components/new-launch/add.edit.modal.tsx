@@ -2,13 +2,21 @@
 import 'reflect-metadata';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import dayjs from 'dayjs';
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ManageModal } from '@gitroom/frontend/components/new-launch/manage.modal';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  editorHtml,
+  editorMedia,
+  editorSettings,
+  editorTags,
+  editorValuesFromPosts,
+  siblingPublishDate,
+} from '@gitroom/frontend/components/new-launch/existing.post';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -76,29 +84,27 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
   const modal = useModals();
   const toaster = useToaster();
   const t = useT();
-  const { addOrRemoveSelectedIntegration, selectedIntegrations, integrations } =
-    useLaunchStore(
-      useShallow((state) => ({
-        integrations: state.integrations,
-        selectedIntegrations: state.selectedIntegrations,
-        addOrRemoveSelectedIntegration: state.addOrRemoveSelectedIntegration,
-      }))
-    );
+  const {
+    addOrRemoveSelectedIntegration,
+    setSelectedIntegrations,
+    selectedIntegrations,
+    integrations,
+  } = useLaunchStore(
+    useShallow((state) => ({
+      integrations: state.integrations,
+      selectedIntegrations: state.selectedIntegrations,
+      addOrRemoveSelectedIntegration: state.addOrRemoveSelectedIntegration,
+      setSelectedIntegrations: state.setSelectedIntegrations,
+    }))
+  );
+  const [selectionReady, setSelectionReady] = useState(
+    () =>
+      !existingData.integration &&
+      !props?.set?.posts?.length &&
+      !props?.selectedChannels?.length
+  );
 
   useEffect(() => {
-    if (props?.set?.posts?.length) {
-      for (const post of props?.set?.posts) {
-        if (post.integration) {
-          const integration = integrations.find(
-            (i) => i.id === post.integration.id
-          );
-          if (integration) {
-            addOrRemoveSelectedIntegration(integration, post.settings);
-          }
-        }
-      }
-    }
-
     if (existingData.integration) {
       const integration = integrations.find(
         (i) => i.id === existingData.integration
@@ -114,15 +120,44 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
         modal.closeAll();
         return;
       }
-      addOrRemoveSelectedIntegration(integration, existingData.settings);
 
-      // the other channels the post was created with
+      // Replace the selection. addOrRemoveSelectedIntegration toggles, so a
+      // second run (or a channel already selected) removed the post's channel
+      // before the editor effect could read it.
+      const picked = [
+        {
+          selectedIntegrations: integration,
+          settings: editorSettings(existingData.settings),
+        },
+      ];
       for (const sibling of existingData.siblings || []) {
         const siblingIntegration = integrations.find(
           (i) => i.id === sibling.integration
         );
         if (siblingIntegration) {
-          addOrRemoveSelectedIntegration(siblingIntegration, sibling.settings);
+          picked.push({
+            selectedIntegrations: siblingIntegration,
+            settings: editorSettings(sibling.settings),
+          });
+        }
+      }
+      setSelectedIntegrations(picked);
+      setSelectionReady(true);
+      return;
+    }
+
+    if (props?.set?.posts?.length) {
+      for (const post of props?.set?.posts) {
+        if (post.integration) {
+          const integration = integrations.find(
+            (i) => i.id === post.integration.id
+          );
+          if (integration) {
+            addOrRemoveSelectedIntegration(
+              integration,
+              editorSettings(post.settings)
+            );
+          }
         }
       }
     }
@@ -135,9 +170,17 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
         }
       }
     }
+
+    setSelectionReady(true);
   }, []);
 
-  if (existingData.integration && selectedIntegrations.length === 0) {
+  const postChannelSelected =
+    !existingData.integration ||
+    selectedIntegrations.some(
+      (item) => item.integration?.id === existingData.integration
+    );
+
+  if (!selectionReady || !postChannelSelected) {
     return null;
   }
 
@@ -146,18 +189,7 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
 
 // an existing post, as the values of the editor
 const postValues = (posts: Post[]) =>
-  posts.map((post) => ({
-    delay: post.delay,
-    content: /<p[\s>]/i.test(post.content)
-      ? post.content
-      : post.content
-          .split('\n')
-          .map((line: string) => `<p>${line}</p>`)
-          .join(''),
-    id: post.id,
-    // @ts-ignore
-    media: post.image as any[],
-  }));
+  editorValuesFromPosts(posts, () => makeId(10));
 
 export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
   const existingData = useExistingData();
@@ -194,13 +226,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       if (existingData?.posts?.[0]?.intervalInDays) {
         setRepeater(existingData.posts[0].intervalInDays);
       }
-      setTags(
-        // @ts-ignore
-        existingData?.posts?.[0]?.tags?.map((p: any) => ({
-          label: p.tag.name,
-          value: p.tag.name,
-        })) || []
-      );
+      setTags(editorTags(existingData.posts));
 
       addInternalValue(
         0,
@@ -212,15 +238,21 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       // content and date
       for (const sibling of existingData.siblings || []) {
         if (
-          selectedIntegrations.some(
-            (p) => p.integration.id === sibling.integration
+          !selectedIntegrations.some(
+            (p) => p.integration?.id === sibling.integration
           )
         ) {
-          addInternalValue(0, sibling.integration, postValues(sibling.posts));
-          setChannelDate(
-            sibling.integration,
-            dayjs.utc(sibling.posts[0].publishDate).local()
-          );
+          continue;
+        }
+
+        addInternalValue(
+          0,
+          sibling.integration,
+          postValues(sibling.posts)
+        );
+        const publishDate = siblingPublishDate(sibling);
+        if (publishDate) {
+          setChannelDate(sibling.integration, dayjs.utc(publishDate).local());
         }
       }
       setCurrent(existingData.integration);
@@ -236,26 +268,15 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       0,
       props.onlyValues?.length
         ? props.onlyValues.map((p) => ({
-            content: /<p[\s>]/i.test(p.content)
-              ? p.content
-              : p.content
-                  .split('\n')
-                  .map((line: string) => `<p>${line}</p>`)
-                  .join(''),
+            content: editorHtml(p.content),
             id: makeId(10),
-            media: p.image || [],
+            media: editorMedia(p.image),
           }))
         : props.set?.posts?.length
         ? props.set.posts[0].value.map((p: any) => ({
             id: makeId(10),
-            content: /<p[\s>]/i.test(p.content)
-              ? p.content
-              : p.content
-                  .split('\n')
-                  .map((line: string) => `<p>${line}</p>`)
-                  .join(''),
-            // @ts-ignore
-            media: p.media,
+            content: editorHtml(p.content),
+            media: editorMedia(p.media),
           }))
         : [
             {
