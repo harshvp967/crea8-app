@@ -229,6 +229,66 @@ type BlueskyPendingData = {
   prepFailures?: number;
 };
 
+// AppView answers a deleted or never-published post with XRPC NotFound
+// (HTTP 400, error "NotFound", and on some SDK builds the class name
+// NotFoundError). The message is "Post not found: at://...". A bare status
+// 400 is not enough: the xrpc client maps unknown 4xx statuses, including
+// timeouts, onto 400 before we see them.
+export function isBlueskyPostMissing(err: unknown): boolean {
+  if (!err || typeof err !== 'object') {
+    return false;
+  }
+
+  const error = err as { name?: unknown; error?: unknown; message?: unknown };
+  if (error.name === 'NotFoundError' || error.error === 'NotFound') {
+    return true;
+  }
+
+  return (
+    typeof error.message === 'string' &&
+    error.message.startsWith('Post not found')
+  );
+}
+
+// The post a plug is watching cannot come back. BadBody is non-retryable, and
+// processPlugs turns it into a finished plug so the workflow drops the rest
+// of the schedule instead of calling processPlug again.
+function stopMissingBlueskyPlug(id: string, detail: string): never {
+  throw new BadBody(
+    'bluesky',
+    JSON.stringify({ uri: id }),
+    {} as BodyInit,
+    `Bluesky post is gone, auto plug stopped: ${detail}`
+  );
+}
+
+async function readBlueskyPlugThread(agent: BskyAgent, id: string) {
+  let getThread: { data: { thread: any } };
+  try {
+    getThread = await agent.getPostThread({
+      uri: id,
+      depth: 0,
+    });
+  } catch (err) {
+    if (isBlueskyPostMissing(err)) {
+      const detail = err instanceof Error ? err.message : 'Post not found';
+      stopMissingBlueskyPlug(id, detail);
+    }
+
+    throw err;
+  }
+
+  const threadType = getThread?.data?.thread?.$type;
+  if (
+    threadType === 'app.bsky.feed.defs#notFoundPost' ||
+    threadType === 'app.bsky.feed.defs#blockedPost'
+  ) {
+    stopMissingBlueskyPlug(id, threadType);
+  }
+
+  return getThread;
+}
+
 @Rules(
   'Bluesky can have maximum 1 video or 4 pictures in one post, it can also be without attachments'
 )
@@ -873,10 +933,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       password: body.password,
     });
 
-    const getThread = await agent.getPostThread({
-      uri: id,
-      depth: 0,
-    });
+    const getThread = await readBlueskyPlugThread(agent, id);
 
     // @ts-ignore
     if (getThread.data.thread.post?.likeCount >= +fields.likesAmount) {
@@ -934,10 +991,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       password: body.password,
     });
 
-    const getThread = await agent.getPostThread({
-      uri: id,
-      depth: 0,
-    });
+    const getThread = await readBlueskyPlugThread(agent, id);
 
     // @ts-ignore
     if (getThread.data.thread.post?.likeCount >= +fields.likesAmount) {

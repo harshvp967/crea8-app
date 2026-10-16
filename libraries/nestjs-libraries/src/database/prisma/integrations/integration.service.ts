@@ -35,6 +35,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
 }
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import {
+  BadBody,
   NotEnoughScopes,
   RefreshToken,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -633,15 +634,31 @@ export class IntegrationService {
       getPlugById.integration.providerIdentifier
     );
 
-    // @ts-ignore
-    const process = await integration[getPlugById.plugFunction](
-      getPlugById.integration,
-      data.postId,
-      JSON.parse(getPlugById.data).reduce((all: any, current: any) => {
-        all[current.name] = current.value;
-        return all;
-      }, {})
-    );
+    let process: boolean;
+    try {
+      // @ts-ignore
+      process = await integration[getPlugById.plugFunction](
+        getPlugById.integration,
+        data.postId,
+        JSON.parse(getPlugById.data).reduce((all: any, current: any) => {
+          all[current.name] = current.value;
+          return all;
+        }, {})
+      );
+    } catch (err) {
+      // BadBody is a permanent provider rejection: the target will not
+      // succeed on a later attempt. Returning true finishes this plug so the
+      // activity succeeds (Temporal does not retry it) and the post workflow
+      // drops the remaining runs for this plugId. Transient errors still throw.
+      if (err instanceof BadBody) {
+        console.warn(
+          `Plug ${data.plugId} stopped for post ${data.postId} after a permanent provider rejection: ${err.message}`
+        );
+        return true;
+      }
+
+      throw err;
+    }
 
     if (process) {
       return true;
