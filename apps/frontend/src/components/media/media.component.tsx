@@ -1038,33 +1038,35 @@ export const MultiMediaComponent: FC<{
                   {label}
                 </div>
               )}
-              <div
+              <button
+                type="button"
                 onClick={showModal}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className="c8-attach cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
               >
                 <div className="flex gap-[8px] items-center">
                   <div>
                     <InsertMediaIcon />
                   </div>
                   <div className="text-[10px] font-[600] maxMedia:hidden block">
-                    {t('insert_media', 'Insert Media')}
+                    {t('insert_media', 'Insert media')}
                   </div>
                 </div>
-              </div>
+              </button>
               {designReady && (
-                <div
+                <button
+                  type="button"
                   onClick={designMedia}
-                  className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                  className="c8-attach cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
                 >
                   <div className="flex gap-[5px] items-center">
                     <div>
                       <DesignMediaIcon />
                     </div>
                     <div className="text-[10px] font-[600] iconBreak:hidden block">
-                      {t('design_media', 'Design Media')}
+                      {t('design_media', 'Design media')}
                     </div>
                   </div>
-                </div>
+                </button>
               )}
 
               {!insertInContent && (

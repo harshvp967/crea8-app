@@ -200,7 +200,7 @@ export const TagsComponentInner: FC<{
             <input
               value={tagQuery}
               onChange={(e) => setTagQuery(e.target.value)}
-              placeholder={t('add_a_tag', 'Add a tag')}
+              placeholder={t('search_tags', 'Search tags')}
             />
           </label>
           {(data?.tags || [])
@@ -296,7 +296,7 @@ export const TagsComponentInner: FC<{
             })}
           <div onClick={addTag} className="po-menu-row po-add-tag">
             <PlusIcon />
-            <span>{t('add_new_tag', 'Add New Tag')}</span>
+            <span>{t('add_a_tag', 'Add a tag')}</span>
           </div>
         </div>
       )}

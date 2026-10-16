@@ -90,7 +90,7 @@ export const RepeatComponent: FC<{
         <div className="cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis">
           {repeat
             ? everyLabel
-            : t('repeat_post_every', 'Repeat Post Every...')}
+            : t('repeat', 'Repeat')}
         </div>
         <div className="cursor-pointer">
           <DropdownArrowIcon rotated={isOpen} />
@@ -99,7 +99,7 @@ export const RepeatComponent: FC<{
       {isOpen && (
         <div className="po-repeat-menu z-[300] absolute start-0 bottom-[calc(100%+8px)] flex flex-col">
           <div className="po-menu-title">
-            {t('repeat_post_every_label', 'Repeat Post Every')}
+            {t('repeat', 'Repeat')}
           </div>
           {list.map((p) => {
             const selected = p.value != null && p.value === repeat;

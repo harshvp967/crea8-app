@@ -11,13 +11,15 @@ export const Bullets: FC<{
     editor?.commands?.toggleBulletList();
   };
   return (
-    <div
+    <button
+      type="button"
       data-tooltip-id="tooltip"
       data-tooltip-content="Bullets"
+      aria-label="Bullets"
       onClick={bullet}
-      className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+      className="c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center"
     >
       <HugeIcon name="list-bullet" size={18} />
-    </div>
+    </button>
   );
 };

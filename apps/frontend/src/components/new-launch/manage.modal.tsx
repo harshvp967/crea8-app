@@ -258,7 +258,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       return (
         <div className="flex items-center gap-[10px]">
           <div className="relative">
-            <SettingsIcon size={15} className="text-white" />
+            <SettingsIcon size={18} className="c8-settings-gear" />
           </div>
           <div>Settings</div>
         </div>
@@ -308,12 +308,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     if (
       await deleteDialog(
         t(
-          'are_you_sure_you_want_to_close_this_modal_all_data_will_be_lost',
-          'Are you sure you want to close this modal? (all data will be lost)'
+          'discard_this_post_body',
+          'The text and media in this post will be lost.'
         ),
-        t('yes_close_it', 'Yes, close it!'),
-        undefined,
-        undefined,
+        t('discard', 'Discard'),
+        t('discard_this_post', 'Discard this post?'),
+        t('keep_editing', 'Keep editing'),
         'danger'
       )
     ) {
@@ -762,10 +762,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
             if (item.tooLong) {
               const channel = capitalize(item.identifier.split('-')[0]);
-              const message = `${item.name} (${item.identifier}) ${t(
-                'post_is_too_long',
-                'post is too long, please fix it'
-              )}`;
+              const message = t(
+                'post_is_too_long_named',
+                '{{name}} is too long. Shorten it.',
+                { name: item.name }
+              );
               toaster.show(message, 'error');
               setIssue({
                 title: t('post_is_too_long', 'post is too long, please fix it'),
@@ -821,11 +822,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             shortLink = await deleteDialog(
               t(
                 'shortlink_urls_question',
-                'Do you want to shortlink the URLs? it will let you get statistics over clicks'
+                'Shorten the links in this post so you can see how many people click them?'
               ),
-              t('yes_shortlink_it', 'Yes, shortlink it!'),
+              t('yes_shortlink_it', 'Shorten links'),
               undefined,
-              t('no_original_urls', 'No, original URLs')
+              t('no_original_urls', 'Keep the links')
             );
           }
         }
@@ -944,11 +945,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   return (
-    <div className={clsx('composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview', issue && 'composer-invalid')}>
+    <div className={clsx('composer c8-composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview', issue && 'composer-invalid')}>
       <div className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] flex-col min-h-0">
         <div className="arc-grab composer-grab" aria-hidden />
         <div className="composer-tabs" role="tablist">
-          <span className="composer-tabs-title">{t('create_post_title', 'Create Post')}</span>
+          <span className="composer-tabs-title">
+            {existingData?.integration
+              ? t('edit_post_title', 'Edit post')
+              : t('create_post_title', 'Create Post')}
+          </span>
           <div className="composer-seg">
             <button type="button" role="tab" aria-selected={phonePane === 'editor'} className={phonePane === 'editor' ? 'on' : ''} onClick={() => setPhonePane('editor')}>
               {t('editor', 'Editor')}
@@ -964,7 +969,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         <div className="composer-split flex-1 flex min-h-0">
           <div className="composer-editor flex flex-col flex-1 border-e border-newBorder min-w-0">
             <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center gap-[12px] px-[20px] text-[20px] font-[600]">
-              {t('create_post_title', 'Create Post')}
+              {existingData?.integration
+                ? t('edit_post_title', 'Edit post')
+                : t('create_post_title', 'Create Post')}
               <CreationMethodBadge
                 creationMethod={existingData?.posts?.[0]?.creationMethod}
                 size="sm"
@@ -1006,6 +1013,14 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                           </div>
                           <div className="po-valid-body">{issue.body}</div>
                         </div>
+                        <button
+                          type="button"
+                          className="c8-valid-close"
+                          aria-label={t('close', 'Close')}
+                          onClick={() => setIssue(null)}
+                        >
+                          <CloseIcon />
+                        </button>
                       </div>
                     )}
                     <div className="flex-1 flex">
@@ -1029,9 +1044,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 )}
               >
                 <div className="po-settings flex flex-col rounded-[18px] border border-newBorder overflow-hidden bg-newBgColorInner">
-                  <div
+                  <button
+                    type="button"
                     onClick={() => setShowSettings(!showSettings)}
-                    className="flex items-center gap-[8px] cursor-pointer px-[14px] py-[12px]"
+                    className="po-settings-toggle flex items-center gap-[8px] cursor-pointer px-[14px] py-[12px]"
                   >
                     <div className="flex-1 text-[14px] font-[600] min-w-0">
                       {currentIntegrationText}
@@ -1042,7 +1058,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         className="text-textItemBlur"
                       />
                     </div>
-                  </div>
+                  </button>
                   <div
                     className={clsx(
                       !showSettings && 'hidden',
@@ -1064,11 +1080,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
           <div className="composer-preview w-[580px] flex flex-col min-w-0">
+            <div className="c8-preview-label">{t('preview', 'Preview')}</div>
             <div className="bg-newBgColor h-[65px] rounded-e-[26px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
               <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
-              <div className="cursor-pointer">
-                <CloseIcon onClick={askClose} className="text-[#A3A3A3]" />
-              </div>
+              <button type="button" className="composer-close-phone" aria-label={t('close', 'Close')} onClick={askClose}>
+                <CloseIcon className="text-[#A3A3A3]" />
+              </button>
             </div>
             <div className="flex-1 relative">
               <Scrollable
@@ -1101,12 +1118,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             {existingData?.integration && (
               <button
                 onClick={deletePost}
-                className="cursor-pointer flex text-[#FF3F3F] gap-[8px] items-center text-[15px] font-[600]"
+                className="c8-delete cursor-pointer flex text-[#FF3F3F] gap-[8px] items-center text-[15px] font-[600]"
               >
                 <div>
                   <TrashIcon />
                 </div>
-                <div>{t('delete_post', 'Delete Post')}</div>
+                <span>{t('delete_post', 'Delete post')}</span>
               </button>
             )}
             <DatePicker onChange={setPickerDate} date={pickerDate} />
@@ -1116,15 +1133,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   selectedIntegrations.length === 0 || loading || locked
                 }
                 onClick={schedule('draft')}
-                className="relative cursor-pointer disabled:cursor-not-allowed px-[20px] h-[44px] bg-btnSimple border border-newBorder justify-center items-center flex rounded-[18px] text-[15px] font-[500]"
+                className="c8-draft relative cursor-pointer disabled:cursor-not-allowed px-[20px] h-[44px] bg-btnSimple border border-newBorder justify-center items-center flex rounded-[18px] text-[15px] font-[500]"
+                aria-busy={loading && busy === 'draft'}
               >
                 {loading && busy === 'draft' && (
                   <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
-                    <div className="po-spin" />
+                    <div className="po-spin" role="status" />
                   </div>
                 )}
                 <div className={clsx(loading && busy === 'draft' && 'invisible')}>
-                  {t('save_as_draft', 'Save as Draft')}
+                  <span className="c8-draft-long">{t('save_as_draft', 'Save as draft')}</span>
+                  <span className="c8-draft-short">{t('draft', 'Draft')}</span>
                 </div>
               </button>
             )}
@@ -1136,7 +1155,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 }
                 onClick={schedule('draft')}
               >
-                Save Set
+                {t('save_set', 'Save set')}
               </button>
             )}
             {!addEditSets && (
@@ -1196,6 +1215,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   }
                   onClick={schedule('schedule')}
                   className="po-split-main text-[#0A0A0A] relative btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none flex justify-center items-center"
+                  aria-busy={loading && busy === 'submit'}
                 >
                   {loading && busy === 'submit' && (
                     <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%] text-[#0A0A0A]">
@@ -1204,7 +1224,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   )}
                   <span className={clsx(loading && busy === 'submit' && 'invisible')}>
                     {selectedIntegrations.length === 0
-                      ? t('check_circles_above', 'Check the circles above')
+                      ? t('select_channel_first', 'Select a channel first')
                       : dummy
                       ? t('create_output', 'Create output')
                       : !existingData?.integration
@@ -1299,6 +1319,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
         </div>
       </div>
+      <div className="c8-copilot" aria-hidden="true" inert>
       <CopilotPopup
         className="po-assist"
         hitEscapeToClose={false}
@@ -1328,6 +1349,7 @@ After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} f
           placeholder: t('ask_the_assistant', 'Ask the assistant…'),
         }}
       />
+      </div>
     </div>
   );
 };
