@@ -5838,3 +5838,145 @@ body.dark.c8-schedule .cal-mode > button[aria-checked='true'] {
     grid-column: 2;
   }
 }
+
+/* UI copy pass. Paint and placement only. */
+
+/* Week post sheet: one grab. The bar's ::before was a second handle,
+   and the open more-button hit target painted a circle over the sheet. */
+body .cal-post-bar.is-sheet::before,
+body.c8-schedule .cal-post.is-open .cal-post-bar::before,
+body.c8-schedule .cal-post.is-open .cal-post-more::before,
+body .cal-post-bar.is-sheet .arc-grab::before,
+body .cal-post-bar.is-sheet .arc-grab::after {
+  content: none !important;
+  display: none !important;
+}
+
+body .cal-post-bar.is-sheet .arc-grab {
+  display: block !important;
+  width: 40px !important;
+  height: 5px !important;
+  margin: 4px auto 8px !important;
+  border-radius: 9px !important;
+  background: var(--c8-line) !important;
+  flex: none;
+}
+
+/* Collapsed rail: "Channels" was wider than the column and lost its C. */
+body.c8-schedule .channel-rail.sidebar:not(.is-open) h2,
+body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) h2 {
+  width: 100% !important;
+  max-width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.2 !important;
+}
+
+body.c8-schedule .channel-rail.sidebar:not(.is-open) > div,
+body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+/* Analytics uses the same flat bar as Calendar. Handlers stay in the tab bar. */
+@media (max-width: 767px) {
+  body:has(.analytics-screen) .mobile-tabbar {
+    display: flex !important;
+    position: fixed;
+    z-index: 70;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 76px;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 10px 18px;
+    border: 0;
+    border-top: 1px solid var(--c8-line);
+    border-radius: 0;
+    background: var(--c8-surface);
+    box-shadow: none;
+  }
+
+  body:has(.analytics-screen) .mobile-tabbar a,
+  body:has(.analytics-screen) .mobile-tabbar button {
+    border-radius: 14px;
+    color: var(--c8-muted);
+    font-size: 11px;
+    font-weight: 500;
+    box-shadow: none;
+  }
+
+  body:has(.analytics-screen) .mobile-tabbar a.arc-selected,
+  body:has(.analytics-screen) .mobile-tabbar button.arc-selected {
+    background: var(--c8-ink);
+    background-image: none;
+    color: var(--c8-on-ink);
+  }
+}
+
+/* Day, week, and month already render Today with setToday. Phone and tablet
+   hid the date range. Show that button and leave the period arrows in place. */
+@media (max-width: 1199px) {
+  body.c8-schedule:not([data-c8-view='list']) .filters-bar .date-range,
+  body.c8-schedule[data-c8-view='day'] .date-range,
+  body.c8-schedule[data-c8-view='week'] .date-range,
+  body.c8-schedule[data-c8-view='month'] .date-range {
+    display: flex !important;
+    flex: none !important;
+    align-items: center;
+    width: auto !important;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  body.c8-schedule:not([data-c8-view='list']) .date-range > .cal-nav {
+    display: none !important;
+  }
+
+  body.c8-schedule .cal-today,
+  body.c8-schedule[data-c8-view='day'] .cal-today,
+  body.c8-schedule[data-c8-view='week'] .cal-today,
+  body.c8-schedule[data-c8-view='month'] .cal-today,
+  body.c8-schedule[data-c8-view='list'] .date-range > .cal-today {
+    display: flex !important;
+    flex: none !important;
+    align-items: center;
+    width: auto !important;
+  }
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  body.c8-schedule[data-c8-view='day'] .calendar-panel:not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='week'] .calendar-panel:not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='month'] .calendar-panel:not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='day'] .calendar-panel:has(.c8-day):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='week'] .calendar-panel:has(.c8-week):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='day'] .calendar-panel:has(.cal-customer > div):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='week'] .calendar-panel:has(.cal-customer > div):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='month'] .calendar-panel:has(.cal-customer > div):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='day'] .calendar-panel:has(.cal-customer > div):has(.c8-day):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='week'] .calendar-panel:has(.cal-customer > div):has(.c8-week):not(:has(.channel-empty-phone)) {
+    grid-template-areas:
+      'head head head'
+      'actions actions actions'
+      'scope scope scope'
+      'today today today'
+      'period period period'
+      'well well well' !important;
+  }
+
+  body.c8-schedule:not([data-c8-view='list']) .date-range {
+    grid-area: today;
+    justify-content: flex-end;
+    width: 100% !important;
+  }
+}

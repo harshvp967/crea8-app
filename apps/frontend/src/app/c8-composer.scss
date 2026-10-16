@@ -2548,3 +2548,348 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
     max-height: 50dvh;
   }
 }
+
+/* UI copy pass. Paint, placement, and display only. */
+
+/* Settings: v2 select and checkbox, same elements and onChange. */
+.c8-composer #social-settings select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  width: 100% !important;
+  padding: 0 36px 0 14px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 12px !important;
+  background-color: var(--c8-surface) !important;
+  background-image: linear-gradient(45deg, transparent 50%, var(--c8-ink) 50%),
+    linear-gradient(135deg, var(--c8-ink) 50%, transparent 50%) !important;
+  background-position: calc(100% - 18px) 19px, calc(100% - 12px) 19px !important;
+  background-size: 6px 6px, 6px 6px !important;
+  background-repeat: no-repeat !important;
+  color: var(--c8-ink) !important;
+  box-shadow: none !important;
+}
+
+.c8-composer #social-settings .cursor-pointer.rounded-\[4px\].select-none,
+.c8-composer #social-settings .bg-forth:not(button) {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  border-radius: 6px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-on-ink) !important;
+  box-shadow: none !important;
+}
+
+.c8-composer #social-settings .cursor-pointer.rounded-\[4px\].select-none:not(:empty),
+.c8-composer #social-settings .bg-forth:not(button):not(:empty) {
+  background: var(--c8-ink) !important;
+  color: var(--c8-on-ink) !important;
+}
+
+.c8-composer #social-settings .cursor-pointer.rounded-\[4px\].select-none svg,
+.c8-composer #social-settings .bg-forth:not(button) svg {
+  color: var(--c8-on-ink) !important;
+}
+
+/* Thread-finisher counter was clipped to the slash. */
+.c8-composer #social-settings .po-editor-tools {
+  overflow: visible !important;
+  flex-wrap: wrap !important;
+  height: auto !important;
+  min-height: 44px;
+  row-gap: 4px;
+}
+
+.c8-composer #social-settings .po-editor-tools .group.rounded-\[6px\] {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  overflow: visible !important;
+}
+
+.c8-composer #social-settings .po-editor-tools .group.rounded-\[6px\] .text-\[10px\] {
+  overflow: visible !important;
+  white-space: nowrap !important;
+  text-overflow: clip !important;
+}
+
+/* Shared sheet header and close. Signature and AI Image use the same inset. */
+.arc-dialog-wrap:has(.po-sign-modal) [class*='pt-'],
+.arc-dialog-wrap:has(.po-ai-modal) [class*='pt-'] {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  min-height: 100% !important;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+.arc-dialog.po-sign-modal,
+.arc-dialog.po-ai-modal {
+  width: min(480px, calc(100vw - 32px)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 32px) !important;
+  height: auto !important;
+  max-height: calc(100dvh - 32px) !important;
+  margin: 16px auto !important;
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
+  border-radius: 28px !important;
+  padding: 16px !important;
+  gap: 12px !important;
+  background: var(--c8-surface) !important;
+  box-sizing: border-box !important;
+  overflow: auto !important;
+  resize: none !important;
+}
+
+.arc-dialog.po-sign-modal .arc-dialog-head,
+.arc-dialog.po-ai-modal .arc-dialog-head,
+.arc-dialog.po-media-modal .arc-dialog-head,
+.arc-dialog.po-tag-modal .arc-dialog-head,
+.c8-composer .po-repeat-menu .po-menu-title,
+.c8-composer .po-tags-menu .po-tag-search {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 44px;
+  text-align: start !important;
+  gap: 8px;
+}
+
+.arc-dialog.po-sign-modal .arc-dialog-head > div:first-child,
+.arc-dialog.po-ai-modal .arc-dialog-head > div:first-child,
+.arc-dialog.po-media-modal .arc-dialog-head > div:first-child,
+.arc-dialog.po-tag-modal .arc-dialog-head > div:first-child,
+.c8-composer .po-repeat-menu .po-menu-title {
+  flex: 1 1 auto;
+  text-align: start !important;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--c8-ink);
+}
+
+.arc-dialog.po-sign-modal .mantine-Modal-close,
+.arc-dialog.po-ai-modal .mantine-Modal-close,
+.arc-dialog.po-media-modal .mantine-Modal-close,
+.arc-dialog.po-tag-modal .mantine-Modal-close {
+  position: static !important;
+  top: auto !important;
+  inset-inline-end: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  margin-left: auto !important;
+  flex: none !important;
+  border: 1.5px solid var(--c8-line) !important;
+  border-radius: 999px !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-ink) !important;
+}
+
+.arc-dialog.po-sign-modal .settings-form > .relative > button.absolute,
+.arc-dialog.po-sign-modal .settings-form .mantine-Modal-close {
+  display: none !important;
+}
+
+.arc-dialog.po-ai-modal textarea {
+  resize: none !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* All customers menu sits above the editor toolbar (z-index 99). */
+.c8-composer .customer-menu {
+  z-index: 120 !important;
+}
+
+/* Tablet footer: keep Repeat and the Update split fully visible. */
+@media (min-width: 640px) and (max-width: 1199px) {
+  .c8-composer .composer-foot,
+  .c8-composer .composer-actions,
+  .c8-composer .composer-foot > .flex-1,
+  .c8-composer .po-split {
+    overflow: visible !important;
+  }
+
+  .c8-composer .composer-foot {
+    height: auto !important;
+    min-height: 64px;
+    flex-wrap: wrap;
+  }
+
+  .c8-composer .po-repeat,
+  .c8-composer .po-repeat > div:first-child {
+    width: auto !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-repeat > div:first-child {
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+
+  .c8-composer .po-repeat > div:first-child > div:nth-child(n + 2) {
+    display: flex !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+  }
+
+  .c8-composer .po-split {
+    flex: 0 0 auto !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
+  }
+
+  .c8-composer .po-split-main {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    overflow: visible !important;
+    padding: 0 16px !important;
+  }
+
+  .c8-composer .po-split-main span {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+  }
+
+  .c8-composer .po-split-chevron {
+    display: flex !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-split-chevron svg {
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+}
+
+/* Media library actions stay inside the sheet. */
+.po-media-modal .po-library,
+.po-media-modal .mantine-Modal-body {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.po-media-modal .po-library-foot {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  gap: 8px !important;
+}
+
+.po-media-modal .po-library-foot button {
+  flex: 0 1 auto !important;
+  max-width: 100% !important;
+  min-height: 44px !important;
+  height: auto !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+}
+
+/* Delay comment stays on screen and above Add comment. */
+@media (min-width: 640px) {
+  .c8-composer .relative:has(> .po-delay) > div.absolute {
+    position: absolute !important;
+    left: 0 !important;
+    right: auto !important;
+    inset-inline-end: auto !important;
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    transform: none !important;
+    width: min(280px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    z-index: 30 !important;
+  }
+}
+
+/* Tablet date pop: solid surface, header inside the viewport. */
+@media (min-width: 640px) and (max-width: 1199px) {
+  .c8-composer .po-date-pop {
+    position: fixed !important;
+    left: 8px !important;
+    right: auto !important;
+    top: 12px !important;
+    bottom: auto !important;
+    width: min(320px, calc(100vw - 16px)) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 96px) !important;
+    overflow: auto !important;
+    background: var(--c8-surface) !important;
+    opacity: 1 !important;
+    z-index: 4600 !important;
+  }
+
+  .c8-composer .po-date-pop .mantine-Calendar-calendarHeader,
+  .c8-composer .po-date-pop .mantine-DatePicker-calendarHeader {
+    background: var(--c8-surface) !important;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+}
+
+/* Preview placeholder stays plain text after a channel is picked. */
+.c8-composer .po-preview-empty,
+.c8-composer .rounded-\[12px\]:has(> .po-preview-empty),
+.c8-composer .shadow-previewShadow:has(> .po-preview-empty) {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Dark edit-draft composer was wider than the viewport. */
+.dark .c8-composer #social-content .flex:has(> .po-add-row) {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+@media (max-width: 1199px) {
+  .dark .mantine-Modal-modal:has(.c8-composer) {
+    width: calc(100% - 16px) !important;
+    max-width: calc(100% - 16px) !important;
+    left: 8px !important;
+    right: 8px !important;
+    overflow-x: clip !important;
+    box-sizing: border-box !important;
+  }
+
+  .dark .c8-composer,
+  .dark .c8-composer .composer-frame,
+  .dark .c8-composer .composer-split,
+  .dark .c8-composer .composer-editor {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}

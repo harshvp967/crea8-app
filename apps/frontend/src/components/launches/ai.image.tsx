@@ -133,6 +133,7 @@ export const AiImage: FC<{
     }
     modals.openModal({
       title: t('generate_ai_image', 'Generate AI Image'),
+      classNames: { modal: 'po-ai-modal' },
       children: (close) => (
         <AiImageModal
           close={close}
@@ -166,7 +167,7 @@ export const AiImage: FC<{
             <HugeIcon name="ai-image" size={16} />
           </div>
           <div className="text-[10px] font-[600] iconBreak:hidden block">
-            {t('ai', 'AI')} Image
+            {t('ai', 'AI')} image
           </div>
         </div>
       </div>

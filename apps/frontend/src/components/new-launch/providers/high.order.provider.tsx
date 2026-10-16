@@ -291,7 +291,7 @@ export const withProvider = function <T extends object>(params: {
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
               !previewHasBody && (
-                <div>
+                <div className="po-preview-empty">
                   {t(
                     'start_writing_your_post',
                     'Start writing your post for a preview'
