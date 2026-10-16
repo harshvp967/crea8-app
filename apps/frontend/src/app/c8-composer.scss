@@ -702,10 +702,11 @@
   position: static !important;
   inset: auto !important;
   opacity: 1 !important;
-  flex: 1 1 auto;
-  width: auto !important;
+  flex: 0 0 auto;
+  width: max-content !important;
+  min-width: max-content;
   height: auto !important;
-  min-width: 0;
+  overflow: visible;
   background: transparent !important;
 }
 
@@ -714,22 +715,28 @@
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  width: auto !important;
+  width: max-content !important;
+  min-width: max-content;
   height: auto !important;
   min-height: 0 !important;
   padding: 0 !important;
+  overflow: visible !important;
 }
 
 .c8-composer .po-date-clock .mantine-TimeInput-controls {
   display: flex;
   align-items: center;
   gap: 2px;
+  width: max-content;
   height: auto;
+  overflow: visible;
 }
 
 .c8-composer .po-date-clock input {
-  width: auto !important;
-  min-width: 2.2ch;
+  flex: none;
+  width: 3.4ch !important;
+  min-width: 3.4ch !important;
+  max-width: none !important;
   height: 28px;
   margin: 0;
   padding: 0 4px;
@@ -739,6 +746,7 @@
   color: var(--c8-ink);
   font-weight: 700;
   text-align: center;
+  box-sizing: content-box;
 }
 
 .c8-composer .po-date-clock input:focus {
@@ -1483,14 +1491,19 @@ body.composer-open .app-toast.is-warning {
 }
 
 body.composer-open .app-toast.is-error {
+  position: fixed !important;
   left: 16px !important;
   right: 16px !important;
+  inset-inline-start: 16px !important;
+  inset-inline-end: 16px !important;
   top: auto !important;
   bottom: calc(76px + env(safe-area-inset-bottom)) !important;
   width: auto !important;
-  max-width: calc(100vw - 32px) !important;
+  max-width: none !important;
   min-width: 0 !important;
   margin: 0 !important;
+  transform: none !important;
+  translate: none !important;
   z-index: 5000 !important;
   background: var(--c8-surface) !important;
   border: 1.5px solid var(--c8-danger) !important;
@@ -2119,15 +2132,29 @@ body.c8-schedule .customer-menu .customer-option[aria-selected='true'] .customer
     min-width: 0;
   }
 
+  .c8-composer #social-content > .flex > div:last-child,
+  .c8-composer .select-customer {
+    position: static !important;
+    z-index: auto !important;
+    float: none;
+    flex: 0 0 auto;
+    width: auto;
+  }
+
   .c8-composer .po-picks {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+    display: flex !important;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    justify-content: flex-start;
     width: 100% !important;
     gap: 10px;
   }
 
   .c8-composer .po-picks > div {
-    justify-content: center;
+    flex: 0 0 auto;
+    width: auto;
+    justify-content: flex-start;
   }
 
   .po-media-modal .po-library {
