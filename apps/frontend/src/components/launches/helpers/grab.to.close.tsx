@@ -138,4 +138,20 @@ export function useGrabToClose(
       handle.removeEventListener('pointercancel', finish);
     };
   }, [active, ref]);
+
+  // A swipe that unmounts the sheet leaves the translate so it does not jump
+  // home. A sheet that only hides (the Post now menu) is still mounted, so
+  // park it at rest once `active` is false and the node is still there.
+  useEffect(() => {
+    if (active) {
+      return;
+    }
+    const root = ref.current;
+    if (!root) {
+      return;
+    }
+    root.style.transition = '';
+    root.style.transform = '';
+    root.style.visibility = '';
+  }, [active, ref]);
 }

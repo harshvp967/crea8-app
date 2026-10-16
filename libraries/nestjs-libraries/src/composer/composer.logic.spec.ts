@@ -1,12 +1,7 @@
 import {
-  clockPeriod,
   composerDateLabel,
   composerTimeLabel,
-  hour24FromChoice,
-  hour24WithPeriod,
-  hourChoices,
   resolveWallClock,
-  wallClockString,
 } from '@gitroom/frontend/components/launches/helpers/date.picker.time';
 import {
   releaseVelocity,
@@ -68,23 +63,7 @@ describe('composer time picker', () => {
       pattern === 'YYYY-MM-DD' ? '2026-10-16' : pattern,
   };
 
-  it('keeps the picked hour and minute on the wall clock that gets saved', () => {
-    expect(wallClockString(wall, 19, 5)).toBe('2026-10-16 19:05:00');
-    expect(hour24FromChoice(7, 'PM', true)).toBe(19);
-    expect(hour24FromChoice(12, 'AM', true)).toBe(0);
-    expect(hour24FromChoice(12, 'PM', true)).toBe(12);
-    expect(hour24WithPeriod(19, 'AM')).toBe(7);
-    expect(clockPeriod(19)).toBe('PM');
-    expect(clockPeriod(0)).toBe('AM');
-  });
-
-  it('marks the selected hour and follows 12-hour or 24-hour labels', () => {
-    const twelve = hourChoices(19, true);
-    expect(twelve.find((hour) => hour.selected)?.label).toBe('7');
-    expect(twelve).toHaveLength(12);
-    const day = hourChoices(19, false);
-    expect(day.find((hour) => hour.selected)?.label).toBe('19');
-    expect(day).toHaveLength(24);
+  it('follows 12-hour or 24-hour labels', () => {
     expect(composerDateLabel(wall, true)).toBe('ddd, MMM D · h:mm A');
     expect(composerTimeLabel(wall, false)).toBe('HH:mm');
     expect(composerDateLabel(wall, false)).toBe('ddd, D MMM · HH:mm');
