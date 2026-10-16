@@ -355,9 +355,9 @@
   overflow: visible;
 }
 
-.c8-composer .po-pick img,
-.c8-composer .po-pick .rounded-full,
-.c8-composer .po-selected img,
+.c8-composer .po-pick img:not(.po-platform),
+.c8-composer .po-pick .rounded-full:not(.po-platform),
+.c8-composer .po-selected .rounded-full > img:not(.absolute),
 .c8-composer .po-selected .rounded-full {
   width: 40px !important;
   height: 40px !important;
@@ -365,6 +365,17 @@
   min-height: 40px !important;
   border-radius: 10px !important;
   object-fit: cover;
+}
+
+.c8-composer .po-platform,
+.c8-composer .po-selected img.absolute {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+  border-radius: 4px !important;
 }
 
 .c8-composer .po-chip-remove {
