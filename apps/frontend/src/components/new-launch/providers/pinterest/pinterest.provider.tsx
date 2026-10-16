@@ -23,6 +23,7 @@ const PinterestSettings: FC = () => {
         name="dominant_color"
         enabled={false}
         canBeCancelled={true}
+        asToggle={true}
       />
     </div>
   );

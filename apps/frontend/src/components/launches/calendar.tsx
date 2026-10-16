@@ -1436,10 +1436,16 @@ const CalendarItem: FC<{
     const postBox = post.getBoundingClientRect();
     const width = Math.max(bar.offsetWidth, 188);
     const height = bar.scrollHeight;
-    let left = postBox.left;
-    if (left + width > window.innerWidth - 8) {
-      left = Math.max(8, window.innerWidth - width - 8);
-    }
+    const sideMargin =
+      window.innerWidth >= 1200
+        ? parseFloat(
+            getComputedStyle(document.body).getPropertyValue('--c8-main-pad')
+          ) || 16
+        : 16;
+    const left = Math.max(
+      sideMargin,
+      Math.min(postBox.left, window.innerWidth - width - sideMargin)
+    );
     const gap = 4;
     let top = postBox.bottom + gap;
     let maxHeight = Math.max(80, window.innerHeight - top - 8);
