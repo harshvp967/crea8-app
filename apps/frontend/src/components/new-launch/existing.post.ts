@@ -84,6 +84,8 @@ export function editorValuesFromPosts(
   }
 
   return (posts as SavedPost[]).map((post) => ({
+    // A saved number, including 0, is kept. Null and undefined already saved
+    // as 0 (`value.delay || 0`) and the delay control treats both as no delay.
     delay: typeof post?.delay === 'number' ? post.delay : 0,
     content: editorHtml(post?.content),
     id: post?.id || fallbackId(),

@@ -1146,6 +1146,31 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   'group po-split cursor-pointer relative',
                   postMenuOpen && 'is-open'
                 )}
+                onBlur={(event) => {
+                  if (!postMenuOpen) {
+                    return;
+                  }
+                  const next = event.relatedTarget as Node | null;
+                  const stillInside = (node: Node | null) =>
+                    !!node &&
+                    (postChevronRef.current?.contains(node) ||
+                      postMenuRef.current?.contains(node));
+                  if (stillInside(next)) {
+                    return;
+                  }
+                  // A click on an item blurs before the click event. Hiding the
+                  // menu in that gap drops the click, so wait until it runs.
+                  if (!next) {
+                    window.setTimeout(() => {
+                      if (stillInside(document.activeElement)) {
+                        return;
+                      }
+                      closePostMenu(false);
+                    }, 0);
+                    return;
+                  }
+                  closePostMenu(false);
+                }}
                 onMouseEnter={() => {
                   if (
                     !finePointer() ||
@@ -1229,6 +1254,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     role="menu"
                     aria-label={t('post_now', 'Post Now')}
                     onKeyDown={onPostMenuKeyDown}
+                    onClick={(event) => {
+                      if (
+                        !(event.target as HTMLElement).closest?.(
+                          '[role="menuitem"]'
+                        )
+                      ) {
+                        return;
+                      }
+                      closePostMenu(event.detail === 0);
+                    }}
                     className={clsx(
                       'post-now-tray po-post-menu',
                       postMenuOpen ? 'flex' : 'hidden'

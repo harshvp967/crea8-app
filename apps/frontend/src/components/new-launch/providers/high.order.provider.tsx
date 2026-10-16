@@ -110,21 +110,37 @@ export const withProvider = function <T extends object>(params: {
       }))
     );
 
+    const parsedAdditionalSettings = () =>
+      parseAdditionalSettings(
+        selectedIntegration?.integration?.additionalSettings
+      );
+
     const characterLimit = (formValues?: any) => {
       if (typeof maximumCharacters === 'number') {
         return maximumCharacters;
       }
+      // A missing limit used to throw. 0 would mark every post over the
+      // counter. /posts/valid uses the same ceiling when a provider limit
+      // is missing (`maximumCharacters || 1000000`).
       if (typeof maximumCharacters !== 'function') {
-        return 0;
+        return 1000000;
       }
       if (formValues?.post_type === 'article') {
         return maximumCharacters(formValues);
       }
-      return maximumCharacters(
-        parseAdditionalSettings(
-          selectedIntegration?.integration?.additionalSettings
-        )
-      );
+      return maximumCharacters(parsedAdditionalSettings());
+    };
+
+    // The preview did not use the article form values. It always passed the
+    // channel's additional settings, so an X article preview stays 280/4000.
+    const previewCharacterLimit = () => {
+      if (typeof maximumCharacters === 'number') {
+        return maximumCharacters;
+      }
+      if (typeof maximumCharacters !== 'function') {
+        return undefined;
+      }
+      return maximumCharacters(parsedAdditionalSettings());
     };
 
     useEffect(() => {
@@ -283,11 +299,11 @@ export const withProvider = function <T extends object>(params: {
               !!value?.[0]?.content?.length &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
-                  maximumCharacters={characterLimit(watched)}
+                  maximumCharacters={previewCharacterLimit()}
                 />
               ) : (
                 <GeneralPreviewComponent
-                  maximumCharacters={characterLimit(watched)}
+                  maximumCharacters={previewCharacterLimit()}
                 />
               ))}
             {(SettingsComponent || !!data?.internalPlugs?.length) &&

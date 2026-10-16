@@ -106,6 +106,11 @@ describe('existing post editor hydration', () => {
     });
     expect(values[1].id).toBe('generated');
     expect(values[1].content).toBe('<p>second</p>');
+    expect(values[1].delay).toBe(0);
+    expect(
+      editorValuesFromPosts([{ id: 'kept', content: 'a', delay: 5 }], () => 'x')[0]
+        .delay
+    ).toBe(5);
 
     expect(
       editorTags([{ tags: [{ tag: null }, { tag: { name: 'launch' } }] }])
