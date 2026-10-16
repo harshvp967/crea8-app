@@ -406,7 +406,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           'are_you_sure_you_want_to_delete_post',
           'Are you sure you want to delete this post?'
         ),
-        t('yes_delete_it', 'Yes, delete it!')
+        t('delete', 'Delete'),
+        t('are_you_sure', 'Are you sure?'),
+        t('cancel', 'Cancel'),
+        'danger'
       ))
     ) {
       setLoading(false);

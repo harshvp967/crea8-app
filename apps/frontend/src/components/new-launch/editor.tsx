@@ -389,7 +389,10 @@ export const EditorWrapper: FC<{
             'are_you_sure_delete_this_post',
             'Are you sure you want to delete this post?'
           ),
-          t('yes_delete_it', 'Yes, delete it!')
+          t('delete', 'Delete'),
+          t('are_you_sure', 'Are you sure?'),
+          t('cancel', 'Cancel'),
+          'danger'
         ))
       ) {
         return;
@@ -601,25 +604,26 @@ export const Editor: FC<{
     if (!emojiPickerOpen) {
       return;
     }
-    const place = () => {
-      const sheet = window.matchMedia(
-        '(max-width: 639px), (max-height: 500px)'
-      ).matches;
+    const sheet = window.matchMedia(
+      '(max-width: 639px), (max-height: 500px)'
+    ).matches;
+    const margin = 8;
+    if (sheet) {
       const rect = emojiButtonRef.current?.getBoundingClientRect();
-      const margin = 8;
-      if (sheet) {
-        const top = rect ? rect.bottom + margin : margin;
-        const available = window.innerHeight - top - margin;
-        const height = Math.min(280, Math.max(180, available));
-        setEmojiAnchor({
-          sheet: true,
-          top,
-          left: margin,
-          width: window.innerWidth - margin * 2,
-          height,
-        });
-        return;
-      }
+      const top = rect ? Math.max(margin, Math.round(rect.bottom + margin)) : margin;
+      const viewHeight = window.visualViewport?.height ?? window.innerHeight;
+      const height = Math.min(280, Math.max(180, Math.round(viewHeight - top - margin)));
+      setEmojiAnchor({
+        sheet: true,
+        top,
+        left: margin,
+        width: Math.round(window.innerWidth - margin * 2),
+        height,
+      });
+      return;
+    }
+    const place = () => {
+      const rect = emojiButtonRef.current?.getBoundingClientRect();
       const width = 360;
       const height = Math.min(420, window.innerHeight - margin * 2);
       let left = rect ? rect.right + margin : margin;

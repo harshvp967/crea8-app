@@ -3443,14 +3443,17 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
   body.c8-schedule .arc-dialog-wrap:has(.c8-slots) {
     align-items: flex-end !important;
     padding: 0 !important;
+    background: var(--c8-scrim) !important;
+    background-image: none !important;
   }
 
   body.c8-schedule .arc-dialog-wrap:has(.c8-slots) .relative.flex-1 > div {
     position: static !important;
     display: flex;
     align-items: flex-end;
-    min-height: 100% !important;
+    min-height: 0 !important;
     height: auto !important;
+    background: transparent !important;
     padding: 0 !important;
   }
 
@@ -3468,6 +3471,7 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     margin: 0 !important;
     border-radius: 28px 28px 0 0 !important;
     border: 1.5px solid var(--c8-hard);
+    height: auto !important;
     max-height: calc(100vh - 8px);
     overflow: hidden;
     padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important;
@@ -4413,7 +4417,7 @@ body.c8-schedule .cal-post-sheet-title {
     position: fixed;
     inset: 0;
     z-index: 12;
-    background: var(--c8-hard);
+    background: var(--c8-scrim);
   }
 
   /* Platform marks are z-index 10 on the cell, so they painted through the
@@ -4426,7 +4430,8 @@ body.c8-schedule .cal-post-sheet-title {
     visibility: hidden;
   }
 
-  body.c8-schedule .cal-post.is-open .cal-post-bar {
+  body.c8-schedule .cal-post.is-open .cal-post-bar,
+  body.c8-schedule .cal-post-bar.is-sheet {
     position: fixed !important;
     top: auto !important;
     right: 0 !important;
@@ -4444,7 +4449,8 @@ body.c8-schedule .cal-post-sheet-title {
     overflow: auto;
   }
 
-  body.c8-schedule .cal-post.is-open .cal-post-bar::before {
+  body.c8-schedule .cal-post.is-open .cal-post-bar::before,
+  body.c8-schedule .cal-post-bar.is-sheet::before {
     content: '';
     display: block;
     width: 40px;
@@ -4455,7 +4461,8 @@ body.c8-schedule .cal-post-sheet-title {
     flex: none;
   }
 
-  body.c8-schedule .cal-post.is-open .cal-post-sheet-title {
+  body.c8-schedule .cal-post.is-open .cal-post-sheet-title,
+  body.c8-schedule .cal-post-bar.is-sheet .cal-post-sheet-title {
     display: -webkit-box;
     overflow: hidden;
     margin: 0 4px 8px;
