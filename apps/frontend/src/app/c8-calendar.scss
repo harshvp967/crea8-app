@@ -4654,7 +4654,7 @@ body.c8-schedule .cal-post-sheet-title {
 
   body.c8-schedule .cal-scope-row:has(.select-customer > div.fixed) {
     position: relative;
-    z-index: 40;
+    z-index: 70;
   }
 
   body.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
@@ -4677,7 +4677,7 @@ body.c8-schedule .cal-post-sheet-title {
 
   body.c8-schedule .customer-menu,
   body.c8-schedule .filters-bar .cal-customer > .select-customer > div.fixed {
-    z-index: 80;
+    z-index: 80 !important;
     background: var(--c8-surface);
     border: 1.5px solid #121016 !important;
     border-radius: 16px;
@@ -5419,6 +5419,13 @@ body.c8-schedule .cal-post-bar.is-overlay {
     white-space: nowrap;
   }
 
+  /* The title keeps about six characters. The time drops before the title is squeezed under that. */
+  body.c8-schedule .month-cell .cal-post-body > .min-w-0,
+  body.c8-schedule .month-cell .line-clamp-2 {
+    flex: 1 0 6ch;
+    min-width: 6ch;
+  }
+
   body.c8-schedule .month-cell .flex.flex-col.w-full {
     gap: 2px;
   }
@@ -5512,15 +5519,18 @@ body.c8-schedule .cal-post-bar.is-overlay {
   }
 }
 
-/* A month column that cannot hold "12:00 ·" hides the time and leaves the title. */
-@container c8-month-chip (max-width: 48px) {
+/* Time plus about six title characters, the menu inset, and the chip padding.
+   Narrower than that, drop the time so the title is not cut to a couple of letters. */
+@container c8-month-chip (max-width: 136px) {
   .cal-chip-when {
     display: none !important;
   }
 }
 
-/* The day header stays above the hour labels when the week grid scrolls. */
-@media (min-width: 640px) and (max-width: 1199px) {
+/* The day header stays above the hour labels when the week grid scrolls.
+   Short landscape (height <= 500) keeps the phone stack, where this header
+   would paint over the open customer menu. */
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
   body.c8-schedule .week-grid > .week-head,
   body.c8-schedule .week-grid > .week-corner {
     position: sticky !important;
