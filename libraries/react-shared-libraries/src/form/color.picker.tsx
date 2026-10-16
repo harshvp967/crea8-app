@@ -2,6 +2,7 @@ import { FC, useCallback, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { useFormContext } from 'react-hook-form';
 import { Button } from './button';
+import { Slider } from './slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { TranslatedLabel } from '../translation/translated-label';
 
@@ -19,6 +20,7 @@ export const ColorPicker: FC<{
   canBeCancelled: boolean;
   translationKey?: string;
   translationParams?: Record<string, string | number>;
+  asToggle?: boolean;
 }> = (props) => {
   const {
     name,
@@ -29,6 +31,7 @@ export const ColorPicker: FC<{
     onChange,
     translationKey,
     translationParams,
+    asToggle,
   } = props;
   const form = useFormContext();
   const color = onChange
@@ -59,6 +62,23 @@ export const ColorPicker: FC<{
 
   const t = useT();
 
+  const toggleRow = asToggle && (
+    <div className="flex items-center gap-[16px]">
+      <div className="settings-row-copy settings-row-title">
+        {t('enable_color_picker', 'Enable color picker')}
+      </div>
+      <Slider
+        value={enabledState ? 'on' : 'off'}
+        onChange={(next) => (next === 'on' ? enable() : cancel())}
+        fill={true}
+      />
+    </div>
+  );
+
+  if (!enabledState && toggleRow) {
+    return <div>{toggleRow}</div>;
+  }
+
   if (!enabledState) {
     return (
       <div>
@@ -70,6 +90,7 @@ export const ColorPicker: FC<{
   }
   return (
     <div className="flex flex-col gap-[6px]">
+      {toggleRow}
       <div>
         {!!label && (
           <div className={`text-[14px]`}>
@@ -81,7 +102,7 @@ export const ColorPicker: FC<{
           </div>
         )}
       </div>
-      {canBeCancelled && (
+      {canBeCancelled && !asToggle && (
         <div>
           <Button onClick={cancel}>
             {t('cancel_the_color_picker', 'Cancel the color picker')}
