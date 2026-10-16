@@ -73,7 +73,8 @@ export const SignaturesComponent: FC<{
           </p>
         </div>
         <Button onClick={addSignature()}>
-          + {t('add_a_signature', 'Add a signature')}
+          <span className="sig-plus" aria-hidden="true">+</span>
+          {t('add_a_signature', 'Add a signature')}
         </Button>
       </div>
       {!!data?.length && (

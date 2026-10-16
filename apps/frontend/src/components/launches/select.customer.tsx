@@ -43,8 +43,14 @@ export const SelectCustomer: FC<{
       return;
     }
 
-    const { x, y, width, height } = ref.current?.getBoundingClientRect();
-    setPos({ top: y + height, left: x });
+    const { x, y, height } = ref.current?.getBoundingClientRect();
+    const menuWidth = 260;
+    const edge = 8;
+    let left = x;
+    if (left + menuWidth > window.innerWidth - edge) {
+      left = Math.max(edge, window.innerWidth - menuWidth - edge);
+    }
+    setPos({ top: y + height, left });
     setOpen(true);
   }, [open]);
 
