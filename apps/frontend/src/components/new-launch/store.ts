@@ -6,13 +6,14 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { createRef, RefObject } from 'react';
 import { PostComment } from '@gitroom/frontend/components/new-launch/providers/post-comment.enum';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
-import { attachInternalValue } from '@gitroom/frontend/components/new-launch/existing.post';
+import { attachInternalValue, seedInternalValue } from '@gitroom/frontend/components/new-launch/existing.post';
 
 interface Values {
   id: string;
   content: string;
   delay: number;
   media: { id: string; path: string; thumbnail?: string }[];
+  added?: boolean;
 }
 
 export interface Internal {
@@ -59,6 +60,7 @@ interface StoreState {
     integrationId: string,
     value: Values[]
   ) => void;
+  seedInternalValue: (integrationId: string, value: Values[]) => void;
   setGlobalValue: (value: Values[]) => void;
   setInternalValue: (integrationId: string, value: Values[]) => void;
   deleteGlobalValue: (index: number) => void;
@@ -228,6 +230,8 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   // Add value after index, similar to addGlobalValue, but for a speciic integration (index starts from 0)
   addInternalValue: (index: number, integrationId: string, value: Values[]) =>
     set((state) => attachInternalValue(state, index, integrationId, value)),
+  seedInternalValue: (integrationId: string, value: Values[]) =>
+    set((state) => seedInternalValue(state, integrationId, value)),
   deleteGlobalValue: (index: number) =>
     set((state) => {
       // Preserve the IDs at their current positions
@@ -317,6 +321,7 @@ export const useLaunchStore = create<StoreState>()((set) => ({
               content: targetItem.content,
               delay: targetItem.delay,
               media: targetItem.media,
+              added: targetItem.added,
             };
           }
           if (i === targetIndex) {
@@ -325,6 +330,7 @@ export const useLaunchStore = create<StoreState>()((set) => ({
               content: currentItem.content,
               delay: currentItem.delay,
               media: currentItem.media,
+              added: currentItem.added,
             };
           }
           return item;
@@ -358,6 +364,7 @@ export const useLaunchStore = create<StoreState>()((set) => ({
                     content: targetValue.content,
                     delay: targetValue.delay,
                     media: targetValue.media,
+                    added: targetValue.added,
                   };
                 }
                 if (i === targetIndex) {
@@ -366,6 +373,7 @@ export const useLaunchStore = create<StoreState>()((set) => ({
                     content: currentValue.content,
                     delay: currentValue.delay,
                     media: currentValue.media,
+                    added: currentValue.added,
                   };
                 }
                 return v;

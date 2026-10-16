@@ -2,7 +2,7 @@
 
 import { Select } from '@gitroom/react/form/select';
 import React, { useState } from 'react';
-import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
+import { isUSCitizen, publishClockPreference } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import timezones from 'timezones-list';
 const dateMetrics = [
   { label: 'AM:PM', value: 'US' },
@@ -21,7 +21,7 @@ const MetricComponent = () => {
   const changeMetric = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
     setCurrentMetric(value === 'US');
-    localStorage.setItem('isUS', value);
+    publishClockPreference(value === 'US' ? 'US' : 'GLOBAL');
   };
 
   const changeTimezone = (event: React.ChangeEvent<HTMLSelectElement>) => {

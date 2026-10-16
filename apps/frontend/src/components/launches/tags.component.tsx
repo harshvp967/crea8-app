@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo, useRef, useState } from 'react';
 import { ReactTags } from 'react-tag-autocomplete';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
@@ -19,6 +19,7 @@ import {
   CheckmarkIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 
 export const TagsComponent: FC<{
   name: string;
@@ -63,6 +64,9 @@ export const TagsComponentInner: FC<{
   const fetch = useFetch();
   const [isOpen, setIsOpen] = useState(false);
   const [allowClose, setAllowClose] = useState(true);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closeMenu = useCallback(() => setIsOpen(false), []);
+  useGrabToClose(menuRef, isOpen, closeMenu);
   const [tagQuery, setTagQuery] = useState('');
   const [tagValue, setTagValue] = useState<any[]>(
     (initial?.slice(0) || []).map((p: any) => {
@@ -194,7 +198,8 @@ export const TagsComponentInner: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="po-tags-menu z-[300] absolute start-0 bottom-[calc(100%+8px)] flex flex-col">
+        <div ref={menuRef} className="po-tags-menu z-[300] absolute start-0 bottom-[calc(100%+8px)] flex flex-col">
+          <div className="arc-grab" aria-hidden />
           <label className="po-tag-search">
             <HugeIcon name="search" size={16} />
             <input

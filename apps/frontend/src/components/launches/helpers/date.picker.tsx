@@ -1,4 +1,4 @@
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useRef, useState, useSyncExternalStore } from 'react';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { Calendar, TimeInput } from '@mantine/dates';
@@ -6,6 +6,35 @@ import { useClickOutside } from '@mantine/hooks';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { displayDayjs, displayNow, getTimezone, isPastCalendarDay } from '@gitroom/frontend/components/layout/set.timezone';
 import { CalendarIcon } from '@gitroom/frontend/components/ui/icons';
+import {
+  CLOCK_PREFERENCE_EVENT,
+  isUSCitizen,
+} from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
+import {
+  composerDateLabel,
+  composerTimeLabel,
+  resolveWallClock,
+} from '@gitroom/frontend/components/launches/helpers/date.picker.time';
+import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
+
+function subscribeClockPreference(onStoreChange: () => void) {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === 'isUS' || event.key === null) {
+      onStoreChange();
+    }
+  };
+  window.addEventListener('storage', onStorage);
+  window.addEventListener(CLOCK_PREFERENCE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener(CLOCK_PREFERENCE_EVENT, onStoreChange);
+  };
+}
+
+function readTwelveHour() {
+  return isUSCitizen();
+}
+
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
   onChange: (day: dayjs.Dayjs) => void;
@@ -13,28 +42,49 @@ export const DatePicker: FC<{
   const { date, onChange } = props;
   const [open, setOpen] = useState(false);
   const t = useT();
+  const popRef = useRef<HTMLDivElement>(null);
 
   const changeShow = useCallback(() => {
     setOpen((prev) => !prev);
   }, []);
+  const close = useCallback(() => {
+    setOpen(false);
+  }, []);
+  useGrabToClose(popRef, open, close);
   const ref = useClickOutside<HTMLDivElement>(() => {
     setOpen(false);
   });
   const changeDate = useCallback(
-    (type: 'date' | 'time') => (day: Date) => {
+    (type: 'date' | 'time') => (day: Date | null) => {
+      if (!day) {
+        return;
+      }
       const picked = dayjs(day);
       const current = displayDayjs(date);
-      onChange(
-        displayDayjs(
-          type === 'time'
-            ? current.format('YYYY-MM-DD') + ' ' + picked.format('HH:mm:ss')
-            : picked.format('YYYY-MM-DD') + ' ' + current.format('HH:mm:ss')
-        )
+      const datePart =
+        type === 'time' ? current.format('YYYY-MM-DD') : picked.format('YYYY-MM-DD');
+      const clock = type === 'time' ? picked : current;
+      const resolved = resolveWallClock(
+        datePart,
+        clock.hour(),
+        clock.minute(),
+        clock.second(),
+        getTimezone()
       );
+      onChange(displayDayjs(resolved.wall));
     },
-    [date]
+    [date, onChange]
   );
   const wall = displayDayjs(date);
+  // Server render stays on the 12-hour label. The client snapshot follows
+  // the AM/PM setting, including a change made while this picker is open.
+  const twelveHour = useSyncExternalStore(
+    subscribeClockPreference,
+    readTwelveHour,
+    () => true
+  );
+  const dateLabel = composerDateLabel(wall, twelveHour);
+  const timeLabel = composerTimeLabel(wall, twelveHour);
   const pickerValue = new Date(
     wall.year(),
     wall.month(),
@@ -55,21 +105,23 @@ export const DatePicker: FC<{
         type="button"
         className="po-date-trigger"
         aria-expanded={open}
-        aria-label={t('date', 'Date')}
+        aria-label={dateLabel}
         onClick={changeShow}
       >
         <div className="cursor-pointer">
           <CalendarIcon />
         </div>
         <div className="po-date-label cursor-pointer whitespace-nowrap">
-          {wall.format('ddd, MMM D · h:mm A')}
+          {dateLabel}
         </div>
       </button>
       {open && (
         <div
+          ref={popRef}
           onClick={(e) => e.stopPropagation()}
           className="po-date-pop animate-fadeIn absolute bottom-[calc(100%+8px)] end-0 z-[300] flex flex-col"
         >
+          <div className="arc-grab" aria-hidden />
           <Calendar
             onChange={changeDate('date')}
             value={pickerValue}
@@ -106,14 +158,15 @@ export const DatePicker: FC<{
             </div>
             <label className="po-date-clock">
               <CalendarIcon />
-              <span>{wall.format('h:mm A')}</span>
+              <span>{timeLabel}</span>
               <TimeInput
+                value={pickerValue}
+                format={twelveHour ? '12' : '24'}
                 onChange={changeDate('time')}
                 classNames={{
                   wrapper: 'po-date-native-wrap',
                   input: 'po-date-native',
                 }}
-                defaultValue={pickerValue}
               />
             </label>
             <button type="button" className="po-date-close" onClick={changeShow}>

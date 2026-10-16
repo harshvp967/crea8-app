@@ -40,6 +40,7 @@ import SkoolProvider from '@gitroom/frontend/components/new-launch/providers/sko
 import WhopProvider from '@gitroom/frontend/components/new-launch/providers/whop/whop.provider';
 import MeweProvider from '@gitroom/frontend/components/new-launch/providers/mewe/mewe.provider';
 import TumblrProvider from '@gitroom/frontend/components/new-launch/providers/tumblr/tumblr.provider';
+import { previewThreadValues, threadItemHasBody } from '@gitroom/frontend/components/new-launch/preview.thread';
 
 export const Providers = [
   {
@@ -196,6 +197,10 @@ export const ShowAllProviders = forwardRef((props, ref) => {
     );
 
   const t = useT();
+  const previewGlobal = previewThreadValues(global);
+  const previewHasBody = previewGlobal.some(
+    (item) => threadItemHasBody(item) || item.added
+  );
 
   useImperativeHandle(ref, () => ({
     checkAllValid: async () => {
@@ -224,14 +229,14 @@ export const ShowAllProviders = forwardRef((props, ref) => {
             integration:
               selectedIntegrations?.[0]?.integration || allIntegrations?.[0],
             allIntegrations: selectedIntegrations.map((p) => p.integration),
-            value: (global || []).map((p) => ({
+            value: previewGlobal.map((p) => ({
               id: p.id,
               content: typeof p?.content === 'string' ? p.content : '',
               image: Array.isArray(p?.media) ? p.media : [],
             })),
           }}
         >
-          {global?.[0]?.content?.length === 0 ? (
+          {!previewHasBody ? (
             <div className="po-preview-empty text-[14px] font-[500] text-textItemBlur">
               {selectedIntegrations.length
                 ? t(

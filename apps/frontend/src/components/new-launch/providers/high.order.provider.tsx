@@ -26,6 +26,7 @@ import {
   editorSettings,
   parseAdditionalSettings,
 } from '@gitroom/frontend/components/new-launch/existing.post';
+import { previewThreadValues, threadItemHasBody } from '@gitroom/frontend/components/new-launch/preview.thread';
 class Empty {
   @IsOptional()
   empty: string;
@@ -192,6 +193,10 @@ export const withProvider = function <T extends object>(params: {
 
       return global;
     }, [internal, global, isGlobal]);
+    const previewValue = previewThreadValues(value);
+    const previewHasBody = previewValue.some(
+      (item) => threadItemHasBody(item) || item.added
+    );
 
     const savedSettings = editorSettings(selectedIntegration?.settings);
     const form = useForm({
@@ -268,7 +273,7 @@ export const withProvider = function <T extends object>(params: {
           date,
           integration: selectedIntegration?.integration,
           allIntegrations,
-          value: (value || []).map((p) => ({
+          value: previewValue.map((p) => ({
             id: p.id,
             content: typeof p?.content === 'string' ? p.content : '',
             image: Array.isArray(p?.media) ? p.media : [],
@@ -285,7 +290,7 @@ export const withProvider = function <T extends object>(params: {
             {current &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
-              !value?.[0]?.content?.length && (
+              !previewHasBody && (
                 <div>
                   {t(
                     'start_writing_your_post',
@@ -296,7 +301,7 @@ export const withProvider = function <T extends object>(params: {
             {current &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
-              !!value?.[0]?.content?.length &&
+              previewHasBody &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
                   maximumCharacters={previewCharacterLimit()}

@@ -10,6 +10,16 @@ import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import {
+  composerDraftKey,
+  consumeComposerApplied,
+  consumeComposerHandoff,
+  clearComposerRestoreFlags,
+  consumeComposerRestored,
+  draftSnapshot,
+  markComposerLayoutRemount,
+  stashComposerHandoff,
+} from '@gitroom/frontend/components/new-launch/composer.draft';
+import {
   editorHtml,
   editorMedia,
   editorSettings,
@@ -47,6 +57,8 @@ export interface AddEditModalProps {
 }
 
 export const AddEditModal: FC<AddEditModalProps> = (props) => {
+  const existingData = useExistingData();
+  const draftKey = composerDraftKey(existingData.posts?.[0]?.id);
   const { setAllIntegrations, setDate, setIsCreateSet, setDummy } =
     useLaunchStore(
       useShallow((state) => ({
@@ -59,11 +71,47 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
 
   const integrations = useLaunchStore((state) => state.integrations);
   useEffect(() => {
-    setDummy(!!props.dummy);
-    setDate(props.date || newDayjs());
-    setAllIntegrations(props.allIntegrations || []);
-    setIsCreateSet(!!props.addEditSets);
+    const onLayout = () => markComposerLayoutRemount();
+    window.addEventListener('resize', onLayout);
+    window.addEventListener('orientationchange', onLayout);
+    const media = window.matchMedia('(max-width: 767px)');
+    media.addEventListener('change', onLayout);
+    return () => {
+      window.removeEventListener('resize', onLayout);
+      window.removeEventListener('orientationchange', onLayout);
+      media.removeEventListener('change', onLayout);
+    };
   }, []);
+  useEffect(() => {
+    setDummy(!!props.dummy);
+    const restored = consumeComposerHandoff<Record<string, unknown>>(draftKey);
+    if (restored) {
+      useLaunchStore.setState(restored);
+    }
+    // Clear the flag here so a later open cannot skip the slot date.
+    if (!consumeComposerRestored(draftKey)) {
+      setDate(props.date || newDayjs());
+      setAllIntegrations(props.allIntegrations || []);
+      setIsCreateSet(!!props.addEditSets);
+    }
+    return () => {
+      clearComposerRestoreFlags();
+    };
+  }, []);
+
+  // A rotate remount can reset integrations while this parent stays mounted,
+  // so the mount effect above does not run again. Restore only a keyed handoff.
+  useEffect(() => {
+    if (integrations.length) {
+      return;
+    }
+    const restored = consumeComposerHandoff<Record<string, unknown>>(draftKey);
+    if (restored) {
+      useLaunchStore.setState(restored);
+      return;
+    }
+    consumeComposerRestored(draftKey);
+  }, [integrations.length]);
 
   useEffect(() => {
     document.querySelector('body')?.classList.add('hideChatbase');
@@ -195,8 +243,8 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
   const existingData = useExistingData();
   const {
     reset,
-    addGlobalValue,
-    addInternalValue,
+    setGlobalValue,
+    seedInternalValue,
     global,
     setCurrent,
     internal,
@@ -208,8 +256,8 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
   } = useLaunchStore(
     useShallow((state) => ({
       reset: state.reset,
-      addGlobalValue: state.addGlobalValue,
-      addInternalValue: state.addInternalValue,
+      setGlobalValue: state.setGlobalValue,
+      seedInternalValue: state.seedInternalValue,
       setCurrent: state.setCurrent,
       global: state.global,
       internal: state.internal,
@@ -221,15 +269,32 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     }))
   );
 
+  const draftKey = composerDraftKey(existingData.posts?.[0]?.id);
+  const releaseDraft = () => {
+    stashComposerHandoff(draftKey, draftSnapshot(useLaunchStore.getState()));
+    clearComposerRestoreFlags();
+    reset();
+  };
+
   useEffect(() => {
+    const restored = consumeComposerHandoff<Record<string, unknown>>(draftKey);
+    if (restored) {
+      useLaunchStore.setState(restored);
+      consumeComposerRestored(draftKey);
+      return releaseDraft;
+    }
+    // The parent already wrote this post's draft back. Clear the flag either way.
+    if (consumeComposerApplied(draftKey) || consumeComposerRestored(draftKey)) {
+      return releaseDraft;
+    }
+
     if (existingData.integration) {
       if (existingData?.posts?.[0]?.intervalInDays) {
         setRepeater(existingData.posts[0].intervalInDays);
       }
       setTags(editorTags(existingData.posts));
 
-      addInternalValue(
-        0,
+      seedInternalValue(
         existingData.integration,
         postValues(existingData.posts)
       );
@@ -245,8 +310,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
           continue;
         }
 
-        addInternalValue(
-          0,
+        seedInternalValue(
           sibling.integration,
           postValues(sibling.posts)
         );
@@ -264,32 +328,35 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       setCurrent(props.focusedChannel);
     }
 
-    addGlobalValue(
-      0,
+    // Replace, don't insert. addGlobalValue appends after index 0, so a second
+    // seed left an empty post under the one the user was writing.
+    setGlobalValue(
       props.onlyValues?.length
         ? props.onlyValues.map((p) => ({
             content: editorHtml(p.content),
             id: makeId(10),
             media: editorMedia(p.image),
+            delay: 0,
           }))
         : props.set?.posts?.length
-        ? props.set.posts[0].value.map((p: any) => ({
+        ? props.set.posts[0].value.map((p: any, index: number) => ({
             id: makeId(10),
             content: editorHtml(p.content),
             media: editorMedia(p.media),
+            delay: 0,
+            ...(index > 0 ? { added: true } : {}),
           }))
         : [
             {
               content: '',
               id: makeId(10),
               media: [],
+              delay: 0,
             },
           ]
     );
 
-    return () => {
-      reset();
-    };
+    return releaseDraft;
   }, []);
 
   if (!global.length && !internal.length) {

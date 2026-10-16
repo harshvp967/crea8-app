@@ -11,11 +11,13 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { useHotkeys } from 'react-hotkeys-hook';
 import clsx from 'clsx';
 import { EventEmitter } from 'events';
+import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 
 interface OpenModalInterface {
   title?: any;
@@ -107,12 +109,16 @@ export const Component: FC<{
     if (modal.askClose) {
       const open = await decision.open();
       if (!open) {
-        return;
+        return false;
       }
     }
     modal?.onClose?.();
     closeModal(modal.id);
+    return true;
   }, [modal.id, closeModal]);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useGrabToClose(dialogRef, !modal.removeLayout, closeModalFunction);
 
   const RenderComponent = useMemo(() => {
     return typeof modal.children === 'function'
@@ -196,6 +202,7 @@ export const Component: FC<{
             )}
           >
             <div
+              ref={dialogRef}
               className={clsx(
                 !modal.removeLayout && 'gap-[40px] p-[32px]',
                 'arc-dialog bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[34px] border border-newBorder relative',
