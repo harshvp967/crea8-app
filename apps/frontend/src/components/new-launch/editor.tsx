@@ -33,7 +33,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 import {
-  editorHtmlAfterMount,
+  editorContentForValue,
   isEmptyEditorHtml,
 } from '@gitroom/frontend/components/new-launch/editor.persist';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
@@ -1087,10 +1087,10 @@ export const OnlyEditor = forwardRef<
   );
 
   const valueRef = useRef(value);
+  const emittedRef = useRef<string | null>(null);
   useEffect(() => {
     valueRef.current = value;
   }, [value]);
-  const clearedRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -1243,36 +1243,34 @@ export const OnlyEditor = forwardRef<
       if (isEmptyEditorHtml(created.getHTML()) && !isEmptyEditorHtml(stored)) {
         created.commands.setContent(stored, { emitUpdate: false });
       }
+      emittedRef.current = created.getHTML();
     },
     onUpdate: (innerProps) => {
       const reported = innerProps.editor.getHTML();
-      const next = editorHtmlAfterMount(
-        valueRef.current || '',
-        reported,
-        clearedRef.current || innerProps.editor.isFocused
-      );
-      if (isEmptyEditorHtml(next)) {
-        clearedRef.current = innerProps.editor.isFocused;
-      } else {
-        clearedRef.current = false;
-      }
-      if (next === valueRef.current) {
+      emittedRef.current = reported;
+      if (reported === valueRef.current) {
         return;
       }
-      valueRef.current = next;
-      onChange?.(next);
+      valueRef.current = reported;
+      onChange?.(reported);
     },
   });
 
   useEffect(() => {
-    if (!editor || editor.isFocused) {
+    if (!editor) {
       return;
     }
-    const reported = editor.getHTML();
-    const next = editorHtmlAfterMount(value || '', reported, clearedRef.current);
-    if (next !== reported) {
-      editor.commands.setContent(next, { emitUpdate: false });
+    const next = editorContentForValue(
+      editor.getHTML(),
+      value || '',
+      emittedRef.current
+    );
+    if (next == null) {
+      return;
     }
+    emittedRef.current = next;
+    valueRef.current = next;
+    editor.commands.setContent(next, { emitUpdate: false });
   }, [editor, value]);
 
   useImperativeHandle(ref, () => ({

@@ -36,17 +36,11 @@ export function threadItemHasBody(item: ThreadItem | null | undefined) {
 }
 
 /**
- * Preview drops trailing blanks that were never added as a thread item.
- * A blank the user added on purpose stays, so the empty card they asked for
- * is still visible. The first item always stays.
+ * Preview drops trailing blanks the same way save does, including a blank
+ * the user added and left empty. An image-only item stays. The first item stays.
  */
 export function previewThreadValues<T extends ThreadItem>(values: T[] | null | undefined): T[] {
-  const list = Array.isArray(values) ? values : [];
-  let end = list.length;
-  while (end > 1 && !threadItemHasBody(list[end - 1]) && !list[end - 1]?.added) {
-    end -= 1;
-  }
-  return list.slice(0, end);
+  return persistedThreadValues(values);
 }
 
 /**

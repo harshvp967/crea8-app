@@ -47,6 +47,7 @@ import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
+import { clearComposerLayoutRemount } from '@gitroom/frontend/components/new-launch/composer.draft';
 import { persistedThreadValues } from '@gitroom/frontend/components/new-launch/preview.thread';
 
 const finePointer = () =>
@@ -304,12 +305,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   const askClose = useCallback(async () => {
+    clearComposerLayoutRemount();
     if (!activateExitButton || dummy) {
-      return;
+      return false;
     }
 
     if (
-      await deleteDialog(
+      !(await deleteDialog(
         t(
           'discard_this_post_body',
           'The text and media in this post will be lost.'
@@ -318,14 +320,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         t('discard_this_post', 'Discard this post?'),
         t('keep_editing', 'Keep editing'),
         'danger'
-      )
+      ))
     ) {
-      if (customClose) {
-        customClose();
-        return;
-      }
-      modal.closeAll();
+      return false;
     }
+    if (customClose) {
+      customClose();
+      return true;
+    }
+    modal.closeAll();
+    return true;
   }, [activateExitButton, dummy]);
 
   useGrabToClose(composerFrameRef, true, askClose);
@@ -391,6 +395,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         )
       );
       mutate();
+      clearComposerLayoutRemount();
       modal.closeAll();
       return;
     }
@@ -411,6 +416,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       method: 'DELETE',
     });
     mutate();
+    clearComposerLayoutRemount();
     modal.closeAll();
     return;
   }, [existingData, existingPosts, channel, integrations, mutate, modal, fetch, t]);
@@ -923,6 +929,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
 
         if (!addEditSets) {
+          clearComposerLayoutRemount();
           modal.closeAll();
         }
       }

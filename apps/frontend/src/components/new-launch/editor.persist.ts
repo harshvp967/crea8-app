@@ -26,3 +26,23 @@ export function editorHtmlAfterMount(
   }
   return reported;
 }
+
+/**
+ * What to write into the editor after `value` changes.
+ * `null` leaves the document alone (the editor just emitted that HTML).
+ * A string is applied as-is, including '' from a delete, a channel switch,
+ * or an AI replace. An empty external value is never filled back in.
+ */
+export function editorContentForValue(
+  editorHtml: string,
+  value: string,
+  lastEmitted: string | null
+) {
+  if (value === lastEmitted) {
+    return null;
+  }
+  if (editorHtml === value) {
+    return null;
+  }
+  return value;
+}

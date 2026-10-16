@@ -10,9 +10,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import {
+  composerDraftKey,
+  consumeComposerApplied,
   consumeComposerHandoff,
+  clearComposerRestoreFlags,
   consumeComposerRestored,
   draftSnapshot,
+  markComposerLayoutRemount,
   stashComposerHandoff,
 } from '@gitroom/frontend/components/new-launch/composer.draft';
 import {
@@ -53,6 +57,8 @@ export interface AddEditModalProps {
 }
 
 export const AddEditModal: FC<AddEditModalProps> = (props) => {
+  const existingData = useExistingData();
+  const draftKey = composerDraftKey(existingData.posts?.[0]?.id);
   const { setAllIntegrations, setDate, setIsCreateSet, setDummy } =
     useLaunchStore(
       useShallow((state) => ({
@@ -65,28 +71,46 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
 
   const integrations = useLaunchStore((state) => state.integrations);
   useEffect(() => {
+    const onLayout = () => markComposerLayoutRemount();
+    window.addEventListener('resize', onLayout);
+    window.addEventListener('orientationchange', onLayout);
+    const media = window.matchMedia('(max-width: 767px)');
+    media.addEventListener('change', onLayout);
+    return () => {
+      window.removeEventListener('resize', onLayout);
+      window.removeEventListener('orientationchange', onLayout);
+      media.removeEventListener('change', onLayout);
+    };
+  }, []);
+  useEffect(() => {
     setDummy(!!props.dummy);
-    // A rotate remount restores the draft in the child effect, which runs
-    // after this one only when the child is already mounted. When integrations
-    // were cleared, the child mounts on the next paint and restores the date
-    // itself. Skip the prop date when that restore already happened.
-    if (!consumeComposerRestored()) {
-      setDate(props.date || newDayjs());
+    const restored = consumeComposerHandoff<Record<string, unknown>>(draftKey);
+    if (restored) {
+      useLaunchStore.setState(restored);
     }
-    setAllIntegrations(props.allIntegrations || []);
-    setIsCreateSet(!!props.addEditSets);
+    // Clear the flag here so a later open cannot skip the slot date.
+    if (!consumeComposerRestored(draftKey)) {
+      setDate(props.date || newDayjs());
+      setAllIntegrations(props.allIntegrations || []);
+      setIsCreateSet(!!props.addEditSets);
+    }
+    return () => {
+      clearComposerRestoreFlags();
+    };
   }, []);
 
-  // reset() on an editor remount clears integrations, and this parent stays
-  // mounted, so its mount effect does not run again. Put the draft back.
+  // A rotate remount can reset integrations while this parent stays mounted,
+  // so the mount effect above does not run again. Restore only a keyed handoff.
   useEffect(() => {
     if (integrations.length) {
       return;
     }
-    const restored = consumeComposerHandoff<Record<string, unknown>>();
+    const restored = consumeComposerHandoff<Record<string, unknown>>(draftKey);
     if (restored) {
       useLaunchStore.setState(restored);
+      return;
     }
+    consumeComposerRestored(draftKey);
   }, [integrations.length]);
 
   useEffect(() => {
@@ -245,21 +269,23 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     }))
   );
 
+  const draftKey = composerDraftKey(existingData.posts?.[0]?.id);
+  const releaseDraft = () => {
+    stashComposerHandoff(draftKey, draftSnapshot(useLaunchStore.getState()));
+    clearComposerRestoreFlags();
+    reset();
+  };
+
   useEffect(() => {
-    const restored = consumeComposerHandoff<Record<string, unknown>>();
+    const restored = consumeComposerHandoff<Record<string, unknown>>(draftKey);
     if (restored) {
       useLaunchStore.setState(restored);
-      return () => {
-        stashComposerHandoff(draftSnapshot(useLaunchStore.getState()));
-        reset();
-      };
+      consumeComposerRestored(draftKey);
+      return releaseDraft;
     }
-    // The parent already wrote the draft back after reset() cleared the store.
-    if (consumeComposerRestored()) {
-      return () => {
-        stashComposerHandoff(draftSnapshot(useLaunchStore.getState()));
-        reset();
-      };
+    // The parent already wrote this post's draft back. Clear the flag either way.
+    if (consumeComposerApplied(draftKey) || consumeComposerRestored(draftKey)) {
+      return releaseDraft;
     }
 
     if (existingData.integration) {
@@ -330,10 +356,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
           ]
     );
 
-    return () => {
-      stashComposerHandoff(draftSnapshot(useLaunchStore.getState()));
-      reset();
-    };
+    return releaseDraft;
   }, []);
 
   if (!global.length && !internal.length) {
