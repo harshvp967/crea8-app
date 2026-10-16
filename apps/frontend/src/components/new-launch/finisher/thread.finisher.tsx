@@ -1,7 +1,6 @@
 'use client';
 
 import { Slider } from '@gitroom/react/form/slider';
-import clsx from 'clsx';
 import { Editor } from '@gitroom/frontend/components/new-launch/editor';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
@@ -40,12 +39,8 @@ export const ThreadFinisher = () => {
           />
         </div>
       </div>
-      <div className="w-full mt-[20px]">
-        <div
-          className={clsx(
-            !slider && 'relative opacity-25 pointer-events-none editor'
-          )}
-        >
+      {!!slider && (
+        <div className="w-full mt-[20px]">
           <div>
             <div className="flex gap-[4px]">
               <div className="flex-1 editor text-textColor">
@@ -62,7 +57,7 @@ export const ThreadFinisher = () => {
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
