@@ -25,6 +25,13 @@
   overflow: hidden !important;
 }
 
+.mantine-Overlay-root:has(.c8-composer) > .flex > .flex,
+.mantine-Overlay-root:has(.c8-composer) > .flex > .flex > .w-full {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
 .c8-composer,
 .c8-composer .composer-frame,
 .c8-composer .composer-split,
