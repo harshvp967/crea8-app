@@ -7,6 +7,15 @@
 .c8-composer {
   color: var(--c8-ink);
   font-family: var(--font-body), Inter, sans-serif;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.mantine-Modal-modal:has(.c8-composer) {
+  width: min(1280px, calc(100vw - 16px)) !important;
+  max-width: calc(100vw - 16px) !important;
+  box-sizing: border-box !important;
 }
 
 .c8-composer,
