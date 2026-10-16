@@ -44,20 +44,25 @@ const sizes = bases.flatMap(([width, height]) => [
 ]);
 const themes = ['light', 'dark'];
 const views = [
-  'create-empty',
-  'with-text',
-  '15-channels',
-  'channel-preview',
-  'settings',
+  'no-channel',
+  'error-toast',
+  'all-channels',
+  'tags-sheet',
+  'repeat-sheet',
   'date-picker',
-  'repeat-menu',
-  'tags-menu',
-  'postnow-open',
-  'emoji',
-  'media-dialog',
-  'close-confirm',
-  'edit-existing',
+  'date-picker-time',
+  'customer-dropdown',
+  'discard-confirm',
+  'add-signature',
+  'emoji-picker',
+  'add-comment',
+  'delay-popover',
+  'postnow-menu',
+  'channel-settings',
+  'post-preview',
+  'media-library',
 ];
+const misses = [];
 
 const stored = JSON.parse(fs.readFileSync(cookieFile, 'utf8'));
 const apiCookie = stored.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
@@ -104,6 +109,16 @@ function mockBody(pathname, body) {
     json = JSON.parse(body.toString('utf8'));
   } catch {
     return body;
+  }
+  if (pathname === '/integrations/list' && Array.isArray(json?.integrations)) {
+    let named = json.integrations.some((item) => item?.customer?.id && item?.customer?.name);
+    if (!named) {
+      const channel = json.integrations.find((item) => item?.id) || json.integrations[0];
+      if (channel) {
+        channel.customer = { id: 'cust-northwind', name: 'Northwind' };
+      }
+    }
+    return Buffer.from(JSON.stringify(json));
   }
   if (pathname === '/posts/tags' && !json?.tags?.length) {
     json.tags = [
@@ -182,7 +197,13 @@ function routeFor() {
       }
       if (request.method() !== 'GET' && request.method() !== 'HEAD') {
         blocked.push(`${request.method()} ${parsed.pathname}`);
-        return route.fulfill({ status: 204, headers: cors, body: '' });
+        const list = parsed.pathname === '/integrations/function';
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          headers: cors,
+          body: list ? '[]' : '{}',
+        });
       }
       const headers = { ...request.headers() };
       delete headers.host;
@@ -386,159 +407,386 @@ async function showEditor() {
   }
 }
 
-async function captureCreate(theme, width, height) {
-  await openCalendar(theme, width, height, 'week');
-  await openComposer();
-  if (wanted(`${width}x${height}-create-empty-${theme}.png`)) {
-    await shot(`${width}x${height}-create-empty-${theme}.png`);
-  }
-  if (wanted(`${width}x${height}-15-channels-${theme}.png`)) {
-    await page.locator('.po-picks').scrollIntoViewIfNeeded();
-    await shot(`${width}x${height}-15-channels-${theme}.png`);
-  }
 
-  await selectChannel();
-  const editor = page.locator('.composer .ProseMirror').first();
-  await editor.click();
-  await page.keyboard.type('Launch week notes for Northwind.');
-  await settle();
-
-  if (wanted(`${width}x${height}-with-text-${theme}.png`)) {
-    await showEditor();
-    await shot(`${width}x${height}-with-text-${theme}.png`);
-  }
-  if (wanted(`${width}x${height}-channel-preview-${theme}.png`)) {
-    await showPreview();
-    await shot(`${width}x${height}-channel-preview-${theme}.png`);
-    await showEditor();
-  }
-  if (wanted(`${width}x${height}-settings-${theme}.png`)) {
-    await page.locator('.po-selected img').first().click();
-    await page.locator('.po-settings-toggle, .po-settings > div').first().click();
-    await page.waitForSelector('#social-settings :is(select, input, label, .c8-select-face)', { timeout: 8000 });
-    await settle();
-    await shot(`${width}x${height}-settings-${theme}.png`);
-    await page.locator('.po-settings-toggle, .po-settings > div').first().click();
-  }
-  if (wanted(`${width}x${height}-date-picker-${theme}.png`)) {
-    await page.locator('.po-date-chip').click();
-    await page.waitForSelector('.po-date-pop', { timeout: 8000 });
-    await settle();
-    await shot(`${width}x${height}-date-picker-${theme}.png`);
-    await page.locator('.po-date-chip').click();
-  }
-  if (wanted(`${width}x${height}-repeat-menu-${theme}.png`)) {
-    await page.locator('.po-repeat').click();
-    await page.waitForSelector('.po-repeat-menu', { timeout: 8000 });
-    await settle();
-    await shot(`${width}x${height}-repeat-menu-${theme}.png`);
-    await page.locator('.po-repeat').click();
-  }
-  if (wanted(`${width}x${height}-tags-menu-${theme}.png`)) {
-    await page.locator('.po-tags').click();
-    await page.waitForSelector('.po-tags-menu', { timeout: 8000 });
-    await settle();
-    await shot(`${width}x${height}-tags-menu-${theme}.png`);
-    await page.locator('.po-tags').click();
-  }
-  if (wanted(`${width}x${height}-postnow-open-${theme}.png`)) {
-    await page.locator('.po-split-chevron').hover();
-    await page.waitForSelector('.po-post-menu', { timeout: 8000 });
-    await page.evaluate(() => {
-      const menu = document.querySelector('.po-post-menu');
-      if (menu) menu.style.setProperty('display', 'flex', 'important');
-    });
-    await settle();
-    await shot(`${width}x${height}-postnow-open-${theme}.png`);
-    await page.evaluate(() => {
-      document.querySelectorAll('.po-post-menu').forEach((node) => {
-        node.style.removeProperty('display');
-      });
-    });
-  }
-  if (wanted(`${width}x${height}-emoji-${theme}.png`)) {
-    await page.evaluate(() => {
-      document.querySelectorAll('.po-post-menu').forEach((node) => {
-        node.style.setProperty('display', 'none', 'important');
-      });
-    });
-    const clickEmoji = () =>
-      page.evaluate(() => {
-        const nodes = [...document.querySelectorAll('[data-tooltip-content]')].filter((item) =>
-          /emoji/i.test(item.getAttribute('data-tooltip-content') || '')
-        );
-        const node = nodes.find((item) => {
-          const box = item.getBoundingClientRect();
-          return box.width > 8 && box.height > 8;
-        });
-        if (!node) return false;
-        const scroller = node.closest('#social-content');
-        if (scroller) {
-          const top =
-            node.getBoundingClientRect().top -
-            scroller.getBoundingClientRect().top +
-            scroller.scrollTop -
-            80;
-          scroller.scrollTop = Math.max(0, top);
-        }
-        node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        return true;
-      });
-    if (!(await clickEmoji())) throw new Error('emoji button missing');
-    await page.waitForSelector('.EmojiPickerReact', { state: 'visible', timeout: 8000 });
-    await settle();
-    await shot(`${width}x${height}-emoji-${theme}.png`);
-    await clickEmoji();
-    await page.waitForSelector('.EmojiPickerReact', { state: 'hidden', timeout: 8000 });
-  }
-  if (wanted(`${width}x${height}-media-dialog-${theme}.png`)) {
-    await page.evaluate(() => {
-      const node = document.querySelector('.po-attach .cursor-pointer');
-      const scroller = node?.closest('#social-content');
-      if (node && scroller) {
-        const top =
-          node.getBoundingClientRect().top -
-          scroller.getBoundingClientRect().top +
-          scroller.scrollTop -
-          80;
-        scroller.scrollTop = Math.max(0, top);
-      }
-      node?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    });
-    await page.waitForSelector('.po-media-modal', { timeout: 8000 });
-    await settle();
-    await shot(`${width}x${height}-media-dialog-${theme}.png`);
-    const cancelMedia = page.locator('.po-media-modal button', { hasText: 'Cancel' });
-    if (await cancelMedia.isVisible().catch(() => false)) {
-      await cancelMedia.click();
-    } else {
-      await page.keyboard.press('Escape');
-    }
-    await page.waitForTimeout(250);
-    await dismissSure();
-  }
-  if (wanted(`${width}x${height}-close-confirm-${theme}.png`)) {
-    await page.locator('.composer-tabs .composer-close-phone').click();
-    await page.waitForSelector('.po-sure-no', { timeout: 8000 });
-    await settle();
-    await shot(`${width}x${height}-close-confirm-${theme}.png`);
-    await page.locator('.po-sure-no').click();
-  }
+function fileName(width, height, state, theme) {
+  return `${width}x${height}-${state}-${theme}.png`;
 }
 
-async function captureEdit(theme, width, height) {
-  const name = `${width}x${height}-edit-existing-${theme}.png`;
-  if (!wanted(name)) return;
-  await openCalendar(theme, width, height, 'list');
-  const scheduled = page.locator('.cal-list-states div', { hasText: 'Scheduled' }).first();
-  if (await scheduled.count()) {
-    await scheduled.click();
+async function miss(name, reason) {
+  misses.push(`${name}: ${reason}`);
+  console.log('MISS', name, reason);
+}
+
+async function visible(selector) {
+  return page.locator(selector).first().isVisible().catch(() => false);
+}
+
+async function closeSheet(opener, menu) {
+  if (!(await visible(menu))) return;
+  const trigger = page.locator(opener).first();
+  if (await trigger.isVisible().catch(() => false)) {
+    await trigger.click({ timeout: 4000 }).catch(() => {});
   }
-  await page.waitForSelector('.cal-post-body', { timeout: 15000 });
-  await page.locator('.cal-post-body').first().click();
-  await page.waitForSelector('.composer', { timeout: 20000 });
+  if (await visible(menu)) {
+    await page.locator('.composer-tabs-title').first().click({ timeout: 4000 }).catch(() => {});
+  }
+  await page.waitForTimeout(150);
+}
+
+async function selectAllChannels() {
+  const picks = page.locator('.composer .po-pick');
+  const count = await picks.count();
+  for (let index = 0; index < count; index += 1) {
+    const pick = picks.nth(index);
+    const selected = await pick.evaluate((node) => node.classList.contains('is-on')).catch(() => false);
+    if (selected) continue;
+    await pick.scrollIntoViewIfNeeded().catch(() => {});
+    await pick.click({ timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(40);
+  }
+  await page.waitForSelector('.po-selected', { timeout: 8000 });
   await settle();
-  await shot(name);
+}
+
+async function captureStates(theme, width, height) {
+  const name = (state) => fileName(width, height, state, theme);
+  await openCalendar(theme, width, height, 'week');
+  await openComposer();
+
+  if (wanted(name('no-channel'))) {
+    await shot(name('no-channel'));
+  }
+
+  if (wanted(name('error-toast'))) {
+    const cta = page.locator('.po-split-main').first();
+    const disabled = await cta.isDisabled().catch(() => true);
+    if (disabled) {
+      await miss(name('error-toast'), 'CTA is disabled until a channel is selected and does not raise a toast');
+    } else {
+      await cta.click();
+      const toast = page.locator('.app-toast');
+      try {
+        await toast.waitFor({ state: 'visible', timeout: 4000 });
+        await shot(name('error-toast'));
+      } catch {
+        await miss(name('error-toast'), 'CTA click did not show an error toast');
+      }
+    }
+  }
+
+  if (wanted(name('all-channels')) || wanted(name('tags-sheet')) || wanted(name('repeat-sheet')) || wanted(name('date-picker')) || wanted(name('date-picker-time')) || wanted(name('customer-dropdown')) || wanted(name('discard-confirm')) || wanted(name('add-signature')) || wanted(name('emoji-picker')) || wanted(name('add-comment')) || wanted(name('delay-popover')) || wanted(name('postnow-menu')) || wanted(name('channel-settings')) || wanted(name('post-preview')) || wanted(name('media-library'))) {
+    await selectAllChannels();
+  }
+
+  if (wanted(name('all-channels'))) {
+    await page.locator('.po-current-row').scrollIntoViewIfNeeded();
+    if (await visible('.po-selected')) {
+      await shot(name('all-channels'));
+    } else {
+      await miss(name('all-channels'), 'selected-channel pill did not render');
+    }
+  }
+
+  if (wanted(name('tags-sheet'))) {
+    try {
+      await page.locator('.po-tags').first().click({ timeout: 8000 });
+      await page.waitForSelector('.po-tags-menu', { state: 'visible', timeout: 8000 });
+      await shot(name('tags-sheet'));
+    } catch {
+      await miss(name('tags-sheet'), 'tags menu did not open');
+    }
+    await closeSheet('.po-tags', '.po-tags-menu');
+  }
+
+  if (wanted(name('repeat-sheet'))) {
+    try {
+      await page.locator('.po-repeat').first().click({ timeout: 8000 });
+      await page.waitForSelector('.po-repeat-menu', { state: 'visible', timeout: 8000 });
+      await shot(name('repeat-sheet'));
+    } catch {
+      await miss(name('repeat-sheet'), 'repeat menu did not open');
+    }
+    await closeSheet('.po-repeat', '.po-repeat-menu');
+  }
+
+  if (wanted(name('date-picker')) || wanted(name('date-picker-time'))) {
+    try {
+      await page.locator('.po-date-chip').first().click({ timeout: 8000 });
+      await page.waitForSelector('.po-date-pop', { state: 'visible', timeout: 8000 });
+      if (wanted(name('date-picker'))) await shot(name('date-picker'));
+    } catch (error) {
+      if (wanted(name('date-picker'))) await miss(name('date-picker'), error.message.split('\n')[0]);
+      if (wanted(name('date-picker-time'))) await miss(name('date-picker-time'), 'date picker did not open');
+    }
+    if (wanted(name('date-picker-time')) && (await visible('.po-date-pop'))) {
+      try {
+        const opened = await page.locator('.po-date-pop .po-date-native, .po-date-pop .po-date-clock').first().evaluate((node) => {
+          const input = node.matches('input') ? node : node.querySelector('input');
+          const target = input || node;
+          target.focus();
+          target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          return document.activeElement === target || document.activeElement === input;
+        });
+        await settle();
+        if (!opened) throw new Error('time field did not take focus');
+        await shot(name('date-picker-time'));
+      } catch (error) {
+        await miss(name('date-picker-time'), error.message.split('\n')[0]);
+      }
+    } else if (wanted(name('date-picker-time')) && !(await visible('.po-date-pop'))) {
+      const timeFile = path.join(outDir, name('date-picker-time'));
+      if (!fs.existsSync(timeFile)) {
+        await miss(name('date-picker-time'), 'date picker did not open');
+      }
+    }
+    if (await visible('.po-date-close')) {
+      await page.locator('.po-date-close').click({ timeout: 4000 }).catch(() => {});
+    } else if (await visible('.po-date-pop')) {
+      await page.locator('.po-date-chip').first().click({ timeout: 4000 }).catch(() => {});
+    }
+    await page.waitForTimeout(150);
+  }
+
+  if (wanted(name('customer-dropdown'))) {
+    const customer = page.locator('.composer .select-customer').first();
+    const customerTrigger = customer.locator('> div').first();
+    if (!(await customer.count())) {
+      await miss(name('customer-dropdown'), 'no named customer on the intercepted channel list');
+    } else {
+      await customer.scrollIntoViewIfNeeded().catch(() => {});
+      try {
+      await customerTrigger.click({ timeout: 8000 });
+        await page.waitForSelector('.composer .customer-menu', { state: 'visible', timeout: 8000 });
+        await shot(name('customer-dropdown'));
+        await page.evaluate(() => {
+          document.querySelectorAll('.composer .customer-menu').forEach((node) => {
+            node.style.pointerEvents = 'none';
+          });
+        });
+        await customerTrigger.click({ timeout: 5000 });
+        if (await visible('.composer .customer-menu')) {
+          await page.locator('.composer-tabs-title').first().click({ timeout: 4000 }).catch(() => {});
+        }
+      } catch {
+        await miss(name('customer-dropdown'), 'customer menu did not open');
+      }
+    }
+  }
+
+  if (wanted(name('discard-confirm'))) {
+    const editor = page.locator('.composer .ProseMirror').first();
+    if (await editor.isVisible().catch(() => false)) {
+      await editor.click({ timeout: 5000 }).catch(() => {});
+      await page.keyboard.type('Note');
+    }
+    try {
+      await page.locator('.composer .composer-close-phone').first().click({ timeout: 8000 });
+      await page.waitForSelector('.po-sure-no', { state: 'visible', timeout: 8000 });
+      await shot(name('discard-confirm'));
+      const keep = page.getByRole('button', { name: 'Keep editing' });
+      if (await keep.isVisible().catch(() => false)) {
+        await keep.click({ timeout: 5000 }).catch(() => {});
+      }
+      if (await visible('.po-sure-modal')) {
+        await page.keyboard.press('Escape');
+      }
+      await page.waitForSelector('.po-sure-modal', { state: 'hidden', timeout: 4000 });
+    } catch {
+      await miss(name('discard-confirm'), 'discard confirmation did not open');
+    }
+  }
+
+  if (wanted(name('add-signature'))) {
+    const pen = page.locator('.composer-editor [aria-label="Add signature"]').first();
+    if (!(await pen.isVisible().catch(() => false))) {
+      await miss(name('add-signature'), 'signature button is not visible');
+    } else {
+      try {
+        const opened = await pen.evaluate((node) => {
+          node.scrollIntoView({ block: 'center', inline: 'center' });
+          node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          return true;
+        });
+        if (!opened) throw new Error('signature button missing');
+        await page.getByText('Add Signature').last().waitFor({ state: 'visible', timeout: 8000 });
+        await shot(name('add-signature'));
+        const close = page.locator('.mantine-Modal-close').last();
+        if (await close.isVisible().catch(() => false)) await close.click();
+        else await page.keyboard.press('Escape');
+        await page.waitForTimeout(200);
+      } catch {
+        await miss(name('add-signature'), 'signature dialog did not open');
+      }
+    }
+  }
+
+  if (wanted(name('emoji-picker'))) {
+    const opened = await page.evaluate(() => {
+      const nodes = [...document.querySelectorAll('[data-tooltip-content]')].filter((item) =>
+        /emoji/i.test(item.getAttribute('data-tooltip-content') || '')
+      );
+      const node = nodes.find((item) => {
+        const box = item.getBoundingClientRect();
+        return box.width > 8 && box.height > 8;
+      });
+      if (!node) return false;
+      const scroller = node.closest('#social-content');
+      if (scroller) {
+        const top = node.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 80;
+        scroller.scrollTop = Math.max(0, top);
+      }
+      node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      return true;
+    });
+    if (!opened) {
+      await miss(name('emoji-picker'), 'emoji button is not visible');
+    } else {
+      try {
+        await page.waitForSelector('.EmojiPickerReact', { state: 'visible', timeout: 8000 });
+        await shot(name('emoji-picker'));
+        await page.evaluate(() => {
+          const nodes = [...document.querySelectorAll('[data-tooltip-content]')].filter((item) =>
+            /emoji/i.test(item.getAttribute('data-tooltip-content') || '')
+          );
+          const node = nodes.find((item) => item.getBoundingClientRect().width > 8);
+          node?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        });
+        await page.waitForTimeout(200);
+      } catch {
+        await miss(name('emoji-picker'), 'emoji picker did not open');
+      }
+    }
+  }
+
+  if (wanted(name('add-comment')) || wanted(name('delay-popover'))) {
+    const add = page.locator('.po-add-row').first();
+    if (!(await add.isVisible().catch(() => false))) {
+      if (wanted(name('add-comment'))) await miss(name('add-comment'), 'add comment control is not visible');
+      if (wanted(name('delay-popover'))) await miss(name('delay-popover'), 'add comment control is not visible');
+    } else {
+      await add.scrollIntoViewIfNeeded();
+      await add.click();
+      await settle();
+      if (wanted(name('add-comment'))) await shot(name('add-comment'));
+      if (wanted(name('delay-popover'))) {
+        const delay = page.locator('.po-delay').first();
+        if (!(await delay.isVisible().catch(() => false))) {
+          await miss(name('delay-popover'), 'delay control did not appear on the new comment');
+        } else {
+          await delay.click();
+          try {
+            await page.getByPlaceholder('Custom min').waitFor({ state: 'visible', timeout: 8000 });
+            await shot(name('delay-popover'));
+            await page.locator('.composer-tabs-title').first().click({ timeout: 4000 });
+          } catch {
+            await miss(name('delay-popover'), 'delay popover did not open');
+          }
+        }
+      }
+    }
+  }
+
+  if (wanted(name('postnow-menu'))) {
+    const chevron = page.locator('.composer .po-split-chevron').first();
+    if (!(await chevron.isVisible().catch(() => false))) {
+      await miss(name('postnow-menu'), 'post now chevron is not visible');
+    } else {
+      try {
+        await chevron.scrollIntoViewIfNeeded();
+        await chevron.click({ timeout: 8000 });
+        const opened = await page.locator('.po-post-menu').isVisible().catch(() => false);
+        if (!opened) {
+          await chevron.evaluate((node) => {
+            node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          });
+        }
+        await page.waitForSelector('.po-post-menu', { state: 'visible', timeout: 8000 });
+        await shot(name('postnow-menu'));
+        await page.locator('.composer-tabs-title').first().click({ timeout: 4000 }).catch(() => {});
+      } catch {
+        await miss(name('postnow-menu'), 'post now menu did not open');
+        await page.locator('.composer-tabs-title').first().click({ timeout: 3000 }).catch(() => {});
+      }
+    }
+  }
+
+  if (wanted(name('channel-settings'))) {
+    const channel = page.locator('.composer .po-selected').first();
+    if (!(await channel.isVisible().catch(() => false))) {
+      await miss(name('channel-settings'), 'no selected channel to open settings');
+    } else {
+      const toggle = page.locator('.po-settings-toggle').first();
+      try {
+        await channel.scrollIntoViewIfNeeded();
+        await channel.evaluate((node) => {
+          const target = node.querySelector('img') || node;
+          target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        });
+        await toggle.waitFor({ state: 'visible', timeout: 8000 });
+        await toggle.click({ timeout: 8000 });
+        await page.waitForFunction(() => {
+          const root = document.querySelector('#social-settings');
+          if (!root) return false;
+          return [...root.children].some((node) => {
+            const style = getComputedStyle(node);
+            return style.display !== 'none' && node.getBoundingClientRect().height > 24;
+          });
+        }, { timeout: 8000 });
+        await page.locator('#social-settings').scrollIntoViewIfNeeded();
+        await shot(name('channel-settings'));
+        await toggle.click();
+      } catch {
+        await miss(name('channel-settings'), 'channel settings did not expand');
+      }
+    }
+  }
+
+  if (wanted(name('post-preview'))) {
+    const tab = page.getByRole('tab', { name: 'Post Preview' });
+    if (await tab.isVisible().catch(() => false)) {
+      await tab.click({ timeout: 8000 }).catch(() => {});
+      await settle();
+    }
+    const preview = page.locator('.composer-preview');
+    if (await preview.isVisible().catch(() => false)) {
+      await shot(name('post-preview'));
+    } else {
+      await miss(name('post-preview'), 'preview pane is not visible');
+    }
+    const editorTab = page.getByRole('tab', { name: 'Editor' });
+    if (await editorTab.isVisible().catch(() => false)) {
+      await editorTab.click({ timeout: 8000 }).catch(() => {});
+      await settle();
+    }
+  }
+
+  if (wanted(name('media-library'))) {
+    const opened = await page.evaluate(() => {
+      const node = document.querySelector('.po-attach .cursor-pointer, .po-attach button');
+      if (!node) return false;
+      const scroller = node.closest('#social-content');
+      if (scroller) {
+        const top = node.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 80;
+        scroller.scrollTop = Math.max(0, top);
+      }
+      node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      return true;
+    });
+    if (!opened) {
+      await miss(name('media-library'), 'media button is not visible');
+    } else {
+      try {
+        await page.waitForSelector('.po-media-modal', { state: 'visible', timeout: 8000 });
+        await shot(name('media-library'));
+        const cancelMedia = page.locator('.po-media-modal button', { hasText: 'Cancel' });
+        if (await cancelMedia.isVisible().catch(() => false)) await cancelMedia.click();
+        else await page.keyboard.press('Escape');
+        await page.waitForTimeout(200);
+      } catch {
+        await miss(name('media-library'), 'media library did not open');
+      }
+    }
+  }
 }
 
 await unlock();
@@ -548,50 +796,35 @@ for (const theme of themes) {
   for (const [width, height] of sizes) {
     if (process.env.SIZE && process.env.SIZE !== `${width}x${height}`) continue;
     const stamp = `${width}x${height}`;
+    const needed = views.some((view) => view !== 'error-toast' && wanted(fileName(width, height, view, theme)) && !fs.existsSync(path.join(outDir, fileName(width, height, view, theme))));
+    if (!needed) {
+      console.log('skip', stamp, theme);
+      continue;
+    }
     try {
-      const createNames = views
-        .filter((view) => view !== 'edit-existing')
-        .map((view) => `${stamp}-${view}-${theme}.png`);
-      const missingCreate = createNames.some(
-        (name) => wanted(name) && !fs.existsSync(path.join(outDir, name))
-      );
-      if (missingCreate) {
-        await captureCreate(theme, width, height);
-      } else {
-        console.log('skip create', stamp, theme);
-      }
+      await captureStates(theme, width, height);
     } catch (error) {
       const message = error.message.split('\n')[0];
-      console.log('FAIL create', stamp, theme, message);
-      failures.push(`${stamp} create ${theme}: ${message}`);
+      console.log('FAIL', stamp, theme, message);
+      failures.push(`${stamp} ${theme}: ${message}`);
       await page.screenshot({
-        path: path.join(outDir, `${stamp}-create-fail-${theme}.png`),
+        path: path.join(outDir, `${stamp}-fail-${theme}.png`),
         timeout: 8000,
       }).catch(() => {});
       await dismissSure().catch(() => {});
-    }
-    try {
-      const editName = `${stamp}-edit-existing-${theme}.png`;
-      if (wanted(editName) && !fs.existsSync(path.join(outDir, editName))) {
-        await captureEdit(theme, width, height);
-      }
-    } catch (error) {
-      const message = error.message.split('\n')[0];
-      console.log('FAIL edit', stamp, theme, message);
-      failures.push(`${stamp} edit ${theme}: ${message}`);
-      await page.screenshot({
-        path: path.join(outDir, `${stamp}-edit-fail-${theme}.png`),
-        timeout: 8000,
-      }).catch(() => {});
+      await page.keyboard.press('Escape').catch(() => {});
     }
   }
 }
 
 await browser.close();
 const expected = sizes.length * themes.length * views.length;
-console.log('shots expected', expected, 'failures', failures.length, 'blocked', blocked.length);
-if (blocked.length) {
-  console.log('blocked', [...new Set(blocked)].join(', '));
+const uniqueMisses = [...new Set(misses)];
+console.log('shots expected', expected, 'failures', failures.length, 'misses', uniqueMisses.length, 'blocked', blocked.length);
+if (blocked.length) console.log('blocked', [...new Set(blocked)].join(', '));
+if (uniqueMisses.length) {
+  fs.writeFileSync(path.join(outDir, 'misses.txt'), uniqueMisses.join('\n') + '\n');
+  console.log(uniqueMisses.join('\n'));
 }
 if (failures.length) {
   fs.writeFileSync(path.join(outDir, 'failures.txt'), failures.join('\n') + '\n');
