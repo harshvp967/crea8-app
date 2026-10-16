@@ -1489,7 +1489,14 @@ body.composer-open .app-toast.is-warning {
   top: auto !important;
 }
 
-.c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\]:has(.text-sm),
+.c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\]:has(.text-sm) {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid var(--c8-line) !important;
+  color: var(--c8-muted) !important;
+  box-shadow: none !important;
+}
+
 .c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\]:has(.text-sm) .text-white,
 .c8-composer .group.rounded-\[6px\]:has(.text-sm) .text-\[\#FF3F3F\] {
   color: var(--c8-muted) !important;
@@ -1630,12 +1637,39 @@ body.c8-schedule .customer-menu .customer-menu-title {
   background: transparent !important;
 }
 
+.c8-composer .customer-menu .customer-option {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  overflow: visible;
+  gap: 8px;
+}
+
+.c8-composer .customer-menu .customer-option:not([aria-selected='true']) .customer-option-check {
+  display: none !important;
+}
+
+.c8-composer .customer-menu .customer-option[aria-selected='true'] .customer-option-check,
 body.c8-schedule .customer-menu .customer-option[aria-selected='true'] .customer-option-check {
   display: inline-flex !important;
   align-items: center;
+  justify-content: center;
   margin-inline-start: auto;
   flex: none;
-  color: var(--c8-ink);
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  color: var(--c8-ink) !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.c8-composer .customer-menu .customer-option[aria-selected='true'] .customer-option-check svg {
+  display: block !important;
+  width: 16px !important;
+  height: 16px !important;
+  stroke: currentColor !important;
+  overflow: visible;
 }
 
 .arc-dialog-wrap:has(.settings-section) [class*='pt-'] {
@@ -1731,10 +1765,21 @@ body.c8-schedule .customer-menu .customer-option[aria-selected='true'] .customer
     display: flex !important;
   }
 
+  .c8-composer .composer-foot > .flex-1,
+  .c8-composer .composer-actions {
+    overflow: visible !important;
+  }
+
   .c8-composer .po-date-chip {
-    width: auto !important;
+    width: max-content !important;
+    min-width: max-content !important;
     max-width: none !important;
-    flex: 0 1 auto !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-date-trigger {
+    width: max-content !important;
     overflow: visible !important;
   }
 
@@ -1743,6 +1788,40 @@ body.c8-schedule .customer-menu .customer-option[aria-selected='true'] .customer
     max-width: none !important;
     overflow: visible !important;
     text-overflow: clip !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 800px) and (min-width: 640px) and (min-height: 501px) {
+  .c8-composer .c8-draft-long {
+    display: none !important;
+  }
+
+  .c8-composer .c8-draft-short {
+    display: inline !important;
+  }
+
+  .c8-composer .c8-draft {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .c8-composer .composer-foot > .flex-1 {
+    padding-left: 12px !important;
+  }
+
+  .c8-composer .composer-actions {
+    padding-right: 8px !important;
+    gap: 6px !important;
+  }
+
+  .c8-composer .po-date-chip {
+    margin-left: 0 !important;
+  }
+
+  .c8-composer .po-date-trigger {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
   }
 }
 
@@ -1805,14 +1884,15 @@ body.c8-schedule .customer-menu .customer-option[aria-selected='true'] .customer
   }
 
   .c8-composer .relative:has(> .po-delay) > div.absolute {
-    position: fixed !important;
-    left: 8px !important;
-    right: 8px !important;
+    position: absolute !important;
+    left: auto !important;
+    right: 0 !important;
     top: auto !important;
-    bottom: 72px !important;
-    width: auto !important;
-    max-width: none !important;
+    bottom: calc(100% + 8px) !important;
+    width: min(280px, calc(100vw - 16px)) !important;
+    max-width: calc(100vw - 16px) !important;
     transform: none !important;
+    z-index: 4500 !important;
   }
 
   .po-media-modal .po-library {
