@@ -1065,6 +1065,30 @@
     border-radius: 0 !important;
   }
 
+  .c8-composer .composer-grab {
+    display: flex !important;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .c8-composer .composer-grab::before {
+    content: '';
+    width: 48px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--c8-ink);
+  }
+
   .c8-composer .composer-seg {
     display: flex !important;
     margin-left: auto;
