@@ -2239,3 +2239,312 @@ body.c8-schedule .customer-menu .customer-option[aria-selected='true'] .customer
     padding-bottom: 0;
   }
 }
+
+/* Layout QA. Paint and placement only. */
+
+.c8-composer .composer-tabs {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.c8-composer .po-editor-card {
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 18px !important;
+  background: var(--c8-surface) !important;
+  background-clip: padding-box;
+  overflow: hidden;
+}
+
+.c8-composer .po-editor-card:has(.relative > div.absolute) {
+  overflow: visible;
+}
+
+.c8-composer .po-editor-tools,
+.c8-composer .po-editor-foot,
+.c8-composer .po-editor-card .bg-newBgColorInner,
+.c8-composer .po-editor-shell .bg-newBgColorInner {
+  background: var(--c8-surface) !important;
+}
+
+.c8-composer .po-editor-tools {
+  border-radius: 17px 17px 0 0;
+}
+
+.c8-composer .po-editor-foot {
+  border-radius: 0 0 17px 17px;
+  padding-inline-end: 8px;
+}
+
+.c8-composer .po-card-extra {
+  padding-inline-end: 16px !important;
+}
+
+.c8-composer .po-picks {
+  scrollbar-width: none;
+  padding-top: 6px;
+  padding-bottom: 8px;
+  padding-inline-end: 10px;
+  box-sizing: border-box;
+}
+
+.c8-composer .po-picks::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.c8-composer .po-date-clock::after {
+  content: none !important;
+  display: none !important;
+}
+
+.c8-composer .po-date-close {
+  position: relative;
+  z-index: 1;
+}
+
+.c8-composer .post-now-tray.po-post-menu {
+  top: auto !important;
+  bottom: calc(100% + 8px) !important;
+}
+
+.dark .c8-composer .po-split-main:disabled,
+.dark .c8-composer .po-split-main:disabled + .po-split-chevron,
+.dark .composer .po-split .po-split-main:disabled + .po-split-chevron {
+  background: var(--c8-soft) !important;
+  color: var(--c8-ink) !important;
+  border-color: var(--c8-line) !important;
+}
+
+.dark .c8-composer .po-split-main:disabled span,
+.dark .c8-composer .po-split-main:disabled .text-\[\#0A0A0A\],
+.dark .c8-composer .po-split-main:disabled + .po-split-chevron,
+.dark .c8-composer .po-split-main:disabled + .po-split-chevron svg {
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .composer-preview .absolute.top-0 {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+.dark .c8-composer .composer-preview .rounded-\[12px\].border {
+  background: var(--c8-surface) !important;
+  border: 1px solid var(--c8-line) !important;
+}
+
+.c8-composer #social-content .flex:has(> .po-add-row) {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c8-line);
+  margin-right: -16px;
+  padding-right: 16px;
+}
+
+.c8-composer #social-settings .rounded-lg.border {
+  border: 1px solid var(--c8-line) !important;
+  background: var(--c8-surface) !important;
+  gap: 8px !important;
+}
+
+.c8-composer #social-settings .rounded-lg.border .mt-\[20px\] {
+  margin-top: 8px !important;
+}
+
+.c8-composer #social-settings .rounded-lg.border .po-editor-card {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.c8-composer #social-settings .rounded-lg.border .opacity-25 {
+  opacity: 1 !important;
+  color: var(--c8-muted) !important;
+}
+
+.c8-composer #social-settings .rounded-lg.border .opacity-25 .ProseMirror,
+.c8-composer #social-settings .rounded-lg.border .opacity-25 [contenteditable] {
+  color: var(--c8-muted) !important;
+  opacity: 1 !important;
+}
+
+.c8-composer #social-settings .w-\[57px\].rounded-\[100px\] {
+  border: 1.5px solid var(--c8-ink) !important;
+  background: var(--c8-soft) !important;
+}
+
+.c8-composer #social-settings .w-\[57px\] .rounded-full {
+  background: var(--c8-ink) !important;
+}
+
+.c8-composer #social-settings button.bg-forth:not(:empty) {
+  width: max-content !important;
+  height: 44px !important;
+  min-height: 44px;
+  padding: 0 16px !important;
+  border-radius: 999px !important;
+  white-space: nowrap;
+  background: var(--c8-cyan) !important;
+  color: var(--c8-on-cyan) !important;
+  border: 1.5px solid var(--c8-hard) !important;
+}
+
+.c8-composer #social-settings button.bg-forth div {
+  color: var(--c8-on-cyan) !important;
+  white-space: nowrap;
+}
+
+.dark .c8-composer #social-settings .w-\[57px\].rounded-\[100px\] {
+  border-color: var(--c8-ink) !important;
+  background: #3a3844 !important;
+}
+
+.dark .c8-composer #social-settings .w-\[57px\].rounded-\[100px\].bg-customColor4 {
+  background: var(--c8-cyan) !important;
+}
+
+.c8-composer #social-settings .w-\[57px\] .rounded-full {
+  box-shadow: 0 0 0 1px var(--c8-line);
+}
+
+.po-media-modal .po-upload-btn {
+  flex: none;
+  height: 44px;
+  min-height: 44px;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.po-media-modal .po-upload-btn svg {
+  flex: none;
+  display: block;
+  overflow: visible;
+}
+
+body.light .c8-composer .po-date-pop .po-day-past,
+body.light .po-date-pop .po-day-past,
+body.light .po-date-pop button:disabled:not(.po-day-on) {
+  color: var(--c8-muted) !important;
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .c8-composer .post-now-tray.po-post-menu {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    bottom: calc(68px + env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    z-index: 4000 !important;
+  }
+}
+
+@media (max-height: 499px) {
+  .c8-composer .composer-editor > .flex-1 {
+    overflow-y: auto !important;
+  }
+
+  .c8-composer #social-content {
+    overflow-y: auto !important;
+  }
+
+  .c8-composer .po-editor-card {
+    min-height: 180px;
+  }
+
+  .c8-composer .po-editor-card .min-h-\[64px\] {
+    min-height: 120px !important;
+  }
+}
+
+@media (max-width: 639px), (max-height: 420px) {
+  .c8-composer .composer-tabs {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  .c8-composer .composer-foot {
+    position: relative;
+    z-index: 40;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-repeat-menu,
+  .c8-composer .po-tags-menu {
+    position: fixed !important;
+    left: 16px !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: 76px !important;
+    width: min(280px, calc(100vw - 32px)) !important;
+    min-width: min(220px, calc(100vw - 32px));
+    min-height: 88px;
+    max-height: min(360px, calc(100vh - 120px)) !important;
+    display: flex !important;
+    z-index: 4600 !important;
+    background: var(--c8-surface) !important;
+    color: var(--c8-ink) !important;
+    overflow: auto !important;
+  }
+
+  .c8-composer .po-tags-menu .po-tag-search,
+  .c8-composer .po-tags-menu .po-menu-row,
+  .c8-composer .po-tags-menu input,
+  .c8-composer .po-repeat-menu .po-menu-row,
+  .c8-composer .po-repeat-menu .po-menu-title {
+    color: var(--c8-ink) !important;
+    opacity: 1 !important;
+  }
+
+  .c8-composer .po-date-pop {
+    position: fixed !important;
+    left: 8px !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: 76px !important;
+    width: min(320px, calc(100vw - 16px)) !important;
+    max-width: calc(100vw - 16px) !important;
+    z-index: 4600 !important;
+    overflow: auto !important;
+  }
+
+  .c8-composer .po-date-chip,
+  .c8-composer .po-date-trigger,
+  .c8-composer .po-date-label {
+    width: max-content !important;
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  .c8-composer .composer-foot > .flex-1 {
+    overflow: visible !important;
+    flex: 0 1 auto;
+  }
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .po-media-modal .po-library .flex.items-center:not(.po-library-foot) {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .po-media-modal .po-library .flex.items-center:not(.po-library-foot) > .flex-1 {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .po-media-modal .po-library > .flex-1,
+  .po-media-modal .po-library .flex.flex-col.flex-1 {
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .po-media-modal .po-media-grid {
+    min-height: 120px;
+    max-height: 50dvh;
+  }
+}

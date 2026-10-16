@@ -5650,3 +5650,191 @@ body.c8-schedule .phone-slot:not(:hover) .cal-add > div::before {
     box-shadow: inset 0 0 0 1.5px var(--c8-ink);
   }
 }
+
+/* Layout QA. Paint and placement only. */
+
+/* Short landscape: the 61px header and 76px tab bar left one hour row. */
+@media (max-height: 499px) {
+  body.c8-schedule .app-header {
+    height: 44px !important;
+    min-height: 44px !important;
+  }
+
+  body.c8-schedule .mobile-tabbar {
+    height: 52px !important;
+    padding: 4px 8px 6px !important;
+  }
+
+  body.c8-schedule .app-shell,
+  body.c8-schedule .c8-shell,
+  .c8-shell {
+    padding-top: 44px !important;
+    padding-bottom: 52px !important;
+  }
+}
+
+/* Phone bell sheet: dim scrim over the header, same token as the post menu. */
+@media (max-width: 639px), (max-height: 500px) {
+  body.c8-schedule .c8-shell:has(.notify-panel)::before {
+    background: var(--c8-scrim);
+    z-index: 210;
+  }
+
+  body.c8-schedule .notify-panel {
+    z-index: 220 !important;
+  }
+}
+
+/* Dark active Week/Month/List pill was surface-on-soft, which disappears. */
+body.dark.c8-schedule .cal-mode > button[aria-checked='true'] {
+  background: var(--c8-ink) !important;
+  color: var(--c8-on-ink) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Tablet and desktop month chips: one line, ellipsis inside the chip. */
+@media (min-width: 640px) {
+  body.c8-schedule .month-cell .cal-post,
+  body.c8-schedule .month-cell .cal-post-body,
+  body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  body.c8-schedule .month-cell .cal-post-body > .min-w-0,
+  body.c8-schedule .month-cell .line-clamp-2 {
+    display: block !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: unset;
+  }
+}
+
+/* Tablet week headers stay in their columns. The day number was painting on the chip. */
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .week-grid > .week-head {
+    min-width: 0;
+    overflow: hidden;
+    padding-inline: 2px;
+    box-sizing: border-box;
+  }
+
+  body.c8-schedule .week-dow {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .week-num {
+    flex: none;
+  }
+}
+
+/* 1180 and the rest of tablet: a 252px rail squeezed the seven day columns.
+   The docked list becomes the avatar rail. The open sheet stays full size. */
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  body.c8-schedule {
+    --c8-rail-w: 88px;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) {
+    width: 88px !important;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) h2 {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) .channel-meta {
+    display: none !important;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) .channel-row {
+    justify-content: center;
+    width: 52px;
+    margin-inline: auto;
+    overflow: visible;
+  }
+}
+
+/* Tablet and desktop bell: dim scrim, and a gap above the screen edge. */
+@media (min-width: 640px) and (min-height: 501px) {
+  body.c8-schedule .c8-shell:has(.notify-panel)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    background: var(--c8-scrim);
+  }
+
+  .c8-shell .c8-side-foot .notify-panel {
+    bottom: 24px !important;
+    z-index: 200 !important;
+  }
+}
+
+/* Desktop list: keep the platform badge on the avatar, visible in dark. */
+@media (min-width: 1200px) {
+  body.c8-schedule .cal-list .cal-post-body,
+  body.c8-schedule .cal-list .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .cal-list .cal-post.is-draft .cal-post-body {
+    overflow: hidden;
+  }
+
+  body.c8-schedule .cal-list .cal-post-icon {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    overflow: visible;
+  }
+
+  body.c8-schedule .cal-list .cal-post-mark {
+    position: absolute;
+    top: auto;
+    left: auto;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    background: var(--c8-surface);
+    border: 1px solid var(--c8-line) !important;
+    box-shadow: 0 0 0 2px var(--c8-surface);
+  }
+
+  body.dark.c8-schedule .cal-list .cal-post-mark {
+    background: #fff;
+  }
+
+  body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected']::before {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected'] > div {
+    grid-column: 2;
+  }
+}
