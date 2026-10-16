@@ -291,11 +291,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
   const changeCustomer = useCallback(
     (customer: string) => {
-      const neededIntegrations = customer
-        ? integrations.filter((p) => p?.customer?.id === customer)
-        : integrations;
+      if (!customer) {
+        return;
+      }
       setSelectedIntegrations(
-        neededIntegrations.map((p) => ({
+        integrations
+          .filter((p) => p?.customer?.id === customer)
+          .map((p) => ({
           settings: {},
           selectedIntegrations: p,
         }))
