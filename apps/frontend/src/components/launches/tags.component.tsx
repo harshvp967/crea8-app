@@ -107,7 +107,10 @@ export const TagsComponentInner: FC<{
       setTagValue(modify);
       onChange({
         target: {
-          value: modify,
+          value: modify.map((item: any) => ({
+            label: item.name,
+            value: item.name,
+          })),
           name,
         },
       });
