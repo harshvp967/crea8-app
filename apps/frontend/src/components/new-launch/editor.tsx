@@ -31,6 +31,11 @@ import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.co
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
+import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
+import {
+  editorHtmlAfterMount,
+  isEmptyEditorHtml,
+} from '@gitroom/frontend/components/new-launch/editor.persist';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useDropzone } from 'react-dropzone';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
@@ -358,6 +363,7 @@ export const EditorWrapper: FC<{
             content: '',
             id: makeId(10),
             media: [],
+            added: true,
           },
         ]);
       }
@@ -368,6 +374,7 @@ export const EditorWrapper: FC<{
           content: '',
           id: makeId(10),
           media: [],
+          added: true,
         },
       ]);
     },
@@ -586,6 +593,8 @@ export const Editor: FC<{
     top: 0,
     left: 0,
   });
+  const emojiSheetRef = useRef<HTMLDivElement>(null);
+  useGrabToClose(emojiSheetRef, emojiPickerOpen, () => setEmojiPickerOpen(false));
   useLayoutEffect(() => {
     if (!emojiPickerOpen) {
       return;
@@ -925,6 +934,7 @@ export const Editor: FC<{
                       }}
                     >
                       <div
+                        ref={emojiSheetRef}
                         className="c8-emoji-pop"
                         style={
                           emojiAnchor.sheet
@@ -932,6 +942,7 @@ export const Editor: FC<{
                             : { top: emojiAnchor.top, left: emojiAnchor.left }
                         }
                       >
+                        <div className="arc-grab" aria-hidden />
                         <EmojiPicker
                           height={emojiAnchor.sheet ? 360 : 400}
                           theme={
@@ -1074,6 +1085,12 @@ export const OnlyEditor = forwardRef<
     },
     [internal, fetch]
   );
+
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+  const clearedRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -1221,10 +1238,42 @@ export const OnlyEditor = forwardRef<
     editorProps: {
       handlePaste: (_view, event, slice) => !!paste?.(event as any, slice),
     },
+    onCreate: ({ editor: created }) => {
+      const stored = valueRef.current || '';
+      if (isEmptyEditorHtml(created.getHTML()) && !isEmptyEditorHtml(stored)) {
+        created.commands.setContent(stored, { emitUpdate: false });
+      }
+    },
     onUpdate: (innerProps) => {
-      onChange?.(innerProps.editor.getHTML());
+      const reported = innerProps.editor.getHTML();
+      const next = editorHtmlAfterMount(
+        valueRef.current || '',
+        reported,
+        clearedRef.current || innerProps.editor.isFocused
+      );
+      if (isEmptyEditorHtml(next)) {
+        clearedRef.current = innerProps.editor.isFocused;
+      } else {
+        clearedRef.current = false;
+      }
+      if (next === valueRef.current) {
+        return;
+      }
+      valueRef.current = next;
+      onChange?.(next);
     },
   });
+
+  useEffect(() => {
+    if (!editor || editor.isFocused) {
+      return;
+    }
+    const reported = editor.getHTML();
+    const next = editorHtmlAfterMount(value || '', reported, clearedRef.current);
+    if (next !== reported) {
+      editor.commands.setContent(next, { emitUpdate: false });
+    }
+  }, [editor, value]);
 
   useImperativeHandle(ref, () => ({
     editor,

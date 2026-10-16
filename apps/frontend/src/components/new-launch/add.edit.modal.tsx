@@ -10,6 +10,12 @@ import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import {
+  consumeComposerHandoff,
+  consumeComposerRestored,
+  draftSnapshot,
+  stashComposerHandoff,
+} from '@gitroom/frontend/components/new-launch/composer.draft';
+import {
   editorHtml,
   editorMedia,
   editorSettings,
@@ -60,10 +66,28 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
   const integrations = useLaunchStore((state) => state.integrations);
   useEffect(() => {
     setDummy(!!props.dummy);
-    setDate(props.date || newDayjs());
+    // A rotate remount restores the draft in the child effect, which runs
+    // after this one only when the child is already mounted. When integrations
+    // were cleared, the child mounts on the next paint and restores the date
+    // itself. Skip the prop date when that restore already happened.
+    if (!consumeComposerRestored()) {
+      setDate(props.date || newDayjs());
+    }
     setAllIntegrations(props.allIntegrations || []);
     setIsCreateSet(!!props.addEditSets);
   }, []);
+
+  // reset() on an editor remount clears integrations, and this parent stays
+  // mounted, so its mount effect does not run again. Put the draft back.
+  useEffect(() => {
+    if (integrations.length) {
+      return;
+    }
+    const restored = consumeComposerHandoff<Record<string, unknown>>();
+    if (restored) {
+      useLaunchStore.setState(restored);
+    }
+  }, [integrations.length]);
 
   useEffect(() => {
     document.querySelector('body')?.classList.add('hideChatbase');
@@ -195,8 +219,8 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
   const existingData = useExistingData();
   const {
     reset,
-    addGlobalValue,
-    addInternalValue,
+    setGlobalValue,
+    seedInternalValue,
     global,
     setCurrent,
     internal,
@@ -208,8 +232,8 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
   } = useLaunchStore(
     useShallow((state) => ({
       reset: state.reset,
-      addGlobalValue: state.addGlobalValue,
-      addInternalValue: state.addInternalValue,
+      setGlobalValue: state.setGlobalValue,
+      seedInternalValue: state.seedInternalValue,
       setCurrent: state.setCurrent,
       global: state.global,
       internal: state.internal,
@@ -222,14 +246,29 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
   );
 
   useEffect(() => {
+    const restored = consumeComposerHandoff<Record<string, unknown>>();
+    if (restored) {
+      useLaunchStore.setState(restored);
+      return () => {
+        stashComposerHandoff(draftSnapshot(useLaunchStore.getState()));
+        reset();
+      };
+    }
+    // The parent already wrote the draft back after reset() cleared the store.
+    if (consumeComposerRestored()) {
+      return () => {
+        stashComposerHandoff(draftSnapshot(useLaunchStore.getState()));
+        reset();
+      };
+    }
+
     if (existingData.integration) {
       if (existingData?.posts?.[0]?.intervalInDays) {
         setRepeater(existingData.posts[0].intervalInDays);
       }
       setTags(editorTags(existingData.posts));
 
-      addInternalValue(
-        0,
+      seedInternalValue(
         existingData.integration,
         postValues(existingData.posts)
       );
@@ -245,8 +284,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
           continue;
         }
 
-        addInternalValue(
-          0,
+        seedInternalValue(
           sibling.integration,
           postValues(sibling.posts)
         );
@@ -264,30 +302,36 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       setCurrent(props.focusedChannel);
     }
 
-    addGlobalValue(
-      0,
+    // Replace, don't insert. addGlobalValue appends after index 0, so a second
+    // seed left an empty post under the one the user was writing.
+    setGlobalValue(
       props.onlyValues?.length
         ? props.onlyValues.map((p) => ({
             content: editorHtml(p.content),
             id: makeId(10),
             media: editorMedia(p.image),
+            delay: 0,
           }))
         : props.set?.posts?.length
-        ? props.set.posts[0].value.map((p: any) => ({
+        ? props.set.posts[0].value.map((p: any, index: number) => ({
             id: makeId(10),
             content: editorHtml(p.content),
             media: editorMedia(p.media),
+            delay: 0,
+            ...(index > 0 ? { added: true } : {}),
           }))
         : [
             {
               content: '',
               id: makeId(10),
               media: [],
+              delay: 0,
             },
           ]
     );
 
     return () => {
+      stashComposerHandoff(draftSnapshot(useLaunchStore.getState()));
       reset();
     };
   }, []);

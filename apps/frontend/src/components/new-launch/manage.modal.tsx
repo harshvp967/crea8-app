@@ -46,6 +46,8 @@ import { useShortlinkPreference } from '@gitroom/frontend/components/settings/sh
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
+import { persistedThreadValues } from '@gitroom/frontend/components/new-launch/preview.thread';
 
 const finePointer = () =>
   typeof window !== 'undefined' &&
@@ -55,6 +57,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
   const ref = useRef(null);
+  const composerFrameRef = useRef<HTMLDivElement>(null);
   const existingData = useExistingData();
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<null | 'draft' | 'submit'>(null);
@@ -324,6 +327,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       modal.closeAll();
     }
   }, [activateExitButton, dummy]);
+
+  useGrabToClose(composerFrameRef, true, askClose);
+  useGrabToClose(postMenuRef, postMenuOpen, () => closePostMenu(false));
 
   const deletePost = useCallback(async () => {
     setLoading(true);
@@ -676,7 +682,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             }
           : {}),
         settings: { ...(post.settings || {}) },
-        value: post.values.map((value: any) => ({
+        value: persistedThreadValues(post.values).map((value: any) => ({
           ...(value.id ? { id: value.id } : {}),
           content: value.content,
           delay: value.delay || 0,
@@ -946,7 +952,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
   return (
     <div className={clsx('composer c8-composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview', issue && 'composer-invalid')}>
-      <div className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] flex-col min-h-0">
+      <div ref={composerFrameRef} className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] flex-col min-h-0">
         <div className="arc-grab composer-grab" aria-hidden />
         <div className="composer-tabs" role="tablist">
           <span className="composer-tabs-title">
@@ -1289,6 +1295,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       postMenuOpen ? 'flex' : 'hidden'
                     )}
                   >
+                    <div className="arc-grab" aria-hidden />
                     <button
                       type="button"
                       role="menuitem"

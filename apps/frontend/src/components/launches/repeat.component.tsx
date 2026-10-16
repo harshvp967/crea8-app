@@ -1,12 +1,13 @@
 'use client';
 
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo, useRef, useState } from 'react';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useClickOutside } from '@mantine/hooks';
 import { isUSCitizen } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import clsx from 'clsx';
 import { RepeatIcon, DropdownArrowIcon, CheckmarkIcon, CloseIcon } from '@gitroom/frontend/components/ui/icons';
+import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 const getList = (t: (key: string, fallback: string) => string) => [
   {
     value: 1,
@@ -57,6 +58,9 @@ export const RepeatComponent: FC<{
   const t = useT();
   const list = getList(t);
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const close = () => setIsOpen(false);
+  useGrabToClose(menuRef, isOpen, close);
 
   const ref = useClickOutside(() => {
     if (!isOpen) {
@@ -97,7 +101,8 @@ export const RepeatComponent: FC<{
         </div>
       </div>
       {isOpen && (
-        <div className="po-repeat-menu z-[300] absolute start-0 bottom-[calc(100%+8px)] flex flex-col">
+        <div ref={menuRef} className="po-repeat-menu z-[300] absolute start-0 bottom-[calc(100%+8px)] flex flex-col">
+          <div className="arc-grab" aria-hidden />
           <div className="po-menu-title">
             {t('repeat', 'Repeat')}
           </div>

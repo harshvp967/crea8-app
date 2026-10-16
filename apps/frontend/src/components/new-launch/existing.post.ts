@@ -10,6 +10,8 @@ export type EditorValue = {
   content: string;
   delay: number;
   media: EditorMedia[];
+  /** Set when the user added this as its own thread item. */
+  added?: boolean;
 };
 
 type SavedPost = {
@@ -83,13 +85,15 @@ export function editorValuesFromPosts(
     return [];
   }
 
-  return (posts as SavedPost[]).map((post) => ({
+  return (posts as SavedPost[]).map((post, index) => ({
     // A saved number, including 0, is kept. Null and undefined already saved
     // as 0 (`value.delay || 0`) and the delay control treats both as no delay.
     delay: typeof post?.delay === 'number' ? post.delay : 0,
     content: editorHtml(post?.content),
     id: post?.id || fallbackId(),
     media: editorMedia(post?.image),
+    // Anything after the first post was saved as its own thread item.
+    ...(index > 0 ? { added: true as const } : {}),
   }));
 }
 
@@ -168,6 +172,31 @@ export function attachInternalValue<
     internal: state.internal.map((item, itemIndex) =>
       itemIndex === integrationIndex
         ? { ...item, integrationValue: newValues }
+        : item
+    ),
+  } as Partial<T>;
+}
+
+// The composer seed replaces a channel's thread. attachInternalValue inserts,
+// so running the seed twice stacked an empty second post onto the first.
+export function seedInternalValue<
+  T extends {
+    internal: InternalRow[];
+    selectedIntegrations: SelectedRow[];
+  }
+>(state: T, integrationId: string, value: EditorValue[]): Partial<T> {
+  const integrationIndex = state.internal.findIndex(
+    (item) => item.integration?.id === integrationId
+  );
+
+  if (integrationIndex === -1) {
+    return attachInternalValue(state, 0, integrationId, value);
+  }
+
+  return {
+    internal: state.internal.map((item, itemIndex) =>
+      itemIndex === integrationIndex
+        ? { ...item, integrationValue: value }
         : item
     ),
   } as Partial<T>;
