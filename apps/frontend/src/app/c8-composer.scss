@@ -139,6 +139,14 @@
   background: var(--c8-bg);
 }
 
+.c8-composer #social-content .flex-1.flex > .relative {
+  flex: 1 1 auto;
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .c8-composer .po-editor-card,
 .c8-composer .po-editor-tools,
 .c8-composer .po-editor-shell .bg-newBgColorInner {
@@ -939,6 +947,9 @@
 
   .c8-composer.composer-show-preview .composer-preview {
     display: flex !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: none !important;
   }
 
   .c8-composer.composer-show-preview .composer-editor {
@@ -946,13 +957,30 @@
   }
 
   .c8-composer .composer-editor {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     min-height: 0;
     overflow: hidden;
   }
 
-  .c8-composer .composer-editor > .flex-1 {
+  .c8-composer .composer-editor > .flex-1,
+  .c8-composer .composer-editor .flex-1.relative {
+    width: 100%;
+    min-width: 0;
     min-height: 0;
+  }
+
+  .c8-composer .composer-editor > .flex-1 {
     overflow: auto;
+  }
+
+  .c8-composer #social-content,
+  .c8-composer .po-editor-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
 
   .c8-composer .composer-foot {
