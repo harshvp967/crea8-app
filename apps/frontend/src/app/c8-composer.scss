@@ -1,9 +1,5 @@
 /* Composer on the calendar v2 tokens. Presentation only. */
 
-.c8-select-ui {
-  display: none;
-}
-
 .c8-composer {
   color: var(--c8-ink);
   font-family: var(--font-body), Inter, sans-serif;
@@ -68,6 +64,7 @@
 
 .c8-composer .composer-tabs {
   display: flex !important;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
   min-height: 56px;
@@ -78,10 +75,12 @@
 }
 
 .c8-composer .composer-tabs-title {
+  flex: none;
   font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
   font-weight: 700;
   font-size: 18px;
   color: var(--c8-ink);
+  white-space: nowrap;
 }
 
 .c8-composer .composer-seg {
@@ -239,6 +238,32 @@
   --epr-hover-bg-color: var(--c8-soft);
   --epr-focus-bg-color: var(--c8-soft);
   --epr-emoji-size: 28px;
+  --epr-search-border-color-active: var(--c8-hard);
+  --epr-search-input-bg-color-active: var(--c8-bg);
+  --epr-category-icon-active-color: var(--c8-cyan);
+  --epr-preview-text-color: var(--c8-muted);
+  --epr-preview-text-size: 13px;
+  --epr-preview-border-color: var(--c8-line);
+  --epr-preview-height: 52px;
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+.c8-emoji .epr-cat-btn {
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+
+.c8-emoji .epr-cat-btn.epr-active,
+.c8-emoji .epr-cat-btn:hover,
+.c8-emoji .epr-cat-btn:focus-visible {
+  filter: none;
+  opacity: 1;
+}
+
+.c8-emoji .epr-search-container input:focus {
+  outline: 2px solid var(--c8-cyan) !important;
+  outline-offset: 1px;
+  border-color: var(--c8-hard) !important;
 }
 
 .c8-composer .group.rounded-\[6px\] {
@@ -268,11 +293,22 @@
   flex-wrap: nowrap !important;
   width: auto !important;
   min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.c8-composer .editor-toolbar::-webkit-scrollbar {
+  display: none;
 }
 
 .c8-composer .po-editor-tools > .ms-auto {
+  position: relative;
+  z-index: 2;
   flex: none;
   margin-left: auto;
+  padding-inline-start: 6px;
+  background: var(--c8-surface);
 }
 
 .c8-composer .group.rounded-\[6px\] .text-white,
@@ -602,12 +638,17 @@
   color: var(--c8-ink);
 }
 
+.c8-composer .po-tags-menu .po-menu-row {
+  min-height: 52px;
+  overflow: visible;
+}
+
 .c8-composer .po-tag-pen {
   width: 44px !important;
   min-width: 44px !important;
   height: 44px !important;
   min-height: 44px !important;
-  flex: 0 0 44px;
+  flex: 0 0 44px !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -669,8 +710,38 @@
 .c8-composer .composer-foot {
   min-height: 64px;
   height: auto;
+  overflow: visible;
   border-top: 1px solid var(--c8-line) !important;
   background: var(--c8-surface) !important;
+}
+
+.c8-composer .composer-actions,
+.c8-composer .po-split {
+  overflow: visible;
+}
+
+.c8-composer .post-now-tray.po-post-menu {
+  position: absolute !important;
+  z-index: 400 !important;
+  right: 0 !important;
+  left: auto !important;
+  top: auto !important;
+  bottom: calc(100% + 8px) !important;
+  width: 240px !important;
+  max-width: min(240px, calc(100vw - 24px)) !important;
+  flex-direction: column !important;
+  padding: 8px !important;
+  background: var(--c8-surface) !important;
+  box-shadow: 4px 4px 0 var(--c8-hard) !important;
+}
+
+.c8-composer .composer-preview .absolute.z-10[class*='-end-'] {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  bottom: 2px !important;
+  inset-inline-end: 2px !important;
 }
 
 .c8-composer .po-split-main,
@@ -877,21 +948,16 @@
   }
 
   .c8-composer .po-date-label {
-    max-width: 9rem;
+    max-width: 14rem;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 }
 
-@media (max-width: 800px) and (min-height: 501px) {
+@media (max-width: 900px) and (min-height: 501px) {
   .c8-composer .composer-foot > .flex-1 {
-    overflow: hidden;
-  }
-
-  .c8-composer .po-tags,
-  .c8-composer .po-repeat,
-  .c8-composer .po-date-chip {
-    min-width: 0 !important;
+    flex: 0 0 auto;
+    min-width: 0;
     overflow: hidden;
   }
 
@@ -903,28 +969,76 @@
     flex: 0 0 44px !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: visible;
   }
 
-  .c8-composer .po-tags > div,
-  .c8-composer .po-repeat > div {
+  .c8-composer .po-tags > div:first-child,
+  .c8-composer .po-repeat > div:first-child {
     width: 44px !important;
     padding: 0 !important;
     gap: 0 !important;
     justify-content: center !important;
   }
 
-  .c8-composer .po-tags > div > div:nth-child(n + 2),
-  .c8-composer .po-repeat > div > div:nth-child(n + 2) {
+  .c8-composer .po-tags > div:first-child > div:nth-child(n + 2),
+  .c8-composer .po-repeat > div:first-child > div:nth-child(n + 2) {
     display: none !important;
   }
 
   .c8-composer .po-date-chip {
     flex: 0 1 auto !important;
-    max-width: 9rem;
+    width: auto !important;
+    max-width: 14rem !important;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .c8-composer .po-date-label {
-    max-width: 5.5rem;
+    max-width: 12rem;
+  }
+}
+
+@media (max-width: 800px) and (min-height: 501px) {
+  .c8-composer .composer-foot > .flex-1 {
+    overflow: hidden;
+  }
+
+  .c8-composer .po-date-chip {
+    min-width: 0 !important;
+    overflow: visible;
+  }
+
+  .c8-composer .po-tags,
+  .c8-composer .po-repeat {
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    flex: 0 0 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible;
+  }
+
+  .c8-composer .po-tags > div:first-child,
+  .c8-composer .po-repeat > div:first-child {
+    width: 44px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    justify-content: center !important;
+  }
+
+  .c8-composer .po-tags > div:first-child > div:nth-child(n + 2),
+  .c8-composer .po-repeat > div:first-child > div:nth-child(n + 2) {
+    display: none !important;
+  }
+
+  .c8-composer .po-date-chip {
+    flex: 0 1 auto !important;
+    max-width: 9rem !important;
+  }
+
+  .c8-composer .po-date-label {
+    max-width: 5.5rem !important;
   }
 }
 
@@ -965,14 +1079,25 @@
     background: var(--c8-soft);
   }
 
+  .c8-composer .composer-tabs-title {
+    font-size: 16px;
+  }
+
+  .c8-composer .composer-seg {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
   .c8-composer .composer-tabs button[role='tab'] {
     height: 44px;
-    padding: 0 12px;
+    padding: 0 10px;
     border: 0;
     border-radius: 999px;
     background: transparent;
     color: var(--c8-muted);
+    font-size: 13px;
     font-weight: 600;
+    white-space: nowrap;
   }
 
   .c8-composer .composer-tabs button.on {
@@ -1050,7 +1175,7 @@
     max-width: 100% !important;
     box-sizing: border-box;
     padding: 6px !important;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .c8-composer .composer-foot > .flex-1,
@@ -1085,8 +1210,8 @@
     overflow: hidden;
   }
 
-  .c8-composer .po-tags > div,
-  .c8-composer .po-repeat > div,
+  .c8-composer .po-tags > div:first-child,
+  .c8-composer .po-repeat > div:first-child,
   .c8-composer .po-date-trigger {
     width: 44px !important;
     padding: 0 !important;
@@ -1094,10 +1219,16 @@
     justify-content: center !important;
   }
 
-  .c8-composer .po-tags > div > div:nth-child(n + 2),
-  .c8-composer .po-repeat > div > div:nth-child(n + 2),
+  .c8-composer .po-tags > div:first-child > div:nth-child(n + 2),
+  .c8-composer .po-repeat > div:first-child > div:nth-child(n + 2),
   .c8-composer .po-date-label {
     display: none !important;
+  }
+
+  .c8-composer .po-tags,
+  .c8-composer .po-repeat,
+  .c8-composer .po-date-chip {
+    overflow: visible;
   }
 
   .c8-composer .po-split-main {
@@ -1149,8 +1280,8 @@
   }
 
   .c8-composer .po-date-pop,
-  .c8-composer .po-repeat-menu,
-  .c8-composer .po-tags-menu {
+  .c8-composer .po-repeat > .po-repeat-menu,
+  .c8-composer .po-tags > .po-tags-menu {
     position: fixed !important;
     left: 8px !important;
     right: 8px !important;
@@ -1160,6 +1291,17 @@
     max-width: none !important;
     max-height: none !important;
     z-index: 400 !important;
+  }
+
+  .c8-composer .post-now-tray.po-post-menu {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    bottom: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    z-index: 4000 !important;
   }
 
   .arc-dialog.po-media-modal,
@@ -1205,5 +1347,21 @@
 
   .c8-composer .po-global-label {
     display: none !important;
+  }
+}
+
+@media (max-width: 420px), (max-height: 420px) {
+  .c8-composer .composer-tabs {
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .c8-composer .composer-tabs-title {
+    font-size: 15px;
+  }
+
+  .c8-composer .composer-tabs button[role='tab'] {
+    padding: 0 8px;
+    font-size: 12px;
   }
 }
