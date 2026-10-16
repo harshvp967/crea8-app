@@ -605,11 +605,11 @@ export const Editor: FC<{
       return;
     }
     const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
+      const target = event.target as globalThis.Node | null;
       if (
         !target ||
-        emojiSheetRef.current?.contains(target) ||
-        emojiButtonRef.current?.contains(target)
+        emojiSheetRef.current?.contains(target as globalThis.Node) ||
+        emojiButtonRef.current?.contains(target as globalThis.Node)
       ) {
         return;
       }
