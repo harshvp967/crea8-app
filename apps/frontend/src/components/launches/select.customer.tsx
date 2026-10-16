@@ -37,6 +37,24 @@ export const SelectCustomer: FC<{
     }
   });
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [open]);
+
   const openClose = useCallback(() => {
     if (open) {
       setOpen(false);
