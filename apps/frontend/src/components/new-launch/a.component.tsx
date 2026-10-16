@@ -41,7 +41,7 @@ export const AComponent: FC<{
       data-tooltip-content="Link"
       aria-label="Link"
       onClick={mark}
-      className="c8-tool select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+      className="c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center"
     >
       <HugeIcon name="link" size={18} />
     </button>

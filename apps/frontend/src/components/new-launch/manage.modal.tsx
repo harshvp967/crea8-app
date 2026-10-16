@@ -258,7 +258,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       return (
         <div className="flex items-center gap-[10px]">
           <div className="relative">
-            <SettingsIcon size={15} className="text-white" />
+            <SettingsIcon size={18} className="c8-settings-gear" />
           </div>
           <div>Settings</div>
         </div>

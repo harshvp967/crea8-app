@@ -4,6 +4,7 @@ import React, {
   FC,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -11,6 +12,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import EmojiPicker from 'emoji-picker-react';
@@ -424,16 +426,18 @@ export const EditorWrapper: FC<{
       )}
       {!canEdit && !isCreateSet && (
         <>
-          <div className="po-lock text-center absolute w-full h-full p-[20px] left-0 top-0 items-center justify-center flex z-[101] flex-col gap-[16px]">
-            <div className="text-[14px] font-[600] text-white">
-              {t('editing_all_channels', 'Editing all channels')}
-            </div>
-            <div className="text-[13px] font-[500]">
-              {t(
-                'customize_for_channel',
-                'Customize for {{name}}',
-                { name: internalFromAll?.name || t('this_channel', 'this channel') }
-              )}
+          <div className="po-lock c8-lock-banner">
+            <div className="c8-lock-copy">
+              <div className="text-[14px] font-[600]">
+                {t('editing_all_channels', 'Editing all channels')}
+              </div>
+              <div className="text-[13px] font-[500]">
+                {t(
+                  'customize_for_channel',
+                  'Customize for {{name}}',
+                  { name: internalFromAll?.name || t('this_channel', 'this channel') }
+                )}
+              </div>
             </div>
             <button
               type="button"
@@ -576,6 +580,41 @@ export const Editor: FC<{
   } = props;
   const [id] = useState(makeId(10));
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
+  const [emojiAnchor, setEmojiAnchor] = useState({
+    sheet: false,
+    top: 0,
+    left: 0,
+  });
+  useLayoutEffect(() => {
+    if (!emojiPickerOpen) {
+      return;
+    }
+    const place = () => {
+      const sheet = window.matchMedia(
+        '(max-width: 639px), (max-height: 500px)'
+      ).matches;
+      const rect = emojiButtonRef.current?.getBoundingClientRect();
+      const width = 360;
+      const height = 420;
+      let left = rect ? rect.left : 8;
+      let top = rect ? rect.bottom + 8 : 8;
+      if (left + width > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - width - 8);
+      }
+      if (rect && top + height > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - height - 8);
+      }
+      setEmojiAnchor({ sheet, top, left });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [emojiPickerOpen]);
   const t = useT();
   const toaster = useToaster();
   const editorRef = useRef<undefined | { editor: any }>(undefined);
@@ -859,42 +898,57 @@ export const Editor: FC<{
                     </>
                   )}
                 <button
+                  ref={emojiButtonRef}
                   type="button"
                   data-tooltip-id="tooltip"
                   data-tooltip-content={t('insert_emoji', 'Insert emoji')}
                   aria-label={t('insert_emoji', 'Insert emoji')}
                   aria-expanded={emojiPickerOpen}
-                  className="c8-tool select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+                  className="c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center"
                   onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                 >
                   <EmojiIcon />
                 </button>
                 <SignatureBox editor={editorRef?.current?.editor} />
-                <div
-                  className={clsx('c8-emoji', emojiPickerOpen && 'is-open')}
-                  onClick={(event) => {
-                    if (event.target === event.currentTarget) {
-                      setEmojiPickerOpen(false);
-                    }
-                  }}
-                >
-                  <div className="absolute z-[500] top-[40px] -start-[50px]">
-                    <EmojiPicker
-                      height={400}
-                      theme={
-                        typeof document !== 'undefined' &&
-                        document.body.classList.contains('dark')
-                          ? Theme.DARK
-                          : Theme.LIGHT
-                      }
-                      onEmojiClick={(e) => {
-                        addText(e.emoji);
-                        setEmojiPickerOpen(false);
+                {emojiPickerOpen &&
+                  typeof document !== 'undefined' &&
+                  createPortal(
+                    <div
+                      className={clsx(
+                        'c8-emoji is-open',
+                        emojiAnchor.sheet && 'is-sheet'
+                      )}
+                      onClick={(event) => {
+                        if (event.target === event.currentTarget) {
+                          setEmojiPickerOpen(false);
+                        }
                       }}
-                      open={emojiPickerOpen}
-                    />
-                  </div>
-                </div>
+                    >
+                      <div
+                        className="c8-emoji-pop"
+                        style={
+                          emojiAnchor.sheet
+                            ? undefined
+                            : { top: emojiAnchor.top, left: emojiAnchor.left }
+                        }
+                      >
+                        <EmojiPicker
+                          height={emojiAnchor.sheet ? 360 : 400}
+                          theme={
+                            document.body.classList.contains('dark')
+                              ? Theme.DARK
+                              : Theme.LIGHT
+                          }
+                          onEmojiClick={(e) => {
+                            addText(e.emoji);
+                            setEmojiPickerOpen(false);
+                          }}
+                          open={emojiPickerOpen}
+                        />
+                      </div>
+                    </div>,
+                    document.body
+                  )}
               </div>
               <div className="ms-auto">
                 <InformationComponent

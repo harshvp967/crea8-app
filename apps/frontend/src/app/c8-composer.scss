@@ -16,6 +16,8 @@
   width: min(1280px, calc(100vw - 16px)) !important;
   max-width: calc(100vw - 16px) !important;
   box-sizing: border-box !important;
+  overflow: hidden !important;
+  background: var(--c8-bg) !important;
 }
 
 .mantine-Overlay-root:has(.c8-composer) > .flex {
@@ -177,25 +179,36 @@
   outline-offset: 2px !important;
 }
 
-.c8-composer .c8-emoji {
-  position: static;
+.c8-emoji.is-open {
+  position: fixed;
+  z-index: 4000;
+  inset: 0;
+  pointer-events: none;
 }
 
-.c8-composer .c8-emoji.is-open {
+.c8-emoji.is-open .c8-emoji-pop {
   position: fixed;
-  z-index: 80;
-  inset: 0;
+  z-index: 4001;
+  pointer-events: auto;
+}
+
+.c8-emoji.is-open.is-sheet {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: var(--c8-scrim);
+  pointer-events: auto;
+  background: var(--c8-scrim-sheet);
 }
 
-.c8-composer .c8-emoji.is-open > div {
-  position: static !important;
+.c8-emoji.is-open.is-sheet .c8-emoji-pop {
+  position: relative;
+  top: auto !important;
+  left: auto !important;
+  width: 100%;
+  margin: 0;
 }
 
-.c8-composer .c8-emoji.is-open .EmojiPickerReact {
+.c8-emoji.is-open .EmojiPickerReact {
   position: relative !important;
   top: auto !important;
   left: auto !important;
@@ -221,19 +234,42 @@
 }
 
 .c8-composer .group.rounded-\[6px\] {
-  height: 32px !important;
-  min-height: 32px;
-  padding: 0 8px !important;
+  height: auto !important;
+  min-height: 0;
+  padding: 0 4px !important;
   border: 0 !important;
-  border-radius: 999px !important;
+  border-radius: 0 !important;
   background: transparent !important;
   color: var(--c8-muted) !important;
   font-size: 13px !important;
   font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.c8-composer .po-editor-tools .group.rounded-\[6px\] > :first-child {
+  display: none !important;
+}
+
+.c8-composer .po-editor-tools {
+  flex-wrap: nowrap !important;
+  min-width: 0;
+}
+
+.c8-composer .editor-toolbar {
+  flex: 1 1 auto;
+  flex-wrap: nowrap !important;
+  width: auto !important;
+  min-width: 0;
+}
+
+.c8-composer .po-editor-tools > .ms-auto {
+  flex: none;
+  margin-left: auto;
 }
 
 .c8-composer .group.rounded-\[6px\] .text-white,
-.c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\] {
+.c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\],
+.c8-composer .group.rounded-\[6px\].bg-\[\#FF3F3F\] .text-white {
   background: transparent !important;
   color: var(--c8-danger) !important;
 }
@@ -302,11 +338,25 @@
   color: var(--c8-ink) !important;
 }
 
-.c8-composer .po-pick,
+.c8-composer .po-pick {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  background: var(--c8-soft) !important;
+  border: 1px solid var(--c8-line) !important;
+  overflow: visible;
+}
+
 .c8-composer .po-pick img,
+.c8-composer .po-pick .rounded-full,
 .c8-composer .po-selected img,
 .c8-composer .po-selected .rounded-full {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
   border-radius: 10px !important;
+  object-fit: cover;
 }
 
 .c8-composer .po-chip-remove {
@@ -331,22 +381,36 @@
 }
 
 .c8-composer .po-lock {
-  position: absolute !important;
-  inset: 12px !important;
-  z-index: 30 !important;
+  position: relative !important;
+  inset: auto !important;
+  z-index: 40 !important;
   width: auto !important;
   height: auto !important;
-  margin: 0;
-  padding: 16px !important;
+  margin: 0 12px 8px !important;
+  padding: 8px 10px 8px 14px !important;
   border: 1.5px solid var(--c8-hard);
   border-radius: 16px;
   background: var(--c8-surface) !important;
   color: var(--c8-ink) !important;
   text-align: start !important;
-  align-items: flex-start !important;
-  justify-content: flex-start !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
   box-shadow: 0 3px 0 var(--c8-hard);
   backdrop-filter: none !important;
+}
+
+.c8-composer .c8-lock-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c8-composer .blur-s {
+  filter: none !important;
 }
 
 .c8-composer .po-lock,
@@ -359,11 +423,7 @@
 }
 
 .c8-composer .po-lock-scrim {
-  display: block !important;
-  opacity: 1 !important;
-  background: var(--c8-bg) !important;
-  backdrop-filter: none !important;
-  z-index: 20 !important;
+  display: none !important;
 }
 
 .c8-composer .c8-lock-btn {
@@ -400,17 +460,67 @@
 }
 
 .c8-composer #social-settings input,
-.c8-composer #social-settings textarea,
-.c8-composer #social-settings .border-newBorder {
-  border-color: var(--c8-line) !important;
-  background: var(--c8-surface) !important;
+.c8-composer #social-settings textarea {
+  color: var(--c8-ink) !important;
+  background: transparent !important;
+}
+
+.c8-composer #social-settings .border:not(select),
+.c8-composer #social-settings .border-newBorder:not(select),
+.c8-composer #social-settings .border-tableBorder {
+  border: 1.5px solid var(--c8-hard) !important;
+  background: var(--c8-bg) !important;
+  color: var(--c8-ink) !important;
+  border-radius: 12px !important;
+}
+
+.c8-composer #social-settings select {
+  appearance: none;
+  height: 44px;
+  width: 100%;
+  padding: 0 36px 0 14px;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 12px !important;
+  background-color: var(--c8-surface) !important;
+  background-image: linear-gradient(45deg, transparent 50%, var(--c8-ink) 50%),
+    linear-gradient(135deg, var(--c8-ink) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 19px, calc(100% - 12px) 19px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
   color: var(--c8-ink) !important;
 }
 
 .c8-composer #social-settings .bg-forth {
-  background: var(--c8-ink) !important;
-  color: var(--c8-on-ink) !important;
+  width: 22px !important;
+  height: 22px !important;
   border-radius: 6px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  background: var(--c8-surface) !important;
+  color: var(--c8-on-ink) !important;
+  box-shadow: none !important;
+}
+
+.c8-composer #social-settings .bg-forth:not(:empty) {
+  background: var(--c8-ink) !important;
+}
+
+.c8-composer .c8-settings-gear {
+  color: var(--c8-ink);
+  display: block;
+}
+
+.c8-composer #social-settings .border-fifth {
+  border: 1.5px solid var(--c8-hard) !important;
+  background: var(--c8-soft) !important;
+}
+
+.c8-composer #social-settings .bg-customColor4 {
+  background: var(--c8-cyan) !important;
+}
+
+.c8-composer #social-settings .bg-customColor5 {
+  background: var(--c8-surface) !important;
+  border: 1.5px solid var(--c8-hard);
 }
 
 .c8-composer #social-settings button,
@@ -419,82 +529,6 @@
   color: var(--c8-ink);
   border: 1.5px solid var(--c8-hard);
   box-shadow: 0 3px 0 var(--c8-hard);
-}
-
-.c8-composer .c8-select-wrap {
-  position: relative;
-}
-
-.c8-composer .c8-native-select {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-.c8-composer .c8-select-ui {
-  display: block;
-}
-
-.c8-composer .c8-select-face,
-.c8-select-menu button {
-  min-height: 44px;
-}
-
-.c8-composer .c8-select-face {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
-  border: 1.5px solid var(--c8-line);
-  border-radius: 12px;
-  background: var(--c8-surface);
-  color: var(--c8-ink);
-  font-size: 14px;
-  text-align: start;
-}
-
-.c8-composer .c8-select-face::after {
-  content: '';
-  width: 8px;
-  height: 8px;
-  margin-left: 12px;
-  border-right: 1.5px solid var(--c8-ink);
-  border-bottom: 1.5px solid var(--c8-ink);
-  transform: rotate(45deg) translateY(-2px);
-}
-
-.c8-composer .c8-select-menu {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  max-height: min(280px, calc(100vh - 24px));
-  overflow: auto;
-  padding: 6px;
-  border: 1.5px solid var(--c8-hard);
-  border-radius: 16px;
-  background: var(--c8-surface);
-  box-shadow: 4px 4px 0 var(--c8-hard);
-}
-
-.c8-composer .c8-select-menu button {
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--c8-ink);
-  text-align: start;
-  padding: 0 12px;
-}
-
-.c8-composer .c8-select-menu button.is-on,
-.c8-composer .c8-select-menu button:hover {
-  background: var(--c8-soft);
 }
 
 .c8-composer .po-tags,
@@ -550,11 +584,19 @@
 }
 
 .c8-composer .po-tag-pen {
-  width: 44px;
-  height: 44px;
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  flex: 0 0 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--c8-ink);
+  font-size: 18px;
 }
 
 .c8-composer .po-date-pop .mantine-Calendar-calendarHeader,
@@ -634,9 +676,10 @@
 .c8-composer .po-split-chevron {
   width: 44px !important;
   min-width: 44px !important;
+  flex: 0 0 44px !important;
   border-left: 0 !important;
   border-radius: 0 999px 999px 0 !important;
-  box-shadow: 3px 3px 0 var(--c8-hard);
+  box-shadow: 0 3px 0 var(--c8-hard);
 }
 
 .c8-composer .po-split-main:only-child {
@@ -670,7 +713,7 @@
 .c8-composer .c8-delete {
   min-height: 44px;
   padding: 0 12px;
-  border: 0;
+  border: 1.5px solid var(--c8-danger);
   border-radius: 999px;
   background: transparent;
   color: var(--c8-danger) !important;
@@ -722,8 +765,8 @@
   box-shadow: 6px 6px 0 var(--c8-hard) !important;
 }
 
-.po-media-modal {
-  max-height: calc(100vh - 16px) !important;
+.arc-dialog.po-media-modal {
+  max-height: calc(100vh - 24px) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
@@ -768,33 +811,56 @@
   color: #fff !important;
 }
 
-@media (min-width: 640px) and (min-height: 501px) {
-  .c8-composer .c8-emoji.is-open {
-    align-items: center;
+@media (max-width: 1199px) and (min-height: 501px) {
+  .mantine-Modal-modal:has(.c8-composer) {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    left: 8px !important;
+    right: 8px !important;
+    overflow: hidden !important;
   }
-}
 
-@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
   .c8-composer {
     padding: 12px !important;
     overflow: hidden;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .c8-composer .composer-frame,
   .c8-composer .composer-split {
-    max-width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     overflow: hidden;
   }
 
   .c8-composer .composer-preview {
-    flex: 1 1 0 !important;
-    width: auto !important;
-    max-width: 46% !important;
+    flex: 1 1 0% !important;
+    width: 0 !important;
+    max-width: 42% !important;
+    min-width: 0 !important;
   }
 
   .c8-composer .composer-editor {
-    flex: 1.15 1 0 !important;
+    flex: 1 1 0% !important;
+    width: 0 !important;
     min-width: 0 !important;
+    overflow: hidden;
+  }
+
+  .c8-composer .composer-foot,
+  .c8-composer .composer-actions,
+  .c8-composer .composer-foot > .flex-1,
+  .c8-composer .po-split {
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+
+  .c8-composer .po-date-label {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -817,7 +883,10 @@
 
   .c8-composer .composer-frame {
     height: 100%;
+    width: 100%;
+    max-width: 100%;
     min-height: 0;
+    overflow: hidden;
     border: 0 !important;
     border-radius: 0 !important;
   }
@@ -890,10 +959,13 @@
     display: flex !important;
     flex-wrap: nowrap !important;
     align-items: center;
-    gap: 6px;
-    height: 64px !important;
+    gap: 4px;
+    height: 60px !important;
     max-height: 64px !important;
-    padding: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    padding: 6px !important;
     overflow: hidden;
   }
 
@@ -904,7 +976,7 @@
     width: auto !important;
     min-width: 0;
     padding: 0 !important;
-    gap: 6px;
+    gap: 4px;
   }
 
   .c8-composer .composer-foot > .flex-1 {
@@ -914,6 +986,7 @@
   .c8-composer .composer-actions {
     flex: 1 1 auto;
     justify-content: flex-end;
+    min-width: 0;
   }
 
   .c8-composer .po-tags,
@@ -921,16 +994,52 @@
   .c8-composer .po-date-chip {
     width: 44px !important;
     min-width: 44px !important;
+    max-width: 44px !important;
     flex: 0 0 44px !important;
     margin: 0 !important;
+    padding: 0 !important;
     overflow: hidden;
   }
 
-  .c8-composer .po-menu-trigger > div:nth-child(2),
-  .c8-composer .po-date-label,
-  .c8-composer .po-menu-trigger > div:nth-child(3),
-  .c8-composer .po-date-trigger > div:nth-child(3) {
+  .c8-composer .po-tags > div,
+  .c8-composer .po-repeat > div,
+  .c8-composer .po-date-trigger {
+    width: 44px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    justify-content: center !important;
+  }
+
+  .c8-composer .po-tags > div > div:nth-child(n + 2),
+  .c8-composer .po-repeat > div > div:nth-child(n + 2),
+  .c8-composer .po-date-label {
     display: none !important;
+  }
+
+  .c8-composer .po-split-main {
+    min-width: 0 !important;
+    padding: 0 8px !important;
+    font-size: 13px !important;
+  }
+
+  .c8-composer .po-split-main span {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .c8-composer .po-split-chevron {
+    flex: 0 0 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+  }
+
+  .c8-composer .c8-draft {
+    flex: none;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
   }
 
   .c8-composer .c8-draft-long,
@@ -969,16 +1078,39 @@
     z-index: 400 !important;
   }
 
-  .po-media-modal,
-  .po-sure-modal,
-  .po-tag-modal {
-    top: auto !important;
+  .arc-dialog.po-media-modal,
+  .arc-dialog.po-sure-modal,
+  .arc-dialog.po-tag-modal {
+    top: 8px !important;
     left: 8px !important;
     right: 8px !important;
     bottom: 8px !important;
     width: auto !important;
-    max-height: calc(100vh - 16px) !important;
+    height: auto !important;
+    max-height: none !important;
     transform: none !important;
+  }
+
+  .arc-dialog.po-media-modal .mantine-Modal-body,
+  .po-media-modal .po-library {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .po-media-modal .po-media-grid,
+  .po-media-modal .po-library > .flex-1,
+  .po-media-modal .po-library .flex-1 {
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .po-media-modal .po-library-foot {
+    flex: none;
+    position: sticky;
+    bottom: 0;
   }
 
   .c8-composer .po-attach .text-\[10px\],

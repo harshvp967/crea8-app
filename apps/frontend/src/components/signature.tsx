@@ -29,7 +29,7 @@ export const SignatureBox: FC<{
         data-tooltip-id="tooltip"
         data-tooltip-content="Add signature"
         aria-label="Add signature"
-        className="c8-tool select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+        className="c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center"
       >
         <HugeIcon name="pencil" size={18} />
       </button>
