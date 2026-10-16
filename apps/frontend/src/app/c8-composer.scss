@@ -18,6 +18,28 @@
   box-sizing: border-box !important;
 }
 
+.mantine-Overlay-root:has(.c8-composer) > .flex {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.c8-composer,
+.c8-composer .composer-frame,
+.c8-composer .composer-split,
+.c8-composer .composer-editor,
+.c8-composer .composer-preview,
+.c8-composer #social-content,
+.c8-composer .po-picks {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.c8-composer .po-picks {
+  overflow-x: auto;
+}
+
 .c8-composer,
 .c8-composer .composer-frame {
   background: var(--c8-bg) !important;
