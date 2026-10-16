@@ -5525,6 +5525,12 @@ body.c8-schedule .cal-post-bar.is-overlay {
   .cal-chip-when {
     display: none !important;
   }
+
+  /* Six letters plus the ellipsis do not fit at 12px beside the menu icon. */
+  .line-clamp-2 {
+    font-size: 10px;
+    line-height: 14px;
+  }
 }
 
 /* The day header stays above the hour labels when the week grid scrolls.
