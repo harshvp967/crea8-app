@@ -3217,3 +3217,75 @@ body:has(.arc-dialog.po-ai-modal) {
     background: var(--c8-surface);
   }
 }
+
+/* Delay comment popover, tablet and desktop (820 recheck after #136).
+   1. uiarc `.po-card-extra .flex.flex-col { flex-direction: row }` also hit
+      the popover (it is `flex flex-col` inside .po-card-extra), so the chips
+      and the Custom/Set row sat side by side and Custom shrank to a "C".
+   2. #136 made .po-editor-foot / .po-card-extra position:relative; z-index:120
+      on every card (`:has(.relative > div.absolute)` also matches the Uppy
+      strip). That made the narrow .po-card-extra the popover's containing
+      block, and the first card's foot (media buttons) painted over the top of
+      the popover, which read as top clipping.
+   3. Opening upward ran past the top of the composer scroll area, where
+      overflow cannot be scrolled to. It now opens down, below the comment
+      card; overflow below stays reachable by scrolling.
+   Phone sheet rules (max-width:639px / max-height:500px) are untouched. */
+@media (min-width: 640px) and (min-height: 501px) {
+  .c8-composer .po-editor-card .po-editor-foot,
+  .c8-composer .po-editor-card .po-card-extra {
+    position: static !important;
+    z-index: auto !important;
+  }
+
+  .c8-composer .po-editor-card:has(.po-delay + div.absolute) {
+    z-index: 130 !important;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-editor-card .po-card-extra .relative:has(> .po-delay) > div.absolute {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0;
+    top: calc(100% + 10px) !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: 12px !important;
+    inset-inline-start: auto !important;
+    inset-inline-end: 12px !important;
+    transform: none !important;
+    width: min(300px, calc(100% - 24px)) !important;
+    max-width: calc(100% - 24px) !important;
+    max-height: min(360px, calc(100dvh - 120px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 200 !important;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .grid {
+    width: 100%;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .border-t {
+    width: 100%;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .border-t .flex {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .border-t input {
+    flex: 1 1 96px !important;
+    min-width: 96px !important;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .border-t button {
+    flex: 0 0 auto !important;
+    min-width: 64px;
+    padding-inline: 16px !important;
+  }
+}
