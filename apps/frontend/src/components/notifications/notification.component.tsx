@@ -3,7 +3,7 @@
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useClickAway } from '@uidotdev/usehooks';
@@ -123,6 +123,23 @@ const NotificationComponent = () => {
     setShow(!show);
   }, [show, data]);
   const ref = useClickAway<HTMLDivElement>(() => setShow(false));
+  useEffect(() => {
+    if (!show) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      setShow(false);
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [show]);
   return (
     <div className="relative cursor-pointer select-none flex items-center justify-center w-[38px] h-[38px] rounded-[14px] transition-colors text-textItemBlur hover:text-newTextColor hover:bg-[var(--arc-selected)]" ref={ref}>
       <div className="relative" onClick={changeShow}>

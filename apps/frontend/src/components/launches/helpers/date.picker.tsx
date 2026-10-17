@@ -1,4 +1,4 @@
-import { FC, useCallback, useRef, useState, useSyncExternalStore } from 'react';
+import { FC, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { Calendar, TimeInput } from '@mantine/dates';
@@ -54,6 +54,23 @@ export const DatePicker: FC<{
   const ref = useClickOutside<HTMLDivElement>(() => {
     setOpen(false);
   });
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [open]);
   const changeDate = useCallback(
     (type: 'date' | 'time') => (day: Date | null) => {
       if (!day) {
