@@ -3384,13 +3384,16 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     overflow: visible !important;
   }
 
-  body.c8-schedule .notify-panel a {
-    display: -webkit-box;
-    overflow: hidden;
-    word-break: break-all;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+  body.c8-schedule .notify-panel a,
+  body.c8-schedule .notify-panel .break-words {
+    display: block;
+    overflow: visible;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
   }
 
   body.c8-schedule .channel-rail.is-open > div {
@@ -4830,14 +4833,20 @@ body.c8-schedule .cal-post-sheet-title {
   }
 }
 
-body.c8-schedule .notify-panel a {
-  display: -webkit-box;
-  overflow: hidden;
-  word-break: break-all;
-  text-overflow: ellipsis;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+body.c8-schedule .notify-panel a,
+body.c8-schedule .notify-panel .break-words {
+  display: block;
+  overflow: visible;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+body.c8-schedule .c8-shell:has(.notify-panel) .c8-sidebar {
+  border-right: 0;
 }
 
 body.c8-schedule .notify-panel > div:last-child > div[class*='arc-selected'] {
@@ -5978,5 +5987,47 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
     grid-area: today;
     justify-content: flex-end;
     width: 100% !important;
+  }
+}
+
+/* Week ⋮ stays inside the chip. In flow it was pushed into the next day,
+   and that cell took the click. The same button handler is used in Month. */
+@media (min-width: 1200px) and (min-height: 501px) {
+  body.c8-schedule .week-cell {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  body.c8-schedule .week-cell .cal-post,
+  body.c8-schedule .week-cell .cal-post-body,
+  body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
+  body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding-inline-end: 20px;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more {
+    position: absolute;
+    z-index: 3;
+    inset-inline-end: 1px;
+    top: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    min-width: 18px;
+    height: 18px;
+    margin: 0;
+    transform: translateY(-50%);
+    pointer-events: auto;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more::before {
+    content: none;
   }
 }
