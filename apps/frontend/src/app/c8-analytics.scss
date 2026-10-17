@@ -1,0 +1,832 @@
+/* Analytics tab, crea8.one v2. Presentation only: handlers live in
+   components/platform-analytics/*. Same page frame, type, cards, buttons and
+   phone chrome as Calendar, Composer and Agent. Every colour is a --c8-* token. */
+
+$c8-heading: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+$c8-body: var(--font-body), Inter, sans-serif;
+
+/* ---------- Page frame ---------- */
+.c8-shell .app-main:has(.analytics-screen) {
+  padding: 36px 40px 40px !important;
+  gap: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.analytics-screen {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  color: var(--c8-ink);
+  font-family: $c8-body;
+}
+
+.analytics-screen .analytics-channels {
+  display: none;
+}
+
+.analytics-screen .analytics-main {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* ---------- Header: sticker, period, title, channel [same as Agent] ---------- */
+.analytics-screen .analytics-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.analytics-screen .analytics-head-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.analytics-screen .analytics-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.analytics-screen .analytics-sticker {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c8-app-schedule);
+  color: #121016;
+  font-family: $c8-body;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+  transform: rotate(-2deg);
+}
+
+.analytics-screen .analytics-period {
+  overflow: hidden;
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analytics-screen .analytics-head h1 {
+  flex: none;
+  margin: 0;
+  overflow: visible;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 48px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.analytics-screen .analytics-sub {
+  max-width: 100%;
+  margin: -2px 0 0;
+  overflow: hidden;
+  color: var(--c8-muted);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Toolbar: logo tiles + range ---------- */
+.analytics-screen .analytics-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+.analytics-screen .analytics-strip {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  margin: -4px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.analytics-screen .analytics-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.analytics-screen .analytics-strip button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--c8-radius-10);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+.analytics-screen .analytics-strip button.is-selected {
+  box-shadow: 0 0 0 2px var(--c8-bg), 0 0 0 3.5px var(--c8-ink);
+}
+
+.analytics-screen .analytics-strip button.is-disabled {
+  opacity: 0.5;
+}
+
+@media (hover: hover) {
+  .analytics-screen .analytics-strip button:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.analytics-screen .analytics-strip button:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+.analytics-screen .analytics-strip .analytics-channel-mark,
+.analytics-screen .analytics-strip .analytics-channel-mark .avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.analytics-screen .analytics-strip .analytics-channel-mark .avatar {
+  border: 0;
+  border-radius: var(--c8-radius-10);
+  object-fit: cover;
+}
+
+.analytics-screen .analytics-strip .analytics-channel-mark .badge {
+  right: -3px;
+  bottom: -3px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--c8-surface);
+  border-radius: 4px;
+  background: var(--c8-surface);
+}
+
+.analytics-screen .analytics-channel-warn {
+  width: 14px;
+  height: 14px;
+  top: -4px;
+  left: -4px;
+  border: 1.5px solid var(--c8-surface);
+  border-radius: 999px;
+  background: var(--c8-danger);
+  color: #121016;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 11px;
+}
+
+/* Range: same soft track and surface thumb as the v2 segmented control. */
+.analytics-screen .analytics-range {
+  display: inline-flex;
+  flex: none;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-soft);
+  box-shadow: none;
+}
+
+.analytics-screen .analytics-range button {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+  color: var(--c8-muted);
+  font-family: $c8-body;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: normal;
+  cursor: pointer;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    color var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+.analytics-screen .analytics-range button.is-selected {
+  background: var(--c8-surface);
+  background-image: none;
+  box-shadow: 0 1px 3px rgb(18 16 22 / 0.12);
+  color: var(--c8-ink);
+  font-weight: 600;
+}
+
+@media (hover: hover) {
+  .analytics-screen .analytics-range button:not(.is-selected):hover {
+    color: var(--c8-ink);
+  }
+}
+
+.analytics-screen .analytics-range button:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- Stats ---------- */
+.analytics-screen .analytics-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.analytics-screen .analytics-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.analytics-screen .analytics-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+  box-shadow: none;
+}
+
+.analytics-screen .analytics-stat-label {
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.analytics-screen .analytics-stat-value {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 36px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.analytics-screen .analytics-stat-delta {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #121016;
+  font-family: $c8-body;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.analytics-screen .analytics-stat-delta.is-up {
+  background: var(--c8-sentiment-pos);
+}
+
+.analytics-screen .analytics-stat-delta.is-down {
+  background: var(--c8-sentiment-neg);
+}
+
+/* ---------- Chart card. ChartCard paints inline, so these win with !important. ---------- */
+.analytics-screen .analytics-chart {
+  background: var(--c8-surface) !important;
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 24px !important;
+  box-shadow: none !important;
+  padding: 20px !important;
+  color: var(--c8-ink) !important;
+  overflow: visible !important;
+}
+
+.analytics-screen .analytics-chart .mb-5 {
+  margin-bottom: 16px !important;
+}
+
+.analytics-screen .analytics-chart .mb-5 p:first-child {
+  color: var(--c8-ink) !important;
+  font-family: $c8-heading;
+  font-size: 20px !important;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.analytics-screen .analytics-chart .mb-5 p:last-child {
+  margin-top: 4px !important;
+  color: var(--c8-muted) !important;
+  font-family: $c8-body;
+  font-size: 13px !important;
+  font-weight: 500;
+}
+
+.analytics-screen .analytics-chart svg > line {
+  stroke: var(--c8-line) !important;
+  stroke-dasharray: none !important;
+}
+
+.analytics-screen .analytics-chart svg text {
+  fill: var(--c8-muted);
+  font-family: $c8-body;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.analytics-screen .analytics-chart svg pattern rect {
+  fill-opacity: 0.1 !important;
+}
+
+.analytics-screen .analytics-chart .pointer-events-none.absolute {
+  background: var(--c8-surface) !important;
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 0 var(--c8-hard) !important;
+  color: var(--c8-ink) !important;
+}
+
+/* ---------- Empty, error, and note cards ---------- */
+.analytics-screen .analytics-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 56px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+  box-shadow: none;
+  text-align: center;
+}
+
+.analytics-screen .analytics-stats > .analytics-state-card {
+  grid-column: 1 / -1;
+  padding: 40px 24px;
+}
+
+.analytics-screen .analytics-state-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.analytics-screen .analytics-state-tile {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 18.67px;
+  box-shadow: 0 3px 0 var(--c8-hard);
+  color: #121016;
+}
+
+.analytics-screen .analytics-state-tile.is-empty {
+  background: var(--c8-app-schedule);
+}
+
+.analytics-screen .analytics-state-tile.is-error {
+  background: var(--c8-danger);
+}
+
+.analytics-screen .analytics-state-title {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 26px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.analytics-screen .analytics-state-body,
+.analytics-screen .analytics-support {
+  max-width: 560px;
+  margin: 0;
+  color: var(--c8-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+/* Primary: the no-channels action. Same metrics as Agent's send button. */
+.analytics-screen .analytics-state-card.is-empty:not(.analytics-note) > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  height: 46px;
+  min-height: 46px;
+  flex: none;
+  padding: 0 22px 0 20px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 999px;
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-family: $c8-body;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out),
+    transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+@media (hover: hover) {
+  .analytics-screen .analytics-state-card.is-empty:not(.analytics-note) > button:hover {
+    background: var(--c8-cyan-hover);
+    box-shadow: 0 5px 0 var(--c8-hard);
+    transform: translateY(-2px);
+  }
+}
+
+.analytics-screen .analytics-state-card.is-empty:not(.analytics-note) > button:active {
+  background: var(--c8-cyan-pressed);
+  box-shadow: 0 0 0 var(--c8-hard);
+  transform: translateY(3px);
+  transition-duration: var(--c8-dur-press);
+  transition-timing-function: var(--c8-ease-in);
+}
+
+.analytics-screen .analytics-state-card.is-empty:not(.analytics-note) > button:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+/* Secondary: Try again and Refresh Channel. Same metrics as Agent's History button. */
+.analytics-screen .analytics-note > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  height: 46px;
+  min-height: 46px;
+  flex: none;
+  padding: 0 22px 0 20px;
+  border: 1.5px solid var(--c8-btn-secondary-stroke);
+  border-radius: 999px;
+  background: var(--c8-btn-secondary);
+  color: var(--c8-ink);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-family: $c8-body;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out),
+    transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+@media (hover: hover) {
+  .analytics-screen .analytics-note > button:hover {
+    background: var(--c8-btn-hover);
+    box-shadow: 0 5px 0 var(--c8-hard);
+    transform: translateY(-2px);
+  }
+}
+
+.analytics-screen .analytics-note > button:active {
+  background: var(--c8-btn-secondary);
+  box-shadow: 0 0 0 var(--c8-hard);
+  transform: translateY(3px);
+  transition-duration: var(--c8-dur-press);
+  transition-timing-function: var(--c8-ease-in);
+}
+
+.analytics-screen .analytics-note > button:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- Loading skeleton ---------- */
+.analytics-screen .analytics-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.analytics-screen .analytics-skel-toolbar {
+  display: flex;
+  gap: 12px;
+}
+
+.analytics-screen .analytics-skel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+}
+
+.analytics-screen .analytics-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.analytics-screen .analytics-skel-lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.analytics-screen .analytics-skel-dot {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--c8-soft);
+}
+
+.analytics-screen .analytics-skel-bar {
+  display: block;
+  height: 12px;
+  max-width: 100%;
+  border-radius: 12px;
+  background: var(--c8-soft);
+}
+
+.analytics-screen .analytics-skel-bar.is-tool-a {
+  width: 331px;
+  height: 40px;
+}
+
+.analytics-screen .analytics-skel-bar.is-tool-b {
+  width: 221px;
+  height: 40px;
+}
+
+.analytics-screen .analytics-skel-bar.is-a {
+  width: 386px;
+}
+
+.analytics-screen .analytics-skel-bar.is-b {
+  width: 243px;
+  height: 10px;
+}
+
+.analytics-screen .analytics-skel-bar.is-full.is-0 {
+  width: 92%;
+}
+
+.analytics-screen .analytics-skel-bar.is-full.is-1 {
+  width: 80%;
+}
+
+.analytics-screen .analytics-skel-bar.is-full.is-2 {
+  width: 66%;
+}
+
+.analytics-screen .analytics-skel-dot,
+.analytics-screen .analytics-skel-bar {
+  animation: c8-analytics-pulse 1.2s var(--c8-ease-in-out) infinite alternate;
+}
+
+@keyframes c8-analytics-pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analytics-screen .analytics-skel-dot,
+  .analytics-screen .analytics-skel-bar {
+    animation: none;
+  }
+}
+
+/* ---------- Tablet 640–1199 ---------- */
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  .c8-shell .app-main:has(.analytics-screen) {
+    padding: 30px 28px 40px !important;
+  }
+
+  .analytics-screen .analytics-main {
+    gap: 22px;
+  }
+
+  .analytics-screen .analytics-head h1 {
+    font-size: 38px;
+  }
+
+  .analytics-screen .analytics-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+/* ---------- Phone < 640 ---------- */
+@media (max-width: 639px) {
+  .c8-shell .app-stage:has(.analytics-screen) {
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .c8-shell .app-main:has(.analytics-screen) {
+    flex: none !important;
+    height: calc(100dvh - 61px - 76px) !important;
+    max-height: calc(100dvh - 61px - 76px) !important;
+    padding: 8px 16px 24px !important;
+  }
+
+  .analytics-screen .analytics-main {
+    gap: 16px;
+  }
+
+  .analytics-screen .analytics-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .analytics-screen .analytics-head h1 {
+    font-size: 32px;
+  }
+
+  .analytics-screen .analytics-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .analytics-screen .analytics-body {
+    gap: 14px;
+  }
+
+  .analytics-screen .analytics-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .analytics-screen .analytics-stat-value {
+    font-size: clamp(26px, 8vw, 36px);
+  }
+
+  .analytics-screen .analytics-state-card {
+    padding: 24px;
+  }
+
+  .analytics-screen .analytics-skel-toolbar {
+    flex-direction: column;
+  }
+
+  .analytics-screen .analytics-skel-bar.is-tool-a {
+    width: 100%;
+  }
+
+  .analytics-screen .analytics-skel-bar.is-tool-b {
+    width: 60%;
+  }
+}
+
+/* ---------- Short landscape, max-height 500 (874×402) ---------- */
+@media (max-height: 500px) {
+  .c8-shell .app-stage:has(.analytics-screen) {
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .c8-shell .app-main:has(.analytics-screen) {
+    flex: none !important;
+    height: calc(100dvh - 61px - 76px) !important;
+    max-height: calc(100dvh - 61px - 76px) !important;
+    padding: 8px 16px 8px !important;
+  }
+
+  .analytics-screen .analytics-main {
+    gap: 12px;
+  }
+
+  .analytics-screen .analytics-head {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .analytics-screen .analytics-head h1 {
+    font-size: 26px;
+  }
+
+  .analytics-screen .analytics-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .analytics-screen .analytics-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .analytics-screen .analytics-stat {
+    padding: 14px;
+  }
+
+  .analytics-screen .analytics-stat-value {
+    font-size: 26px;
+  }
+
+  .analytics-screen .analytics-state-card {
+    padding: 24px;
+  }
+
+  .analytics-screen .analytics-state-tile {
+    width: 44px;
+    height: 44px;
+    border-radius: 14.67px;
+  }
+
+  .analytics-screen .analytics-state-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-height: 499px) {
+  .c8-shell .app-main:has(.analytics-screen) {
+    height: calc(100dvh - 44px - 52px) !important;
+    max-height: calc(100dvh - 44px - 52px) !important;
+  }
+}
+
+/* Very wide: centre the page column the way Agent centres its reading column.
+   1104px is the desktop frame's content width, so the cards stay that size. */
+@media (min-width: 1600px) and (min-height: 501px) {
+  .analytics-screen .analytics-main {
+    width: 100%;
+    max-width: 1104px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
