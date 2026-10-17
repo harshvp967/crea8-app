@@ -6154,9 +6154,10 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
    period label already jumps back to the current period. The max-width
    1199px block above shows .cal-today and the phone block adds a 'today'
    grid row for it; hide both on phone and drop that row so no 8px gap is
-   left. The ‹ › arrows and the period header stay as they are. Tablet,
-   desktop and short landscape are unchanged. */
-@media (max-width: 639px) {
+   left. The ‹ › arrows and the period header stay as they are. Short
+   landscape (rotated phone, height <= 500px) uses the same phone grid, so it
+   is covered too. Tablet and desktop over 500px tall still show Today. */
+@media (max-width: 639px), (max-height: 500px) {
   body.c8-schedule:not([data-c8-view='list']) .filters-bar .date-range,
   body.c8-schedule[data-c8-view='day'] .date-range,
   body.c8-schedule[data-c8-view='week'] .date-range,
