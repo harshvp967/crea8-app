@@ -7,6 +7,7 @@ import '../c8-calendar.scss';
 import '../c8-composer.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
+import '../c8-agent.scss';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Bricolage_Grotesque, Inter, Plus_Jakarta_Sans } from 'next/font/google';

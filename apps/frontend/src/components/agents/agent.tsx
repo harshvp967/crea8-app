@@ -236,20 +236,20 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <PropertiesContext.Provider value={{ properties }}>
       <div className="agent-workspace">
+        <AgentTitle
+          onChannels={() => {
+            setThreadsOpen(false);
+            setChannelsOpen(true);
+          }}
+          onHistory={() => {
+            setChannelsOpen(false);
+            setThreadsOpen(true);
+          }}
+        />
         <div className={clsx('agent-threads', threadsOpen && 'is-open')}>
           <Threads onPick={() => setThreadsOpen(false)} />
         </div>
         <div className="agent-chat-pane">
-          <AgentTitle
-            onChannels={() => {
-              setThreadsOpen(false);
-              setChannelsOpen(true);
-            }}
-            onHistory={() => {
-              setChannelsOpen(false);
-              setThreadsOpen(true);
-            }}
-          />
           <div className="agent-chat-body">{children}</div>
         </div>
       </div>
@@ -287,21 +287,34 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
 
   return (
     <div className="agent-titlebar">
-      <button
-        type="button"
-        className="agent-history"
-        aria-label={t('conversations', 'Conversations')}
-        onClick={onHistory}
-      >
-        <HugeIcon name="menu" size={18} />
-      </button>
-      <h1>{title}</h1>
-      <button type="button" className="agent-channels-pill" onClick={onChannels}>
-        <HugeIcon name="users" size={16} />
-        <span>
-          {t('channels', 'Channels')} · {count}
-        </span>
-      </button>
+      <div className="agent-page-head">
+        <div className="agent-page-kicker">
+          <span className="agent-page-sticker">
+            {t('schedule', 'Schedule')}
+          </span>
+          <span className="agent-page-sub">
+            {t('agent_page_sub', 'Your AI social assistant')}
+          </span>
+        </div>
+        <h1 className="agent-page-title">{t('agent', 'Agent')}</h1>
+        {current ? <p className="agent-thread-name">{title}</p> : null}
+      </div>
+      <div className="agent-page-actions">
+        <button
+          type="button"
+          className="agent-history"
+          aria-label={t('conversations', 'Conversations')}
+          onClick={onHistory}
+        >
+          <span>{t('history', 'History')}</span>
+        </button>
+        <button type="button" className="agent-channels-pill" onClick={onChannels}>
+          <HugeIcon name="users" size={16} />
+          <span>
+            {t('channels', 'Channels')} · {count}
+          </span>
+        </button>
+      </div>
     </div>
   );
 };

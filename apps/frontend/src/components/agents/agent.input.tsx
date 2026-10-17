@@ -49,7 +49,7 @@ export const Input = ({
     isInProgress && !hideStopButton ? (
       context.icons.stopIcon
     ) : (
-      <HugeIcon name="send" size={18} />
+      <span className="agent-send-label">{t('send', 'Send')}</span>
     );
 
   const { interrupt } = useCopilotChatInternal();
