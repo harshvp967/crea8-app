@@ -3599,14 +3599,13 @@ body:has(.arc-dialog.po-ai-modal) {
 
 /* Dark scrollbars. The theme is `body.dark` (mode.component.tsx) with the
    --c8-* tokens from colors.scss. Light is untouched.
-   color-scheme makes native scrollbars and UA controls dark. scrollbar-color
-   is inherited, so it is set on the composer, dialogs, emoji portal and the
+   No color-scheme: it would also restyle native form controls app-wide.
+   scrollbar-color is inherited, so it is set on the composer, dialogs, emoji portal and the
    calendar shell. The named scroll areas also get thin width and webkit
    styling, and the tailwind-scrollbar `.scrollbar` vars are overridden
    (its scrollbar-color would otherwise win). scrollbar-width:none areas
    (date pop, channel picks, toolbar row) keep none. */
 body.dark {
-  color-scheme: dark;
   --c8-scroll-thumb: color-mix(in srgb, var(--c8-muted) 55%, var(--c8-surface));
 }
 
