@@ -1565,11 +1565,11 @@ const CalendarItem: FC<{
         )}
         <div className="cal-post-action" onClick={runMenuAction(duplicatePost)}>
           <Duplicate />
-          <span>{t('duplicate_post', 'Duplicate Post')}</span>
+          <span>{t('duplicate_post', 'Duplicate post')}</span>
         </div>
         <div className="cal-post-action" onClick={runMenuAction(preview)}>
           <Preview />
-          <span>{t('preview_post', 'Preview Post')}</span>
+          <span>{t('preview_post', 'Preview post')}</span>
         </div>{' '}
         {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
           <></>
@@ -1588,7 +1588,7 @@ const CalendarItem: FC<{
         )}{' '}
         <div className="cal-post-action is-danger" onClick={runMenuAction(deletePost)}>
           <DeletePost />
-          <span>{t('delete_post', 'Delete Post')}</span>
+          <span>{t('delete_post', 'Delete post')}</span>
         </div>
           </div>
         );
@@ -1744,7 +1744,7 @@ const Duplicate = () => {
     <span
       className="inline-flex"
       data-tooltip-id="tooltip"
-      data-tooltip-content={t('duplicate_post', 'Duplicate Post')}
+      data-tooltip-content={t('duplicate_post', 'Duplicate post')}
     >
       <HugeIcon name="copy" size={16} />
     </span>
@@ -1756,7 +1756,7 @@ const Preview = () => {
     <span
       className="inline-flex"
       data-tooltip-id="tooltip"
-      data-tooltip-content={t('preview_post', 'Preview Post')}
+      data-tooltip-content={t('preview_post', 'Preview post')}
     >
       <HugeIcon name="eye" size={16} />
     </span>
@@ -1781,7 +1781,7 @@ export const DeletePost = () => {
     <span
       className="inline-flex"
       data-tooltip-id="tooltip"
-      data-tooltip-content={t('delete_post', 'Delete Post')}
+      data-tooltip-content={t('delete_post', 'Delete post')}
     >
       <HugeIcon name="trash" size={16} />
     </span>

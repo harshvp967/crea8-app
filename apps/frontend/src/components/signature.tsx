@@ -15,6 +15,7 @@ export const SignatureBox: FC<{
     modals.openModal({
       title: 'Add Signature',
       withCloseButton: true,
+      classNames: { modal: 'po-sign-modal' },
       children: (close) => (
         <SignatureModal appendSignature={appendValue} close={close} />
       ),
