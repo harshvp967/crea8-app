@@ -23,7 +23,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .analytics-screen .analytics-channels {
-  display: none !important;
+  display: none;
 }
 
 .analytics-screen .analytics-main {
@@ -128,7 +128,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .analytics-screen .analytics-strip {
-  display: flex !important;
+  display: flex;
   gap: 8px;
   min-width: 0;
   max-width: 100%;
@@ -367,7 +367,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
   font-weight: 500;
 }
 
-.analytics-screen .analytics-chart svg line {
+.analytics-screen .analytics-chart svg > line {
   stroke: var(--c8-line) !important;
   stroke-dasharray: none !important;
 }
@@ -402,7 +402,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
   border: 1px solid var(--c8-line);
   border-radius: 24px;
   background: var(--c8-surface);
-  box-shadow: none !important;
+  box-shadow: none;
   text-align: center;
 }
 
