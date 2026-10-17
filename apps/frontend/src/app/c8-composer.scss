@@ -3745,3 +3745,43 @@ body.c8-schedule .customer-menu,
     z-index: 140 !important;
   }
 }
+
+/* Short landscape (height <= 500px, e.g. 874x402): All customers menu as a
+   mini-sheet, like Delay in #139. The menu opened at the chip (inline top /
+   left from JS) and ran under the 60px composer footer, so only the
+   "Customers" title and "All customers" showed. The calendar's landscape
+   rule (body.c8-schedule .customer-menu: margin-left 56px, max-content
+   width, max-height 100vh - 250px) also hit it. Here it is fixed above the
+   footer with the page's 16px side margins and scrolls inside itself.
+   The row that holds it goes above the footer while it is open.
+   Phone portrait, tablet, desktop and the calendar menu are unchanged. */
+@media (max-height: 500px) {
+  .c8-composer #social-content > .flex:has(.customer-menu) {
+    position: relative;
+    z-index: 160 !important;
+  }
+
+  body .c8-composer .select-customer > .customer-menu {
+    position: fixed !important;
+    top: auto !important;
+    right: 16px !important;
+    bottom: 64px !important;
+    left: 16px !important;
+    inset-inline-start: 16px !important;
+    inset-inline-end: 16px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 480px !important;
+    height: auto !important;
+    max-height: calc(100dvh - 176px) !important;
+    margin: 0 auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    transform: none !important;
+    background: var(--c8-surface) !important;
+    background-color: var(--c8-surface) !important;
+    opacity: 1 !important;
+    z-index: 160 !important;
+  }
+}
