@@ -2495,8 +2495,7 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
     overflow: visible !important;
   }
 
-  .c8-composer .po-repeat-menu,
-  .c8-composer .po-tags-menu {
+  .c8-composer .po-repeat-menu {
     position: fixed !important;
     left: 16px !important;
     right: auto !important;
@@ -2513,6 +2512,28 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
     overflow: auto !important;
   }
 
+  .c8-composer .po-tags {
+    position: relative;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-tags > .po-tags-menu {
+    position: absolute !important;
+    left: 0 !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    width: min(260px, calc(100vw - 32px)) !important;
+    min-width: min(200px, calc(100vw - 32px));
+    max-height: min(360px, calc(100vh - 120px)) !important;
+    display: flex !important;
+    z-index: 4600 !important;
+    background: var(--c8-surface) !important;
+    color: var(--c8-ink) !important;
+    overflow: auto !important;
+    transform: none !important;
+  }
+
   .c8-composer .po-tags-menu .po-tag-search,
   .c8-composer .po-tags-menu .po-menu-row,
   .c8-composer .po-tags-menu input,
@@ -2522,16 +2543,25 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
     opacity: 1 !important;
   }
 
+  .c8-composer .po-date-chip {
+    position: relative;
+    overflow: visible !important;
+  }
+
   .c8-composer .po-date-pop {
-    position: fixed !important;
-    left: 8px !important;
-    right: auto !important;
+    position: absolute !important;
+    left: auto !important;
+    right: 0 !important;
+    inset-inline-end: 0 !important;
     top: auto !important;
-    bottom: 76px !important;
-    width: min(320px, calc(100vw - 16px)) !important;
-    max-width: calc(100vw - 16px) !important;
+    bottom: calc(100% + 8px) !important;
+    width: min(320px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: min(480px, calc(100dvh - 120px)) !important;
+    transform: none !important;
     z-index: 4600 !important;
     overflow: auto !important;
+    background: var(--c8-surface) !important;
   }
 
   .c8-composer .po-date-chip,
@@ -2642,38 +2672,80 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
   text-overflow: clip !important;
 }
 
-/* Shared sheet header and close. Signature and AI Image use the same inset. */
+/* Signature and AI Image stay on screen. A relative dialog inside the
+   scrolling wrap sat below the fold, so only the scrim was visible. */
+.arc-dialog-wrap:has(.po-sign-modal),
+.arc-dialog-wrap:has(.po-ai-modal) {
+  position: fixed !important;
+  inset: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+body:has(.arc-dialog.po-sign-modal),
+body:has(.arc-dialog.po-ai-modal) {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
 .arc-dialog-wrap:has(.po-sign-modal) [class*='pt-'],
 .arc-dialog-wrap:has(.po-ai-modal) [class*='pt-'] {
   display: flex !important;
-  align-items: flex-start !important;
+  align-items: center !important;
   justify-content: center !important;
-  min-height: 100% !important;
-  padding-top: 16px !important;
-  padding-bottom: 16px !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 .arc-dialog.po-sign-modal,
 .arc-dialog.po-ai-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
   width: min(480px, calc(100vw - 32px)) !important;
   min-width: 0 !important;
   max-width: calc(100vw - 32px) !important;
   height: auto !important;
   max-height: calc(100dvh - 32px) !important;
-  margin: 16px auto !important;
-  position: relative !important;
-  top: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  left: auto !important;
-  transform: none !important;
+  margin: 0 !important;
   border-radius: 28px !important;
   padding: 16px !important;
   gap: 12px !important;
   background: var(--c8-surface) !important;
   box-sizing: border-box !important;
   overflow: auto !important;
+  overscroll-behavior: contain;
   resize: none !important;
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .arc-dialog-wrap:has(.po-sign-modal),
+  .arc-dialog-wrap:has(.po-ai-modal) {
+    align-items: flex-end !important;
+  }
+
+  .arc-dialog.po-sign-modal,
+  .arc-dialog.po-ai-modal {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 24px) !important;
+    margin: 0 !important;
+    border-radius: 28px 28px 0 0 !important;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  }
 }
 
 .arc-dialog.po-sign-modal .arc-dialog-head,
@@ -2752,6 +2824,21 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
     height: auto !important;
     min-height: 64px;
     flex-wrap: wrap;
+    gap: 8px;
+    row-gap: 8px;
+  }
+
+  .c8-composer .composer-foot > .flex-1,
+  .c8-composer .composer-actions {
+    flex: 1 1 auto;
+    min-width: min-content;
+    gap: 8px;
+  }
+
+  .c8-composer .po-split {
+    margin-inline-start: 8px;
+    position: relative;
+    z-index: 2;
   }
 
   .c8-composer .po-repeat,
@@ -2840,33 +2927,67 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
   white-space: nowrap !important;
 }
 
-/* Delay comment stays on screen and above Add comment. */
+/* Delay stays inside the editor card. Left: 0 grew it past the pane edge. */
 @media (min-width: 640px) {
-  .c8-composer .relative:has(> .po-delay) > div.absolute {
+  .c8-composer .po-card-extra .relative:has(> .po-delay) {
+    position: static !important;
+  }
+
+  .c8-composer .po-editor-card:has(.po-delay) {
+    position: relative;
+    overflow: visible;
+  }
+
+  .c8-composer .po-editor-card .relative:has(> .po-delay) > div.absolute {
     position: absolute !important;
-    left: 0 !important;
-    right: auto !important;
-    inset-inline-end: auto !important;
+    left: auto !important;
+    right: 12px !important;
+    inset-inline-start: auto !important;
+    inset-inline-end: 12px !important;
     top: auto !important;
-    bottom: calc(100% + 8px) !important;
+    bottom: 52px !important;
     transform: none !important;
-    width: min(280px, calc(100vw - 24px)) !important;
-    max-width: calc(100vw - 24px) !important;
-    z-index: 30 !important;
+    width: min(280px, calc(100% - 24px)) !important;
+    max-width: calc(100% - 24px) !important;
+    z-index: 40 !important;
   }
 }
 
-/* Tablet date pop: solid surface, header inside the viewport. */
+.c8-composer .relative:has(> .po-delay) .grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+.c8-composer .relative:has(> .po-delay) .grid > div {
+  flex: 0 0 auto;
+  min-width: 44px;
+  padding: 0 10px;
+}
+
+/* Tablet date pop stays on the Date button for the whole 640–1199 range. */
 @media (min-width: 640px) and (max-width: 1199px) {
+  .c8-composer .composer-foot,
+  .c8-composer .composer-actions,
+  .c8-composer .po-date-chip {
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-date-chip {
+    position: relative;
+  }
+
   .c8-composer .po-date-pop {
-    position: fixed !important;
-    left: 8px !important;
-    right: auto !important;
-    top: 12px !important;
-    bottom: auto !important;
-    width: min(320px, calc(100vw - 16px)) !important;
-    max-width: calc(100vw - 16px) !important;
-    max-height: calc(100dvh - 96px) !important;
+    position: absolute !important;
+    left: auto !important;
+    right: 0 !important;
+    inset-inline-end: 0 !important;
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    width: min(320px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: min(480px, calc(100dvh - 96px)) !important;
+    transform: none !important;
     overflow: auto !important;
     background: var(--c8-surface) !important;
     opacity: 1 !important;
@@ -2967,4 +3088,77 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
   grid-template-columns: 16px minmax(0, 1fr) auto;
   width: 100%;
   min-width: 0;
+}
+
+/* Media library footer stays on screen. The 100px inset plus a fixed
+   dialog height pushed Cancel and Add selected media below the fold. */
+@media (min-width: 640px) and (min-height: 501px) {
+  .arc-dialog-wrap:has(.po-media-modal) {
+    position: fixed !important;
+    inset: 0 !important;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  body:has(.arc-dialog.po-media-modal) {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  .arc-dialog-wrap:has(.po-media-modal) .pt-\[100px\] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding-top: 16px !important;
+    padding-bottom: 16px !important;
+  }
+
+  .arc-dialog.po-media-modal {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: min(960px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+    height: auto !important;
+    max-height: calc(100dvh - 32px) !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .po-media-modal .arc-dialog-body,
+  .po-media-modal .po-library {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  .po-media-modal .po-media-grid,
+  .po-media-modal .po-library > .flex-1,
+  .po-media-modal .po-library .flex-1 {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: auto !important;
+  }
+
+  .po-media-modal .po-library-foot {
+    flex: none !important;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--c8-surface);
+  }
 }
