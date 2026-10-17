@@ -24,7 +24,8 @@ export const InformationComponent: FC<{
   totalAllowedChars: number;
   isPicture: boolean;
   text?: string;
-}> = ({ totalChars, totalAllowedChars, chars, isPicture, text }) => {
+  part?: 'counter' | 'popover';
+}> = ({ totalChars, totalAllowedChars, chars, isPicture, text, part = 'counter' }) => {
   const t = useT();
   const { isGlobal, selectedIntegrations, internal, currentIntegration } =
     useLaunchStore(
@@ -138,41 +139,16 @@ export const InformationComponent: FC<{
     return validLimit ?? limits[0];
   }, [isGlobal, selectedIntegrations, chars, isInternal, countFor]);
 
-  return (
-    <div
-      className={clsx(
-        'group rounded-[6px] gap-[4px] h-[30px] px-[6px] flex justify-center items-center relative',
-        isValid ? 'border border-newColColor' : 'bg-[#FF3F3F]'
-      )}
-    >
-      {isValid ? <Valid /> : <Invalid />}
+  const showDetails =
+    (isGlobal && selectedIntegrations.length > 0) ||
+    !isValid ||
+    showStripLinkWarning;
 
-      {!isGlobal && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
-          {currentChars}/{totalAllowedChars}
-        </div>
-      )}
-      {isGlobal && globalDisplayLimit !== null && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
-          {globalDisplayLimit.count}/{globalDisplayLimit.limit}
-        </div>
-      )}
-      {((isGlobal && selectedIntegrations.length) ||
-        !isValid ||
-        showStripLinkWarning) && (
-        <HugeIcon
-          name="chevron-down"
-          size={16}
-          className={clsx('group-hover:rotate-180', !isValid && 'text-white')}
-        />
-      )}
-      {((isGlobal && selectedIntegrations.length) ||
-        !isValid ||
-        showStripLinkWarning) && (
+  const popover = showDetails ? (
         <div
           className={clsx(
-            'z-[300] hidden rounded-[12px] bg-newBgColorInner group-hover:flex absolute end-0 bottom-[100%] mb-[5px] p-[12px] flex-col',
-            isValid ? 'border border-newColColor' : 'border border-[#FF3F3F]'
+            'po-char-pop p-[12px] flex-col',
+            isValid ? 'is-ok' : 'is-bad'
           )}
         >
           {!isPicture && !totalChars && (
@@ -251,6 +227,37 @@ export const InformationComponent: FC<{
             </div>
           )}
         </div>
+  ) : null;
+
+  if (part === 'popover') {
+    return popover;
+  }
+
+  return (
+    <div
+      className={clsx(
+        'po-char-trigger group rounded-[6px] gap-[4px] h-[30px] px-[6px] flex justify-center items-center relative',
+        isValid ? 'border border-newColColor' : 'bg-[#FF3F3F]'
+      )}
+    >
+      {isValid ? <Valid /> : <Invalid />}
+
+      {!isGlobal && (
+        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+          {currentChars}/{totalAllowedChars}
+        </div>
+      )}
+      {isGlobal && globalDisplayLimit !== null && (
+        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+          {globalDisplayLimit.count}/{globalDisplayLimit.limit}
+        </div>
+      )}
+      {showDetails && (
+        <HugeIcon
+          name="chevron-down"
+          size={16}
+          className={clsx('group-hover:rotate-180', !isValid && 'text-white')}
+        />
       )}
     </div>
   );
