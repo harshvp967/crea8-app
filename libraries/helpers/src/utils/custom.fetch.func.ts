@@ -17,6 +17,13 @@ function readCsrfToken() {
   return row ? decodeURIComponent(row.slice('csrf='.length)) : '';
 }
 
+// For clients that do not go through customFetch (the CopilotKit chat runtime).
+// The API rejects cookie-authenticated POSTs without this header (csrfGuard).
+export function csrfHeaders(): Record<string, string> {
+  const token = readCsrfToken();
+  return token ? { [CSRF_HEADER]: token } : {};
+}
+
 function rememberCsrf(token: string | null) {
   if (typeof window === 'undefined' || !token) {
     return;
