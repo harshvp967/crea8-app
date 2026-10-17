@@ -1,3 +1,12 @@
+# crea8.one
+
+- UI PRs change only layout, styling, and placement. Keep Postiz's exact behaviour and handlers. Put logic fixes in a separate PR.
+- The brand is written exactly "crea8.one".
+- One fix per PR.
+- Before opening a PR, run `pnpm run prisma-generate`, then `pnpm exec tsc -p apps/frontend/tsconfig.json --noEmit`, then the frontend production build `pnpm --filter ./apps/frontend run build` (`next build` from `apps/frontend/package.json`).
+- Never commit secrets.
+- Keep app.crea8.one noindexed except `/p/` and the legal pages.
+
 This project is Postiz, a tool to schedule social media and chat posts to 28+ channels.
 You can add posts to the calendar, they will be added into a workflow and posted at the right time.
 You can find things like:
