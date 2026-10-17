@@ -1,22 +1,19 @@
 import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
 initializeSentry('backend', true);
-import compression from 'compression';
-import helmet from 'helmet';
 import { assertIntegrationTokenKey } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.token.crypto';
 
 assertIntegrationTokenKey();
 
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
-import { json } from 'express';
 import { Runtime } from '@temporalio/worker';
 Runtime.install({ shutdownSignals: [] });
 
 process.env.TZ = 'UTC';
 
-import cookieParser from 'cookie-parser';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { configureHttp } from './http.setup';
 
 import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { PostValidationExceptionFilter } from '@gitroom/backend/api/routes/posts.validation.exception';
@@ -24,88 +21,17 @@ import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exceptio
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 import { mcpCorsOrigins } from '@gitroom/nestjs-libraries/chat/mcp.public.origin';
-import { csrfGuard } from '@gitroom/nestjs-libraries/security/csrf';
 
 async function start() {
+  // CORS is set up in configureHttp, not through these options (see there).
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
-    cors: {
-      ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
-      // Cache preflights (browsers cap this at 2h). Every API call sends custom
-      // headers, so without this each request paid an extra OPTIONS round trip.
-      maxAge: 7200,
-      allowedHeaders: [
-        'Content-Type',
-        'Authorization',
-        'auth',
-        'showorg',
-        'impersonate',
-        'x-postiz-org',
-        'x-postiz-include-deleted',
-        'x-copilotkit-runtime-client-gql-version',
-        'x-csrf-token',
-      ],
-      exposedHeaders: [
-        'reload',
-        'onboarding',
-        'activate',
-        'x-csrf-token',
-        'x-csrf-required',
-        'x-copilotkit-runtime-client-gql-version',
-        ...(process.env.NOT_SECURED ? ['auth', 'showorg', 'impersonate'] : []),
-      ],
-      origin: [
-        process.env.FRONTEND_URL,
-        'http://localhost:6274',
-        ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
-        ...(process.env.EXTRA_CORS_ORIGINS || '')
-          .split(',')
-          .map((o) => o.trim())
-          .filter(Boolean),
-        ...mcpCorsOrigins(),
-      ],
-    },
   });
 
   await startMcp(app);
 
-  const server = app.getHttpAdapter().getInstance();
-  server.disable('x-powered-by');
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-      crossOriginEmbedderPolicy: false,
-      crossOriginResourcePolicy: { policy: 'cross-origin' },
-      hsts: {
-        maxAge: 63072000,
-        includeSubDomains: true,
-      },
-      frameguard: { action: 'sameorigin' },
-      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-      noSniff: true,
-    })
-  );
-  app.use((_req: unknown, res: { setHeader: (name: string, value: string) => void }, next: () => void) => {
-    res.setHeader(
-      'Permissions-Policy',
-      'camera=(), microphone=(), geolocation=(), payment=(self)'
-    );
-    next();
-  });
+  configureHttp(app, mcpCorsOrigins());
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-    })
-  );
-
-  app.use(['/copilot/{*splat}', '/posts'], (req: any, res: any, next: any) => {
-    json({ limit: '50mb' })(req, res, next);
-  });
-
-  app.use(cookieParser());
-  app.use(csrfGuard);
-  app.use(compression());
   app.useGlobalFilters(new SubscriptionExceptionFilter());
   app.useGlobalFilters(new PostValidationExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());

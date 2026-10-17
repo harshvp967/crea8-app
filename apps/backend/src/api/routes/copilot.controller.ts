@@ -22,22 +22,13 @@ import { Request, Response } from 'express';
 import { RequestContext } from '@mastra/core/di';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { copilotRuntimeCors } from '@gitroom/nestjs-libraries/security/cors';
 
 export type ChannelsContext = {
   integrations: string;
   organization: string;
   ui: string;
 };
-
-// the copilot runtime writes its own CORS headers on the response, keep them aligned with main.ts
-const copilotCors = () => ({
-  origin: [
-    process.env.FRONTEND_URL,
-    'http://localhost:6274',
-    ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
-  ],
-  credentials: !process.env.NOT_SECURED,
-});
 
 @Controller('/copilot')
 export class CopilotController {
@@ -52,12 +43,13 @@ export class CopilotController {
       process.env.OPENAI_API_KEY === ''
     ) {
       Logger.warn('OpenAI API key not set, chat functionality will not work');
+      res.status(503).json({ message: 'AI chat is not configured' });
       return;
     }
 
     const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
       endpoint: '/copilot/chat',
-      cors: copilotCors(),
+      cors: copilotRuntimeCors(),
       runtime: new CopilotRuntime(),
       serviceAdapter: new OpenAIAdapter({
         model: 'gpt-4.1',
@@ -79,6 +71,7 @@ export class CopilotController {
       process.env.OPENAI_API_KEY === ''
     ) {
       Logger.warn('OpenAI API key not set, chat functionality will not work');
+      res.status(503).json({ message: 'AI chat is not configured' });
       return;
     }
     const mastra = await this._mastraService.mastra();
@@ -103,7 +96,7 @@ export class CopilotController {
 
     const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
       endpoint: '/copilot/agent',
-      cors: copilotCors(),
+      cors: copilotRuntimeCors(),
       runtime,
       serviceAdapter: new OpenAIAdapter({
         model: 'gpt-4.1',

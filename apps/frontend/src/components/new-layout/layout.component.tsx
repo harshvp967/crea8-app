@@ -1,5 +1,6 @@
 'use client';
 
+import { csrfHeaders } from '@gitroom/helpers/utils/custom.fetch.func';
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
@@ -174,6 +175,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     <ContextWrapper user={user}>
       <CopilotKit
         credentials="include"
+        headers={csrfHeaders}
         runtimeUrl={backendUrl + '/copilot/chat'}
         useSingleEndpoint={true}
         showDevConsole={false}

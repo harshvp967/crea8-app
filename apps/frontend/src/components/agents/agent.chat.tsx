@@ -1,5 +1,6 @@
 'use client';
 
+import { csrfHeaders } from '@gitroom/helpers/utils/custom.fetch.func';
 import React, {
   FC,
   useCallback,
@@ -54,6 +55,7 @@ export const AgentChat: FC = () => {
     <CopilotKit
       {...(params.id === 'new' ? {} : { threadId: params.id })}
       credentials="include"
+      headers={csrfHeaders}
       runtimeUrl={backendUrl + '/copilot/agent'}
       useSingleEndpoint={true}
       showDevConsole={false}
