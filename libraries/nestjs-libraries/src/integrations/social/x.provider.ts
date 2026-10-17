@@ -31,7 +31,10 @@ import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { xOAuthCallbackUrl } from '@gitroom/nestjs-libraries/integrations/social/x.oauth.callback';
+import { xMetricChange } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
 import { isAllowedUploadPath } from '@gitroom/helpers/utils/valid.url.path';
+
+export { xMetricChange };
 
 // GET /2/tweets accepts at most 100 ids per request.
 // https://docs.x.com/x-api/posts/lookup/quickstart
@@ -90,14 +93,6 @@ export const xRateLimitWaitMs = (
     return null;
   }
   return wait;
-};
-
-// 0 when the earlier half has no posts: there is no baseline to turn into a percent.
-export const xMetricChange = (earlier: number, later: number) => {
-  if (!earlier) {
-    return 0;
-  }
-  return Math.round(((later - earlier) / earlier) * 100);
 };
 
 export type XLinkSettings = {

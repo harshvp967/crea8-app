@@ -19,6 +19,7 @@ import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { Integration } from '@prisma/client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { percentageChangeFromSeries } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -755,16 +756,19 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const data = payload?.data;
 
     return (
-      data?.map((d: any) => ({
-        label: capitalize(d.name),
-        percentageChange: 5,
-        data: d.total_value
+      data?.map((d: any) => {
+        const points = d.total_value
           ? [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }]
           : d.values.map((v: any) => ({
               total: v.value,
               date: dayjs(v.end_time).format('YYYY-MM-DD'),
-            })),
-      })) || []
+            }));
+        return {
+          label: capitalize(d.name),
+          percentageChange: percentageChangeFromSeries(points),
+          data: points,
+        };
+      }) || []
     );
   }
 

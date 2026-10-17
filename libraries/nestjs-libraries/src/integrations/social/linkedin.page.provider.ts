@@ -19,6 +19,7 @@ import { Integration } from '@prisma/client';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { percentageChangeFromSeries } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
 
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
@@ -506,13 +507,15 @@ export class LinkedinPageProvider
       }
     );
 
-    return Object.keys(analytics).map((key) => ({
-      label: key,
-      data: analytics[
-        key as 'Page Views' | 'Organic Followers' | 'Paid Followers'
-      ],
-      percentageChange: 5,
-    }));
+    return Object.keys(analytics).map((key) => {
+      const points =
+        analytics[key as 'Page Views' | 'Organic Followers' | 'Paid Followers'];
+      return {
+        label: key,
+        data: points,
+        percentageChange: percentageChangeFromSeries(points),
+      };
+    });
   }
 
   async postAnalytics(
