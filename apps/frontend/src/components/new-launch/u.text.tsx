@@ -4,6 +4,8 @@ import { FC, useCallback } from 'react';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { useEditorMarkActive } from '@gitroom/frontend/components/new-launch/bold.text';
+import clsx from 'clsx';
 const underlineMap = {
   a: 'a̲',
   b: 'b̲',
@@ -75,6 +77,7 @@ export const UText: FC<{
   editor: any;
   currentValue: string;
 }> = ({ editor }) => {
+  const active = useEditorMarkActive(editor, 'underline');
   const mark = () => {
     editor?.commands?.unsetBold();
     editor?.commands?.toggleUnderline();
@@ -86,8 +89,12 @@ export const UText: FC<{
       data-tooltip-id="tooltip"
       data-tooltip-content="Underline"
       aria-label="Underline"
+      aria-pressed={active}
       onClick={mark}
-      className="c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center"
+      className={clsx(
+        'c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center',
+        active && 'is-active'
+      )}
     >
       <HugeIcon name="underline" size={18} />
     </button>
