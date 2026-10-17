@@ -176,6 +176,11 @@
   background: var(--c8-soft) !important;
 }
 
+.c8-composer .c8-tool.is-active {
+  background: var(--c8-ink) !important;
+  color: var(--c8-on-ink) !important;
+}
+
 .c8-composer button:focus-visible,
 .c8-composer [role='button']:focus-visible,
 .c8-composer .c8-tool:focus-visible,

@@ -1,6 +1,7 @@
 'use client';
 
-import { FC, useCallback } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
+import clsx from 'clsx';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
@@ -71,10 +72,29 @@ const originalMap = {
 const reverseMap = Object.fromEntries(
   Object.entries(originalMap).map(([key, value]) => [value, key])
 );
+export const useEditorMarkActive = (editor: any, markName: string) => {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    if (!editor?.on) {
+      setActive(false);
+      return;
+    }
+    const update = () => setActive(!!editor.isActive?.(markName));
+    update();
+    editor.on('selectionUpdate', update);
+    editor.on('transaction', update);
+    return () => {
+      editor.off('selectionUpdate', update);
+      editor.off('transaction', update);
+    };
+  }, [editor, markName]);
+  return active;
+};
 export const BoldText: FC<{
   editor: any;
   currentValue: string;
 }> = ({ editor }) => {
+  const active = useEditorMarkActive(editor, 'bold');
   const mark = () => {
     editor?.commands?.unsetUnderline();
     editor?.commands?.toggleBold();
@@ -86,8 +106,12 @@ export const BoldText: FC<{
       data-tooltip-id="tooltip"
       data-tooltip-content="Bold"
       aria-label="Bold"
+      aria-pressed={active}
       onClick={mark}
-      className="c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center"
+      className={clsx(
+        'c8-tool select-none cursor-pointer rounded-[6px] flex justify-center items-center',
+        active && 'is-active'
+      )}
     >
       <HugeIcon name="bold" size={18} />
     </button>
