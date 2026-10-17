@@ -6098,3 +6098,20 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
     z-index: 3 !important;
   }
 }
+
+/* Bell open, tablet and desktop: nothing in the main column paints above the
+   scrim. A thin light line at the channel rail's right edge (the rail's
+   scrolling inner card, ~x=150 at 820) still showed over the scrim after
+   #136. .c8-main becomes its own stacking context at z 0, below the
+   c8-shell::before scrim (150); the sidebar holding the panel stays at 260. */
+@media (min-width: 640px) and (min-height: 501px) {
+  body.c8-schedule .c8-shell:has(.notify-panel) .c8-main {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+  }
+
+  body.c8-schedule .c8-shell:has(.notify-panel) .channel-rail {
+    isolation: isolate;
+  }
+}
