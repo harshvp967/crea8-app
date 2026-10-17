@@ -11,7 +11,7 @@ export const Toaster = () => {
   const [toasterType, setToasterType] = useState<'success' | 'warning' | 'error' | ''>(
     ''
   );
-  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     const onShow = (params: {
       text: string;
