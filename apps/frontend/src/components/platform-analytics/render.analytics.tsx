@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import useCookie from 'react-use-cookie';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartLine } from '@gitroom/frontend/components/analytics/chart-line';
-import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 interface AnalyticsDataItem {
@@ -108,14 +108,46 @@ const AnalyticsCard: FC<{
   );
 };
 
+export const AnalyticsSkeleton: FC<{ toolbar?: boolean }> = ({ toolbar }) => (
+  <div className="analytics-skeleton" role="status">
+    <span className="sr-only">Loading</span>
+    {toolbar && (
+      <div className="analytics-skel-toolbar">
+        <span className="analytics-skel-bar is-tool-a" />
+        <span className="analytics-skel-bar is-tool-b" />
+      </div>
+    )}
+    {[0, 1, 2].map((i) => (
+      <div key={i} className="analytics-skel-card">
+        <div className="analytics-skel-row">
+          <span className="analytics-skel-dot" />
+          <div className="analytics-skel-lines">
+            <span className="analytics-skel-bar is-a" />
+            <span className="analytics-skel-bar is-b" />
+          </div>
+        </div>
+        <span className={`analytics-skel-bar is-full is-${i}`} />
+      </div>
+    ))}
+  </div>
+);
+
 const PanelMessage: FC<{
   title: string;
   actionLabel?: string;
   onAction?: () => void;
-}> = ({ title, actionLabel, onAction }) => {
+  tone?: 'empty' | 'error';
+  heading?: string;
+}> = ({ title, actionLabel, onAction, tone = 'empty', heading }) => {
   return (
-    <div className="analytics-note">
-      <p>{title}</p>
+    <div className={`analytics-note analytics-state-card is-${tone}`}>
+      <span className={`analytics-state-tile is-${tone}`} aria-hidden="true">
+        <HugeIcon name={tone === 'error' ? 'alert' : 'analytics-bars'} size={25} />
+      </span>
+      <div className="analytics-state-text">
+        {heading ? <h2 className="analytics-state-title">{heading}</h2> : null}
+        <p className="analytics-state-body">{title}</p>
+      </div>
       {actionLabel && onAction && (
         <button type="button" onClick={onAction}>
           {actionLabel}
@@ -225,16 +257,14 @@ export const RenderAnalytics: FC<{
   }, [data]);
 
   if (isLoading) {
-    return (
-      <div className="analytics-state">
-        <ScheduleLoading />
-      </div>
-    );
+    return <AnalyticsSkeleton />;
   }
 
   if (error) {
     return (
       <PanelMessage
+        tone="error"
+        heading={t('analytics_load_error_title', "Couldn't load analytics")}
         title={
           error instanceof Error
             ? error.message
@@ -254,6 +284,7 @@ export const RenderAnalytics: FC<{
       <div className="analytics-stats">
         {data?.length === 0 && (
           <PanelMessage
+            tone="empty"
             title={t(
               'analytics_empty_period',
               'No analytics for this channel in the selected period.'

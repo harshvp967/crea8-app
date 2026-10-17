@@ -1135,14 +1135,16 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
 
 /* ---------- v2 phone top bar + tab bar on /agents (pick 3). Same rules as Calendar (c8-calendar.scss body.c8-schedule chrome), scoped to this page. ---------- */
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .app-shell {
+  body:has(.agent-workspace) .app-shell,
+  body:has(.analytics-screen) .app-shell {
     padding: 61px 0 76px;
     gap: 0;
   }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .app-header {
+  body:has(.agent-workspace) .app-header,
+  body:has(.analytics-screen) .app-header {
     display: flex !important;
     position: fixed;
     z-index: 60;
@@ -1161,13 +1163,16 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
 
 @media (max-width: 639px), (max-height: 500px) {
   body:has(.agent-workspace) .app-header .desktop-nav,
-  body:has(.agent-workspace) .desktop-utilities {
+  body:has(.analytics-screen) .app-header .desktop-nav,
+  body:has(.agent-workspace) .desktop-utilities,
+  body:has(.analytics-screen) .desktop-utilities {
     display: none !important;
   }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .mobile-tabbar {
+  body:has(.agent-workspace) .mobile-tabbar,
+  body:has(.analytics-screen) .mobile-tabbar {
     display: flex !important;
     position: fixed;
     z-index: 70;
@@ -1188,7 +1193,9 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
 
 @media (max-width: 639px), (max-height: 500px) {
   body:has(.agent-workspace) .mobile-tabbar a,
-  body:has(.agent-workspace) .mobile-tabbar button {
+  body:has(.analytics-screen) .mobile-tabbar a,
+  body:has(.agent-workspace) .mobile-tabbar button,
+  body:has(.analytics-screen) .mobile-tabbar button {
     border-radius: 14px;
     color: var(--c8-muted);
     font-size: 11px;
@@ -1198,7 +1205,9 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
 
 @media (max-width: 639px), (max-height: 500px) {
   body:has(.agent-workspace) .mobile-tabbar a.arc-selected,
-  body:has(.agent-workspace) .mobile-tabbar button.arc-selected {
+  body:has(.analytics-screen) .mobile-tabbar a.arc-selected,
+  body:has(.agent-workspace) .mobile-tabbar button.arc-selected,
+  body:has(.analytics-screen) .mobile-tabbar button.arc-selected {
     background: var(--c8-ink);
     background-image: none;
     color: var(--c8-on-ink);
@@ -1206,19 +1215,22 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .logo-word {
+  body:has(.agent-workspace) .logo-word,
+  body:has(.analytics-screen) .logo-word {
     display: inline-flex !important;
   }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .logo-mark {
+  body:has(.agent-workspace) .logo-mark,
+  body:has(.analytics-screen) .logo-mark {
     display: none !important;
   }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .app-logo::after {
+  body:has(.agent-workspace) .app-logo::after,
+  body:has(.analytics-screen) .app-logo::after {
     content: '';
     width: 7px;
     height: 7px;
@@ -1231,13 +1243,17 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
 
 @media (max-width: 639px), (max-height: 500px) {
   body:has(.agent-workspace) .header-gear,
+  body:has(.analytics-screen) .header-gear,
   body:has(.agent-workspace) .header-overflow,
-  body:has(.agent-workspace) .app-header .navsep {
+  body:has(.analytics-screen) .header-overflow,
+  body:has(.agent-workspace) .app-header .navsep,
+  body:has(.analytics-screen) .app-header .navsep {
     display: none !important;
   }
 }
 
-body:has(.agent-workspace) .sheet-backdrop {
+body:has(.agent-workspace) .sheet-backdrop,
+body:has(.analytics-screen) .sheet-backdrop {
   background: var(--c8-hard) !important;
   background-image: none !important;
   backdrop-filter: none !important;
@@ -1245,13 +1261,17 @@ body:has(.agent-workspace) .sheet-backdrop {
 }
 
 body:has(.agent-workspace) .notify-panel,
+body:has(.analytics-screen) .notify-panel,
 body:has(.agent-workspace) .dash-mswitch-menu,
-body:has(.agent-workspace) .mobile-sheet {
+body:has(.analytics-screen) .dash-mswitch-menu,
+body:has(.agent-workspace) .mobile-sheet,
+body:has(.analytics-screen) .mobile-sheet {
   font-family: var(--font-body), Inter, sans-serif;
 }
 
 @media (max-width: 1199px) {
-  body:has(.agent-workspace) .c8-shell .c8-side-foot .notify-panel {
+  body:has(.agent-workspace) .c8-shell .c8-side-foot .notify-panel,
+  body:has(.analytics-screen) .c8-shell .c8-side-foot .notify-panel {
     border: 1.5px solid var(--c8-hard);
     padding: 6px;
     font-size: 14px;
@@ -1261,7 +1281,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 1199px) {
-  body:has(.agent-workspace) .c8-shell .c8-side-foot .notify-panel > div:last-child {
+  body:has(.agent-workspace) .c8-shell .c8-side-foot .notify-panel > div:last-child,
+  body:has(.analytics-screen) .c8-shell .c8-side-foot .notify-panel > div:last-child {
     max-height: min(420px, calc(100vh - 180px)) !important;
     min-height: 0;
     flex: none;
@@ -1271,8 +1292,11 @@ body:has(.agent-workspace) .mobile-sheet {
 
 @media (max-width: 639px), (max-height: 500px) {
   body:has(.agent-workspace) .app-logo,
+  body:has(.analytics-screen) .app-logo,
   body:has(.agent-workspace) .app-logo .logo-word,
-  body:has(.agent-workspace) .app-logo .logo-word svg {
+  body:has(.analytics-screen) .app-logo .logo-word,
+  body:has(.agent-workspace) .app-logo .logo-word svg,
+  body:has(.analytics-screen) .app-logo .logo-word svg {
     height: 24px !important;
     max-height: 24px !important;
     width: auto !important;
@@ -1280,7 +1304,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .dash-mswitch-btn {
+  body:has(.agent-workspace) .dash-mswitch-btn,
+  body:has(.analytics-screen) .dash-mswitch-btn {
     height: 37px;
     padding: 0 12px 0 6px;
     border: 1.5px solid var(--c8-hard);
@@ -1293,7 +1318,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .dash-mswitch-btn::before {
+  body:has(.agent-workspace) .dash-mswitch-btn::before,
+  body:has(.analytics-screen) .dash-mswitch-btn::before {
     content: '';
     width: 26px;
     height: 26px;
@@ -1304,7 +1330,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .dash-mswitch-menu {
+  body:has(.agent-workspace) .dash-mswitch-menu,
+  body:has(.analytics-screen) .dash-mswitch-menu {
     border: 1.5px solid var(--c8-hard);
     border-radius: 16px;
     background: var(--c8-surface);
@@ -1313,7 +1340,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .dash-mswitch-menu a.arc-selected {
+  body:has(.agent-workspace) .dash-mswitch-menu a.arc-selected,
+  body:has(.analytics-screen) .dash-mswitch-menu a.arc-selected {
     background: var(--c8-soft);
     background-image: none;
     color: var(--c8-ink);
@@ -1324,7 +1352,9 @@ body:has(.agent-workspace) .mobile-sheet {
 
 @media (max-width: 639px), (max-height: 500px) {
   body:has(.agent-workspace) .header-tools .header-theme,
-  body:has(.agent-workspace) .header-tools .relative.cursor-pointer {
+  body:has(.analytics-screen) .header-tools .header-theme,
+  body:has(.agent-workspace) .header-tools .relative.cursor-pointer,
+  body:has(.analytics-screen) .header-tools .relative.cursor-pointer {
     width: 36px;
     height: 36px;
     border: 1px solid var(--c8-line);
@@ -1335,20 +1365,23 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .header-tools .rounded-full {
+  body:has(.agent-workspace) .header-tools .rounded-full,
+  body:has(.analytics-screen) .header-tools .rounded-full {
     background: var(--c8-danger) !important;
     border-color: var(--c8-surface) !important;
   }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace):has(.notify-panel) .app-header {
+  body:has(.agent-workspace):has(.notify-panel) .app-header,
+  body:has(.analytics-screen):has(.notify-panel) .app-header {
     z-index: 200;
   }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .c8-shell:has(.notify-panel)::before {
+  body:has(.agent-workspace) .c8-shell:has(.notify-panel)::before,
+  body:has(.analytics-screen) .c8-shell:has(.notify-panel)::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -1358,7 +1391,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .notify-panel {
+  body:has(.agent-workspace) .notify-panel,
+  body:has(.analytics-screen) .notify-panel {
     position: fixed !important;
     top: auto !important;
     right: 0 !important;
@@ -1383,7 +1417,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .notify-panel::before {
+  body:has(.agent-workspace) .notify-panel::before,
+  body:has(.analytics-screen) .notify-panel::before {
     content: '';
     display: block;
     width: 40px;
@@ -1396,7 +1431,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .notify-panel > div:last-child {
+  body:has(.agent-workspace) .notify-panel > div:last-child,
+  body:has(.analytics-screen) .notify-panel > div:last-child {
     max-height: none !important;
     min-height: auto;
     flex: none;
@@ -1406,7 +1442,9 @@ body:has(.agent-workspace) .mobile-sheet {
 
 @media (max-width: 639px), (max-height: 500px) {
   body:has(.agent-workspace) .notify-panel a,
-  body:has(.agent-workspace) .notify-panel .break-words {
+  body:has(.analytics-screen) .notify-panel a,
+  body:has(.agent-workspace) .notify-panel .break-words,
+  body:has(.analytics-screen) .notify-panel .break-words {
     display: block;
     overflow: visible;
     white-space: normal;
@@ -1419,7 +1457,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .sheet-backdrop {
+  body:has(.agent-workspace) .sheet-backdrop,
+  body:has(.analytics-screen) .sheet-backdrop {
     display: block !important;
     z-index: 72;
     background: var(--c8-hard) !important;
@@ -1427,7 +1466,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .mobile-sheet {
+  body:has(.agent-workspace) .mobile-sheet,
+  body:has(.analytics-screen) .mobile-sheet {
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
@@ -1443,7 +1483,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .mobile-sheet::before {
+  body:has(.agent-workspace) .mobile-sheet::before,
+  body:has(.analytics-screen) .mobile-sheet::before {
     content: '';
     display: block;
     width: 40px;
@@ -1456,7 +1497,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
-  body:has(.agent-workspace) .c8-shell .c8-side-foot .notify-panel {
+  body:has(.agent-workspace) .c8-shell .c8-side-foot .notify-panel,
+  body:has(.analytics-screen) .c8-shell .c8-side-foot .notify-panel {
     bottom: 16px !important;
     left: calc(var(--c8-side-w, 84px) + 12px) !important;
     width: min(360px, calc(100vw - var(--c8-side-w, 84px) - 28px)) !important;
@@ -1465,7 +1507,8 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .app-header {
+  body:has(.agent-workspace) .app-header,
+  body:has(.analytics-screen) .app-header {
     position: fixed !important;
     top: 0;
     right: 0;
@@ -1475,7 +1518,9 @@ body:has(.agent-workspace) .mobile-sheet {
 }
 
 body:has(.agent-workspace) .notify-panel a,
-body:has(.agent-workspace) .notify-panel .break-words {
+body:has(.analytics-screen) .notify-panel a,
+body:has(.agent-workspace) .notify-panel .break-words,
+body:has(.analytics-screen) .notify-panel .break-words {
   display: block;
   overflow: visible;
   white-space: normal;
@@ -1486,18 +1531,21 @@ body:has(.agent-workspace) .notify-panel .break-words {
   line-clamp: unset;
 }
 
-body:has(.agent-workspace) .c8-shell:has(.notify-panel) .c8-sidebar {
+body:has(.agent-workspace) .c8-shell:has(.notify-panel) .c8-sidebar,
+body:has(.analytics-screen) .c8-shell:has(.notify-panel) .c8-sidebar {
   border-right: 0;
 }
 
-body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-selected'] {
+body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-selected'],
+body:has(.analytics-screen) .notify-panel > div:last-child > div[class*='arc-selected'] {
   display: grid;
   grid-template-columns: 12px minmax(0, 1fr);
   column-gap: 8px;
   align-items: start;
 }
 
-body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-selected']::before {
+body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-selected']::before,
+body:has(.analytics-screen) .notify-panel > div:last-child > div[class*='arc-selected']::before {
   content: '';
   width: 8px;
   height: 8px;
@@ -1508,7 +1556,8 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 }
 
 @media (max-height: 500px) and (min-width: 640px) {
-  body:has(.agent-workspace) .c8-shell {
+  body:has(.agent-workspace) .c8-shell,
+  body:has(.analytics-screen) .c8-shell {
     height: auto !important;
     min-height: 100vh;
     max-height: none !important;
@@ -1517,7 +1566,8 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 }
 
 @media (max-height: 500px) and (min-width: 640px) {
-  body:has(.agent-workspace) .mobile-tabbar {
+  body:has(.agent-workspace) .mobile-tabbar,
+  body:has(.analytics-screen) .mobile-tabbar {
     position: fixed !important;
     left: 0 !important;
     right: 0 !important;
@@ -1530,7 +1580,9 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 
 @media (max-height: 500px) and (min-width: 640px) {
   body:has(.agent-workspace) .mobile-tabbar a,
-  body:has(.agent-workspace) .mobile-tabbar button {
+  body:has(.analytics-screen) .mobile-tabbar a,
+  body:has(.agent-workspace) .mobile-tabbar button,
+  body:has(.analytics-screen) .mobile-tabbar button {
     flex: 1 1 0 !important;
     min-width: 0 !important;
     width: auto !important;
@@ -1546,7 +1598,9 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 
 @media (max-height: 500px) and (min-width: 640px) {
   body:has(.agent-workspace) .mobile-tabbar a span,
-  body:has(.agent-workspace) .mobile-tabbar button span {
+  body:has(.analytics-screen) .mobile-tabbar a span,
+  body:has(.agent-workspace) .mobile-tabbar button span,
+  body:has(.analytics-screen) .mobile-tabbar button span {
     display: block;
     max-width: 100%;
     overflow: hidden;
@@ -1556,14 +1610,16 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 }
 
 @media (max-height: 499px) {
-  body:has(.agent-workspace) .app-header {
+  body:has(.agent-workspace) .app-header,
+  body:has(.analytics-screen) .app-header {
     height: 44px !important;
     min-height: 44px !important;
   }
 }
 
 @media (max-height: 499px) {
-  body:has(.agent-workspace) .mobile-tabbar {
+  body:has(.agent-workspace) .mobile-tabbar,
+  body:has(.analytics-screen) .mobile-tabbar {
     height: 52px !important;
     padding: 4px 8px 6px !important;
   }
@@ -1571,27 +1627,32 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 
 @media (max-height: 499px) {
   body:has(.agent-workspace) .app-shell,
-  body:has(.agent-workspace) .c8-shell {
+  body:has(.analytics-screen) .app-shell,
+  body:has(.agent-workspace) .c8-shell,
+  body:has(.analytics-screen) .c8-shell {
     padding-top: 44px !important;
     padding-bottom: 52px !important;
   }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .c8-shell:has(.notify-panel)::before {
+  body:has(.agent-workspace) .c8-shell:has(.notify-panel)::before,
+  body:has(.analytics-screen) .c8-shell:has(.notify-panel)::before {
     background: var(--c8-scrim);
     z-index: 210;
   }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .notify-panel {
+  body:has(.agent-workspace) .notify-panel,
+  body:has(.analytics-screen) .notify-panel {
     z-index: 220 !important;
   }
 }
 
 @media (min-width: 640px) and (min-height: 501px) {
-  body:has(.agent-workspace) .c8-shell:has(.notify-panel)::before {
+  body:has(.agent-workspace) .c8-shell:has(.notify-panel)::before,
+  body:has(.analytics-screen) .c8-shell:has(.notify-panel)::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -1601,20 +1662,23 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 }
 
 @media (min-width: 1200px) {
-  body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-selected']::before {
+  body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-selected']::before,
+  body:has(.analytics-screen) .notify-panel > div:last-child > div[class*='arc-selected']::before {
     grid-row: 1;
     grid-column: 1;
   }
 }
 
 @media (min-width: 1200px) {
-  body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-selected'] > div {
+  body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-selected'] > div,
+  body:has(.analytics-screen) .notify-panel > div:last-child > div[class*='arc-selected'] > div {
     grid-column: 2;
   }
 }
 
 @media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
-  body:has(.agent-workspace) .c8-shell:has(.notify-panel) .c8-sidebar {
+  body:has(.agent-workspace) .c8-shell:has(.notify-panel) .c8-sidebar,
+  body:has(.analytics-screen) .c8-shell:has(.notify-panel) .c8-sidebar {
     position: relative;
     z-index: 260;
     border-right: 0;
@@ -1623,7 +1687,8 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 }
 
 @media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
-  body:has(.agent-workspace) .c8-shell .c8-side-foot {
+  body:has(.agent-workspace) .c8-shell .c8-side-foot,
+  body:has(.analytics-screen) .c8-shell .c8-side-foot {
     position: relative;
     z-index: 2;
     overflow: visible;
@@ -1631,13 +1696,15 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 }
 
 @media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
-  body:has(.agent-workspace) .c8-shell .c8-side-foot .notify-panel {
+  body:has(.agent-workspace) .c8-shell .c8-side-foot .notify-panel,
+  body:has(.analytics-screen) .c8-shell .c8-side-foot .notify-panel {
     z-index: 3 !important;
   }
 }
 
 @media (min-width: 640px) and (min-height: 501px) {
-  body:has(.agent-workspace) .c8-shell:has(.notify-panel) .c8-main {
+  body:has(.agent-workspace) .c8-shell:has(.notify-panel) .c8-main,
+  body:has(.analytics-screen) .c8-shell:has(.notify-panel) .c8-main {
     position: relative;
     z-index: 0;
     isolation: isolate;
@@ -1645,7 +1712,8 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 }
 
 @media (min-width: 640px) and (min-height: 501px) {
-  body:has(.agent-workspace) .c8-shell:has(.notify-panel) .channel-rail {
+  body:has(.agent-workspace) .c8-shell:has(.notify-panel) .channel-rail,
+  body:has(.analytics-screen) .c8-shell:has(.notify-panel) .channel-rail {
     isolation: isolate;
   }
 }
@@ -1715,13 +1783,15 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 }
 
 @media (min-width: 640px) and (min-height: 501px) {
-  body:has(.agent-workspace) .agent-channels-sheet {
+  body:has(.agent-workspace) .agent-channels-sheet,
+  body:has(.analytics-screen) .agent-channels-sheet {
     flex-direction: column;
     height: auto;
   }
 
   @supports (anchor-name: --a) {
-    body:has(.agent-workspace) .agent-channels-sheet {
+    body:has(.agent-workspace) .agent-channels-sheet,
+    body:has(.analytics-screen) .agent-channels-sheet {
       position-anchor: --agent-actions;
       top: calc(anchor(bottom) + 8px);
       right: anchor(right);
@@ -1735,7 +1805,8 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
   /* Fallback without anchor positioning: header heights from the layout
      (padding-top + kicker 26 + 10 + title line; +28 with the conversation name). */
   @supports not (anchor-name: --a) {
-    body:has(.agent-workspace) .agent-channels-sheet {
+    body:has(.agent-workspace) .agent-channels-sheet,
+    body:has(.analytics-screen) .agent-channels-sheet {
       top: 130px;
       right: 40px;
       max-height: min(640px, calc(100dvh - 146px));
@@ -1750,7 +1821,8 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 
 @supports not (anchor-name: --a) {
   @media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
-    body:has(.agent-workspace) .agent-channels-sheet {
+    body:has(.agent-workspace) .agent-channels-sheet,
+    body:has(.analytics-screen) .agent-channels-sheet {
       top: 114px;
       right: 28px;
       max-height: min(640px, calc(100dvh - 130px));
@@ -1765,13 +1837,15 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
 
 /* 2. The list fits its rows (no absolute scroller), scrolls only past the
    limit, and rows line up with the title (row border 1 + padding 10). */
-body:has(.agent-workspace) .agent-channels-sheet .agent-channels {
+body:has(.agent-workspace) .agent-channels-sheet .agent-channels,
+body:has(.analytics-screen) .agent-channels-sheet .agent-channels {
   flex: 0 1 auto;
   height: auto !important;
   min-height: 0;
 }
 
-body:has(.agent-workspace) .agent-channels-sheet .agent-channels > div {
+body:has(.agent-workspace) .agent-channels-sheet .agent-channels > div,
+body:has(.analytics-screen) .agent-channels-sheet .agent-channels > div {
   position: static !important;
   flex: 0 1 auto;
   width: auto !important;
@@ -1781,21 +1855,25 @@ body:has(.agent-workspace) .agent-channels-sheet .agent-channels > div {
   padding: 20px !important;
 }
 
-body:has(.agent-workspace) .agent-channels-sheet .agent-channel {
+body:has(.agent-workspace) .agent-channels-sheet .agent-channel,
+body:has(.analytics-screen) .agent-channels-sheet .agent-channel {
   justify-content: flex-start;
   margin-inline: -11px;
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .agent-channels-sheet {
+  body:has(.agent-workspace) .agent-channels-sheet,
+  body:has(.analytics-screen) .agent-channels-sheet {
     flex-direction: column;
   }
 
-  body:has(.agent-workspace) .agent-channels-sheet .agent-channels {
+  body:has(.agent-workspace) .agent-channels-sheet .agent-channels,
+  body:has(.analytics-screen) .agent-channels-sheet .agent-channels {
     flex: 1 1 auto;
   }
 
-  body:has(.agent-workspace) .agent-channels-sheet .agent-channels > div {
+  body:has(.agent-workspace) .agent-channels-sheet .agent-channels > div,
+  body:has(.analytics-screen) .agent-channels-sheet .agent-channels > div {
     flex: 1 1 auto;
   }
 }

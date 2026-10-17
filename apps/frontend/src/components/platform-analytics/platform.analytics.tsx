@@ -1,19 +1,46 @@
 'use client';
 
 import useSWR from 'swr';
-import { useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import { capitalize, orderBy } from 'lodash';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { RenderAnalytics } from '@gitroom/frontend/components/platform-analytics/render.analytics';
+import {
+  AnalyticsSkeleton,
+  RenderAnalytics,
+} from '@gitroom/frontend/components/platform-analytics/render.analytics';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
+
+const AnalyticsPageHead: FC<{ period?: number; sub?: string }> = ({
+  period,
+  sub,
+}) => {
+  const t = useT();
+  return (
+    <header className="analytics-head">
+      <div className="analytics-head-text">
+        <div className="analytics-kicker">
+          <span className="analytics-sticker">{t('schedule', 'Schedule')}</span>
+          {period ? (
+            <span className="analytics-period">
+              {t('last_n_days', `Last ${period} days`)}
+            </span>
+          ) : null}
+        </div>
+        <h1>{t('analytics', 'Analytics')}</h1>
+        {sub ? <p className="analytics-sub">{sub}</p> : null}
+      </div>
+    </header>
+  );
+};
+
 const allowedIntegrations = [
   'facebook',
   'instagram',
@@ -200,15 +227,26 @@ export const PlatformAnalytics = () => {
   if (error) {
     return (
       <div className="analytics-screen">
-        <div className="analytics-main analytics-state">
-          <p>
-            {error instanceof Error
-              ? error.message
-              : t(
-                  'analytics_load_error',
-                  'Could not load analytics. Refresh the page and try again.'
-                )}
-          </p>
+        <div className="analytics-main">
+          <AnalyticsPageHead period={keys} />
+          <div className="analytics-state-card is-error" role="alert">
+            <span className="analytics-state-tile is-error" aria-hidden="true">
+              <HugeIcon name="alert" size={25} />
+            </span>
+            <div className="analytics-state-text">
+              <h2 className="analytics-state-title">
+                {t('analytics_load_error_title', "Couldn't load analytics")}
+              </h2>
+              <p className="analytics-state-body">
+                {error instanceof Error
+                  ? error.message
+                  : t(
+                      'analytics_load_error',
+                      'Could not load analytics. Refresh the page and try again.'
+                    )}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -217,8 +255,9 @@ export const PlatformAnalytics = () => {
   if (isLoading || !data) {
     return (
       <div className="analytics-screen">
-        <div className="analytics-main analytics-state">
-          <ScheduleLoading />
+        <div className="analytics-main">
+          <AnalyticsPageHead period={keys} />
+          <AnalyticsSkeleton toolbar />
         </div>
       </div>
     );
@@ -227,28 +266,35 @@ export const PlatformAnalytics = () => {
   if (!sortedIntegrations.length) {
     return (
       <div className="analytics-screen">
-        <div className="analytics-main analytics-state">
-          <img src="/peoplemarketplace.svg" alt="" />
-          <h1>
-            {t('can_t_show_analytics_yet', "Can't show analytics yet")}
-          </h1>
-          <p>
-            {t(
-              'you_have_to_add_social_media_channels',
-              'You have to add Social Media channels'
-            )}
-          </p>
-          <p className="analytics-support">
-            {t('supported', 'Supported:')}{' '}
-            {allowedIntegrations.map((p) => capitalize(p)).join(', ')}. Bluesky
-            and Mastodon do not provide account analytics here.
-          </p>
-          <Button onClick={() => router.push('/launches')}>
-            {t(
-              'go_to_the_calendar_to_add_channels',
-              'Go to the calendar to add channels'
-            )}
-          </Button>
+        <div className="analytics-main">
+          <AnalyticsPageHead period={keys} />
+          <div className="analytics-state-card is-empty">
+            <span className="analytics-state-tile is-empty" aria-hidden="true">
+              <HugeIcon name="analytics-bars" size={25} />
+            </span>
+            <div className="analytics-state-text">
+              <h2 className="analytics-state-title">
+                {t('can_t_show_analytics_yet', "Can't show analytics yet")}
+              </h2>
+              <p className="analytics-state-body">
+                {t(
+                  'you_have_to_add_social_media_channels',
+                  'You have to add Social Media channels'
+                )}
+              </p>
+              <p className="analytics-support">
+                {t('supported', 'Supported:')}{' '}
+                {allowedIntegrations.map((p) => capitalize(p)).join(', ')}. Bluesky
+                and Mastodon do not provide account analytics here.
+              </p>
+            </div>
+            <Button onClick={() => router.push('/launches')}>
+              {t(
+                'go_to_the_calendar_to_add_channels',
+                'Go to the calendar to add channels'
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -286,43 +332,42 @@ export const PlatformAnalytics = () => {
         </div>
       </div>
       <div className="analytics-main">
-        <div className="analytics-head">
-          <h1>{t('analytics', 'Analytics')}</h1>
-          <div className="analytics-head-row">
-            <p className="analytics-sub">
-              {currentIntegration.name} · {platformLabel}
-            </p>
-            {!!options.length && (
-              <div className="analytics-range" role="group">
-                {options.map((option) => (
-                  <button
-                    type="button"
-                    key={option.key}
-                    className={keys === option.key ? 'is-selected' : ''}
-                    onClick={() => setKey(option.key)}
-                  >
-                    {option.value}
-                  </button>
-                ))}
-              </div>
-            )}
+        <AnalyticsPageHead
+          period={keys}
+          sub={`${currentIntegration.name} · ${platformLabel}`}
+        />
+        <div className="analytics-toolbar">
+          <div className="analytics-strip">
+            {sortedIntegrations.map((integration, index) => (
+              <button
+                type="button"
+                key={integration.id}
+                title={integration.name}
+                aria-label={integration.name}
+                onClick={() => pickChannel(integration, index)}
+                className={clsx(
+                  currentIntegration.id === integration.id && 'is-selected',
+                  integration.disabled && 'is-disabled'
+                )}
+              >
+                {channelMark(integration)}
+              </button>
+            ))}
           </div>
-        </div>
-        <div className="analytics-strip">
-          {sortedIntegrations.map((integration, index) => (
-            <button
-              type="button"
-              key={integration.id}
-              aria-label={integration.name}
-              onClick={() => pickChannel(integration, index)}
-              className={clsx(
-                currentIntegration.id === integration.id && 'is-selected',
-                integration.disabled && 'is-disabled'
-              )}
-            >
-              {channelMark(integration)}
-            </button>
-          ))}
+          {!!options.length && (
+            <div className="analytics-range" role="group">
+              {options.map((option) => (
+                <button
+                  type="button"
+                  key={option.key}
+                  className={keys === option.key ? 'is-selected' : ''}
+                  onClick={() => setKey(option.key)}
+                >
+                  {option.value}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {!!keys && !!currentIntegration && !refresh && (
           <RenderAnalytics integration={currentIntegration} date={keys} />
