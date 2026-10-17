@@ -3490,3 +3490,22 @@ body:has(.arc-dialog.po-ai-modal) {
     background: var(--c8-surface);
   }
 }
+
+/* Footer popovers above the editor, tablet and desktop.
+   At 640-1199px (min-height 501px) .composer-foot is position:relative;
+   z-index:40 (#124), a stacking context, so the Repeat / Date / Tags / Post
+   now menus inside it (z 300 / 4600) only count as z 40 against the editor
+   text field (position:relative; z-index:99, in the same context). Where a
+   menu opening upward overlaps the editor (1180x820, 1366x768) the field
+   painted over its top. While a footer menu is open the footer goes above
+   the field (99) and the open Delay card (130). Closed, it stays at 40.
+   The max-height:500px sheets (z 4500) are not in this band. */
+@media (min-width: 640px) and (min-height: 501px) {
+  .c8-composer .composer-foot:has(.po-repeat-menu),
+  .c8-composer .composer-foot:has(.po-date-pop),
+  .c8-composer .composer-foot:has(.po-tags-menu),
+  .c8-composer .composer-foot:has(.po-post-menu) {
+    position: relative !important;
+    z-index: 140 !important;
+  }
+}
