@@ -3685,3 +3685,36 @@ body.dark.c8-schedule .notify-panel > div:last-child::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: var(--c8-scroll-thumb);
 }
+
+/* Tablet Repeat menu (640-1199px wide, 501px+ tall).
+   The fixed bottom:76px / max-height:360px menu was shorter than its 9 rows,
+   so Month and Cancel scrolled out of view, and on 820x1180 it sat over the
+   Tags / Repeat footer row. While the menu is open, .po-repeat goes static so
+   the menu anchors to .composer-foot (position:relative, z 140 from #140) and
+   opens fully above the footer row. It only scrolls when the viewport is too
+   short for all rows. Desktop (1200px+), phone sheets and the max-height:500px
+   rules are not in this band. */
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  .c8-composer .composer-foot:has(.po-repeat-menu) .po-repeat {
+    position: static !important;
+  }
+
+  .c8-composer .composer-foot .po-repeat > .po-repeat-menu {
+    position: absolute !important;
+    left: 20px !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    height: auto !important;
+    min-height: 0;
+    max-height: min(560px, calc(100dvh - 160px)) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    transform: none !important;
+  }
+
+  .c8-composer .po-repeat-menu .po-menu-row,
+  .c8-composer .po-repeat-menu .po-menu-title {
+    flex: none !important;
+  }
+}
