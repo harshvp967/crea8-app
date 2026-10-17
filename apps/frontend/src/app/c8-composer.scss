@@ -3227,9 +3227,11 @@ body:has(.arc-dialog.po-ai-modal) {
       strip). That made the narrow .po-card-extra the popover's containing
       block, and the first card's foot (media buttons) painted over the top of
       the popover, which read as top clipping.
-   3. Opening upward ran past the top of the composer scroll area, where
-      overflow cannot be scrolled to. It now opens down, below the comment
-      card; overflow below stays reachable by scrolling.
+   3. Direction: up, anchored just above the comment card's foot row
+      (bottom: 56px of the editor's .relative wrapper). Opening down (#138)
+      was clipped by the composer footer. Anchoring above the foot rather than
+      above the whole card leaves the most room under the scroll area's top
+      edge; max-height plus internal scroll keeps Custom/Set reachable.
    Phone sheet rules (max-width:639px / max-height:500px) are untouched. */
 @media (min-width: 640px) and (min-height: 501px) {
   .c8-composer .po-editor-card .po-editor-foot,
@@ -3247,8 +3249,8 @@ body:has(.arc-dialog.po-ai-modal) {
     display: flex !important;
     flex-direction: column !important;
     gap: 0;
-    top: calc(100% + 10px) !important;
-    bottom: auto !important;
+    top: auto !important;
+    bottom: 56px !important;
     left: auto !important;
     right: 12px !important;
     inset-inline-start: auto !important;
@@ -3256,7 +3258,7 @@ body:has(.arc-dialog.po-ai-modal) {
     transform: none !important;
     width: min(300px, calc(100% - 24px)) !important;
     max-width: calc(100% - 24px) !important;
-    max-height: min(360px, calc(100dvh - 120px));
+    max-height: min(360px, calc(100dvh - 160px));
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -3287,5 +3289,204 @@ body:has(.arc-dialog.po-ai-modal) {
     flex: 0 0 auto !important;
     min-width: 64px;
     padding-inline: 16px !important;
+  }
+}
+
+/* Short landscape (height <= 500px, e.g. 874x402). Portrait phone rules at
+   heights over 500px are untouched.
+   a. Delay: the min-width:640px rules from #135/#136 beat the phone sheet
+      here, so it opened up under the composer header, and uiarc's
+      `.po-card-extra .flex.flex-col` row rule squeezed Custom. Fixed mini
+      sheet at the bottom of the viewport, column layout, Custom >= 96px.
+   b. Emoji: the sheet top is button bottom + 8px and the picker height is at
+      least 180px, which runs past a 402px viewport. Pin it inside the
+      viewport and size it to 100dvh - 24px so the grid scrolls.
+   c. Media Library: same structure as #137 with a definite sheet height. */
+@media (max-height: 500px) {
+  .c8-composer .po-editor-card .po-editor-foot,
+  .c8-composer .po-editor-card .po-card-extra {
+    position: static !important;
+    z-index: auto !important;
+  }
+
+  .c8-composer .po-editor-card:has(.po-delay + div.absolute) {
+    z-index: 4500 !important;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-editor-card .po-card-extra .relative:has(> .po-delay) > div.absolute {
+    position: fixed !important;
+    display: flex !important;
+    flex-direction: column !important;
+    top: auto !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    left: 12px !important;
+    inset-inline-start: 12px !important;
+    inset-inline-end: 12px !important;
+    width: auto !important;
+    max-width: 480px !important;
+    height: auto !important;
+    max-height: calc(100dvh - 24px) !important;
+    margin-inline: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    transform: none !important;
+    z-index: 4500 !important;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .grid,
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .border-t {
+    width: 100%;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .border-t .flex {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .border-t input {
+    flex: 1 1 96px !important;
+    min-width: 96px !important;
+  }
+
+  .c8-composer .po-card-extra .relative:has(> .po-delay) .border-t button {
+    flex: 0 0 auto !important;
+    min-width: 64px;
+    padding-inline: 16px !important;
+  }
+
+  .c8-emoji.is-open.is-sheet .c8-emoji-pop {
+    top: 12px !important;
+    bottom: auto !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-height: calc(100dvh - 24px) !important;
+  }
+
+  .c8-emoji.is-open.is-sheet .EmojiPickerReact {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    height: calc(100dvh - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .c8-emoji.is-open.is-sheet .EmojiPickerReact .epr-body {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  .arc-dialog-wrap:has(.po-media-modal) {
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  body:has(.arc-dialog.po-media-modal) {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  .arc-dialog-wrap:has(.po-media-modal) > .relative {
+    position: relative !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+  }
+
+  .arc-dialog-wrap:has(.po-media-modal) .h-screen,
+  .arc-dialog-wrap:has(.po-media-modal) .pt-\[100px\] {
+    position: absolute !important;
+    inset: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    padding: 8px !important;
+    overflow: hidden !important;
+  }
+
+  .arc-dialog.po-media-modal {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    height: calc(100dvh - 16px) !important;
+    min-height: calc(100dvh - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    gap: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .po-media-modal .arc-grab,
+  .po-media-modal .arc-dialog-head {
+    flex: 0 0 auto !important;
+  }
+
+  .po-media-modal .arc-dialog-body,
+  .po-media-modal .po-library,
+  .po-media-modal .po-library > .flex.flex-col {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  .po-media-modal .po-library-scroll {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .po-media-modal .po-media-grid {
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .po-media-modal .po-library-foot {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    bottom: auto !important;
+    z-index: 2;
+    margin-top: 8px !important;
+    background: var(--c8-surface);
   }
 }
