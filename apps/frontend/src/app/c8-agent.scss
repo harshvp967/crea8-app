@@ -1656,3 +1656,224 @@ body:has(.agent-workspace) .notify-panel > div:last-child > div[class*='arc-sele
     isolation: isolate;
   }
 }
+
+/* ======================================================================
+   QA fixes (live QA after #146). CSS only; handlers unchanged.
+   ====================================================================== */
+
+/* 1. History popover: a grid item laid over the chat card, so its top is
+   always 8px under the real buttons row (titlebar is bottom-aligned), and it
+   right-aligns with the buttons. Tablet/desktop only; phone keeps the drawer. */
+@media (min-width: 640px) and (min-height: 501px) {
+  .agent-workspace {
+    --agent-gap: 28px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--agent-gap);
+  }
+
+  .agent-workspace > .agent-titlebar {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .agent-workspace > .agent-chat-pane {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .agent-workspace > .agent-threads.is-open {
+    position: relative;
+    z-index: 81;
+    inset: auto;
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: end;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    width: min(360px, 100%);
+    height: auto;
+    max-height: min(560px, calc(100% + var(--agent-gap) - 8px));
+    margin-top: calc(8px - var(--agent-gap));
+  }
+
+  .agent-workspace > .agent-threads.is-open > div {
+    position: static !important;
+    flex: 0 1 auto;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  .agent-workspace {
+    --agent-gap: 22px;
+  }
+}
+
+/* 1 + 2. Channels popover (portaled to body): anchored to the actions row,
+   8px below it, right-aligned, and sized to its rows up to the viewport. */
+.agent-workspace .agent-page-actions {
+  anchor-name: --agent-actions;
+}
+
+@media (min-width: 640px) and (min-height: 501px) {
+  body:has(.agent-workspace) .agent-channels-sheet {
+    flex-direction: column;
+    height: auto;
+  }
+
+  @supports (anchor-name: --a) {
+    body:has(.agent-workspace) .agent-channels-sheet {
+      position-anchor: --agent-actions;
+      top: calc(anchor(bottom) + 8px);
+      right: anchor(right);
+      bottom: 16px;
+      left: auto;
+      align-self: start;
+      max-height: 640px;
+    }
+  }
+
+  /* Fallback without anchor positioning: header heights from the layout
+     (padding-top + kicker 26 + 10 + title line; +28 with the conversation name). */
+  @supports not (anchor-name: --a) {
+    body:has(.agent-workspace) .agent-channels-sheet {
+      top: 130px;
+      right: 40px;
+      max-height: min(640px, calc(100dvh - 146px));
+    }
+
+    body:has(.agent-thread-name) .agent-channels-sheet {
+      top: 158px;
+      max-height: min(640px, calc(100dvh - 174px));
+    }
+  }
+}
+
+@supports not (anchor-name: --a) {
+  @media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+    body:has(.agent-workspace) .agent-channels-sheet {
+      top: 114px;
+      right: 28px;
+      max-height: min(640px, calc(100dvh - 130px));
+    }
+
+    body:has(.agent-thread-name) .agent-channels-sheet {
+      top: 142px;
+      max-height: min(640px, calc(100dvh - 158px));
+    }
+  }
+}
+
+/* 2. The list fits its rows (no absolute scroller), scrolls only past the
+   limit, and rows line up with the title (row border 1 + padding 10). */
+body:has(.agent-workspace) .agent-channels-sheet .agent-channels {
+  flex: 0 1 auto;
+  height: auto !important;
+  min-height: 0;
+}
+
+body:has(.agent-workspace) .agent-channels-sheet .agent-channels > div {
+  position: static !important;
+  flex: 0 1 auto;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px !important;
+}
+
+body:has(.agent-workspace) .agent-channels-sheet .agent-channel {
+  justify-content: flex-start;
+  margin-inline: -11px;
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  body:has(.agent-workspace) .agent-channels-sheet {
+    flex-direction: column;
+  }
+
+  body:has(.agent-workspace) .agent-channels-sheet .agent-channels {
+    flex: 1 1 auto;
+  }
+
+  body:has(.agent-workspace) .agent-channels-sheet .agent-channels > div {
+    flex: 1 1 auto;
+  }
+}
+
+/* 3. One focus outline: the textarea draws nothing, the box gets the v2 focus treatment. */
+.agent-workspace .agent .copilotKitInput > textarea,
+.agent-workspace .agent .copilotKitInput > textarea:focus,
+.agent-workspace .agent .copilotKitInput > textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.agent-workspace .agent .copilotKitInput:focus-within {
+  border-color: var(--c8-hard);
+  box-shadow: none;
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+/* 4. Paperclip readable in light and dark. */
+.agent-workspace .agent .agent-attach {
+  color: var(--c8-muted);
+  opacity: 1;
+}
+
+.agent-workspace .agent .agent-attach svg {
+  width: 18px;
+  height: 18px;
+  color: currentColor;
+  opacity: 1;
+  stroke-width: 1.75;
+}
+
+/* 5. Short landscape: the input caps at 3 lines (3 × 22 + 12) and scrolls
+   inside, so the message list keeps about 140px. */
+@media (max-height: 500px) {
+  .agent-workspace {
+    gap: 6px;
+  }
+
+  .agent-workspace .agent-chat-pane {
+    padding: 8px;
+  }
+
+  .agent-workspace .agent .copilotKitMessages {
+    min-height: 140px;
+  }
+
+  .agent-workspace .agent .copilotKitMessagesContainer {
+    padding-bottom: 8px;
+  }
+
+  .agent-workspace .agent .copilotKitInput {
+    min-height: 48px;
+    padding: 4px;
+  }
+
+  .agent-workspace .agent .copilotKitInput > textarea {
+    max-height: 78px !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* 6. Very wide: a centred 880px reading column; the card keeps full width. */
+@media (min-width: 1600px) and (min-height: 501px) {
+  .agent-workspace .agent .copilotKitMessagesContainer,
+  .agent-workspace .agent .copilotKitInputContainer,
+  .agent-workspace .agent .agent-media {
+    width: 100%;
+    max-width: 880px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
