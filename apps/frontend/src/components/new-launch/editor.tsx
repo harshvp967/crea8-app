@@ -933,7 +933,8 @@ export const Editor: FC<{
             >
               {t('drop_files_here_to_upload', 'Drop your files here to upload')}
             </div>
-            <div className="po-editor-tools flex items-center gap-[8px] px-[10px] bg-newBgColorInner relative z-[99]">
+            <div className="po-editor-tools flex flex-col items-stretch gap-0 px-[10px] bg-newBgColorInner relative">
+              <div className="po-editor-toolrow flex items-center gap-[8px] w-full min-w-0">
               <div className="editor-toolbar flex gap-[5px] min-w-0 flex-wrap">
                 {editorType !== 'none' && (
                   <>
@@ -1017,6 +1018,7 @@ export const Editor: FC<{
               </div>
               <div className="ms-auto">
                 <InformationComponent
+                  part="counter"
                   isPicture={pictures?.length > 0}
                   chars={chars}
                   totalChars={valueWithoutHtml.length}
@@ -1024,6 +1026,15 @@ export const Editor: FC<{
                   text={valueWithoutHtml}
                 />
               </div>
+              </div>
+              <InformationComponent
+                part="popover"
+                isPicture={pictures?.length > 0}
+                chars={chars}
+                totalChars={valueWithoutHtml.length}
+                totalAllowedChars={props.totalChars}
+                text={valueWithoutHtml}
+              />
             </div>
             <div
               className="px-[12px] pt-[8px] pb-[8px] bg-newBgColorInner relative z-[99] min-h-[64px]"

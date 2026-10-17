@@ -96,7 +96,7 @@ export const SelectCurrent: FC = () => {
 
   return (
     <>
-      <div className="po-current select-none left-0 absolute w-full z-[100] px-[20px]">
+      <div className="po-current select-none w-full">
         <div
           className={clsx(
             'po-current-row flex gap-[8px] w-full flex-wrap',

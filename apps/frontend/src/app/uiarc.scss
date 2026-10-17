@@ -7623,8 +7623,9 @@ body.composer-open .copilotKitWindow,
 
 .po-chip-remove {
   position: absolute;
-  top: -5px;
-  inset-inline-start: -5px;
+  top: 0;
+  inset-inline-start: 0;
+  margin: 0;
   width: 16px;
   height: 16px;
   border-radius: 999px;

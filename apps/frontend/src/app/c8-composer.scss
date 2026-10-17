@@ -285,8 +285,11 @@
 }
 
 .c8-composer .po-editor-tools {
+  flex-direction: column !important;
+  align-items: stretch !important;
   flex-wrap: nowrap !important;
   min-width: 0;
+  height: auto !important;
 }
 
 .c8-composer .editor-toolbar {
@@ -303,9 +306,9 @@
   display: none;
 }
 
-.c8-composer .po-editor-tools > .ms-auto {
-  position: relative;
-  z-index: 2;
+.c8-composer .po-editor-toolrow > .ms-auto {
+  position: static;
+  z-index: auto;
   flex: none;
   margin-left: auto;
   padding-inline-start: 6px;
@@ -345,7 +348,8 @@
 }
 
 .c8-composer .po-current-row {
-  width: fit-content;
+  position: static;
+  width: 100%;
   max-width: 100%;
   gap: 4px;
   padding: 4px;
@@ -418,8 +422,10 @@
 .c8-composer .po-chip-remove {
   width: 44px;
   height: 44px;
-  top: -16px;
-  inset-inline-start: -16px;
+  top: 0;
+  inset-inline-start: 0;
+  margin: 0;
+  transform: none;
   border: 0;
   background: transparent;
   color: var(--c8-ink);
@@ -892,6 +898,19 @@
 }
 
 .c8-composer .po-valid {
+  position: static !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  transform: none !important;
+  z-index: auto !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--c8-danger) !important;
   border-radius: 16px;
   background: var(--c8-surface) !important;
@@ -1546,21 +1565,32 @@ body.composer-open .app-toast.is-error .app-toast-icon.is-bad {
 }
 
 .c8-composer .po-current {
-  left: 0 !important;
-  right: 0 !important;
-  width: auto !important;
+  position: static !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
   box-sizing: border-box;
 }
 
 .c8-composer .po-current-row {
-  flex-wrap: nowrap !important;
+  position: static !important;
+  flex-wrap: wrap !important;
   width: 100% !important;
   max-width: 100% !important;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
+  overflow: visible !important;
+  left: auto !important;
+  right: auto !important;
+  margin: 0 !important;
+  transform: none !important;
 }
 
 .c8-composer .po-current-row::-webkit-scrollbar {
@@ -1568,9 +1598,14 @@ body.composer-open .app-toast.is-error .app-toast-icon.is-bad {
 }
 
 .c8-composer .po-global {
-  position: sticky;
-  left: 0;
-  z-index: 2;
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  inset: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: auto !important;
   flex: none;
 }
 
@@ -1578,32 +1613,16 @@ body.composer-open .app-toast.is-error .app-toast-icon.is-bad {
   background: var(--c8-soft) !important;
 }
 
-@media (max-width: 1199px) {
-  .c8-composer .po-current {
-    left: 16px !important;
-    right: 16px !important;
-    width: auto !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  .c8-composer .po-global {
-    position: sticky !important;
-    left: 0;
-    z-index: 3;
-    flex: none;
-    padding-right: 8px !important;
-    background: var(--c8-soft) !important;
-  }
-
-  .c8-composer .po-global.po-global-on {
-    background: var(--c8-surface) !important;
-    box-shadow: 0 2px 0 var(--c8-hard), 8px 0 0 var(--c8-soft) !important;
-  }
+.c8-composer .po-global.po-global-on {
+  box-shadow: 0 2px 0 var(--c8-hard) !important;
 }
 
 .c8-composer .po-current-spacer {
-  height: 56px;
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .c8-composer .po-editor-shell,
@@ -2897,4 +2916,55 @@ body.light .po-date-pop button:disabled:not(.po-day-on) {
     max-width: 100% !important;
     min-width: 0 !important;
   }
+}
+
+/* Validation note and selected-channel strip stay in document flow. */
+.c8-composer .po-char-pop {
+  display: none;
+  position: static !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  margin: 8px 0 0 !important;
+  transform: none !important;
+  z-index: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+  overflow: visible !important;
+  white-space: normal !important;
+  background: var(--c8-surface);
+  border: 1px solid var(--c8-line);
+  border-radius: 16px;
+  color: var(--c8-ink);
+}
+
+.c8-composer .po-char-pop.is-bad {
+  border-color: var(--c8-danger);
+}
+
+.c8-composer .po-editor-tools:has(.po-char-trigger:hover) .po-char-pop,
+.c8-composer .po-editor-tools:has(.po-char-trigger:focus-within) .po-char-pop,
+.c8-composer .po-editor-tools:has(.po-char-pop:hover) .po-char-pop {
+  display: flex !important;
+  flex-direction: column;
+}
+
+.c8-composer .po-char-pop .whitespace-nowrap,
+.c8-composer .po-char-pop .text-sm {
+  position: static !important;
+  left: auto !important;
+  margin-left: 0 !important;
+  transform: none !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+.c8-composer .po-char-pop .grid {
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  width: 100%;
+  min-width: 0;
 }
