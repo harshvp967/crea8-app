@@ -3718,3 +3718,30 @@ body.dark.c8-schedule .notify-panel > div:last-child::-webkit-scrollbar-thumb {
     flex: none !important;
   }
 }
+
+/* Customers menu: solid in the composer and on the calendar.
+   The menu (.customer-menu, shared by the composer and the calendar filters
+   bar) gets the theme surface as an opaque fill, so it works in light and
+   dark. On phone and short landscape .select-customer is static with
+   z-index:auto, so its z-500 stacking context is gone and the editor's text
+   field (position:relative; z-index:99) painted over the open menu
+   ("Write something …" showed inside it). While the menu is open, the
+   channels + customers row becomes its own stacking context above the
+   editor cards. Calendar keeps its z-500 wrapper; only the fill is shared. */
+body.c8-schedule .customer-menu,
+.c8-composer .customer-menu {
+  background: var(--c8-surface) !important;
+  background-color: var(--c8-surface) !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .c8-composer #social-content > .flex:has(.customer-menu) {
+    position: relative;
+    z-index: 130;
+  }
+
+  .c8-composer .customer-menu {
+    z-index: 140 !important;
+  }
+}
