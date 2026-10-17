@@ -615,9 +615,20 @@ export const Editor: FC<{
       }
       setEmojiPickerOpen(false);
     };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      setEmojiPickerOpen(false);
+      emojiButtonRef.current?.focus();
+    };
     document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown, true);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('keydown', onKeyDown, true);
     };
   }, [emojiPickerOpen]);
   useLayoutEffect(() => {

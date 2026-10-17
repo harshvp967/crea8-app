@@ -52,6 +52,24 @@ export const DelayComponent: FC<{
     setIsOpen(false);
   });
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      setIsOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [isOpen]);
+
   const setDelay = useCallback(
     (index: number) => (minutes: number) => {
       if (current !== 'global') {

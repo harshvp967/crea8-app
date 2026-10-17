@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import EventEmitter from 'events';
 import clsx from 'clsx';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
@@ -11,21 +11,27 @@ export const Toaster = () => {
   const [toasterType, setToasterType] = useState<'success' | 'warning' | 'error' | ''>(
     ''
   );
+  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
-    toaster.on(
-      'show',
-      (params: { text: string; type?: 'success' | 'warning' | 'error' }) => {
-        const { text, type } = params;
-        setToasterText(text);
-        setToasterType(type || 'success');
-        setShowToaster(true);
-        setTimeout(() => {
-          setShowToaster(false);
-        }, 4200);
-      }
-    );
+    const onShow = (params: {
+      text: string;
+      type?: 'success' | 'warning' | 'error';
+    }) => {
+      const { text, type } = params;
+      // Each toast owns the hide timer, so an older toast's timer can't
+      // cut the new one short or leave it on screen.
+      clearTimeout(hideTimer.current);
+      setToasterText(text);
+      setToasterType(type || 'success');
+      setShowToaster(true);
+      hideTimer.current = setTimeout(() => {
+        setShowToaster(false);
+      }, 4200);
+    };
+    toaster.on('show', onShow);
     return () => {
-      toaster.removeAllListeners();
+      clearTimeout(hideTimer.current);
+      toaster.off('show', onShow);
     };
   }, []);
   if (!showToaster) {

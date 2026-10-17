@@ -1464,6 +1464,7 @@ const CalendarItem: FC<{
   }, [post]);
   const runMenuAction = (action: () => void) => (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
+    setActionsOpen(false);
     action();
   };
   const [{ opacity }, dragRef] = useDrag(
