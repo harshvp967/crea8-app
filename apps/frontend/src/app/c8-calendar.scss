@@ -6149,3 +6149,44 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
     line-height: 16px;
   }
 }
+
+/* Phone drops the Today pill in every view (decision Oct 15). Tapping the
+   period label already jumps back to the current period. The max-width
+   1199px block above shows .cal-today and the phone block adds a 'today'
+   grid row for it; hide both on phone and drop that row so no 8px gap is
+   left. The ‹ › arrows and the period header stay as they are. Tablet,
+   desktop and short landscape are unchanged. */
+@media (max-width: 639px) {
+  body.c8-schedule:not([data-c8-view='list']) .filters-bar .date-range,
+  body.c8-schedule[data-c8-view='day'] .date-range,
+  body.c8-schedule[data-c8-view='week'] .date-range,
+  body.c8-schedule[data-c8-view='month'] .date-range {
+    display: none !important;
+  }
+
+  body.c8-schedule .cal-today,
+  body.c8-schedule[data-c8-view='day'] .cal-today,
+  body.c8-schedule[data-c8-view='week'] .cal-today,
+  body.c8-schedule[data-c8-view='month'] .cal-today,
+  body.c8-schedule[data-c8-view='list'] .date-range > .cal-today {
+    display: none !important;
+  }
+
+  body.c8-schedule[data-c8-view='day'] .calendar-panel:not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='week'] .calendar-panel:not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='month'] .calendar-panel:not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='day'] .calendar-panel:has(.c8-day):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='week'] .calendar-panel:has(.c8-week):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='day'] .calendar-panel:has(.cal-customer > div):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='week'] .calendar-panel:has(.cal-customer > div):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='month'] .calendar-panel:has(.cal-customer > div):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='day'] .calendar-panel:has(.cal-customer > div):has(.c8-day):not(:has(.channel-empty-phone)),
+  body.c8-schedule[data-c8-view='week'] .calendar-panel:has(.cal-customer > div):has(.c8-week):not(:has(.channel-empty-phone)) {
+    grid-template-areas:
+      'head head head'
+      'actions actions actions'
+      'scope scope scope'
+      'period period period'
+      'well well well' !important;
+  }
+}
