@@ -6115,3 +6115,37 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
     isolation: isolate;
   }
 }
+
+/* Short landscape month (max-height 500px, e.g. 874x402).
+   The 36px rows above were shorter than the 70px .cal-col (min-h
+   max(70px,100%)), which is centred in the cell, so Oct 15 / 16 chips spilled
+   over the next rows' dates. Rows start at 56px (date + one chip) and grow
+   for up to three chips and the existing "+N" link; the page scrolls, the
+   same as week and day at this size. A closed cell clips its own content so
+   it can never paint over another cell. The open-post lift keeps overflow
+   visible. Week and day views and other sizes are untouched. */
+@media (max-height: 500px) {
+  body.c8-schedule .month-grid {
+    grid-auto-rows: minmax(56px, auto) !important;
+  }
+
+  body.c8-schedule .month-cell {
+    min-height: 56px !important;
+    align-items: stretch !important;
+  }
+
+  body.c8-schedule .month-cell:not(:has(.cal-post.is-open)) {
+    overflow: hidden;
+  }
+
+  body.c8-schedule .month-cell > .cal-col {
+    min-height: 0 !important;
+    height: auto;
+  }
+
+  body.c8-schedule .month-cell > .cal-col > div:first-child {
+    padding-top: 4px !important;
+    padding-bottom: 0 !important;
+    line-height: 16px;
+  }
+}
