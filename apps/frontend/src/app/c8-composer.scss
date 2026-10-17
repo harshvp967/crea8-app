@@ -3105,20 +3105,26 @@ body:has(.arc-dialog.po-ai-modal) {
   min-width: 0;
 }
 
-/* Media library footer stays on screen.
-   fullScreen uses .h-screen, not .pt-[100px]. height:auto let the dialog's
-   min-height:auto grow with the grid, and overflow:hidden on the wrap clipped
-   Cancel / Add selected media with nothing left to scroll. */
+/* Media library on tablet and desktop. Phone (under 640 wide or under 500
+   tall) keeps the sheet rules above.
+   #136 set .h-screen to height:100% and min-height:0. The wrap is a row flex
+   with align-items:center, so the in-flow child does not stretch, and the
+   absolute panel gives it no height. 100% of that is 0, overflow:hidden
+   clipped the dialog to a thin strip. The dialog height has to be a length,
+   and the wrapper has to be 100dvh, not a percentage of that collapsed box. */
 @media (min-width: 640px) and (min-height: 501px) {
   .arc-dialog-wrap:has(.po-media-modal) {
     position: fixed !important;
     inset: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
     height: 100dvh !important;
+    min-height: 100dvh !important;
     max-height: 100dvh !important;
     overflow: hidden !important;
     overscroll-behavior: none;
-    align-items: center !important;
-    justify-content: center !important;
   }
 
   body:has(.arc-dialog.po-media-modal) {
@@ -3126,15 +3132,33 @@ body:has(.arc-dialog.po-ai-modal) {
     overscroll-behavior: none;
   }
 
+  .arc-dialog-wrap:has(.po-media-modal) > .relative {
+    position: relative !important;
+    flex: 1 1 auto !important;
+    align-self: stretch !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+  }
+
   .arc-dialog-wrap:has(.po-media-modal) .h-screen,
   .arc-dialog-wrap:has(.po-media-modal) .pt-\[100px\] {
+    position: absolute !important;
+    inset: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
     box-sizing: border-box !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    min-height: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
     padding: 16px !important;
     overflow: hidden !important;
   }
@@ -3147,12 +3171,13 @@ body:has(.arc-dialog.po-ai-modal) {
     left: auto !important;
     transform: none !important;
     box-sizing: border-box !important;
+    align-self: center !important;
     width: min(960px, calc(100vw - 32px)) !important;
     max-width: calc(100vw - 32px) !important;
-    height: calc(100dvh - 32px) !important;
-    max-height: calc(100dvh - 32px) !important;
-    min-height: 0 !important;
-    flex: 0 1 auto !important;
+    height: min(720px, calc(100dvh - 32px)) !important;
+    max-height: min(720px, calc(100dvh - 32px)) !important;
+    min-height: min(720px, calc(100dvh - 32px)) !important;
+    flex: 0 0 auto !important;
     margin: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -3161,7 +3186,7 @@ body:has(.arc-dialog.po-ai-modal) {
 
   .po-media-modal .arc-grab,
   .po-media-modal .arc-dialog-head {
-    flex: none;
+    flex: 0 0 auto !important;
   }
 
   .po-media-modal .arc-dialog-body,
@@ -3175,20 +3200,20 @@ body:has(.arc-dialog.po-ai-modal) {
     overflow: hidden !important;
   }
 
-  .po-media-modal .po-library-scroll {
+  .po-media-modal .po-library-scroll,
+  .po-media-modal .po-media-grid {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     max-height: none !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow: auto !important;
   }
 
   .po-media-modal .po-library-foot {
     flex: 0 0 auto !important;
-    position: relative;
-    bottom: auto;
+    position: relative !important;
+    bottom: auto !important;
     z-index: 2;
-    margin-top: auto;
+    margin-top: 0 !important;
     background: var(--c8-surface);
   }
 }
