@@ -22,6 +22,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 import { META_GRAPH_API_VERSION } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { percentageChangeFromSeries } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
 
 @Rules(
   "Instagram should have at least one attachment, if it's a story, it can have only one picture"
@@ -1220,27 +1221,33 @@ export class InstagramProvider
     const analytics = [];
 
     analytics.push(
-      ...(data?.map((d: any) => ({
-        label: this.setTitle(d.name),
-        percentageChange: 5,
-        data: d.values.map((v: any) => ({
+      ...(data?.map((d: any) => {
+        const points = d.values.map((v: any) => ({
           total: v.value,
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
-        })),
-      })) || [])
+        }));
+        return {
+          label: this.setTitle(d.name),
+          percentageChange: percentageChangeFromSeries(points),
+          data: points,
+        };
+      }) || [])
     );
 
     analytics.push(
-      ...data2.map((d: any) => ({
-        label: this.setTitle(d.name),
-        percentageChange: 5,
-        data: [
+      ...data2.map((d: any) => {
+        const points = [
           {
             total: d.total_value.value,
             date: dayjs().format('YYYY-MM-DD'),
           },
-        ],
-      }))
+        ];
+        return {
+          label: this.setTitle(d.name),
+          percentageChange: percentageChangeFromSeries(points),
+          data: points,
+        };
+      })
     );
 
     return analytics;

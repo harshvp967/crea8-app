@@ -24,6 +24,7 @@ import { Integration } from '@prisma/client';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { percentageChangeFromSeries } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
 
 export const META_GRAPH_API_VERSION = 'v25.0';
 
@@ -1088,21 +1089,24 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     };
 
     return (
-      data?.map((d: any) => ({
-        label:
-          d.name === 'page_total_media_view_unique'
-            ? 'Page Impressions'
-            : d.name === 'page_post_engagements'
-            ? 'Posts Engagement'
-            : d.name === 'page_daily_follows'
-            ? 'Page followers'
-            : 'Media views',
-        percentageChange: 5,
-        data: d?.values?.map((v: any) => ({
+      data?.map((d: any) => {
+        const points = d?.values?.map((v: any) => ({
           total: sumValue(v.value),
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
-        })),
-      })) || []
+        }));
+        return {
+          label:
+            d.name === 'page_total_media_view_unique'
+              ? 'Page Impressions'
+              : d.name === 'page_post_engagements'
+              ? 'Posts Engagement'
+              : d.name === 'page_daily_follows'
+              ? 'Page followers'
+              : 'Media views',
+          percentageChange: percentageChangeFromSeries(points),
+          data: points,
+        };
+      }) || []
     );
   }
 
