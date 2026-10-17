@@ -2927,7 +2927,10 @@ body:has(.arc-dialog.po-ai-modal) {
   white-space: nowrap !important;
 }
 
-/* Delay stays inside the editor card. Left: 0 grew it past the pane edge. */
+/* Delay stays inside the editor card. Left: 0 grew it past the pane edge.
+   The comment field is position:relative; z-index:99 with an opaque fill, so a
+   z-index of 40 on the popover painted behind that field. The open card also
+   has to sit above the comment card before it. */
 @media (min-width: 640px) {
   .c8-composer .po-card-extra .relative:has(> .po-delay) {
     position: static !important;
@@ -2935,6 +2938,18 @@ body:has(.arc-dialog.po-ai-modal) {
 
   .c8-composer .po-editor-card:has(.po-delay) {
     position: relative;
+    overflow: visible;
+  }
+
+  .c8-composer .po-editor-card:has(.po-delay):has(.relative > div.absolute) {
+    z-index: 30;
+    overflow: visible !important;
+  }
+
+  .c8-composer .po-editor-card:has(.relative > div.absolute) .po-editor-foot,
+  .c8-composer .po-editor-card:has(.relative > div.absolute) .po-card-extra {
+    position: relative;
+    z-index: 120;
     overflow: visible;
   }
 
@@ -2949,7 +2964,7 @@ body:has(.arc-dialog.po-ai-modal) {
     transform: none !important;
     width: min(280px, calc(100% - 24px)) !important;
     max-width: calc(100% - 24px) !important;
-    z-index: 40 !important;
+    z-index: 200 !important;
   }
 }
 
@@ -3090,12 +3105,16 @@ body:has(.arc-dialog.po-ai-modal) {
   min-width: 0;
 }
 
-/* Media library footer stays on screen. The 100px inset plus a fixed
-   dialog height pushed Cancel and Add selected media below the fold. */
+/* Media library footer stays on screen.
+   fullScreen uses .h-screen, not .pt-[100px]. height:auto let the dialog's
+   min-height:auto grow with the grid, and overflow:hidden on the wrap clipped
+   Cancel / Add selected media with nothing left to scroll. */
 @media (min-width: 640px) and (min-height: 501px) {
   .arc-dialog-wrap:has(.po-media-modal) {
     position: fixed !important;
     inset: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
     overflow: hidden !important;
     overscroll-behavior: none;
     align-items: center !important;
@@ -3107,15 +3126,17 @@ body:has(.arc-dialog.po-ai-modal) {
     overscroll-behavior: none;
   }
 
+  .arc-dialog-wrap:has(.po-media-modal) .h-screen,
   .arc-dialog-wrap:has(.po-media-modal) .pt-\[100px\] {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     box-sizing: border-box !important;
     height: 100% !important;
+    max-height: 100% !important;
     min-height: 0 !important;
-    padding-top: 16px !important;
-    padding-bottom: 16px !important;
+    padding: 16px !important;
+    overflow: hidden !important;
   }
 
   .arc-dialog.po-media-modal {
@@ -3125,40 +3146,49 @@ body:has(.arc-dialog.po-ai-modal) {
     bottom: auto !important;
     left: auto !important;
     transform: none !important;
+    box-sizing: border-box !important;
     width: min(960px, calc(100vw - 32px)) !important;
     max-width: calc(100vw - 32px) !important;
-    height: auto !important;
+    height: calc(100dvh - 32px) !important;
     max-height: calc(100dvh - 32px) !important;
+    min-height: 0 !important;
+    flex: 0 1 auto !important;
     margin: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
   }
 
+  .po-media-modal .arc-grab,
+  .po-media-modal .arc-dialog-head {
+    flex: none;
+  }
+
   .po-media-modal .arc-dialog-body,
-  .po-media-modal .po-library {
+  .po-media-modal .po-library,
+  .po-media-modal .po-library > .flex.flex-col {
     display: flex !important;
     flex-direction: column !important;
-    flex: 1 1 auto;
+    flex: 1 1 auto !important;
     min-height: 0 !important;
     max-height: none !important;
     overflow: hidden !important;
   }
 
-  .po-media-modal .po-media-grid,
-  .po-media-modal .po-library > .flex-1,
-  .po-media-modal .po-library .flex-1 {
-    flex: 1 1 auto;
+  .po-media-modal .po-library-scroll {
+    flex: 1 1 auto !important;
     min-height: 0 !important;
     max-height: none !important;
-    overflow: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
   }
 
   .po-media-modal .po-library-foot {
-    flex: none !important;
-    position: sticky;
-    bottom: 0;
+    flex: 0 0 auto !important;
+    position: relative;
+    bottom: auto;
     z-index: 2;
+    margin-top: auto;
     background: var(--c8-surface);
   }
 }

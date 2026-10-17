@@ -5990,32 +5990,66 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
   }
 }
 
-/* Week ⋮ stays inside the chip. In flow it was pushed into the next day,
-   and that cell took the click. The same button handler is used in Month. */
+/* Week ⋮ stays inside the chip. Absolute placement left the icon under the
+   nowrap time, which overflow:hidden then cut off ("12:00"). The time and
+   title shrink; the icon does not. */
 @media (min-width: 1200px) and (min-height: 501px) {
   body.c8-schedule .week-cell {
     min-width: 0;
     overflow: hidden;
   }
 
-  body.c8-schedule .week-cell .cal-post,
+  body.c8-schedule .week-cell .cal-post {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
   body.c8-schedule .week-cell .cal-post-body,
   body.c8-schedule .week-cell .cal-post:not(.is-draft) .cal-post-body,
   body.c8-schedule .week-cell .cal-post.is-draft .cal-post-body {
     position: relative;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     overflow: hidden;
-    padding-inline-end: 20px;
+    padding-inline-end: 2px;
+  }
+
+  body.c8-schedule .week-cell .cal-post-icon {
+    flex: 0 0 auto;
+  }
+
+  body.c8-schedule .week-cell .cal-chip-when {
+    flex: 0 1 auto;
+    min-width: 0 !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .week-cell .cal-post-body > .min-w-0,
+  body.c8-schedule .week-cell .line-clamp-2 {
+    flex: 1 1 auto;
+    min-width: 0 !important;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   body.c8-schedule .week-cell .cal-post-more {
-    position: absolute;
+    position: relative;
     z-index: 3;
-    inset-inline-end: 1px;
-    top: 50%;
+    inset: auto;
+    top: auto;
+    flex: 0 0 auto;
+    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -6023,11 +6057,44 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
     min-width: 18px;
     height: 18px;
     margin: 0;
-    transform: translateY(-50%);
+    transform: none;
+    color: var(--c8-ink);
     pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  body.c8-schedule .week-cell .cal-post-more svg {
+    display: block;
+    flex: none;
+    width: 16px;
+    height: 16px;
   }
 
   body.c8-schedule .week-cell .cal-post-more::before {
     content: none;
+  }
+}
+
+/* Tablet bell. The closed channel rail is a full-height column whose light
+   right edge crosses the fixed panel (the missing "t" in Notifications and
+   "post"). The sidebar's own border is not that line. Lift the sidebar,
+   which holds the panel, above the rail and the scrim. */
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  body.c8-schedule .c8-shell:has(.notify-panel) .c8-sidebar {
+    position: relative;
+    z-index: 260;
+    border-right: 0;
+    overflow: visible;
+  }
+
+  body.c8-schedule .c8-shell .c8-side-foot {
+    position: relative;
+    z-index: 2;
+    overflow: visible;
+  }
+
+  body.c8-schedule .c8-shell .c8-side-foot .notify-panel {
+    z-index: 3 !important;
   }
 }
