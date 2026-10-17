@@ -3596,3 +3596,93 @@ body:has(.arc-dialog.po-ai-modal) {
     padding-inline: 16px !important;
   }
 }
+
+/* Dark scrollbars. The theme is `body.dark` (mode.component.tsx) with the
+   --c8-* tokens from colors.scss. Light is untouched.
+   color-scheme makes native scrollbars and UA controls dark. scrollbar-color
+   is inherited, so it is set on the composer, dialogs, emoji portal and the
+   calendar shell. The named scroll areas also get thin width and webkit
+   styling, and the tailwind-scrollbar `.scrollbar` vars are overridden
+   (its scrollbar-color would otherwise win). scrollbar-width:none areas
+   (date pop, channel picks, toolbar row) keep none. */
+body.dark {
+  color-scheme: dark;
+  --c8-scroll-thumb: color-mix(in srgb, var(--c8-muted) 55%, var(--c8-surface));
+}
+
+body.dark .c8-composer,
+body.dark .c8-emoji,
+body.dark .arc-dialog-wrap,
+body.dark.c8-schedule .c8-shell {
+  scrollbar-color: var(--c8-scroll-thumb) transparent;
+}
+
+body.dark .c8-composer .scrollbar,
+body.dark .arc-dialog-wrap .scrollbar,
+body.dark.c8-schedule .c8-shell .scrollbar {
+  --scrollbar-thumb: var(--c8-scroll-thumb) !important;
+  --scrollbar-track: transparent !important;
+}
+
+body.dark .c8-emoji .EmojiPickerReact .epr-body,
+body.dark .po-media-modal .po-library-scroll,
+body.dark .po-media-modal .po-media-grid,
+body.dark .c8-composer .po-repeat-menu,
+body.dark .c8-composer .po-tags-menu,
+body.dark .c8-composer .po-post-menu,
+body.dark .c8-composer #social-content,
+body.dark .c8-composer .composer-editor > .flex-1,
+body.dark .c8-composer .composer-preview,
+body.dark .c8-composer .relative:has(> .po-delay) > div.absolute,
+body.dark.c8-schedule .channel-rail > div,
+body.dark.c8-schedule .notify-panel,
+body.dark.c8-schedule .notify-panel > div:last-child,
+body.dark.c8-schedule .customer-menu {
+  scrollbar-color: var(--c8-scroll-thumb) transparent !important;
+  scrollbar-width: thin !important;
+}
+
+body.dark .c8-emoji .EmojiPickerReact .epr-body::-webkit-scrollbar,
+body.dark .po-media-modal .po-library-scroll::-webkit-scrollbar,
+body.dark .po-media-modal .po-media-grid::-webkit-scrollbar,
+body.dark .c8-composer .po-repeat-menu::-webkit-scrollbar,
+body.dark .c8-composer .po-tags-menu::-webkit-scrollbar,
+body.dark .c8-composer .po-post-menu::-webkit-scrollbar,
+body.dark .c8-composer #social-content::-webkit-scrollbar,
+body.dark .c8-composer .composer-editor > .flex-1::-webkit-scrollbar,
+body.dark .c8-composer .composer-preview::-webkit-scrollbar,
+body.dark.c8-schedule .channel-rail > div::-webkit-scrollbar,
+body.dark.c8-schedule .notify-panel > div:last-child::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+body.dark .c8-emoji .EmojiPickerReact .epr-body::-webkit-scrollbar-track,
+body.dark .po-media-modal .po-library-scroll::-webkit-scrollbar-track,
+body.dark .po-media-modal .po-media-grid::-webkit-scrollbar-track,
+body.dark .c8-composer .po-repeat-menu::-webkit-scrollbar-track,
+body.dark .c8-composer .po-tags-menu::-webkit-scrollbar-track,
+body.dark .c8-composer .po-post-menu::-webkit-scrollbar-track,
+body.dark .c8-composer #social-content::-webkit-scrollbar-track,
+body.dark .c8-composer .composer-editor > .flex-1::-webkit-scrollbar-track,
+body.dark .c8-composer .composer-preview::-webkit-scrollbar-track,
+body.dark.c8-schedule .channel-rail > div::-webkit-scrollbar-track,
+body.dark.c8-schedule .notify-panel > div:last-child::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body.dark .c8-emoji .EmojiPickerReact .epr-body::-webkit-scrollbar-thumb,
+body.dark .po-media-modal .po-library-scroll::-webkit-scrollbar-thumb,
+body.dark .po-media-modal .po-media-grid::-webkit-scrollbar-thumb,
+body.dark .c8-composer .po-repeat-menu::-webkit-scrollbar-thumb,
+body.dark .c8-composer .po-tags-menu::-webkit-scrollbar-thumb,
+body.dark .c8-composer .po-post-menu::-webkit-scrollbar-thumb,
+body.dark .c8-composer #social-content::-webkit-scrollbar-thumb,
+body.dark .c8-composer .composer-editor > .flex-1::-webkit-scrollbar-thumb,
+body.dark .c8-composer .composer-preview::-webkit-scrollbar-thumb,
+body.dark.c8-schedule .channel-rail > div::-webkit-scrollbar-thumb,
+body.dark.c8-schedule .notify-panel > div:last-child::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--c8-scroll-thumb);
+}
