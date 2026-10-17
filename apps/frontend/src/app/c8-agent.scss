@@ -551,13 +551,6 @@ $c8-body: var(--font-body), Inter, sans-serif;
   border-radius: 28px;
 }
 
-.agent-workspace .agent .copilotKitInput:focus-within {
-  border-color: var(--c8-hard);
-  box-shadow:
-    0 0 0 2px var(--c8-surface),
-    0 0 0 3.5px var(--c8-ink);
-}
-
 .agent-workspace .agent .copilotKitInput > textarea {
   flex: 1 1 auto;
   width: auto;
@@ -1815,11 +1808,14 @@ body:has(.agent-workspace) .agent-channels-sheet .agent-channel {
   box-shadow: none !important;
 }
 
+/* Focus = the box's own 1.5px border turns --c8-ink, thickened inward by 0.5px
+   so it reads as one 2px line in light theme too (--c8-hard equals ink there).
+   No outline, no gap, no layout shift. */
 .agent-workspace .agent .copilotKitInput:focus-within {
-  border-color: var(--c8-hard);
-  box-shadow: none;
-  outline: 2px solid var(--c8-ink);
-  outline-offset: 2px;
+  border-color: var(--c8-ink);
+  box-shadow: inset 0 0 0 0.5px var(--c8-ink);
+  outline: none;
+  outline-offset: 0;
 }
 
 /* 4. Paperclip readable in light and dark. */
