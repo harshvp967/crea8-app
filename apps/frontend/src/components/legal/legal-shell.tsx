@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 
 export function LegalShell({
   title,
@@ -13,13 +14,7 @@ export function LegalShell({
   return (
     <div className="min-h-screen w-full bg-primary text-newTextColor">
       <main className="mx-auto flex w-full max-w-[760px] flex-col px-[16px] py-[32px] sm:px-[24px] sm:py-[48px]">
-        <img
-          src="/crea8one-logo-horizontal-color-on-dark.svg"
-          alt="Crea8one"
-          width={877}
-          height={263}
-          className="h-[36px] w-auto max-w-[180px] object-contain object-left"
-        />
+        <Crea8oneWordmark className="h-[36px] w-auto max-w-[180px] object-contain object-left" />
         <h1 className="mt-[12px] text-[32px] font-[500] leading-tight tracking-[-0.4px] sm:text-[40px]">
           {title}
         </h1>

@@ -794,21 +794,19 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   }
 
   body.c8-schedule .logo-word {
-    display: inline-flex !important;
-  }
-
-  body.c8-schedule .logo-mark {
     display: none !important;
   }
 
+  body.c8-schedule .logo-mark {
+    display: block !important;
+    height: 32px !important;
+    width: 32px !important;
+    max-width: 32px !important;
+    max-height: none !important;
+  }
+
   body.c8-schedule .app-logo::after {
-    content: '';
-    width: 7px;
-    height: 7px;
-    margin-left: 2px;
-    border-radius: 999px;
-    background: var(--c8-cyan);
-    flex: none;
+    content: none;
   }
 
   body.c8-schedule .header-gear,
@@ -917,6 +915,17 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   display: none;
   width: 28px;
   height: 28px;
+}
+
+@media (max-height: 500px) {
+  .c8-side-logo-word,
+  .c8-side-logo .c8-side-dot {
+    display: none;
+  }
+
+  .c8-side-mark {
+    display: block;
+  }
 }
 
 .c8-side-dot {
@@ -3272,7 +3281,6 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     opacity: 1;
   }
 
-  body.c8-schedule .app-logo,
   body.c8-schedule .app-logo .logo-word,
   body.c8-schedule .app-logo .logo-word svg {
     height: 24px !important;

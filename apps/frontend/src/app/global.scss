@@ -822,3 +822,26 @@ html[dir='rtl'] [dir='ltr'] {
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
     1px 1px 0 black;
 }
+
+/* Cyan icon below the v2 desktop breakpoint. Full wordmark keeps its own height. */
+.c8-brand-icon {
+  display: block;
+  height: 32px;
+  width: 32px;
+  max-width: 32px;
+  flex: none;
+}
+
+.c8-brand-full {
+  display: none;
+}
+
+@media (min-width: 1200px) and (min-height: 501px) {
+  .c8-brand-icon {
+    display: none;
+  }
+
+  .c8-brand-full {
+    display: inline-flex;
+  }
+}
