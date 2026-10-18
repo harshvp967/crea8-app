@@ -22,7 +22,7 @@ export default function manifest(): MetadataRoute.Manifest {
         type: 'image/png',
       },
       {
-        src: '/crea8one-logo.png',
+        src: '/crea8one-icon-512.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any',
