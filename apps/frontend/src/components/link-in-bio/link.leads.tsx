@@ -7,7 +7,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { LinkRequestError, linkLocked, linkSend, useLinkLeads, useLinkPage, type LinkLead } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkSegments, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
-import { stkCard, stkCardTight, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { stkCard, stkCardTight, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const SOURCE_LOGO: Record<string, string> = {
   instagram: '/icons/platforms/instagram.png',
@@ -97,18 +97,25 @@ export const LinkLeadsScreen = () => {
 
   return (
     <div className="lib-leads flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
-      <div className="flex flex-col items-start gap-[12px] md:flex-row md:items-start md:justify-between">
+      <div className="lib-head flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
+          <div className="lib-kicker">
+            <span className="lib-sticker">Link-in-Bio</span>
+            <span className="lib-pill lib-pill-live">
+              {counts ? `${counts.all.toLocaleString('en-US')} subscribers` : 'Subscribers'}
+            </span>
+            <span className={`${stkSub} lib-period`}>
+              Your leads stay yours: unlimited contacts and CSV export, free.
+            </span>
+          </div>
           <h1 className={stkTitle}>Leads</h1>
-          <p className={stkSub}>
-            {counts ? `${counts.all.toLocaleString('en-US')} subscribers` : 'Subscribers'} · Your leads stay yours:
-            unlimited contacts and CSV export, free.
-          </p>
         </div>
-        <button type="button" className={linkSecondary} disabled={busy} onClick={exportCsv}>
-          <HugeIcon name="download" size={16} />
-          Export CSV
-        </button>
+        <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
+          <button type="button" className={linkSecondary} disabled={busy} onClick={exportCsv}>
+            <HugeIcon name="download" size={16} />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {error ? null : (
@@ -116,10 +123,10 @@ export const LinkLeadsScreen = () => {
           <div className="max-w-full overflow-x-auto">
             <LinkSegments label="Lead status" value={status} options={filters} onChange={setStatus} />
           </div>
-          <label className="relative block w-full md:w-[240px]">
-            <HugeIcon name="search" size={16} className="pointer-events-none absolute start-[14px] top-[14px] text-textItemBlur" />
+          <label className="lib-search-field relative block w-full md:w-[240px]">
+            <HugeIcon name="search" size={16} className="pointer-events-none absolute start-[14px] top-[14px]" />
             <input
-              className="h-[44px] w-full rounded-[18px] border border-newBorder bg-newBgColorInner pe-[14px] ps-[38px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none placeholder:text-textItemBlur focus:border-[color:var(--arc-selected-border)] focus:shadow-[inset_0_0_0_1px_var(--arc-selected-border)]"
+              className="lib-input lib-search"
               placeholder="Search emails"
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -130,12 +137,14 @@ export const LinkLeadsScreen = () => {
       )}
 
       {error ? (
-        <section className={`${stkCard} flex items-center gap-[12px]`}>
-          <HugeIcon name="alert" size={20} className="shrink-0 text-[color:var(--arc-danger)]" />
+        <section className={`${stkCard} stk-state`}>
+          <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
+            <HugeIcon name="alert" size={20} />
+          </span>
           <p className="text-[14px] font-[500]">Could not load leads.</p>
         </section>
       ) : isLoading || !data ? (
-        <section className={stkCard}>
+        <section className={`${stkCard} lib-loading flex items-center gap-[12px]`}>
           <p className="text-[14px] font-[500] text-textItemBlur">Loading leads…</p>
         </section>
       ) : data.leads.length ? (
@@ -193,10 +202,10 @@ export const LinkLeadsScreen = () => {
           </div>
         </>
       ) : (
-        <section className={`${stkCard} flex flex-col items-center gap-[8px] py-[28px] text-center`}>
-          <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
+        <section className={`${stkCard} stk-state flex flex-col items-center gap-[8px] py-[28px] text-center`}>
+          <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
             <HugeIcon name="mail" size={18} />
-          </div>
+          </span>
           <h2 className="text-[16px] font-[600] tracking-[-0.02em]">No leads yet</h2>
           <p className="max-w-[360px] text-[14px] font-[500] text-textItemBlur">
             Turn on Email capture to collect subscribers from your page.
@@ -276,7 +285,7 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
     }
   };
   return (
-    <section className={stkCard}>
+    <section className={`${stkCard} lib-integrations`}>
       <h2 className="text-[16px] font-[600] tracking-[-0.02em]">Integrations{data.paid ? '' : ' (Pro)'}</h2>
       <p className="mb-[16px] mt-[4px] text-[13px] font-[500] text-textItemBlur">
         {linkLocked(data)
@@ -285,7 +294,7 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
           ? 'New leads are sent to Mailchimp, ConvertKit and your webhook. Keys stay on the server.'
           : 'Mailchimp, ConvertKit and webhooks are on a paid plan. They stay open while plan gating is off. Keys stay on the server.'}{' '}
         {linkLocked(data) ? (
-          <Link href="/billing" className="text-[#00D9FF]">
+          <Link href="/billing">
             Upgrade
           </Link>
         ) : null}
