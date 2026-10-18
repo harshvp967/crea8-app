@@ -702,6 +702,442 @@ body:has(.link-screen) .stk-close {
   padding-bottom: 0 !important;
 }
 
+/* ---------- Appearance and Settings ---------- */
+.link-screen .lib-appearance .lib-period,
+.link-screen .lib-settings .lib-period {
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.link-screen .lib-themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.link-screen .lib-theme {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.link-screen .lib-swatch {
+  width: 128px;
+  height: 104px;
+  box-sizing: border-box;
+  border: 1px solid var(--c8-line);
+  border-radius: 18px;
+}
+
+.link-screen .lib-swatch.is-active {
+  border: 1.5px solid var(--c8-hard) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+}
+
+.link-screen .lib-theme-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--c8-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.link-screen .lib-pill-pro {
+  height: auto;
+  padding: 2px 6px;
+  border: 0;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: normal;
+}
+
+.link-screen .lib-choice .lib-pill-pro {
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-pill-active,
+.link-screen .lib-pill-live,
+.link-screen .lib-slug-ok {
+  background: var(--c8-app-lib);
+  color: #121016;
+}
+
+.link-screen .lib-slug-ok {
+  height: auto;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.link-screen .lib-slug-ok::before {
+  content: '✓\00a0';
+}
+
+.link-screen .lib-pill-pending {
+  background: color-mix(in srgb, var(--c8-warn) 22%, var(--c8-surface));
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-pill-failed {
+  background: color-mix(in srgb, var(--c8-danger) 16%, var(--c8-surface));
+  color: var(--c8-danger);
+}
+
+.link-screen .lib-avatar {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.link-screen .lib-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.link-screen .lib-quiet {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--c8-muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.link-screen .lib-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--c8-line);
+  border-radius: 14px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-account-row strong {
+  display: block;
+  overflow: hidden;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-screen .lib-account-url {
+  color: var(--c8-muted);
+  font-size: 13px;
+}
+
+.link-screen .lib-account-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--c8-ink);
+}
+
+.link-screen .lib-input {
+  width: 100%;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: var(--c8-soft) !important;
+  box-shadow: none !important;
+  color: var(--c8-ink) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  outline: none;
+}
+
+.link-screen .lib-domain-field .lib-input {
+  padding-inline-start: 38px !important;
+}
+
+.link-screen .lib-domain-field svg {
+  color: var(--c8-muted);
+}
+
+.link-screen .lib-input-ok {
+  padding-inline-end: 124px !important;
+}
+
+.link-screen .lib-input:disabled,
+.link-screen .lib-domain-connect:disabled {
+  opacity: 0.5;
+}
+
+.link-screen .lib-appearance input[type='range'] {
+  width: 100%;
+  accent-color: var(--c8-ink);
+}
+
+.link-screen .lib-color {
+  display: flex;
+  min-width: 140px;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.link-screen .lib-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-screen .lib-color-chip {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+}
+
+.link-screen .lib-color-chip input {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.link-screen .lib-color-value {
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.link-screen .lib-color-swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.link-screen .lib-appearance .stk-card > p,
+.link-screen .lib-settings .stk-card p,
+.link-screen .lib-label {
+  color: var(--c8-muted);
+  font-size: 13px;
+}
+
+.link-screen .lib-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.link-screen .lib-slug-bad,
+.link-screen .lib-domain-error {
+  color: var(--c8-danger) !important;
+  font-weight: 600;
+}
+
+.link-screen .lib-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.link-screen .lib-settings-main,
+.link-screen .lib-settings-side {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.link-screen .lib-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.link-screen .lib-toggle-copy {
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.link-screen .lib-toggle-actions {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-screen .lib-qr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.link-screen .lib-qr-tile {
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 16px !important;
+}
+
+.link-screen .lib-qr-actions .stk-btn-secondary {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 16px !important;
+  font-size: 14px !important;
+}
+
+.link-screen .lib-domain-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--c8-soft);
+}
+
+.link-screen .lib-domain-mark {
+  display: grid;
+  flex: none;
+  color: var(--c8-muted);
+}
+
+.link-screen .lib-domain-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.link-screen .lib-domain-host {
+  overflow-wrap: anywhere;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.link-screen .lib-domain-note {
+  color: var(--c8-muted);
+  font-size: 12px;
+}
+
+.link-screen .lib-domain-error {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.link-screen .lib-domain-row .lib-pill {
+  flex: none;
+}
+
+.link-screen .lib-settings a:not(.stk-btn) {
+  color: var(--c8-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-screen .lib-settings .lib-dialog p,
+.link-screen .lib-settings .lib-dialog-copy {
+  color: var(--c8-muted);
+  font-size: 14px;
+}
+
+.link-screen .lib-settings .lib-dialog .lib-domain-host {
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.link-screen .lib-table th {
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.link-screen .lib-table td {
+  border-top-color: var(--c8-line);
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-table td::before {
+  color: var(--c8-muted);
+}
+
+.link-screen .lib-appearance button:focus,
+.link-screen .lib-appearance input:focus,
+.link-screen .lib-appearance select:focus,
+.link-screen .lib-appearance textarea:focus,
+.link-screen .lib-settings button:focus,
+.link-screen .lib-settings input:focus,
+.link-screen .lib-settings select:focus,
+.link-screen .lib-settings textarea:focus,
+.link-screen .lib-settings a:focus {
+  outline: none;
+}
+
+.link-screen .lib-appearance button:focus-visible,
+.link-screen .lib-appearance input:focus-visible,
+.link-screen .lib-appearance select:focus-visible,
+.link-screen .lib-appearance textarea:focus-visible,
+.link-screen .lib-settings button:focus-visible,
+.link-screen .lib-settings input:focus-visible,
+.link-screen .lib-settings select:focus-visible,
+.link-screen .lib-settings textarea:focus-visible,
+.link-screen .lib-settings a:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1200px) and (min-height: 501px) {
+  .link-screen .lib-settings-layout {
+    grid-template-columns: minmax(0, 1fr) 268px;
+  }
+
+  .link-screen .lib-domain-form {
+    flex-direction: column;
+  }
+}
+
 /* ---------- Tablet 640–1199 ---------- */
 @media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
   .c8-shell .app-main:has(.link-screen) {
@@ -839,7 +1275,8 @@ body:has(.link-screen) .stk-close {
 }
 
 @media (min-width: 1600px) and (min-height: 501px) {
-  .link-screen > .lib-split {
+  .link-screen > .lib-split,
+  .link-screen > .lib-settings {
     width: 100%;
     max-width: 1104px;
     margin-right: auto;
