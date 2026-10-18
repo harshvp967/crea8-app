@@ -15,6 +15,7 @@ import {
   stkDialogHead,
   stkField,
   stkGhost,
+  stkHead,
   stkMenu,
   stkMenuItem,
   stkOverlay,
@@ -160,12 +161,16 @@ export const StalkerSettings = () => {
 
   return (
     <div className={`${stkPage} stk-settings`}>
-      <div className="stk-set-head">
+      <div className={`${stkHead} stk-set-head`}>
         <div className="min-w-0">
+          <div className="stk-kicker">
+            <span className="stk-sticker">Stalker</span>
+            {project.name ? <span className="stk-period">{project.name}</span> : null}
+          </div>
           <h1 className={stkTitle}>Project settings</h1>
           {project.name ? <p className={stkSub}>{project.name}</p> : null}
         </div>
-        <div className="stk-set-actions">
+        <div className="stk-head-actions stk-set-actions flex shrink-0 flex-nowrap items-center gap-[8px]">
           <span className="stk-set-check">
             <StalkerCheckNow iconOnly />
           </span>
@@ -179,27 +184,6 @@ export const StalkerSettings = () => {
           </button>
         </div>
       </div>
-      {dirty ? (
-        <div className="stk-set-dirtybar">
-          <p className="stk-set-dirty-label">
-            <HugeIcon name="info" size={16} className="stk-set-info" />
-            Unsaved changes
-          </p>
-          <div className="stk-set-actions">
-            <button type="button" className={`${stkGhost} stk-set-discard`} onClick={() => setDraft(saved)}>
-              Discard
-            </button>
-            <button
-              type="button"
-              className={`${stkPrimary} stk-set-save stk-set-save-bar`}
-              disabled={saving}
-              onClick={save}
-            >
-              {saving ? 'Saving…' : 'Save changes'}
-            </button>
-          </div>
-        </div>
-      ) : null}
 
       <section className={`${stkCard} stk-set-card`}>
         <label className="stk-set-label">
@@ -373,6 +357,27 @@ export const StalkerSettings = () => {
           Delete project
         </button>
       </section>
+      {dirty ? (
+        <div className="stk-set-dirtybar">
+          <p className="stk-set-dirty-label">
+            <HugeIcon name="info" size={16} className="stk-set-info" />
+            Unsaved changes
+          </p>
+          <div className="stk-set-actions">
+            <button type="button" className={`${stkGhost} stk-set-discard`} onClick={() => setDraft(saved)}>
+              Discard
+            </button>
+            <button
+              type="button"
+              className={`${stkPrimary} stk-set-save stk-set-save-bar`}
+              disabled={saving}
+              onClick={save}
+            >
+              {saving ? 'Saving…' : 'Save changes'}
+            </button>
+          </div>
+        </div>
+      ) : null}
       {confirmDelete ? (
         <div
           className={`${stkOverlay} stk-del-overlay`}
