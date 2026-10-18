@@ -14,6 +14,7 @@ import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.na
 import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
+import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 import dynamic from 'next/dynamic';
 
 const ModeComponent = dynamic(
@@ -118,8 +119,9 @@ export const C8Sidebar = ({
     <aside className="c8-sidebar" aria-label={sectionLabel}>
       <Link href="/launches" className="c8-side-logo" title="crea8.one">
         <img className="c8-side-mark" src="/crea8one-icon-cyan.svg" alt="" />
-        <span className="c8-side-logo-word">crea8.one</span>
-        <span className="c8-side-dot" aria-hidden />
+        <span className="c8-side-logo-word">
+          <Crea8oneWordmark className="h-[40px] w-auto max-w-full" />
+        </span>
       </Link>
       <p className="c8-side-kicker">Apps</p>
       <nav className="c8-side-apps" aria-label="Apps">
