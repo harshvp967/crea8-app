@@ -232,7 +232,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
   outline-offset: 2px;
 }
 
-/* ---------- Toolbar: search. The right side is reserved for a later type filter. ---------- */
+/* ---------- Toolbar: search, then All / Images / Videos ---------- */
 .media-library .media-toolbar {
   display: flex;
   align-items: center;
@@ -246,8 +246,10 @@ $c8-body: var(--font-body), Inter, sans-serif;
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 360px;
-  max-width: 100%;
+  flex: 1 1 360px;
+  width: auto;
+  min-width: 0;
+  max-width: 360px;
   height: 40px;
   padding: 0 14px;
   border: 1px solid var(--c8-line);
@@ -287,6 +289,64 @@ $c8-body: var(--font-body), Inter, sans-serif;
 .media-library .media-search:focus-within {
   border-color: var(--c8-ink);
   box-shadow: inset 0 0 0 1px var(--c8-ink);
+}
+
+/* Same soft track and surface thumb as the Analytics range control.
+   The selected chip is ink on surface. Cyan stays on Upload. */
+.media-library .media-types {
+  display: inline-flex;
+  flex: none;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-soft);
+  box-shadow: none;
+}
+
+.media-library .media-types button {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+  color: var(--c8-muted);
+  font-family: $c8-body;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: normal;
+  cursor: pointer;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    color var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+.media-library .media-types button.is-selected {
+  background: var(--c8-surface);
+  background-image: none;
+  box-shadow: 0 1px 3px rgb(18 16 22 / 0.12);
+  color: var(--c8-ink);
+  font-weight: 600;
+}
+
+@media (hover: hover) {
+  .media-library .media-types button:not(.is-selected):hover {
+    color: var(--c8-ink);
+  }
+}
+
+.media-library .media-types button:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-library .media-types button {
+    transition: none;
+  }
 }
 
 /* ---------- Upload progress strip ---------- */
@@ -707,10 +767,6 @@ $c8-body: var(--font-body), Inter, sans-serif;
     font-size: 38px;
   }
 
-  .media-library .media-search {
-    width: 100%;
-  }
-
   .media-library .media-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
@@ -761,8 +817,19 @@ $c8-body: var(--font-body), Inter, sans-serif;
     font-size: 32px;
   }
 
+  .media-library .media-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .media-library .media-search {
+    flex: none;
     width: 100%;
+    max-width: 100%;
+  }
+
+  .media-library .media-types {
+    align-self: flex-start;
   }
 
   .media-library .media-grid {
@@ -823,7 +890,8 @@ $c8-body: var(--font-body), Inter, sans-serif;
   }
 
   .media-library .media-search {
-    width: 100%;
+    flex: 1 1 240px;
+    width: auto;
     max-width: 360px;
   }
 

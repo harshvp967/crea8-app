@@ -5,6 +5,7 @@ import { generationError } from '@gitroom/nestjs-libraries/openai/generation.err
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Organization } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { MediaListType } from '@gitroom/nestjs-libraries/dtos/media/get.media.dto';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -471,8 +472,13 @@ export class MediaService {
     );
   }
 
-  async getMedia(org: string, page: number, search?: string) {
-    const data = await this._mediaRepository.getMedia(org, page, search);
+  async getMedia(
+    org: string,
+    page: number,
+    search?: string,
+    type?: MediaListType
+  ) {
+    const data = await this._mediaRepository.getMedia(org, page, search, type);
     return {
       pages: data.pages,
       results: await Promise.all(data.results.map((row) => this.toClient(row))),

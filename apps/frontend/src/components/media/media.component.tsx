@@ -228,6 +228,9 @@ export const MediaBox: FC<{
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search, 300);
+  // Standalone page only. The Composer picker keeps its own `type` prop and
+  // must not send this filter.
+  const [listType, setListType] = useState<'all' | 'image' | 'video'>('all');
   const fetch = useFetch();
   const modals = useModals();
   const toaster = useToaster();
@@ -239,10 +242,15 @@ export const MediaBox: FC<{
     if (debouncedSearch.trim()) {
       params.set('search', debouncedSearch.trim());
     }
+    if (standalone) {
+      params.set('type', listType);
+    }
     return (await fetch(`/media?${params.toString()}`)).json();
-  }, [page, debouncedSearch]);
+  }, [page, debouncedSearch, standalone, listType]);
   const { data, mutate, isLoading } = useSWR(
-    `get-media-${page}-${debouncedSearch}`,
+    standalone
+      ? `get-media-${page}-${debouncedSearch}-${listType}`
+      : `get-media-${page}-${debouncedSearch}`,
     loadMedia
   );
   const [selected, setSelected] = useState([]);
@@ -494,6 +502,35 @@ export const MediaBox: FC<{
                   placeholder={t('search_media_by_name', 'Search by file name')}
                 />
               </label>
+              <div
+                className="media-types"
+                role="group"
+                aria-label={t('media_type', 'Media type')}
+              >
+                {(
+                  [
+                    ['all', t('all', 'All')],
+                    ['image', t('images', 'Images')],
+                    ['video', t('videos', 'Videos')],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={listType === value ? 'is-selected' : undefined}
+                    aria-pressed={listType === value}
+                    onClick={() => {
+                      if (value === listType) {
+                        return;
+                      }
+                      setListType(value);
+                      setPage(0);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         ) : (
@@ -559,7 +596,7 @@ export const MediaBox: FC<{
           >
             {libraryEmpty && (
               standalone ? (
-                debouncedSearch ? (
+                debouncedSearch || listType !== 'all' ? (
                   <div className="media-state-card is-search">
                     <span className="media-state-tile is-search" aria-hidden="true">
                       <HugeIcon name="search" size={25} />

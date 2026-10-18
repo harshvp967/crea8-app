@@ -25,6 +25,7 @@ import { streamUploadOptions } from '@gitroom/nestjs-libraries/upload/multer.str
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { GetMediaQueryDto } from '@gitroom/nestjs-libraries/dtos/media/get.media.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
 import { LocalUploadPathDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
@@ -221,9 +222,10 @@ export class MediaController {
   getMedia(
     @GetOrgFromRequest() org: Organization,
     @Query('page') page: number,
-    @Query('search') search?: string
+    @Query('search') search: string | undefined,
+    @Query() query: GetMediaQueryDto
   ) {
-    return this._mediaService.getMedia(org.id, page, search);
+    return this._mediaService.getMedia(org.id, page, search, query.type);
   }
 
   @Get('/video-options')
