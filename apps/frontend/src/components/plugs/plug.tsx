@@ -26,6 +26,7 @@ import { Slider } from '@gitroom/react/form/slider';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 export function convertBackRegex(s: string) {
   const matches = s.match(/\/(.*)\/([a-z]*)/);
   const pattern = matches?.[1] || '';
@@ -291,6 +292,9 @@ export const Plug = () => {
   if (!plug?.plugs?.length || !plug.plugs.some((item) => item.title)) {
     return (
       <div className="plugs-empty">
+        <span className="plugs-state-tile is-search" aria-hidden="true">
+          <HugeIcon name="search" size={25} />
+        </span>
         <h2>
           {t(
             'there_are_not_plugs_matching_your_channels',

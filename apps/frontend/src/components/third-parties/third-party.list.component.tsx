@@ -12,8 +12,18 @@ import { Input } from '@gitroom/react/form/input';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import clsx from 'clsx';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+
+export const IntegrationsSkeleton = () => (
+  <div className="integrations-skeleton" role="status">
+    <span className="sr-only">Loading</span>
+    <div className="integrations-skel-card">
+      <span className="integrations-skel-row" />
+      <span className="integrations-skel-row" />
+      <span className="integrations-skel-row" />
+    </div>
+  </div>
+);
 
 const ThirdPartyMenuComponent: FC<{
   reload: () => void;
@@ -228,12 +238,15 @@ export const ThirdPartyListComponent: FC<{
   }, [data, saved]);
 
   if (isLoading && !data) {
-    return <LoadingComponent />;
+    return <IntegrationsSkeleton />;
   }
 
   if (!cards.length) {
     return (
       <div className="integrations-empty">
+        <span className="integrations-state-tile" aria-hidden="true">
+          <HugeIcon name="puzzle" size={25} />
+        </span>
         <h2>No Integrations Yet</h2>
       </div>
     );
@@ -253,6 +266,9 @@ export const ThirdPartyListComponent: FC<{
                 <IntegrationMark identifier={card.identifier} title={card.title} />
               </span>
               <h3>{card.title}</h3>
+            </div>
+            {card.description ? <p>{card.description}</p> : null}
+            <div className="integrations-actions">
               {connected && (
                 <span className="integrations-badge">
                   <i />
@@ -266,20 +282,19 @@ export const ThirdPartyListComponent: FC<{
                   tParty={row}
                 />
               ))}
+              {card.canAdd && (
+                <Button
+                  secondary
+                  className="integrations-add"
+                  onClick={addApiKey(card.title, card.identifier)}
+                >
+                  <span className="integrations-add-label">
+                    <HugeIcon name="plus" size={18} />
+                    {t('connect', 'Connect')}
+                  </span>
+                </Button>
+              )}
             </div>
-            {card.description ? <p>{card.description}</p> : null}
-            {card.canAdd && (
-              <Button
-                secondary
-                className="integrations-add"
-                onClick={addApiKey(card.title, card.identifier)}
-              >
-                <span className="integrations-add-label">
-                  <HugeIcon name="plus" size={18} />
-                  {t('add', 'Add')}
-                </span>
-              </Button>
-            )}
           </article>
         );
       })}
