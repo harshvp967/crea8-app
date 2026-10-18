@@ -657,8 +657,8 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 @media (hover: hover) {
-  .media-library .media-pages li > div:hover,
-  .media-library .media-pages li > a:hover {
+  .media-library .media-pages li > div:not(.arc-selected):hover,
+  .media-library .media-pages li > a:not(.arc-selected):hover {
     color: var(--c8-ink) !important;
   }
 }
