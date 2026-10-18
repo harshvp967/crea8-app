@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useEffect, useMemo } from 'react';
 import { PreviewWrapper } from '@gitroom/frontend/components/preview/preview.wrapper';
 import { usePathname } from 'next/navigation';
 import dayjs from 'dayjs';
@@ -13,6 +13,13 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
     all.pop();
     return all.pop();
   }, [params]);
+  useEffect(() => {
+    if (style !== 'dark' && style !== 'light') {
+      return;
+    }
+    document.body.classList.remove('dark', 'light');
+    document.body.classList.add(style);
+  }, [style]);
   return (
     <div
       className={`hideCopilot ${style} h-[100vh] w-full text-textColor flex flex-1 flex-col !bg-none`}
@@ -22,7 +29,7 @@ export const AppLayout = ({ children }: { children: ReactNode }) => {
           #add-edit-modal, .hideCopilot {
             background: transparent !important;
           }
-          html body.dark, html {
+          html body.dark, html body.light, html {
             background: transparent !important;
           }
         `}

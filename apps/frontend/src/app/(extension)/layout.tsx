@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic';
 import '../global.scss';
+import '../uiarc.scss';
+import '../c8-composer.scss';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Bricolage_Grotesque, Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
@@ -26,11 +28,30 @@ const jakartaSans = Plus_Jakarta_Sans({
   preload: false,
 });
 
+const c8Heading = Bricolage_Grotesque({
+  subsets: ['latin'],
+  display: 'swap',
+  preload: false,
+  variable: '--font-heading',
+});
+
+const c8Body = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  preload: false,
+  variable: '--font-body',
+});
+
 export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html>
       <body
-        className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}
+        className={clsx(
+          jakartaSans.className,
+          c8Heading.variable,
+          c8Body.variable,
+          'text-primary !bg-primary'
+        )}
       >
         <VariableContextComponent
           language="en"
