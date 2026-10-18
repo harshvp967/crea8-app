@@ -127,4 +127,4 @@ export const linkPrimary = `${stkPrimary} lib-raised`;
 export const linkSecondary = stkSecondary;
 export const linkDanger = `${stkDanger} lib-danger`;
 export const linkChoice =
-  'stk-wave inline-flex h-[44px] min-h-[44px] shrink-0 items-center justify-center gap-[8px] rounded-[18px] border border-[color:var(--arc-selected-border)] bg-newBgColorInner px-[16px] text-[14px] font-[500] text-newTextColor shadow-[var(--arc-shadow-resting)]';
+  'stk-wave lib-choice inline-flex h-[44px] min-h-[44px] shrink-0 items-center justify-center gap-[8px] rounded-[18px] border border-[color:var(--arc-selected-border)] bg-newBgColorInner px-[16px] text-[14px] font-[500] text-newTextColor shadow-[var(--arc-shadow-resting)]';

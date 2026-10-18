@@ -11,6 +11,7 @@ import {
   useVisibleMenuItems,
 } from '@gitroom/frontend/components/layout/top.menu';
 import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.nav';
+import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
 import dynamic from 'next/dynamic';
@@ -94,13 +95,21 @@ export const C8Sidebar = ({
     ...settings,
     ...extras,
   ];
-  const sectionLabel = activeApp === 'stalker' ? 'Stalker' : 'Schedule';
+  const sectionLabel =
+    activeApp === 'stalker' ? 'Stalker' : activeApp === 'link' ? 'Link-in-Bio' : 'Schedule';
   const sectionRows =
     activeApp === 'stalker'
       ? stalkerNavLinks.map((link) => ({
           name: link.label,
           path: link.path,
           icon: link.icon,
+          onClick: undefined as (() => void) | undefined,
+        }))
+      : activeApp === 'link'
+      ? linkNavLinks.map((item) => ({
+          name: item.label,
+          path: item.path,
+          icon: item.icon,
           onClick: undefined as (() => void) | undefined,
         }))
       : rows;
@@ -136,7 +145,11 @@ export const C8Sidebar = ({
           const active =
             !item.onClick &&
             item.path !== '#' &&
-            pathname.indexOf(item.path) === 0;
+            (activeApp === 'link'
+              ? item.path === '/link'
+                ? pathname === '/link'
+                : pathname.startsWith(item.path)
+              : pathname.indexOf(item.path) === 0);
           const className = clsx('c8-side-link', active && 'is-active');
           const inner = (
             <>

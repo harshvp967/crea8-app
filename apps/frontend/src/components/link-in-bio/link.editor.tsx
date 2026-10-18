@@ -211,12 +211,19 @@ export const LinkEditorScreen = () => {
           </LinkPreview>
         }
       >
-        <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
+        <div className="lib-editor-page flex min-w-0 flex-col gap-[12px] pb-[24px]">
           <div className="min-w-0">
+            <div className="lib-kicker">
+              <span className="lib-sticker">Link-in-Bio</span>
+            </div>
             <h1 className={stkTitle}>Editor</h1>
           </div>
-          <div className={`${stkCard} flex items-center gap-[12px]`}>
-            {error ? <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" /> : null}
+          <div className={`${stkCard} ${error ? 'stk-state' : 'lib-loading'} flex items-center gap-[12px]`}>
+            {error ? (
+              <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
+                <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" />
+              </span>
+            ) : null}
             <p className="text-[14px] font-[500] text-textItemBlur">
               {error ? 'Could not load your page.' : 'Loading your page…'}
             </p>
@@ -260,15 +267,18 @@ export const LinkEditorScreen = () => {
         </LinkPreview>
       }
     >
-      <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
-        <div className="flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+      <div className="lib-editor-page flex min-w-0 flex-col gap-[12px] pb-[24px]">
+        <div className="lib-head flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div className="min-w-0">
+            <div className="lib-kicker">
+              <span className="lib-sticker">Link-in-Bio</span>
+              <span className={`${stkSub} lib-period truncate`}>
+                {data.publicOrigin.replace(/^https?:\/\//, '')}/{data.slug}
+              </span>
+            </div>
             <h1 className={stkTitle}>Editor</h1>
-            <p className={`${stkSub} truncate`}>
-              {data.publicOrigin.replace(/^https?:\/\//, '')}/{data.slug}
-            </p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-[8px] sm:justify-end">
+          <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
             <button type="button" className={`${linkSecondary} min-[1200px]:hidden`} onClick={() => setPreview((value) => !value)}>
               <HugeIcon name="eye" size={16} />
               {preview ? 'Close preview' : 'Preview'}
@@ -280,6 +290,7 @@ export const LinkEditorScreen = () => {
               </button>
               {addOpen ? (
                 <div className="lib-menu">
+                  <p className="lib-menu-kicker">Add block</p>
                   <LinkMenuRow icon="link" onClick={() => openLink()}>
                     Link
                   </LinkMenuRow>
@@ -473,12 +484,12 @@ export const LinkEditorScreen = () => {
           </div>
         </div>
 
-        <section className={stkCard}>
+        <section className={`${stkCard} lib-preview-as`}>
           <div className="mb-[8px] flex items-center justify-between gap-[8px]">
             <h2 className="text-[16px] font-[600]">Preview as</h2>
             <button
               type="button"
-              className="text-[13px] text-textItemBlur"
+              className="lib-text-btn text-[13px] text-textItemBlur"
               onClick={() => setVisitor({ country: '', platform: '', language: '' })}
             >
               Reset
@@ -524,8 +535,8 @@ export const LinkEditorScreen = () => {
         </section>
 
         {!data.blocks.length ? (
-          <div className={`${stkCard} ${stkEmpty}`}>
-            <span className={stkIconTile} aria-hidden>
+          <div className={`${stkCard} ${stkEmpty} stk-state`}>
+            <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
               <HugeIcon name="link" size={24} />
             </span>
             <h2 className="text-[16px] font-[600]">No links yet</h2>
@@ -559,18 +570,18 @@ export const LinkEditorScreen = () => {
               <div className="lib-editor-copy">
                 <div className="lib-editor-titleline">
                   <strong className="lib-editor-name">{blockName(block)}</strong>
-                  {block.type === 'FEATURED_POST' ? <span className="lib-pill lib-pill-cyan lib-pill-inline">From Schedule</span> : null}
+                  {block.type === 'FEATURED_POST' ? <span className="lib-pill lib-pill-cyan lib-pill-schedule lib-pill-inline">From Schedule</span> : null}
                   {block.layout === 'featured' ? <span className="lib-pill">Featured</span> : null}
                   {block.animation && block.animation !== 'none' ? <span className="lib-pill lib-pill-cyan">Animated</span> : null}
-                  {block.priorityMode === 'expand' ? <span className="lib-pill lib-pill-cyan">Expand</span> : null}
-                  {block.priorityMode === 'redirect' ? <span className="lib-pill lib-pill-cyan">Redirect</span> : null}
+                  {block.priorityMode === 'expand' ? <span className="lib-pill lib-pill-cyan lib-pill-soft">Expand</span> : null}
+                  {block.priorityMode === 'redirect' ? <span className="lib-pill lib-pill-cyan lib-pill-soft">Redirect</span> : null}
                   {block.priorityMode === 'highlight' || (block.priority && block.priorityMode === 'none') ? (
-                    <span className="lib-pill lib-pill-cyan">Priority</span>
+                    <span className="lib-pill lib-pill-cyan lib-pill-priority">Priority</span>
                   ) : null}
                   {block.rules?.length ? <span className="lib-pill">Rules</span> : null}
                   {block.spotlight ? <span className="lib-pill lib-pill-cyan">Spotlight</span> : null}
                   {block.lock?.type && block.lock.type !== 'NONE' ? <span className="lib-pill">Locked</span> : null}
-                  {block.state === 'scheduled' ? <span className="lib-pill lib-pill-amber">Scheduled</span> : null}
+                  {block.state === 'scheduled' ? <span className="lib-pill lib-pill-amber lib-pill-scheduled">Scheduled</span> : null}
                   {block.state === 'ended' ? <span className="lib-pill">Ended</span> : null}
                   {block.state === 'hidden' ? <span className="lib-pill">Hidden</span> : null}
                 </div>
@@ -582,7 +593,7 @@ export const LinkEditorScreen = () => {
                 ) : null}
                 {block.type === 'FEATURED_POST' ? (
                   <div className="lib-editor-feature-line">
-                    <span className="lib-pill lib-pill-cyan">From Schedule</span>
+                    <span className="lib-pill lib-pill-cyan lib-pill-schedule">From Schedule</span>
                     <button
                       type="button"
                       className={`${linkSecondary} !h-[36px] !min-h-[36px]`}
