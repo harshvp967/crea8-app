@@ -195,7 +195,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <div
               className={clsx(
                 'app-shell flex flex-col min-h-screen min-w-screen text-newTextColor p-[16px] gap-[12px]',
-                !stalker && !link && 'c8-shell',
+                !link && 'c8-shell',
                 jakartaSans.className
               )}
             >
@@ -207,7 +207,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <AnnouncementBanner />
                   <Support />
                   <div className="c8-frame">
-                  {!stalker && !link ? (
+                  {!link ? (
                     <C8Sidebar
                       name={user?.name || ''}
                       email={user?.email || ''}
@@ -224,7 +224,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     </span>
                     <DashboardSwitcher />
                     <div className="navsep w-[1px] h-[24px] bg-blockSeparator hidden sm:block shrink-0" />
-                    {stalker ? <StalkerTopNav /> : link ? <LinkTopNav /> : <TopMenu />}
+                    {link ? <LinkTopNav /> : stalker ? null : <TopMenu />}
                     <div className="header-tools flex items-center text-textItemBlur shrink-0 ms-auto gap-[8px]">
                       <div className="header-account relative flex items-center" ref={accountRef}>
                         <HeaderAvatar
