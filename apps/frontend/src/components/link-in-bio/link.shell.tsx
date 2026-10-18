@@ -6,7 +6,7 @@ import { stkClose } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import './link.scss';
 
 export const LinkShell = ({ children }: { children: ReactNode }) => {
-  return <div className="lib-shell flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>;
+  return <div className="lib-shell link-screen flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>;
 };
 
 export const LinkSplit = ({
@@ -56,7 +56,7 @@ export const LinkPreview = ({
 }) => (
   <div className={`lib-preview flex w-full flex-col items-center gap-[10px] ${onClose ? 'max-w-[440px]' : 'max-w-[320px]'}`}>
     <div className="lib-preview-tools flex w-full items-center justify-between text-[14px]">
-      <span className="font-[600] tracking-[-0.02em]">Preview</span>
+      <span className="font-[600] tracking-[-0.02em]">Live preview</span>
       <span className="inline-flex items-center gap-[14px]">
         <button type="button" className="inline-flex items-center gap-[6px] text-[14px] font-[500]" onClick={onCopy}>
           <HugeIcon name="copy" size={16} />

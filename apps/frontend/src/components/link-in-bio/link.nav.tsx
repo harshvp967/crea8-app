@@ -28,6 +28,12 @@ const links: LinkNavItem[] = [
     tabIcon: <HugeIcon name="palette" size={18} />,
   },
   {
+    label: 'Settings',
+    path: '/link/settings',
+    icon: <HugeIcon name="settings" size={18} />,
+    tabIcon: <HugeIcon name="settings" size={18} />,
+  },
+  {
     label: 'Analytics',
     path: '/link/analytics',
     icon: <HugeIcon name="chart" size={18} />,
@@ -38,12 +44,6 @@ const links: LinkNavItem[] = [
     path: '/link/leads',
     icon: <HugeIcon name="mail" size={18} />,
     tabIcon: <HugeIcon name="mail" size={18} />,
-  },
-  {
-    label: 'Settings',
-    path: '/link/settings',
-    icon: <HugeIcon name="settings" size={18} />,
-    tabIcon: <HugeIcon name="settings" size={18} />,
   },
 ];
 

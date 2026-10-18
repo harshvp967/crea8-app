@@ -195,7 +195,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <div
               className={clsx(
                 'app-shell flex flex-col min-h-screen min-w-screen text-newTextColor p-[16px] gap-[12px]',
-                !link && 'c8-shell',
+                'c8-shell',
                 jakartaSans.className
               )}
             >
@@ -207,14 +207,12 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <AnnouncementBanner />
                   <Support />
                   <div className="c8-frame">
-                  {!link ? (
                     <C8Sidebar
                       name={user?.name || ''}
                       email={user?.email || ''}
                       accountOpen={accountOpen}
                       onAccount={() => setAccountOpen((value) => !value)}
                     />
-                  ) : null}
                   <div className="c8-main">
                   <header
                     className="app-header flex items-center min-h-[64px] h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder gap-[8px] ps-[18px] pe-[12px] shrink-0"
@@ -224,7 +222,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     </span>
                     <DashboardSwitcher />
                     <div className="navsep w-[1px] h-[24px] bg-blockSeparator hidden sm:block shrink-0" />
-                    {link ? <LinkTopNav /> : stalker ? null : <TopMenu />}
+                    {link || stalker ? null : <TopMenu />}
                     <div className="header-tools flex items-center text-textItemBlur shrink-0 ms-auto gap-[8px]">
                       <div className="header-account relative flex items-center" ref={accountRef}>
                         <HeaderAvatar

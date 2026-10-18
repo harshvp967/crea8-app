@@ -1,0 +1,848 @@
+/* Link-in-Bio (/link), crea8.one v2. Presentation only. Handlers stay in
+   components/link-in-bio. Every colour is a --c8-* token. Rules stay under
+   .link-screen or body:has(.link-screen) so Schedule, Stalker, and the public
+   visitor page are unchanged. Nothing inside .lib-public is restyled. */
+
+$c8-heading: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+$c8-body: var(--font-body), Inter, sans-serif;
+
+/* ---------- Page frame ---------- */
+.c8-shell .app-main:has(.link-screen) {
+  padding: 36px 40px 40px !important;
+  gap: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.link-screen.lib-shell {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--c8-ink);
+  font-family: $c8-body;
+}
+
+.dark .link-screen.lib-shell {
+  background: transparent !important;
+}
+
+.link-screen .lib-editor-page {
+  gap: 16px !important;
+}
+
+/* ---------- Header ---------- */
+.link-screen .lib-head {
+  align-items: flex-end;
+  gap: 16px !important;
+}
+
+.link-screen .lib-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 10px;
+}
+
+.link-screen .lib-sticker {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c8-app-lib);
+  color: #121016;
+  font-family: $c8-body;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+  transform: rotate(-2deg);
+}
+
+.link-screen .lib-period {
+  margin: 0 !important;
+  overflow: hidden;
+  color: var(--c8-muted) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-screen .stk-title {
+  margin: 0;
+  color: var(--c8-ink) !important;
+  font-family: $c8-heading;
+  font-size: 48px !important;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.05 !important;
+}
+
+.link-screen .lib-head-actions {
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px !important;
+}
+
+/* ---------- Buttons. One cyan control: .stk-btn-primary ---------- */
+.link-screen .stk-btn {
+  box-sizing: border-box;
+  font-family: $c8-body;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out),
+    transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+.link-screen .stk-btn-primary,
+.link-screen .lib-raised.stk-btn-primary {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 22px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 999px !important;
+  background: var(--c8-cyan) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  color: var(--c8-on-cyan) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.link-screen .stk-btn-secondary {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 22px !important;
+  border: 1.5px solid var(--c8-btn-secondary-stroke) !important;
+  border-radius: 999px !important;
+  background: var(--c8-btn-secondary) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  color: var(--c8-ink) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.link-screen .stk-btn-danger,
+.link-screen .lib-danger {
+  height: 46px !important;
+  min-height: 46px !important;
+  border: 1.5px solid var(--c8-danger) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--c8-danger) !important;
+  font-weight: 600 !important;
+}
+
+.link-screen .lib-choice {
+  height: 46px !important;
+  min-height: 46px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 999px !important;
+  background: var(--c8-ink) !important;
+  box-shadow: none !important;
+  color: var(--c8-surface) !important;
+  font-weight: 600 !important;
+}
+
+.link-screen .lib-editor-change,
+.link-screen .lib-editor-feature-line .stk-btn-secondary {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 16px !important;
+  font-size: 14px !important;
+}
+
+@media (hover: hover) {
+  .link-screen .stk-btn-primary:hover {
+    background: var(--c8-cyan-hover) !important;
+    box-shadow: 0 5px 0 var(--c8-hard) !important;
+    transform: translateY(-2px);
+  }
+
+  .link-screen .stk-btn-secondary:hover {
+    background: var(--c8-btn-hover) !important;
+    box-shadow: 0 5px 0 var(--c8-hard) !important;
+    transform: translateY(-2px);
+  }
+}
+
+.link-screen .stk-btn-primary:active {
+  background: var(--c8-cyan-pressed) !important;
+  box-shadow: 0 0 0 var(--c8-hard) !important;
+  transform: translateY(3px);
+}
+
+.link-screen .stk-btn-secondary:active {
+  box-shadow: 0 0 0 var(--c8-hard) !important;
+  transform: translateY(3px);
+}
+
+.link-screen .stk-btn:disabled {
+  cursor: default;
+  transform: none;
+}
+
+.link-screen .lib-head button:focus,
+.link-screen .lib-editor-page button:focus,
+.link-screen .lib-menu button:focus,
+.link-screen .lib-preview-tools button:focus,
+body:has(.link-screen) .lib-dialog button:focus {
+  outline: none;
+}
+
+.link-screen .lib-head button:focus-visible,
+.link-screen .lib-editor-page button:focus-visible,
+.link-screen .lib-editor-page input:focus-visible,
+.link-screen .lib-editor-page select:focus-visible,
+.link-screen .lib-editor-page textarea:focus-visible,
+.link-screen .lib-menu button:focus-visible,
+.link-screen .lib-preview-tools button:focus-visible,
+body:has(.link-screen) .lib-dialog button:focus-visible,
+body:has(.link-screen) .lib-dialog input:focus-visible,
+body:has(.link-screen) .lib-dialog select:focus-visible,
+body:has(.link-screen) .lib-dialog textarea:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- Fields, toggle, segments ---------- */
+.link-screen .lib-field {
+  gap: 6px;
+}
+
+.link-screen .lib-field > span {
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.link-screen .lib-field input,
+.link-screen .lib-field textarea,
+.link-screen .lib-field select {
+  width: 100%;
+  min-height: 46px;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: var(--c8-soft) !important;
+  box-shadow: none !important;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.link-screen .lib-field input,
+.link-screen .lib-field select {
+  height: 46px;
+}
+
+.link-screen .lib-field textarea {
+  height: auto;
+  min-height: 88px;
+}
+
+.link-screen .lib-field input:focus,
+.link-screen .lib-field textarea:focus,
+.link-screen .lib-field select:focus {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.link-screen .lib-text-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--c8-ink) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.link-screen .lib-preview-as > p {
+  color: var(--c8-muted) !important;
+  font-size: 12px !important;
+}
+
+.link-screen .lib-toggle {
+  width: 46px;
+  height: 28px;
+  border: 0;
+  background: var(--c8-toggle-off);
+}
+
+.link-screen .lib-toggle i {
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: var(--c8-surface);
+  box-shadow: none;
+}
+
+.link-screen .lib-toggle[data-on='true'] {
+  border-color: var(--c8-ink);
+  background: var(--c8-ink);
+}
+
+.link-screen .lib-toggle[data-on='true'] i {
+  background: var(--c8-cyan);
+  transform: translateX(18px);
+}
+
+.light .link-screen .lib-toggle,
+.light .link-screen .lib-toggle[data-on='true'],
+.dark .link-screen .lib-toggle,
+.dark .link-screen .lib-toggle[data-on='true'] {
+  border-color: transparent;
+}
+
+.light .link-screen .lib-toggle i,
+.dark .link-screen .lib-toggle i {
+  background: var(--c8-surface);
+  box-shadow: none;
+}
+
+.light .link-screen .lib-toggle[data-on='true'],
+.dark .link-screen .lib-toggle[data-on='true'] {
+  background: var(--c8-ink);
+}
+
+.light .link-screen .lib-toggle[data-on='true'] i,
+.dark .link-screen .lib-toggle[data-on='true'] i {
+  background: var(--c8-cyan);
+}
+
+.link-screen .lib-segment {
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-soft);
+}
+
+.link-screen .lib-segment button {
+  height: 36px;
+  min-height: 36px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.link-screen .lib-segment button.is-on {
+  background: var(--c8-surface);
+  background-image: none;
+  color: var(--c8-ink);
+  box-shadow: 0 1px 2px rgb(18 16 22 / 0.12);
+}
+
+/* ---------- Cards, pills, editor rows ---------- */
+.link-screen .stk-card {
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 24px !important;
+  background: var(--c8-surface) !important;
+  padding: 16px 20px !important;
+  box-shadow: none !important;
+  color: var(--c8-ink);
+}
+
+.link-screen .stk-card h2 {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.link-screen.lib-shell .lib-editor-row {
+  position: relative;
+  min-height: 58px;
+  align-items: center;
+  gap: 14px !important;
+  padding: 12px 16px !important;
+  border-radius: 20px !important;
+}
+
+.link-screen .lib-editor-drag {
+  position: static;
+  top: auto;
+  left: auto;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  color: var(--c8-muted);
+}
+
+.link-screen .lib-type-tile {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-editor-name {
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.link-screen .lib-editor-note,
+.link-screen .lib-editor-clicks {
+  color: var(--c8-muted) !important;
+  font-size: 12px !important;
+}
+
+.link-screen .lib-editor-more {
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  color: var(--c8-muted);
+}
+
+.link-screen .lib-editor-more:hover {
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-editor-row.is-feature {
+  border: 1.5px solid var(--c8-hard) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+}
+
+.link-screen .lib-pill {
+  height: auto;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.link-screen .lib-pill-cyan {
+  border: 0;
+  background: color-mix(in srgb, var(--c8-cyan) 18%, var(--c8-surface));
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-pill-soft,
+.link-screen .lib-pill-amber,
+.link-screen .lib-pill-scheduled {
+  border: 0;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-pill-scheduled,
+.link-screen .lib-pill-amber.lib-pill-scheduled {
+  background: color-mix(in srgb, var(--c8-cyan) 18%, var(--c8-surface));
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-pill-schedule {
+  background: var(--c8-app-schedule);
+  color: #121016;
+}
+
+.link-screen .lib-pill-priority {
+  background: var(--c8-app-lib);
+  color: #121016;
+}
+
+.link-screen .lib-pill-priority::before {
+  content: '★\00a0';
+}
+
+.light .link-screen .lib-pill-cyan,
+.light .link-screen .lib-editor-row.is-feature {
+  border-color: var(--c8-hard);
+}
+
+/* ---------- State cards and skeleton ---------- */
+.link-screen .stk-state {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 56px 16px !important;
+  border: 0 !important;
+  border-radius: 24px;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: center;
+}
+
+.link-screen .stk-state-mark,
+.link-screen .stk-state .stk-icon-tile {
+  display: grid !important;
+  place-items: center;
+  width: 56px !important;
+  height: 56px !important;
+  flex: none;
+  margin: 0 !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 18.67px !important;
+  background: var(--c8-app-lib) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  color: #121016 !important;
+}
+
+.link-screen .stk-state h1,
+.link-screen .stk-state h2 {
+  margin: 0;
+  color: var(--c8-ink) !important;
+  font-family: $c8-heading;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.link-screen .stk-state p {
+  margin: 0;
+  max-width: 360px;
+  color: var(--c8-muted) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.45;
+}
+
+.link-screen .lib-loading {
+  border-radius: 24px !important;
+  background: var(--c8-soft) !important;
+  animation: c8-link-pulse 1.2s var(--c8-ease-in-out) infinite alternate;
+}
+
+.link-screen .lib-loading p {
+  color: var(--c8-muted) !important;
+}
+
+@keyframes c8-link-pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-screen .lib-loading,
+  .link-screen .lib-toggle i,
+  .link-screen .stk-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Menus ---------- */
+.link-screen .lib-menu {
+  min-width: 220px;
+  padding: 8px;
+  border: 1.5px solid var(--c8-ink);
+  border-radius: 20px;
+  background: var(--c8-surface);
+  box-shadow: 0 6px 0 var(--c8-hard);
+  color: var(--c8-ink);
+}
+
+.link-screen .lib-menu-kicker {
+  margin: 4px 8px 6px;
+  color: var(--c8-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.link-screen .lib-menu button {
+  min-height: 36px;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 6px 10px;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.link-screen .lib-menu button svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.link-screen .lib-menu button:hover {
+  background: var(--c8-soft);
+}
+
+.link-screen .lib-menu button.danger {
+  color: var(--c8-danger);
+}
+
+/* ---------- Dialogs ---------- */
+body:has(.link-screen) .lib-modal {
+  background: var(--c8-scrim) !important;
+}
+
+body:has(.link-screen) .lib-dialog {
+  width: min(460px, 100%);
+  max-width: 460px !important;
+  margin-top: 0 !important;
+  padding: 24px !important;
+  gap: 18px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 28px !important;
+  background: var(--c8-surface) !important;
+  box-shadow: 0 6px 0 var(--c8-hard) !important;
+  color: var(--c8-ink);
+}
+
+body:has(.link-screen) .lib-dialog .stk-dialog-head,
+body:has(.link-screen) .lib-dialog .stk-dialog-body {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+body:has(.link-screen) .lib-dialog .stk-dialog-body {
+  max-height: min(60vh, 520px);
+  gap: 14px !important;
+}
+
+body:has(.link-screen) .lib-dialog h2 {
+  margin: 0;
+  color: var(--c8-ink) !important;
+  font-family: $c8-heading;
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.05 !important;
+}
+
+.link-screen .stk-close,
+body:has(.link-screen) .stk-close {
+  width: 36px !important;
+  height: 36px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: var(--c8-soft) !important;
+  color: var(--c8-ink) !important;
+  box-shadow: none !important;
+}
+
+/* ---------- Live preview frame (border only) ---------- */
+.link-screen .lib-split {
+  gap: 28px !important;
+}
+
+.link-screen .lib-preview-col {
+  width: 340px;
+}
+
+.link-screen .lib-preview {
+  max-width: 340px !important;
+  gap: 10px;
+}
+
+.link-screen .lib-preview-tools > span:first-child {
+  color: var(--c8-muted);
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.link-screen .lib-preview-tools button {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--c8-ink) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.link-screen .lib-preview-col .lib-phone {
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 32px;
+  box-shadow: 0 6px 0 var(--c8-hard);
+}
+
+.link-screen .lib-preview-col.is-open {
+  background: var(--c8-scrim) !important;
+}
+
+.link-screen .lib-preview-col.is-open .lib-preview-sheet-head {
+  color: var(--c8-surface);
+}
+
+.link-screen .lib-settings,
+.link-screen .lib-analytics,
+.link-screen .lib-leads {
+  padding-bottom: 0 !important;
+}
+
+/* ---------- Tablet 640–1199 ---------- */
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  .c8-shell .app-main:has(.link-screen) {
+    padding: 30px 28px 40px !important;
+  }
+
+  .link-screen .stk-title {
+    font-size: 38px !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .link-screen .lib-editor-clicks {
+    display: inline;
+  }
+
+  .link-screen .lib-editor-change {
+    display: inline-flex;
+  }
+
+  .link-screen .lib-editor-feature-line {
+    display: none;
+  }
+
+  .link-screen .lib-editor-row.is-feature .lib-pill-inline {
+    display: inline-flex;
+  }
+
+  body:has(.link-screen) .lib-modal {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 24px !important;
+  }
+
+  body:has(.link-screen) .lib-dialog {
+    width: min(460px, 100%) !important;
+    max-width: 460px !important;
+    border-width: 1.5px !important;
+    border-radius: 28px !important;
+    box-shadow: 0 6px 0 var(--c8-hard) !important;
+  }
+}
+
+/* ---------- Phone ≤639 ---------- */
+@media (max-width: 639px) {
+  .c8-shell .app-stage:has(.link-screen) {
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .c8-shell .app-main:has(.link-screen) {
+    flex: none !important;
+    height: calc(100dvh - 61px - 76px) !important;
+    max-height: calc(100dvh - 61px - 76px) !important;
+    padding: 8px 16px 24px !important;
+  }
+
+  .link-screen .lib-head {
+    align-items: flex-start !important;
+  }
+
+  .link-screen .stk-title {
+    font-size: 32px !important;
+  }
+
+  .link-screen .lib-head-actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+
+  .link-screen .stk-state {
+    padding: 24px 8px 8px !important;
+  }
+
+  body:has(.link-screen) .lib-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  body:has(.link-screen) .lib-dialog {
+    width: 100% !important;
+    max-width: none !important;
+    margin-top: auto !important;
+    border-width: 1.5px 0 0 !important;
+    border-radius: 28px 28px 0 0 !important;
+    box-shadow: none !important;
+  }
+
+  body:has(.link-screen) .lib-dialog::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    flex: none;
+    margin: 0 auto 4px;
+    border-radius: 9px;
+    background: var(--c8-line);
+  }
+}
+
+/* ---------- Short landscape ---------- */
+@media (max-height: 500px) {
+  .c8-shell .app-stage:has(.link-screen) {
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .c8-shell .app-main:has(.link-screen) {
+    flex: none !important;
+    height: calc(100dvh - 61px - 76px) !important;
+    max-height: calc(100dvh - 61px - 76px) !important;
+    padding: 8px 16px 8px !important;
+  }
+
+  .link-screen .stk-title {
+    font-size: 26px !important;
+  }
+
+  .link-screen .stk-state-mark {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 14.67px !important;
+  }
+}
+
+@media (max-height: 499px) {
+  .c8-shell .app-main:has(.link-screen) {
+    height: calc(100dvh - 44px - 52px) !important;
+    max-height: calc(100dvh - 44px - 52px) !important;
+  }
+}
+
+@media (min-width: 1600px) and (min-height: 501px) {
+  .link-screen > .lib-split {
+    width: 100%;
+    max-width: 1104px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}

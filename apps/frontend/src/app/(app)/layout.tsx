@@ -14,6 +14,7 @@ import '../c8-plugs.scss';
 import '../c8-integrations.scss';
 import '../c8-settings.scss';
 import '../c8-stalker.scss';
+import '../c8-link.scss';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Bricolage_Grotesque, Inter, Plus_Jakarta_Sans } from 'next/font/google';
