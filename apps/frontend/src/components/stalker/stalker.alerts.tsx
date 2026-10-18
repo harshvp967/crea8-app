@@ -40,8 +40,8 @@ import {
   stkPage,
   stkPrimary,
   stkSecondary,
-  stkSub,
   stkTitle,
+  stkHead,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const field = stkField;
@@ -221,14 +221,17 @@ export const StalkerAlerts = () => {
 
   return (
     <div className={`${stkPage} stk-alerts`}>
-      <div className="stk-al-head">
+      <div className={`${stkHead} stk-al-head`}>
         <div className="min-w-0">
+          <div className="stk-kicker">
+            <span className="stk-sticker">Stalker</span>
+            {project?.name ? <span className="stk-period">{project.name}</span> : null}
+          </div>
           <h1 className={stkTitle}>Alerts</h1>
-          {project?.name ? <p className={`${stkSub} hidden md:block`}>{project.name}</p> : null}
           {project?.name ? (
             <button
               type="button"
-              className="stk-project-sub"
+              className="stk-project-sub md:hidden"
               aria-haspopup="listbox"
               aria-expanded={projectsOpen}
               onClick={() => setProjectsOpen(true)}
@@ -240,10 +243,12 @@ export const StalkerAlerts = () => {
           ) : null}
         </div>
         {bare ? null : (
-          <button type="button" className={`${stkPrimary} stk-al-new`} onClick={openNew}>
-            <PlusIcon />
-            New alert
-          </button>
+          <div className="stk-head-actions">
+            <button type="button" className={`${stkPrimary} stk-al-new`} onClick={openNew}>
+              <PlusIcon />
+              New alert
+            </button>
+          </div>
         )}
       </div>
       {projectsOpen ? (
@@ -261,8 +266,8 @@ export const StalkerAlerts = () => {
       ) : null}
       {bare ? (
         <section className={`${stkCard} stk-al-empty`}>
-          <div className={stkEmpty}>
-            <span className={stkIconTile} aria-hidden>
+          <div className={`${stkEmpty} stk-state`}>
+            <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
               <HugeIcon name="bell" size={24} />
             </span>
             <h3 className="text-[16px] font-[600]">No alerts yet.</h3>

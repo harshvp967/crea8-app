@@ -40,9 +40,9 @@ import {
   stkPrimary,
   stkRow,
   stkSecondary,
-  stkSub,
   stkTitle,
   stkCard,
+  stkHead,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const field = stkField;
@@ -128,21 +128,21 @@ const PlayIcon = () => <HugeIcon name="play" size={16} />;
 const TrashIcon = () => <HugeIcon name="trash" size={16} />;
 
 const PreviewPost = ({ phrase }: { phrase: string }) => (
-  <article className="rounded-[20px] border border-newBorder bg-newBoxHover p-[14px]">
+  <article className="stk-kw-preview rounded-[20px] border border-newBorder bg-newBoxHover p-[14px]">
     <div className="flex items-center gap-[10px]">
-      <span className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-newBoxHover text-[12px] font-[600]">
+      <span className="stk-kw-ava flex h-[36px] w-[36px] items-center justify-center rounded-full bg-newBoxHover text-[12px] font-[600]">
         AC
       </span>
       <div>
         <p className="text-[14px] font-[600]">
-          Alex Chen <span className="text-[color:var(--arc-accent-text)]">✓</span>
+          Alex Chen <span className="stk-kw-checkmark">✓</span>
         </p>
         <p className="text-[12px] text-textItemBlur">@alexchen</p>
       </div>
     </div>
     <p className="mt-[10px] text-[14px] leading-[1.5]">
       Just tried{' '}
-      <span className="rounded-[6px] bg-[var(--arc-selected)] px-[4px] font-[600]">
+      <span className="stk-hit rounded-[6px] bg-[var(--arc-selected)] px-[4px] font-[600]">
         {phrase || 'your keyword'}
       </span>{' '}
       and I&apos;m honestly impressed — the product quality is top-tier. Who else has tried it?
@@ -541,7 +541,7 @@ export const StalkerKeywords = () => {
   const ScanStatus = ({ keyword }: { keyword: Keyword }) => {
     const line = scanLine(keyword, busyFor(keyword));
     return (
-      <span className={line.spinning ? 'inline-flex items-center gap-[8px] text-[color:var(--arc-accent-text)]' : 'text-textItemBlur'}>
+      <span className={line.spinning ? 'stk-kw-scan is-on inline-flex items-center gap-[8px] text-[color:var(--arc-accent-text)]' : 'stk-kw-scan text-textItemBlur'}>
         {line.spinning ? (
           <span className="h-[14px] w-[14px] animate-spin rounded-full border border-current border-t-transparent" />
         ) : null}
@@ -564,14 +564,17 @@ export const StalkerKeywords = () => {
 
   return (
     <div className={`${stkPage} stk-keywords`}>
-      <div className="stk-kw-head">
+      <div className={`${stkHead} stk-kw-head`}>
         <div className="min-w-0">
+          <div className="stk-kicker">
+            <span className="stk-sticker">Stalker</span>
+            {project?.name ? <span className="stk-period">{project.name}</span> : null}
+          </div>
           <h1 className={stkTitle}>Keywords</h1>
-          {project?.name ? <p className={`${stkSub} hidden md:block`}>{project.name}</p> : null}
           {project?.name ? (
             <button
               type="button"
-              className="stk-project-sub"
+              className="stk-project-sub md:hidden"
               aria-haspopup="listbox"
               aria-expanded={projectsOpen}
               onClick={() => setProjectsOpen(true)}
@@ -582,7 +585,7 @@ export const StalkerKeywords = () => {
             </button>
           ) : null}
         </div>
-        <div className="flex shrink-0 flex-nowrap items-center gap-[8px]">
+        <div className="stk-head-actions flex shrink-0 flex-nowrap items-center gap-[8px]">
           <button
             type="button"
             className={`${stkSecondary} stk-kw-groups`}
@@ -616,8 +619,8 @@ export const StalkerKeywords = () => {
       ) : null}
       {!keywords.length ? (
         <section className={`${stkCard} stk-kw-empty`}>
-          <div className={stkEmpty}>
-            <span className={stkIconTile} aria-hidden>
+          <div className={`${stkEmpty} stk-state`}>
+            <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
               <HugeIcon name="list" size={24} />
             </span>
             <h3 className="text-[16px] font-[600]">No keywords yet.</h3>
@@ -646,13 +649,14 @@ export const StalkerKeywords = () => {
                   <div key={keyword.id} className="stk-kw-row">
                     <div className="flex items-center justify-between gap-[8px]">
                       <p className="text-[16px] font-[600]">
+                        <span className="stk-kw-hash" aria-hidden>#</span>
                         {keyword.phrase}
                         {keyword.paused ? (
                           <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[13px] font-[500]">
                             <span className={stkBadge}>Paused</span>
                             <button
                               type="button"
-                              className="font-[600] text-[color:var(--arc-accent-text)] underline underline-offset-[3px]"
+                              className="stk-kw-resume font-[600] text-[color:var(--arc-accent-text)] underline underline-offset-[3px]"
                               onClick={() => resumeKeyword(keyword)}
                             >
                               Resume
@@ -680,7 +684,7 @@ export const StalkerKeywords = () => {
                     </p>
                     <SourceEditors keyword={keyword} />
                     <p className="stk-kw-line text-textItemBlur">
-                      Mentions (30d) · {mentionCount(keyword)}
+                      Mentions (30d) · <span className="stk-kw-count">{mentionCount(keyword)}</span>
                     </p>
                     <p className="stk-kw-line">
                       <span className="text-textItemBlur">Last scan · </span>
@@ -704,13 +708,14 @@ export const StalkerKeywords = () => {
                     {rows.map((keyword) => (
                       <tr key={keyword.id}>
                         <td className="font-[600]">
+                          <span className="stk-kw-hash" aria-hidden>#</span>
                           {keyword.phrase}
                           {keyword.paused ? (
                             <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[13px] font-[500] text-textItemBlur">
                               <span className={stkBadge}>Paused</span>
                               <button
                                 type="button"
-                                className="font-[600] text-[color:var(--arc-accent-text)] underline underline-offset-[3px]"
+                                className="stk-kw-resume font-[600] text-[color:var(--arc-accent-text)] underline underline-offset-[3px]"
                                 onClick={() => resumeKeyword(keyword)}
                               >
                                 Resume
@@ -722,7 +727,9 @@ export const StalkerKeywords = () => {
                           <SourceControls keyword={keyword} />
                           <SourceEditors keyword={keyword} />
                         </td>
-                        <td>{mentionCount(keyword)}</td>
+                        <td>
+                          <span className="stk-kw-count">{mentionCount(keyword)}</span>
+                        </td>
                         <td>
                           <ScanStatus keyword={keyword} />
                         </td>
@@ -797,7 +804,7 @@ export const StalkerKeywords = () => {
               </div>
             </label>
             {sourcesMenu ? (
-              <div className="rounded-[18px] border border-newBorder p-[8px]">
+              <div className="stk-kw-panel rounded-[18px] border border-newBorder p-[8px]">
                 {SOURCES.map((source) => {
                   const locked = !!note(source.id);
                   const key = source.id as keyof typeof sourcesOn;
@@ -824,7 +831,7 @@ export const StalkerKeywords = () => {
               </div>
             ) : null}
             {filtersMenu ? (
-              <div className="rounded-[18px] border border-newBorder p-[12px]">
+              <div className="stk-kw-panel rounded-[18px] border border-newBorder p-[12px]">
                 <p className="mb-[6px] text-[14px] font-[500]">Filters</p>
                 <p className="mb-[6px] text-[13px] text-textItemBlur">Exclude accounts</p>
                 <input
@@ -882,7 +889,7 @@ export const StalkerKeywords = () => {
         >
           <div className={`${stkDialog} max-w-[460px]`}>
             <div className={`${stkDialogHead} border-b-0 pb-[8px]`}>
-              <span className="stk-ic-bad flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[16px] border" aria-hidden>
+              <span className="stk-ic-bad stk-danger-mark flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[16px] border" aria-hidden>
                 !
               </span>
               <div>
