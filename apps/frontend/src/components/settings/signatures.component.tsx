@@ -86,7 +86,7 @@ export const SignaturesComponent: FC<{
           </div>
           {data.map((p: any) => (
             <article key={p.id} className="settings-item cols-sig">
-              <b className="settings-ellipsis">{p.content}</b>
+              <b className="settings-ellipsis settings-copy">{p.content}</b>
               <span
                 className={clsx('settings-pill', p.autoAdd && 'is-on')}
                 data-label={t('auto_add', 'Auto Add?')}

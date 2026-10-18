@@ -32,7 +32,7 @@ const SaveSetModal: FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="settings-form flex flex-col gap-4">
       <div>
         <Input
           label="Set Name"
@@ -182,6 +182,7 @@ export const Sets: FC = () => {
           </div>
           {data.map((p: any) => (
             <article key={p.id} className="settings-item cols-set">
+              <span className="settings-tile" aria-hidden="true" />
               <b>{p.name}</b>
               <div className="settings-item-actions">
                 <Button secondary className="settings-mini" onClick={addSet(p)}>
