@@ -9,6 +9,7 @@ import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 import '../c8-agent.scss';
 import '../c8-analytics.scss';
+import '../c8-media.scss';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Bricolage_Grotesque, Inter, Plus_Jakarta_Sans } from 'next/font/google';

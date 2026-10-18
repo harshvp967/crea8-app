@@ -430,7 +430,7 @@ export const MediaBox: FC<{
             <div className="animate-spin h-[20px] w-[20px] border-4 border-[#00D9FF] border-t-transparent rounded-full" />
           </div>
         ) : standalone ? (
-          <HugeIcon name="upload" size={16} />
+          <HugeIcon name="plus" size={18} />
         ) : (
           <PlusIcon size={14} />
         )}
@@ -468,9 +468,23 @@ export const MediaBox: FC<{
           multiple={true}
         />
         {standalone ? (
-          <div className="media-head">
-            <h1>{t('media_library', 'Media Library')}</h1>
-            <div className="media-tools">
+          <>
+            <div className="media-head">
+              <div className="media-head-text">
+                <div className="media-kicker">
+                  <span className="media-sticker">{t('schedule', 'Schedule')}</span>
+                  <span className="media-period">
+                    {t('your_uploads', 'Your uploads')}
+                  </span>
+                </div>
+                <h1>{t('media', 'Media')}</h1>
+              </div>
+              <div className="media-head-actions">
+                {btn}
+                <ThirdPartyMediaLibrary onImported={() => mutate()} />
+              </div>
+            </div>
+            <div className="media-toolbar">
               <label className="media-search">
                 <HugeIcon name="search" size={16} />
                 <input
@@ -480,10 +494,8 @@ export const MediaBox: FC<{
                   placeholder={t('search_media_by_name', 'Search by file name')}
                 />
               </label>
-              {btn}
-              <ThirdPartyMediaLibrary onImported={() => mutate()} />
             </div>
-          </div>
+          </>
         ) : (
           <div
             className={clsx(
@@ -548,8 +560,11 @@ export const MediaBox: FC<{
             {libraryEmpty && (
               standalone ? (
                 debouncedSearch ? (
-                  <div className="media-empty-note">
-                    <p>
+                  <div className="media-state-card is-search">
+                    <span className="media-state-tile is-search" aria-hidden="true">
+                      <HugeIcon name="search" size={25} />
+                    </span>
+                    <p className="media-state-body">
                       {t(
                         'no_media_match_search',
                         'No media matches your search'
@@ -557,25 +572,28 @@ export const MediaBox: FC<{
                     </p>
                   </div>
                 ) : (
-                  <div className="media-drop">
-                    <NoMediaIcon />
-                    <h2>
-                      {t(
-                        'you_dont_have_any_media_yet',
-                        "You don't have any media yet"
-                      )}
-                    </h2>
-                    <p>
-                      {t(
-                        'select_or_upload_pictures_max_1gb',
-                        'Select or upload pictures (maximum 1 GB per upload).'
-                      )}
-                      <br />
-                      {t(
-                        'you_can_drag_drop_pictures',
-                        'You can also drag & drop pictures.'
-                      )}
-                    </p>
+                  <div className="media-state-card is-empty">
+                    <span className="media-state-tile is-empty" aria-hidden="true">
+                      <HugeIcon name="image" size={25} />
+                    </span>
+                    <div className="media-state-text">
+                      <h2 className="media-state-title">
+                        {t(
+                          'you_dont_have_any_media_yet',
+                          "You don't have any media yet"
+                        )}
+                      </h2>
+                      <p className="media-state-body">
+                        {t(
+                          'select_or_upload_pictures_max_1gb',
+                          'Select or upload pictures (maximum 1 GB per upload).'
+                        )}{' '}
+                        {t(
+                          'you_can_drag_drop_pictures',
+                          'You can also drag & drop pictures.'
+                        )}
+                      </p>
+                    </div>
                   </div>
                 )
               ) : (
