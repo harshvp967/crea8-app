@@ -77,7 +77,7 @@ export const ApprovedAppsComponent: FC = () => {
         {!apps?.length ? (
           <div className="settings-empty">
             <span className="settings-empty-mark" aria-hidden>
-              <HugeIcon name="shield" size={24} />
+              <HugeIcon name="check" size={25} />
             </span>
             <h2>{t('no_approved_apps', 'No approved apps yet.')}</h2>
           </div>
@@ -86,7 +86,7 @@ export const ApprovedAppsComponent: FC = () => {
             {apps.map((app: any) => (
               <div
                 key={app.id}
-                className="flex items-center justify-between p-[12px] border border-fifth rounded-[4px]"
+                className="settings-app flex items-center justify-between p-[12px] border border-fifth rounded-[4px]"
               >
                 <div className="flex items-center gap-[12px]">
                   {app.oauthApp?.picture?.path ? (

@@ -20,16 +20,20 @@ const MetricComponent = dynamic(
 export const GlobalSettings = () => {
   const t = useT();
   return (
-    <div className="settings-section">
-      <div className="settings-head">
-        <h1>{t('global_settings', 'Global Settings')}</h1>
+    <>
+      <div className="settings-section">
+        <div className="settings-head">
+          <h1>{t('global_settings', 'Global Settings')}</h1>
+        </div>
+        <div className="settings-group">
+          <MetricComponent />
+          <EmailNotificationsComponent />
+          <ShortlinkPreferenceComponent />
+        </div>
       </div>
-      <div className="settings-group">
-        <MetricComponent />
-        <EmailNotificationsComponent />
-        <ShortlinkPreferenceComponent />
+      <div className="settings-section">
+        <DeleteAccountComponent />
       </div>
-      <DeleteAccountComponent />
-    </div>
+    </>
   );
 };
