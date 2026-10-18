@@ -28,10 +28,10 @@ import {
   stkCard,
   stkEmpty,
   stkHead,
+  stkIconTile,
   stkMenu,
   stkPage,
   stkSecondary,
-  stkSub,
   stkTitle,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
@@ -382,12 +382,15 @@ export const StalkerAnalytics = () => {
     <div className={`${stkPage} stk-analytics`}>
       <div className={stkHead}>
         <div className="min-w-0">
+          <div className="stk-kicker">
+            <span className="stk-sticker">Stalker</span>
+            {project?.name ? <span className="stk-period">{project.name}</span> : null}
+          </div>
           <h1 className={stkTitle}>Analytics</h1>
-          {project?.name ? <p className={`${stkSub} hidden md:block`}>{project.name}</p> : null}
           {project?.name ? (
             <button
               type="button"
-              className="stk-project-sub"
+              className="stk-project-sub md:hidden"
               aria-haspopup="listbox"
               aria-expanded={projectsOpen}
               onClick={() => setProjectsOpen(true)}
@@ -398,14 +401,16 @@ export const StalkerAnalytics = () => {
             </button>
           ) : null}
         </div>
-        <SegmentedControl
-          aria-label="Chart range"
-          className="shrink-0"
-          size="sm"
-          value={selected}
-          onValueChange={(value) => setFilters((current) => applyRange(current, value))}
-          options={RANGES.map((item) => ({ value: item.value, label: item.label }))}
-        />
+        <div className="stk-head-actions">
+          <SegmentedControl
+            aria-label="Chart range"
+            className="stk-segments shrink-0"
+            size="sm"
+            value={selected}
+            onValueChange={(value) => setFilters((current) => applyRange(current, value))}
+            options={RANGES.map((item) => ({ value: item.value, label: item.label }))}
+          />
+        </div>
       </div>
       {projectsOpen ? (
         <>
@@ -429,7 +434,7 @@ export const StalkerAnalytics = () => {
       />
       {!data ? (
         analytics.isLoading || analytics.isValidating || analytics.data === undefined ? (
-          <div className="flex flex-col gap-[16px]" aria-busy="true">
+          <div className="stk-an-loading flex flex-col gap-[16px]" aria-busy="true">
             <div className="stk-skel h-[280px] animate-pulse" />
             <div className="stk-an-grid">
               <div className="stk-skel h-[180px] animate-pulse" />
@@ -438,8 +443,11 @@ export const StalkerAnalytics = () => {
             </div>
           </div>
         ) : (
-          <section className={stkCard}>
-            <div className={stkEmpty}>
+          <section className={`${stkCard} stk-an-error`}>
+            <div className={`${stkEmpty} stk-state`}>
+              <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
+                <HugeIcon name="chart-line" size={24} />
+              </span>
               <h3 className="text-[16px] font-[600]">Couldn&apos;t load analytics.</h3>
               <button type="button" className={stkSecondary} onClick={() => analytics.mutate()}>
                 Try again
@@ -524,7 +532,7 @@ export const StalkerAnalytics = () => {
                         style={{
                           background:
                             value && peak
-                              ? `color-mix(in srgb, #00D9FF ${Math.max(18, Math.round((value / peak) * 70))}%, transparent)`
+                              ? `color-mix(in srgb, var(--c8-cyan) ${Math.max(18, Math.round((value / peak) * 70))}%, transparent)`
                               : 'transparent',
                         }}
                       />
