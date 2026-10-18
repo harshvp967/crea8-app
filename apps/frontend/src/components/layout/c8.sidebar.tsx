@@ -120,7 +120,7 @@ export const C8Sidebar = ({
       <Link href="/launches" className="c8-side-logo" title="crea8.one">
         <img className="c8-side-mark" src="/crea8one-icon-cyan.svg" alt="" />
         <span className="c8-side-logo-word">
-          <Crea8oneWordmark className="h-[40px] w-auto max-w-full" />
+          <Crea8oneWordmark className="h-[56px] w-auto max-w-full" />
         </span>
       </Link>
       <p className="c8-side-kicker">Apps</p>
