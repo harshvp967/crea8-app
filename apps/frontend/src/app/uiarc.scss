@@ -345,6 +345,13 @@ body :focus-visible {
     max-width: 148px !important;
   }
 
+  .app-logo .logo-mark {
+    height: 32px !important;
+    width: 32px !important;
+    max-width: 32px !important;
+    max-height: none !important;
+  }
+
   .desktop-nav,
   .desktop-utilities {
     display: none !important;
@@ -924,9 +931,39 @@ body :focus-visible {
 
 /* Responsive chrome matching the uiarc mocks. Presentation only. */
 .logo-mark {
+  display: block;
+  height: 32px;
+  width: 32px;
+  flex: none;
+}
+
+.logo-word {
   display: none;
-  height: 26px;
-  width: auto;
+}
+
+@media (max-width: 1199px), (max-height: 500px) {
+  a.app-logo,
+  .app-logo a {
+    height: auto;
+  }
+
+  .app-logo .logo-mark {
+    display: block !important;
+    height: 32px !important;
+    width: 32px !important;
+    max-width: 32px !important;
+    max-height: none !important;
+  }
+}
+
+@media (min-width: 1200px) and (min-height: 501px) {
+  .logo-mark {
+    display: none;
+  }
+
+  .logo-word {
+    display: inline;
+  }
 }
 
 .dash-mswitch {
@@ -1459,9 +1496,9 @@ body :focus-visible {
 
   .app-header .logo-mark {
     display: block;
-    height: 26px !important;
-    width: auto !important;
-    max-width: none !important;
+    height: 32px !important;
+    width: 32px !important;
+    max-width: 32px !important;
   }
 
   .date-range {
@@ -1996,6 +2033,19 @@ body :focus-visible {
   height: 56px !important;
   width: auto !important;
   max-width: 220px !important;
+}
+
+.auth-pitch .c8-brand,
+.auth-logo-mobile .c8-brand {
+  height: auto !important;
+  max-width: none !important;
+}
+
+.auth-pitch .c8-brand-icon,
+.auth-logo-mobile .c8-brand-icon {
+  height: 32px !important;
+  width: 32px !important;
+  max-width: 32px !important;
 }
 
 @media (max-width: 1199px) {
@@ -5064,7 +5114,10 @@ body.composer-open .po-assist .copilotKitWindow.open,
 }
 
 .cc-return-logo .logo-mark {
-  display: none !important;
+  display: block !important;
+  height: 32px !important;
+  width: 32px !important;
+  max-width: 32px !important;
 }
 
 .cc-return-logo .app-logo {
@@ -5073,10 +5126,20 @@ body.composer-open .po-assist .copilotKitWindow.open,
 }
 
 .cc-return-logo .logo-word {
-  display: inline-flex !important;
+  display: none !important;
   height: 66px !important;
   max-width: none !important;
   width: auto !important;
+}
+
+@media (min-width: 1200px) and (min-height: 501px) {
+  .cc-return-logo .logo-mark {
+    display: none !important;
+  }
+
+  .cc-return-logo .logo-word {
+    display: inline-flex !important;
+  }
 }
 
 .cc-return-logo .logo-word > span {

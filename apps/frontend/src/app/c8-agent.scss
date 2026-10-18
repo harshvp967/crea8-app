@@ -1277,7 +1277,7 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
   body:has(.settings-screen) .logo-word,
   body:has(.stalker-screen) .logo-word,
   body:has(.link-screen) .logo-word {
-    display: inline-flex !important;
+    display: none !important;
   }
 }
 
@@ -1290,7 +1290,11 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
   body:has(.settings-screen) .logo-mark,
   body:has(.stalker-screen) .logo-mark,
   body:has(.link-screen) .logo-mark {
-    display: none !important;
+    display: block !important;
+    height: 32px !important;
+    width: 32px !important;
+    max-width: 32px !important;
+    max-height: none !important;
   }
 }
 
@@ -1303,13 +1307,7 @@ body:has(.agent-workspace) .agent-channel .border-fifth {
   body:has(.settings-screen) .app-logo::after,
   body:has(.stalker-screen) .app-logo::after,
   body:has(.link-screen) .app-logo::after {
-    content: '';
-    width: 7px;
-    height: 7px;
-    margin-left: 2px;
-    border-radius: 999px;
-    background: var(--c8-cyan);
-    flex: none;
+    content: none;
   }
 }
 
@@ -1417,14 +1415,6 @@ body:has(.link-screen) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .app-logo,
-  body:has(.analytics-screen) .app-logo,
-  body:has(.media-library) .app-logo,
-  body:has(.plugs-screen) .app-logo,
-  body:has(.integrations-screen) .app-logo,
-  body:has(.settings-screen) .app-logo,
-  body:has(.stalker-screen) .app-logo,
-  body:has(.link-screen) .app-logo,
   body:has(.agent-workspace) .app-logo .logo-word,
   body:has(.analytics-screen) .app-logo .logo-word,
   body:has(.media-library) .app-logo .logo-word,

@@ -11,24 +11,31 @@ export const Crea8oneWordmark = ({
   className: string;
 }) => {
   return (
-    <span className={`inline-flex items-center ${className}`}>
-      <Image
-        src={LIGHT_SRC}
+    <span className="c8-brand inline-flex items-center">
+      <img
+        src="/crea8one-icon-cyan.svg"
         alt="crea8.one"
-        width={877}
-        height={263}
-        unoptimized
-        className="h-full w-auto max-w-full object-contain object-left dark:hidden"
+        className="c8-brand-icon"
       />
-      <Image
-        src={DARK_SRC}
-        alt=""
-        aria-hidden
-        width={877}
-        height={263}
-        unoptimized
-        className="hidden h-full w-auto max-w-full object-contain object-left dark:block"
-      />
+      <span className={`c8-brand-full inline-flex items-center ${className}`}>
+        <Image
+          src={LIGHT_SRC}
+          alt="crea8.one"
+          width={877}
+          height={263}
+          unoptimized
+          className="h-full w-auto max-w-full object-contain object-left dark:hidden"
+        />
+        <Image
+          src={DARK_SRC}
+          alt=""
+          aria-hidden
+          width={877}
+          height={263}
+          unoptimized
+          className="hidden h-full w-auto max-w-full object-contain object-left dark:block"
+        />
+      </span>
     </span>
   );
 };
