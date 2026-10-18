@@ -1,0 +1,753 @@
+/* Integrations tab (/third-party), crea8.one v2. Presentation only: handlers
+   live in components/third-parties/*. Same page frame and type as Plugs.
+   Every colour is a --c8-* token. Scoped to .integrations-screen and
+   .arc-dialog:has(.integrations-form). */
+
+$c8-heading: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+$c8-body: var(--font-body), Inter, sans-serif;
+
+/* ---------- Page frame ---------- */
+.c8-shell .app-main:has(.integrations-screen) {
+  padding: 36px 40px 40px !important;
+  gap: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.integrations-screen {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  color: var(--c8-ink);
+  font-family: $c8-body;
+}
+
+.integrations-screen .integrations-main {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.integrations-screen .integrations-main.integrations-state {
+  align-items: stretch;
+  justify-content: flex-start;
+  text-align: start;
+}
+
+.integrations-screen .integrations-scroll {
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* ---------- Header: sticker, kicker, title ---------- */
+.integrations-screen .integrations-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: none;
+}
+
+.integrations-screen .integrations-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.integrations-screen .integrations-sticker {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c8-app-schedule);
+  color: #121016;
+  font-family: $c8-body;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+  transform: rotate(-2deg);
+}
+
+.integrations-screen .integrations-period {
+  overflow: hidden;
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.integrations-screen .integrations-head h1 {
+  flex: none;
+  margin: 0;
+  overflow: visible;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 48px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+/* ---------- List card and rows ---------- */
+.integrations-screen .integrations-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.integrations-screen .integrations-card {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--c8-line);
+  border-radius: 16px;
+  background: var(--c8-bg);
+  background-image: none;
+  box-sizing: border-box;
+}
+
+.integrations-screen .integrations-card.is-on {
+  border-color: var(--c8-line);
+  background: var(--c8-bg);
+  background-image: none;
+}
+
+.integrations-screen .integrations-card-head {
+  display: contents;
+}
+
+.integrations-screen .integrations-mark {
+  display: flex;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: var(--c8-radius-10);
+  background: #121016;
+}
+
+.integrations-screen .integrations-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+}
+
+.integrations-screen .integrations-letter {
+  color: #fff;
+  font-family: $c8-body;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.integrations-screen .integrations-card h3 {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--c8-ink);
+  font-family: $c8-body;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.integrations-screen .integrations-card:not(:has(> p)) h3 {
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.integrations-screen .integrations-card > p {
+  display: -webkit-box;
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.integrations-screen .integrations-actions {
+  display: flex;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-items: center;
+  justify-self: end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.integrations-screen .integrations-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-app-lib);
+  color: #121016;
+  font-family: $c8-body;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.integrations-screen .integrations-badge i {
+  display: none;
+}
+
+.integrations-screen .integrations-menu {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: var(--c8-muted);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .integrations-screen .integrations-menu:hover {
+    background: var(--c8-btn-hover);
+    color: var(--c8-ink);
+  }
+}
+
+.integrations-screen .integrations-menu-pop {
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 16px !important;
+  background: var(--c8-surface) !important;
+  padding: 6px !important;
+  box-shadow: 0 4px 0 var(--c8-hard) !important;
+  color: var(--c8-danger);
+  font-family: $c8-body;
+}
+
+.integrations-screen .integrations-menu-pop > div {
+  border-radius: 10px !important;
+  color: var(--c8-danger);
+  font-family: $c8-body;
+  font-size: 13px !important;
+  font-weight: 500;
+}
+
+@media (hover: hover) {
+  .integrations-screen .integrations-menu-pop > div:hover {
+    background: var(--c8-soft);
+  }
+}
+
+.integrations-screen .integrations-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: 46px;
+  min-height: 46px;
+  flex: none;
+  padding: 0 22px 0 20px;
+  border: 1.5px solid var(--c8-btn-secondary-stroke);
+  border-radius: 999px;
+  background: var(--c8-btn-secondary);
+  color: var(--c8-ink);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-family: $c8-body;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out),
+    transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+.integrations-screen .integrations-add svg {
+  display: none;
+}
+
+@media (hover: hover) {
+  .integrations-screen .integrations-add:hover {
+    background: var(--c8-btn-hover);
+    box-shadow: 0 5px 0 var(--c8-hard);
+    transform: translateY(-2px);
+  }
+}
+
+.integrations-screen .integrations-add:active {
+  background: var(--c8-btn-secondary);
+  box-shadow: 0 0 0 var(--c8-hard);
+  transform: translateY(3px);
+  transition-duration: var(--c8-dur-press);
+  transition-timing-function: var(--c8-ease-in);
+}
+
+.integrations-screen .integrations-add:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- Empty ---------- */
+.integrations-screen .integrations-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: auto;
+  padding: 40px 24px;
+  border: 1.5px dashed var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+  box-shadow: none;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.integrations-screen .integrations-state-tile {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 18.67px;
+  background: var(--c8-soft);
+  box-shadow: none;
+  color: var(--c8-muted);
+}
+
+.integrations-screen .integrations-empty h2 {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 22px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* ---------- Loading skeleton ---------- */
+.integrations-screen .integrations-skeleton {
+  display: flex;
+  flex-direction: column;
+}
+
+.integrations-screen .integrations-skel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+  box-sizing: border-box;
+}
+
+.integrations-screen .integrations-skel-row {
+  display: block;
+  height: 72px;
+  border-radius: 16px;
+  background: var(--c8-soft);
+  animation: c8-integrations-pulse 1.2s var(--c8-ease-in-out) infinite alternate;
+}
+
+@keyframes c8-integrations-pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .integrations-screen .integrations-skel-row {
+    animation: none;
+  }
+}
+
+/* ---------- API key modal ---------- */
+body:has(.integrations-screen) .arc-dialog-wrap {
+  background: var(--c8-scrim) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.arc-dialog:has(.integrations-form) {
+  width: min(480px, calc(100vw - 32px)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 32px);
+  padding: 24px;
+  gap: 18px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 28px;
+  background: var(--c8-surface);
+  background-image: none;
+  box-shadow: 0 6px 0 var(--c8-hard);
+  color: var(--c8-ink);
+  font-family: $c8-body;
+  box-sizing: border-box;
+}
+
+.arc-dialog:has(.integrations-form) .arc-grab {
+  display: none;
+}
+
+.arc-dialog:has(.integrations-form) .arc-dialog-head {
+  position: static;
+  gap: 12px;
+  padding: 0;
+  background: transparent;
+}
+
+.arc-dialog:has(.integrations-form) .arc-dialog-head > div:first-child {
+  color: var(--c8-ink);
+  font-family: $c8-heading !important;
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.52px;
+  line-height: 1.05;
+}
+
+.arc-dialog:has(.integrations-form) .arc-dialog-body {
+  max-height: none;
+  overflow: visible;
+}
+
+.arc-dialog:has(.integrations-form) .mantine-Modal-close {
+  position: static !important;
+  top: auto !important;
+  inset-inline-end: auto !important;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  margin-left: 12px;
+  border: 1px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .arc-dialog:has(.integrations-form) .mantine-Modal-close:hover {
+    background: var(--c8-btn-hover);
+  }
+}
+
+.arc-dialog:has(.integrations-form) .mantine-Modal-close:focus-visible {
+  outline: 2px solid var(--c8-ink) !important;
+  outline-offset: 2px;
+}
+
+.arc-dialog:has(.integrations-form) .integrations-form {
+  min-width: 0;
+}
+
+.arc-dialog:has(.integrations-form) .integrations-form .text-\[14px\] {
+  color: var(--c8-muted);
+  font-family: $c8-body;
+  font-size: 12px !important;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.arc-dialog:has(.integrations-form) .integrations-form .border-newBorder {
+  height: 41px !important;
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 14px !important;
+  background: var(--c8-bg) !important;
+  color: var(--c8-ink);
+  box-shadow: none;
+}
+
+.arc-dialog:has(.integrations-form) .integrations-form .border-newBorder:focus-within {
+  border-color: var(--c8-ink) !important;
+  box-shadow: inset 0 0 0 1px var(--c8-ink);
+  outline: none;
+}
+
+.arc-dialog:has(.integrations-form) .integrations-form input {
+  color: var(--c8-ink);
+  font-family: $c8-body;
+  font-size: 14px;
+  outline: none;
+}
+
+.arc-dialog:has(.integrations-form) .integrations-form input:focus,
+.arc-dialog:has(.integrations-form) .integrations-form input:focus-visible {
+  outline: none;
+}
+
+.arc-dialog:has(.integrations-form) .integrations-form .text-red-400 {
+  color: var(--c8-danger) !important;
+  font-size: 12px;
+}
+
+.arc-dialog:has(.integrations-form) .integrations-submit {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.arc-dialog:has(.integrations-form) button[type='submit'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: 46px;
+  min-height: 46px;
+  flex: none;
+  padding: 0 22px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 999px;
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-family: $c8-body;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out),
+    transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+@media (hover: hover) {
+  .arc-dialog:has(.integrations-form) button[type='submit']:hover {
+    background: var(--c8-cyan-hover);
+    box-shadow: 0 5px 0 var(--c8-hard);
+    transform: translateY(-2px);
+  }
+}
+
+.arc-dialog:has(.integrations-form) button[type='submit']:active {
+  background: var(--c8-cyan-pressed);
+  box-shadow: 0 0 0 var(--c8-hard);
+  transform: translateY(3px);
+  transition-duration: var(--c8-dur-press);
+  transition-timing-function: var(--c8-ease-in);
+}
+
+.arc-dialog:has(.integrations-form) button[type='submit']:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- Tablet 640–1199 ---------- */
+@media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
+  .c8-shell .app-main:has(.integrations-screen) {
+    padding: 30px 28px 40px !important;
+  }
+
+  .integrations-screen .integrations-main {
+    gap: 22px;
+  }
+
+  .integrations-screen .integrations-head h1 {
+    font-size: 38px;
+  }
+}
+
+/* ---------- Phone < 640 ---------- */
+@media (max-width: 639px) {
+  .c8-shell .app-stage:has(.integrations-screen) {
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .c8-shell .app-main:has(.integrations-screen) {
+    flex: none !important;
+    height: calc(100dvh - 61px - 76px) !important;
+    max-height: calc(100dvh - 61px - 76px) !important;
+    padding: 8px 16px 24px !important;
+  }
+
+  .integrations-screen .integrations-main {
+    gap: 16px;
+  }
+
+  .integrations-screen .integrations-head h1 {
+    font-size: 32px;
+  }
+
+  .integrations-screen .integrations-card {
+    padding: 12px;
+  }
+
+  .integrations-screen .integrations-card > p {
+    -webkit-line-clamp: 2;
+  }
+
+  .integrations-screen .integrations-add {
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+
+  .integrations-screen .integrations-empty {
+    padding: 24px;
+  }
+
+  body:has(.integrations-screen) .arc-dialog-wrap:has(.integrations-form) {
+    align-items: flex-end;
+    padding-bottom: 0 !important;
+  }
+
+  .arc-dialog:has(.integrations-form) {
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 24px);
+    padding: 8px 20px calc(20px + env(safe-area-inset-bottom));
+    border-bottom: 0;
+    border-radius: 28px 28px 0 0;
+    overflow: auto;
+  }
+
+  .arc-dialog:has(.integrations-form)::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 0 auto;
+    border-radius: 999px;
+    background: var(--c8-line);
+    flex: none;
+  }
+
+  .arc-dialog:has(.integrations-form) .integrations-submit {
+    position: sticky;
+    bottom: 0;
+    margin-top: 8px;
+    padding-top: 12px;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--c8-surface);
+  }
+
+  .arc-dialog:has(.integrations-form) button[type='submit'] {
+    width: 100%;
+  }
+}
+
+/* ---------- Short landscape, max-height 500 (874×402) ---------- */
+@media (max-height: 500px) {
+  .c8-shell .app-stage:has(.integrations-screen) {
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .c8-shell .app-main:has(.integrations-screen) {
+    flex: none !important;
+    height: calc(100dvh - 61px - 76px) !important;
+    max-height: calc(100dvh - 61px - 76px) !important;
+    padding: 8px 16px 8px !important;
+  }
+
+  .integrations-screen .integrations-main {
+    gap: 12px;
+  }
+
+  .integrations-screen .integrations-head h1 {
+    font-size: 26px;
+  }
+
+  .integrations-screen .integrations-empty {
+    padding: 24px;
+  }
+
+  .integrations-screen .integrations-state-tile {
+    width: 44px;
+    height: 44px;
+    border-radius: 14.67px;
+  }
+
+  .integrations-screen .integrations-empty h2 {
+    font-size: 22px;
+  }
+}
+
+@media (max-height: 499px) {
+  .c8-shell .app-main:has(.integrations-screen) {
+    height: calc(100dvh - 44px - 52px) !important;
+    max-height: calc(100dvh - 44px - 52px) !important;
+  }
+}
+
+/* Very wide: centre the page column. 1104px is the desktop content width. */
+@media (min-width: 1600px) and (min-height: 501px) {
+  .integrations-screen .integrations-main {
+    width: 100%;
+    max-width: 1104px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}

@@ -2,11 +2,13 @@
 
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { ThirdPartyListComponent } from '@gitroom/frontend/components/third-parties/third-party.list.component';
+import {
+  IntegrationsSkeleton,
+  ThirdPartyListComponent,
+} from '@gitroom/frontend/components/third-parties/third-party.list.component';
 import { useCallback } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 
 export const ThirdPartyComponent = () => {
   const t = useT();
@@ -29,10 +31,16 @@ export const ThirdPartyComponent = () => {
     <div className="integrations-screen">
       <div className={clsx('integrations-main', isLoading && !data && 'integrations-state')}>
         <div className="integrations-head">
+          <div className="integrations-kicker">
+            <span className="integrations-sticker">{t('schedule', 'Schedule')}</span>
+            <span className="integrations-period">
+              {t('connected_tools', 'Connected tools')}
+            </span>
+          </div>
           <h1>{t('integrations', 'Integrations')}</h1>
         </div>
         {isLoading && !data ? (
-          <LoadingComponent />
+          <IntegrationsSkeleton />
         ) : (
           <div className="integrations-scroll">
             <ThirdPartyListComponent reload={mutate} saved={data || []} />
