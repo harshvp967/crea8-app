@@ -13,10 +13,10 @@ import {
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
-import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const fieldClass =
-  'h-[44px] min-h-[44px] w-full rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none';
+  'lib-input h-[44px] min-h-[44px] w-full rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none';
 
 const statusCopy: Record<LinkEditor['domainStatus'], string> = {
   NONE: 'Not connected',
@@ -28,10 +28,10 @@ const statusCopy: Record<LinkEditor['domainStatus'], string> = {
 
 const statusClass: Record<LinkEditor['domainStatus'], string> = {
   NONE: 'lib-pill',
-  WAITING: 'lib-pill lib-pill-amber',
-  VERIFYING: 'lib-pill lib-pill-cyan',
-  LIVE: 'lib-pill lib-pill-green',
-  ERROR: 'lib-pill lib-pill-red',
+  WAITING: 'lib-pill lib-pill-amber lib-pill-pending',
+  VERIFYING: 'lib-pill lib-pill-cyan lib-pill-pending',
+  LIVE: 'lib-pill lib-pill-green lib-pill-live',
+  ERROR: 'lib-pill lib-pill-red lib-pill-failed',
 };
 
 const checkedLabel = (iso: string | null) => {
@@ -128,11 +128,22 @@ export const LinkSettingsScreen = () => {
 
   if (isLoading || !data || !ready) {
     return (
-      <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
-        <h1 className={stkTitle}>Page settings</h1>
-        <div className={`${stkCard} flex items-center gap-[12px]`}>
-          {error ? <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" /> : null}
-          <p className="text-[14px] font-[500] text-textItemBlur">{error ? 'Could not load your page.' : 'Loading your page…'}</p>
+      <div className="lib-settings flex min-w-0 flex-col gap-[12px] pb-[24px]">
+        <div className="min-w-0">
+          <div className="lib-kicker">
+            <span className="lib-sticker">Link-in-Bio</span>
+          </div>
+          <h1 className={stkTitle}>Settings</h1>
+        </div>
+        <div className={`${stkCard} ${error ? 'stk-state' : 'lib-loading'} flex items-center gap-[12px]`}>
+          {error ? (
+            <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
+              <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" />
+            </span>
+          ) : null}
+          <p className="text-[14px] font-[500] text-textItemBlur">
+            {error ? 'Could not load your page.' : 'Loading your page…'}
+          </p>
         </div>
       </div>
     );
@@ -268,48 +279,136 @@ export const LinkSettingsScreen = () => {
 
   return (
     <div className="lib-settings flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
-      <div className="flex flex-col items-start gap-[12px] sm:flex-row sm:justify-between">
+      <div className="lib-head flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className={stkTitle}>Page settings</h1>
-          <p className={stkSub}>Address, custom domain, sharing and search for {origin}/{data.slug}</p>
+          <div className="lib-kicker">
+            <span className="lib-sticker">Link-in-Bio</span>
+            <span className={`${stkSub} lib-period`}>
+              Address, custom domain, sharing and search for {origin}/{data.slug}
+            </span>
+          </div>
+          <h1 className={stkTitle}>Settings</h1>
         </div>
-        <button type="button" className={linkPrimary} disabled={busy || (slugState ? !slugState.ok : false)} onClick={save}>
-          Save changes
-        </button>
+        <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
+          <button type="button" className={linkPrimary} disabled={busy || (slugState ? !slugState.ok : false)} onClick={save}>
+            Save changes
+          </button>
+        </div>
       </div>
 
+      <div className="lib-settings-layout">
+      <div className="lib-settings-main">
       <section className={stkCard}>
         <h2 className="text-[16px] font-[600]">Your page address</h2>
         <div className="mt-[12px] grid gap-[6px]">
-          <span className="text-[14px] font-[500]">Username</span>
+          <span className="lib-label">Username</span>
           <div className="relative">
             <input
-              className={`${fieldClass} ${slugState?.ok ? 'pe-[100px]' : ''}`}
+              className={`${fieldClass}${slugState?.ok ? ' lib-input-ok' : ''}`}
               value={slug}
               maxLength={30}
               onChange={(event) => setSlug(event.target.value.toLowerCase())}
               aria-label="Username"
             />
             {slugState?.ok ? (
-              <span className="pointer-events-none absolute inset-y-0 end-[12px] flex items-center text-[13px] font-[600] text-[color:var(--arc-success)]">
+              <span className="lib-pill lib-slug-ok pointer-events-none absolute inset-y-0 end-[12px] flex items-center">
                 {slugState.message}
               </span>
             ) : null}
           </div>
           <p className="text-[13px] text-textItemBlur">Letters, numbers, dots and underscores · 3 to 30 characters</p>
-          {slugState && !slugState.ok ? <p className="text-[13px] font-[600] text-[color:var(--arc-danger)]">{slugState.message}</p> : null}
+          {slugState && !slugState.ok ? <p className="lib-slug-bad text-[13px] font-[600]">{slugState.message}</p> : null}
           <p className="text-[13px] text-textItemBlur">Opens {origin}/{slug || data.slug}</p>
         </div>
       </section>
 
       <section className={stkCard}>
-        <div className="mb-[12px] flex items-center justify-between gap-[12px]">
-          <h2 className="text-[16px] font-[600]">Custom domain</h2>
-          {data.domainStatus !== 'NONE' ? <span className={statusClass[data.domainStatus]}>{statusCopy[data.domainStatus]}</span> : null}
+        <h2 className="mb-[12px] text-[16px] font-[600]">Page visibility</h2>
+        <div className="lib-toggle-row mb-[14px]">
+          <div className="min-w-0">
+            <div className="lib-toggle-copy">Page is public</div>
+            <p className="text-[13px] text-textItemBlur">Turn off to show a “coming soon” page</p>
+          </div>
+          <LinkToggle checked={isPublic} label="Page is public" onChange={setIsPublic} />
         </div>
+        <div className="lib-toggle-row mb-[14px]">
+          <div className="min-w-0">
+            <div className="lib-toggle-copy">Sensitive content warning</div>
+            <p className="text-[13px] text-textItemBlur">Ask visitors to confirm before opening</p>
+          </div>
+          <LinkToggle checked={sensitive} label="Sensitive content warning" onChange={setSensitive} />
+        </div>
+        <div className="lib-toggle-row">
+          <div className="min-w-0">
+            <div className="lib-toggle-copy">Show “made with crea8.one”</div>
+            <p className="text-[13px] text-textItemBlur">
+              {linkLocked(data) ? 'Hiding the badge is on a paid plan' : data.paid ? 'Paid plans can hide the badge' : 'Paid plans can hide the badge. It stays open while plan gating is off.'}
+            </p>
+          </div>
+          <span className="lib-toggle-actions">
+            {linkLocked(data) ? <span className="lib-pill lib-pill-pro">★ Pro</span> : null}
+            <LinkToggle
+              checked={!hideBadge}
+              label="Show made with crea8.one"
+              onChange={(show) => {
+                if (!show && linkLocked(data)) {
+                  setDomainNote('');
+                  toast.show('Removing the badge is on a paid plan', 'warning');
+                  return;
+                }
+                setHideBadge(!show);
+              }}
+            />
+          </span>
+        </div>
+        {linkLocked(data) ? (
+          <p className="mt-[8px] text-[13px] text-textItemBlur">
+            <Link href="/billing" className="text-[#00D9FF]">
+              Upgrade
+            </Link>{' '}
+            to remove the badge.
+          </p>
+        ) : null}
+      </section>
+
+      <section className={stkCard}>
+        <h2 className="mb-[12px] text-[16px] font-[600]">Search and sharing</h2>
+        <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
+          <LinkField label="Page title">
+            <input value={seoTitle} maxLength={70} onChange={(event) => setSeoTitle(event.target.value)} />
+          </LinkField>
+          <LinkField label="Meta description">
+            <textarea value={seoDescription} maxLength={160} onChange={(event) => setSeoDescription(event.target.value)} />
+          </LinkField>
+        </div>
+      </section>
+      </div>
+
+      <div className="lib-settings-side">
+      <section className={stkCard}>
+        <h2 className="mb-[12px] text-[16px] font-[600]">QR code</h2>
+        <div className="lib-qr">
+          <div className="lib-qr-tile grid h-[120px] w-[120px] place-items-center overflow-hidden bg-white">
+            {qr ? <img src={qr} alt={`QR code for ${data.publicUrl}`} className="h-full w-full" /> : null}
+          </div>
+          <div className="lib-qr-actions flex flex-col gap-[8px]">
+            <button type="button" className={linkSecondary} onClick={() => download('png')}>
+              <HugeIcon name="download" size={16} />
+              Download PNG
+            </button>
+            <button type="button" className={linkSecondary} onClick={() => download('svg')}>
+              <HugeIcon name="download" size={16} />
+              SVG
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className={stkCard}>
+        <h2 className="mb-[12px] text-[16px] font-[600]">Custom domain</h2>
         {data.domainStatus === 'NONE' ? (
-          <div className="flex flex-col gap-[8px] sm:flex-row">
-            <div className="relative min-w-0 flex-1">
+          <div className="lib-domain-form flex flex-col gap-[8px] sm:flex-row">
+            <div className="lib-domain-field relative min-w-0 flex-1">
               <HugeIcon name="link" size={16} className="pointer-events-none absolute start-[14px] top-1/2 -translate-y-1/2 text-textItemBlur" />
               <input
                 className={`${fieldClass} ps-[38px]`}
@@ -321,7 +420,7 @@ export const LinkSettingsScreen = () => {
               />
             </div>
             {!data.gating || data.customDomainAddon ? (
-              <button type="button" className={linkSecondary} disabled={busy || !domain.trim()} onClick={connect}>
+              <button type="button" className={`${linkSecondary} lib-domain-connect`} disabled={busy || !domain.trim()} onClick={connect}>
                 Connect domain
               </button>
             ) : (
@@ -332,8 +431,19 @@ export const LinkSettingsScreen = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-[12px]">
-            <p className="text-[14px]">{data.customDomain}</p>
-            {data.domainError ? <p className="text-[13px] text-[#f07178]">{data.domainError}</p> : null}
+            <div className="lib-domain-row">
+              <span className="lib-domain-mark" aria-hidden>
+                <HugeIcon name="globe" size={16} />
+              </span>
+              <span className="lib-domain-copy">
+                <strong className="lib-domain-host">{data.customDomain}</strong>
+                {data.domainError ? <span className="lib-domain-error">{data.domainError}</span> : null}
+                {checkedLabel(data.domainCheckedAt) ? (
+                  <span className="lib-domain-note">{checkedLabel(data.domainCheckedAt)}</span>
+                ) : null}
+              </span>
+              <span className={statusClass[data.domainStatus]}>{statusCopy[data.domainStatus]}</span>
+            </div>
             {data.domainRecords.length ? (
               <div className="lib-table-wrap">
               <table className="lib-table">
@@ -358,16 +468,13 @@ export const LinkSettingsScreen = () => {
               </table>
               </div>
             ) : null}
-            <div className="flex flex-wrap items-center justify-between gap-[8px]">
-              <span className="text-[13px] text-textItemBlur">{checkedLabel(data.domainCheckedAt)}</span>
-                <div className="flex flex-wrap gap-[8px]">
-                <button type="button" className={linkSecondary} disabled={busy} onClick={check}>
-                  Check again
-                </button>
-                <button type="button" className={linkSecondary} disabled={busy} onClick={remove}>
-                  Remove domain
-                </button>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} disabled={busy} onClick={check}>
+                Check again
+              </button>
+              <button type="button" className={linkSecondary} disabled={busy} onClick={remove}>
+                Remove domain
+              </button>
             </div>
           </div>
         )}
@@ -390,90 +497,13 @@ export const LinkSettingsScreen = () => {
           </p>
         ) : null}
       </section>
-
-      <div className="grid min-w-0 grid-cols-1 gap-[16px] md:grid-cols-2">
-        <section className={stkCard}>
-          <h2 className="mb-[12px] text-[16px] font-[600]">Page visibility</h2>
-          <div className="mb-[14px] flex items-center justify-between gap-[12px]">
-            <div className="min-w-0">
-              <div className="text-[14px] font-[500]">Page is public</div>
-              <p className="text-[13px] text-textItemBlur">Turn off to show a “coming soon” page</p>
-            </div>
-            <LinkToggle checked={isPublic} label="Page is public" onChange={setIsPublic} />
-          </div>
-          <div className="mb-[14px] flex items-center justify-between gap-[12px]">
-            <div className="min-w-0">
-              <div className="text-[14px] font-[500]">Sensitive content warning</div>
-              <p className="text-[13px] text-textItemBlur">Ask visitors to confirm before opening</p>
-            </div>
-            <LinkToggle checked={sensitive} label="Sensitive content warning" onChange={setSensitive} />
-          </div>
-          <div className="flex items-center justify-between gap-[12px]">
-            <div className="min-w-0">
-              <div className="text-[14px] font-[500]">Show “made with crea8.one”</div>
-              <p className="text-[13px] text-textItemBlur">
-                {linkLocked(data) ? 'Hiding the badge is on a paid plan' : data.paid ? 'Paid plans can hide the badge' : 'Paid plans can hide the badge. It stays open while plan gating is off.'}
-              </p>
-            </div>
-            <LinkToggle
-              checked={!hideBadge}
-              label="Show made with crea8.one"
-              onChange={(show) => {
-                if (!show && linkLocked(data)) {
-                  setDomainNote('');
-                  toast.show('Removing the badge is on a paid plan', 'warning');
-                  return;
-                }
-                setHideBadge(!show);
-              }}
-            />
-          </div>
-          {linkLocked(data) ? (
-            <p className="mt-[8px] text-[13px] text-textItemBlur">
-              <Link href="/billing" className="text-[#00D9FF]">
-                Upgrade
-              </Link>{' '}
-              to remove the badge.
-            </p>
-          ) : null}
-        </section>
-
-        <section className={stkCard}>
-          <h2 className="mb-[12px] text-[16px] font-[600]">QR code</h2>
-          <div className="flex flex-wrap items-center gap-[16px]">
-            <div className="grid h-[120px] w-[120px] place-items-center overflow-hidden rounded-[12px] bg-white">
-              {qr ? <img src={qr} alt={`QR code for ${data.publicUrl}`} className="h-full w-full" /> : null}
-            </div>
-            <div className="flex flex-col gap-[8px]">
-              <button type="button" className={linkSecondary} onClick={() => download('png')}>
-                <HugeIcon name="download" size={16} />
-                Download PNG
-              </button>
-              <button type="button" className={linkSecondary} onClick={() => download('svg')}>
-                <HugeIcon name="download" size={16} />
-                SVG
-              </button>
-            </div>
-          </div>
-        </section>
       </div>
-
-      <section className={stkCard}>
-        <h2 className="mb-[12px] text-[16px] font-[600]">Search and sharing</h2>
-        <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
-          <LinkField label="Page title">
-            <input value={seoTitle} maxLength={70} onChange={(event) => setSeoTitle(event.target.value)} />
-          </LinkField>
-          <LinkField label="Meta description">
-            <textarea value={seoDescription} maxLength={160} onChange={(event) => setSeoDescription(event.target.value)} />
-          </LinkField>
-        </div>
-      </section>
+      </div>
 
       {recordsOpen && data.domainStatus !== 'NONE' ? (
         <LinkModal title="Connect domain" onClose={() => setRecordsOpen(false)}>
-          <p className="mb-[12px] text-[14px] text-textItemBlur">Add these records at your DNS provider</p>
-          <p className="mb-[10px] break-all text-[14px]">{data.customDomain}</p>
+          <p className="lib-dialog-copy">Add these records at your DNS provider</p>
+          <p className="lib-domain-host break-all">{data.customDomain}</p>
           <div className="lib-table-wrap">
           <table className="lib-table">
             <thead>
@@ -496,7 +526,7 @@ export const LinkSettingsScreen = () => {
             </tbody>
           </table>
           </div>
-          <p className="mt-[8px] text-[13px] text-textItemBlur">{checkedLabel(data.domainCheckedAt)}</p>
+          <p className="lib-domain-note">{checkedLabel(data.domainCheckedAt)}</p>
           <div className="mt-[14px] flex justify-end">
             <button type="button" className={linkPrimary} onClick={() => setRecordsOpen(false)}>
               Done

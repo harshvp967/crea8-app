@@ -22,7 +22,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkSegments, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 
 type Draft = {
@@ -60,7 +60,7 @@ const toDraft = (page: LinkEditor): Draft => {
   };
 };
 
-const Pro = () => <span className="lib-pill lib-pill-cyan">Pro</span>;
+const Pro = () => <span className="lib-pill lib-pill-pro">★ Pro</span>;
 
 export const LinkAppearanceScreen = () => {
   const fetch = useFetch();
@@ -79,11 +79,22 @@ export const LinkAppearanceScreen = () => {
 
   if (isLoading || !data || !draft) {
     return (
-      <div className="flex min-w-0 flex-col gap-[12px] pb-[24px]">
-        <h1 className={stkTitle}>Appearance</h1>
-        <div className={`${stkCard} flex items-center gap-[12px]`}>
-          {error ? <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" /> : null}
-          <p className="text-[14px] font-[500] text-textItemBlur">{error ? 'Could not load your page.' : 'Loading your page…'}</p>
+      <div className="lib-appearance flex min-w-0 flex-col gap-[12px] pb-[24px]">
+        <div className="min-w-0">
+          <div className="lib-kicker">
+            <span className="lib-sticker">Link-in-Bio</span>
+          </div>
+          <h1 className={stkTitle}>Appearance</h1>
+        </div>
+        <div className={`${stkCard} ${error ? 'stk-state' : 'lib-loading'} flex items-center gap-[12px]`}>
+          {error ? (
+            <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
+              <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" />
+            </span>
+          ) : null}
+          <p className="text-[14px] font-[500] text-textItemBlur">
+            {error ? 'Could not load your page.' : 'Loading your page…'}
+          </p>
         </div>
       </div>
     );
@@ -171,21 +182,24 @@ export const LinkAppearanceScreen = () => {
         </LinkPreview>
       }
     >
-      <div className="flex min-w-0 flex-col gap-[16px] pb-[24px]">
-        <div className="flex items-start justify-between gap-[12px]">
+      <div className="lib-appearance flex min-w-0 flex-col gap-[16px] pb-[24px]">
+        <div className="lib-head flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div className="min-w-0">
+            <div className="lib-kicker">
+              <span className="lib-sticker">Link-in-Bio</span>
+              <span className={`${stkSub} lib-period`}>Themes, wallpaper and the phone preview update as you edit</span>
+            </div>
             <h1 className={stkTitle}>Appearance</h1>
-            <p className={stkSub}>Themes, wallpaper and the phone preview update as you edit</p>
           </div>
-          <div className="flex shrink-0 items-center gap-[8px]">
+          <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
             <button
               type="button"
-              className={`${linkSecondary} lib-preview-toggle`}
+              className={`${linkSecondary} min-[1200px]:hidden`}
               aria-label={preview ? 'Close preview' : 'Preview'}
               onClick={() => setPreview((value) => !value)}
             >
               <HugeIcon name="eye" size={16} />
-              <span className="lib-preview-label">{preview ? 'Close preview' : 'Preview'}</span>
+              {preview ? 'Close preview' : 'Preview'}
             </button>
             <button type="button" className={`${linkSecondary} lib-reset`} onClick={() => setDraft(toDraft(data))}>
               Reset
@@ -203,7 +217,7 @@ export const LinkAppearanceScreen = () => {
           <h2 className="text-[16px] font-[600]">Profile</h2>
           <p className="mb-[12px] text-[13px] text-textItemBlur">Photo, title and bio. Title is 30 characters, bio is 160.</p>
           <div className="mb-[14px] flex flex-wrap items-center gap-[12px]">
-            <div className="grid h-[52px] w-[52px] place-items-center overflow-hidden rounded-full border border-newBorder text-[18px] font-[600]">
+            <div className="lib-avatar">
               {draft.avatarPath ? (
                 <img src={draft.avatarPath} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -229,7 +243,7 @@ export const LinkAppearanceScreen = () => {
                 }}
               />
             </label>
-            <button type="button" className="text-[14px] font-[500] text-textItemBlur" onClick={() => setDraft({ ...draft, avatarPath: '' })}>
+            <button type="button" className="lib-quiet" onClick={() => setDraft({ ...draft, avatarPath: '' })}>
               Remove
             </button>
           </div>
@@ -291,31 +305,24 @@ export const LinkAppearanceScreen = () => {
           <p className="mb-[12px] text-[13px] text-textItemBlur">
             Pro themes are marked
           </p>
-          <div className="flex flex-wrap gap-[12px]">
+          <div className="lib-themes">
             {LINK_THEMES.map((theme) => (
               <button
                 key={theme.id}
                 type="button"
-                className="flex flex-col items-center gap-[6px]"
+                className="lib-theme"
                 onClick={() => {
                   if (!guard(theme.pro, 'That theme is on a paid plan')) return;
                   setDraft({ ...draft, theme: theme.id });
                 }}
               >
-                <span
-                  className="lib-swatch"
-                  data-theme={theme.id}
-                  style={
-                    draft.theme === theme.id
-                      ? { borderColor: 'rgba(0,217,255,.8)', boxShadow: 'inset 0 0 0 1px rgba(0,217,255,.8)' }
-                      : undefined
-                  }
-                >
+                <span className={`lib-swatch${draft.theme === theme.id ? ' is-active' : ''}`} data-theme={theme.id}>
                   <i />
                   <i />
                 </span>
-                <span className="flex items-center gap-[6px] text-[13px] text-textItemBlur">
+                <span className="lib-theme-label">
                   {theme.label}
+                  {draft.theme === theme.id ? <span className="lib-pill lib-pill-active">Active</span> : null}
                   {theme.pro ? <Pro /> : null}
                 </span>
               </button>
@@ -464,7 +471,7 @@ export const LinkAppearanceScreen = () => {
           </div>
           <div className="mb-[12px] flex flex-col gap-[8px]">
             {data.accounts.map((account) => (
-              <label key={account.id} className="flex items-center justify-between gap-[12px] rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] py-[10px]">
+              <label key={account.id} className="lib-account-row">
                 <span className="flex min-w-0 items-center gap-[10px]">
                   <span className="lib-socials" aria-hidden>
                     <span title={account.network}>
@@ -473,7 +480,7 @@ export const LinkAppearanceScreen = () => {
                   </span>
                   <span className="min-w-0">
                     <strong className="block truncate text-[14px]">{account.name}</strong>
-                    <span className="block truncate text-[13px] text-textItemBlur">{account.url}</span>
+                    <span className="lib-account-url block truncate">{account.url}</span>
                   </span>
                 </span>
                 <input
@@ -504,7 +511,7 @@ export const LinkAppearanceScreen = () => {
                     </span>
                   </span>
                 <select
-                  className="h-[44px] min-h-[44px] min-w-0 flex-1 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
+                  className="lib-input h-[44px] min-h-[44px] min-w-0 flex-1 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
                   value={item.network}
                   onChange={(event) => {
                     const socials = draft.socials.slice();
@@ -520,7 +527,7 @@ export const LinkAppearanceScreen = () => {
                 </select>
                 </span>
                 <input
-                  className="h-[44px] min-h-[44px] min-w-0 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
+                  className="lib-input h-[44px] min-h-[44px] min-w-0 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
                   value={item.url}
                   placeholder="https://"
                   onChange={(event) => {
@@ -562,25 +569,24 @@ const ColorField = ({
   onChange: (value: string) => void;
   swatches?: string[];
 }) => (
-  <label className="flex min-w-[140px] flex-col gap-[6px] text-[13px] font-[500]">
+  <label className="lib-color">
     <span>{label}</span>
-    <span className="flex items-center gap-[8px]">
-      <span className="relative h-[28px] w-[28px] shrink-0 overflow-hidden rounded-full border border-newBorder">
+    <span className="lib-color-row">
+      <span className="lib-color-chip">
         <input
           type="color"
           aria-label={label}
-          className="absolute -left-[6px] -top-[6px] h-[40px] w-[40px] cursor-pointer border-0 bg-transparent p-0"
           value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : '#0a0a0a'}
           onChange={(event) => onChange(event.target.value)}
         />
       </span>
-      <span className="text-[13px] uppercase text-textItemBlur">{value}</span>
+      <span className="lib-color-value">{value}</span>
       {swatches.map((colour) => (
         <button
           key={colour}
           type="button"
           aria-label={colour}
-          className="h-[18px] w-[18px] rounded-full border border-newBorder"
+          className="lib-color-swatch"
           style={{ background: colour }}
           onClick={() => onChange(colour)}
         />
