@@ -1,11 +1,51 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { MediaListType } from '@gitroom/nestjs-libraries/dtos/media/get.media.dto';
 import {
   canonicalizeStoredMedia,
   isSafeUploadRelative,
   mentionsUploadRelative,
 } from '@gitroom/nestjs-libraries/upload/media.access';
+
+export const MEDIA_PAGE_SIZE = 18;
+
+// The Media.type column defaults to "image" and saveFile never writes it, so
+// it cannot tell a video from a picture. There is no mime column. Videos are
+// recognized by extension, the same way the library and the uploader do:
+// mp4 (and mov, which the normalizer turns into mp4) are video; the image
+// extensions below are the picture formats the page and the upload allow-list
+// accept. Anything else stays in All.
+const MEDIA_IMAGE_EXTENSIONS = [
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'avif',
+  'svg',
+  'bmp',
+  'tif',
+  'tiff',
+];
+const MEDIA_VIDEO_EXTENSIONS = ['mp4', 'mov'];
+const MEDIA_NAME_FIELDS = ['path', 'name', 'originalName'] as const;
+
+export function mediaTypeFilter(type?: MediaListType): Prisma.MediaWhereInput {
+  if (!type || type === 'all') {
+    return {};
+  }
+  const extensions =
+    type === 'video' ? MEDIA_VIDEO_EXTENSIONS : MEDIA_IMAGE_EXTENSIONS;
+  return {
+    OR: extensions.flatMap((ext) =>
+      MEDIA_NAME_FIELDS.map((field) => ({
+        [field]: { endsWith: `.${ext}`, mode: 'insensitive' as const },
+      }))
+    ),
+  };
+}
 
 @Injectable()
 export class MediaRepository {
@@ -129,7 +169,12 @@ export class MediaRepository {
     });
   }
 
-  async getMedia(org: string, page: number, search?: string) {
+  async getMedia(
+    org: string,
+    page: number,
+    search?: string,
+    type?: MediaListType
+  ) {
     const pageNum = (page || 1) - 1;
     const trimmedSearch = search?.trim();
     const searchFilter = trimmedSearch
@@ -140,24 +185,29 @@ export class MediaRepository {
           },
         }
       : {};
+    const typeFilter = mediaTypeFilter(type);
+    const shared: Prisma.MediaWhereInput = {
+      deletedAt: null,
+      // still being normalized: it shows up once the workflow releases it
+      status: { not: 'processing' },
+      ...searchFilter,
+      ...typeFilter,
+    };
     const query = {
       where: {
         organization: {
           id: org,
         },
-        deletedAt: null,
-        status: { not: 'processing' },
-        ...searchFilter,
+        ...shared,
       },
     };
-    const pages = Math.ceil((await this._media.model.media.count(query)) / 18);
+    const pages = Math.ceil(
+      (await this._media.model.media.count(query)) / MEDIA_PAGE_SIZE
+    );
     const results = await this._media.model.media.findMany({
       where: {
         organizationId: org,
-        deletedAt: null,
-        // still being normalized: it shows up once the workflow releases it
-        status: { not: 'processing' },
-        ...searchFilter,
+        ...shared,
       },
       orderBy: {
         createdAt: 'desc',
@@ -171,8 +221,8 @@ export class MediaRepository {
         alt: true,
         thumbnailTimestamp: true,
       },
-      skip: pageNum * 18,
-      take: 18,
+      skip: pageNum * MEDIA_PAGE_SIZE,
+      take: MEDIA_PAGE_SIZE,
     });
 
     return {
