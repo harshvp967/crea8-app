@@ -33,6 +33,26 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 
+const SettingsPageHead: FC<{
+  t: ReturnType<typeof useT>;
+  showLogout: boolean;
+}> = ({ t, showLogout }) => (
+  <header className="settings-head-v2">
+    <div className="settings-kicker">
+      <span className="settings-sticker">{t('schedule', 'Schedule')}</span>
+      <span className="settings-period">
+        {t('settings_kicker', 'Team, webhooks & API keys')}
+      </span>
+    </div>
+    <h1>{t('settings', 'Settings')}</h1>
+    {showLogout && (
+      <div className="settings-nav-foot">
+        <LogoutComponent />
+      </div>
+    )}
+  </header>
+);
+
 const SkeletonBar = ({ className }: { className: string }) => (
   <div className={`animate-pulse rounded-[12px] bg-newBoxHover ${className}`} />
 );
@@ -152,6 +172,8 @@ export const SettingsPopup: FC<{
     <button
       key={tabKey}
       type="button"
+      role="tab"
+      aria-selected={tabKey === tab}
       className={clsx('settings-tab', tabKey === tab && 'is-on')}
       onClick={() => setTab(tabKey)}
     >
@@ -166,14 +188,10 @@ export const SettingsPopup: FC<{
         <div className="settings-tabs">
           {list.map(({ tab: tabKey, label }) => sectionButton(tabKey, label))}
         </div>
-        {showLogout && (
-          <div className="settings-nav-foot">
-            <LogoutComponent />
-          </div>
-        )}
       </aside>
       <div className="settings-main">
-        <div className="settings-settabs">
+        <SettingsPageHead t={t} showLogout={showLogout} />
+        <div className="settings-settabs" role="tablist">
           {list.map(({ tab: tabKey, label }) => sectionButton(tabKey, label))}
         </div>
         <FormProvider {...form}>

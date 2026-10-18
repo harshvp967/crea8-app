@@ -182,7 +182,7 @@ export const TeamsComponent = () => {
       </div>
       {!!data?.length && (
         <div className="settings-list">
-          <div className="settings-cols cols-team">
+          <div className="settings-cols cols-team" aria-hidden="true">
             <span>{t('user', 'User')}</span>
             <span>{t('email', 'Email')}</span>
             <span>{t('role', 'Role')}</span>
