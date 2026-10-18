@@ -8,7 +8,7 @@ import { formatRate } from '@gitroom/nestjs-libraries/database/prisma/link-in-bi
 import { LinkRequestError, linkLocked, useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkSegments, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
-import { stkCard, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const ranges: Array<{ id: string; label: string }> = [
   { id: '7d', label: '7 days' },
@@ -17,8 +17,7 @@ const ranges: Array<{ id: string; label: string }> = [
   { id: '365d', label: '365 days' },
 ];
 
-const dateClass =
-  'relative h-[44px] min-h-[44px] w-[148px] rounded-[18px] border border-newBorder bg-newBgColorInner pe-[12px] ps-[36px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none';
+const dateClass = 'lib-input lib-date';
 
 const SOURCE_LOGO: Record<string, string> = {
   instagram: '/icons/platforms/instagram.png',
@@ -44,9 +43,9 @@ const deltaText = (kind: 'pct' | 'pt', value: number | null) => {
 
 const deltaTone = (value: number | null) => {
   if (value === null || value === 0) {
-    return 'text-textItemBlur';
+    return 'is-flat';
   }
-  return value > 0 ? 'text-[color:var(--arc-success)]' : 'text-[color:var(--arc-danger)]';
+  return value > 0 ? 'is-up' : 'is-down';
 };
 
 const dayLabel = (iso: string) => {
@@ -74,11 +73,11 @@ const Chart = ({ series }: { series: Array<{ day: string; views: number }> }) =>
   return (
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} className="h-[180px] w-full" role="img" aria-label="Daily views">
-        <polygon points={`0,${height} ${coords.join(' ')} ${width},${height}`} fill="rgba(0,217,255,0.16)" />
-        <polyline points={coords.join(' ')} fill="none" stroke="#00D9FF" strokeWidth="2" />
+        <polygon className="lib-chart-fill" points={`0,${height} ${coords.join(' ')} ${width},${height}`} />
+        <polyline className="lib-chart-line" points={coords.join(' ')} fill="none" />
       </svg>
       {ticks.length ? (
-        <div className="mt-[6px] flex justify-between text-[12px] font-[500] text-textItemBlur">
+        <div className="lib-chart-axis mt-[6px] flex justify-between text-[12px] font-[500]">
           {ticks.map((point) => (
             <span key={point.day}>{dayLabel(point.day)}</span>
           ))}
@@ -119,14 +118,18 @@ export const LinkAnalyticsScreen = () => {
 
   return (
     <div className="lib-analytics flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
-      <div className="flex flex-col items-start gap-[12px] sm:flex-row sm:items-start sm:justify-between">
+      <div className="lib-head flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
+          <div className="lib-kicker">
+            <span className="lib-sticker">Link-in-Bio</span>
+            <span className={`${stkSub} lib-period`}>
+              {host}
+              {page.data && !page.data.paid ? ' — Custom ranges, CSV and device breakdowns are Pro.' : ''}
+            </span>
+          </div>
           <h1 className={stkTitle}>Analytics</h1>
-          <p className={stkSub}>
-            {host}
-            {page.data && !page.data.paid ? ' — Custom ranges, CSV and device breakdowns are Pro.' : ''}
-          </p>
         </div>
+        <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
         <button
           type="button"
           className={linkSecondary}
@@ -162,6 +165,7 @@ export const LinkAnalyticsScreen = () => {
           <HugeIcon name="download" size={16} />
           Export CSV
         </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-[8px]">
@@ -177,8 +181,8 @@ export const LinkAnalyticsScreen = () => {
           />
         </div>
         <div className="hidden flex-wrap items-center gap-[8px] sm:flex">
-          <label className="relative">
-            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[12px] top-[14px] text-textItemBlur" />
+          <label className="lib-date-field relative">
+            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[12px] top-[14px]" />
             <input
               className={`${dateClass} ${from ? '' : 'text-transparent'}`}
               type="date"
@@ -186,10 +190,10 @@ export const LinkAnalyticsScreen = () => {
               value={from}
               onChange={(event) => setFrom(event.target.value)}
             />
-            {from ? null : <span className="pointer-events-none absolute start-[36px] top-[12px] text-[14px] font-[500] text-textItemBlur">From</span>}
+            {from ? null : <span className="pointer-events-none absolute start-[36px] top-[12px] text-[14px] font-[500]">From</span>}
           </label>
-          <label className="relative">
-            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[12px] top-[14px] text-textItemBlur" />
+          <label className="lib-date-field relative">
+            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[12px] top-[14px]" />
             <input
               className={`${dateClass} ${to ? '' : 'text-transparent'}`}
               type="date"
@@ -197,7 +201,7 @@ export const LinkAnalyticsScreen = () => {
               value={to}
               onChange={(event) => setTo(event.target.value)}
             />
-            {to ? null : <span className="pointer-events-none absolute start-[36px] top-[12px] text-[14px] font-[500] text-textItemBlur">To</span>}
+            {to ? null : <span className="pointer-events-none absolute start-[36px] top-[12px] text-[14px] font-[500]">To</span>}
           </label>
           <button
             type="button"
@@ -220,17 +224,19 @@ export const LinkAnalyticsScreen = () => {
       </div>
 
       {error ? (
-        <section className={`${stkCard} flex items-center gap-[12px]`}>
-          <HugeIcon name="alert" size={20} className="shrink-0 text-[color:var(--arc-danger)]" />
+        <section className={`${stkCard} stk-state`}>
+          <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
+            <HugeIcon name="alert" size={20} />
+          </span>
           <p className="text-[14px] font-[500]">Could not load analytics.</p>
         </section>
       ) : isLoading || !data ? (
-        <section className={stkCard}>
+        <section className={`${stkCard} lib-loading flex items-center gap-[12px]`}>
           <p className="text-[14px] font-[500] text-textItemBlur">Loading analytics…</p>
         </section>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-[12px] xl:grid-cols-4">
+          <div className="lib-metrics grid grid-cols-2 gap-[12px] min-[1200px]:grid-cols-4">
             <Metric label="Views" value={data.views.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.views)} deltaValue={data.deltas.views} period={period} />
             <Metric label="Link clicks" value={data.clicks.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.clicks)} deltaValue={data.deltas.clicks} period={period} />
             <Metric label="Click-through rate" value={formatRate(data.ctr)} delta={deltaText('pt', data.deltas.ctr)} deltaValue={data.deltas.ctr} period={period} />
@@ -249,10 +255,10 @@ export const LinkAnalyticsScreen = () => {
               <span className="text-[13px] font-[500] text-textItemBlur">Daily</span>
             </div>
             {data.views === 0 && data.clicks === 0 ? (
-              <div className="lib-analytics-empty flex flex-col items-center gap-[8px] py-[36px] text-center">
-                <div className="grid h-[44px] w-[44px] place-items-center rounded-[14px] border border-newBorder text-textItemBlur">
+              <div className="lib-analytics-empty stk-state flex flex-col items-center gap-[8px] py-[36px] text-center">
+                <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
                   <HugeIcon name="chart-line" size={18} />
-                </div>
+                </span>
                 <strong className="text-[16px] font-[600] tracking-[-0.02em]">No views yet</strong>
                 <p className="text-[14px] font-[500] text-textItemBlur">Share {host} to start collecting views.</p>
                 <button type="button" className={`${linkPrimary} mt-[8px]`} onClick={copyLink}>
@@ -337,7 +343,7 @@ export const LinkAnalyticsScreen = () => {
               <h2 className="text-[16px] font-[600] tracking-[-0.02em]">Device, browser and UTM</h2>
               <p className="mt-[6px] text-[14px] font-[500] text-textItemBlur">
                 Per-link CTR, device, browser, UTM and CSV export are on a paid plan.{' '}
-                <Link href="/billing" className="text-[#00D9FF]">
+                <Link href="/billing">
                   Upgrade
                 </Link>
               </p>
@@ -365,12 +371,12 @@ const Metric = ({
   period: string;
 }) => (
   <section className={`${stkCard} lib-metric`}>
-    <p className="text-[13px] font-[500] text-textItemBlur">{label}</p>
-    <p className="mt-[6px] text-[28px] font-[600] tracking-[-0.03em]">{value}</p>
+    <p className="lib-metric-label text-[13px] font-[500]">{label}</p>
+    <p className="lib-metric-value mt-[6px] text-[28px] font-[600] tracking-[-0.03em]">{value}</p>
     {delta ? (
-      <p className={`text-[13px] font-[600] ${deltaTone(deltaValue)}`}>{delta}</p>
+      <p className={`lib-delta ${deltaTone(deltaValue)}`}>{delta}</p>
     ) : (
-      <p className="text-[13px] font-[500] text-textItemBlur">{period}</p>
+      <p className="lib-metric-period text-[13px] font-[500]">{period}</p>
     )}
   </section>
 );
