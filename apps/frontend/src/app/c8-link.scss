@@ -1383,10 +1383,22 @@ body:has(.link-screen) .stk-close {
   margin-top: 8px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--c8-app-lib);
   color: #121016;
   font-size: 11px;
   font-weight: 700;
+}
+
+.link-screen .lib-delta.is-up {
+  background: var(--c8-sentiment-pos);
+}
+
+.link-screen .lib-delta.is-down {
+  background: var(--c8-sentiment-neg);
+}
+
+.link-screen .lib-delta.is-flat {
+  background: transparent;
+  color: var(--c8-muted);
 }
 
 .link-screen .lib-chart-fill {

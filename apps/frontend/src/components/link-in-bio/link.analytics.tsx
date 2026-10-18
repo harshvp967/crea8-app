@@ -41,6 +41,13 @@ const deltaText = (kind: 'pct' | 'pt', value: number | null) => {
   return kind === 'pt' ? `${sign}${value} pt` : `${sign}${value}%`;
 };
 
+const deltaTone = (value: number | null) => {
+  if (value === null || value === 0) {
+    return 'is-flat';
+  }
+  return value > 0 ? 'is-up' : 'is-down';
+};
+
 const dayLabel = (iso: string) => {
   const date = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) {
@@ -230,13 +237,14 @@ export const LinkAnalyticsScreen = () => {
       ) : (
         <>
           <div className="lib-metrics grid grid-cols-2 gap-[12px] min-[1200px]:grid-cols-4">
-            <Metric label="Views" value={data.views.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.views)} period={period} />
-            <Metric label="Link clicks" value={data.clicks.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.clicks)} period={period} />
-            <Metric label="Click-through rate" value={formatRate(data.ctr)} delta={deltaText('pt', data.deltas.ctr)} period={period} />
+            <Metric label="Views" value={data.views.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.views)} deltaValue={data.deltas.views} period={period} />
+            <Metric label="Link clicks" value={data.clicks.toLocaleString('en-US')} delta={deltaText('pct', data.deltas.clicks)} deltaValue={data.deltas.clicks} period={period} />
+            <Metric label="Click-through rate" value={formatRate(data.ctr)} delta={deltaText('pt', data.deltas.ctr)} deltaValue={data.deltas.ctr} period={period} />
             <Metric
               label="New subscribers"
               value={data.subscribers.toLocaleString('en-US')}
               delta={deltaText('pct', data.deltas.subscribers)}
+              deltaValue={data.deltas.subscribers}
               period={period}
             />
           </div>
@@ -353,18 +361,20 @@ const Metric = ({
   label,
   value,
   delta,
+  deltaValue,
   period,
 }: {
   label: string;
   value: string;
   delta: string;
+  deltaValue: number | null;
   period: string;
 }) => (
   <section className={`${stkCard} lib-metric`}>
     <p className="lib-metric-label text-[13px] font-[500]">{label}</p>
     <p className="lib-metric-value mt-[6px] text-[28px] font-[600] tracking-[-0.03em]">{value}</p>
     {delta ? (
-      <p className="lib-delta">{delta}</p>
+      <p className={`lib-delta ${deltaTone(deltaValue)}`}>{delta}</p>
     ) : (
       <p className="lib-metric-period text-[13px] font-[500]">{period}</p>
     )}
