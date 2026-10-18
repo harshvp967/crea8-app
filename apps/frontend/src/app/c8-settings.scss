@@ -1,9 +1,10 @@
-/* Settings (/settings), crea8.one v2, PR1. Presentation only: handlers live in
+/* Settings (/settings), crea8.one v2. Presentation only: handlers live in
    components/layout/settings.component.tsx and the tab components. Same page
    frame, type, cards and buttons as Calendar, Composer, Agent, Analytics,
-   Media, Plugs and Integrations. Every colour is a --c8-* token. Scoped to
-   .settings-screen. Dialogs and the Developers tab stay on the uiarc rules
-   until PR2. */
+   Media, Plugs and Integrations. Every colour is a --c8-* token. Page rules
+   stay under .settings-screen. Dialog rules stay under
+   body:has(.settings-screen) .arc-dialog:has(.settings-form):not(.po-sign-modal)
+   so the Composer signature modal is unchanged. */
 
 $c8-heading: var(--font-heading), 'Bricolage Grotesque', sans-serif;
 $c8-body: var(--font-body), Inter, sans-serif;
@@ -872,6 +873,477 @@ $c8-body: var(--font-body), Inter, sans-serif;
   }
 }
 
+/* ---------- Tab rows: icon tile, copy, autopost toggle, set index ---------- */
+.settings-screen .settings-tile {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-family: $c8-body;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.settings-screen .settings-tile svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.settings-screen .cols-hook .settings-tile {
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+}
+
+.settings-screen .cols-auto .settings-tile {
+  background: var(--c8-app-schedule);
+  color: #121016;
+}
+
+.settings-screen .settings-list:has(.cols-set) {
+  counter-reset: settings-set;
+}
+
+.settings-screen .settings-item.cols-set {
+  counter-increment: settings-set;
+}
+
+.settings-screen .cols-set .settings-tile {
+  border-radius: 999px;
+}
+
+.settings-screen .cols-set .settings-tile::before {
+  content: counter(settings-set);
+}
+
+.settings-screen .settings-item > div.settings-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-screen .settings-copy > b {
+  overflow: hidden;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-screen .settings-copy > .settings-muted,
+.settings-screen .settings-copy .block {
+  display: block;
+  flex: none;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-screen .settings-active > .settings-muted {
+  display: none;
+}
+
+.settings-screen .cols-auto .settings-active {
+  flex: none;
+  margin-left: auto;
+}
+
+.settings-screen .cols-sig .settings-pill {
+  flex: none;
+}
+
+.settings-screen .cols-set .settings-mini:not(.settings-danger) {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border: 1.5px solid var(--c8-btn-secondary-stroke) !important;
+  border-radius: 999px !important;
+  background: var(--c8-btn-secondary) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: var(--c8-ink) !important;
+}
+
+/* ---------- Developers ---------- */
+.settings-screen .settings-section:has(.settings-seg) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.settings-screen .settings-stack,
+.settings-screen .settings-section > .flex.flex-col.gap-\[40px\] {
+  gap: 14px !important;
+}
+
+.settings-screen .settings-stack > .text-textColor,
+.settings-screen .settings-section > .flex.flex-col > .text-textColor {
+  color: var(--c8-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.settings-screen .settings-seg {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.settings-screen .settings-seg button {
+  height: auto;
+  padding: 6px 12px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  background-image: none;
+  color: var(--c8-ink);
+  font-family: $c8-body;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.settings-screen .settings-seg button.is-on {
+  border-color: var(--c8-ink);
+  background: var(--c8-ink);
+  background-image: none;
+  color: var(--c8-surface);
+}
+
+.settings-screen .settings-seg button:focus-visible {
+  outline: 2px solid var(--c8-cyan);
+  outline-offset: 2px;
+}
+
+.settings-screen .settings-card,
+.settings-screen .settings-section .rounded-\[12px\].border {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 24px !important;
+  background: var(--c8-surface) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+
+.settings-screen .settings-card .border-b,
+.settings-screen .settings-section .rounded-\[12px\] .border-b {
+  border-bottom-color: transparent !important;
+  background: transparent !important;
+}
+
+.settings-screen .settings-card .bg-newBgColorInner:not(.settings-url),
+.settings-screen .settings-section .rounded-\[12px\] .bg-newBgColorInner:not(input):not(textarea):not(.rounded-\[8px\]) {
+  background-color: transparent !important;
+}
+
+.settings-screen .settings-card .text-\[15px\],
+.settings-screen .settings-section .rounded-\[12px\] .text-\[15px\] {
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 22px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.settings-screen .settings-card .text-customColor18,
+.settings-screen .settings-section .text-customColor18 {
+  color: var(--c8-muted);
+}
+
+.settings-screen div.settings-url,
+.settings-screen code.settings-url,
+.settings-screen pre.settings-url,
+.settings-screen .settings-section .rounded-\[12px\] input,
+.settings-screen .settings-section .rounded-\[12px\] textarea,
+.settings-screen .settings-section .rounded-\[12px\] .rounded-\[8px\] {
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 14px !important;
+  background: var(--c8-bg) !important;
+  background-image: none !important;
+  color: var(--c8-ink);
+  box-shadow: none !important;
+  box-sizing: border-box;
+}
+
+.settings-screen div.settings-url {
+  height: auto !important;
+  min-height: 44px;
+  padding: 11px 14px;
+}
+
+.settings-screen code.settings-url,
+.settings-screen pre.settings-url {
+  display: block;
+  margin: 0;
+  padding: 11px 14px;
+  font-family: $c8-body;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.settings-screen div.settings-url code,
+.settings-screen .settings-section .rounded-\[12px\] code {
+  color: var(--c8-ink);
+  font-size: 14px;
+}
+
+.settings-screen .settings-section .rounded-\[12px\] input,
+.settings-screen .settings-section .rounded-\[12px\] textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 14px;
+  font-family: $c8-body;
+  font-size: 14px;
+  outline: none;
+}
+
+.settings-screen .settings-section .rounded-\[12px\] input:focus,
+.settings-screen .settings-section .rounded-\[12px\] input:focus-visible,
+.settings-screen .settings-section .rounded-\[12px\] textarea:focus,
+.settings-screen .settings-section .rounded-\[12px\] textarea:focus-visible,
+.settings-screen div.settings-url:focus-within {
+  outline: none;
+  border-color: var(--c8-ink) !important;
+  box-shadow: inset 0 0 0 1px var(--c8-ink) !important;
+}
+
+.settings-screen .settings-card .p-\[20px\] > .flex,
+.settings-screen .settings-card .flex.gap-\[6px\],
+.settings-screen .settings-card .flex.gap-\[8px\] {
+  flex-wrap: wrap;
+}
+
+.settings-screen .settings-tool,
+.settings-screen .settings-section button.rounded-full,
+.settings-screen .settings-section button.bg-btnSimple {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px;
+  width: auto !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  flex: none;
+  padding: 0 22px !important;
+  border: 1.5px solid var(--c8-btn-secondary-stroke) !important;
+  border-radius: 999px !important;
+  background: var(--c8-btn-secondary) !important;
+  background-image: none !important;
+  color: var(--c8-ink) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  font-family: $c8-body !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: normal !important;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out),
+    transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+.settings-screen .settings-card button.rounded-full {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 6px 12px !important;
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 999px !important;
+  background: var(--c8-surface) !important;
+  background-image: none !important;
+  color: var(--c8-ink) !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.settings-screen .settings-card button.rounded-full.bg-\[\#00D9FF\],
+.settings-screen .settings-card button.rounded-full.bg-\[\#00D9FF\]:hover {
+  border-color: var(--c8-ink) !important;
+  background: var(--c8-ink) !important;
+  background-image: none !important;
+  color: var(--c8-surface) !important;
+}
+
+.settings-screen .settings-wizard,
+.settings-screen .settings-section button.bg-btnPrimary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  flex: none;
+  padding: 0 22px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 999px !important;
+  background: var(--c8-cyan) !important;
+  background-image: none !important;
+  color: var(--c8-on-cyan) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  font-family: $c8-body !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: normal !important;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  filter: none !important;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out),
+    transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+.settings-screen .settings-tool.settings-danger {
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--c8-muted) !important;
+  box-shadow: none !important;
+  font-family: $c8-body !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+.settings-screen .settings-section button.bg-red-600,
+.settings-screen .settings-section button.bg-red-600:hover {
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--c8-danger) !important;
+  box-shadow: none !important;
+  font-family: $c8-body !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+.settings-screen .settings-tool.settings-danger svg {
+  display: none;
+}
+
+.settings-screen .settings-wizard-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--c8-bg);
+}
+
+.settings-screen .settings-wizard-row p {
+  flex: 1 1 180px;
+  min-width: 0;
+  margin: 0;
+  color: var(--c8-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+@media (hover: hover) {
+  .settings-screen .settings-tool:not(.settings-danger):hover,
+  .settings-screen .settings-section button.rounded-full:hover,
+  .settings-screen .settings-section button.bg-btnSimple:hover {
+    background: var(--c8-btn-hover) !important;
+    box-shadow: 0 5px 0 var(--c8-hard) !important;
+    transform: translateY(-2px);
+  }
+
+  .settings-screen .cols-set .settings-mini:not(.settings-danger):hover {
+    background: var(--c8-btn-hover) !important;
+    box-shadow: none !important;
+    transform: none;
+  }
+
+  .settings-screen .settings-card button.rounded-full:hover {
+    background: var(--c8-surface) !important;
+    box-shadow: none !important;
+    transform: none;
+  }
+
+  .settings-screen .settings-wizard:hover,
+  .settings-screen .settings-section button.bg-btnPrimary:hover {
+    background: var(--c8-cyan-hover) !important;
+    box-shadow: 0 5px 0 var(--c8-hard) !important;
+    transform: translateY(-2px);
+    filter: none !important;
+  }
+}
+
+.settings-screen .settings-tool:not(.settings-danger):active,
+.settings-screen .settings-section button.bg-btnSimple:active,
+.settings-screen .settings-section button.rounded-full:active {
+  background: var(--c8-btn-secondary) !important;
+  box-shadow: 0 0 0 var(--c8-hard) !important;
+  transform: translateY(3px);
+  transition-duration: var(--c8-dur-press);
+  transition-timing-function: var(--c8-ease-in);
+}
+
+.settings-screen .settings-card button.rounded-full:active {
+  background: var(--c8-surface) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.settings-screen .settings-wizard:active,
+.settings-screen .settings-section button.bg-btnPrimary:active {
+  background: var(--c8-cyan-pressed) !important;
+  box-shadow: 0 0 0 var(--c8-hard) !important;
+  transform: translateY(3px);
+  transition-duration: var(--c8-dur-press);
+  transition-timing-function: var(--c8-ease-in);
+}
+
 /* ---------- Tablet 640–1199 ---------- */
 @media (min-width: 640px) and (max-width: 1199px) and (min-height: 501px) {
   .c8-shell .app-main:has(.settings-screen) {
@@ -1034,5 +1506,429 @@ $c8-body: var(--font-body), Inter, sans-serif;
     max-width: 1104px;
     margin-right: auto;
     margin-left: auto;
+  }
+}
+
+/* ---------- Settings dialogs ----------
+   Portaled to body, so the page class is on an ancestor check.
+   :not(.po-sign-modal) leaves the Composer signature modal alone. */
+$c8-settings-dialog: 'body:has(.settings-screen) .arc-dialog:has(.settings-form):not(.po-sign-modal)';
+
+body:has(.settings-screen) .arc-dialog-wrap:has(.settings-form):not(:has(.po-sign-modal)) {
+  background: var(--c8-scrim) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#{$c8-settings-dialog} {
+  width: min(480px, calc(100vw - 32px)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 32px);
+  padding: 24px;
+  gap: 18px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 28px;
+  background: var(--c8-surface);
+  background-image: none;
+  box-shadow: 0 6px 0 var(--c8-hard);
+  color: var(--c8-ink);
+  font-family: $c8-body;
+  box-sizing: border-box;
+}
+
+#{$c8-settings-dialog} .arc-grab {
+  display: none;
+}
+
+#{$c8-settings-dialog} .arc-dialog-head {
+  position: static;
+  gap: 12px;
+  padding: 0;
+  background: transparent;
+}
+
+#{$c8-settings-dialog} .arc-dialog-head > div:first-child {
+  color: var(--c8-ink);
+  font-family: $c8-heading !important;
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+#{$c8-settings-dialog} .arc-dialog-body {
+  max-height: none;
+  overflow: visible;
+}
+
+#{$c8-settings-dialog} .arc-dialog-head .mantine-Modal-close {
+  position: static !important;
+  top: auto !important;
+  inset-inline-end: auto !important;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  margin-left: 12px;
+  border: 1px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  #{$c8-settings-dialog} .arc-dialog-head .mantine-Modal-close:hover {
+    background: var(--c8-btn-hover);
+  }
+}
+
+#{$c8-settings-dialog} .arc-dialog-head .mantine-Modal-close:focus-visible {
+  outline: 2px solid var(--c8-ink) !important;
+  outline-offset: 2px;
+}
+
+#{$c8-settings-dialog} .settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  min-width: 0;
+}
+
+#{$c8-settings-dialog} .settings-form > .relative,
+#{$c8-settings-dialog} .settings-form > .flex {
+  gap: 18px !important;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#{$c8-settings-dialog} .settings-form .text-\[14px\]:not(button) {
+  color: var(--c8-muted);
+  font-family: $c8-body;
+  font-size: 12px !important;
+  font-weight: 600;
+  line-height: normal;
+}
+
+#{$c8-settings-dialog} .settings-form .border-newBorder,
+#{$c8-settings-dialog} .settings-form select {
+  width: 100%;
+  height: auto !important;
+  min-height: 44px;
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 14px !important;
+  background-color: var(--c8-bg) !important;
+  color: var(--c8-ink);
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+#{$c8-settings-dialog} .settings-form select {
+  appearance: none;
+  padding: 11px 40px 11px 14px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'><path d='M4 6.2 8 10l4-3.8' stroke='%236b6875' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  font-family: $c8-body;
+  font-size: 14px;
+  line-height: normal;
+  cursor: pointer;
+}
+
+body.dark:has(.settings-screen) .arc-dialog:has(.settings-form):not(.po-sign-modal) .settings-form select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'><path d='M4 6.2 8 10l4-3.8' stroke='%23a29fae' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+
+#{$c8-settings-dialog} .settings-form .border-newBorder:focus-within,
+#{$c8-settings-dialog} .settings-form select:focus,
+#{$c8-settings-dialog} .settings-form select:focus-visible {
+  border-color: var(--c8-ink) !important;
+  box-shadow: inset 0 0 0 1px var(--c8-ink);
+  outline: none;
+}
+
+#{$c8-settings-dialog} .settings-form input {
+  color: var(--c8-ink);
+  font-family: $c8-body;
+  font-size: 14px;
+  outline: none;
+}
+
+#{$c8-settings-dialog} .settings-form input:focus,
+#{$c8-settings-dialog} .settings-form input:focus-visible {
+  outline: none;
+}
+
+#{$c8-settings-dialog} .settings-form .text-red-400 {
+  color: var(--c8-danger) !important;
+  font-size: 12px;
+}
+
+#{$c8-settings-dialog} .settings-form .bg-customColor2 {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#{$c8-settings-dialog} .settings-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 16px !important;
+  background: var(--c8-bg) !important;
+  background-color: var(--c8-bg) !important;
+  padding: 14px !important;
+  color: var(--c8-ink) !important;
+  font-family: $c8-body !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  scrollbar-color: var(--c8-muted) transparent;
+}
+
+#{$c8-settings-dialog} .settings-form textarea::-webkit-scrollbar-thumb {
+  background: var(--c8-muted);
+}
+
+#{$c8-settings-dialog} .settings-form textarea:focus,
+#{$c8-settings-dialog} .settings-form textarea:focus-visible {
+  outline: none !important;
+  border-color: var(--c8-ink) !important;
+  box-shadow: inset 0 0 0 1px var(--c8-ink) !important;
+}
+
+#{$c8-settings-dialog} .settings-form .flex.gap-\[5px\] {
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+}
+
+#{$c8-settings-dialog} .settings-form .flex.gap-\[5px\] > div:last-child {
+  flex: 1;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+#{$c8-settings-dialog} .settings-form .w-\[24px\].h-\[24px\] {
+  width: 22px !important;
+  height: 22px !important;
+  border: 1.5px solid var(--c8-line) !important;
+  border-radius: 7px !important;
+  background: var(--c8-bg) !important;
+  color: var(--c8-cyan);
+}
+
+#{$c8-settings-dialog} .settings-form .w-\[24px\].h-\[24px\]:has(svg) {
+  border-color: var(--c8-ink) !important;
+  background: var(--c8-ink) !important;
+  color: var(--c8-cyan);
+}
+
+#{$c8-settings-dialog} .settings-form .mt-\[24px\],
+#{$c8-settings-dialog} .settings-form .mt-\[18px\] {
+  margin-top: 0 !important;
+}
+
+#{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button) {
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+#{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button[type='submit'] {
+  order: 2;
+}
+
+#{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button:not([type='submit']) {
+  order: 1;
+}
+
+#{$c8-settings-dialog} button[type='submit'],
+#{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button):not(:has(> button[type='submit'])) > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  align-self: flex-end;
+  width: auto !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  flex: none;
+  padding: 0 22px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 999px !important;
+  background: var(--c8-cyan) !important;
+  background-color: var(--c8-cyan) !important;
+  background-image: none !important;
+  color: var(--c8-on-cyan) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  font-family: $c8-body !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: normal !important;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background-color var(--c8-dur-hover) var(--c8-ease-out),
+    box-shadow var(--c8-dur-hover) var(--c8-ease-out),
+    transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+#{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button:not([type='submit']) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  flex: none;
+  padding: 0 22px !important;
+  border: 1.5px solid var(--c8-btn-secondary-stroke) !important;
+  border-radius: 999px !important;
+  background: var(--c8-btn-secondary) !important;
+  background-color: var(--c8-btn-secondary) !important;
+  background-image: none !important;
+  color: var(--c8-ink) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  font-family: $c8-body !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: normal !important;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+@media (hover: hover) {
+  #{$c8-settings-dialog} button[type='submit']:hover,
+  #{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button):not(:has(> button[type='submit'])) > button:hover {
+    background: var(--c8-cyan-hover) !important;
+    background-color: var(--c8-cyan-hover) !important;
+    box-shadow: 0 5px 0 var(--c8-hard) !important;
+    transform: translateY(-2px);
+  }
+
+  #{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button:not([type='submit']):hover {
+    background: var(--c8-btn-hover) !important;
+    background-color: var(--c8-btn-hover) !important;
+    box-shadow: 0 5px 0 var(--c8-hard) !important;
+    transform: translateY(-2px);
+  }
+}
+
+#{$c8-settings-dialog} button[type='submit']:active,
+#{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button):not(:has(> button[type='submit'])) > button:active {
+  background: var(--c8-cyan-pressed) !important;
+  background-color: var(--c8-cyan-pressed) !important;
+  box-shadow: 0 0 0 var(--c8-hard) !important;
+  transform: translateY(3px);
+  transition-duration: var(--c8-dur-press);
+  transition-timing-function: var(--c8-ease-in);
+}
+
+#{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button:not([type='submit']):active {
+  background: var(--c8-btn-secondary) !important;
+  background-color: var(--c8-btn-secondary) !important;
+  box-shadow: 0 0 0 var(--c8-hard) !important;
+  transform: translateY(3px);
+  transition-duration: var(--c8-dur-press);
+  transition-timing-function: var(--c8-ease-in);
+}
+
+#{$c8-settings-dialog} button:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+#{$c8-settings-dialog} .settings-form .border-newBorder:focus-within,
+#{$c8-settings-dialog} .settings-form select:focus:not(:focus-visible),
+#{$c8-settings-dialog} .settings-form input:focus:not(:focus-visible),
+#{$c8-settings-dialog} .settings-form textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Phone sheet. Lone submit stays full width, the way the shared rule does.
+   A submit sitting next to another button keeps sharing the row. */
+@media (max-width: 639px) {
+  .settings-screen .settings-section:has(.settings-seg) {
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .settings-screen .settings-card,
+  .settings-screen .settings-section .rounded-\[12px\].border {
+    border-radius: 22px !important;
+  }
+
+  .settings-screen .cols-hook,
+  .settings-screen .cols-auto,
+  .settings-screen .cols-set {
+    flex-wrap: wrap;
+  }
+
+  .settings-screen .cols-hook .settings-item-actions,
+  .settings-screen .cols-auto .settings-item-actions,
+  .settings-screen .cols-set .settings-item-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+
+  body:has(.settings-screen) .arc-dialog-wrap:has(.settings-form):not(:has(.po-sign-modal)) {
+    align-items: flex-end;
+    padding-bottom: 0 !important;
+    background: var(--c8-scrim-sheet) !important;
+  }
+
+  #{$c8-settings-dialog} {
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 24px);
+    padding: 8px 20px calc(20px + env(safe-area-inset-bottom));
+    border-bottom: 0;
+    border-radius: 28px 28px 0 0;
+    overflow: auto;
+  }
+
+  #{$c8-settings-dialog}::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 0 auto;
+    border-radius: 999px;
+    background: var(--c8-line);
+    flex: none;
+  }
+
+  #{$c8-settings-dialog} button[type='submit'] {
+    align-self: stretch;
+    width: 100% !important;
+  }
+
+  #{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button {
+    flex: 1 1 0;
+    width: auto !important;
+    min-width: 0;
+  }
+
+  #{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button):not(:has(> button[type='submit'])) > button {
+    align-self: stretch;
+    width: 100% !important;
   }
 }

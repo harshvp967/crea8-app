@@ -2932,16 +2932,10 @@ body :focus-visible {
   flex: none;
 }
 
-.settings-list,
-.settings-card,
-.settings-wizard-row {
+.settings-list {
   border: 1px solid var(--new-border);
   border-radius: var(--arc-radius-control);
   background: var(--new-bgColorInner);
-}
-
-.settings-list,
-.settings-card {
   overflow: hidden;
 }
 
@@ -3036,112 +3030,6 @@ body :focus-visible {
   padding: 0 12px !important;
 }
 
-.settings-seg {
-  display: flex;
-  flex: none;
-  gap: 2px;
-  width: max-content;
-  padding: 3px;
-  border: 1px solid var(--new-border);
-  border-radius: var(--arc-radius-control);
-  background: var(--arc-muted);
-}
-
-.settings-seg button {
-  height: 34px;
-  padding: 0 14px;
-  border: 1px solid transparent;
-  border-radius: 14px;
-  background: transparent;
-  color: var(--new-textItemBlur);
-  font: inherit;
-  font-size: 14px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.settings-seg button.is-on {
-  color: var(--new-btn-text);
-  background-color: var(--new-bgColorInner);
-  background-image: var(--arc-wave);
-  border-color: var(--arc-selected-border);
-}
-
-.settings-card .p-\[20px\] > .flex {
-  flex-wrap: wrap;
-}
-
-.settings-tool {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--new-border);
-  border-radius: 18px;
-  background: var(--new-bgColorInner);
-  color: var(--new-btn-text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.settings-tool.settings-danger {
-  color: var(--arc-danger);
-  background: transparent;
-  border-color: color-mix(in srgb, var(--arc-danger) 36%, var(--new-border));
-}
-
-.settings-wizard-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-radius: var(--arc-radius-panel);
-}
-
-.settings-wizard-row p {
-  flex: 1;
-  min-width: 180px;
-  margin: 0;
-  color: var(--new-textItemBlur);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.settings-wizard {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  height: 44px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 18px;
-  background: var(--arc-accent);
-  color: #0a0a0a;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.settings-card button.rounded-full {
-  background: transparent !important;
-  color: var(--new-textItemBlur) !important;
-  border: 1px solid var(--new-border) !important;
-}
-
-.settings-card button.rounded-full.bg-\[\#00D9FF\],
-.settings-card button.rounded-full.bg-\[\#00D9FF\]:hover,
-.settings-card button.rounded-full:hover {
-  color: var(--new-btn-text) !important;
-  background-color: var(--new-bgColorInner) !important;
-  background-image: var(--arc-wave) !important;
-  border-color: var(--arc-selected-border) !important;
-}
-
 .arc-dialog:has(.settings-form) .arc-dialog-head {
   gap: 12px;
 }
@@ -3186,10 +3074,6 @@ body :focus-visible {
 
   .settings-head h1 {
     font-size: 22px;
-  }
-
-  .settings-wizard-row {
-    flex-wrap: wrap;
   }
 
   .settings-form .flex:not(.flex-col):has(> button):not(:has(> button[type='submit'])) > button {

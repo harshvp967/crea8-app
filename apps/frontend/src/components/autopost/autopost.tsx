@@ -17,6 +17,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Slider } from '@gitroom/react/form/slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 export const Autopost: FC = () => {
   const fetch = useFetch();
   const t = useT();
@@ -95,10 +96,15 @@ export const Autopost: FC = () => {
           </div>
           {data.map((p: any) => (
             <article key={p.id} className="settings-item cols-auto">
-              <b>{p.title}</b>
-              <span className="settings-muted" data-label={t('url', 'URL')}>
-                {p.url}
+              <span className="settings-tile" aria-hidden="true">
+                <HugeIcon name="repeat" size={18} />
               </span>
+              <div className="settings-copy">
+                <b>{p.title}</b>
+                <span className="settings-muted" data-label={t('url', 'URL')}>
+                  {p.url}
+                </span>
+              </div>
               <div className="settings-active">
                 <span className="settings-muted">{t('active', 'Active')}</span>
                 <Slider

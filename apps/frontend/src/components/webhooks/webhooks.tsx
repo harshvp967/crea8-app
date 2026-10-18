@@ -16,6 +16,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 export const Webhooks: FC = () => {
   const fetch = useFetch();
@@ -86,15 +87,20 @@ export const Webhooks: FC = () => {
           </div>
           {data.map((p: any) => (
             <article key={p.id} className="settings-item cols-hook">
-              <b>{p.name}</b>
-              <span className="settings-muted" data-label={t('url', 'URL')}>
-                {p.url}
-                {p.signingSecret ? (
-                  <span className="block">
-                    {t('signing_secret', 'Signing secret')}: {p.signingSecret}
-                  </span>
-                ) : null}
+              <span className="settings-tile" aria-hidden="true">
+                <HugeIcon name="send" size={18} />
               </span>
+              <div className="settings-copy">
+                <b>{p.name}</b>
+                <span className="settings-muted" data-label={t('url', 'URL')}>
+                  {p.url}
+                  {p.signingSecret ? (
+                    <span className="block">
+                      {t('signing_secret', 'Signing secret')}: {p.signingSecret}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
               <div className="settings-item-actions">
                 <Button secondary className="settings-mini" onClick={addWebhook(p)}>
                   {t('edit', 'Edit')}

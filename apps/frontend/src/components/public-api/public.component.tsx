@@ -500,7 +500,7 @@ const PublicApiContent = () => {
           </div>
         </div>
         <div className="p-[20px] flex flex-col gap-[16px]">
-          <div className="bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] flex items-center overflow-hidden">
+          <div className="settings-url bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] flex items-center overflow-hidden">
             <code className="text-[14px] flex-1 truncate">
               {reveal ? (
                 user.publicApi
@@ -539,8 +539,8 @@ const PublicApiContent = () => {
       <div className="settings-card">
         <div className="p-[20px] flex flex-col gap-[12px]">
           <div className="text-[15px] font-[600]">MCP</div>
-          <code className="text-[14px] break-all">{`${mcpBase}/mcp`}</code>
-          <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all leading-[1.6]">{`Bearer
+          <code className="settings-url text-[14px] break-all">{`${mcpBase}/mcp`}</code>
+          <pre className="settings-url bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all leading-[1.6]">{`Bearer
 ${mcpBase}/mcp
 Authorization: Bearer <API key>
 
