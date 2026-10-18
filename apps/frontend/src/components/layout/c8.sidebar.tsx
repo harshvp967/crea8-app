@@ -10,6 +10,7 @@ import {
   useMenuItem,
   useVisibleMenuItems,
 } from '@gitroom/frontend/components/layout/top.menu';
+import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.nav';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
 import dynamic from 'next/dynamic';
@@ -93,9 +94,19 @@ export const C8Sidebar = ({
     ...settings,
     ...extras,
   ];
+  const sectionLabel = activeApp === 'stalker' ? 'Stalker' : 'Schedule';
+  const sectionRows =
+    activeApp === 'stalker'
+      ? stalkerNavLinks.map((link) => ({
+          name: link.label,
+          path: link.path,
+          icon: link.icon,
+          onClick: undefined as (() => void) | undefined,
+        }))
+      : rows;
 
   return (
-    <aside className="c8-sidebar" aria-label="Schedule">
+    <aside className="c8-sidebar" aria-label={sectionLabel}>
       <Link href="/launches" className="c8-side-logo" title="crea8.one">
         <img className="c8-side-mark" src="/crea8one-icon-cyan.svg" alt="" />
         <span className="c8-side-logo-word">crea8.one</span>
@@ -119,9 +130,9 @@ export const C8Sidebar = ({
         ))}
       </nav>
       <div className="c8-side-rule" />
-      <p className="c8-side-kicker">Schedule</p>
-      <nav className="c8-side-nav" aria-label="Schedule">
-        {rows.map((item) => {
+      <p className="c8-side-kicker">{sectionLabel}</p>
+      <nav className="c8-side-nav" aria-label={sectionLabel}>
+        {sectionRows.map((item) => {
           const active =
             !item.onClick &&
             item.path !== '#' &&

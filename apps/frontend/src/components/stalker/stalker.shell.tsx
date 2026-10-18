@@ -9,9 +9,9 @@ import { StalkerWizard } from '@gitroom/frontend/components/stalker/stalker.wiza
 import { stkEmpty, stkIconTile, stkPrimary } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const Welcome = ({ onCreate }: { onCreate: () => void }) => (
-  <div className="flex flex-1 items-center justify-center px-[24px] py-[64px]">
-    <div className={stkEmpty}>
-      <span className={stkIconTile} aria-hidden>
+  <div className="stk-state-wrap flex flex-1 items-center justify-center px-[24px] py-[64px]">
+    <div className={`${stkEmpty} stk-state`}>
+      <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
         <HugeIcon name="list" size={24} />
       </span>
       <h1 className="text-[16px] font-[600]">Welcome</h1>
@@ -35,10 +35,15 @@ const PageSkeleton = () => (
 );
 
 const StalkerBody = ({ children }: { children: ReactNode }) => {
-  const { projects, projectId, loading, showWizard, setShowWizard } = useStalkerProject();
+  const { projects, projectId, loading, showWizard, setShowWizard, sample } =
+    useStalkerProject();
 
   return (
-    <div className="stk-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-newBorder bg-newBgColorInner">
+    <div
+      className={`stk-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-newBorder bg-newBgColorInner${
+        sample ? '' : ' stalker-screen'
+      }`}
+    >
       <main className="min-h-0 min-w-0 flex-1 overflow-auto">
         {loading && !projectId ? (
           <PageSkeleton />
@@ -60,7 +65,7 @@ export const StalkerShell = ({ children }: { children: ReactNode }) => {
 
   if (!stalkerEnabled && !project.sample) {
     return (
-      <div className="flex flex-1 items-center bg-newBgColorInner p-[32px] text-[15px] text-textItemBlur">
+      <div className="stalker-screen flex flex-1 items-center bg-newBgColorInner p-[32px] text-[15px] text-textItemBlur">
         {t(
           'stalker_disabled',
           'Stalker is turned off. Set STALKER_ENABLED=true on the frontend and the backend to open this dashboard.'

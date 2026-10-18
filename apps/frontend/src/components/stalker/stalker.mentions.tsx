@@ -49,7 +49,6 @@ import {
   stkChipOn,
   stkPrimary,
   stkSecondary,
-  stkSub,
   stkTint,
   stkTitle,
   stkPopover,
@@ -156,7 +155,7 @@ const highlight = (text: string, phrase?: string) => {
     return (
       <span key={index}>
         {part.slice(0, at)}
-        <span className="rounded-[6px] bg-[var(--arc-selected)] px-[4px] font-[600]">
+        <span className="stk-hit rounded-[6px] bg-[var(--arc-selected)] px-[4px] font-[600]">
           {part.slice(at, at + needle.length)}
         </span>
         {part.slice(at + needle.length)}
@@ -348,8 +347,11 @@ export const StalkerMentions = () => {
     <div className={stkPage}>
       <div className={stkHead}>
         <div className="min-w-0">
+          <div className="stk-kicker">
+            <span className="stk-sticker">Stalker</span>
+            {project?.name ? <span className="stk-period">{project.name}</span> : null}
+          </div>
           <h1 className={stkTitle}>Mentions</h1>
-          {project?.name ? <p className={`${stkSub} hidden md:block`}>{project.name}</p> : null}
           {project?.name ? (
             <button
               type="button"
@@ -364,18 +366,7 @@ export const StalkerMentions = () => {
             </button>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-[8px]">
-          <SegmentedControl
-            aria-label="Mentions view"
-            size="sm"
-            value={feedView}
-            onValueChange={(value) => setFeedView(value === 'timeline' ? 'timeline' : 'feed')}
-            options={[
-              { value: 'feed', label: 'Feed' },
-              { value: 'timeline', label: 'Timeline' },
-            ]}
-          />
-          <StalkerCheckNow />
+        <div className="stk-head-actions flex flex-wrap items-center gap-[8px]">
           <div className="relative">
             <button
               type="button"
@@ -418,6 +409,7 @@ export const StalkerMentions = () => {
               </>
             ) : null}
           </div>
+          <StalkerCheckNow />
         </div>
       </div>
       {projectsOpen ? (
@@ -454,10 +446,10 @@ export const StalkerMentions = () => {
         categories={project?.categories || []}
         authors={authors}
       />
-      <div className="flex flex-wrap items-center gap-[10px] text-[14px]">
+      <div className="stk-tools flex flex-wrap items-center gap-[10px] text-[14px]">
         <button
           type="button"
-          className="inline-flex min-h-[44px] items-center gap-[8px] text-[14px] text-textItemBlur"
+          className="stk-offtopic inline-flex min-h-[44px] items-center gap-[8px] text-[14px] text-textItemBlur"
           onClick={() => setFilters({ ...filters, offTopic: !filters.offTopic })}
         >
           <span className="stk-switch" role="switch" aria-checked={!!filters.offTopic} aria-label="Show off-topic">
@@ -466,9 +458,20 @@ export const StalkerMentions = () => {
           Show off-topic
           {!filters.offTopic && hiddenOffTopic ? ` (${hiddenOffTopic})` : ''}
         </button>
+        <SegmentedControl
+          className="stk-segments"
+          aria-label="Mentions view"
+          size="sm"
+          value={feedView}
+          onValueChange={(value) => setFeedView(value === 'timeline' ? 'timeline' : 'feed')}
+          options={[
+            { value: 'feed', label: 'Feed' },
+            { value: 'timeline', label: 'Timeline' },
+          ]}
+        />
       </div>
       {mentionsQuery.isLoading && !mentions.length ? (
-        <div className="flex flex-col gap-[12px]" aria-hidden>
+        <div className="stk-loading flex flex-col gap-[12px]" aria-hidden>
           {[0, 1, 2].map((row) => (
             <div key={row} className={`${stkCardTight} flex flex-col gap-[12px]`}>
               <div className="flex items-center gap-[12px]">
@@ -483,8 +486,8 @@ export const StalkerMentions = () => {
       ) : null}
       {!mentionsQuery.isLoading && !mentions.length ? (
         hiddenOffTopic && !filters.offTopic ? (
-          <div className={stkEmpty}>
-            <span className={stkIconTile} aria-hidden>
+          <div className={`${stkEmpty} stk-state`}>
+            <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
               <HugeIcon name="list" size={24} />
             </span>
             <h2 className="text-[16px] font-[600]">
@@ -499,8 +502,8 @@ export const StalkerMentions = () => {
             </button>
           </div>
         ) : dirty ? (
-          <div className="stk-empty-view">
-            <span className="stk-empty-mark" aria-hidden>@</span>
+          <div className="stk-empty-view stk-state">
+            <span className="stk-empty-mark stk-state-mark" aria-hidden>@</span>
             <h2 className="text-[16px] font-[600]">No mentions in this view.</h2>
             <p className="max-w-[360px] text-[14px] text-textItemBlur">
               Try a wider date range or clear a filter.
@@ -510,8 +513,8 @@ export const StalkerMentions = () => {
             </button>
           </div>
         ) : (
-          <div className="stk-empty-view">
-            <span className="stk-empty-mark" aria-hidden>@</span>
+          <div className="stk-empty-view stk-state">
+            <span className="stk-empty-mark stk-state-mark" aria-hidden>@</span>
             <h2 className="text-[16px] font-[600]">No mentions yet.</h2>
             <p className="max-w-[360px] text-[14px] text-textItemBlur">
               Stalker is listening for mentions of {project?.name || 'this project'}.
