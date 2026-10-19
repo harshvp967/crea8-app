@@ -10,6 +10,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { IdeaPostsButton } from '@gitroom/frontend/components/launches/idea.posts';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
@@ -379,6 +380,10 @@ export const Filters = () => {
       <h1 className="c8-cal-title">
         {isListView ? t('upcoming', 'Upcoming') : t('calendar', 'Calendar')}
       </h1>
+      <IdeaPostsButton
+        customer={calendar.customer}
+        reload={calendar.reloadCalendarView}
+      />
     </div>
     <div
       className={clsx(

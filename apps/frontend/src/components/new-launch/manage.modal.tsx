@@ -49,6 +49,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 import { clearComposerLayoutRemount } from '@gitroom/frontend/components/new-launch/composer.draft';
 import { persistedThreadValues } from '@gitroom/frontend/components/new-launch/preview.thread';
+import { IdeaPostsButton } from '@gitroom/frontend/components/launches/idea.posts';
 
 const finePointer = () =>
   typeof window !== 'undefined' &&
@@ -996,6 +997,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               {t('post_preview', 'Post Preview')}
             </button>
           </div>
+          <IdeaPostsButton customer={props.customer} reload={mutate} />
           <button type="button" className="composer-close-phone" aria-label={t('close', 'Close')} onClick={askClose}>
             <CloseIcon className="text-[#A3A3A3]" />
           </button>

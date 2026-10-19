@@ -252,6 +252,17 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   editor = 'html' as const;
   dto = XDto;
 
+  override plainPostSettings() {
+    return {
+      who_can_reply_post: 'everyone',
+      post_type: 'post',
+    };
+  }
+
+  override draftStyle() {
+    return 'Short and conversational. One or two sentences. No title and no hashtag block.';
+  }
+
   maxLength(additionalSettings?: any, settings?: any) {
     // Articles are long-form content, the tweet character limit doesn't apply.
     if (settings?.post_type === 'article') {

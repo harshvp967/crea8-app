@@ -203,6 +203,15 @@ export abstract class SocialAbstract {
     return null;
   }
 
+  // A plain scheduled post. Providers that require a setting override this.
+  plainPostSettings(): Record<string, string | boolean> {
+    return {};
+  }
+
+  draftStyle() {
+    return 'Match the usual length and tone of this platform.';
+  }
+
   protected socialHandle(profile?: string | null) {
     const value = (profile || '').trim().replace(/^@/, '');
     if (!value || value.length > 80 || /[\s<>"'`]/.test(value)) {

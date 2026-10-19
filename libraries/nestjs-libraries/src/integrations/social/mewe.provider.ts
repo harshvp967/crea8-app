@@ -34,6 +34,10 @@ export class MeweProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  override plainPostSettings() {
+    return { postType: 'timeline' };
+  }
+
   maxLength() {
     return 63206;
   }

@@ -46,6 +46,15 @@ export class InstagramStandaloneProvider
   dto = InstagramDto;
 
   editor = 'normal' as const;
+
+  override plainPostSettings() {
+    return { post_type: 'post' };
+  }
+
+  override draftStyle() {
+    return 'A caption. The first line is the hook. This channel still needs a picture before it can be scheduled.';
+  }
+
   maxLength() {
     return 2200;
   }
