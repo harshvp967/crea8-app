@@ -18,8 +18,15 @@ import {
 } from '@gitroom/nestjs-libraries/services/payment/payment.provider.interface';
 
 import { STRIPE_PROVIDER } from '@gitroom/nestjs-libraries/services/payment/payment.providers';
+import {
+  guardStripeClient,
+  staticSubscriptionTiers,
+  stripeBillingEnabled,
+} from '@gitroom/nestjs-libraries/services/stripe.gate';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing');
+const stripe = guardStripeClient(
+  new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing')
+);
 
 @PaymentProvider({ provider: STRIPE_PROVIDER })
 export class StripeService extends PaymentProviderAbstract {
@@ -258,6 +265,10 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   async getPackages() {
+    if (!stripeBillingEnabled()) {
+      return staticSubscriptionTiers();
+    }
+
     const products = await stripe.prices.list({
       active: true,
       expand: ['data.tiers', 'data.product'],
