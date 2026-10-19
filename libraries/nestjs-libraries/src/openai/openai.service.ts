@@ -564,4 +564,53 @@ ${allowed}`,
     }
     return posts;
   }
+
+  async extractBrandVoice(samples: string[]): Promise<{
+    traits: string[];
+    sample: string;
+  }> {
+    if (!this.hasApiKey()) {
+      throw new Error('AI is not configured');
+    }
+
+    const parsed = (
+      await openai.chat.completions.parse(
+        {
+          model: 'gpt-4.1',
+          temperature: 0.3,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'Read these posts from one person. Return 4 to 6 short trait labels, each under 4 words, and one sample sentence in their voice. Do not copy a post. Do not invent a biography.',
+            },
+            {
+              role: 'user',
+              content: samples
+                .map((sample, index) => `Post ${index + 1}:\n${sample.slice(0, 2000)}`)
+                .join('\n\n'),
+            },
+          ],
+          response_format: zodResponseFormat(
+            z.object({
+              traits: z.array(z.string()).min(1),
+              sample: z.string(),
+            }),
+            'brandVoice'
+          ),
+        },
+        { timeout: 60_000, maxRetries: 0 }
+      )
+    ).choices[0].message.parsed;
+
+    const traits = (parsed?.traits || [])
+      .map((trait) => trait.trim())
+      .filter(Boolean)
+      .slice(0, 6);
+    const sample = parsed?.sample?.trim() || '';
+    if (!traits.length || !sample) {
+      throw new Error('empty voice');
+    }
+    return { traits, sample };
+  }
 }

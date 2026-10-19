@@ -31,6 +31,7 @@ import { SignaturesComponent } from '@gitroom/frontend/components/settings/signa
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
+import { BrandVoiceSettings } from '@gitroom/frontend/components/settings/brand.voice';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 
 const SettingsPageHead: FC<{
@@ -156,6 +157,9 @@ export const SettingsPopup: FC<{
     if (user?.tier.current !== 'FREE') {
       arr.push({ tab: 'signatures', label: t('signatures', 'Signatures') });
     }
+    if (user?.aiDrafts) {
+      arr.push({ tab: 'brand_voice', label: t('brand_voice', 'Brand voice') });
+    }
     if (user?.tier?.public_api && isGeneral && showLogout) {
       arr.push({ tab: 'api', label: t('developers', 'Developers') });
     }
@@ -203,6 +207,11 @@ export const SettingsPopup: FC<{
               {tab === 'global_settings' && (
                 <div>
                   <GlobalSettings />
+                </div>
+              )}
+              {tab === 'brand_voice' && !!user?.aiDrafts && (
+                <div>
+                  <BrandVoiceSettings />
                 </div>
               )}
               {tab === 'teams' && !!user?.tier?.team_members && isGeneral && (

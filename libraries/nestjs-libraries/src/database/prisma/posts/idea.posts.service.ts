@@ -22,6 +22,7 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
+import { BrandVoiceService } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice.service';
 
 const AI_POSTS = 'ai_posts';
 
@@ -57,7 +58,8 @@ export class IdeaPostsService {
     private _postsService: PostsService,
     private _integrationManager: IntegrationManager,
     private _openaiService: OpenaiService,
-    private _extractContentService: ExtractContentService
+    private _extractContentService: ExtractContentService,
+    private _brandVoiceService: BrandVoiceService
   ) {}
 
   private assertEnabled(orgId: string) {
@@ -66,9 +68,9 @@ export class IdeaPostsService {
     }
   }
 
-  // Brand voice fills this in when that setting is on for the organization.
-  protected async brandVoice(_orgId: string): Promise<string | null> {
-    return null;
+  // Applied only when this organization has saved a voice and turned it on.
+  protected async brandVoice(orgId: string): Promise<string | null> {
+    return this._brandVoiceService.voiceForDrafts(orgId);
   }
 
   private async usageCounts(org: Organization) {

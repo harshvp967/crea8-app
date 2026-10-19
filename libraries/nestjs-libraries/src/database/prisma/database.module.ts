@@ -11,6 +11,8 @@ import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/in
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IdeaPostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/idea.posts.service';
+import { BrandVoiceRepository } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice.repository';
+import { BrandVoiceService } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice.service';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
@@ -80,6 +82,8 @@ import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/servi
     IntegrationRepository,
     PostsService,
     IdeaPostsService,
+    BrandVoiceRepository,
+    BrandVoiceService,
     PostsRepository,
     StripeService,
     PaymentService,
