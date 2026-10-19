@@ -55,11 +55,25 @@ model Organization {
   stalkerAlertRules   StalkerAlertRule[]
   stalkerScanRuns     StalkerScanRun[]
   linkPage            LinkPage?
+  brandVoice          BrandVoice?
 
   @@index([apiKey])
   @@index([streakSince])
   @@index([paymentId])
   @@index([deletedAt])
+}
+
+// Additive. Not applied to production from this change. Traits for one organization.
+model BrandVoice {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  enabled        Boolean      @default(false)
+  traits         String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
 }
 
 model Tags {

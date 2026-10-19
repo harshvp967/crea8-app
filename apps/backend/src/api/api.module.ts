@@ -16,6 +16,7 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { SettingsController } from '@gitroom/backend/api/routes/settings.controller';
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { IdeaPostsController } from '@gitroom/backend/api/routes/idea.posts.controller';
+import { BrandVoiceController } from '@gitroom/backend/api/routes/brand.voice.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { ClippingController } from '@gitroom/backend/api/routes/clipping.controller';
 import { MediaWidgetController } from '@gitroom/backend/api/routes/media.widget.controller';
@@ -70,6 +71,7 @@ const authenticatedController = [
   SettingsController,
   PostsController,
   IdeaPostsController,
+  BrandVoiceController,
   MediaController,
   ClippingController,
   BillingController,

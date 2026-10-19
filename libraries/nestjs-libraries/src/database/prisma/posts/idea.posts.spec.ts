@@ -31,6 +31,12 @@ jest.mock('@gitroom/nestjs-libraries/openai/openai.service', () => ({
 jest.mock('@gitroom/nestjs-libraries/openai/extract.content.service', () => ({
   ExtractContentService: class ExtractContentService {},
 }));
+jest.mock(
+  '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice.service',
+  () => ({
+    BrandVoiceService: class BrandVoiceService {},
+  })
+);
 
 import { aiDraftsEnabledForOrg } from '@gitroom/nestjs-libraries/database/prisma/posts/ai.drafts.flag';
 import {
@@ -166,7 +172,8 @@ describe('IdeaPostsService flag', () => {
       { findFreeDateTime: jest.fn() } as any,
       { getSocialIntegration: jest.fn() } as any,
       openai as any,
-      { extractContent: jest.fn() } as any
+      { extractContent: jest.fn() } as any,
+      { voiceForDrafts: jest.fn().mockResolvedValue(null) } as any
     );
     return { built, openai, credits };
   }

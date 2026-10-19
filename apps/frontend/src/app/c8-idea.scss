@@ -385,3 +385,253 @@ body.c8-schedule .c8-cal-head:has(.c8-idea-entry) .c8-idea-entry {
     white-space: normal;
   }
 }
+
+.c8-voice {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.c8-voice-card {
+  padding: 21px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+}
+
+.c8-voice-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.c8-voice-card h2 {
+  margin: 0;
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.48px;
+}
+
+.c8-voice-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.c8-voice-pill.is-learned {
+  background: var(--c8-app-lib);
+  color: #121016;
+}
+
+.c8-voice-help,
+.c8-voice-actions p,
+.c8-voice-toggle p {
+  color: var(--c8-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.c8-voice-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.c8-voice-posts li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 16px;
+  background: var(--c8-bg);
+}
+
+.c8-voice-posts li > span {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-weight: 700;
+  line-height: 32px;
+  text-align: center;
+}
+
+.c8-voice-posts p {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+}
+
+.c8-voice-posts button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  cursor: pointer;
+}
+
+.c8-voice-add {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.c8-voice-add textarea {
+  min-height: 76px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 16px;
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.c8-voice-error {
+  color: var(--c8-danger);
+  font-size: 14px;
+}
+
+.c8-voice-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.c8-voice-learn {
+  height: 46px;
+  padding: 0 16px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 999px;
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.c8-voice-learn:disabled {
+  opacity: 0.5;
+}
+
+.c8-voice-label {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.c8-voice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.c8-voice-chips span {
+  padding: 8px 14px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-bg);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.c8-voice-sample {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--c8-soft);
+}
+
+.c8-voice-sample div {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c8-muted);
+}
+
+.c8-voice-sample p {
+  margin: 6px 0 0;
+}
+
+.c8-voice-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--c8-bg);
+}
+
+.c8-voice-toggle strong {
+  display: block;
+}
+
+.c8-voice-toggle p {
+  margin: 2px 0 0;
+}
+
+.c8-voice-toggle button {
+  flex: none;
+  width: 46px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-toggle-off);
+  cursor: pointer;
+  position: relative;
+}
+
+.c8-voice-toggle button::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.c8-voice-toggle button.is-on {
+  background: var(--c8-cyan);
+}
+
+.c8-voice-toggle button.is-on::after {
+  left: 21px;
+}
+
+@media (max-width: 900px) {
+  .c8-voice {
+    grid-template-columns: 1fr;
+  }
+
+  .c8-voice-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
