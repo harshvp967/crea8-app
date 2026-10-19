@@ -29,7 +29,6 @@ import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.p
 import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NewPost } from '@gitroom/frontend/components/launches/new.post';
-import { IdeaPostsButton } from '@gitroom/frontend/components/launches/idea.posts';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
@@ -645,7 +644,6 @@ export const LaunchesComponent = () => {
               <AddProviderButton update={() => update(true)} />
               <div className="sidebar-create flex gap-[8px] group-[.sidebar]:flex-col">
                 {channels?.length > 0 && <NewPost />}
-                {channels?.length > 0 && <IdeaPostsButton />}
                 {channels?.length > 0 &&
                   user?.tier?.ai &&
                   billingEnabled && <GeneratorComponent />}
@@ -706,7 +704,6 @@ export const LaunchesComponent = () => {
             <AddProviderButton update={() => update(true)} />
             <div className="strip-create">
               {channels?.length > 0 && <NewPost />}
-              {channels?.length > 0 && <IdeaPostsButton />}
             </div>
             {channels.length === 0 ? (
               <span className="channel-empty-label">
@@ -789,7 +786,6 @@ export const LaunchesComponent = () => {
           {channels?.length > 0 && (
             <div className="phone-create">
               <NewPost presentation="floating" />
-              <IdeaPostsButton presentation="floating" />
             </div>
           )}
         </div>

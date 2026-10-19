@@ -29,6 +29,7 @@ export type IdeaDraft = {
   integrationId: string;
   provider: string;
   name: string;
+  picture?: string | null;
   content: string;
   publishAt: string;
   settings: Record<string, string | boolean>;
@@ -38,7 +39,10 @@ export type IdeaDraft = {
 export type IdeaPostsResult = {
   used: number;
   limit: number;
+  channels?: number;
   limited?: boolean;
+  voice?: boolean;
+  counted?: boolean;
   message?: string;
   error?: string;
   drafts?: IdeaDraft[];
@@ -80,7 +84,9 @@ export class IdeaPostsService {
 
   async usage(org: Organization): Promise<IdeaPostsResult> {
     this.assertEnabled(org.id);
-    return this.usageCounts(org);
+    const counts = await this.usageCounts(org);
+    const channels = await this.channels(org.id);
+    return { ...counts, channels: channels.length };
   }
 
   async generate(org: Organization, body: IdeaPostsDto): Promise<IdeaPostsResult> {
@@ -137,7 +143,9 @@ export class IdeaPostsService {
       return {
         used,
         limit,
-        error: 'Could not draft posts. Try again. Scheduling still works.',
+        voice: !!voice,
+        counted: false,
+        error: "Couldn't write your drafts. Your idea is still here. Nothing was added, and this try did not count.",
       };
     }
 
@@ -147,6 +155,7 @@ export class IdeaPostsService {
         integrationId: channel.integrationId,
         provider: channel.provider,
         name: channel.name,
+        picture: channel.picture,
         content:
           clipPlain(byId.get(channel.integrationId) || '', channel.maxLength) ||
           clipPlain(source, Math.min(channel.maxLength, 280)),
@@ -161,6 +170,8 @@ export class IdeaPostsService {
     return {
       used: used + 1,
       limit,
+      voice: !!voice,
+      counted: true,
       drafts: drafts.filter((draft) => draft.content),
     };
   }
@@ -207,6 +218,7 @@ export class IdeaPostsService {
           integrationId: row.id,
           provider: row.providerIdentifier,
           name: row.name,
+          picture: row.picture,
           maxLength: maxLength > 0 ? maxLength : 1000,
           style:
             provider?.draftStyle?.() ||

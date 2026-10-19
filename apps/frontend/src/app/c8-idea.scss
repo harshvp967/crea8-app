@@ -1,0 +1,387 @@
+.c8-idea-entry {
+  height: 46px;
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--c8-btn-secondary-stroke);
+  background: var(--c8-btn-secondary);
+  color: var(--c8-ink);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.c8-idea-entry:hover {
+  background: var(--c8-btn-hover);
+}
+
+body.c8-schedule .c8-cal-head:has(.c8-idea-entry) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  align-items: end;
+  width: 100%;
+}
+
+body.c8-schedule .c8-cal-head:has(.c8-idea-entry) .c8-idea-entry {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.c8-composer .composer-tabs .c8-idea-entry {
+  margin-left: auto;
+}
+
+.c8-composer .composer-tabs:has(.c8-idea-entry) .composer-close-phone {
+  margin-left: 8px;
+}
+
+.c8-idea {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  font-family: var(--font-body), Inter, sans-serif;
+  color: var(--c8-ink);
+}
+
+.c8-idea-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: var(--c8-scrim);
+  cursor: pointer;
+}
+
+.c8-idea-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  width: 480px;
+  max-width: 100%;
+  height: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+  background: var(--c8-surface);
+  border: 1.5px solid var(--c8-ink);
+  border-radius: 28px 0 0 28px;
+  box-shadow: 0 6px 0 var(--c8-hard);
+}
+
+.c8-idea-panel .arc-grab {
+  display: none;
+}
+
+.c8-idea-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.c8-idea-head h2 {
+  margin: 0;
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1.05;
+  letter-spacing: -0.56px;
+}
+
+.c8-idea-head p {
+  margin: 6px 0 0;
+  color: var(--c8-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.c8-idea-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.c8-idea-bar {
+  width: 64px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--c8-line);
+  overflow: hidden;
+}
+
+.c8-idea-bar span {
+  display: block;
+  height: 100%;
+  background: var(--c8-cyan);
+}
+
+.c8-idea-close {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  cursor: pointer;
+}
+
+.c8-idea-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.c8-idea-field textarea,
+.c8-idea-copy {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 16px;
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.c8-idea-field textarea {
+  min-height: 66px;
+  padding: 12px 14px;
+}
+
+.c8-idea-generate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.c8-idea-generate p,
+.c8-idea-count {
+  margin: 0;
+  color: var(--c8-muted);
+  font-size: 13px;
+}
+
+.c8-idea-count {
+  margin-top: 16px;
+  font-weight: 600;
+}
+
+.c8-idea-secondary,
+.c8-idea-ghost,
+.c8-idea-primary,
+.c8-idea-edit,
+.c8-idea-time {
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.c8-idea-secondary {
+  height: 46px;
+  padding: 0 16px;
+  border: 1.5px solid var(--c8-btn-secondary-stroke);
+  background: var(--c8-btn-secondary);
+  color: var(--c8-ink);
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
+.c8-idea-secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.c8-idea-upgrade {
+  margin: 12px 0 0;
+  color: var(--c8-warn);
+  font-size: 14px;
+}
+
+.c8-idea-error {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--c8-danger) 12%, var(--c8-surface));
+  color: var(--c8-danger);
+}
+
+.c8-idea-error p {
+  margin: 6px 0 12px;
+  font-size: 14px;
+}
+
+.c8-idea-list {
+  flex: 1;
+  min-height: 0;
+  margin-top: 10px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.c8-idea-card {
+  padding: 12px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 18px;
+  background: var(--c8-bg);
+}
+
+.c8-idea-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.c8-idea-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.c8-idea-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.c8-idea-who strong {
+  font-size: 14px;
+}
+
+.c8-idea-who span,
+.c8-idea-card-error {
+  color: var(--c8-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c8-idea-card-error {
+  color: var(--c8-danger);
+  white-space: normal;
+}
+
+.c8-idea-time,
+.c8-idea-edit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1.5px solid var(--c8-line);
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 13px;
+}
+
+.c8-idea-time input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.c8-idea-copy {
+  min-height: 64px;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 1.4;
+}
+
+.c8-idea-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--c8-line);
+}
+
+.c8-idea-ghost {
+  height: 46px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+}
+
+.c8-idea-primary {
+  height: 46px;
+  padding: 0 16px;
+  border: 1.5px solid var(--c8-hard);
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
+.c8-idea-primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (max-width: 767px) {
+  .c8-idea-panel {
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    max-height: calc(100% - 64px);
+    padding: 12px 20px 20px;
+    border-radius: 28px 28px 0 0;
+  }
+
+  .c8-idea-panel .arc-grab {
+    display: block;
+    width: 48px;
+    height: 5px;
+    margin: 0 auto 12px;
+    border-radius: 999px;
+    background: var(--c8-line);
+  }
+
+  .c8-idea-head h2 {
+    font-size: 24px;
+  }
+
+  .c8-idea-copy {
+    max-height: 1.4em;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .c8-idea-foot {
+    position: sticky;
+    bottom: 0;
+    background: var(--c8-surface);
+  }
+
+  .c8-idea-entry {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

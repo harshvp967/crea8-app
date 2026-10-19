@@ -1,20 +1,21 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
-import clsx from 'clsx';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { useToaster } from '@gitroom/react/toaster/toaster';
-import { Button } from '@gitroom/react/form/button';
-import { Textarea } from '@gitroom/react/form/textarea';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { plainToPostHtml } from '@gitroom/nestjs-libraries/database/prisma/posts/idea.posts';
+import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
+import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
+import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import SafeImage from '@gitroom/react/helpers/safe.image';
 
 dayjs.extend(utc);
 
@@ -22,6 +23,7 @@ type Draft = {
   integrationId: string;
   provider: string;
   name: string;
+  picture?: string | null;
   content: string;
   publishAt: string;
   settings: Record<string, string | boolean>;
@@ -36,6 +38,14 @@ function toLocalInput(value: string) {
 
 function toUtc(value: string) {
   return dayjs(value).utc().format('YYYY-MM-DDTHH:mm:ss');
+}
+
+function networkName(provider: string) {
+  const name = provider.split('-')[0] || provider;
+  if (name === 'x') {
+    return 'X';
+  }
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 async function readMessage(response: Response) {
@@ -53,20 +63,53 @@ async function readMessage(response: Response) {
   return '';
 }
 
-const IdeaPostsPanel = ({
+export const IdeaPostsButton = ({
   customer,
   reload,
 }: {
   customer?: string | null;
-  reload: () => void;
+  reload?: () => void;
+}) => {
+  const user = useUser();
+  const [open, setOpen] = useState(false);
+  if (!user?.aiDrafts) {
+    return null;
+  }
+  return (
+    <>
+      <button type="button" className="c8-idea-entry" onClick={() => setOpen(true)}>
+        One idea, every platform
+      </button>
+      {open && (
+        <IdeaPostsPanel
+          customer={customer}
+          reload={reload}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  );
+};
+
+const IdeaPostsPanel = ({
+  customer,
+  reload,
+  onClose,
+}: {
+  customer?: string | null;
+  reload?: () => void;
+  onClose: () => void;
 }) => {
   const fetch = useFetch();
   const t = useT();
-  const toaster = useToaster();
-  const { closeCurrent } = useModals();
+  const modal = useModals();
+  const sheetRef = useRef<HTMLElement>(null);
+  const [phone, setPhone] = useState(false);
   const [idea, setIdea] = useState('');
-  const [used, setUsed] = useState<number | null>(null);
-  const [limit, setLimit] = useState<number | null>(null);
+  const [used, setUsed] = useState(0);
+  const [limit, setLimit] = useState(0);
+  const [voice, setVoice] = useState(false);
+  const [channelCount, setChannelCount] = useState(0);
   const [error, setError] = useState('');
   const [upgrade, setUpgrade] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,27 +117,31 @@ const IdeaPostsPanel = ({
   const [drafts, setDrafts] = useState<Draft[]>([]);
 
   useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    const apply = () => setPhone(media.matches);
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
+
+  useGrabToClose(sheetRef, phone, onClose);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       const response = await fetch('/idea-posts');
       const data = await response.json().catch(() => ({}));
-      if (cancelled) {
-        return;
-      }
-      if (!response.ok) {
-        setError(
-          (typeof data?.message === 'string' && data.message) ||
-            t('idea_not_available', 'Not available')
-        );
+      if (cancelled || !response.ok) {
         return;
       }
       setUsed(data.used ?? 0);
       setLimit(data.limit ?? 0);
+      setChannelCount(data.channels ?? 0);
     })();
     return () => {
       cancelled = true;
     };
-  }, [fetch, t]);
+  }, [fetch]);
 
   const draft = useCallback(async () => {
     setError('');
@@ -111,33 +158,25 @@ const IdeaPostsPanel = ({
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         setError(
-          (typeof data?.message === 'string' && data.message) ||
-            t(
-              'idea_draft_failed',
-              'Could not draft posts. Try again. Scheduling still works.'
-            )
+          "Couldn't write your drafts. Your idea is still here. Nothing was added, and this try did not count."
         );
         return;
       }
-      if (typeof data.used === 'number') {
+      if (typeof data.used === 'number' && data.counted !== false) {
         setUsed(data.used);
       }
       if (typeof data.limit === 'number') {
         setLimit(data.limit);
       }
+      setVoice(!!data.voice);
       if (data.limited) {
-        setUpgrade(
-          data.message ||
-            t(
-              'idea_upgrade',
-              "You've used this month's AI posts. Upgrade crea8.one to draft more."
-            )
-        );
+        setUpgrade(data.message || '');
         setDrafts([]);
         return;
       }
       if (data.error) {
         setError(data.error);
+        setDrafts([]);
         return;
       }
       setDrafts(
@@ -149,15 +188,56 @@ const IdeaPostsPanel = ({
       );
     } catch {
       setError(
-        t(
-          'idea_draft_failed',
-          'Could not draft posts. Try again. Scheduling still works.'
-        )
+        "Couldn't write your drafts. Your idea is still here. Nothing was added, and this try did not count."
       );
     } finally {
       setLoading(false);
     }
-  }, [customer, fetch, idea, t]);
+  }, [customer, fetch, idea]);
+
+  const edit = useCallback(
+    async (item: Draft) => {
+      const listResponse = await fetch('/integrations/list');
+      const list = await listResponse.json();
+      const catalog = (
+        Array.isArray(list) ? list : list?.integrations || []
+      ) as Integrations[];
+      const channels = composerChannels({ catalog, customer });
+      const date = dayjs(item.publishAt);
+      modal.openModal({
+        id: 'add-edit-modal',
+        closeOnClickOutside: false,
+        removeLayout: true,
+        closeOnEscape: false,
+        withCloseButton: false,
+        askClose: true,
+        fullScreen: true,
+        classNames: {
+          modal: 'w-[100%] max-w-[1400px] text-textColor',
+        },
+        size: '80%',
+        title: '',
+        children: (
+          <AddEditModal
+            allIntegrations={channels.allIntegrations.map((row) => ({ ...row }))}
+            integrations={channels.allIntegrations}
+            selectedChannels={[item.integrationId]}
+            customer={customer || undefined}
+            mutate={reload || (() => undefined)}
+            date={date}
+            reopenModal={() => undefined}
+            onlyValues={[
+              {
+                content: plainToPostHtml(item.content),
+              },
+            ]}
+          />
+        ),
+      });
+      onClose();
+    },
+    [customer, fetch, modal, onClose, reload]
+  );
 
   const addAll = useCallback(async () => {
     setSaving(true);
@@ -222,159 +302,165 @@ const IdeaPostsPanel = ({
     setDrafts(next);
     setSaving(false);
     if (saved) {
-      reload();
-      toaster.show(t('added_successfully', 'Added successfully'));
+      reload?.();
     }
     if (saved && next.every((item) => item.saved)) {
-      closeCurrent();
+      onClose();
     }
-  }, [closeCurrent, drafts, fetch, reload, t, toaster]);
+  }, [drafts, fetch, onClose, reload, t]);
 
-  return (
-    <div className="flex flex-col gap-[12px] font-c8-body text-c8-ink">
-      <p className="text-c8-body text-c8-muted">
-        {t(
-          'one_idea_help',
-          'Type one idea, or paste one link. You get a draft for each connected channel.'
-        )}
-      </p>
-      {used !== null && limit !== null && (
-        <p className="text-c8-caption text-c8-muted">
-          {t('ai_posts_used', 'AI posts used: {{used}} of {{limit}}', {
-            used,
-            limit,
-          })}
-        </p>
-      )}
-      <Textarea
-        label={t('your_idea', 'Your idea')}
-        name="idea"
-        disableForm
-        value={idea}
-        onChange={(event) => setIdea(event.target.value)}
-      />
-      {!!upgrade && <p className="text-c8-body text-c8-warn">{upgrade}</p>}
-      {!!error && <p className="text-c8-body text-c8-danger">{error}</p>}
-      <div>
-        <Button
-          type="button"
-          loading={loading}
-          disabled={loading || idea.trim().length < 3}
-          onClick={draft}
-        >
-          {t('draft_for_each_channel', 'Draft for each channel')}
-        </Button>
-      </div>
-      {drafts.map((item, index) => (
-        <div
-          key={item.integrationId}
-          className="flex flex-col gap-[8px] rounded-[18px] border border-c8-line bg-c8-surface p-[12px]"
-        >
-          <div className="text-c8-label">
-            {item.name}
-            <span className="text-c8-muted font-normal"> · {item.provider}</span>
-          </div>
-          <Textarea
-            label={t('draft', 'Draft')}
-            name={`draft-${item.integrationId}`}
-            disableForm
-            className="!min-h-[88px]"
-            value={item.content}
-            onChange={(event) => {
-              const value = event.target.value;
-              setDrafts((current) =>
-                current.map((row, rowIndex) =>
-                  rowIndex === index ? { ...row, content: value, saved: false } : row
-                )
-              );
-            }}
-          />
-          <label className="flex flex-col gap-[6px] text-[14px]">
-            {t('posting_time', 'Posting time')}
-            <input
-              type="datetime-local"
-              value={item.publishAt}
-              onChange={(event) => {
-                const value = event.target.value;
-                setDrafts((current) =>
-                  current.map((row, rowIndex) =>
-                    rowIndex === index
-                      ? { ...row, publishAt: value, saved: false }
-                      : row
-                  )
-                );
-              }}
-              className="bg-newBgColorInner border border-newBorder rounded-[18px] px-[12px] py-[10px] text-textColor"
-            />
-          </label>
-          {!!item.error && <p className="text-c8-caption text-c8-danger">{item.error}</p>}
-          {!!item.saved && (
-            <p className="text-c8-caption text-c8-positive">
-              {t('added_successfully', 'Added successfully')}
+  const meter = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const node = (
+    <div className="c8-idea">
+      <button type="button" className="c8-idea-scrim" aria-label={t('close', 'Close')} onClick={onClose} />
+      <aside ref={sheetRef} className="c8-idea-panel" role="dialog" aria-labelledby="c8-idea-title">
+        <div className="arc-grab" aria-hidden />
+        <div className="c8-idea-head">
+          <div>
+            <h2 id="c8-idea-title">{t('one_idea_every_platform', 'One idea, every platform')}</h2>
+            <p>
+              {t(
+                'one_idea_help',
+                'Type one idea or paste a link. You get one draft for each connected channel.'
+              )}
             </p>
-          )}
+            <div className="c8-idea-meter">
+              <HugeIcon name="agent" size={12} />
+              <span>
+                {t('ai_posts_used', 'AI posts used: {{used}} of {{limit}}', {
+                  used,
+                  limit,
+                })}
+              </span>
+              <span className="c8-idea-bar" aria-hidden>
+                <span style={{ width: `${meter}%` }} />
+              </span>
+            </div>
+          </div>
+          <button type="button" className="c8-idea-close" aria-label={t('close', 'Close')} onClick={onClose}>
+            <HugeIcon name="close" size={18} />
+          </button>
         </div>
-      ))}
-      {!!drafts.length && (
-        <div>
-          <Button
+        <label className="c8-idea-field">
+          <span>{t('your_idea_or_link', 'Your idea or link')}</span>
+          <textarea
+            value={idea}
+            maxLength={4000}
+            onChange={(event) => setIdea(event.target.value)}
+          />
+        </label>
+        <div className="c8-idea-generate">
+          <p>
+            {voice
+              ? t(
+                  'uses_brand_voice',
+                  'Uses your brand voice · {{count}} channels connected',
+                  { count: channelCount }
+                )
+              : t('channels_connected', '{{count}} channels connected', {
+                  count: channelCount,
+                })}
+          </p>
+          <button
             type="button"
-            secondary
-            loading={saving}
-            disabled={saving || drafts.every((item) => item.saved)}
+            className="c8-idea-secondary"
+            disabled={loading || idea.trim().length < 3}
+            onClick={draft}
+          >
+            {loading ? t('writing', 'Writing…') : t('generate', 'Generate')}
+          </button>
+        </div>
+        {!!upgrade && <p className="c8-idea-upgrade">{upgrade}</p>}
+        {!!error && (
+          <div className="c8-idea-error" role="alert">
+            <strong>{t('could_not_write', "Couldn't write your drafts")}</strong>
+            <p>{error}</p>
+            <button type="button" className="c8-idea-secondary" onClick={draft}>
+              {t('try_again', 'Try again')}
+            </button>
+          </div>
+        )}
+        {!!drafts.length && (
+          <p className="c8-idea-count">
+            {t('drafts_for_channels', 'Drafts for {{count}} channels', {
+              count: drafts.length,
+            })}
+          </p>
+        )}
+        <div className="c8-idea-list">
+          {drafts.map((item, index) => (
+            <article key={item.integrationId} className="c8-idea-card">
+              <div className="c8-idea-card-head">
+                <SafeImage
+                  src={item.picture || '/no-picture.jpg'}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="c8-idea-logo"
+                />
+                <div className="c8-idea-who">
+                  <strong>{networkName(item.provider)}</strong>
+                  <span>{item.name}</span>
+                </div>
+                <label className="c8-idea-time">
+                  <HugeIcon name="clock" size={14} />
+                  <span>{dayjs(item.publishAt).format('ddd h:mm A')}</span>
+                  <input
+                    type="datetime-local"
+                    aria-label={t('posting_time', 'Posting time')}
+                    value={item.publishAt}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setDrafts((current) =>
+                        current.map((row, rowIndex) =>
+                          rowIndex === index
+                            ? { ...row, publishAt: value, saved: false }
+                            : row
+                        )
+                      );
+                    }}
+                  />
+                </label>
+                <button type="button" className="c8-idea-edit" onClick={() => edit(item)}>
+                  <HugeIcon name="pencil" size={14} />
+                  {t('edit', 'Edit')}
+                </button>
+              </div>
+              <textarea
+                className="c8-idea-copy"
+                value={item.content}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setDrafts((current) =>
+                    current.map((row, rowIndex) =>
+                      rowIndex === index ? { ...row, content: value, saved: false } : row
+                    )
+                  );
+                }}
+              />
+              {!!item.error && <p className="c8-idea-card-error">{item.error}</p>}
+            </article>
+          ))}
+        </div>
+        <div className="c8-idea-foot">
+          <button type="button" className="c8-idea-ghost" onClick={onClose}>
+            {t('discard', 'Discard')}
+          </button>
+          <button
+            type="button"
+            className="c8-idea-primary"
+            disabled={saving || !drafts.length || !!error || drafts.every((item) => item.saved)}
             onClick={addAll}
           >
             {t('add_all_to_calendar', 'Add all to calendar')}
-          </Button>
+          </button>
         </div>
-      )}
+      </aside>
     </div>
   );
-};
 
-export const IdeaPostsButton = ({
-  presentation = 'inline',
-}: {
-  presentation?: 'inline' | 'floating';
-}) => {
-  const user = useUser();
-  const modal = useModals();
-  const { customer, reloadCalendarView } = useCalendar();
-  const t = useT();
-
-  const open = useCallback(() => {
-    modal.openModal({
-      title: t('one_idea_every_platform', 'One idea, every platform'),
-      closeOnClickOutside: false,
-      closeOnEscape: true,
-      withCloseButton: true,
-      size: 'lg',
-      classNames: {
-        modal: 'text-textColor max-w-[720px]',
-      },
-      children: (
-        <IdeaPostsPanel customer={customer} reload={reloadCalendarView} />
-      ),
-    });
-  }, [customer, modal, reloadCalendarView, t]);
-
-  if (!user?.aiDrafts) {
+  if (typeof document === 'undefined') {
     return null;
   }
-
-  return (
-    <button
-      type="button"
-      onClick={open}
-      className={clsx(
-        'text-c8-ink flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] min-h-[44px] max-h-[44px] rounded-[18px] bg-c8-btn-secondary border border-c8-btn-secondary-stroke flex justify-center items-center gap-[8px] outline-none',
-        presentation === 'floating' && 'phone-create-btn'
-      )}
-    >
-      <HugeIcon name="agent" size={20} className="min-w-[20px]" />
-      <div className="flex-1 text-start text-[14px] font-c8-body group-[.sidebar]:hidden">
-        {t('one_idea', 'One idea')}
-      </div>
-    </button>
-  );
+  return createPortal(node, document.body);
 };
