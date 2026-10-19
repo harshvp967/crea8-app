@@ -32,6 +32,7 @@ import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { aiDraftsEnabledForOrg } from '@gitroom/nestjs-libraries/database/prisma/posts/ai.drafts.flag';
 import {
   AuthorizationActions,
   Sections,
@@ -131,6 +132,7 @@ export class UsersController {
         : organization?.isTrailing,
       allowTrial: organization?.allowTrial,
       streakSince: organization?.streakSince || null,
+      aiDrafts: aiDraftsEnabledForOrg(organization.id),
       publicApi:
         // @ts-ignore
         organization?.users[0]?.role === 'SUPERADMIN' ||

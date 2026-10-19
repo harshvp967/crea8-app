@@ -514,4 +514,54 @@ ${allowed}`,
 
     return parsed?.content || '';
   }
+
+  // Same OpenAI client and gpt-4.1 model the Agent tab uses.
+  async completeIdeaDrafts(
+    system: string,
+    user: string
+  ): Promise<{ id: string; content: string }[]> {
+    if (!this.hasApiKey()) {
+      throw new Error('AI is not configured');
+    }
+
+    const parsed = (
+      await openai.chat.completions.parse(
+        {
+          model: 'gpt-4.1',
+          temperature: 0.7,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+          response_format: zodResponseFormat(
+            z.object({
+              posts: z.array(
+                z.object({
+                  id: z.string(),
+                  content: z.string(),
+                })
+              ),
+            }),
+            'ideaPosts'
+          ),
+        },
+        { timeout: 60_000, maxRetries: 0 }
+      )
+    ).choices[0].message.parsed;
+
+    if (!parsed?.posts?.length) {
+      throw new Error('empty drafts');
+    }
+
+    const posts = parsed.posts
+      .filter((post) => post.id && post.content)
+      .map((post) => ({
+        id: post.id as string,
+        content: post.content as string,
+      }));
+    if (!posts.length) {
+      throw new Error('empty drafts');
+    }
+    return posts;
+  }
 }

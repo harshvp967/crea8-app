@@ -50,6 +50,14 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   ];
   override maxConcurrentJob = 500; // Facebook has reasonable rate limits
   editor = 'normal' as const;
+  override plainPostSettings() {
+    return { post_type: 'post' };
+  }
+
+  override draftStyle() {
+    return 'Conversational. A short paragraph or two.';
+  }
+
   maxLength() {
     return 63206;
   }

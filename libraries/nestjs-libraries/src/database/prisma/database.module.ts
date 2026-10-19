@@ -10,6 +10,7 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { IdeaPostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/idea.posts.service';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
@@ -78,6 +79,7 @@ import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/servi
     IntegrationService,
     IntegrationRepository,
     PostsService,
+    IdeaPostsService,
     PostsRepository,
     StripeService,
     PaymentService,

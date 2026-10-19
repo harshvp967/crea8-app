@@ -201,6 +201,9 @@ export interface SocialProvider
   refreshCron?: boolean;
   dto?: any;
   maxLength: (additionalSettings?: any, settings?: any) => number;
+  // Defaults for a plain text post, and a one-line style note for drafts.
+  plainPostSettings?(): Record<string, string | boolean>;
+  draftStyle?(): string;
   checkValidity(
     posts: Array<{ path: string; thumbnail?: string }[]>,
     settings: any,

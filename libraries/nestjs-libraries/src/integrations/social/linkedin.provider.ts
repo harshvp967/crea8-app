@@ -80,6 +80,10 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   refreshWait = true;
   editor = 'normal' as const;
   dto = LinkedinDto;
+  override draftStyle() {
+    return 'A few short paragraphs. Professional and human. Line breaks are fine.';
+  }
+
   maxLength() {
     return 3000;
   }
