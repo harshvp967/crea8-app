@@ -1,0 +1,23 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "crea8-frontend",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-19",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "crea8-frontend"
+    }
+  ],
+  "vars": {
+    "PUBLIC_LINK_CACHE_SECONDS": "0"
+  }
+}

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createReadStream, statSync } from 'fs';
 import { resolve, sep } from 'path';
 import {
   localPublicSignatureOk,
@@ -82,6 +81,16 @@ export const GET = async (
   // Confine reads to UPLOAD_DIRECTORY. resolve() collapses any `..` segments
   // (including URL-decoded ones), so this blocks every path-traversal variant.
   if (filePath !== base && !filePath.startsWith(base + sep)) {
+    return new NextResponse('Not found', { status: 404 });
+  }
+  // Local disk only. Production media is R2, and this route is not on the
+  // rewrite path unless STORAGE_PROVIDER=local. Workers has no filesystem, so
+  // load `fs` here. A missing module returns 404 instead of failing the Worker.
+  let createReadStream: typeof import('fs').createReadStream;
+  let statSync: typeof import('fs').statSync;
+  try {
+    ({ createReadStream, statSync } = await import('fs'));
+  } catch {
     return new NextResponse('Not found', { status: 404 });
   }
   let fileStats;
