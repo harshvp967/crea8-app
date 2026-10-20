@@ -2001,7 +2001,10 @@ body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode {
 }
 
 body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode .date-range {
-  display: contents;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
 }
 
 body.c8-schedule[data-c8-view='list'] .cal-list-pager {
@@ -3627,7 +3630,10 @@ body.c8-schedule .cal-post-sheet-title {
   }
 
   body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode .date-range {
-    display: contents;
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
   }
 
   body.c8-schedule[data-c8-view='list'] .cal-list-pager,
@@ -4346,22 +4352,31 @@ body.c8-schedule .cal-post-sheet-title {
     display: none !important;
   }
 
-  body.c8-schedule[data-c8-view='list'] .cal-list-states {
-    grid-area: well;
+  body.c8-schedule[data-c8-view='list'] .cal-list-states-row {
+    grid-area: states;
     align-self: start;
     z-index: 2;
     width: 100%;
     max-width: 100%;
+    padding: 0;
+  }
+
+  body.c8-schedule[data-c8-view='list'] .cal-list-states {
+    grid-area: auto;
+    align-self: start;
+    z-index: 2;
+    width: fit-content;
+    max-width: 100%;
     overflow-x: auto;
     flex-wrap: nowrap;
     gap: 6px;
-    padding: 0 0 8px;
+    padding: 0;
     border: 0;
-    background: var(--c8-bg);
+    background: transparent;
   }
 
   body.c8-schedule[data-c8-view='list'] .calendar-well {
-    padding-top: 52px !important;
+    padding-top: 0 !important;
   }
 
   /* The desktop list is an absolute scroller inside a fixed-height well.
@@ -5271,8 +5286,10 @@ body.c8-schedule .cal-show-more-short {
   body.c8-schedule[data-c8-view='list'] .calendar-panel,
   body.c8-schedule[data-c8-view='list'] .calendar-panel:has(.cal-customer > div) {
     grid-template-areas:
+      'head head head'
       'actions actions actions'
       'scope scope scope'
+      'period period period'
       'states states states'
       'well well well' !important;
     row-gap: 4px !important;
@@ -5927,7 +5944,8 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
     gap: 8px;
   }
 
-  body.c8-schedule:not([data-c8-view='list']) .date-range > .cal-nav {
+  body.c8-schedule:not([data-c8-view='list']) .date-range > .cal-nav,
+  body.c8-schedule[data-c8-view='list'] .date-range > .cal-nav {
     display: none !important;
   }
 
@@ -6429,21 +6447,23 @@ body.c8-schedule .month-cell > .cal-col {
   body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row .cal-mode,
   body.c8-schedule .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row .cal-mode,
   body.c8-schedule .cal-scope-row .cal-mode.c8-seg {
-    flex: 1 0 auto !important;
-    width: 100% !important;
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+    width: max-content !important;
     max-width: 100% !important;
     min-width: 0;
     margin: 0 !important;
-    overflow: visible !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
   }
 
   body.c8-schedule .cal-scope-row .cal-mode.c8-seg > button[role='radio'] {
-    flex: 1 1 0 !important;
+    flex: 0 0 auto !important;
     width: auto !important;
-    min-width: max-content;
-    height: 36px !important;
-    min-height: 36px !important;
-    padding: 0 8px !important;
+    min-width: 0;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 7px 14px !important;
     font-size: 13px !important;
     white-space: nowrap !important;
     text-align: center;
@@ -6601,20 +6621,22 @@ body.c8-schedule .filters-bar .cal-scope-row .cal-mode,
 body.c8-schedule .filters-bar.is-list-mode .cal-scope-row .cal-mode,
 body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row .cal-mode,
 body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row .cal-mode {
-  flex: 1 1 auto !important;
-  width: auto !important;
+  flex: 0 0 auto !important;
+  align-self: flex-start !important;
+  width: max-content !important;
   max-width: 100% !important;
   min-width: 0 !important;
   margin: 0 !important;
   order: 1 !important;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 body.c8-schedule .cal-scope-row .cal-mode.c8-seg > [role='radio'] {
-  flex: 1 1 auto !important;
+  flex: 0 0 auto !important;
   width: auto !important;
-  min-width: max-content !important;
-  padding-inline: 10px !important;
+  min-width: 0 !important;
+  padding: 7px 14px !important;
   white-space: nowrap !important;
 }
 
@@ -6681,7 +6703,7 @@ body.c8-schedule .filters-bar.is-list-mode .cal-list-states {
   }
 
   body.c8-schedule .cal-scope-row .cal-mode.c8-seg > [role='radio'] {
-    padding-inline: 6px !important;
+    padding: 7px 14px !important;
     font-size: 13px !important;
   }
 }
@@ -6692,7 +6714,7 @@ body.c8-schedule .filters-bar.is-list-mode .cal-list-states {
   }
 
   body.c8-schedule .cal-scope-row .cal-mode.c8-seg > [role='radio'] {
-    padding-inline: 4px !important;
-    font-size: 12px !important;
+    padding: 7px 14px !important;
+    font-size: 13px !important;
   }
 }

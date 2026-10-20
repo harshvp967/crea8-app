@@ -310,9 +310,15 @@ export const Filters = () => {
     }
   }, [calendar]);
 
+  const pageLabel = `${t('page', 'Page')} ${calendar.listPage + 1} ${t('of', 'of')} ${Math.max(1, calendar.listTotalPages)}`;
+  const stepPrevious = isListView ? previousPage : previous;
+  const stepNext = isListView ? nextPage : next;
+  const listAtStart = isListView && calendar.listPage <= 0;
+  const listAtEnd = isListView && calendar.listPage >= calendar.listTotalPages - 1;
+
   const phonePeriod = (() => {
     if (isListView) {
-      return null;
+      return { title: pageLabel, small: '', full: true };
     }
     if (calendar.display === 'day') {
       const start = displayDayjs(calendar.startDate);
@@ -389,7 +395,12 @@ export const Filters = () => {
     >
       {phonePeriod && (
         <div className={clsx('c8-phone-period', phonePeriod.full ? 'is-full' : 'is-relative')}>
-          <button type="button" className="c8-phone-step" aria-label="Previous" onClick={previous}>
+          <button
+            type="button"
+            className={clsx('c8-phone-step', listAtStart && 'opacity-50 cursor-not-allowed')}
+            aria-label="Previous"
+            onClick={stepPrevious}
+          >
             <HugeIcon name="chevron-left" size={16} />
           </button>
           <button type="button" className="c8-phone-period-label" onClick={setToday}>
@@ -398,28 +409,37 @@ export const Filters = () => {
               <span className="c8-phone-period-small">{phonePeriod.small}</span>
             ) : null}
           </button>
-          <button type="button" className="c8-phone-step" aria-label="Next" onClick={next}>
+          <button
+            type="button"
+            className={clsx('c8-phone-step', listAtEnd && 'opacity-50 cursor-not-allowed')}
+            aria-label="Next"
+            onClick={stepNext}
+          >
             <HugeIcon name="chevron-right" size={16} />
           </button>
         </div>
       )}
-      {!isListView && (
-          <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
+      <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
           <div className="cal-nav border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
             <div
-              onClick={previous}
+              onClick={stepPrevious}
               role="button"
               aria-label="Previous"
-              className="cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
+              className={clsx(
+                'cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors',
+                listAtStart && 'opacity-50 cursor-not-allowed'
+              )}
             >
               <HugeIcon name="chevron-left" size={12} />
             </div>
             <div className="cal-range-label min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="cal-range-desktop py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
-                {getDisplayText()}
+              <div className="cal-range-desktop py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500] whitespace-nowrap">
+                {isListView ? pageLabel : getDisplayText()}
               </div>
-              <div className="cal-range-phone py-[3px] px-[12px] text-[16px] font-[600]">
-                {calendar.display === 'month'
+              <div className="cal-range-phone py-[3px] px-[12px] text-[16px] font-[600] whitespace-nowrap">
+                {isListView
+                  ? pageLabel
+                  : calendar.display === 'month'
                   ? getDisplayText()
                   : (() => {
                       const start = displayDayjs(calendar.startDate).startOf('isoWeek');
@@ -431,10 +451,13 @@ export const Filters = () => {
               </div>
             </div>
             <div
-              onClick={next}
+              onClick={stepNext}
               role="button"
               aria-label="Next"
-              className="cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors"
+              className={clsx(
+                'cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors',
+                listAtEnd && 'opacity-50 cursor-not-allowed'
+              )}
             >
               <HugeIcon name="chevron-right" size={12} />
             </div>
@@ -450,48 +473,7 @@ export const Filters = () => {
             </div>
           </div>
         </div>
-      )}
       {isListView && (
-          <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
-          <div className={clsx('cal-list-pager border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden', calendar.listTotalPages <= 1 && 'is-single-page')}>
-            <div
-              onClick={previousPage}
-              className={clsx(
-                'text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center transition-colors',
-                calendar.listPage > 0
-                  ? 'cursor-pointer hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]'
-                  : 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <HugeIcon name="chevron-left" size={12} />
-            </div>
-            <div className="cal-page-caption min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
-              <div className="py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500]">
-                {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
-              </div>
-            </div>
-            <div
-              onClick={nextPage}
-              className={clsx(
-                'text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center transition-colors',
-                calendar.listPage < calendar.listTotalPages - 1
-                  ? 'cursor-pointer hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)]'
-                  : 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <HugeIcon name="chevron-right" size={12} />
-            </div>
-          </div>
-          <div className="cal-today flex-1 text-[14px] font-[500]">
-            <div className="text-center flex h-[40px]">
-              <div
-                onClick={setToday}
-                className="hover:text-newTextColor hover:bg-newBoxHover h-[36px] px-[12px] flex justify-center items-center rounded-[18px] transition-all cursor-pointer text-[14px] font-[500] bg-newBgColorInner border border-newBorder text-textItemBlur shadow-[var(--arc-shadow-resting)]"
-              >
-                {t('today', 'Today')}
-              </div>
-            </div>
-          </div>
           <div className="cal-list-states-row">
           <SegmentedControl
             variant="pill"
@@ -504,8 +486,6 @@ export const Filters = () => {
             options={listStateOptions}
           />
           </div>
-          <div className="flex-1" />
-        </div>
       )}
       <div className="cal-scope-row">
       <div className="cal-customer">
