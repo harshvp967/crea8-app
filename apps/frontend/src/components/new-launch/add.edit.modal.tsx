@@ -46,6 +46,19 @@ export interface AddEditModalProps {
   mutate: () => void;
   padding?: string;
   customClose?: () => void;
+  channelSettings?: Record<string, unknown>;
+  saveToDraft?: (data: {
+    date: string;
+    posts: Array<{
+      integration: { id: string };
+      date?: string;
+      settings?: Record<string, unknown>;
+      value: Array<{
+        content?: string;
+        image?: Array<{ id: string; path: string }>;
+      }>;
+    }>;
+  }) => void;
   onlyValues?: Array<{
     content: string;
     id?: string;
@@ -214,7 +227,14 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
       for (const channel of props.selectedChannels) {
         const integration = integrations.find((i) => i.id === channel);
         if (integration) {
-          addOrRemoveSelectedIntegration(integration, {});
+          addOrRemoveSelectedIntegration(
+            integration,
+            editorSettings(
+              props.selectedChannels?.length === 1
+                ? props.channelSettings
+                : {}
+            )
+          );
         }
       }
     }

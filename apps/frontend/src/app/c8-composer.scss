@@ -3785,3 +3785,92 @@ body.c8-schedule .customer-menu,
     z-index: 160 !important;
   }
 }
+
+.c8-composer .composer-actions > button.c8-save-draft {
+  height: 44px !important;
+  min-width: 180px;
+  padding: 0 20px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 999px !important;
+  background: var(--c8-cyan) !important;
+  color: var(--c8-on-cyan) !important;
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-weight: 600;
+  white-space: nowrap !important;
+}
+
+.c8-composer .c8-save-draft:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.arc-dialog.po-sure-draft {
+  padding: 0 !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+  width: min(440px, calc(100vw - 32px)) !important;
+  max-width: calc(100vw - 32px) !important;
+  box-sizing: border-box;
+}
+
+.po-sure-draft .arc-dialog-head {
+  display: none;
+}
+
+.po-sure-draft .po-sure-yes,
+.po-sure-draft .po-sure-no {
+  order: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .c8-composer.c8-composer-draft .composer-foot {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: auto !important;
+    max-height: none !important;
+    flex-wrap: wrap !important;
+    gap: 8px;
+  }
+
+  .c8-composer.c8-composer-draft .composer-foot > .flex-1,
+  .c8-composer.c8-composer-draft .composer-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    justify-content: stretch !important;
+  }
+
+  .c8-composer.c8-composer-draft .composer-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding-right: 0 !important;
+  }
+
+  .c8-composer.c8-composer-draft .c8-save-draft {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .arc-dialog.po-sure-draft {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important;
+    border-radius: 28px 28px 0 0 !important;
+  }
+
+  .po-sure-draft .po-sure-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .po-sure-draft .po-sure-yes,
+  .po-sure-draft .po-sure-no {
+    flex: none;
+    width: 100%;
+  }
+}
