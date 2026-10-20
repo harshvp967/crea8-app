@@ -365,6 +365,94 @@
   cursor: default;
 }
 
+body:has(.c8-composer) .c8-idea {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.c8-idea-file {
+  display: none;
+}
+
+.c8-idea-tray,
+.c8-idea-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.c8-idea-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.c8-idea-tray-file,
+.c8-idea-thumb {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex: none;
+}
+
+.c8-idea-tray-file img,
+.c8-idea-thumb img,
+.c8-idea-video {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.c8-idea-tray-file > button,
+.c8-idea-thumb > button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  cursor: pointer;
+}
+
+.c8-idea-needs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--c8-danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.c8-idea-discord {
+  margin-top: 8px;
+}
+
 @media (max-width: 767px) {
   .c8-idea-panel {
     top: auto;

@@ -15,9 +15,19 @@ import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/gr
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { DiscordChannelSelect } from '@gitroom/frontend/components/new-launch/providers/discord/discord.channel.select';
+import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import { FormProvider, useForm } from 'react-hook-form';
 
 dayjs.extend(utc);
+
+type DraftMedia = {
+  id: string;
+  path: string;
+  kind: 'image' | 'video';
+};
 
 type Draft = {
   integrationId: string;
@@ -27,8 +37,23 @@ type Draft = {
   content: string;
   publishAt: string;
   settings: Record<string, string | boolean>;
+  media: DraftMedia[];
   error?: string;
   saved?: boolean;
+  valid?: boolean;
+  warning?: string;
+  needs?: 'image' | 'video' | null;
+  discord?: boolean;
+};
+
+type ValidRow = {
+  id: string;
+  identifier?: string;
+  valid?: boolean;
+  settingsError?: string;
+  errors?: string | true;
+  emptyContent?: boolean;
+  tooLong?: boolean;
 };
 
 function toLocalInput(value: string) {
@@ -46,6 +71,80 @@ function networkName(provider: string) {
     return 'X';
   }
   return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+function mediaKind(path: string): 'image' | 'video' {
+  return path.toLowerCase().indexOf('mp4') > -1 ? 'video' : 'image';
+}
+
+function channelAccepts(provider: string, kind: 'image' | 'video') {
+  if (provider.toLowerCase().startsWith('youtube')) {
+    return kind === 'video';
+  }
+  return true;
+}
+
+function readUploaded(result: unknown): DraftMedia[] {
+  const rows = Array.isArray(result) ? result : [];
+  return rows.flatMap((file) => {
+    const row = file?.saved || file;
+    const path = String(row?.path || '');
+    const id = String(row?.id || '');
+    if (!id || !path) {
+      return [];
+    }
+    return [{ id, path, kind: mediaKind(path) }];
+  });
+}
+
+function cardIssue(draft: Draft, result: ValidRow | undefined, tray: DraftMedia[]) {
+  if (!result) {
+    return {
+      valid: false,
+      warning: 'Could not check this draft.',
+      needs: null as 'image' | 'video' | null,
+      discord: false,
+    };
+  }
+  const error = result.errors === true ? '' : String(result.errors || '');
+  const settings = result.settingsError || '';
+  const provider = draft.provider.toLowerCase();
+  if (provider.startsWith('discord') && /channel/i.test(settings)) {
+    return { valid: false, warning: '', needs: null, discord: true };
+  }
+  const imagesOnly =
+    tray.some((file) => file.kind === 'image') &&
+    !tray.some((file) => file.kind === 'video') &&
+    !draft.media.some((file) => file.kind === 'video');
+  const videoOnly = provider.startsWith('youtube') || /must be a video/i.test(error);
+  const missingMedia =
+    /at least one media|one media|no video \/ images|requires at least one media/i.test(
+      error
+    );
+  if (videoOnly && (missingMedia || imagesOnly || /must be a video/i.test(error))) {
+    return { valid: false, warning: 'Needs a video', needs: 'video' as const, discord: false };
+  }
+  if (missingMedia) {
+    return { valid: false, warning: 'Needs an image', needs: 'image' as const, discord: false };
+  }
+  if (result.emptyContent) {
+    return {
+      valid: false,
+      warning: 'Your post should have at least one character or one image.',
+      needs: null,
+      discord: false,
+    };
+  }
+  if (result.tooLong) {
+    return { valid: false, warning: 'This draft is too long.', needs: null, discord: false };
+  }
+  if (result.valid === false && settings) {
+    return { valid: false, warning: settings, needs: null, discord: false };
+  }
+  if (error) {
+    return { valid: false, warning: error, needs: null, discord: false };
+  }
+  return { valid: true, warning: '', needs: null, discord: false };
 }
 
 async function readMessage(response: Response) {
@@ -103,6 +202,35 @@ export const IdeaPostsButton = ({
   );
 };
 
+const DiscordDraftChannel = ({
+  integrationId,
+  value,
+  onChange,
+}: {
+  integrationId: string;
+  value: string;
+  onChange: (value: string) => void;
+}) => {
+  const form = useForm({ values: { channel: value } });
+  return (
+    <IntegrationContext.Provider
+      value={{
+        date: dayjs(),
+        integration: { id: integrationId } as Integrations,
+        allIntegrations: [],
+        value: [],
+      }}
+    >
+      <FormProvider {...form}>
+        <DiscordChannelSelect
+          name="channel"
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </FormProvider>
+    </IntegrationContext.Provider>
+  );
+};
+
 const IdeaPostsPanel = ({
   customer,
   reload,
@@ -126,7 +254,25 @@ const IdeaPostsPanel = ({
   const [upgrade, setUpgrade] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [allWhen, setAllWhen] = useState('');
+  const [tray, setTray] = useState<DraftMedia[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const addTarget = useRef<number | 'all'>('all');
+  const trayRef = useRef<DraftMedia[]>([]);
+  const receiveFiles = useRef<(files: DraftMedia[]) => void>(() => undefined);
+  trayRef.current = tray;
+  const uppy = useUppyUploader({
+    allowedFileTypes: 'image/*,video/mp4',
+    onStart: () => setUploading(true),
+    onEnd: () => setUploading(false),
+    onUploadSuccess: (result) => {
+      receiveFiles.current(readUploaded(result));
+      uppy.clear();
+    },
+  });
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 767px)');
@@ -196,6 +342,9 @@ const IdeaPostsPanel = ({
           ...item,
           publishAt: toLocalInput(item.publishAt),
           settings: item.settings || {},
+          media: trayRef.current.filter((file) =>
+            channelAccepts(item.provider, file.kind)
+          ),
         }))
       );
     } catch {
@@ -241,17 +390,23 @@ const IdeaPostsPanel = ({
             onlyValues={[
               {
                 content: plainToPostHtml(item.content),
+                image: (item.media || []).map((file) => ({
+                  id: file.id,
+                  path: file.path,
+                })),
               },
             ]}
           />
         ),
       });
-      onClose();
     },
-    [customer, fetch, modal, onClose, reload]
+    [customer, fetch, modal, reload]
   );
 
   const addAll = useCallback(async () => {
+    if (drafts.some((item) => !item.saved && item.valid !== true)) {
+      return;
+    }
     setSaving(true);
     let saved = 0;
     const next = [...drafts];
@@ -280,7 +435,10 @@ const IdeaPostsPanel = ({
                   {
                     content: plainToPostHtml(item.content),
                     delay: 0,
-                    image: [],
+                    image: (item.media || []).map((file) => ({
+                      id: file.id,
+                      path: file.path,
+                    })),
                   },
                 ],
               },
@@ -321,7 +479,139 @@ const IdeaPostsPanel = ({
     }
   }, [drafts, fetch, onClose, reload, t]);
 
+  receiveFiles.current = (files) => {
+    if (!files.length) {
+      return;
+    }
+    const target = addTarget.current;
+    setTray((current) => {
+      const next = [...current];
+      for (const file of files) {
+        if (!next.some((row) => row.id === file.id)) {
+          next.push(file);
+        }
+      }
+      return next;
+    });
+    setDrafts((current) =>
+      current.map((row, index) => {
+        if (target !== 'all' && index !== target) {
+          return row;
+        }
+        const extra = files.filter(
+          (file) =>
+            channelAccepts(row.provider, file.kind) &&
+            !row.media.some((have) => have.id === file.id)
+        );
+        if (!extra.length) {
+          return row;
+        }
+        return {
+          ...row,
+          media: [...row.media, ...extra],
+          saved: false,
+          valid: undefined,
+        };
+      })
+    );
+    addTarget.current = 'all';
+  };
+
+  const draftSignature = drafts
+    .map(
+      (item) =>
+        `${item.integrationId}\t${item.content}\t${item.publishAt}\t${item.settings?.channel || ''}\t${item.media.map((file) => file.id).join(',')}`
+    )
+    .join('\n');
+  const traySignature = tray.map((file) => `${file.kind}:${file.id}`).join(',');
+
+  useEffect(() => {
+    if (!drafts.length) {
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setChecking(true);
+      try {
+        const response = await fetch('/posts/valid', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: 'schedule',
+            posts: drafts.map((item) => ({
+              integration: { id: item.integrationId },
+              settings: item.settings || {},
+              value: [
+                {
+                  content: plainToPostHtml(item.content),
+                  image: item.media.map((file) => ({
+                    id: file.id,
+                    path: file.path,
+                  })),
+                },
+              ],
+            })),
+          }),
+        });
+        const data = await response.json().catch(() => []);
+        if (cancelled) {
+          return;
+        }
+        const rows = (Array.isArray(data) ? data : []) as ValidRow[];
+        setDrafts((current) => {
+          let changed = false;
+          const next = current.map((item) => {
+            const issue = cardIssue(
+              item,
+              rows.find((row) => row.id === item.integrationId),
+              trayRef.current
+            );
+            if (
+              item.valid === issue.valid &&
+              item.warning === issue.warning &&
+              item.needs === issue.needs &&
+              item.discord === issue.discord
+            ) {
+              return item;
+            }
+            changed = true;
+            return { ...item, ...issue };
+          });
+          return changed ? next : current;
+        });
+      } catch {
+        if (!cancelled) {
+          setDrafts((current) =>
+            current.map((item) =>
+              item.valid === false && item.warning
+                ? item
+                : {
+                    ...item,
+                    valid: false,
+                    warning: 'Could not check this draft.',
+                  }
+            )
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setChecking(false);
+        }
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [draftSignature, traySignature, fetch]);
+
+  const pickFiles = (target: number | 'all') => {
+    addTarget.current = target;
+    fileRef.current?.click();
+  };
+
   const meter = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const ready =
+    !!drafts.length && drafts.every((item) => item.saved || item.valid === true);
   const node = (
     <div className="c8-idea">
       <button type="button" className="c8-idea-scrim" aria-label={t('close', 'Close')} onClick={onClose} />
@@ -361,6 +651,54 @@ const IdeaPostsPanel = ({
             onChange={(event) => setIdea(event.target.value)}
           />
         </label>
+        <div className="c8-idea-tray">
+          <input
+            ref={fileRef}
+            className="c8-idea-file"
+            type="file"
+            accept="image/*,video/mp4"
+            multiple
+            onChange={(event) => {
+              const files = Array.from(event.target.files || []);
+              event.target.value = '';
+              for (const file of files) {
+                uppy.addFile(file);
+              }
+            }}
+          />
+          <button type="button" className="c8-idea-add" onClick={() => pickFiles('all')}>
+            <HugeIcon name="plus" size={14} />
+            {uploading
+              ? t('uploading', 'Uploading…')
+              : t('add_images_or_videos', 'Add images or videos')}
+          </button>
+          {tray.map((file) => (
+            <span key={file.id} className="c8-idea-tray-file">
+              {file.kind === 'video' ? (
+                <span className="c8-idea-video">{t('video', 'Video')}</span>
+              ) : (
+                <SafeImage src={file.path} alt="" width={56} height={56} />
+              )}
+              <button
+                type="button"
+                aria-label={t('remove_media', 'Remove media')}
+                onClick={() => {
+                  setTray((current) => current.filter((row) => row.id !== file.id));
+                  setDrafts((current) =>
+                    current.map((row) => ({
+                      ...row,
+                      media: row.media.filter((have) => have.id !== file.id),
+                      saved: false,
+                      valid: undefined,
+                    }))
+                  );
+                }}
+              >
+                <HugeIcon name="close" size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
         <div className="c8-idea-generate">
           <p>
             {voice
@@ -406,6 +744,21 @@ const IdeaPostsPanel = ({
             <input
               type="datetime-local"
               aria-label={t('set_date_time_all', 'Set date and time for all drafts')}
+              value={allWhen}
+              onChange={(event) => {
+                const value = event.target.value;
+                setAllWhen(value);
+                if (!value) {
+                  return;
+                }
+                setDrafts((current) =>
+                  current.map((row) => ({
+                    ...row,
+                    publishAt: value,
+                    saved: false,
+                  }))
+                );
+              }}
             />
           </label>
         )}
@@ -426,7 +779,7 @@ const IdeaPostsPanel = ({
                 </div>
                 <label className="c8-idea-time">
                   <HugeIcon name="clock" size={14} />
-                  <span>{dayjs(item.publishAt).format('ddd h:mm A')}</span>
+                  <span>{dayjs(item.publishAt).format('MMM D, h:mm A')}</span>
                   <input
                     type="datetime-local"
                     aria-label={t('posting_time', 'Posting time')}
@@ -453,6 +806,9 @@ const IdeaPostsPanel = ({
                   aria-label={t('remove_draft', 'Remove {{name}}', {
                     name: networkName(item.provider),
                   })}
+                  onClick={() =>
+                    setDrafts((current) => current.filter((row) => row.integrationId !== item.integrationId))
+                  }
                 >
                   <HugeIcon name="close" size={14} />
                 </button>
@@ -464,11 +820,77 @@ const IdeaPostsPanel = ({
                   const value = event.target.value;
                   setDrafts((current) =>
                     current.map((row, rowIndex) =>
-                      rowIndex === index ? { ...row, content: value, saved: false } : row
+                      rowIndex === index
+                        ? { ...row, content: value, saved: false, valid: undefined }
+                        : row
                     )
                   );
                 }}
               />
+              {!!item.media.length && (
+                <div className="c8-idea-strip">
+                  {item.media.map((file) => (
+                    <span key={file.id} className="c8-idea-thumb">
+                      {file.kind === 'video' ? (
+                        <span className="c8-idea-video">{t('video', 'Video')}</span>
+                      ) : (
+                        <SafeImage src={file.path} alt="" width={56} height={56} />
+                      )}
+                      <button
+                        type="button"
+                        aria-label={t('remove_media', 'Remove media')}
+                        onClick={() =>
+                          setDrafts((current) =>
+                            current.map((row, rowIndex) =>
+                              rowIndex === index
+                                ? {
+                                    ...row,
+                                    media: row.media.filter((have) => have.id !== file.id),
+                                    saved: false,
+                                    valid: undefined,
+                                  }
+                                : row
+                            )
+                          )
+                        }
+                      >
+                        <HugeIcon name="close" size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {(item.discord || item.provider.toLowerCase().startsWith('discord')) && (
+                <div className="c8-idea-discord">
+                  <DiscordDraftChannel
+                    integrationId={item.integrationId}
+                    value={String(item.settings.channel || '')}
+                    onChange={(value) =>
+                      setDrafts((current) =>
+                        current.map((row, rowIndex) =>
+                          rowIndex === index
+                            ? {
+                                ...row,
+                                settings: { ...row.settings, channel: value },
+                                saved: false,
+                                valid: undefined,
+                              }
+                            : row
+                        )
+                      )
+                    }
+                  />
+                </div>
+              )}
+              {!!item.needs && (
+                <div className="c8-idea-needs">
+                  <span>{item.warning}</span>
+                  <button type="button" className="c8-idea-add" onClick={() => pickFiles(index)}>
+                    {t('add_media', 'Add')}
+                  </button>
+                </div>
+              )}
+              {!item.needs && !!item.warning && <p className="c8-idea-card-error">{item.warning}</p>}
               {!!item.error && <p className="c8-idea-card-error">{item.error}</p>}
             </article>
           ))}
@@ -480,7 +902,15 @@ const IdeaPostsPanel = ({
           <button
             type="button"
             className="c8-idea-primary"
-            disabled={saving || !drafts.length || !!error || drafts.every((item) => item.saved)}
+            disabled={
+              saving ||
+              checking ||
+              uploading ||
+              !drafts.length ||
+              !!error ||
+              !ready ||
+              drafts.every((item) => item.saved)
+            }
             onClick={addAll}
           >
             {t('add_all_to_calendar', 'Add all to calendar')}
