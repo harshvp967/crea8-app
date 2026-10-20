@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 const AnalyticsPageHead: FC<{ period?: number; sub?: string }> = ({
   period,
@@ -355,18 +356,17 @@ export const PlatformAnalytics = () => {
             ))}
           </div>
           {!!options.length && (
-            <div className="analytics-range" role="group">
-              {options.map((option) => (
-                <button
-                  type="button"
-                  key={option.key}
-                  className={keys === option.key ? 'is-selected' : ''}
-                  onClick={() => setKey(option.key)}
-                >
-                  {option.value}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              variant="pill"
+              className="analytics-range"
+              aria-label={t('analytics_range', 'Date range')}
+              value={String(keys)}
+              onValueChange={(value) => setKey(Number(value))}
+              options={options.map((option) => ({
+                value: String(option.key),
+                label: option.value,
+              }))}
+            />
           )}
         </div>
         {!!keys && !!currentIntegration && !refresh && (

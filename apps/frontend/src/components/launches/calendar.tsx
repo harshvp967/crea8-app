@@ -1144,6 +1144,7 @@ export const CalendarColumn: FC<{
       className={clsx(
         'cal-col flex flex-col w-full relative transition-colors',
         display === 'month' ? 'min-h-[max(70px,100%)]' : 'min-h-full',
+        display === 'month' && showAll && 'is-expanded',
         display === 'week' || display === 'month' ? 'cal-col-week' : 'rounded-[12px]',
         isBeforeNow && 'is-past repeated-strip',
         loading && 'animate-pulse',

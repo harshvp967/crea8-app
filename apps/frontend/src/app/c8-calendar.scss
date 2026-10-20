@@ -1863,10 +1863,11 @@ body.c8-schedule .c8-day-label {
   body.c8-schedule .channel-rail h2 {
     font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
     font-variation-settings: 'opsz' 14, 'wdth' 100;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.4px;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.44px;
     line-height: 1.05;
+    color: var(--c8-ink);
   }
 
   body.c8-schedule .channel-rail .mt-auto {
@@ -5879,9 +5880,8 @@ body .cal-post-bar.is-sheet .arc-grab {
   flex: none;
 }
 
-/* Collapsed rail: "Channels" was wider than the column and lost its C. */
-body.c8-schedule .channel-rail.sidebar:not(.is-open) h2,
-body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) h2 {
+/* Collapsed rail only. The open list uses the panel heading below. */
+body.c8-schedule .channel-rail.sidebar:not(.is-open) h2 {
   width: 100% !important;
   max-width: 100%;
   margin: 0 !important;
@@ -5894,6 +5894,19 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) h2 {
   font-weight: 700 !important;
   letter-spacing: 0 !important;
   line-height: 1.2 !important;
+}
+
+body.c8-schedule .channel-rail:not(.sidebar) h2 {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.44px;
+  line-height: 1.05;
+  text-align: start;
+  white-space: normal;
 }
 
 body.c8-schedule .channel-rail.sidebar:not(.is-open) > div,
@@ -6159,5 +6172,111 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
       'scope scope scope'
       'period period period'
       'well well well' !important;
+  }
+}
+
+/* Create post stays one button. With AI drafts on, the icon is attached. */
+body.c8-schedule .c8-create {
+  display: contents;
+}
+
+body.c8-schedule .channel-rail .sidebar-create .c8-create {
+  display: none;
+}
+
+body.c8-schedule .c8-create.is-split {
+  display: inline-flex;
+  align-items: stretch;
+  min-width: 0;
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  overflow: hidden;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 999px;
+  background: var(--c8-cyan);
+  box-shadow: 0 3px 0 var(--c8-hard);
+  color: var(--c8-on-cyan);
+}
+
+body.c8-schedule .strip-create .c8-create.is-split,
+body.c8-schedule .phone-create .c8-create.is-split {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: 100%;
+}
+
+body.c8-schedule .c8-create.is-split > button,
+body.c8-schedule .strip-create .c8-create.is-split > button,
+body.c8-schedule .phone-create .c8-create.is-split > button,
+body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--c8-on-cyan) !important;
+}
+
+body.c8-schedule .c8-create.is-split > .c8-idea-icon {
+  flex: 0 0 46px !important;
+  width: 46px !important;
+  min-width: 46px !important;
+  max-width: 46px !important;
+  border-left: 1.5px solid var(--c8-hard) !important;
+  border-radius: 0 !important;
+}
+
+/* An expanded month day stays in its week. The row grows; later weeks start below it. */
+body.c8-schedule .month-grid {
+  align-content: start;
+  grid-auto-rows: minmax(70px, max-content);
+}
+
+body.c8-schedule .month-cell {
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  height: auto !important;
+  min-height: min-content !important;
+  overflow: hidden;
+}
+
+body.c8-schedule .month-cell:has(.cal-post.is-open) {
+  overflow: visible;
+}
+
+body.c8-schedule .month-cell > .cal-col {
+  flex: 1 1 auto;
+  width: 100%;
+  height: auto !important;
+  min-height: min-content !important;
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  body.c8-schedule .month-grid {
+    align-content: start !important;
+    grid-auto-rows: minmax(56px, max-content) !important;
+  }
+
+  body.c8-schedule .month-cell,
+  body.c8-schedule .month-cell:not(:has(.cal-post.is-open)) {
+    height: auto !important;
+    min-height: min-content !important;
+    overflow: hidden;
+  }
+
+  body.c8-schedule .month-cell:has(.cal-post.is-open) {
+    overflow: visible;
+  }
+
+  body.c8-schedule .month-cell > .cal-col,
+  body.c8-schedule .month-cell .cal-col > div {
+    height: auto !important;
+    min-height: min-content !important;
   }
 }

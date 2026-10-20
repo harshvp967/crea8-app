@@ -49,7 +49,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 import { clearComposerLayoutRemount } from '@gitroom/frontend/components/new-launch/composer.draft';
 import { persistedThreadValues } from '@gitroom/frontend/components/new-launch/preview.thread';
-import { IdeaPostsButton } from '@gitroom/frontend/components/launches/idea.posts';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 const finePointer = () =>
   typeof window !== 'undefined' &&
@@ -989,15 +989,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               ? t('edit_post_title', 'Edit post')
               : t('create_post_title', 'Create Post')}
           </span>
-          <div className="composer-seg">
-            <button type="button" role="tab" aria-selected={phonePane === 'editor'} className={phonePane === 'editor' ? 'on' : ''} onClick={() => setPhonePane('editor')}>
-              {t('editor', 'Editor')}
-            </button>
-            <button type="button" role="tab" aria-selected={phonePane === 'preview'} className={phonePane === 'preview' ? 'on' : ''} onClick={() => setPhonePane('preview')}>
-              {t('post_preview', 'Post Preview')}
-            </button>
-          </div>
-          <IdeaPostsButton customer={props.customer} reload={mutate} />
+          <SegmentedControl
+            variant="pill"
+            className="composer-seg"
+            aria-label={t('composer_pane', 'Composer')}
+            value={phonePane}
+            onValueChange={(value) =>
+              setPhonePane(value === 'preview' ? 'preview' : 'editor')
+            }
+            options={[
+              { value: 'editor', label: t('editor', 'Editor') },
+              { value: 'preview', label: t('post_preview', 'Post Preview') },
+            ]}
+          />
           <button type="button" className="composer-close-phone" aria-label={t('close', 'Close')} onClick={askClose}>
             <CloseIcon className="text-[#A3A3A3]" />
           </button>

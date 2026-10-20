@@ -12,6 +12,8 @@ import { SetSelectionModal } from '@gitroom/frontend/components/launches/calenda
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { IdeaPostsButton } from '@gitroom/frontend/components/launches/idea.posts';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { mutate } from 'swr';
 
 export const openCreatePost = async ({
@@ -141,6 +143,7 @@ export const useOpenComposer = () => {
 export const NewPost = ({ presentation = 'inline' }: { presentation?: 'inline' | 'floating' }) => {
   const fetch = useFetch();
   const modal = useModals();
+  const user = useUser();
   const { allIntegrations, customer, reloadCalendarView, sets } = useCalendar();
   const t = useT();
 
@@ -158,17 +161,20 @@ export const NewPost = ({ presentation = 'inline' }: { presentation?: 'inline' |
     [fetch, modal, t, allIntegrations, customer, sets, reloadCalendarView]
   );
   return (
-    <button
-      onClick={createAPost}
-      className={clsx(
-        'text-[#0A0A0A] flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-[18px] bg-btnPrimary flex justify-center items-center gap-[5px] outline-none',
-        presentation === 'floating' && 'phone-create-btn'
-      )}
-    >
-      <HugeIcon name="plus" size={20} className="min-w-[21px] min-h-[20px]" />
-      <div className="flex-1 text-start text-[14px] group-[.sidebar]:hidden">
-        {t('create_new_post', 'Create post')}
-      </div>
-    </button>
+    <div className={clsx('c8-create', user?.aiDrafts && 'is-split')}>
+      <button
+        onClick={createAPost}
+        className={clsx(
+          'text-[#0A0A0A] flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-[18px] bg-btnPrimary flex justify-center items-center gap-[5px] outline-none',
+          presentation === 'floating' && 'phone-create-btn'
+        )}
+      >
+        <HugeIcon name="plus" size={20} className="min-w-[21px] min-h-[20px]" />
+        <div className="flex-1 text-start text-[14px] group-[.sidebar]:hidden">
+          {t('create_new_post', 'Create post')}
+        </div>
+      </button>
+      <IdeaPostsButton customer={customer} reload={reloadCalendarView} />
+    </div>
   );
 };

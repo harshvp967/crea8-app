@@ -71,14 +71,26 @@ export const IdeaPostsButton = ({
   reload?: () => void;
 }) => {
   const user = useUser();
+  const t = useT();
   const [open, setOpen] = useState(false);
   if (!user?.aiDrafts) {
     return null;
   }
+  const tip = t(
+    'one_idea_tooltip',
+    'Turn one idea into a draft for every platform'
+  );
   return (
     <>
-      <button type="button" className="c8-idea-entry" onClick={() => setOpen(true)}>
-        One idea, every platform
+      <button
+        type="button"
+        className="c8-idea-icon"
+        aria-label={tip}
+        data-tooltip-id="tooltip"
+        data-tooltip-content={tip}
+        onClick={() => setOpen(true)}
+      >
+        <HugeIcon name="sparkles" size={18} />
       </button>
       {open && (
         <IdeaPostsPanel
@@ -387,6 +399,16 @@ const IdeaPostsPanel = ({
             })}
           </p>
         )}
+        {!!drafts.length && (
+          <label className="c8-idea-all-time">
+            <HugeIcon name="clock" size={14} />
+            <span>{t('set_date_time_all', 'Set date and time for all drafts')}</span>
+            <input
+              type="datetime-local"
+              aria-label={t('set_date_time_all', 'Set date and time for all drafts')}
+            />
+          </label>
+        )}
         <div className="c8-idea-list">
           {drafts.map((item, index) => (
             <article key={item.integrationId} className="c8-idea-card">
@@ -424,6 +446,15 @@ const IdeaPostsPanel = ({
                 <button type="button" className="c8-idea-edit" onClick={() => edit(item)}>
                   <HugeIcon name="pencil" size={14} />
                   {t('edit', 'Edit')}
+                </button>
+                <button
+                  type="button"
+                  className="c8-idea-remove"
+                  aria-label={t('remove_draft', 'Remove {{name}}', {
+                    name: networkName(item.provider),
+                  })}
+                >
+                  <HugeIcon name="close" size={14} />
                 </button>
               </div>
               <textarea

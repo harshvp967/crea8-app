@@ -45,6 +45,11 @@ export interface SegmentedControlProps {
   className?: string;
   /** Hide option text below 1440px. Icons stay, and each option keeps its label for assistive tech. */
   compactBelow1440?: boolean;
+  /**
+   * "pill" matches the Stalker Feed/Timeline control: soft track, dark active
+   * segment, and the same sliding indicator. "soft" keeps the cyan wash.
+   */
+  variant?: 'soft' | 'pill';
 }
 
 const sizes = {
@@ -70,6 +75,7 @@ export function SegmentedControl({
   'aria-label': ariaLabel,
   className,
   compactBelow1440 = false,
+  variant = 'soft',
 }: SegmentedControlProps) {
   const reduced = useReducedMotion();
   const id = useId();
@@ -103,24 +109,42 @@ export function SegmentedControl({
   };
 
   const activeIndex = options.findIndex((option) => option.value === selected);
+  const pill = variant === 'pill';
+  const thumb = pill
+    ? {
+        background: 'var(--c8-surface)',
+        boxShadow: '0 1px 3px rgb(18 16 22 / 0.12)',
+      }
+    : pillColor
+      ? { background: pillColor }
+      : softPill;
 
   return (
     <div
       role="radiogroup"
       aria-label={ariaLabel}
       className={clsx(
-        'relative inline-flex items-center rounded-[18px] border border-newBorder bg-[var(--arc-muted)] p-[3px]',
+        'relative inline-flex items-center',
+        pill
+          ? 'c8-seg gap-[2px] rounded-full bg-[var(--c8-soft)] p-[4px]'
+          : 'rounded-[18px] border border-newBorder bg-[var(--arc-muted)] p-[3px]',
         className
       )}
     >
       {options.map((option, i) => {
         const active = option.value === selected;
         const itemClass = clsx(
-          'relative inline-flex items-center justify-center whitespace-nowrap rounded-[14px] font-[500] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--arc-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
-          sizes[size],
+          'relative inline-flex items-center justify-center whitespace-nowrap font-[500] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--arc-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
+          pill
+            ? 'c8-seg-item rounded-full px-[14px] py-[7px] text-[13px]'
+            : clsx('rounded-[14px]', sizes[size]),
           active
-            ? 'text-newTextColor'
-            : 'text-textItemBlur hover:text-newTextColor'
+            ? pill
+              ? 'font-[600] text-[color:var(--c8-ink)]'
+              : 'text-newTextColor'
+            : pill
+              ? 'text-[color:var(--c8-muted)] hover:text-[color:var(--c8-ink)]'
+              : 'text-textItemBlur hover:text-newTextColor'
         );
         const inner = (
           <>
@@ -128,8 +152,11 @@ export function SegmentedControl({
               <motion.span
                 layoutId={`${id}-pill`}
                 aria-hidden="true"
-                className="absolute inset-0 rounded-[14px]"
-                style={pillColor ? { background: pillColor } : softPill}
+                className={clsx(
+                  'c8-seg-thumb absolute inset-0',
+                  pill ? 'rounded-full' : 'rounded-[14px]'
+                )}
+                style={thumb}
                 transition={
                   reduced ? { duration: 0 } : { type: 'spring', stiffness, damping }
                 }

@@ -10,7 +10,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { IdeaPostsButton } from '@gitroom/frontend/components/launches/idea.posts';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
@@ -380,10 +380,6 @@ export const Filters = () => {
       <h1 className="c8-cal-title">
         {isListView ? t('upcoming', 'Upcoming') : t('calendar', 'Calendar')}
       </h1>
-      <IdeaPostsButton
-        customer={calendar.customer}
-        reload={calendar.reloadCalendarView}
-      />
     </div>
     <div
       className={clsx(
@@ -496,22 +492,16 @@ export const Filters = () => {
               </div>
             </div>
           </div>
-          <div className="cal-list-states flex flex-row p-[3px] border border-newBorder rounded-[18px] text-[14px] font-[500] bg-[var(--arc-muted)]">
-            {listStateOptions.map((option) => (
-              <div
-                key={option.value}
-                onClick={setListStateFilter(option.value)}
-                className={clsx(
-                  'h-[30px] cursor-pointer min-w-[80px] px-[12px] flex items-center justify-center text-center rounded-[14px] transition-colors',
-                  calendar.listState === option.value
-                    ? 'arc-selected'
-                    : 'text-textItemBlur hover:text-newTextColor'
-                )}
-              >
-                {option.label}
-              </div>
-            ))}
-          </div>
+          <SegmentedControl
+            variant="pill"
+            className="cal-list-states"
+            aria-label={t('post_state', 'Post state')}
+            value={calendar.listState}
+            onValueChange={(value) =>
+              setListStateFilter(value as ListStateFilter)()
+            }
+            options={listStateOptions}
+          />
           <div className="flex-1" />
         </div>
       )}
@@ -523,48 +513,14 @@ export const Filters = () => {
         integrations={calendar.allIntegrations}
       />
       </div>
-      <div
+      <SegmentedControl
+        variant="pill"
         className="cal-mode"
-        role="radiogroup"
         aria-label={t('calendar_view', 'Calendar view')}
-        onKeyDown={(event) => {
-          if (
-            event.key !== 'ArrowRight' &&
-            event.key !== 'ArrowLeft' &&
-            event.key !== 'ArrowDown' &&
-            event.key !== 'ArrowUp'
-          ) {
-            return;
-          }
-          event.preventDefault();
-          const current = viewOptions.findIndex(
-            (option) => option.value === calendar.display
-          );
-          const delta =
-            event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
-          const next =
-            viewOptions[
-              (current + delta + viewOptions.length) % viewOptions.length
-            ];
-          setDisplay(next.value);
-        }}
-      >
-        {viewOptions.map((option) => {
-          const selected = calendar.display === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              tabIndex={selected ? 0 : -1}
-              onClick={() => setDisplay(option.value)}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+        value={calendar.display}
+        onValueChange={setDisplay}
+        options={viewOptions}
+      />
       </div>
     </div>
     </>
