@@ -21,7 +21,7 @@
   position: fixed;
   inset: 0;
   z-index: 900;
-  overflow: hidden;
+  overflow: visible;
   font-family: var(--font-body), Inter, sans-serif;
   color: var(--c8-ink);
 }
@@ -1011,6 +1011,40 @@ body:has(.c8-composer) .c8-idea {
 body:has(.c8-idea) .arc-dialog-wrap,
 body:has(.c8-idea) .mantine-Overlay-root {
   z-index: 1100 !important;
+}
+
+.c8-idea-pop {
+  position: fixed;
+  z-index: 1300;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 16px;
+  background: var(--c8-surface);
+  box-shadow: 0 6px 0 var(--c8-hard);
+}
+
+.c8-idea-pop button {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.c8-idea-pop button:not(.is-remove) {
+  border: 1.5px solid var(--c8-line);
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+}
+
+.c8-idea-pop .is-remove {
+  border: 1.5px solid var(--c8-hard);
+  background: var(--c8-danger);
+  color: #fff;
 }
 
 @media (max-width: 389px) {
