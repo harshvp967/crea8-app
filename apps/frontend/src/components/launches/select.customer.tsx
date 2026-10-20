@@ -16,8 +16,9 @@ export const SelectCustomer: FC<{
   onChange: (value: string) => void;
   integrations: Integrations[];
   customer?: string;
+  ariaLabel?: string;
 }> = (props) => {
-  const { onChange, integrations, customer: currentCustomer } = props;
+  const { onChange, integrations, customer: currentCustomer, ariaLabel } = props;
   const { setCurrent } = useLaunchStore(
     useShallow((state) => ({
       setCurrent: state.setCurrent,
@@ -98,9 +99,19 @@ export const SelectCustomer: FC<{
   return (
     <div className="select-customer relative select-none z-[500]" ref={ref}>
       <div
+        role="button"
+        tabIndex={0}
+        aria-label={ariaLabel || t('select_customer_tooltip', 'Select Customer')}
         data-tooltip-id="tooltip"
-        data-tooltip-content={t('select_customer_tooltip', 'Select Customer')}
+        data-tooltip-content={ariaLabel || t('select_customer_tooltip', 'Select Customer')}
+        data-filtered={customer ? 'true' : 'false'}
         onClick={openClose}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openClose();
+          }
+        }}
         className={clsx(
           'relative z-[20] cursor-pointer h-[42px] rounded-[8px] pl-[16px] pr-[12px] gap-[8px] border flex items-center',
           open ? 'border-[#00D9FF]' : 'border-newColColor'
@@ -112,9 +123,10 @@ export const SelectCustomer: FC<{
         <span className="select-customer-label">
           {selectedName}
         </span>
-        <div>
+        <div className="select-customer-caret">
           <DropdownArrowIcon rotated={open} />
         </div>
+        {!!customer && <span className="select-customer-dot" aria-hidden="true" />}
       </div>
       {open && (
         <div

@@ -2554,7 +2554,6 @@ body.c8-schedule .phone-create button,
 body.c8-schedule .sidebar-create button,
 body.c8-schedule .cal-today > div > div,
 body.c8-schedule .cal-nav-arrow,
-body.c8-schedule .cal-mode > button,
 body.c8-schedule .channel-menu-item,
 body.c8-schedule .cal-post-action {
   transition:
@@ -2579,7 +2578,6 @@ body.c8-schedule .phone-create button:active,
 body.c8-schedule .sidebar-create button:first-child:active,
 body.c8-schedule .cal-today > div > div:active,
 body.c8-schedule .cal-nav-arrow:active,
-body.c8-schedule .cal-mode > button:active,
 body.c8-schedule .channel-menu-item:active,
 body.c8-schedule .cal-post-action:active {
   transform: translateY(3px);
@@ -2593,7 +2591,6 @@ body.c8-schedule .phone-create button:active,
 body.c8-schedule .sidebar-create button:active,
 body.c8-schedule .cal-today > div > div:active,
 body.c8-schedule .cal-nav-arrow:active,
-body.c8-schedule .cal-mode > button:active,
 body.c8-schedule .channel-menu-item:active,
 body.c8-schedule .cal-post-action:active {
   transition-duration: 80ms;
@@ -6257,7 +6254,7 @@ body.c8-schedule .c8-create.is-split > .c8-idea-icon {
   max-height: 46px !important;
   padding: 0 !important;
   border: 1.5px solid var(--c8-hard) !important;
-  border-left-color: var(--c8-btn-secondary-stroke) !important;
+  border-left-color: var(--c8-hard) !important;
   border-radius: 0 999px 999px 0 !important;
   background: var(--c8-cyan) !important;
   box-shadow: 0 3px 0 var(--c8-hard) !important;
@@ -6552,5 +6549,150 @@ body.c8-schedule .month-cell > .cal-col {
     min-width: 16px !important;
     height: 16px !important;
     min-height: 16px !important;
+  }
+}
+
+/* Customer chip and Day/Week/Month/List stay on one row. The list filter hugs
+   its labels. Segment buttons do not paint their own active fill. */
+body.c8-schedule .cal-scope-row,
+body.c8-schedule .filters-bar .cal-scope-row,
+body.c8-schedule .filters-bar.is-list-mode .cal-scope-row,
+body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row,
+body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row {
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin-inline-start: auto !important;
+  grid-template-columns: none !important;
+}
+
+@media (max-width: 1199px) {
+  body.c8-schedule .cal-scope-row,
+  body.c8-schedule .filters-bar .cal-scope-row,
+  body.c8-schedule .filters-bar.is-list-mode .cal-scope-row,
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row,
+  body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row {
+    width: 100% !important;
+    margin-inline-start: 0 !important;
+  }
+}
+
+body.c8-schedule .cal-scope-row .cal-customer,
+body.c8-schedule .filters-bar .cal-scope-row .cal-customer,
+body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row .cal-customer,
+body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row .cal-customer {
+  flex: 0 1 auto !important;
+  align-self: center !important;
+  width: auto !important;
+  max-width: 46% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  order: 0 !important;
+}
+
+body.c8-schedule .cal-scope-row .cal-mode,
+body.c8-schedule .cal-scope-row .cal-mode.c8-seg,
+body.c8-schedule .filters-bar .cal-scope-row .cal-mode,
+body.c8-schedule .filters-bar.is-list-mode .cal-scope-row .cal-mode,
+body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row .cal-mode,
+body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row .cal-mode {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  order: 1 !important;
+  overflow: visible;
+}
+
+body.c8-schedule .cal-scope-row .cal-mode.c8-seg > [role='radio'] {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  padding-inline: 10px !important;
+  white-space: nowrap !important;
+}
+
+body.c8-schedule .cal-list-states-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex: 1 0 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  order: 5;
+}
+
+body.c8-schedule .cal-list-states,
+body.c8-schedule[data-c8-view='list'] .cal-list-states,
+body.c8-schedule[data-c8-view='list'] .cal-list-states.c8-seg,
+body.c8-schedule .filters-bar.is-list-mode .cal-list-states {
+  flex: 0 0 auto !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  align-self: flex-start !important;
+  margin: 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.select-customer-dot {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  body.c8-schedule .cal-scope-row .select-customer-label,
+  body.c8-schedule .cal-scope-row .select-customer-caret {
+    display: none !important;
+  }
+
+  body.c8-schedule .cal-scope-row .cal-customer,
+  body.c8-schedule .filters-bar .cal-scope-row .cal-customer {
+    flex: 0 0 auto !important;
+    max-width: none !important;
+  }
+
+  body.c8-schedule .cal-scope-row .select-customer > div:not(.fixed) {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    justify-content: center !important;
+  }
+
+  body.c8-schedule .cal-scope-row .select-customer-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--c8-cyan);
+  }
+
+  body.c8-schedule .cal-scope-row .cal-mode.c8-seg > [role='radio'] {
+    padding-inline: 6px !important;
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 389px) {
+  body.c8-schedule .cal-scope-row {
+    gap: 6px !important;
+  }
+
+  body.c8-schedule .cal-scope-row .cal-mode.c8-seg > [role='radio'] {
+    padding-inline: 4px !important;
+    font-size: 12px !important;
   }
 }

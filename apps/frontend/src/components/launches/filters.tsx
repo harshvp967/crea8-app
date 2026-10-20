@@ -492,6 +492,7 @@ export const Filters = () => {
               </div>
             </div>
           </div>
+          <div className="cal-list-states-row">
           <SegmentedControl
             variant="pill"
             className="cal-list-states"
@@ -502,6 +503,7 @@ export const Filters = () => {
             }
             options={listStateOptions}
           />
+          </div>
           <div className="flex-1" />
         </div>
       )}
@@ -509,6 +511,7 @@ export const Filters = () => {
       <div className="cal-customer">
       <SelectCustomer
         customer={calendar.customer || ''}
+        ariaLabel={t('customers', 'Customers')}
         onChange={(customer: string) => setCustomer(customer)}
         integrations={calendar.allIntegrations}
       />

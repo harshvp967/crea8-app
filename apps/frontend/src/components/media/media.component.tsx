@@ -899,6 +899,8 @@ export const MultiMediaComponent: FC<{
       }>;
     };
   }) => void;
+  /** Idea box only: Insert media and AI image, with the same handlers. */
+  bar?: 'full' | 'idea';
 }> = (props) => {
   const {
     name,
@@ -1005,6 +1007,30 @@ export const MultiMediaComponent: FC<{
       ),
     });
   }, [changeMedia, designReady, dummy, t, user?.tier?.ai]);
+
+  if (props.bar === 'idea') {
+    return (
+      <div className="c8-idea-attach">
+        <button
+          type="button"
+          onClick={showModal}
+          className="c8-attach cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+        >
+          <div className="flex gap-[8px] items-center">
+            <div>
+              <InsertMediaIcon />
+            </div>
+            <div className="text-[10px] font-[600] whitespace-nowrap">
+              {t('insert_media', 'Insert media')}
+            </div>
+          </div>
+        </button>
+        {!!user?.tier?.ai && (
+          <AiImage value={text} onChange={changeMedia} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <>

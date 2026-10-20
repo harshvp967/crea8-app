@@ -1,9 +1,11 @@
 import { FC, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { Calendar, TimeInput } from '@mantine/dates';
 import { useClickOutside } from '@mantine/hooks';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { displayDayjs, displayNow, getTimezone, isPastCalendarDay } from '@gitroom/frontend/components/layout/set.timezone';
 import { CalendarIcon } from '@gitroom/frontend/components/ui/icons';
 import {
@@ -38,9 +40,13 @@ function readTwelveHour() {
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
   onChange: (day: dayjs.Dayjs) => void;
+  /** Pill matches the draft-card clock. Composer is the footer chip. */
+  variant?: 'composer' | 'pill';
 }> = (props) => {
-  const { date, onChange } = props;
+  const { date, onChange, variant = 'composer' } = props;
+  const pill = variant === 'pill';
   const [open, setOpen] = useState(false);
+  const [box, setBox] = useState<{ top: number; left: number; width: number } | null>(null);
   const t = useT();
   const popRef = useRef<HTMLDivElement>(null);
 
@@ -52,8 +58,51 @@ export const DatePicker: FC<{
   }, []);
   useGrabToClose(popRef, open, close);
   const ref = useClickOutside<HTMLDivElement>(() => {
+    if (pill) {
+      return;
+    }
     setOpen(false);
   });
+  const place = useCallback(() => {
+    const node = ref.current;
+    if (!node) {
+      return;
+    }
+    const rect = node.getBoundingClientRect();
+    const width = Math.min(320, window.innerWidth - 16);
+    let left = rect.left;
+    if (left + width > window.innerWidth - 8) {
+      left = window.innerWidth - width - 8;
+    }
+    left = Math.max(8, left);
+    const estimated = 380;
+    let top = rect.bottom + 8;
+    if (top + estimated > window.innerHeight - 8) {
+      top = Math.max(8, rect.top - estimated - 8);
+    }
+    setBox({ top, left, width });
+  }, [ref]);
+  useEffect(() => {
+    if (!open || !pill) {
+      return;
+    }
+    place();
+    const onPointer = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (ref.current?.contains(target) || popRef.current?.contains(target)) {
+        return;
+      }
+      setOpen(false);
+    };
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    document.addEventListener('mousedown', onPointer);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+      document.removeEventListener('mousedown', onPointer);
+    };
+  }, [open, pill, place, ref]);
   useEffect(() => {
     if (!open) {
       return;
@@ -102,6 +151,7 @@ export const DatePicker: FC<{
   );
   const dateLabel = composerDateLabel(wall, twelveHour);
   const timeLabel = composerTimeLabel(wall, twelveHour);
+  const pillLabel = wall.format(twelveHour ? 'MMM D, h:mm A' : 'MMM D, HH:mm');
   const pickerValue = new Date(
     wall.year(),
     wall.month(),
@@ -110,33 +160,22 @@ export const DatePicker: FC<{
     wall.minute(),
     wall.second()
   );
-  return (
-    <div
-      className={clsx(
-        'po-date-chip border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1',
-        open ? 'border-[#00D9FF] bg-[#00D9FF]/10' : 'border-newTextColor/10'
-      )}
-      ref={ref}
-    >
-      <button
-        type="button"
-        className="po-date-trigger"
-        aria-expanded={open}
-        aria-label={dateLabel}
-        onClick={changeShow}
-      >
-        <div className="cursor-pointer">
-          <CalendarIcon />
-        </div>
-        <div className="po-date-label cursor-pointer whitespace-nowrap">
-          {dateLabel}
-        </div>
-      </button>
-      {open && (
+  const popup = open ? (
         <div
           ref={popRef}
           onClick={(e) => e.stopPropagation()}
-          className="po-date-pop animate-fadeIn absolute bottom-[calc(100%+8px)] end-0 z-[300] flex flex-col"
+          className={
+            pill
+              ? 'po-date-pop c8-date-pop flex flex-col'
+              : 'po-date-pop animate-fadeIn absolute bottom-[calc(100%+8px)] end-0 z-[300] flex flex-col'
+          }
+          style={
+            pill
+              ? box
+                ? { position: 'fixed', top: box.top, left: box.left, width: box.width, zIndex: 1200 }
+                : { position: 'fixed', visibility: 'hidden' }
+              : undefined
+          }
         >
           <div className="arc-grab" aria-hidden />
           <Calendar
@@ -191,7 +230,40 @@ export const DatePicker: FC<{
             </button>
           </div>
         </div>
-      )}
+  ) : null;
+  return (
+    <div
+      className={
+        pill
+          ? 'po-date-chip c8-date-pill'
+          : clsx(
+              'po-date-chip border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1',
+              open ? 'border-[#00D9FF] bg-[#00D9FF]/10' : 'border-newTextColor/10'
+            )
+      }
+      ref={ref}
+    >
+      <button
+        type="button"
+        className="po-date-trigger"
+        aria-expanded={open}
+        aria-label={pill ? pillLabel : dateLabel}
+        onClick={changeShow}
+      >
+        {pill ? (
+          <HugeIcon name="clock" size={14} />
+        ) : (
+          <div className="cursor-pointer">
+            <CalendarIcon />
+          </div>
+        )}
+        <div className="po-date-label cursor-pointer whitespace-nowrap">
+          {pill ? pillLabel : dateLabel}
+        </div>
+      </button>
+      {pill && popup && typeof document !== 'undefined'
+        ? createPortal(popup, document.body)
+        : popup}
     </div>
   );
 };
