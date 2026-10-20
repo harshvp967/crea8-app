@@ -33,6 +33,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { BrandVoiceSettings } from '@gitroom/frontend/components/settings/brand.voice';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 const SettingsPageHead: FC<{
   t: ReturnType<typeof useT>;
@@ -195,9 +196,17 @@ export const SettingsPopup: FC<{
       </aside>
       <div className="settings-main">
         <SettingsPageHead t={t} showLogout={showLogout} />
-        <div className="settings-settabs" role="tablist">
-          {list.map(({ tab: tabKey, label }) => sectionButton(tabKey, label))}
-        </div>
+        <SegmentedControl
+          variant="pill"
+          className="settings-settabs"
+          aria-label={t('settings', 'Settings')}
+          value={tab}
+          onValueChange={setTab}
+          options={list.map(({ tab: tabKey, label }) => ({
+            value: tabKey,
+            label,
+          }))}
+        />
         <FormProvider {...form}>
           <form className="settings-form-page" onSubmit={form.handleSubmit(submit)}>
             {!!getRef && (

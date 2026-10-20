@@ -1932,3 +1932,88 @@ body.dark:has(.settings-screen) .arc-dialog:has(.settings-form):not(.po-sign-mod
     width: 100% !important;
   }
 }
+
+/* Schedule segmented pills share the Stalker Feed/Timeline control. */
+.settings-screen .settings-settabs.c8-seg,
+.settings-screen .settings-seg.c8-seg,
+.media-library .media-types.c8-seg,
+.analytics-screen .analytics-range.c8-seg,
+body.c8-schedule .cal-mode.c8-seg,
+body.c8-schedule .cal-list-states.c8-seg,
+body.dark.c8-schedule .cal-mode.c8-seg,
+body.dark.c8-schedule .cal-list-states.c8-seg {
+  display: inline-flex !important;
+  flex-flow: row nowrap !important;
+  gap: 2px !important;
+  width: max-content;
+  max-width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 4px !important;
+  overflow-x: auto;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--c8-soft) !important;
+  box-shadow: none !important;
+}
+
+.settings-screen .settings-settabs.c8-seg > [role='radio'],
+.settings-screen .settings-seg.c8-seg > [role='radio'],
+.media-library .media-types.c8-seg > [role='radio'],
+.analytics-screen .analytics-range.c8-seg > [role='radio'],
+.c8-composer .composer-seg.c8-seg > [role='radio'],
+body.c8-schedule .cal-mode.c8-seg > [role='radio'],
+body.c8-schedule .cal-list-states.c8-seg > [role='radio'],
+body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'],
+body.dark.c8-schedule .cal-list-states.c8-seg > button {
+  height: auto !important;
+  min-height: 0 !important;
+  width: auto !important;
+  flex: none !important;
+  padding: 7px 14px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: var(--c8-muted) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: normal !important;
+}
+
+.settings-screen .settings-settabs.c8-seg > [role='radio'][aria-checked='true'],
+.settings-screen .settings-seg.c8-seg > [role='radio'][aria-checked='true'],
+.media-library .media-types.c8-seg > [role='radio'][aria-checked='true'],
+.analytics-screen .analytics-range.c8-seg > [role='radio'][aria-checked='true'],
+.c8-composer .composer-seg.c8-seg > [role='radio'][aria-checked='true'],
+body.c8-schedule .cal-mode.c8-seg > [role='radio'][aria-checked='true'],
+body.c8-schedule .cal-list-states.c8-seg > [role='radio'][aria-checked='true'],
+body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'],
+body.dark.c8-schedule .cal-list-states.c8-seg > button[aria-checked='true'] {
+  background: transparent !important;
+  color: var(--c8-ink) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.settings-screen .settings-seg.c8-seg > [role='radio'] > .c8-seg-thumb,
+.settings-screen .c8-seg > [role='radio'] > .c8-seg-thumb,
+.media-library .c8-seg > [role='radio'] > .c8-seg-thumb,
+.analytics-screen .c8-seg > [role='radio'] > .c8-seg-thumb,
+.c8-composer .c8-seg > [role='radio'] > .c8-seg-thumb,
+body.c8-schedule .c8-seg > [role='radio'] > .c8-seg-thumb {
+  border-radius: 999px !important;
+  background: var(--c8-surface) !important;
+  background-image: none !important;
+  box-shadow: 0 1px 3px rgb(18 16 22 / 0.12) !important;
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .c8-composer .composer-seg.c8-seg {
+    display: inline-flex !important;
+    flex: 0 1 auto;
+    margin-left: auto;
+  }
+}

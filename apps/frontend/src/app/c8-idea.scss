@@ -1,42 +1,20 @@
-.c8-idea-entry {
+.c8-idea-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  min-width: 46px;
   height: 46px;
-  min-height: 46px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1.5px solid var(--c8-btn-secondary-stroke);
-  background: var(--c8-btn-secondary);
-  color: var(--c8-ink);
-  box-shadow: 0 3px 0 var(--c8-hard);
-  font-family: var(--font-body), Inter, sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--c8-on-cyan);
   cursor: pointer;
 }
 
-.c8-idea-entry:hover {
-  background: var(--c8-btn-hover);
-}
-
-body.c8-schedule .c8-cal-head:has(.c8-idea-entry) {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 16px;
-  align-items: end;
-  width: 100%;
-}
-
-body.c8-schedule .c8-cal-head:has(.c8-idea-entry) .c8-idea-entry {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-}
-
-.c8-composer .composer-tabs .c8-idea-entry {
-  margin-left: auto;
-}
-
-.c8-composer .composer-tabs:has(.c8-idea-entry) .composer-close-phone {
-  margin-left: 8px;
+.c8-idea-icon:focus-visible {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: -4px;
 }
 
 .c8-idea {
@@ -187,7 +165,8 @@ body.c8-schedule .c8-cal-head:has(.c8-idea-entry) .c8-idea-entry {
 .c8-idea-ghost,
 .c8-idea-primary,
 .c8-idea-edit,
-.c8-idea-time {
+.c8-idea-time,
+.c8-idea-all-time {
   border-radius: 999px;
   font-weight: 600;
   cursor: pointer;
@@ -282,7 +261,8 @@ body.c8-schedule .c8-cal-head:has(.c8-idea-entry) .c8-idea-entry {
 }
 
 .c8-idea-time,
-.c8-idea-edit {
+.c8-idea-edit,
+.c8-idea-all-time {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -293,6 +273,49 @@ body.c8-schedule .c8-cal-head:has(.c8-idea-entry) .c8-idea-entry {
   background: var(--c8-surface);
   color: var(--c8-ink);
   font-size: 13px;
+}
+
+.c8-idea-all-time {
+  width: 100%;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+.c8-idea-all-time span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c8-idea-all-time input {
+  margin-left: auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+  font: inherit;
+  font-weight: 600;
+}
+
+.c8-idea-remove {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--c8-muted);
+  cursor: pointer;
+}
+
+.c8-idea-remove:hover,
+.c8-idea-remove:focus-visible {
+  background: var(--c8-soft);
+  color: var(--c8-ink);
 }
 
 .c8-idea-time input {
@@ -380,10 +403,6 @@ body.c8-schedule .c8-cal-head:has(.c8-idea-entry) .c8-idea-entry {
     background: var(--c8-surface);
   }
 
-  .c8-idea-entry {
-    max-width: 100%;
-    white-space: normal;
-  }
 }
 
 .c8-voice {

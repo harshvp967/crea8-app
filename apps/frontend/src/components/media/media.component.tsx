@@ -50,6 +50,7 @@ import {
   NoMediaIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useShallow } from 'zustand/react/shallow';
@@ -502,35 +503,25 @@ export const MediaBox: FC<{
                   placeholder={t('search_media_by_name', 'Search by file name')}
                 />
               </label>
-              <div
+              <SegmentedControl
+                variant="pill"
                 className="media-types"
-                role="group"
                 aria-label={t('media_type', 'Media type')}
-              >
-                {(
-                  [
-                    ['all', t('all', 'All')],
-                    ['image', t('images', 'Images')],
-                    ['video', t('videos', 'Videos')],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={listType === value ? 'is-selected' : undefined}
-                    aria-pressed={listType === value}
-                    onClick={() => {
-                      if (value === listType) {
-                        return;
-                      }
-                      setListType(value);
-                      setPage(0);
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+                value={listType}
+                onValueChange={(value) => {
+                  const next = value as 'all' | 'image' | 'video';
+                  if (next === listType) {
+                    return;
+                  }
+                  setListType(next);
+                  setPage(0);
+                }}
+                options={[
+                  { value: 'all', label: t('all', 'All') },
+                  { value: 'image', label: t('images', 'Images') },
+                  { value: 'video', label: t('videos', 'Videos') },
+                ]}
+              />
             </div>
           </>
         ) : (

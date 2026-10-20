@@ -13,6 +13,7 @@ import { DeveloperComponent } from '@gitroom/frontend/components/developer/devel
 import { McpClientIcon } from '@gitroom/frontend/components/public-api/mcp.client.icons';
 import clsx from 'clsx';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 // Remote clients can't set headers, they get a URL to paste (hint = where)
 export const remoteMcpClients = {
@@ -615,18 +616,19 @@ export const PublicComponent = () => {
             )}
           </p>
         </div>
-        <div className="settings-seg">
-          {(['api', 'developer'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={clsx(subTab === tab && 'is-on')}
-              onClick={() => setSubTab(tab)}
-            >
-              {tab === 'api' ? t('access', 'Access') : t('apps', 'Apps')}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          variant="pill"
+          className="settings-seg"
+          aria-label={t('developers', 'Developers')}
+          value={subTab}
+          onValueChange={(value) =>
+            setSubTab(value === 'developer' ? 'developer' : 'api')
+          }
+          options={[
+            { value: 'api', label: t('access', 'Access') },
+            { value: 'developer', label: t('apps', 'Apps') },
+          ]}
+        />
       </div>
       {subTab === 'api' && <PublicApiContent />}
       {subTab === 'developer' && <DeveloperComponent />}
