@@ -3874,3 +3874,102 @@ body.c8-schedule .customer-menu,
     width: 100%;
   }
 }
+
+/* Time row: timezone shrinks, the hh:mm field keeps its width, Done stays beside it.
+   Mantine's input paints a white box; the field follows the app ink in both themes. */
+.c8-composer .po-date-pop .po-date-time,
+.c8-date-pop .po-date-time {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.c8-composer .po-date-pop .po-date-time > div:first-child,
+.c8-date-pop .po-date-time > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c8-composer .po-date-pop .po-date-clock,
+.c8-date-pop .po-date-clock {
+  flex: 0 0 auto;
+  width: auto !important;
+  min-width: 0;
+  max-width: calc(100% - 76px);
+  height: 36px;
+  overflow: hidden;
+}
+
+.c8-composer .po-date-pop .po-date-clock .po-date-native,
+.c8-composer .po-date-pop .po-date-clock .po-date-native-wrap,
+.c8-composer .po-date-pop .po-date-clock .mantine-Input-wrapper,
+.c8-composer .po-date-pop .po-date-clock .mantine-Input-input,
+.c8-date-pop .po-date-clock .po-date-native,
+.c8-date-pop .po-date-clock .po-date-native-wrap,
+.c8-date-pop .po-date-clock .mantine-Input-wrapper,
+.c8-date-pop .po-date-clock .mantine-Input-input {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--c8-ink) !important;
+}
+
+.c8-composer .po-date-pop .po-date-clock input,
+.c8-date-pop .po-date-clock input,
+.c8-composer .po-date-pop .mantine-AmPmInput-amPmInput,
+.c8-date-pop .mantine-AmPmInput-amPmInput {
+  flex: none;
+  width: 3.2ch !important;
+  min-width: 3.2ch !important;
+  max-width: none !important;
+  height: 28px;
+  margin: 0;
+  padding: 0 2px !important;
+  border: 0 !important;
+  border-radius: 8px;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--c8-ink) !important;
+  -webkit-text-fill-color: var(--c8-ink);
+  font-weight: 700;
+  text-align: center;
+  box-sizing: content-box;
+}
+
+.c8-composer .po-date-pop .mantine-AmPmInput-amPmInput,
+.c8-date-pop .mantine-AmPmInput-amPmInput,
+.c8-composer .po-date-pop .po-date-clock input:last-of-type,
+.c8-date-pop .po-date-clock input:last-of-type {
+  width: 3.6ch !important;
+  min-width: 3.6ch !important;
+}
+
+.c8-composer .po-date-pop .po-date-close,
+.c8-date-pop .po-date-close {
+  position: static !important;
+  z-index: auto !important;
+  flex: none;
+  white-space: nowrap;
+}
+
+body.dark .c8-date-pop,
+body.dark .c8-composer .po-date-pop {
+  color-scheme: dark;
+}
+
+body.light .c8-date-pop,
+body.light .c8-composer .po-date-pop {
+  color-scheme: light;
+}

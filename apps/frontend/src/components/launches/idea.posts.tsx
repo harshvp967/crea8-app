@@ -1127,8 +1127,13 @@ const IdeaPostsPanel = ({
       <aside ref={sheetRef} className="c8-idea-panel" role="dialog" aria-labelledby="c8-idea-title">
         <div className="arc-grab" aria-hidden />
         <div className="c8-idea-head">
-          <div>
+          <div className="c8-idea-titleline">
             <h2 id="c8-idea-title">{t('one_idea_every_platform', 'One idea, every platform')}</h2>
+            <button type="button" className="c8-idea-close" aria-label={t('close', 'Close')} onClick={confirmClose}>
+              <HugeIcon name="close" size={16} />
+            </button>
+          </div>
+          <div>
             <p>
               {t(
                 'one_idea_help',
@@ -1148,9 +1153,6 @@ const IdeaPostsPanel = ({
               </span>
             </div>
           </div>
-          <button type="button" className="c8-idea-close" aria-label={t('close', 'Close')} onClick={confirmClose}>
-            <HugeIcon name="close" size={18} />
-          </button>
         </div>
         <input
           ref={fileRef}
