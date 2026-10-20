@@ -6175,7 +6175,8 @@ body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
   }
 }
 
-/* Create post stays one button. With AI drafts on, the icon is attached. */
+/* Create post stays one button. With AI drafts on, it is the Channels split:
+   shared pill, 1.5px divider, square icon half. The label does not wrap. */
 body.c8-schedule .c8-create {
   display: contents;
 }
@@ -6184,52 +6185,83 @@ body.c8-schedule .channel-rail .sidebar-create .c8-create {
   display: none;
 }
 
+body.c8-schedule .strip-create button > div,
+body.c8-schedule .phone-create button > div {
+  white-space: nowrap;
+}
+
 body.c8-schedule .c8-create.is-split {
   display: inline-flex;
   align-items: stretch;
-  min-width: 0;
+  flex: 0 0 auto;
+  gap: 0;
+  width: max-content;
+  min-width: max-content;
+  max-width: 100%;
   height: 46px;
-  min-height: 46px;
-  max-height: 46px;
-  overflow: hidden;
-  border: 1.5px solid var(--c8-hard);
-  border-radius: 999px;
-  background: var(--c8-cyan);
-  box-shadow: 0 3px 0 var(--c8-hard);
-  color: var(--c8-on-cyan);
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-body.c8-schedule .strip-create .c8-create.is-split,
-body.c8-schedule .phone-create .c8-create.is-split {
-  flex: 1 1 auto;
-  width: auto;
+body.c8-schedule .strip-create:has(.c8-create.is-split),
+body.c8-schedule .phone-create:has(.c8-create.is-split) {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
   max-width: 100%;
 }
 
-body.c8-schedule .c8-create.is-split > button,
-body.c8-schedule .strip-create .c8-create.is-split > button,
-body.c8-schedule .phone-create .c8-create.is-split > button,
-body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button {
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: none !important;
+body.c8-schedule .c8-create.is-split > button:not(.c8-idea-icon),
+body.c8-schedule .strip-create .c8-create.is-split > button:not(.c8-idea-icon),
+body.c8-schedule .phone-create .c8-create.is-split > button:not(.c8-idea-icon),
+body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon) {
+  flex: 0 0 auto !important;
   width: auto !important;
-  min-width: 0 !important;
-  flex: 1 1 auto !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  max-height: 46px !important;
+  gap: 6px !important;
+  padding: 0 16px !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-right-width: 0 !important;
+  border-radius: 999px 0 0 999px !important;
+  background: var(--c8-cyan) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
   color: var(--c8-on-cyan) !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
 }
 
+body.c8-schedule .c8-create.is-split > button:not(.c8-idea-icon) > div {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  white-space: nowrap !important;
+}
+
+body.c8-schedule .channel-strip .strip-create .c8-create.is-split > .c8-idea-icon,
+body.c8-schedule .phone-create .c8-create.is-split > .c8-idea-icon,
 body.c8-schedule .c8-create.is-split > .c8-idea-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   flex: 0 0 46px !important;
   width: 46px !important;
   min-width: 46px !important;
   max-width: 46px !important;
-  border-left: 1.5px solid var(--c8-hard) !important;
-  border-radius: 0 !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  max-height: 46px !important;
+  padding: 0 !important;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-left-color: var(--c8-btn-secondary-stroke) !important;
+  border-radius: 0 999px 999px 0 !important;
+  background: var(--c8-cyan) !important;
+  box-shadow: 0 3px 0 var(--c8-hard) !important;
+  color: var(--c8-on-cyan) !important;
 }
 
 /* An expanded month day stays in its week. The row grows; later weeks start below it. */
@@ -6278,5 +6310,247 @@ body.c8-schedule .month-cell > .cal-col {
   body.c8-schedule .month-cell .cal-col > div {
     height: auto !important;
     min-height: min-content !important;
+  }
+}
+
+/* Below 1200px the action row is Channels | +, the link, and Create post | AI
+   on one line. The customer chip is its own row. The Day/Week/Month/List
+   pill is the next row, full width. On tablet the chip and the pill share
+   a row only when both fit. */
+@media (max-width: 1199px) {
+  body.c8-schedule .channel-strip {
+    --c8-split: 46px;
+    flex-wrap: nowrap !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body.c8-schedule .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='day'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='week'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='month'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='list'] .channel-strip .channels-trigger,
+  body.c8-schedule:not([data-c8-view]) .channel-strip .channels-trigger {
+    flex: 0 0 auto !important;
+    height: var(--c8-split) !important;
+    min-height: var(--c8-split) !important;
+    padding: 0 12px !important;
+    white-space: nowrap !important;
+  }
+
+  body.c8-schedule .channel-strip .channel-add,
+  body.c8-schedule .channel-strip > .flex .channel-add {
+    flex: 0 0 var(--c8-split) !important;
+    width: var(--c8-split) !important;
+    min-width: var(--c8-split) !important;
+    max-width: var(--c8-split) !important;
+    height: var(--c8-split) !important;
+    min-height: var(--c8-split) !important;
+    padding: 0 !important;
+  }
+
+  body.c8-schedule .channel-strip .channel-invite {
+    flex: 0 0 var(--c8-split) !important;
+    width: var(--c8-split) !important;
+    min-width: var(--c8-split) !important;
+    max-width: var(--c8-split) !important;
+    height: var(--c8-split) !important;
+    min-height: var(--c8-split) !important;
+    margin-inline-start: 8px !important;
+    padding: 0 !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create:has(.c8-create.is-split) {
+    margin-inline-start: 8px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split,
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon),
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > .c8-idea-icon {
+    height: var(--c8-split) !important;
+    min-height: var(--c8-split) !important;
+    max-height: var(--c8-split) !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon) {
+    gap: 4px !important;
+    padding: 0 12px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > .c8-idea-icon {
+    flex-basis: var(--c8-split) !important;
+    width: var(--c8-split) !important;
+    min-width: var(--c8-split) !important;
+    max-width: var(--c8-split) !important;
+  }
+
+  body.c8-schedule .cal-scope-row {
+    display: flex !important;
+    flex-flow: column nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100% !important;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body.c8-schedule .filters-bar .cal-scope-row .cal-customer,
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row .cal-customer,
+  body.c8-schedule[data-c8-view='list'] .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row .cal-customer {
+    flex: 0 0 auto !important;
+    align-self: flex-start;
+    width: max-content !important;
+    max-width: 100% !important;
+    min-width: 0;
+    margin: 0 !important;
+  }
+
+  body.c8-schedule .cal-scope-row .select-customer,
+  body.c8-schedule .cal-scope-row .select-customer > div:not(.fixed) {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body.c8-schedule .cal-scope-row .select-customer > div:not(.fixed) {
+    overflow: hidden;
+  }
+
+  body.c8-schedule .cal-scope-row .select-customer-label {
+    display: block !important;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .filters-bar .cal-scope-row .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode .cal-scope-row .cal-mode,
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row .cal-mode,
+  body.c8-schedule .cal-scope-row .cal-mode.c8-seg {
+    flex: 1 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.c8-schedule .cal-scope-row .cal-mode.c8-seg > button[role='radio'] {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: max-content;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 8px !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    text-align: center;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .cal-scope-row {
+    flex-flow: row wrap;
+    align-items: center;
+  }
+
+  body.c8-schedule .filters-bar .cal-scope-row .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode .cal-scope-row .cal-mode,
+  body.c8-schedule .filters-bar:has(.cal-customer > div) .cal-scope-row .cal-mode,
+  body.c8-schedule .filters-bar.is-list-mode:has(.cal-customer > div) .cal-scope-row .cal-mode,
+  body.c8-schedule .cal-scope-row .cal-mode.c8-seg {
+    width: auto !important;
+    min-width: max-content;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  body.c8-schedule .channel-strip {
+    --c8-split: 42px;
+  }
+
+  body.c8-schedule .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='day'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='week'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='month'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='list'] .channel-strip .channels-trigger,
+  body.c8-schedule:not([data-c8-view]) .channel-strip .channels-trigger {
+    padding: 0 10px !important;
+    font-size: 14px !important;
+  }
+
+  body.c8-schedule .channel-strip .channel-invite {
+    margin-inline-start: 6px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create:has(.c8-create.is-split) {
+    margin-inline-start: 6px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon) {
+    gap: 4px !important;
+    padding: 0 8px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon) > div {
+    font-size: 14px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon) > svg {
+    flex: none;
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+  }
+}
+
+@media (max-width: 389px) {
+  body.c8-schedule .calendar-panel,
+  body.c8-schedule .calendar-panel:has(.c8-week),
+  body.c8-schedule .calendar-panel:has(.c8-day),
+  body.c8-schedule .calendar-panel:has(.cal-customer > div) {
+    padding-inline: 10px !important;
+  }
+
+  body.c8-schedule .channel-strip {
+    --c8-split: 34px;
+  }
+
+  body.c8-schedule .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='day'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='week'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='month'] .channel-strip .channels-trigger,
+  body.c8-schedule[data-c8-view='list'] .channel-strip .channels-trigger,
+  body.c8-schedule:not([data-c8-view]) .channel-strip .channels-trigger {
+    padding: 0 6px !important;
+    font-size: 13px !important;
+  }
+
+  body.c8-schedule .channel-strip .channel-invite,
+  body.c8-schedule .channel-strip .strip-create:has(.c8-create.is-split) {
+    margin-inline-start: 4px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon) {
+    gap: 2px !important;
+    padding: 0 6px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon) > div {
+    font-size: 13px !important;
+  }
+
+  body.c8-schedule .channel-strip .strip-create .c8-create.is-split > button:not(.c8-idea-icon) > svg {
+    width: 16px !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    min-height: 16px !important;
   }
 }
