@@ -21,6 +21,7 @@
   position: fixed;
   inset: 0;
   z-index: 900;
+  overflow: hidden;
   font-family: var(--font-body), Inter, sans-serif;
   color: var(--c8-ink);
 }
@@ -44,6 +45,7 @@
   height: 100%;
   padding: 24px;
   box-sizing: border-box;
+  overflow-x: hidden;
   background: var(--c8-surface);
   border: 1.5px solid var(--c8-ink);
   border-radius: 28px 0 0 28px;
@@ -58,6 +60,11 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  min-width: 0;
+}
+
+.c8-idea-head > div:first-child {
+  min-width: 0;
 }
 
 .c8-idea-head h2 {
@@ -78,8 +85,10 @@
 
 .c8-idea-meter {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
   margin-top: 10px;
   padding: 4px 10px;
   border-radius: 999px;
@@ -166,7 +175,8 @@
 .c8-idea-primary,
 .c8-idea-edit,
 .c8-idea-time,
-.c8-idea-all-time {
+.c8-idea-all-time,
+.c8-idea-settings-toggle {
   border-radius: 999px;
   font-weight: 600;
   cursor: pointer;
@@ -216,6 +226,8 @@
 }
 
 .c8-idea-card {
+  min-width: 0;
+  max-width: 100%;
   padding: 12px;
   border: 1.5px solid var(--c8-line);
   border-radius: 18px;
@@ -223,12 +235,18 @@
 }
 
 .c8-idea-card-head {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 28px;
+  grid-template-areas:
+    "logo who remove"
+    "actions actions actions";
   gap: 8px;
+  align-items: center;
+  min-width: 0;
 }
 
 .c8-idea-logo {
+  grid-area: logo;
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -236,23 +254,39 @@
 }
 
 .c8-idea-who {
+  grid-area: who;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  flex: 1;
 }
 
 .c8-idea-who strong {
   font-size: 14px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
-.c8-idea-who span,
+.c8-idea-who span {
+  color: var(--c8-muted);
+  font-size: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .c8-idea-card-error {
   color: var(--c8-muted);
   font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.c8-idea-card-actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .c8-idea-card-error {
@@ -262,7 +296,8 @@
 
 .c8-idea-time,
 .c8-idea-edit,
-.c8-idea-all-time {
+.c8-idea-all-time,
+.c8-idea-settings-toggle {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -273,24 +308,39 @@
   background: var(--c8-surface);
   color: var(--c8-ink);
   font-size: 13px;
-}
-
-.c8-idea-all-time {
-  width: 100%;
-  margin-top: 10px;
-  box-sizing: border-box;
-}
-
-.c8-idea-all-time span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.c8-idea-all-time input {
-  margin-left: auto;
+.c8-idea-all-time {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  height: auto;
+  margin-top: 10px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  gap: 8px;
+}
+
+.c8-idea-all-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   min-width: 0;
+}
+
+.c8-idea-all-label span {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.c8-idea-all-time input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  box-sizing: border-box;
   border: 0;
   background: transparent;
   color: var(--c8-ink);
@@ -299,6 +349,7 @@
 }
 
 .c8-idea-remove {
+  grid-area: remove;
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -449,20 +500,64 @@ body:has(.c8-composer) .c8-idea {
   font-weight: 600;
 }
 
-.c8-idea-discord {
+.c8-idea-restored {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 10px 0 0;
+  color: var(--c8-muted);
+  font-size: 13px;
+}
+
+.c8-idea-restored button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c8-ink);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.c8-idea-settings {
+  min-width: 0;
+  max-width: 100%;
   margin-top: 8px;
+}
+
+.c8-idea-settings-toggle {
+  margin-top: 0;
+}
+
+.c8-idea-settings input,
+.c8-idea-settings select,
+.c8-idea-settings textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.c8-idea-ghost,
+.c8-idea-primary,
+.c8-idea-edit,
+.c8-idea-settings-toggle {
+  white-space: nowrap;
 }
 
 @media (max-width: 767px) {
   .c8-idea-panel {
-    top: auto;
+    top: 0;
     right: 0;
     left: 0;
     bottom: 0;
     width: 100%;
-    height: auto;
-    max-height: calc(100% - 64px);
-    padding: 12px 20px 20px;
+    height: 100%;
+    max-height: 100%;
+    padding: 12px 16px 16px;
     border-radius: 28px 28px 0 0;
   }
 
@@ -480,15 +575,22 @@ body:has(.c8-composer) .c8-idea {
   }
 
   .c8-idea-copy {
-    max-height: 1.4em;
-    min-height: 0;
-    overflow: hidden;
+    min-height: calc(1.4em * 3);
+    max-height: none;
+    overflow: auto;
   }
 
   .c8-idea-foot {
     position: sticky;
     bottom: 0;
+    flex-direction: column;
+    align-items: stretch;
     background: var(--c8-surface);
+  }
+
+  .c8-idea-foot .c8-idea-ghost,
+  .c8-idea-foot .c8-idea-primary {
+    width: 100%;
   }
 
 }

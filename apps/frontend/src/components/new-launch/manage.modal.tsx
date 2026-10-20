@@ -55,6 +55,93 @@ const finePointer = () =>
   typeof window !== 'undefined' &&
   window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
+function stableValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stableValue);
+  }
+  if (value && typeof value === 'object') {
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce((acc: Record<string, unknown>, key) => {
+        const next = (value as Record<string, unknown>)[key];
+        if (typeof next !== 'undefined') {
+          acc[key] = stableValue(next);
+        }
+        return acc;
+      }, {});
+  }
+  return value;
+}
+
+function composerFingerprint(
+  values: Array<{
+    id?: string;
+    settings?: Record<string, unknown>;
+    values?: Array<{ content?: string; delay?: number; media?: Array<{ id?: string; path?: string }> }>;
+  }> | undefined,
+  state: {
+    date?: { format?: (pattern: string) => string };
+    channelDates?: Record<string, { format?: (pattern: string) => string }>;
+    tags?: unknown;
+    repeater?: number;
+  }
+) {
+  const channels = state.channelDates || {};
+  return JSON.stringify(stableValue({
+    date: state.date?.format?.('YYYY-MM-DDTHH:mm') || '',
+    channels: Object.keys(channels)
+      .sort()
+      .map((id) => [id, channels[id]?.format?.('YYYY-MM-DDTHH:mm') || '']),
+    tags: state.tags || [],
+    repeater: state.repeater || 0,
+    posts: (values || []).map((post) => ({
+      id: post?.id || '',
+      settings: post?.settings || {},
+      value: (post?.values || []).map((row) => ({
+        content: row?.content || '',
+        delay: row?.delay || 0,
+        media: (row?.media || []).map((file) => file?.id || file?.path || ''),
+      })),
+    })),
+  }));
+}
+
+const DraftCloseChoices = ({
+  onPick,
+}: {
+  onPick: (choice: 'save' | 'discard' | 'keep') => void;
+}) => {
+  const t = useT();
+  return (
+    <div className="po-sure">
+      <div className="po-sure-body">
+        <div className="min-w-0">
+          <div className="po-sure-title">
+            {t('save_changes_to_draft', 'Save changes to this draft?')}
+          </div>
+          <div className="po-sure-copy">
+            {t(
+              'save_changes_to_draft_body',
+              'Save keeps your edits on this draft. Discard drops only these edits.'
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="po-sure-actions">
+        <Button className="po-sure-yes" type="button" onClick={() => onPick('save')}>
+          {t('save_changes', 'Save changes')}
+        </Button>
+        <Button secondary className="po-sure-no" type="button" onClick={() => onPick('discard')}>
+          {t('discard_changes', 'Discard changes')}
+        </Button>
+        <Button secondary className="po-sure-no" type="button" onClick={() => onPick('keep')}>
+          {t('keep_editing', 'Keep editing')}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
@@ -79,7 +166,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const hoverSuppressed = useRef(false);
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
 
-  const { addEditSets, mutate, customClose, dummy } = props;
+  const { addEditSets, mutate, customClose, dummy, saveToDraft } = props;
+  const baselineRef = useRef<string | null>(null);
+  const runSaveRef = useRef<() => Promise<void>>(async () => undefined);
 
   const {
     selectedIntegrations,
@@ -307,9 +396,85 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     [integrations]
   );
 
+  useEffect(() => {
+    if (!saveToDraft) {
+      baselineRef.current = null;
+      return;
+    }
+    let cancel = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const values = await (ref.current as { getAllValues?: () => Promise<any[]> } | null)?.getAllValues?.();
+        if (cancel || !values) {
+          return;
+        }
+        baselineRef.current = composerFingerprint(values, useLaunchStore.getState());
+      } catch {
+        baselineRef.current = null;
+      }
+    }, 0);
+    return () => {
+      cancel = true;
+      window.clearTimeout(timer);
+    };
+  }, [saveToDraft]);
+
   const askClose = useCallback(async () => {
     clearComposerLayoutRemount();
     if (!activateExitButton || dummy) {
+      return false;
+    }
+
+    if (saveToDraft) {
+      let dirty = false;
+      if (baselineRef.current) {
+        try {
+          const values = await (ref.current as { getAllValues?: () => Promise<any[]> } | null)?.getAllValues?.();
+          dirty =
+            composerFingerprint(values, useLaunchStore.getState()) !==
+            baselineRef.current;
+        } catch {
+          dirty = true;
+        }
+      }
+      if (!dirty) {
+        modal.closeAll();
+        return true;
+      }
+      const choice = await new Promise<'save' | 'discard' | 'keep'>((resolve) => {
+        let settled = false;
+        const finish = (value: 'save' | 'discard' | 'keep') => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          resolve(value);
+        };
+        modal.openModal({
+          id: 'idea-draft-close',
+          title: '',
+          askClose: false,
+          withCloseButton: false,
+          classNames: { modal: 'po-sure-modal po-sure-draft' },
+          onClose: () => finish('keep'),
+          children: (
+            <DraftCloseChoices
+              onPick={(value) => {
+                finish(value);
+                modal.closeById('idea-draft-close');
+              }}
+            />
+          ),
+        });
+      });
+      if (choice === 'keep') {
+        return false;
+      }
+      if (choice === 'discard') {
+        modal.closeAll();
+        return true;
+      }
+      await runSaveRef.current();
       return false;
     }
 
@@ -333,7 +498,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     }
     modal.closeAll();
     return true;
-  }, [activateExitButton, dummy]);
+  }, [activateExitButton, dummy, saveToDraft, modal]);
 
   useGrabToClose(composerFrameRef, true, askClose);
   useGrabToClose(postMenuRef, postMenuOpen, () => closePostMenu(false));
@@ -804,6 +969,18 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
 
+      if (!dummy && saveToDraft) {
+        saveToDraft({
+          date: date.utc().format('YYYY-MM-DDTHH:mm:ss'),
+          posts,
+        });
+        clearComposerLayoutRemount();
+        modal.closeAll();
+        setLoading(false);
+        setBusy(null);
+        return;
+      }
+
       const shortlinkPreference = shortlinkPreferenceData?.shortlink || 'ASK';
 
       let shortLink = false;
@@ -962,6 +1139,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       t,
       fetch,
       mutate,
+      saveToDraft,
     ]
   );
 
@@ -978,9 +1156,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     },
     [saveWith, toaster, t]
   );
+  runSaveRef.current = schedule('schedule');
 
   return (
-    <div className={clsx('composer c8-composer w-full h-full flex-1 p-[40px] flex relative', phonePane === 'preview' && 'composer-show-preview', issue && 'composer-invalid')}>
+    <div className={clsx('composer c8-composer w-full h-full flex-1 p-[40px] flex relative', saveToDraft && 'c8-composer-draft', phonePane === 'preview' && 'composer-show-preview', issue && 'composer-invalid')}>
       <div ref={composerFrameRef} className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] flex-col min-h-0">
         <div className="arc-grab composer-grab" aria-hidden />
         <div className="composer-tabs" role="tablist">
@@ -1167,7 +1346,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             <DatePicker onChange={setPickerDate} date={pickerDate} />
-            {!addEditSets && (
+            {!addEditSets && !saveToDraft && (
               <button
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
@@ -1187,6 +1366,18 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 </div>
               </button>
             )}
+            {saveToDraft && (
+              <button
+                type="button"
+                className="c8-save-draft"
+                disabled={
+                  selectedIntegrations.length === 0 || loading || locked
+                }
+                onClick={schedule('schedule')}
+              >
+                {t('save_to_draft', 'Save to draft')}
+              </button>
+            )}
             {addEditSets && (
               <button
                 className="text-[#0A0A0A] text-[15px] font-[500] min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[18px] bg-[#00D9FF] ps-[20px] pe-[16px]"
@@ -1198,7 +1389,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 {t('save_set', 'Save set')}
               </button>
             )}
-            {!addEditSets && (
+            {!addEditSets && !saveToDraft && (
               <div
                 ref={postSplitRef}
                 className={clsx(

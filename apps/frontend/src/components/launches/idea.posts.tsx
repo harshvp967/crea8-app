@@ -16,10 +16,14 @@ import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.m
 import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
-import { DiscordChannelSelect } from '@gitroom/frontend/components/new-launch/providers/discord/discord.channel.select';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import SafeImage from '@gitroom/react/helpers/safe.image';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { IsOptional } from 'class-validator';
+import { classValidatorResolver } from '@hookform/resolvers/class-validator';
+import { Providers } from '@gitroom/frontend/components/new-launch/providers/show.all.providers';
+import { getProviderSettingsMeta } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
 dayjs.extend(utc);
 
@@ -36,7 +40,7 @@ type Draft = {
   picture?: string | null;
   content: string;
   publishAt: string;
-  settings: Record<string, string | boolean>;
+  settings: Record<string, any>;
   media: DraftMedia[];
   error?: string;
   saved?: boolean;
@@ -44,6 +48,33 @@ type Draft = {
   warning?: string;
   needs?: 'image' | 'video' | null;
   discord?: boolean;
+  badSettings?: boolean;
+};
+
+const WEEK = 7 * 24 * 60 * 60 * 1000;
+
+class EmptySettings {
+  @IsOptional()
+  empty?: string;
+}
+
+type StoredPanel = {
+  at: number;
+  idea: string;
+  allWhen: string;
+  voice: boolean;
+  tray: DraftMedia[];
+  drafts: Array<{
+    integrationId: string;
+    provider: string;
+    name: string;
+    picture?: string | null;
+    content: string;
+    publishAt: string;
+    settings: Record<string, any>;
+    media: DraftMedia[];
+    saved?: boolean;
+  }>;
 };
 
 type ValidRow = {
@@ -84,6 +115,98 @@ function channelAccepts(provider: string, kind: 'image' | 'video') {
   return true;
 }
 
+function panelKey(orgId: string, userId: string, customer?: string | null) {
+  return `c8-idea:${orgId}:${userId}:${customer || ''}`;
+}
+
+function readPanel(key: string): StoredPanel | null {
+  if (!key || typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) {
+      return null;
+    }
+    const data = JSON.parse(raw) as StoredPanel;
+    if (!data || typeof data.at !== 'number' || Date.now() - data.at > WEEK) {
+      window.localStorage.removeItem(key);
+      return null;
+    }
+    if (!Array.isArray(data.drafts) || !Array.isArray(data.tray) || typeof data.idea !== 'string') {
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function writePanel(key: string, data: StoredPanel) {
+  if (!key) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(key, JSON.stringify(data));
+  } catch {
+    return;
+  }
+}
+
+function clearPanel(key: string) {
+  if (!key) {
+    return;
+  }
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    return;
+  }
+}
+
+function htmlToPlain(html: string) {
+  const text = String(html || '');
+  if (!/<[a-z][\s\S]*>/i.test(text)) {
+    return text;
+  }
+  return text
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function settingsMeta(provider: string) {
+  const row = Providers.find((item) => item.identifier === provider);
+  return getProviderSettingsMeta(row?.component);
+}
+
+function integrationFor(catalog: Integrations[], item: Draft): Integrations {
+  const found = catalog.find((row) => row.id === item.integrationId);
+  if (found) {
+    return found;
+  }
+  return {
+    id: item.integrationId,
+    name: item.name,
+    identifier: item.provider,
+    display: item.name,
+    editor: 'normal',
+    picture: item.picture || '',
+    inBetweenSteps: false,
+    type: 'social',
+    additionalSettings: '[]',
+    changeProfilePicture: false,
+    changeNickName: false,
+    time: [],
+  } as Integrations;
+}
+
 function readUploaded(result: unknown): DraftMedia[] {
   const rows = Array.isArray(result) ? result : [];
   return rows.flatMap((file) => {
@@ -104,13 +227,14 @@ function cardIssue(draft: Draft, result: ValidRow | undefined, tray: DraftMedia[
       warning: 'Could not check this draft.',
       needs: null as 'image' | 'video' | null,
       discord: false,
+      badSettings: false,
     };
   }
   const error = result.errors === true ? '' : String(result.errors || '');
   const settings = result.settingsError || '';
   const provider = draft.provider.toLowerCase();
   if (provider.startsWith('discord') && /channel/i.test(settings)) {
-    return { valid: false, warning: '', needs: null, discord: true };
+    return { valid: false, warning: '', needs: null, discord: true, badSettings: true };
   }
   const imagesOnly =
     tray.some((file) => file.kind === 'image') &&
@@ -122,10 +246,10 @@ function cardIssue(draft: Draft, result: ValidRow | undefined, tray: DraftMedia[
       error
     );
   if (videoOnly && (missingMedia || imagesOnly || /must be a video/i.test(error))) {
-    return { valid: false, warning: 'Needs a video', needs: 'video' as const, discord: false };
+    return { valid: false, warning: 'Needs a video', needs: 'video' as const, discord: false, badSettings: false };
   }
   if (missingMedia) {
-    return { valid: false, warning: 'Needs an image', needs: 'image' as const, discord: false };
+    return { valid: false, warning: 'Needs an image', needs: 'image' as const, discord: false, badSettings: false };
   }
   if (result.emptyContent) {
     return {
@@ -133,18 +257,19 @@ function cardIssue(draft: Draft, result: ValidRow | undefined, tray: DraftMedia[
       warning: 'Your post should have at least one character or one image.',
       needs: null,
       discord: false,
+      badSettings: false,
     };
   }
   if (result.tooLong) {
-    return { valid: false, warning: 'This draft is too long.', needs: null, discord: false };
+    return { valid: false, warning: 'This draft is too long.', needs: null, discord: false, badSettings: false };
   }
   if (result.valid === false && settings) {
-    return { valid: false, warning: settings, needs: null, discord: false };
+    return { valid: false, warning: settings, needs: null, discord: false, badSettings: true };
   }
   if (error) {
-    return { valid: false, warning: error, needs: null, discord: false };
+    return { valid: false, warning: error, needs: null, discord: false, badSettings: false };
   }
-  return { valid: true, warning: '', needs: null, discord: false };
+  return { valid: true, warning: '', needs: null, discord: false, badSettings: false };
 }
 
 async function readMessage(response: Response) {
@@ -191,10 +316,12 @@ export const IdeaPostsButton = ({
       >
         <HugeIcon name="sparkles" size={18} />
       </button>
-      {open && (
+      {open && user?.id && user.orgId && (
         <IdeaPostsPanel
           customer={customer}
           reload={reload}
+          orgId={user.orgId}
+          userId={user.id}
           onClose={() => setOpen(false)}
         />
       )}
@@ -202,30 +329,74 @@ export const IdeaPostsButton = ({
   );
 };
 
-const DiscordDraftChannel = ({
-  integrationId,
-  value,
+const ChannelSettingsForm = ({
+  provider,
+  integration,
+  settings,
   onChange,
 }: {
-  integrationId: string;
-  value: string;
-  onChange: (value: string) => void;
+  provider: string;
+  integration: Integrations;
+  settings: Record<string, any>;
+  onChange: (settings: Record<string, any>) => void;
 }) => {
-  const form = useForm({ values: { channel: value } });
+  const meta = settingsMeta(provider);
+  const Settings = meta?.SettingsComponent;
+  const form = useForm({
+    resolver: classValidatorResolver(meta?.dto || EmptySettings),
+    defaultValues: settings || {},
+    mode: 'onChange',
+  });
+  const watched = useWatch({ control: form.control });
+  const onChangeRef = useRef(onChange);
+  const settingsRef = useRef(settings);
+  const last = useRef(JSON.stringify(settings || {}));
+  const fromForm = useRef(false);
+  onChangeRef.current = onChange;
+  settingsRef.current = settings;
+
+  useEffect(() => {
+    const next = (watched || {}) as Record<string, any>;
+    const serial = JSON.stringify(next);
+    if (serial === last.current) {
+      return;
+    }
+    if (!Object.keys(next).length && Object.keys(settingsRef.current || {}).length) {
+      return;
+    }
+    last.current = serial;
+    fromForm.current = true;
+    onChangeRef.current(next);
+  }, [watched]);
+
+  useEffect(() => {
+    if (fromForm.current) {
+      fromForm.current = false;
+      last.current = JSON.stringify(settings || {});
+      return;
+    }
+    const serial = JSON.stringify(settings || {});
+    if (serial === last.current) {
+      return;
+    }
+    last.current = serial;
+    form.reset(settings || {});
+  }, [settings]);
+
+  if (!Settings) {
+    return null;
+  }
   return (
     <IntegrationContext.Provider
       value={{
         date: dayjs(),
-        integration: { id: integrationId } as Integrations,
-        allIntegrations: [],
+        integration,
+        allIntegrations: [integration],
         value: [],
       }}
     >
       <FormProvider {...form}>
-        <DiscordChannelSelect
-          name="channel"
-          onChange={(event) => onChange(event.target.value)}
-        />
+        <Settings />
       </FormProvider>
     </IntegrationContext.Provider>
   );
@@ -234,16 +405,21 @@ const DiscordDraftChannel = ({
 const IdeaPostsPanel = ({
   customer,
   reload,
+  orgId,
+  userId,
   onClose,
 }: {
   customer?: string | null;
   reload?: () => void;
+  orgId: string;
+  userId: string;
   onClose: () => void;
 }) => {
   const fetch = useFetch();
   const t = useT();
   const modal = useModals();
   const sheetRef = useRef<HTMLElement>(null);
+  const key = panelKey(orgId, userId, customer);
   const [phone, setPhone] = useState(false);
   const [idea, setIdea] = useState('');
   const [used, setUsed] = useState(0);
@@ -256,10 +432,16 @@ const IdeaPostsPanel = ({
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [restored, setRestored] = useState(false);
   const [allWhen, setAllWhen] = useState('');
   const [tray, setTray] = useState<DraftMedia[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [catalog, setCatalog] = useState<Integrations[]>([]);
+  const [settingsOpen, setSettingsOpen] = useState<Record<string, boolean>>({});
   const fileRef = useRef<HTMLInputElement>(null);
+  const catalogRef = useRef<Integrations[]>([]);
+  const closeRef = useRef<() => void>(() => undefined);
+  const seenInvalid = useRef<Record<string, boolean>>({});
   const addTarget = useRef<number | 'all'>('all');
   const trayRef = useRef<DraftMedia[]>([]);
   const receiveFiles = useRef<(files: DraftMedia[]) => void>(() => undefined);
@@ -282,7 +464,7 @@ const IdeaPostsPanel = ({
     return () => media.removeEventListener('change', apply);
   }, []);
 
-  useGrabToClose(sheetRef, phone, onClose);
+  useGrabToClose(sheetRef, phone, () => closeRef.current());
 
   useEffect(() => {
     let cancelled = false;
@@ -301,7 +483,46 @@ const IdeaPostsPanel = ({
     };
   }, [fetch]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const response = await fetch('/integrations/list');
+      const list = await response.json().catch(() => []);
+      if (cancelled) {
+        return;
+      }
+      const rows = (Array.isArray(list) ? list : list?.integrations || []) as Integrations[];
+      catalogRef.current = rows;
+      setCatalog(rows);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetch]);
+
+  useEffect(() => {
+    const saved = readPanel(key);
+    if (!saved) {
+      return;
+    }
+    setIdea(saved.idea);
+    setAllWhen(saved.allWhen || '');
+    setVoice(!!saved.voice);
+    setTray(saved.tray || []);
+    setDrafts(
+      saved.drafts.map((item) => ({
+        ...item,
+        settings: item.settings || {},
+        media: item.media || [],
+        saved: !!item.saved,
+        valid: undefined,
+      }))
+    );
+    setRestored(true);
+  }, [key]);
+
   const draft = useCallback(async () => {
+    setRestored(false);
     setError('');
     setUpgrade('');
     setLoading(true);
@@ -360,10 +581,13 @@ const IdeaPostsPanel = ({
     async (item: Draft) => {
       const listResponse = await fetch('/integrations/list');
       const list = await listResponse.json();
-      const catalog = (
+      const rows = (
         Array.isArray(list) ? list : list?.integrations || []
       ) as Integrations[];
-      const channels = composerChannels({ catalog, customer });
+      catalogRef.current = rows;
+      setCatalog(rows);
+      const channels = composerChannels({ catalog: rows, customer });
+      const openedId = item.integrationId;
       const date = dayjs(item.publishAt);
       modal.openModal({
         id: 'add-edit-modal',
@@ -383,10 +607,56 @@ const IdeaPostsPanel = ({
             allIntegrations={channels.allIntegrations.map((row) => ({ ...row }))}
             integrations={channels.allIntegrations}
             selectedChannels={[item.integrationId]}
+            channelSettings={item.settings || {}}
             customer={customer || undefined}
             mutate={reload || (() => undefined)}
             date={date}
             reopenModal={() => undefined}
+            saveToDraft={(data) => {
+              const post =
+                (data.posts || []).find((row) => row.integration?.id === openedId) ||
+                data.posts?.[0];
+              if (!post) {
+                return;
+              }
+              const nextId = post.integration?.id || openedId;
+              const integration = catalogRef.current.find((row) => row.id === nextId);
+              setDrafts((current) => {
+                const taken = current.some(
+                  (row) => row.integrationId === nextId && row.integrationId !== openedId
+                );
+                return current.map((row) => {
+                  if (row.integrationId !== openedId) {
+                    return row;
+                  }
+                  const images = (post.value || []).flatMap((value) => value.image || []);
+                  return {
+                    ...row,
+                    integrationId: taken ? openedId : nextId,
+                    provider: taken ? row.provider : integration?.identifier || row.provider,
+                    name: taken ? row.name : integration?.name || row.name,
+                    picture: taken ? row.picture : integration?.picture ?? row.picture,
+                    content: (post.value || [])
+                      .map((value) => htmlToPlain(String(value.content || '')))
+                      .join('\n\n'),
+                    media: images.flatMap((file) => {
+                      const path = String(file?.path || '');
+                      const id = String(file?.id || '');
+                      if (!id || !path) {
+                        return [];
+                      }
+                      return [{ id, path, kind: mediaKind(path) }];
+                    }),
+                    settings: (post.settings || {}) as Record<string, any>,
+                    publishAt: toLocalInput(post.date || data.date) || row.publishAt,
+                    saved: false,
+                    valid: undefined,
+                    error: '',
+                    warning: '',
+                  };
+                });
+              });
+            }}
             onlyValues={[
               {
                 content: plainToPostHtml(item.content),
@@ -475,9 +745,10 @@ const IdeaPostsPanel = ({
       reload?.();
     }
     if (saved && next.every((item) => item.saved)) {
+      clearPanel(key);
       onClose();
     }
-  }, [drafts, fetch, onClose, reload, t]);
+  }, [drafts, fetch, key, onClose, reload, t]);
 
   receiveFiles.current = (files) => {
     if (!files.length) {
@@ -520,7 +791,7 @@ const IdeaPostsPanel = ({
   const draftSignature = drafts
     .map(
       (item) =>
-        `${item.integrationId}\t${item.content}\t${item.publishAt}\t${item.settings?.channel || ''}\t${item.media.map((file) => file.id).join(',')}`
+        `${item.integrationId}\t${item.content}\t${item.publishAt}\t${JSON.stringify(item.settings || {})}\t${item.media.map((file) => file.id).join(',')}`
     )
     .join('\n');
   const traySignature = tray.map((file) => `${file.kind}:${file.id}`).join(',');
@@ -569,7 +840,8 @@ const IdeaPostsPanel = ({
               item.valid === issue.valid &&
               item.warning === issue.warning &&
               item.needs === issue.needs &&
-              item.discord === issue.discord
+              item.discord === issue.discord &&
+              item.badSettings === issue.badSettings
             ) {
               return item;
             }
@@ -588,6 +860,7 @@ const IdeaPostsPanel = ({
                     ...item,
                     valid: false,
                     warning: 'Could not check this draft.',
+                    badSettings: false,
                   }
             )
           );
@@ -604,6 +877,96 @@ const IdeaPostsPanel = ({
     };
   }, [draftSignature, traySignature, fetch]);
 
+  const invalidSig = drafts
+    .map((item) => `${item.integrationId}:${item.valid === false ? '1' : '0'}`)
+    .join('|');
+  useEffect(() => {
+    setSettingsOpen((current) => {
+      let changed = false;
+      const next = { ...current };
+      for (const item of drafts) {
+        const bad = item.valid === false;
+        if (bad && !seenInvalid.current[item.integrationId] && settingsMeta(item.provider)?.SettingsComponent) {
+          next[item.integrationId] = true;
+          changed = true;
+        }
+        seenInvalid.current[item.integrationId] = bad;
+      }
+      return changed ? next : current;
+    });
+  }, [invalidSig, drafts]);
+
+  const packPanel = useCallback((): StoredPanel => {
+    return {
+      at: Date.now(),
+      idea,
+      allWhen,
+      voice,
+      tray,
+      drafts: drafts.map((item) => ({
+        integrationId: item.integrationId,
+        provider: item.provider,
+        name: item.name,
+        picture: item.picture,
+        content: item.content,
+        publishAt: item.publishAt,
+        settings: item.settings || {},
+        media: item.media || [],
+        saved: !!item.saved,
+      })),
+    };
+  }, [allWhen, drafts, idea, tray, voice]);
+
+  const persistClose = useCallback(() => {
+    const payload = packPanel();
+    const empty = !payload.idea.trim() && !payload.drafts.length && !payload.tray.length;
+    if (empty) {
+      clearPanel(key);
+    } else {
+      writePanel(key, payload);
+    }
+    onClose();
+  }, [key, onClose, packPanel]);
+  closeRef.current = persistClose;
+
+  const startFresh = useCallback(() => {
+    clearPanel(key);
+    setIdea('');
+    setDrafts([]);
+    setTray([]);
+    setAllWhen('');
+    setError('');
+    setUpgrade('');
+    setVoice(false);
+    setRestored(false);
+    setSettingsOpen({});
+    seenInvalid.current = {};
+  }, [key]);
+
+  const discard = useCallback(async () => {
+    if (!drafts.length && !idea.trim() && !tray.length) {
+      clearPanel(key);
+      onClose();
+      return;
+    }
+    const keep = !(await deleteDialog(
+      t(
+        'discard_all_drafts_body',
+        'This removes the idea and these drafts from the panel.'
+      ),
+      t('discard', 'Discard'),
+      t('discard_all_drafts', 'Discard all {{count}} drafts?', {
+        count: drafts.length,
+      }),
+      t('keep', 'Keep')
+    ));
+    if (keep) {
+      return;
+    }
+    clearPanel(key);
+    onClose();
+  }, [drafts.length, idea, key, onClose, t, tray.length]);
+
   const pickFiles = (target: number | 'all') => {
     addTarget.current = target;
     fileRef.current?.click();
@@ -614,7 +977,7 @@ const IdeaPostsPanel = ({
     !!drafts.length && drafts.every((item) => item.saved || item.valid === true);
   const node = (
     <div className="c8-idea">
-      <button type="button" className="c8-idea-scrim" aria-label={t('close', 'Close')} onClick={onClose} />
+      <button type="button" className="c8-idea-scrim" aria-label={t('close', 'Close')} onClick={persistClose} />
       <aside ref={sheetRef} className="c8-idea-panel" role="dialog" aria-labelledby="c8-idea-title">
         <div className="arc-grab" aria-hidden />
         <div className="c8-idea-head">
@@ -639,7 +1002,7 @@ const IdeaPostsPanel = ({
               </span>
             </div>
           </div>
-          <button type="button" className="c8-idea-close" aria-label={t('close', 'Close')} onClick={onClose}>
+          <button type="button" className="c8-idea-close" aria-label={t('close', 'Close')} onClick={persistClose}>
             <HugeIcon name="close" size={18} />
           </button>
         </div>
@@ -737,10 +1100,20 @@ const IdeaPostsPanel = ({
             })}
           </p>
         )}
+        {restored && (
+          <p className="c8-idea-restored">
+            <span>{t('restored_last_drafts', 'Restored your last drafts')}</span>
+            <button type="button" onClick={startFresh}>
+              {t('start_fresh', 'Start fresh')}
+            </button>
+          </p>
+        )}
         {!!drafts.length && (
           <label className="c8-idea-all-time">
-            <HugeIcon name="clock" size={14} />
-            <span>{t('set_date_time_all', 'Set date and time for all drafts')}</span>
+            <span className="c8-idea-all-label">
+              <HugeIcon name="clock" size={14} />
+              <span>{t('set_date_time_all', 'Set date and time for all drafts')}</span>
+            </span>
             <input
               type="datetime-local"
               aria-label={t('set_date_time_all', 'Set date and time for all drafts')}
@@ -777,29 +1150,6 @@ const IdeaPostsPanel = ({
                   <strong>{networkName(item.provider)}</strong>
                   <span>{item.name}</span>
                 </div>
-                <label className="c8-idea-time">
-                  <HugeIcon name="clock" size={14} />
-                  <span>{dayjs(item.publishAt).format('MMM D, h:mm A')}</span>
-                  <input
-                    type="datetime-local"
-                    aria-label={t('posting_time', 'Posting time')}
-                    value={item.publishAt}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setDrafts((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index
-                            ? { ...row, publishAt: value, saved: false }
-                            : row
-                        )
-                      );
-                    }}
-                  />
-                </label>
-                <button type="button" className="c8-idea-edit" onClick={() => edit(item)}>
-                  <HugeIcon name="pencil" size={14} />
-                  {t('edit', 'Edit')}
-                </button>
                 <button
                   type="button"
                   className="c8-idea-remove"
@@ -812,6 +1162,31 @@ const IdeaPostsPanel = ({
                 >
                   <HugeIcon name="close" size={14} />
                 </button>
+                <div className="c8-idea-card-actions">
+                  <label className="c8-idea-time">
+                    <HugeIcon name="clock" size={14} />
+                    <span>{dayjs(item.publishAt).format('MMM D, h:mm A')}</span>
+                    <input
+                      type="datetime-local"
+                      aria-label={t('posting_time', 'Posting time')}
+                      value={item.publishAt}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setDrafts((current) =>
+                          current.map((row, rowIndex) =>
+                            rowIndex === index
+                              ? { ...row, publishAt: value, saved: false }
+                              : row
+                          )
+                        );
+                      }}
+                    />
+                  </label>
+                  <button type="button" className="c8-idea-edit" onClick={() => edit(item)}>
+                    <HugeIcon name="pencil" size={14} />
+                    {t('edit', 'Edit')}
+                  </button>
+                </div>
               </div>
               <textarea
                 className="c8-idea-copy"
@@ -860,26 +1235,47 @@ const IdeaPostsPanel = ({
                   ))}
                 </div>
               )}
-              {(item.discord || item.provider.toLowerCase().startsWith('discord')) && (
-                <div className="c8-idea-discord">
-                  <DiscordDraftChannel
-                    integrationId={item.integrationId}
-                    value={String(item.settings.channel || '')}
-                    onChange={(value) =>
-                      setDrafts((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index
-                            ? {
-                                ...row,
-                                settings: { ...row.settings, channel: value },
-                                saved: false,
-                                valid: undefined,
-                              }
-                            : row
-                        )
-                      )
+              {!!settingsMeta(item.provider)?.SettingsComponent && (
+                <div className="c8-idea-settings">
+                  <button
+                    type="button"
+                    className="c8-idea-settings-toggle"
+                    aria-expanded={!!settingsOpen[item.integrationId]}
+                    onClick={() =>
+                      setSettingsOpen((current) => ({
+                        ...current,
+                        [item.integrationId]: !current[item.integrationId],
+                      }))
                     }
-                  />
+                  >
+                    <HugeIcon name="settings" size={14} />
+                    {t('settings', 'Settings')}
+                  </button>
+                  {!!settingsOpen[item.integrationId] && (
+                    <ChannelSettingsForm
+                      provider={item.provider}
+                      integration={integrationFor(catalog, item)}
+                      settings={item.settings || {}}
+                      onChange={(value) =>
+                        setDrafts((current) =>
+                          current.map((row, rowIndex) => {
+                            if (rowIndex !== index) {
+                              return row;
+                            }
+                            if (JSON.stringify(row.settings || {}) === JSON.stringify(value || {})) {
+                              return row;
+                            }
+                            return {
+                              ...row,
+                              settings: value,
+                              saved: false,
+                              valid: undefined,
+                            };
+                          })
+                        )
+                      }
+                    />
+                  )}
                 </div>
               )}
               {!!item.needs && (
@@ -896,7 +1292,7 @@ const IdeaPostsPanel = ({
           ))}
         </div>
         <div className="c8-idea-foot">
-          <button type="button" className="c8-idea-ghost" onClick={onClose}>
+          <button type="button" className="c8-idea-ghost" onClick={discard}>
             {t('discard', 'Discard')}
           </button>
           <button
