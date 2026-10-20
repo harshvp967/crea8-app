@@ -2010,6 +2010,35 @@ body.c8-schedule .c8-seg > [role='radio'] > .c8-seg-thumb {
   box-shadow: 0 1px 3px rgb(18 16 22 / 0.12) !important;
 }
 
+/* The sliding thumb is the only active motion. Old per-button fills stay off. */
+.settings-screen .settings-settabs.c8-seg > [role='radio'],
+.settings-screen .settings-seg.c8-seg > [role='radio'],
+.media-library .media-types.c8-seg > [role='radio'],
+.analytics-screen .analytics-range.c8-seg > [role='radio'],
+.c8-composer .composer-seg.c8-seg > [role='radio'],
+body.c8-schedule .cal-mode.c8-seg > [role='radio'],
+body.c8-schedule .cal-list-states.c8-seg > [role='radio'],
+body.dark.c8-schedule .cal-mode.c8-seg > [role='radio'],
+body.dark.c8-schedule .cal-list-states.c8-seg > [role='radio'],
+body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'],
+body.dark.c8-schedule .cal-list-states.c8-seg > button[aria-checked='true'] {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+body.c8-schedule .cal-mode.c8-seg > [role='radio'][aria-checked='true'],
+body.c8-schedule .cal-list-states.c8-seg > [role='radio'][aria-checked='true'],
+body.dark.c8-schedule .cal-mode.c8-seg > [role='radio'][aria-checked='true'],
+body.dark.c8-schedule .cal-list-states.c8-seg > [role='radio'][aria-checked='true'],
+body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
+  background: transparent !important;
+  color: var(--c8-ink) !important;
+  box-shadow: none !important;
+}
+
 @media (max-width: 639px), (max-height: 500px) {
   .c8-composer .composer-seg.c8-seg {
     display: inline-flex !important;

@@ -134,7 +134,7 @@ export function SegmentedControl({
       {options.map((option, i) => {
         const active = option.value === selected;
         const itemClass = clsx(
-          'relative inline-flex items-center justify-center whitespace-nowrap font-[500] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--arc-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
+          'relative inline-flex items-center justify-center whitespace-nowrap font-[500] outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--arc-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-newBgColorInner',
           pill
             ? 'c8-seg-item rounded-full px-[14px] py-[7px] text-[13px]'
             : clsx('rounded-[14px]', sizes[size]),

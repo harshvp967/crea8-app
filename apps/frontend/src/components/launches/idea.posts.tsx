@@ -24,6 +24,9 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { Providers } from '@gitroom/frontend/components/new-launch/providers/show.all.providers';
 import { getProviderSettingsMeta } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
+import { Button } from '@gitroom/react/form/button';
+import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
 
 dayjs.extend(utc);
 
@@ -94,6 +97,53 @@ function toLocalInput(value: string) {
 
 function toUtc(value: string) {
   return dayjs(value).utc().format('YYYY-MM-DDTHH:mm:ss');
+}
+
+function localDay(value: string) {
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed : dayjs();
+}
+
+function DraftCopy({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) {
+      return;
+    }
+    node.style.height = 'auto';
+    node.style.height = `${node.scrollHeight}px`;
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      className="c8-idea-copy"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
+}
+
+function WhenPill({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <DatePicker
+      variant="pill"
+      date={localDay(value)}
+      onChange={(next) => onChange(next.format('YYYY-MM-DDTHH:mm'))}
+    />
+  );
 }
 
 function networkName(provider: string) {
@@ -1006,61 +1056,84 @@ const IdeaPostsPanel = ({
             <HugeIcon name="close" size={18} />
           </button>
         </div>
-        <label className="c8-idea-field">
+        <input
+          ref={fileRef}
+          className="c8-idea-file"
+          type="file"
+          accept="image/*,video/mp4"
+          multiple
+          onChange={(event) => {
+            const files = Array.from(event.target.files || []);
+            event.target.value = '';
+            for (const file of files) {
+              uppy.addFile(file);
+            }
+          }}
+        />
+        <div className="c8-idea-box">
           <span>{t('your_idea_or_link', 'Your idea or link')}</span>
-          <textarea
-            value={idea}
-            maxLength={4000}
-            onChange={(event) => setIdea(event.target.value)}
-          />
-        </label>
-        <div className="c8-idea-tray">
-          <input
-            ref={fileRef}
-            className="c8-idea-file"
-            type="file"
-            accept="image/*,video/mp4"
-            multiple
-            onChange={(event) => {
-              const files = Array.from(event.target.files || []);
-              event.target.value = '';
-              for (const file of files) {
-                uppy.addFile(file);
-              }
-            }}
-          />
-          <button type="button" className="c8-idea-add" onClick={() => pickFiles('all')}>
-            <HugeIcon name="plus" size={14} />
-            {uploading
-              ? t('uploading', 'Uploading…')
-              : t('add_images_or_videos', 'Add images or videos')}
-          </button>
-          {tray.map((file) => (
-            <span key={file.id} className="c8-idea-tray-file">
-              {file.kind === 'video' ? (
-                <span className="c8-idea-video">{t('video', 'Video')}</span>
-              ) : (
-                <SafeImage src={file.path} alt="" width={56} height={56} />
-              )}
-              <button
-                type="button"
-                aria-label={t('remove_media', 'Remove media')}
-                onClick={() => {
-                  setTray((current) => current.filter((row) => row.id !== file.id));
-                  setDrafts((current) =>
-                    current.map((row) => ({
-                      ...row,
-                      media: row.media.filter((have) => have.id !== file.id),
-                      saved: false,
-                      valid: undefined,
-                    }))
+          <div className="c8-idea-input">
+            <textarea
+              value={idea}
+              maxLength={4000}
+              onChange={(event) => setIdea(event.target.value)}
+            />
+            {!!tray.length && (
+              <div className="c8-idea-tray">
+                {tray.map((file) => (
+                  <span key={file.id} className="c8-idea-tray-file">
+                    {file.kind === 'video' ? (
+                      <span className="c8-idea-video">{t('video', 'Video')}</span>
+                    ) : (
+                      <SafeImage src={file.path} alt="" width={56} height={56} />
+                    )}
+                    <button
+                      type="button"
+                      aria-label={t('remove_media', 'Remove media')}
+                      onClick={() => {
+                        setTray((current) => current.filter((row) => row.id !== file.id));
+                        setDrafts((current) =>
+                          current.map((row) => ({
+                            ...row,
+                            media: row.media.filter((have) => have.id !== file.id),
+                            saved: false,
+                            valid: undefined,
+                          }))
+                        );
+                      }}
+                    >
+                      <HugeIcon name="close" size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="c8-idea-input-foot">
+              <MultiMediaComponent
+                bar="idea"
+                label=""
+                description=""
+                dummy={false}
+                allData={[]}
+                text={idea}
+                name="idea-media"
+                onChange={(event) => {
+                  const rows = event.target.value || [];
+                  addTarget.current = 'all';
+                  receiveFiles.current(
+                    rows.flatMap((file) => {
+                      const path = String(file?.path || '');
+                      const id = String(file?.id || '');
+                      if (!id || !path) {
+                        return [];
+                      }
+                      return [{ id, path, kind: mediaKind(path) }];
+                    })
                   );
                 }}
-              >
-                <HugeIcon name="close" size={12} />
-              </button>
-            </span>
-          ))}
+              />
+            </div>
+          </div>
         </div>
         <div className="c8-idea-generate">
           <p>
@@ -1074,14 +1147,13 @@ const IdeaPostsPanel = ({
                   count: channelCount,
                 })}
           </p>
-          <button
-            type="button"
-            className="c8-idea-secondary"
-            disabled={loading || idea.trim().length < 3}
+          <Button
+            className="c8-idea-go"
+            disabled={loading || (!idea.trim() && !tray.length)}
             onClick={draft}
           >
             {loading ? t('writing', 'Writing…') : t('generate', 'Generate')}
-          </button>
+          </Button>
         </div>
         {!!upgrade && <p className="c8-idea-upgrade">{upgrade}</p>}
         {!!error && (
@@ -1109,17 +1181,13 @@ const IdeaPostsPanel = ({
           </p>
         )}
         {!!drafts.length && (
-          <label className="c8-idea-all-time">
+          <div className="c8-idea-all-time">
             <span className="c8-idea-all-label">
-              <HugeIcon name="clock" size={14} />
-              <span>{t('set_date_time_all', 'Set date and time for all drafts')}</span>
+              {t('set_date_time_all', 'Set date and time for all drafts')}
             </span>
-            <input
-              type="datetime-local"
-              aria-label={t('set_date_time_all', 'Set date and time for all drafts')}
-              value={allWhen}
-              onChange={(event) => {
-                const value = event.target.value;
+            <WhenPill
+              value={allWhen || drafts[0]?.publishAt || ''}
+              onChange={(value) => {
                 setAllWhen(value);
                 if (!value) {
                   return;
@@ -1133,66 +1201,59 @@ const IdeaPostsPanel = ({
                 );
               }}
             />
-          </label>
+          </div>
         )}
         <div className="c8-idea-list">
           {drafts.map((item, index) => (
             <article key={item.integrationId} className="c8-idea-card">
               <div className="c8-idea-card-head">
-                <SafeImage
-                  src={item.picture || '/no-picture.jpg'}
-                  alt=""
-                  width={32}
-                  height={32}
-                  className="c8-idea-logo"
-                />
-                <div className="c8-idea-who">
-                  <strong>{networkName(item.provider)}</strong>
-                  <span>{item.name}</span>
+                <div className="c8-idea-card-top">
+                  <SafeImage
+                    src={item.picture || '/no-picture.jpg'}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="c8-idea-logo"
+                  />
+                  <div className="c8-idea-who">
+                    <strong>{networkName(item.provider)}</strong>
+                    <span>{item.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="c8-idea-remove"
+                    aria-label={t('remove_draft', 'Remove {{name}}', {
+                      name: networkName(item.provider),
+                    })}
+                    onClick={() =>
+                      setDrafts((current) => current.filter((row) => row.integrationId !== item.integrationId))
+                    }
+                  >
+                    <HugeIcon name="close" size={18} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="c8-idea-remove"
-                  aria-label={t('remove_draft', 'Remove {{name}}', {
-                    name: networkName(item.provider),
-                  })}
-                  onClick={() =>
-                    setDrafts((current) => current.filter((row) => row.integrationId !== item.integrationId))
-                  }
-                >
-                  <HugeIcon name="close" size={14} />
-                </button>
                 <div className="c8-idea-card-actions">
-                  <label className="c8-idea-time">
-                    <HugeIcon name="clock" size={14} />
-                    <span>{dayjs(item.publishAt).format('MMM D, h:mm A')}</span>
-                    <input
-                      type="datetime-local"
-                      aria-label={t('posting_time', 'Posting time')}
-                      value={item.publishAt}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setDrafts((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index
-                              ? { ...row, publishAt: value, saved: false }
-                              : row
-                          )
-                        );
-                      }}
-                    />
-                  </label>
+                  <WhenPill
+                    value={item.publishAt}
+                    onChange={(value) => {
+                      setDrafts((current) =>
+                        current.map((row, rowIndex) =>
+                          rowIndex === index
+                            ? { ...row, publishAt: value, saved: false }
+                            : row
+                        )
+                      );
+                    }}
+                  />
                   <button type="button" className="c8-idea-edit" onClick={() => edit(item)}>
                     <HugeIcon name="pencil" size={14} />
                     {t('edit', 'Edit')}
                   </button>
                 </div>
               </div>
-              <textarea
-                className="c8-idea-copy"
+              <DraftCopy
                 value={item.content}
-                onChange={(event) => {
-                  const value = event.target.value;
+                onChange={(value) => {
                   setDrafts((current) =>
                     current.map((row, rowIndex) =>
                       rowIndex === index

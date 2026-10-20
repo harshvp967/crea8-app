@@ -123,31 +123,50 @@
   cursor: pointer;
 }
 
-.c8-idea-field {
+.c8-idea-box {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 18px;
+  margin-top: 12px;
   font-size: 13px;
   font-weight: 600;
 }
 
-.c8-idea-field textarea,
-.c8-idea-copy {
-  width: 100%;
-  box-sizing: border-box;
+.c8-idea-input {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   border: 1.5px solid var(--c8-line);
   border-radius: 16px;
   background: var(--c8-bg);
+  overflow: hidden;
+}
+
+.c8-idea-input > textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 66px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--c8-ink);
   font: inherit;
   font-weight: 400;
   resize: vertical;
 }
 
-.c8-idea-field textarea {
-  min-height: 66px;
-  padding: 12px 14px;
+.c8-idea-copy {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font: inherit;
+  font-weight: 400;
+  resize: none;
+  overflow: hidden;
 }
 
 .c8-idea-generate {
@@ -235,18 +254,21 @@
 }
 
 .c8-idea-card-head {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 28px;
-  grid-template-areas:
-    "logo who remove"
-    "actions actions actions";
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+  min-width: 0;
+}
+
+.c8-idea-card-top {
+  display: flex;
   align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
 .c8-idea-logo {
-  grid-area: logo;
+  flex: none;
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -254,7 +276,6 @@
 }
 
 .c8-idea-who {
-  grid-area: who;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -280,7 +301,6 @@
 }
 
 .c8-idea-card-actions {
-  grid-area: actions;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -312,14 +332,20 @@
 }
 
 .c8-idea-all-time {
-  flex-direction: column;
-  align-items: stretch;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
   height: auto;
   margin-top: 10px;
-  padding: 10px 12px;
+  padding: 0;
   box-sizing: border-box;
   gap: 8px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  box-shadow: none;
+  white-space: normal;
 }
 
 .c8-idea-all-label {
@@ -335,31 +361,18 @@
   overflow-wrap: anywhere;
 }
 
-.c8-idea-all-time input {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  margin: 0;
-  box-sizing: border-box;
-  border: 0;
-  background: transparent;
-  color: var(--c8-ink);
-  font: inherit;
-  font-weight: 600;
-}
-
 .c8-idea-remove {
-  grid-area: remove;
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
+  margin-inline-start: auto;
   border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--c8-muted);
+  border-radius: 12px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
   cursor: pointer;
 }
 
@@ -369,20 +382,17 @@
   color: var(--c8-ink);
 }
 
-.c8-idea-time input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
 .c8-idea-copy {
   min-height: 64px;
   margin-top: 10px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  line-height: 1.4;
+  padding: 12px 14px;
+  line-height: 1.45;
+}
+
+.c8-idea-copy:focus {
+  padding: 12px 14px;
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 0;
 }
 
 .c8-idea-foot {
@@ -430,7 +440,13 @@ body:has(.c8-composer) .c8-idea {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin: 0;
+  padding: 0 12px 8px;
+}
+
+.c8-idea-strip {
   margin-top: 10px;
+  padding: 0;
 }
 
 .c8-idea-add {
@@ -454,6 +470,8 @@ body:has(.c8-composer) .c8-idea {
   width: 56px;
   height: 56px;
   flex: none;
+  overflow: hidden;
+  border-radius: 10px;
 }
 
 .c8-idea-tray-file img,
@@ -475,13 +493,13 @@ body:has(.c8-composer) .c8-idea {
 .c8-idea-tray-file > button,
 .c8-idea-thumb > button {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 4px;
+  right: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 0;
   border-radius: 999px;
   background: var(--c8-surface);
@@ -575,9 +593,10 @@ body:has(.c8-composer) .c8-idea {
   }
 
   .c8-idea-copy {
-    min-height: calc(1.4em * 3);
+    min-height: 64px;
     max-height: none;
-    overflow: auto;
+    overflow: hidden;
+    padding: 12px 14px;
   }
 
   .c8-idea-foot {
@@ -842,5 +861,165 @@ body:has(.c8-composer) .c8-idea {
   .c8-voice-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+
+.c8-idea-all-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: normal;
+}
+
+.c8-idea-input-foot {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 12px;
+  border-top: 1px solid var(--c8-line);
+}
+
+.c8-idea-attach {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.c8-idea-attach .c8-attach,
+.c8-idea-attach .relative > div {
+  height: 34px;
+  white-space: nowrap;
+}
+
+.c8-idea-attach .text-\[10px\] {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.c8-idea-generate p {
+  min-width: 0;
+}
+
+.c8-idea-generate .c8-idea-go {
+  flex: none;
+  width: auto;
+  height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--c8-hard) !important;
+  border-radius: 999px !important;
+  background: var(--c8-cyan) !important;
+  color: var(--c8-on-cyan) !important;
+  box-shadow: 0 3px 0 var(--c8-hard);
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    transform 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+
+.c8-idea-generate .c8-idea-go:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 var(--c8-hard);
+}
+
+.c8-idea-generate .c8-idea-go:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--c8-hard);
+  transition-duration: 80ms;
+  transition-timing-function: ease-in;
+}
+
+.c8-idea-generate .c8-idea-go:disabled {
+  box-shadow: none;
+  transform: none;
+  opacity: 0.45;
+}
+
+.c8-idea .c8-date-pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 34px;
+  border: 1.5px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+}
+
+.c8-idea .c8-date-pill .po-date-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.c8-date-pop {
+  color-scheme: dark;
+  z-index: 1200;
+  max-width: calc(100vw - 16px);
+  background: var(--c8-surface);
+  border: 1.5px solid var(--c8-hard);
+  color: var(--c8-ink);
+}
+
+.c8-date-pop .po-date-time,
+.c8-date-pop .po-date-clock,
+.c8-date-pop .mantine-Calendar-calendarHeaderLevel,
+.c8-date-pop .po-date-close {
+  color: var(--c8-ink);
+}
+
+.c8-date-pop .po-date-clock > span {
+  display: none;
+}
+
+.c8-date-pop .po-date-clock .po-date-native-wrap {
+  position: static !important;
+  inset: auto !important;
+  opacity: 1 !important;
+  width: max-content !important;
+  height: auto !important;
+  background: transparent !important;
+}
+
+.c8-date-pop .po-date-clock input {
+  width: 3.4ch !important;
+  min-width: 3.4ch !important;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+  font-weight: 700;
+  text-align: center;
+}
+
+.c8-date-pop .po-day-on {
+  background: var(--c8-ink) !important;
+  color: var(--c8-on-ink) !important;
+}
+
+body:has(.c8-idea) .arc-dialog-wrap,
+body:has(.c8-idea) .mantine-Overlay-root {
+  z-index: 1100 !important;
+}
+
+@media (max-width: 389px) {
+  .c8-idea .c8-date-pill .po-date-trigger {
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .c8-idea-generate {
+    gap: 8px;
   }
 }

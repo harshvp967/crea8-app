@@ -84,16 +84,16 @@ describe('ai drafts allowlist', () => {
 });
 
 describe('one idea drafts', () => {
-  it('counts a calendar month in UTC and keeps free at 10', () => {
+  it('counts a calendar month in UTC and keeps free at 1000', () => {
     expect(monthStart(new Date('2026-10-19T03:00:00.000Z')).toISOString()).toBe(
       '2026-10-01T00:00:00.000Z'
     );
-    expect(limitForTier('FREE')).toBe(10);
+    expect(limitForTier('FREE')).toBe(1000);
     expect(limitForTier('STANDARD')).toBeGreaterThan(10);
     expect(limitForTier('TEAM')).toBeGreaterThan(10);
     expect(limitForTier('PRO')).toBeGreaterThan(10);
     expect(limitForTier('ULTIMATE')).toBeGreaterThan(10);
-    expect(limitForTier('UNKNOWN')).toBe(10);
+    expect(limitForTier('UNKNOWN')).toBe(1000);
     expect(upgradeMessage(10, 10)).toContain('crea8.one');
   });
 
@@ -194,7 +194,7 @@ describe('IdeaPostsService flag', () => {
     (built as any)._subscriptionService.getSubscription.mockResolvedValue({
       subscriptionTier: 'FREE',
     });
-    credits.getCreditsFrom.mockResolvedValue(10);
+    credits.getCreditsFrom.mockResolvedValue(1000);
     const result = await built.generate({ id: 'org-1' } as any, {
       idea: 'a real idea',
     });
