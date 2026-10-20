@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -13,7 +13,10 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { plainToPostHtml } from '@gitroom/nestjs-libraries/database/prisma/posts/idea.posts';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
-import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
+import {
+  composerChannels,
+  integrationsForCustomer,
+} from '@gitroom/frontend/components/launches/customer.filter';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
@@ -475,13 +478,18 @@ const IdeaPostsPanel = ({
   const [used, setUsed] = useState(0);
   const [limit, setLimit] = useState(0);
   const [voice, setVoice] = useState(false);
-  const [channelCount, setChannelCount] = useState(0);
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [removeAsk, setRemoveAsk] = useState<{
+    top: number;
+    left: number;
+    run: () => void;
+  } | null>(null);
   const [error, setError] = useState('');
   const [upgrade, setUpgrade] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [, setChecking] = useState(false);
+  const [, setUploading] = useState(false);
   const [restored, setRestored] = useState(false);
   const [allWhen, setAllWhen] = useState('');
   const [tray, setTray] = useState<DraftMedia[]>([]);
@@ -526,7 +534,6 @@ const IdeaPostsPanel = ({
       }
       setUsed(data.used ?? 0);
       setLimit(data.limit ?? 0);
-      setChannelCount(data.channels ?? 0);
     })();
     return () => {
       cancelled = true;
@@ -550,9 +557,25 @@ const IdeaPostsPanel = ({
     };
   }, [fetch]);
 
+  const connectedCount = useMemo(() => {
+    return integrationsForCustomer(catalog, customer).filter(
+      (row) => !row.disabled && !row.inBetweenSteps
+    ).length;
+  }, [catalog, customer]);
+
   useEffect(() => {
     const saved = readPanel(key);
     if (!saved) {
+      setIdea('');
+      setAllWhen('');
+      setVoice(false);
+      setTray([]);
+      setDrafts([]);
+      setRestored(false);
+      setError('');
+      setUpgrade('');
+      setSettingsOpen({});
+      seenInvalid.current = {};
       return;
     }
     setIdea(saved.idea);
@@ -724,7 +747,13 @@ const IdeaPostsPanel = ({
   );
 
   const addAll = useCallback(async () => {
-    if (drafts.some((item) => !item.saved && item.valid !== true)) {
+    const first = drafts.find((item) => !item.saved && item.valid !== true);
+    if (first) {
+      setSettingsOpen((current) => ({
+        ...current,
+        [first.integrationId]: true,
+      }));
+      setFocusId(first.integrationId);
       return;
     }
     setSaving(true);
@@ -799,6 +828,51 @@ const IdeaPostsPanel = ({
       onClose();
     }
   }, [drafts, fetch, key, onClose, reload, t]);
+
+  useEffect(() => {
+    if (!focusId) {
+      return;
+    }
+    const card = document.getElementById(`c8-idea-card-${focusId}`);
+    const error = card?.querySelector(
+      '.c8-idea-card-error, .c8-idea-needs, .c8-idea-settings'
+    );
+    (error || card)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [focusId]);
+
+  const askRemove = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    run: () => void
+  ) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const width = 200;
+    const height = 52;
+    let left = rect.right - width;
+    let top = rect.bottom + 6;
+    left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+    if (top + height > window.innerHeight - 8) {
+      top = Math.max(8, rect.top - height - 6);
+    }
+    setRemoveAsk({ top, left, run });
+  };
+
+  useEffect(() => {
+    if (!removeAsk) {
+      return;
+    }
+    const close = () => setRemoveAsk(null);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        close();
+      }
+    };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [removeAsk]);
 
   receiveFiles.current = (files) => {
     if (!files.length) {
@@ -979,6 +1053,30 @@ const IdeaPostsPanel = ({
   }, [key, onClose, packPanel]);
   closeRef.current = persistClose;
 
+  const confirmClose = useCallback(async () => {
+    if (!drafts.length) {
+      persistClose();
+      return;
+    }
+    const remove = await deleteDialog(
+      t(
+        'discard_all_drafts_body',
+        'This removes the idea and these drafts from the panel.'
+      ),
+      t('remove', 'Remove'),
+      t('discard_all_drafts', 'Discard all {{count}} drafts?', {
+        count: drafts.length,
+      }),
+      t('cancel', 'Cancel'),
+      'danger'
+    );
+    if (!remove) {
+      return;
+    }
+    clearPanel(key);
+    onClose();
+  }, [drafts.length, key, onClose, persistClose, t]);
+
   const startFresh = useCallback(() => {
     clearPanel(key);
     setIdea('');
@@ -1023,8 +1121,6 @@ const IdeaPostsPanel = ({
   };
 
   const meter = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
-  const ready =
-    !!drafts.length && drafts.every((item) => item.saved || item.valid === true);
   const node = (
     <div className="c8-idea">
       <button type="button" className="c8-idea-scrim" aria-label={t('close', 'Close')} onClick={persistClose} />
@@ -1052,7 +1148,7 @@ const IdeaPostsPanel = ({
               </span>
             </div>
           </div>
-          <button type="button" className="c8-idea-close" aria-label={t('close', 'Close')} onClick={persistClose}>
+          <button type="button" className="c8-idea-close" aria-label={t('close', 'Close')} onClick={confirmClose}>
             <HugeIcon name="close" size={18} />
           </button>
         </div>
@@ -1090,17 +1186,19 @@ const IdeaPostsPanel = ({
                     <button
                       type="button"
                       aria-label={t('remove_media', 'Remove media')}
-                      onClick={() => {
-                        setTray((current) => current.filter((row) => row.id !== file.id));
-                        setDrafts((current) =>
-                          current.map((row) => ({
-                            ...row,
-                            media: row.media.filter((have) => have.id !== file.id),
-                            saved: false,
-                            valid: undefined,
-                          }))
-                        );
-                      }}
+                      onClick={(event) =>
+                        askRemove(event, () => {
+                          setTray((current) => current.filter((row) => row.id !== file.id));
+                          setDrafts((current) =>
+                            current.map((row) => ({
+                              ...row,
+                              media: row.media.filter((have) => have.id !== file.id),
+                              saved: false,
+                              valid: undefined,
+                            }))
+                          );
+                        })
+                      }
                     >
                       <HugeIcon name="close" size={12} />
                     </button>
@@ -1141,10 +1239,10 @@ const IdeaPostsPanel = ({
               ? t(
                   'uses_brand_voice',
                   'Uses your brand voice · {{count}} channels connected',
-                  { count: channelCount }
+                  { count: connectedCount }
                 )
-              : t('channels_connected', '{{count}} channels connected', {
-                  count: channelCount,
+                : t('channels_connected', '{{count}} channels connected', {
+                  count: connectedCount,
                 })}
           </p>
           <Button
@@ -1205,7 +1303,11 @@ const IdeaPostsPanel = ({
         )}
         <div className="c8-idea-list">
           {drafts.map((item, index) => (
-            <article key={item.integrationId} className="c8-idea-card">
+            <article
+              key={item.integrationId}
+              id={`c8-idea-card-${item.integrationId}`}
+              className="c8-idea-card"
+            >
               <div className="c8-idea-card-head">
                 <div className="c8-idea-card-top">
                   <SafeImage
@@ -1225,8 +1327,12 @@ const IdeaPostsPanel = ({
                     aria-label={t('remove_draft', 'Remove {{name}}', {
                       name: networkName(item.provider),
                     })}
-                    onClick={() =>
-                      setDrafts((current) => current.filter((row) => row.integrationId !== item.integrationId))
+                    onClick={(event) =>
+                      askRemove(event, () =>
+                        setDrafts((current) =>
+                          current.filter((row) => row.integrationId !== item.integrationId)
+                        )
+                      )
                     }
                   >
                     <HugeIcon name="close" size={18} />
@@ -1275,17 +1381,19 @@ const IdeaPostsPanel = ({
                       <button
                         type="button"
                         aria-label={t('remove_media', 'Remove media')}
-                        onClick={() =>
-                          setDrafts((current) =>
-                            current.map((row, rowIndex) =>
-                              rowIndex === index
-                                ? {
-                                    ...row,
-                                    media: row.media.filter((have) => have.id !== file.id),
-                                    saved: false,
-                                    valid: undefined,
-                                  }
-                                : row
+                        onClick={(event) =>
+                          askRemove(event, () =>
+                            setDrafts((current) =>
+                              current.map((row, rowIndex) =>
+                                rowIndex === index
+                                  ? {
+                                      ...row,
+                                      media: row.media.filter((have) => have.id !== file.id),
+                                      saved: false,
+                                      valid: undefined,
+                                    }
+                                  : row
+                              )
                             )
                           )
                         }
@@ -1361,11 +1469,7 @@ const IdeaPostsPanel = ({
             className="c8-idea-primary"
             disabled={
               saving ||
-              checking ||
-              uploading ||
               !drafts.length ||
-              !!error ||
-              !ready ||
               drafts.every((item) => item.saved)
             }
             onClick={addAll}
@@ -1374,6 +1478,27 @@ const IdeaPostsPanel = ({
           </button>
         </div>
       </aside>
+      {removeAsk && (
+        <div
+          className="c8-idea-pop"
+          style={{ top: removeAsk.top, left: removeAsk.left }}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <button type="button" onClick={() => setRemoveAsk(null)}>
+            {t('cancel', 'Cancel')}
+          </button>
+          <button
+            type="button"
+            className="is-remove"
+            onClick={() => {
+              removeAsk.run();
+              setRemoveAsk(null);
+            }}
+          >
+            {t('remove', 'Remove')}
+          </button>
+        </div>
+      )}
     </div>
   );
 
