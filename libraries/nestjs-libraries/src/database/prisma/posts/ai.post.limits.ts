@@ -1,6 +1,6 @@
 // Placeholder monthly caps for one-idea drafts. Change the numbers here.
 export const aiPostGenerationLimits: Record<string, number> = {
-  FREE: 10,
+  FREE: 1000,
   STANDARD: 80,
   TEAM: 200,
   PRO: 400,
