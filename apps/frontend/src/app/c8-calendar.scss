@@ -5910,6 +5910,22 @@ body.c8-schedule .channel-rail.sidebar:not(.is-open) h2 {
   line-height: 1.2 !important;
 }
 
+/* The title and the collapse chevron share one 36px row. */
+body.c8-schedule .channel-rail:not(.sidebar) > div > .flex.items-center:first-child,
+body.c8-schedule .channel-rail.is-open > div > .flex.items-center:first-child {
+  align-items: center;
+  min-height: 36px;
+}
+
+body.c8-schedule .channel-rail:not(.sidebar) > div > .flex.items-center:first-child h2,
+body.c8-schedule .channel-rail.is-open > div > .flex.items-center:first-child h2 {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  min-height: 36px;
+  margin: 0;
+}
+
 body.c8-schedule .channel-rail:not(.sidebar) h2 {
   margin: 0;
   color: var(--c8-ink);
@@ -5923,10 +5939,23 @@ body.c8-schedule .channel-rail:not(.sidebar) h2 {
   white-space: normal;
 }
 
-body.c8-schedule .channel-rail.sidebar:not(.is-open) > div,
-body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
+/* 4px is the collapsed icon rail only. The open list keeps the card padding
+   so "Channels" is not flush with the left edge. */
+body.c8-schedule .channel-rail.sidebar:not(.is-open) > div {
   padding-left: 4px !important;
   padding-right: 4px !important;
+}
+
+@media (min-width: 1200px) {
+  body.c8-schedule .channel-rail:not(.sidebar) > div {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+body.c8-schedule .channel-rail.is-open > div {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
 }
 
 /* Day, week, and month already render Today with setToday. Phone and tablet
@@ -6715,6 +6744,85 @@ body.c8-schedule .filters-bar.is-list-mode .cal-list-states {
 
   body.c8-schedule .cal-scope-row .cal-mode.c8-seg > [role='radio'] {
     padding: 7px 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Day/Week/Month/List is the shared SegmentedControl. Older rules painted a
+   static fill on the active button, which hid the sliding thumb. The thumb
+   is the only active shape. Labels stay on one line. */
+body.c8-schedule .cal-scope-row .cal-mode.c8-seg,
+body.c8-schedule .filters-bar .cal-scope-row .cal-mode.c8-seg,
+body.c8-schedule .filters-bar.is-list-mode .cal-scope-row .cal-mode.c8-seg,
+body.dark.c8-schedule .cal-scope-row .cal-mode.c8-seg {
+  display: inline-flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  gap: 2px !important;
+  width: max-content !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 4px !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--c8-soft) !important;
+  box-shadow: none !important;
+}
+
+body.c8-schedule .cal-mode.c8-seg > button[role='radio'],
+body.dark.c8-schedule .cal-mode.c8-seg > button[role='radio'],
+body.c8-schedule .cal-mode.c8-seg > button[role='radio'][aria-checked='true'],
+body.dark.c8-schedule .cal-mode.c8-seg > button[role='radio'][aria-checked='true'] {
+  position: relative !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 7px 14px !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: var(--c8-muted) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: normal !important;
+  white-space: nowrap !important;
+  transform: none !important;
+}
+
+body.c8-schedule .cal-mode.c8-seg > button[role='radio'][aria-checked='true'],
+body.dark.c8-schedule .cal-mode.c8-seg > button[role='radio'][aria-checked='true'] {
+  background: transparent !important;
+  color: var(--c8-ink) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+body.c8-schedule .cal-mode.c8-seg > button[role='radio'] > .c8-seg-thumb,
+body.dark.c8-schedule .cal-mode.c8-seg > button[role='radio'] > .c8-seg-thumb {
+  border-radius: 999px !important;
+  background: var(--c8-surface) !important;
+  background-image: none !important;
+  box-shadow: 0 1px 3px rgb(18 16 22 / 0.12) !important;
+}
+
+body.dark.c8-schedule .cal-mode.c8-seg > button[role='radio'] > .c8-seg-thumb {
+  background: var(--c8-ink) !important;
+  box-shadow: none !important;
+}
+
+body.dark.c8-schedule .cal-mode.c8-seg > button[role='radio'][aria-checked='true'] {
+  color: var(--c8-on-ink) !important;
+}
+
+@media (max-width: 389px) {
+  body.c8-schedule .cal-scope-row .cal-mode.c8-seg > button[role='radio'] {
+    padding: 7px 8px !important;
     font-size: 13px !important;
   }
 }
