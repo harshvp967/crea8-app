@@ -485,8 +485,8 @@ export const StalkerKeywords = () => {
       >
         {active.length ? (
           active.map((source) => (
-            <span key={source.id} title={source.label} className="text-newTextColor">
-              <SourceIcon source={source.icon} className="h-[16px] w-[16px]" />
+            <span key={source.id} title={source.label} className="stk-kw-src">
+              <SourceIcon source={source.icon} className="h-[22px] w-[22px]" />
             </span>
           ))
         ) : (
@@ -648,11 +648,13 @@ export const StalkerKeywords = () => {
                 {rows.map((keyword) => (
                   <div key={keyword.id} className="stk-kw-row">
                     <div className="flex items-center justify-between gap-[8px]">
-                      <p className="text-[16px] font-[600]">
+                      <p className="stk-kw-name">
                         <span className="stk-kw-hash" aria-hidden>#</span>
-                        {keyword.phrase}
+                        <span className="stk-kw-phrase" title={keyword.phrase}>
+                          {keyword.phrase}
+                        </span>
                         {keyword.paused ? (
-                          <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[13px] font-[500]">
+                          <span className="stk-kw-paused">
                             <span className={stkBadge}>Paused</span>
                             <button
                               type="button"
@@ -678,7 +680,7 @@ export const StalkerKeywords = () => {
                         {rowMenu === keyword.id ? <KeywordMenu keyword={keyword} /> : null}
                       </span>
                     </div>
-                    <p className="stk-kw-line flex flex-wrap items-center gap-[8px] text-textItemBlur">
+                    <p className="stk-kw-line flex items-center gap-[8px] text-textItemBlur">
                       <span>Sources</span>
                       <SourceControls keyword={keyword} />
                     </p>
@@ -694,11 +696,18 @@ export const StalkerKeywords = () => {
                 ))}
               </div>
               <div className="stk-table-wrap hidden md:block">
-                <table className="stk-table w-full text-left">
+                <table className="stk-table stk-kw-table w-full text-left">
+                  <colgroup>
+                    <col className="stk-kw-col-name" />
+                    <col className="stk-kw-col-sources" />
+                    <col className="stk-kw-col-count" />
+                    <col className="stk-kw-col-scan" />
+                    <col className="stk-kw-col-menu" />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Keyword</th>
-                      <th className="text-center">Sources</th>
+                      <th>Sources</th>
                       <th>Mentions (30d)</th>
                       <th>Last scan</th>
                       <th />
@@ -708,22 +717,26 @@ export const StalkerKeywords = () => {
                     {rows.map((keyword) => (
                       <tr key={keyword.id}>
                         <td className="font-[600]">
-                          <span className="stk-kw-hash" aria-hidden>#</span>
-                          {keyword.phrase}
-                          {keyword.paused ? (
-                            <span className="ms-[8px] inline-flex items-center gap-[6px] align-middle text-[13px] font-[500] text-textItemBlur">
-                              <span className={stkBadge}>Paused</span>
-                              <button
-                                type="button"
-                                className="stk-kw-resume font-[600] text-[color:var(--arc-accent-text)] underline underline-offset-[3px]"
-                                onClick={() => resumeKeyword(keyword)}
-                              >
-                                Resume
-                              </button>
+                          <span className="stk-kw-name">
+                            <span className="stk-kw-hash" aria-hidden>#</span>
+                            <span className="stk-kw-phrase" title={keyword.phrase}>
+                              {keyword.phrase}
                             </span>
-                          ) : null}
+                            {keyword.paused ? (
+                              <span className="stk-kw-paused">
+                                <span className={stkBadge}>Paused</span>
+                                <button
+                                  type="button"
+                                  className="stk-kw-resume font-[600] text-[color:var(--arc-accent-text)] underline underline-offset-[3px]"
+                                  onClick={() => resumeKeyword(keyword)}
+                                >
+                                  Resume
+                                </button>
+                              </span>
+                            ) : null}
+                          </span>
                         </td>
-                        <td className="text-center">
+                        <td>
                           <SourceControls keyword={keyword} />
                           <SourceEditors keyword={keyword} />
                         </td>

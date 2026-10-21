@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import {
@@ -86,12 +87,48 @@ export const StalkerCheckNow = ({
       ? date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
       : '';
   };
+  const resultKey = showScanning
+    ? 'scanning'
+    : [
+        preview || '',
+        scanResult?.finishedAt || '',
+        scanResult?.notice || '',
+        scanResult?.error || '',
+        sources.map((source) => `${source.id}:${source.ok ? 1 : 0}:${source.found || 0}`).join(','),
+      ].join('|');
+  const [seenKey, setSeenKey] = useState(resultKey);
+  const [dismissed, setDismissed] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  if (seenKey !== resultKey) {
+    setSeenKey(resultKey);
+    setDismissed(false);
+  }
+  const open = showResult && !dismissed;
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDismissed(true);
+    };
+    const onPointer = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || root.current?.contains(target)) return;
+      setDismissed(true);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onPointer);
+    };
+  }, [open]);
 
   return (
-    <div className="relative shrink-0">
+    <div className="relative shrink-0" ref={root}>
       <button
         type="button"
         aria-label="Check now"
+        title={iconOnly ? 'Check now' : undefined}
         className={clsx(
           stkSecondary,
           compact && '!h-[36px] !min-h-[36px] !px-[12px]',
@@ -112,8 +149,19 @@ export const StalkerCheckNow = ({
         ) : null}
         {iconOnly ? null : showScanning ? 'Checking…' : 'Check now'}
       </button>
-      {showResult ? (
-        <div className={`${stkMenu} absolute end-0 top-[calc(100%+8px)] w-[280px] p-[12px] text-[14px]`}>
+      {open ? (
+        <>
+          <button type="button" className="stk-sheet-backdrop" aria-label="Close" onClick={() => setDismissed(true)} />
+          <div
+            className={`${stkMenu} stk-check-pop absolute end-0 top-[calc(100%+8px)] text-[14px]`}
+            role="dialog"
+            aria-label="Check results"
+          >
+            <div className="stk-check-head">
+              <button type="button" className="stk-check-x" aria-label="Close" onClick={() => setDismissed(true)}>
+                <HugeIcon name="close" size={16} />
+              </button>
+            </div>
           {notice ? (
             <div className="mb-[8px] text-textItemBlur">
               <p>
@@ -150,7 +198,8 @@ export const StalkerCheckNow = ({
               ))}
             </ul>
           )}
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
   );

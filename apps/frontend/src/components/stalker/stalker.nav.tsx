@@ -42,12 +42,6 @@ const links: StalkerLink[] = [
     tabIcon: <HugeIcon name="bell" size={18} />,
   },
   {
-    label: 'API',
-    path: '/stalker/api',
-    icon: <HugeIcon name="code" size={18} />,
-    tabIcon: <HugeIcon name="code" size={18} />,
-  },
-  {
     label: 'Settings',
     path: '/stalker/settings',
     icon: <HugeIcon name="settings" size={18} />,
