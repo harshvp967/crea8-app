@@ -2231,6 +2231,11 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   cursor: pointer;
 }
 
+.account-chip:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .account-save {
   align-self: flex-start;
   width: auto;

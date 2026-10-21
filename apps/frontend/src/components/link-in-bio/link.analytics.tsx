@@ -343,7 +343,7 @@ export const LinkAnalyticsScreen = () => {
               <h2 className="text-[16px] font-[600] tracking-[-0.02em]">Device, browser and UTM</h2>
               <p className="mt-[6px] text-[14px] font-[500] text-textItemBlur">
                 Per-link CTR, device, browser, UTM and CSV export are on a paid plan.{' '}
-                <Link href="/billing">
+                <Link href="/account?section=billing">
                   Upgrade
                 </Link>
               </p>

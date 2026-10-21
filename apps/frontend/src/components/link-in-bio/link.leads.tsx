@@ -294,7 +294,7 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
           ? 'New leads are sent to Mailchimp, ConvertKit and your webhook. Keys stay on the server.'
           : 'Mailchimp, ConvertKit and webhooks are on a paid plan. They stay open while plan gating is off. Keys stay on the server.'}{' '}
         {linkLocked(data) ? (
-          <Link href="/billing">
+          <Link href="/account?section=billing">
             Upgrade
           </Link>
         ) : null}

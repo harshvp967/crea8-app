@@ -102,7 +102,7 @@ export const LifetimeDeal = () => {
     return null;
   }
   if (user?.id && user?.tier?.current !== 'FREE' && !user?.isLifetime) {
-    router.replace('/billing');
+    router.replace('/account?section=billing');
     return null;
   }
   return (

@@ -33,12 +33,10 @@ const initialsOf = (name: string) =>
 export const C8Sidebar = ({
   name,
   email,
-  accountOpen,
   onAccount,
 }: {
   name: string;
   email: string;
-  accountOpen: boolean;
   onAccount: () => void;
 }) => {
   const pathname = usePathname() || '';
@@ -191,8 +189,11 @@ export const C8Sidebar = ({
         <button
           type="button"
           className="c8-side-user"
-          aria-haspopup="menu"
-          aria-expanded={accountOpen}
+          aria-label={
+            name || email
+              ? `${name || email}, account settings`
+              : 'Account settings'
+          }
           onClick={onAccount}
         >
           <span className="c8-side-avatar">{initialsOf(name || email)}</span>

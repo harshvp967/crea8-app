@@ -20,7 +20,7 @@ export class SubscriptionExceptionFilter implements ExceptionFilter {
     response.status(status).json({
       statusCode: status,
       message,
-      url: process.env.FRONTEND_URL + '/billing',
+      url: process.env.FRONTEND_URL + '/account?section=billing',
     });
   }
 }

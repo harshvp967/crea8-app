@@ -81,7 +81,7 @@ export const useMenuItem = () => {
     {
       name: t('billing', 'Billing'),
       icon: <HugeIcon name="billing" size={18} />,
-      path: '/billing',
+      path: '/account?section=billing',
       role: ['ADMIN', 'SUPERADMIN'],
       requireBilling: true,
     },

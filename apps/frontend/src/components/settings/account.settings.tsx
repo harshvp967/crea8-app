@@ -8,8 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FormProvider, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -48,6 +47,11 @@ export const accountSections = [
 ] as const;
 
 export type AccountSectionId = (typeof accountSections)[number]['id'];
+
+export const accountSectionFrom = (value: string | null | undefined): AccountSectionId =>
+  accountSections.some((item) => item.id === value)
+    ? (value as AccountSectionId)
+    : 'profile';
 
 const initialsOf = (name: string) =>
   name
@@ -295,8 +299,28 @@ const AccountAppearance = () => {
 
 const AccountSecurity = () => {
   const t = useT();
+  const fetch = useFetch();
   const user = useUser();
   const email = user?.email || '';
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const sendReset = useCallback(async () => {
+    if (!email || sending) return;
+    setSending(true);
+    try {
+      await fetch('/auth/forgot', {
+        method: 'POST',
+        body: JSON.stringify({
+          email,
+          provider: 'LOCAL',
+        }),
+      });
+      setSent(true);
+    } finally {
+      setSending(false);
+    }
+  }, [email, fetch, sending]);
 
   return (
     <div className="settings-section">
@@ -308,12 +332,21 @@ const AccountSecurity = () => {
           <div className="settings-row-copy">
             <div className="settings-row-title">{t('password', 'Password')}</div>
             <div className="settings-row-sub">
-              {t('password_reset_for_account', 'Reset the password for this account')}
+              {sent
+                ? t('reset_link_sent', 'Reset link sent')
+                : t('password_reset_for_account', 'Reset the password for this account')}
             </div>
           </div>
-          <Link href="/auth/forgot" className="account-chip">
-            {t('reset_password', 'Reset password')}
-          </Link>
+          <button
+            type="button"
+            className="account-chip"
+            onClick={sendReset}
+            disabled={sending || sent || !email}
+          >
+            {sent
+              ? t('reset_link_sent', 'Reset link sent')
+              : t('reset_password', 'Reset password')}
+          </button>
         </div>
         <div className="settings-row">
           <div className="settings-row-copy">
@@ -334,7 +367,7 @@ const AccountDelete = () => (
 );
 
 export const AccountSettings = ({
-  section = 'profile',
+  section,
   onSection,
 }: {
   section?: AccountSectionId;
@@ -342,27 +375,28 @@ export const AccountSettings = ({
 }) => {
   const t = useT();
   const router = useRouter();
+  const params = useSearchParams();
+  const querySection = accountSectionFrom(params.get('section'));
   const [mounted, setMounted] = useState(false);
-  const [localSection, setLocalSection] = useState<AccountSectionId>(section);
-  const active = onSection ? section : localSection;
+  const [localSection, setLocalSection] = useState<AccountSectionId>('profile');
+  const active = section || localSection;
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!onSection) setLocalSection(section);
-  }, [onSection, section]);
+    if (!section) setLocalSection(querySection);
+  }, [querySection, section]);
 
   const choose = useCallback(
     (next: string) => {
-      const id = accountSections.some((item) => item.id === next)
-        ? (next as AccountSectionId)
-        : 'profile';
+      const id = accountSectionFrom(next);
       if (onSection) onSection(id);
       else setLocalSection(id);
+      router.replace(`/account?section=${id}`, { scroll: false });
     },
-    [onSection]
+    [onSection, router]
   );
 
   const close = useCallback(() => {
