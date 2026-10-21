@@ -24,6 +24,72 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { percentageChangeFromSeries } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
 
+// Published media is a signed https URL. Its query string contains `&`.
+// Graph parses an unencoded image_url as several fields, drops the signature,
+// and Meta reports 2207052 (media fetch failed).
+export function instagramGraphMediaQuery(
+  path: string,
+  options: { story: boolean; alone: boolean; thumbOffset: number }
+) {
+  const mediaUrl = instagramPublicMediaUrl(path);
+  const encoded = encodeURIComponent(mediaUrl);
+  const video = hasExtension(instagramMediaPathname(mediaUrl), 'mp4');
+  if (video && options.story) {
+    return `video_url=${encoded}&media_type=STORIES`;
+  }
+  if (video) {
+    const offset = Number.isFinite(options.thumbOffset) ? options.thumbOffset : 0;
+    return options.alone
+      ? `video_url=${encoded}&media_type=REELS&thumb_offset=${offset}`
+      : `video_url=${encoded}&media_type=VIDEO&thumb_offset=${offset}`;
+  }
+  return options.story
+    ? `image_url=${encoded}&media_type=STORIES`
+    : `image_url=${encoded}`;
+}
+
+export function instagramPublicMediaUrl(path: string) {
+  const value = (path || '').trim();
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new BadBody(
+      'instagram',
+      '{}',
+      '{}',
+      'Instagram media URL must be an absolute public https URL'
+    );
+  }
+  const host = url.hostname.toLowerCase();
+  if (
+    url.protocol !== 'https:' ||
+    !host ||
+    url.username ||
+    url.password ||
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host === '0.0.0.0'
+  ) {
+    throw new BadBody(
+      'instagram',
+      '{}',
+      '{}',
+      'Instagram media URL must be an absolute public https URL'
+    );
+  }
+  return value;
+}
+
+function instagramMediaPathname(value: string) {
+  try {
+    return new URL(value).pathname;
+  } catch {
+    return value;
+  }
+}
+
 @Rules(
   "Instagram should have at least one attachment, if it's a story, it can have only one picture"
 )
@@ -737,21 +803,11 @@ export class InstagramProvider
           (firstPost?.media?.length || 0) > 1 && !isStory
             ? `&is_carousel_item=true`
             : ``;
-        const mediaType = hasExtension(m.path, 'mp4')
-          ? firstPost?.media?.length === 1
-            ? isStory
-              ? `video_url=${m.path}&media_type=STORIES`
-              : `video_url=${m.path}&media_type=REELS&thumb_offset=${
-                  m?.thumbnailTimestamp || 0
-                }`
-            : isStory
-            ? `video_url=${m.path}&media_type=STORIES`
-            : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
-                m?.thumbnailTimestamp || 0
-              }`
-          : isStory
-          ? `image_url=${m.path}&media_type=STORIES`
-          : `image_url=${m.path}`;
+        const mediaType = instagramGraphMediaQuery(m.path, {
+          story: isStory,
+          alone: firstPost?.media?.length === 1,
+          thumbOffset: m?.thumbnailTimestamp || 0,
+        });
 
         const trialParams = isTrialReel
           ? `&trial_params=${encodeURIComponent(
@@ -774,7 +830,7 @@ export class InstagramProvider
           type === 'graph.facebook.com' &&
           !isStory &&
           firstPost?.media?.length === 1 &&
-          hasExtension(m.path, 'mp4')
+          hasExtension(instagramMediaPathname(m.path), 'mp4')
             ? `&audio_configuration=${encodeURIComponent(
                 JSON.stringify({
                   audio_id: firstPost.settings.audio.id,
