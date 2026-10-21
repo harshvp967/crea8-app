@@ -32,6 +32,8 @@ export interface StalkerSourceProvider {
   enabled(auth?: StalkerSourceAuth): boolean;
   statusDetail(available: boolean): string;
   buildQuery(input: StalkerSearchTerms): string;
+  // Fold keyword phrases into buildQuery and search that string once.
+  foldsKeywordsIntoQuery?(): boolean;
   // Non-empty salt keeps this source's search cache per project. Empty uses
   // the shared phrase cache (YouTube quota is spent once per phrase).
   cacheNamespace?(scope: StalkerSearchScope): string;

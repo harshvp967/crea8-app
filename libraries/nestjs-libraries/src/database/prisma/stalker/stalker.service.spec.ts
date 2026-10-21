@@ -87,7 +87,8 @@ const build = (options: {
     integrationIdentifier: () => string | null;
     enabled: (auth?: { accessToken?: string }) => boolean;
     statusDetail: (available: boolean) => string;
-    buildQuery: () => string;
+    buildQuery: (input?: { phrases?: string[] }) => string;
+    foldsKeywordsIntoQuery?: () => boolean;
     search: (keyword: string, since: Date, auth?: { accessToken?: string }) => Promise<unknown>;
   };
 }) => {
@@ -133,6 +134,7 @@ const build = (options: {
       !!(process.env.YOUTUBE_STALKER_API_KEY || '').trim() || !!auth?.accessToken,
     statusDetail: () => 'Connect a YouTube channel',
     buildQuery: () => 'brand',
+    foldsKeywordsIntoQuery: () => false,
     search: jest.fn((_keyword: string, _since: Date, auth?: { accessToken?: string }) =>
       options.search(auth)
     ),
@@ -355,6 +357,42 @@ describe('StalkerService token refresh', () => {
       'word3',
       'word4',
       'word5',
+    ]);
+  });
+
+  it('searches a folding source once with the brand and keywords together', async () => {
+    const refresh = jest.fn();
+    const { service, source, repository } = build({
+      tokenExpiration: new Date(Date.now() + 60 * 60 * 1000),
+      search: async () => [],
+      refresh,
+    });
+    source.foldsKeywordsIntoQuery = () => true;
+    source.buildQuery = (input) =>
+      (input?.phrases || []).filter((phrase) => phrase.trim().length >= 2).join('|');
+    repository.listKeywords.mockResolvedValue([
+      {
+        id: 'kb',
+        phrase: 'brand',
+        listenYoutube: true,
+        listenReddit: false,
+        listenX: false,
+        listenLinkedin: false,
+      },
+      {
+        id: 'kc',
+        phrase: 'canva',
+        listenYoutube: true,
+        listenReddit: false,
+        listenX: false,
+        listenLinkedin: false,
+      },
+    ]);
+
+    await service.pollOrganization('org');
+
+    expect((source.search as jest.Mock).mock.calls.map((call) => call[0])).toEqual([
+      'brand|canva',
     ]);
   });
 

@@ -2375,14 +2375,17 @@ export class StalkerService {
       const phrases = [identity.brand, ...identity.aliases].filter(
         (phrase) => phrase.length >= 2
       );
-      const query = source.buildQuery({
-        phrases,
+      const terms = {
         handle: handleForSource(source.id, identity),
         subreddit: identity.handles.redditSubreddit,
+      };
+      const brandQuery = source.buildQuery({
+        phrases,
+        ...terms,
       });
       const field = listenField[source.id];
       const brandCovered = (phrase: string) =>
-        !!query.trim() && brandPhrases.has(stalkerPhraseKey(phrase));
+        !!brandQuery.trim() && brandPhrases.has(stalkerPhraseKey(phrase));
       const selected = orderKeywordsForScan(
         keywords.filter(
           (keyword) => keyword[field] && !brandCovered(keyword.phrase)
@@ -2390,6 +2393,13 @@ export class StalkerService {
         cursors,
         source.id
       );
+      const folded = source.foldsKeywordsIntoQuery?.() === true;
+      const query = folded
+        ? source.buildQuery({
+            phrases: [...phrases, ...selected.map((keyword) => keyword.phrase)],
+            ...terms,
+          })
+        : brandQuery;
       const keywordIds = new Map(
         selected.map((keyword) => [keyword.phrase.toLowerCase(), keyword.id])
       );
@@ -2483,10 +2493,43 @@ export class StalkerService {
         );
       };
       if (query.trim()) {
-        await pull(query, 'brand', brandKeyword?.phrase);
+        if (folded) {
+          const keys = [
+            'brand',
+            ...selected.map((keyword) => keyword.phrase.toLowerCase()),
+          ];
+          let oldestKey = 'brand';
+          let oldestSince = Number.POSITIVE_INFINITY;
+          for (const key of keys) {
+            const cursor = cursorMap.get(`${source.id}:${key}`);
+            const scan = resolveScanSince({
+              now,
+              cursorAt: cursor?.cursorAt,
+              backfillUntil: cursor?.backfillUntil,
+              lookbackMs: SEARCH_SINCE_MS,
+            });
+            if (scan.since.getTime() < oldestSince) {
+              oldestSince = scan.since.getTime();
+              oldestKey = key;
+            }
+          }
+          await pull(query, oldestKey);
+          if (stat.ok && stat.searched > 0) {
+            for (const key of keys) {
+              if (key === oldestKey) {
+                continue;
+              }
+              await this._repository.finishScan(project.id, source.id, key, false);
+            }
+          }
+        } else {
+          await pull(query, 'brand', brandKeyword?.phrase);
+        }
       }
-      for (const keyword of selected) {
-        await pull(keyword.phrase, keyword.phrase.toLowerCase(), keyword.phrase);
+      if (!folded) {
+        for (const keyword of selected) {
+          await pull(keyword.phrase, keyword.phrase.toLowerCase(), keyword.phrase);
+        }
       }
       const blocked = new Map<string, Set<string>>();
       for (const keyword of keywords) {

@@ -4,10 +4,12 @@ import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import {
+  StalkerSearchScope,
   StalkerSearchTerms,
   StalkerSourceAuth,
   StalkerSourceProvider,
 } from '@gitroom/nestjs-libraries/stalker/stalker.source';
+import { containsPhrase } from '@gitroom/nestjs-libraries/stalker/stalker.match';
 
 const youtubeClient = (accessToken: string) => {
   const client = new google.auth.OAuth2({
@@ -86,7 +88,11 @@ export const isProviderAuthFailure = (err: unknown) => {
 
 export const YOUTUBE_QUOTA_MESSAGE = 'quota exceeded, retrying next scan';
 const YOUTUBE_QUOTA_KEY = 'stalker:yt:quota';
-const YOUTUBE_SEARCH_MAX = 5;
+const YOUTUBE_SEARCH_MAX = 50;
+const YOUTUBE_COMMENT_MAX = 50;
+const YOUTUBE_QUERY_TERMS = 24;
+const YOUTUBE_QUERY_CHARS = 480;
+const YOUTUBE_KNOWN_SECONDS = 8 * 24 * 60 * 60;
 
 type CachedYoutubeComment = {
   id: string;
@@ -244,6 +250,61 @@ const searchCovers = (entry: CachedYoutubeSearch, since: Date) => {
   return Number.isFinite(cachedSince) && cachedSince <= since.getTime();
 };
 
+const knownVideoKey = (scopeId: string, keyword: string) =>
+  youtubeCacheId(['known', scopeId, keyword]);
+
+const readKnownVideoIds = async (scopeId: string, keyword: string) => {
+  const ids = await readYoutubeCache<string[]>(knownVideoKey(scopeId, keyword));
+  return new Set(ids || []);
+};
+
+// Outlives the 6h search cache so the next scan can stop on a video it already returned.
+const rememberYoutubeVideos = async (
+  scopeId: string,
+  keyword: string,
+  ids: string[]
+) => {
+  const fresh = [...new Set(ids.filter(Boolean))];
+  if (!fresh.length) {
+    return;
+  }
+  const key = knownVideoKey(scopeId, keyword);
+  youtubeCacheKeys.add(key);
+  const previous = await readYoutubeCache<string[]>(key);
+  const merged = [...new Set([...(previous || []), ...fresh])].slice(-500);
+  try {
+    await ioRedis.set(key, JSON.stringify(merged));
+    await ioRedis.pexpire(key, YOUTUBE_KNOWN_SECONDS * 1000);
+  } catch {
+    // The next scan can fetch those videos again.
+  }
+};
+
+const queryTerms = (keyword: string) =>
+  keyword
+    .split('|')
+    .map((part) => part.trim().replace(/^"|"$/g, '').trim())
+    .filter((part) => part.length >= 2);
+
+const phraseFor = (text: string, keyword: string) => {
+  const terms = queryTerms(keyword);
+  const hit = terms.find(
+    (term) =>
+      containsPhrase(text, term) || containsPhrase(text, term.replace(/^@/, ''))
+  );
+  return hit || terms[0] || keyword;
+};
+
+const commentMatches = (text: string, keyword: string) => {
+  if (!keyword.includes('|')) {
+    return true;
+  }
+  return queryTerms(keyword).some(
+    (term) =>
+      containsPhrase(text, term) || containsPhrase(text, term.replace(/^@/, ''))
+  );
+};
+
 // A channel comment call failed for a reason other than quota. The empty
 // result is returned and not cached, so the next scan tries again.
 export class YoutubeChannelMiss extends Error {
@@ -315,15 +376,43 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
     return available ? 'Connected channel' : 'Connect a YouTube channel';
   }
 
+  foldsKeywordsIntoQuery() {
+    return true;
+  }
+
+  // One project's stored videos must not truncate another project's search.
+  cacheNamespace(scope: StalkerSearchScope) {
+    return (scope.projectId || '').trim();
+  }
+
   buildQuery(input: StalkerSearchTerms) {
-    const parts = (input.phrases || [])
-      .map((phrase) => phrase.trim().replace(/"/g, ''))
-      .filter((phrase) => phrase.length >= 2)
-      .slice(0, 8)
-      .map((phrase) => (phrase.includes(' ') ? `"${phrase}"` : phrase));
+    const seen = new Set<string>();
+    const parts: string[] = [];
+    let length = 0;
+    const push = (phrase: string) => {
+      const clean = phrase.trim().replace(/"/g, '').replace(/\s+/g, ' ');
+      if (clean.length < 2) {
+        return;
+      }
+      const token = clean.includes(' ') ? `"${clean}"` : clean;
+      const key = token.toLowerCase();
+      if (seen.has(key)) {
+        return;
+      }
+      const next = parts.length ? length + 1 + token.length : token.length;
+      if (parts.length >= YOUTUBE_QUERY_TERMS || next > YOUTUBE_QUERY_CHARS) {
+        return;
+      }
+      seen.add(key);
+      parts.push(token);
+      length = next;
+    };
+    for (const phrase of input.phrases || []) {
+      push(phrase);
+    }
     const handle = (input.handle || '').trim().replace(/^@/, '');
     if (handle.length >= 2) {
-      parts.push(`@${handle}`);
+      push(`@${handle}`);
     }
     return parts.join('|');
   }
@@ -331,20 +420,23 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
   async search(
     keyword: string,
     since: Date,
-    auth?: StalkerSourceAuth
+    auth?: StalkerSourceAuth,
+    scope?: StalkerSearchScope
   ): Promise<StalkerMentionDraft[]> {
     const youtube = youtubeForSearch(auth?.accessToken);
     if (!youtube) {
       return [];
     }
     const normalized = keyword.trim().toLowerCase();
-    const cacheKey = youtubeCacheId(['search', normalized]);
+    const scopeId = (scope?.projectId || '').trim();
+    const cacheKey = youtubeCacheId(['search', scopeId, normalized]);
+    const inflightKey = `${scopeId}\n${normalized}`;
     const cached = await readYoutubeCache<CachedYoutubeSearch>(cacheKey);
     if (cached && searchCovers(cached, since)) {
       return this.draftsFrom(cached, keyword, since);
     }
     await assertYoutubeQuota();
-    const pending = searchInflight.get(normalized);
+    const pending = searchInflight.get(inflightKey);
     if (pending) {
       const shared = await pending;
       if (searchCovers(shared, since)) {
@@ -352,21 +444,26 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
       }
     }
     let run!: Promise<CachedYoutubeSearch>;
-    run = this.fetchSearch(youtube, keyword, since)
+    run = this.fetchSearch(youtube, keyword, since, scopeId, normalized)
       .then(async ({ entry, store }) => {
         // A quota stop or a failed comment read is not cached, so the next
         // scan can try those calls again.
         if (store && !(await this.quotaBlocked())) {
           await writeYoutubeCache(cacheKey, entry);
+          await rememberYoutubeVideos(
+            scopeId,
+            normalized,
+            entry.videos.map((video) => video.videoId)
+          );
         }
         return entry;
       })
       .finally(() => {
-        if (searchInflight.get(normalized) === run) {
-          searchInflight.delete(normalized);
+        if (searchInflight.get(inflightKey) === run) {
+          searchInflight.delete(inflightKey);
         }
       });
-    searchInflight.set(normalized, run);
+    searchInflight.set(inflightKey, run);
     const entry = await run;
     return this.draftsFrom(entry, keyword, since);
   }
@@ -382,7 +479,7 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
       }
       const text = `${video.title || ''}\n${video.description || ''}`.trim();
       if (text) {
-          drafts.push({
+        drafts.push({
           externalId: `yt-video:${video.videoId}`,
           source: 'YOUTUBE_SEARCH',
           authorName: video.channelTitle || 'YouTube',
@@ -390,7 +487,7 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
           text: text.slice(0, 2000),
           url: `https://www.youtube.com/watch?v=${video.videoId}`,
           postExternalId: video.videoId,
-          keywordPhrase: keyword,
+          keywordPhrase: phraseFor(text, keyword),
           ...(Number.isFinite(published) ? { postedAt: new Date(published).toISOString() } : {}),
         });
       }
@@ -408,7 +505,7 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
           likeCount: comment.likeCount || 0,
           url: `https://www.youtube.com/watch?v=${video.videoId}&lc=${comment.id}`,
           postExternalId: video.videoId,
-          keywordPhrase: keyword,
+          keywordPhrase: phraseFor(comment.text, keyword),
         });
       }
     }
@@ -418,70 +515,124 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
   private async fetchSearch(
     youtube: { client: YoutubeClient; apiKey: string },
     keyword: string,
-    since: Date
+    since: Date,
+    scopeId: string,
+    normalized: string
   ): Promise<{ entry: CachedYoutubeSearch; store: boolean }> {
     const key = youtube.apiKey ? { key: youtube.apiKey } : {};
-    let search: {
-      data: {
-        items?: Array<{
-          id?: { videoId?: string | null } | null;
-          snippet?: {
-            title?: string | null;
-            description?: string | null;
-            channelTitle?: string | null;
-            publishedAt?: string | null;
-          } | null;
-        }> | null;
+    const known = await readKnownVideoIds(scopeId, normalized);
+    const videos: CachedYoutubeVideo[] = [];
+    const seen = new Set<string>();
+    let pageToken = '';
+    let store = true;
+    for (let page = 0; page < 2; page++) {
+      let search: {
+        data: {
+          nextPageToken?: string | null;
+          items?: Array<{
+            id?: { videoId?: string | null } | null;
+            snippet?: {
+              title?: string | null;
+              description?: string | null;
+              channelTitle?: string | null;
+              publishedAt?: string | null;
+            } | null;
+          }> | null;
+        };
       };
-    };
-    try {
-      search = (await youtube.client.search.list({
-        ...key,
-        part: ['snippet'],
-        q: keyword,
-        type: ['video'],
-        maxResults: YOUTUBE_SEARCH_MAX,
-        order: 'date',
-        publishedAfter: since.toISOString(),
-        safeSearch: 'moderate',
-      })) as typeof search;
-    } catch (err) {
-      if (err instanceof Error && err.message === YOUTUBE_QUOTA_MESSAGE) {
+      try {
+        search = (await youtube.client.search.list({
+          ...key,
+          part: ['snippet'],
+          q: keyword,
+          type: ['video'],
+          maxResults: YOUTUBE_SEARCH_MAX,
+          order: 'date',
+          publishedAfter: since.toISOString(),
+          safeSearch: 'moderate',
+          ...(pageToken ? { pageToken } : {}),
+        })) as typeof search;
+      } catch (err) {
+        if (err instanceof Error && err.message === YOUTUBE_QUOTA_MESSAGE) {
+          throw err;
+        }
+        if (isYoutubeQuotaError(err)) {
+          await markYoutubeQuota();
+          throw new Error(YOUTUBE_QUOTA_MESSAGE);
+        }
+        if (isProviderAuthFailure(err)) {
+          console.error(
+            youtube.apiKey
+              ? 'Stalker YouTube search rejected YOUTUBE_STALKER_API_KEY'
+              : 'Stalker YouTube search rejected the channel token'
+          );
+          throw new Error(
+            youtube.apiKey ? 'API key was rejected' : 'Invalid credentials'
+          );
+        }
         throw err;
       }
-      if (isYoutubeQuotaError(err)) {
-        await markYoutubeQuota();
-        throw new Error(YOUTUBE_QUOTA_MESSAGE);
+      const items = search.data.items || [];
+      let inWindow = true;
+      let stopped = false;
+      for (const item of items) {
+        const publishedAt = item.snippet?.publishedAt || '';
+        const published = Date.parse(publishedAt);
+        if (Number.isFinite(published) && published < since.getTime()) {
+          inWindow = false;
+          break;
+        }
+        const videoId = item.id?.videoId || '';
+        if (!videoId || seen.has(videoId)) {
+          continue;
+        }
+        seen.add(videoId);
+        videos.push({
+          videoId,
+          title: item.snippet?.title || '',
+          description: item.snippet?.description || '',
+          channelTitle: item.snippet?.channelTitle || '',
+          publishedAt,
+          comments: [],
+        });
+        if (known.has(videoId)) {
+          stopped = true;
+          break;
+        }
       }
-      if (isProviderAuthFailure(err)) {
-        console.error(
-          youtube.apiKey
-            ? 'Stalker YouTube search rejected YOUTUBE_STALKER_API_KEY'
-            : 'Stalker YouTube search rejected the channel token'
-        );
-        throw new Error(
-          youtube.apiKey ? 'API key was rejected' : 'Invalid credentials'
-        );
+      const next = (search.data.nextPageToken || '').trim();
+      if (stopped || items.length < YOUTUBE_SEARCH_MAX || !inWindow || !next) {
+        break;
       }
-      throw err;
+      pageToken = next;
     }
 
-    const videos: CachedYoutubeVideo[] = [];
-    let store = true;
-    for (const video of search.data.items || []) {
-      const videoId = video.id?.videoId;
-      if (!videoId) {
+    const pending = videos.filter((video) => !known.has(video.videoId));
+    const counts = await this.commentCounts(
+      youtube,
+      key,
+      pending.map((video) => video.videoId)
+    );
+    if (counts.quota) {
+      return {
+        entry: { publishedAfter: since.toISOString(), videos },
+        store: false,
+      };
+    }
+    const combined = keyword.includes('|');
+    for (const video of pending) {
+      const count = counts.values.get(video.videoId);
+      if (count === 0) {
         continue;
       }
-      const comments: CachedYoutubeComment[] = [];
       let quotaHit = false;
       try {
         const listed = await youtube.client.commentThreads.list({
           ...key,
           part: ['snippet'],
-          videoId,
-          searchTerms: keyword,
-          maxResults: 5,
+          videoId: video.videoId,
+          ...(combined ? {} : { searchTerms: keyword }),
+          maxResults: YOUTUBE_COMMENT_MAX,
           textFormat: 'plainText',
         });
         for (const item of listed.data.items || []) {
@@ -492,10 +643,10 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
             top?.snippet?.textDisplay ||
             ''
           ).trim();
-          if (!commentId || !body) {
+          if (!commentId || !body || !commentMatches(body, keyword)) {
             continue;
           }
-          comments.push({
+          video.comments.push({
             id: commentId,
             author: top?.snippet?.authorDisplayName || 'Someone',
             text: body,
@@ -515,19 +666,59 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
           );
         }
       }
-      videos.push({
-        videoId,
-        title: video.snippet?.title || '',
-        description: video.snippet?.description || '',
-        channelTitle: video.snippet?.channelTitle || '',
-        publishedAt: video.snippet?.publishedAt || '',
-        comments,
-      });
       if (quotaHit) {
         break;
       }
     }
     return { entry: { publishedAfter: since.toISOString(), videos }, store };
+  }
+
+  private async commentCounts(
+    youtube: { client: YoutubeClient; apiKey: string },
+    key: { key?: string },
+    ids: string[]
+  ) {
+    const values = new Map<string, number>();
+    for (let index = 0; index < ids.length; index += YOUTUBE_SEARCH_MAX) {
+      const chunk = ids.slice(index, index + YOUTUBE_SEARCH_MAX);
+      try {
+        const listed = (await youtube.client.videos.list({
+          ...key,
+          part: ['statistics'],
+          id: chunk,
+          maxResults: chunk.length,
+        })) as {
+          data?: {
+            items?: Array<{
+              id?: string | null;
+              statistics?: { commentCount?: string | null } | null;
+            }> | null;
+          };
+        } | null;
+        for (const item of listed?.data?.items || []) {
+          const id = item.id || '';
+          const raw = item.statistics?.commentCount;
+          if (!id || raw === undefined || raw === null || raw === '') {
+            continue;
+          }
+          const count = Number(raw);
+          if (Number.isFinite(count)) {
+            values.set(id, count);
+          }
+        }
+      } catch (err) {
+        if (isYoutubeQuotaError(err)) {
+          await markYoutubeQuota();
+          return { values, quota: true };
+        }
+        console.error(
+          'Stalker YouTube video statistics failed',
+          err instanceof Error ? err.message : 'statistics failed'
+        );
+        return { values, quota: false };
+      }
+    }
+    return { values, quota: false };
   }
 
   private async quotaBlocked() {
