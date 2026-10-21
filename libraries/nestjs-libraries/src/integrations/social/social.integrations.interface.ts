@@ -182,6 +182,7 @@ export type StalkerMentionDraft = {
   replyCount?: number;
   matchKind?: 'BRAND' | 'ALIAS' | 'HANDLE' | 'KEYWORD';
   matchLabel?: string;
+  postedAt?: string;
 };
 
 export interface SocialProvider

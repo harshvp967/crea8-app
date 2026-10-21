@@ -382,7 +382,7 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
       }
       const text = `${video.title || ''}\n${video.description || ''}`.trim();
       if (text) {
-        drafts.push({
+          drafts.push({
           externalId: `yt-video:${video.videoId}`,
           source: 'YOUTUBE_SEARCH',
           authorName: video.channelTitle || 'YouTube',
@@ -391,6 +391,7 @@ export class YoutubeStalkerSource implements StalkerSourceProvider {
           url: `https://www.youtube.com/watch?v=${video.videoId}`,
           postExternalId: video.videoId,
           keywordPhrase: keyword,
+          ...(Number.isFinite(published) ? { postedAt: new Date(published).toISOString() } : {}),
         });
       }
       for (const comment of video.comments) {

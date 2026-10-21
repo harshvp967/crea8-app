@@ -366,6 +366,11 @@ export class StalkerViewFiltersDto {
   @IsString()
   @MaxLength(120)
   engagement?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(8)
+  tz?: string;
 }
 
 export class CreateStalkerViewDto {
@@ -526,6 +531,84 @@ export class CreateStalkerGroupDto {
   @MinLength(2)
   @MaxLength(40)
   name: string;
+}
+
+export class StalkerAnalyticsQueryDto {
+  @IsString()
+  @IsDefined()
+  projectId: string;
+
+  @IsOptional()
+  @IsIn(['24h', '7d', '30d', 'all'])
+  date?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  start?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  end?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(-840)
+  @Max(840)
+  tz?: number;
+
+  @IsOptional()
+  @IsString()
+  source?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  engagement?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  from?: string;
+
+  @IsOptional()
+  @IsString()
+  keywordId?: string;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  sentiment?: string;
+
+  @IsOptional()
+  @IsIn(['NEW', 'REPLIED', 'IGNORED', 'DONE', 'FOLLOW_UP'])
+  status?: string;
+
+  @IsOptional()
+  @IsIn(['brand', 'competitors', 'compare'])
+  group?: 'brand' | 'competitors' | 'compare';
+}
+
+export class UpdateStalkerAlertRuleDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(80)
+  name?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => StalkerViewFiltersDto)
+  filters?: StalkerViewFiltersDto;
 }
 
 export class CreateStalkerAlertRuleDto {

@@ -9,6 +9,7 @@ import { VideoActivity } from '@gitroom/orchestrator/activities/video.activity';
 import { MediaActivity } from '@gitroom/orchestrator/activities/media.activity';
 import { ClippingActivity } from '@gitroom/orchestrator/activities/clipping.activity';
 import { StalkerActivity } from '@gitroom/orchestrator/activities/stalker.activity';
+import { StalkerDigestActivity } from '@gitroom/orchestrator/activities/stalker.digest.activity';
 import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 import { HealthController } from '@gitroom/orchestrator/health.controller';
 import { StalkerScheduleRegister } from '@gitroom/orchestrator/stalker.schedule';
@@ -22,6 +23,7 @@ const activities = [
   MediaActivity,
   ClippingActivity,
   StalkerActivity,
+  StalkerDigestActivity,
 ];
 @Module({
   imports: [

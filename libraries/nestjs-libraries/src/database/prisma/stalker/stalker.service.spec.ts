@@ -19,10 +19,12 @@ import {
   nextScheduledScan,
   orderKeywordsForScan,
   scanRunStatus,
+  ruleMatches,
   stalkerAnalyticsDetail,
   stalkerProjectIntervalMs,
   StalkerService,
 } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
+import { stalkerPhraseKey } from '@gitroom/nestjs-libraries/stalker/stalker.match';
 import { mentionRange } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.repository';
 import { X_PLAN_ERROR } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
 import { stalkerKeywordCap } from '@gitroom/nestjs-libraries/stalker/stalker.match';
@@ -118,6 +120,8 @@ const build = (options: {
     insertMentions: jest.fn().mockResolvedValue(1),
     existingKeywordIds: jest.fn(async (_p: string, ids: string[]) => new Set(ids)),
     listCategories: jest.fn().mockResolvedValue([]),
+    unclassified: jest.fn().mockResolvedValue([]),
+    saveClassification: jest.fn().mockResolvedValue(undefined),
   };
   const source = options.source || {
     id: 'youtube' as const,
@@ -708,7 +712,7 @@ describe('StalkerService keywords and scan status', () => {
     expect(nextScheduledScan(null, now).toISOString()).toBe('2026-10-06T10:00:00.000Z');
   });
 
-  it('marks an unconfigured source nobody listens on as skipped, and the run succeeded', async () => {
+  it('leaves a disabled source out of the scan and still succeeds', async () => {
     const { service, repository } = build({
       tokenExpiration: new Date(Date.now() + 60 * 60 * 1000),
       search: async () => [],
@@ -732,7 +736,7 @@ describe('StalkerService keywords and scan status', () => {
       trigger: 'manual',
       runId: 'run-1',
     });
-    expect(result.sources[0]).toEqual(expect.objectContaining({ id: 'reddit', skipped: true }));
+    expect(result.sources.find((source) => source.id === 'reddit')).toBeUndefined();
     expect(repository.finishScanRun).toHaveBeenCalledWith('run-1', 'succeeded', expect.any(Object), '');
   });
 
@@ -910,5 +914,41 @@ describe('Stalker analytics math', () => {
     expect(detail.supporters).toEqual([{ authorName: 'Ada', count: 1 }]);
     // Tuesday 13:51 IST.
     expect(detail.heatmap[1][13]).toBe(1);
+  });
+
+  it('treats crea8.one and crea8one as the same phrase and matches likes or replies', () => {
+    expect(stalkerPhraseKey('crea8.one')).toBe(stalkerPhraseKey('crea8one'));
+    expect(
+      ruleMatches(
+        { engagement: 'X:10', status: 'DONE' },
+        {
+          source: 'X_POST',
+          authorName: 'Ada',
+          authorHandle: 'ada',
+          keywordId: null,
+          categoryId: null,
+          sentiment: 'NEUTRAL',
+          likeCount: 10,
+          replyCount: 0,
+          status: 'REPLIED',
+        }
+      )
+    ).toBe(true);
+    expect(
+      ruleMatches(
+        { engagement: 'X:10' },
+        {
+          source: 'X_POST',
+          authorName: 'Ada',
+          authorHandle: 'ada',
+          keywordId: null,
+          categoryId: null,
+          sentiment: 'NEUTRAL',
+          likeCount: 4,
+          replyCount: 4,
+          status: 'NEW',
+        }
+      )
+    ).toBe(false);
   });
 });

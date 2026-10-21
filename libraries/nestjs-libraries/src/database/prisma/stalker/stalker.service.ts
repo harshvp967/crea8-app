@@ -49,8 +49,10 @@ import {
   tagDrafts,
   matchRelevance,
   stalkerKeywordCap,
+  stalkerPhraseKey,
   type StalkerAlertScopeName,
 } from '@gitroom/nestjs-libraries/stalker/stalker.match';
+import { stalkerSourceEnabled } from '@gitroom/helpers/utils/stalker.sources';
 import {
   CreateStalkerKeywordDto,
   CreateStalkerProjectDto,
@@ -445,7 +447,71 @@ export const stalkerAnalyticsDetail = (
   };
 };
 
-const digestClock = (timezone: string) => {
+export const stalkerCompareSeries = (
+  facts: {
+    createdAt: Date;
+    groupName?: string | null;
+    phrase?: string | null;
+  }[],
+  options: { tz?: number | string; from?: Date; to?: Date; now?: number } = {}
+) => {
+  const span = stalkerAnalyticsDetail(
+    facts.map((fact) => ({
+      createdAt: fact.createdAt,
+      sentiment: 'NEUTRAL',
+      authorName: '',
+      authorHandle: '',
+      source: '',
+    })),
+    options
+  );
+  const offsetMs = stalkerTzOffset(options.tz) * 60 * 1000;
+  const dayKey = (date: Date) => new Date(date.getTime() - offsetMs).toISOString().slice(0, 10);
+  const lines = new Map<string, Map<string, number>>();
+  const touch = (name: string) => {
+    const existing = lines.get(name);
+    if (existing) return existing;
+    const created = new Map<string, number>();
+    lines.set(name, created);
+    return created;
+  };
+  for (const fact of facts) {
+    const competitor = (fact.groupName || '').toLowerCase() === 'competitors';
+    const name = competitor ? fact.phrase || 'Competitor' : 'My brand';
+    const key = dayKey(fact.createdAt);
+    const bag = touch(name);
+    bag.set(key, (bag.get(key) || 0) + 1);
+  }
+  touch('My brand');
+  const ordered = [...lines.keys()].sort((left, right) => {
+    if (left === 'My brand') return -1;
+    if (right === 'My brand') return 1;
+    return left.localeCompare(right);
+  });
+  return ordered.map((name) => ({
+    name,
+    points: span.series.map((row) => ({
+      date: row.date,
+      count: lines.get(name)?.get(row.date) || 0,
+    })),
+  }));
+};
+
+export const zonedDayStart = (timezone: string, now = new Date()) => {
+  const clock = digestClock(timezone || 'UTC');
+  const probe = (date: Date) => digestClockAt(timezone || 'UTC', date).day;
+  let low = now.getTime() - 36 * 60 * 60 * 1000;
+  let high = now.getTime() + 2 * 60 * 60 * 1000;
+  if (probe(new Date(low)) === clock.day) return new Date(low);
+  while (high - low > 1000) {
+    const mid = Math.floor((low + high) / 2);
+    if (probe(new Date(mid)) === clock.day) high = mid;
+    else low = mid;
+  }
+  return new Date(high);
+};
+
+const digestClockAt = (timezone: string, now: Date) => {
   try {
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone || 'UTC',
@@ -454,7 +520,7 @@ const digestClock = (timezone: string) => {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-    }).formatToParts(new Date());
+    }).formatToParts(now);
     const read = (type: string) =>
       parts.find((part) => part.type === type)?.value || '';
     const month = read('month').padStart(2, '0');
@@ -464,12 +530,57 @@ const digestClock = (timezone: string) => {
       day: `${read('year')}-${month}-${day}`,
     };
   } catch {
-    const now = new Date();
     return { hour: now.getUTCHours(), day: now.toISOString().slice(0, 10) };
   }
 };
 
-const ruleMatches = (
+const digestClock = (timezone: string) => digestClockAt(timezone, new Date());
+
+const presetBounds = (preset: string, now: Date, tz?: unknown) => {
+  const offsetMs = stalkerTzOffset(tz as number | string | undefined) * 60 * 1000;
+  const iso = new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
+  const shift = (days: number) => {
+    const date = new Date(`${iso}T00:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+  };
+  const monthShift = (months: number) => {
+    const date = new Date(`${iso}T00:00:00.000Z`);
+    date.setUTCMonth(date.getUTCMonth() + months);
+    return date.toISOString().slice(0, 10);
+  };
+  if (preset === 'today') return { start: iso, end: iso };
+  if (preset === '7d') return { start: shift(-6), end: iso };
+  if (preset === '30d') return { start: shift(-29), end: iso };
+  if (preset === '4w') return { start: shift(-27), end: iso };
+  if (preset === '6m') return { start: monthShift(-6), end: iso };
+  if (preset === '12m') return { start: monthShift(-12), end: iso };
+  if (preset === 'mtd') return { start: `${iso.slice(0, 8)}01`, end: iso };
+  if (preset === 'qtd') {
+    const month = Number(iso.slice(5, 7)) - 1;
+    const quarter = Math.floor(month / 3) * 3 + 1;
+    return { start: `${iso.slice(0, 5)}${String(quarter).padStart(2, '0')}-01`, end: iso };
+  }
+  if (preset === 'ytd') return { start: `${iso.slice(0, 4)}-01-01`, end: iso };
+  return null;
+};
+
+const ruleInWindow = (filters: Record<string, unknown>, at: Date) => {
+  const preset = String(filters.preset || '');
+  const start = String(filters.start || '');
+  const end = String(filters.end || '');
+  if (!preset && !start && !end) return true;
+  if (preset === 'all') return true;
+  const bounds =
+    preset && preset !== 'custom' ? presetBounds(preset, at, filters.tz) : { start, end };
+  if (!bounds) return true;
+  const range = mentionRange(bounds.start, bounds.end, filters.tz as number | string | undefined);
+  if (range.start && at < range.start) return false;
+  if (range.end && at >= range.end) return false;
+  return true;
+};
+
+export const ruleMatches = (
   filters: Record<string, unknown>,
   row: {
     source: string;
@@ -480,6 +591,10 @@ const ruleMatches = (
     sentiment: string;
     likeCount: number;
     replyCount: number;
+    status?: string;
+    relevant?: boolean;
+    postedAt?: Date | null;
+    createdAt?: Date | null;
   }
 ) => {
   const listed = String(filters.sources || filters.source || '')
@@ -502,7 +617,7 @@ const ruleMatches = (
         continue;
       }
       if (name === family || name === row.source) {
-        if (row.likeCount + row.replyCount < min) {
+        if (row.likeCount < min && row.replyCount < min) {
           return false;
         }
       }
@@ -534,6 +649,16 @@ const ruleMatches = (
   if (filters.sentiment && row.sentiment !== filters.sentiment) {
     return false;
   }
+  const status = String(filters.status || '');
+  if (status === 'DONE') {
+    if (row.status !== 'DONE' && row.status !== 'REPLIED') return false;
+  } else if (status === 'IGNORED') {
+    if (row.status !== 'IGNORED' && row.relevant !== false) return false;
+  } else if (status && row.status !== status) {
+    return false;
+  }
+  const at = row.postedAt || row.createdAt;
+  if (at && !ruleInWindow(filters, at)) return false;
   return true;
 };
 
@@ -558,7 +683,7 @@ export class StalkerService {
   async status(organizationId: string) {
     this.assertEnabled();
     const integrations = await this.organizationIntegrations(organizationId);
-    const sources = this._sources.all().map((source) => {
+    const sources = this._sources.all().filter((source) => stalkerSourceEnabled(source.id)).map((source) => {
       const identifier = source.integrationIdentifier();
       const integration = identifier
         ? integrations.find(
@@ -578,6 +703,7 @@ export class StalkerService {
     });
     const commentSources = this._integrationManager
       .stalkerCommentSources()
+      .filter((source) => stalkerSourceEnabled(source.id))
       .map((source) => ({
         id: source.id,
         label: source.label,
@@ -782,7 +908,7 @@ export class StalkerService {
     const identity = readIdentity(project);
     const brandTerms = new Set(
       [identity.brand, ...identity.aliases]
-        .map((term) => term.toLowerCase())
+        .map((term) => stalkerPhraseKey(term))
         .filter((term) => term.length >= 2)
     );
     const projectNextScan = nextScheduledScan(
@@ -823,11 +949,11 @@ export class StalkerService {
     }
     return rows.map((row) => {
       // A brand-equal keyword is scanned by the brand pull (cursor key "brand").
-      const isBrand = brandTerms.has(row.phrase.toLowerCase());
+      const isBrand = brandTerms.has(stalkerPhraseKey(row.phrase));
       const phraseKey = isBrand ? 'brand' : row.phrase.toLowerCase();
       const sources = (
         ['youtube', 'reddit', 'x', 'linkedin'] as const
-      ).map((id) => {
+      ).filter((id) => stalkerSourceEnabled(id)).map((id) => {
         const on = !!row[listenField[id]];
         const cursor = cursors.find(
           (item) => item.source === id && item.phraseKey === phraseKey
@@ -1038,7 +1164,7 @@ export class StalkerService {
       const isBrand =
         !!identity &&
         [identity.brand, ...identity.aliases].some(
-          (term) => term.toLowerCase() === phrase.toLowerCase()
+          (term) => stalkerPhraseKey(term) === stalkerPhraseKey(phrase)
         );
       const groups = await this._repository.listGroups(body.projectId);
       groupId =
@@ -1208,7 +1334,36 @@ export class StalkerService {
 
   async deleteAlertRule(organizationId: string, id: string) {
     this.assertEnabled();
-    await this._repository.deleteAlertRule(organizationId, id);
+    const deleted = await this._repository.deleteAlertRule(organizationId, id);
+    if (!deleted.count) {
+      throw new NotFoundException('Alert not found');
+    }
+    return { deleted: true };
+  }
+
+  async updateAlertRule(
+    organizationId: string,
+    id: string,
+    body: { name?: string; enabled?: boolean; filters?: object }
+  ) {
+    this.assertEnabled();
+    const data: { name?: string; enabled?: boolean; filters?: Prisma.InputJsonValue } = {};
+    if (typeof body.name === 'string') data.name = body.name.trim();
+    if (typeof body.enabled === 'boolean') data.enabled = body.enabled;
+    if (body.filters) data.filters = body.filters as Prisma.InputJsonValue;
+    const updated = await this._repository.updateAlertRule(organizationId, id, data);
+    if (!updated.count) {
+      throw new NotFoundException('Alert not found');
+    }
+    return { updated: true };
+  }
+
+  async deleteMention(organizationId: string, id: string) {
+    this.assertEnabled();
+    const deleted = await this._repository.softDeleteMention(organizationId, id);
+    if (!deleted.count) {
+      throw new NotFoundException('Mention not found');
+    }
     return { deleted: true };
   }
 
@@ -1301,7 +1456,19 @@ export class StalkerService {
     organizationId: string,
     projectId: string,
     date = '30d',
-    range?: { start?: string; end?: string; tz?: number | string }
+    range?: {
+      start?: string;
+      end?: string;
+      tz?: number | string;
+      source?: string;
+      engagement?: string;
+      from?: string;
+      keywordId?: string;
+      categoryId?: string;
+      sentiment?: string;
+      status?: string;
+      group?: string;
+    }
   ) {
     this.assertEnabled();
     if (!projectId) {
@@ -1320,22 +1487,69 @@ export class StalkerService {
           : window === 'all'
             ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
             : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const scope = range?.group === 'competitors' || range?.group === 'compare' ? range.group : 'brand';
+    const cardGroup = scope === 'competitors' ? 'competitors' : 'brand';
+    const shared = {
+      start: range?.start,
+      end: range?.end,
+      tz: range?.tz,
+      source: range?.source,
+      engagement: range?.engagement,
+      from: range?.from,
+      keywordId: range?.keywordId,
+      categoryId: range?.categoryId,
+      sentiment: range?.sentiment,
+      status: range?.status,
+      enabledSourcesOnly: true,
+    };
     // One aggregate pass plus one facts read; the daily chart comes from the
     // facts (it used to be up to 90 separate COUNT queries per page load).
-    const [raw, facts] = await Promise.all([
-      this._repository.analytics(organizationId, projectId, window, range),
+    const [raw, facts, compareFacts] = await Promise.all([
+      this._repository.analytics(organizationId, projectId, window, {
+        ...shared,
+        group: cardGroup,
+      }),
       this._repository.mentionFacts(
         organizationId,
         projectId,
         rangedStart || windowSince,
-        rangedEnd
+        rangedEnd,
+        { ...shared, group: cardGroup }
       ),
+      scope === 'compare'
+        ? this._repository.mentionFacts(
+            organizationId,
+            projectId,
+            rangedStart || windowSince,
+            rangedEnd,
+            shared
+          )
+        : Promise.resolve([]),
     ]);
-    const detail = stalkerAnalyticsDetail(facts, {
-      tz: range?.tz,
-      from: window === 'all' && !rangedStart ? undefined : rangedStart || windowSince,
-      to: rangedEnd,
-    });
+    const at = (row: { postedAt?: Date | null; createdAt: Date }) => row.postedAt || row.createdAt;
+    const detail = stalkerAnalyticsDetail(
+      facts.map((fact) => ({ ...fact, createdAt: at(fact) })),
+      {
+        tz: range?.tz,
+        from: window === 'all' && !rangedStart ? undefined : rangedStart || windowSince,
+        to: rangedEnd,
+      }
+    );
+    const compare =
+      scope === 'compare'
+        ? stalkerCompareSeries(
+            compareFacts.map((fact) => ({
+              createdAt: at(fact),
+              groupName: fact.keyword?.group?.name || null,
+              phrase: fact.keyword?.phrase || null,
+            })),
+            {
+              tz: range?.tz,
+              from: window === 'all' && !rangedStart ? undefined : rangedStart || windowSince,
+              to: rangedEnd,
+            }
+          )
+        : null;
     return {
       bySource: raw.bySource.map((row) => ({
         source: row.source,
@@ -1399,6 +1613,7 @@ export class StalkerService {
       supporters: detail.supporters,
       critics: detail.critics,
       heatmap: detail.heatmap,
+      compare,
     };
   }
 
@@ -1941,6 +2156,9 @@ export class StalkerService {
         continue;
       }
       const sourceId = this.sourceIdFor(integration.providerIdentifier);
+      if (!stalkerSourceEnabled(sourceId)) {
+        continue;
+      }
       if (sourceId === 'youtube') {
         if (youtubeOk) {
           continue;
@@ -2116,18 +2334,27 @@ export class StalkerService {
     let found = 0;
     let stored = 0;
     let duplicates = 0;
-    const brandKey = identity.brand.toLowerCase();
+    const brandKey = stalkerPhraseKey(identity.brand);
     const brandPhrases = new Set(
       [identity.brand, ...identity.aliases]
-        .map((phrase) => phrase.toLowerCase())
+        .map((phrase) => stalkerPhraseKey(phrase))
         .filter((phrase) => phrase.length >= 2)
     );
+    const rememberKeyword = (map: Map<string, string>, phrase: string, id: string) => {
+      const lower = phrase.toLowerCase();
+      const key = stalkerPhraseKey(phrase);
+      if (lower) map.set(lower, id);
+      if (key) map.set(key, id);
+    };
     // A keyword equal to the brand (or an alias) is covered by the brand pull:
     // its results are linked to that keyword instead of searching it twice.
     const brandKeyword =
-      keywords.find((keyword) => keyword.phrase.toLowerCase() === brandKey) ||
-      keywords.find((keyword) => brandPhrases.has(keyword.phrase.toLowerCase()));
+      keywords.find((keyword) => stalkerPhraseKey(keyword.phrase) === brandKey) ||
+      keywords.find((keyword) => brandPhrases.has(stalkerPhraseKey(keyword.phrase)));
     for (const source of this._sources.all()) {
+      if (!stalkerSourceEnabled(source.id)) {
+        continue;
+      }
       const stat: StalkerPollSource = {
         projectId: project.id,
         id: source.id,
@@ -2155,7 +2382,7 @@ export class StalkerService {
       });
       const field = listenField[source.id];
       const brandCovered = (phrase: string) =>
-        !!query.trim() && brandPhrases.has(phrase.toLowerCase());
+        !!query.trim() && brandPhrases.has(stalkerPhraseKey(phrase));
       const selected = orderKeywordsForScan(
         keywords.filter(
           (keyword) => keyword[field] && !brandCovered(keyword.phrase)
@@ -2167,7 +2394,11 @@ export class StalkerService {
         selected.map((keyword) => [keyword.phrase.toLowerCase(), keyword.id])
       );
       if (brandKeyword) {
-        keywordIds.set(brandKeyword.phrase.toLowerCase(), brandKeyword.id);
+        rememberKeyword(keywordIds, brandKeyword.phrase, brandKeyword.id);
+        rememberKeyword(keywordIds, identity.brand, brandKeyword.id);
+        for (const alias of identity.aliases) {
+          rememberKeyword(keywordIds, alias, brandKeyword.id);
+        }
       }
       const wantsSearch = !!query.trim() || selected.length > 0;
       if (!wantsSearch) {
@@ -2607,9 +2838,6 @@ export class StalkerService {
       projectId
     );
     const bySource: Record<string, number> = {};
-    if (!categories.length) {
-      return { offTopic: 0, bySource };
-    }
     const byName = new Map(
       categories.map((category) => [category.name.toLowerCase(), category])
     );
@@ -2640,21 +2868,44 @@ export class StalkerService {
           named ||
           byName.get(fallback.categoryName.trim().toLowerCase()) ||
           categories[0];
-        if (!match) {
-          return [];
-        }
         const row = pendingById.get(item.id);
         const gate = row ? matchRelevance(row, keywordPhrases) : null;
         const relevant = gate === null ? item.relevant : gate;
+        if (!relevant) {
+          return [
+            {
+              id: item.id,
+              category: StalkerCategory.OTHER,
+              categoryName: 'Other',
+              categoryId: null,
+              sentiment: 'NEUTRAL',
+              urgency: 0,
+              relevant: false,
+            },
+          ];
+        }
+        if (!match) {
+          return [
+            {
+              id: item.id,
+              category: legacyCategory(item.categoryName || 'Other'),
+              categoryName: item.categoryName || 'Other',
+              categoryId: null,
+              sentiment: item.sentiment,
+              urgency: item.urgency,
+              relevant: true,
+            },
+          ];
+        }
         return [
           {
             id: item.id,
             category: legacyCategory(match.name),
             categoryName: match.name,
             categoryId: match.id,
-            sentiment: relevant ? item.sentiment : 'NEUTRAL',
-            urgency: relevant ? item.urgency : 0,
-            relevant,
+            sentiment: item.sentiment,
+            urgency: item.urgency,
+            relevant: true,
           },
         ];
       });
@@ -2812,7 +3063,7 @@ export class StalkerService {
       }
     }
     const relevant = saved.filter((item) => item.relevant);
-    if (relevant.length && (digestOn || rules.some((rule) => rule.enabled))) {
+    if (relevant.length && rules.some((rule) => rule.enabled)) {
       const rows = await this._repository.mentionsByIds(
         organizationId,
         relevant.map((item) => item.id)
@@ -2820,29 +3071,9 @@ export class StalkerService {
       const email = project.alertEmail.includes('@')
         ? project.alertEmail
         : '';
-      const wanted = (project.digestGroupName || 'My brand').toLowerCase();
       for (const row of rows) {
         if (!email) {
           break;
-        }
-        const groupName = (
-          row.keyword?.group?.name || 'My brand'
-        ).toLowerCase();
-        const inDigest =
-          digestOn &&
-          (groupName === wanted || (!row.keywordId && wanted === 'my brand'));
-        if (inDigest) {
-          await this._repository.createAlert({
-            organizationId,
-            projectId: project.id,
-            mentionId: row.id,
-            kind: StalkerAlertKind.MENTION,
-            channel: StalkerAlertChannel.EMAIL,
-            status: StalkerAlertStatus.PENDING,
-            dedupeKey: `digest:${row.id}:EMAIL`,
-            title: `${row.authorName} mentioned ${project.name}`,
-            body: [row.text, row.url || ''].filter(Boolean).join('\n'),
-          });
         }
         for (const rule of rules) {
           if (!rule.enabled) {
@@ -2862,6 +3093,10 @@ export class StalkerService {
               sentiment: row.sentiment,
               likeCount: row.likeCount,
               replyCount: row.replyCount,
+              status: row.status,
+              relevant: row.relevant,
+              postedAt: row.postedAt,
+              createdAt: row.createdAt,
             })
           ) {
             continue;
@@ -3078,8 +3313,7 @@ export class StalkerService {
       if (!organizationId || typeof this._repository.countSentEmails !== 'function') {
         return DAILY_EMAIL_CAP;
       }
-      const start = new Date();
-      start.setUTCHours(0, 0, 0, 0);
+      const start = zonedDayStart(project.digestTimezone || 'UTC');
       const sent = await this._repository.countSentEmails(organizationId, start);
       return Math.max(0, DAILY_EMAIL_CAP - sent);
     };
@@ -3162,6 +3396,85 @@ export class StalkerService {
       ok ? '' : 'Email was not sent. Check EMAIL_FROM_ADDRESS and EMAIL_FROM_NAME.'
     );
     return ok;
+  }
+
+  async flushDueDigests() {
+    if (!isStalkerEnabled()) return { sent: 0 };
+    const projects = await this._repository.listDigestProjects();
+    let sent = 0;
+    for (const project of projects) {
+      if (!project.alertEmail.includes('@')) continue;
+      const zone = project.digestTimezone || 'UTC';
+      const clock = digestClock(zone);
+      if (clock.hour < (project.digestHour ?? 8)) continue;
+      if (project.digestSentOn === clock.day) continue;
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const rows = await this._repository.digestMentions(
+        project.organizationId,
+        project.id,
+        since,
+        project.digestGroupName || 'My brand'
+      );
+      const positive = rows.filter((row) => row.sentiment === 'POSITIVE').length;
+      const negative = rows.filter((row) => row.sentiment === 'NEGATIVE').length;
+      const neutral = rows.length - positive - negative;
+      const top = rows.slice(0, 5);
+      const summary = [
+        `${rows.length} mention${rows.length === 1 ? '' : 's'} in the last 24 hours.`,
+        `${positive} positive, ${neutral} neutral, ${negative} negative.`,
+        ...top.map((row) => {
+          const when = row.postedAt || row.createdAt;
+          return `${row.authorName}: ${row.text.slice(0, 180)}${row.url ? ` ${row.url}` : ''} (${when.toISOString()})`;
+        }),
+      ].join('\n');
+      const html = [
+        `<p><strong>${rows.length} mention${rows.length === 1 ? '' : 's'}</strong> in the last 24 hours.</p>`,
+        `<p>${positive} positive · ${neutral} neutral · ${negative} negative</p>`,
+        ...top.map(
+          (row) =>
+            `<p><strong>${escapeHtml(row.authorName)}</strong> ${escapeHtml(row.text.slice(0, 280))}${
+              row.url ? ` <a href="${escapeHtml(row.url)}">Open</a>` : ''
+            }</p>`
+        ),
+      ].join('');
+      const roomStart = zonedDayStart(zone);
+      const sentToday = await this._repository.countSentEmails(project.organizationId, roomStart);
+      if (sentToday >= DAILY_EMAIL_CAP) continue;
+      const ok = await this._emailService.sendEmailSync(
+        project.alertEmail,
+        `Stalker digest: ${rows.length} mention${rows.length === 1 ? '' : 's'} for ${project.name}`,
+        html
+      );
+      const created = await this._repository.createAlert({
+        organizationId: project.organizationId,
+        projectId: project.id,
+        kind: StalkerAlertKind.MENTION,
+        channel: StalkerAlertChannel.EMAIL,
+        status: ok ? StalkerAlertStatus.SENT : StalkerAlertStatus.FAILED,
+        dedupeKey: `digest-summary:${clock.day}`,
+        title: `Stalker digest for ${project.name}`,
+        body: summary,
+        sentAt: ok ? new Date() : null,
+      });
+      if (created.status !== (ok ? StalkerAlertStatus.SENT : StalkerAlertStatus.FAILED)) {
+        await this._repository.markAlert(
+          created.id,
+          ok ? StalkerAlertStatus.SENT : StalkerAlertStatus.FAILED,
+          ok ? '' : 'Email was not sent. Check EMAIL_FROM_ADDRESS and EMAIL_FROM_NAME.'
+        );
+      } else if (!ok) {
+        await this._repository.markAlert(
+          created.id,
+          StalkerAlertStatus.FAILED,
+          'Email was not sent. Check EMAIL_FROM_ADDRESS and EMAIL_FROM_NAME.'
+        );
+      }
+      if (ok) {
+        await this._repository.markDigestSent(project.id, clock.day);
+        sent += 1;
+      }
+    }
+    return { sent };
   }
 
   private async sendAlertEmail(

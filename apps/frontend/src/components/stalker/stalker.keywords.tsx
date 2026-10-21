@@ -14,6 +14,7 @@ import { StalkerProjectMenu } from '@gitroom/frontend/components/stalker/stalker
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import { ReconnectText, StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
+import { stalkerSourceEnabled } from '@gitroom/helpers/utils/stalker.sources';
 import {
   SAMPLE_GROUPS,
   SAMPLE_KEYWORDS,
@@ -52,7 +53,7 @@ const SOURCES = [
   { id: 'reddit', label: sourceLabel('reddit'), key: 'listenReddit' as const, icon: 'REDDIT' },
   { id: 'youtube', label: sourceLabel('youtube'), key: 'listenYoutube' as const, icon: 'YOUTUBE' },
   { id: 'linkedin', label: sourceLabel('linkedin'), key: 'listenLinkedin' as const, icon: 'LINKEDIN' },
-];
+].filter((source) => stalkerSourceEnabled(source.id));
 
 type Keyword = {
   id: string;

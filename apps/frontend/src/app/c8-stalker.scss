@@ -1529,7 +1529,8 @@ body:has(.stalker-screen) .stk-dialog-foot {
   grid-row: 3;
 }
 
-.stalker-screen .stk-al-card > .stk-al-icon {
+.stalker-screen .stk-al-card > .stk-al-icon,
+.stalker-screen .stk-al-card > .stk-al-actions {
   grid-column: 2;
   grid-row: 1 / span 3;
   justify-self: end;
@@ -1599,6 +1600,20 @@ body:has(.stalker-screen) .stk-dialog-foot {
 
 .stalker-screen .stk-an-legend .is-bad::before {
   background: var(--c8-danger);
+}
+
+.stalker-screen .stk-an-legend .is-line::before {
+  background: var(--stk-dot, var(--c8-muted));
+}
+
+.stalker-screen .stk-scope {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 12px;
+}
+
+.stalker-screen .stk-scope.stk-segments {
+  margin-left: 0;
 }
 
 .stalker-screen .stk-chart {
@@ -1688,8 +1703,67 @@ body:has(.stalker-screen) .stk-dialog-foot {
 }
 
 .stalker-screen .stk-heat-cell {
+  display: block;
+  width: 100%;
+  min-height: 10px;
+  aspect-ratio: 1;
   border: 1px solid var(--c8-line) !important;
   border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.stalker-screen .stk-confirm {
+  position: absolute;
+  z-index: 40;
+  inset-inline-end: 0;
+  top: calc(100% + 6px);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1.5px solid var(--c8-hard);
+  border-radius: 16px;
+  background: var(--c8-surface);
+  box-shadow: 0 6px 0 var(--c8-hard);
+}
+
+.stalker-screen .stk-confirm button {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.stalker-screen .stk-confirm button:not(.is-remove) {
+  border: 1.5px solid var(--c8-line);
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+}
+
+.stalker-screen .stk-confirm .is-remove {
+  border: 1.5px solid var(--c8-hard);
+  background: var(--c8-danger);
+  color: #fff;
+}
+
+.stalker-screen .stk-menu-danger {
+  color: var(--c8-danger);
+}
+
+.stalker-screen .stk-more-inline {
+  margin-top: 6px;
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: start;
+}
+
+.stalker-screen button.stk-menu-item:disabled,
+.stalker-screen .stk-menu-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .stalker-screen .stk-analytics .stk-card h2 {
@@ -1763,7 +1837,8 @@ body:has(.stalker-screen) .stk-dialog-foot {
     grid-row: 2;
   }
 
-  .stalker-screen .stk-al-card > .stk-al-icon {
+  .stalker-screen .stk-al-card > .stk-al-icon,
+  .stalker-screen .stk-al-card > .stk-al-actions {
     grid-column: 3;
     grid-row: 1 / span 2;
   }
@@ -2673,6 +2748,10 @@ body:has(.stalker-screen) .stk-dialog-foot {
 
   .stalker-screen .stk-segments {
     margin-left: 0;
+  }
+
+  .stalker-screen .stk-scope.stk-segments [role='radio'] {
+    padding: 7px 8px !important;
   }
 
   .stalker-screen .stk-mfoot {

@@ -281,6 +281,10 @@ export const resolveScanSince = (input: {
 const includesAny = (text: string, words: string[]) =>
   words.some((word) => text.includes(word));
 
+// "crea8.one" and "crea8one" are the same brand phrase.
+export const stalkerPhraseKey = (value: string) =>
+  (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
 export const fallbackClassification = (
   text: string,
   categories: { name: string }[]

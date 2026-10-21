@@ -9,6 +9,7 @@ import {
   useStalkerProject,
 } from '@gitroom/frontend/components/stalker/stalker.project';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
+import { stalkerSourceEnabled } from '@gitroom/helpers/utils/stalker.sources';
 import { stkMenu, stkSecondary } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const sourceName = sourceLabel;
@@ -72,11 +73,12 @@ export const StalkerCheckNow = ({
       ? 'YouTube: channel token expired. Reconnect YouTube in Channels'
       : '';
   const showScanning = scanning || preview === 'running';
-  const sources = previewError
+  const sources = (previewError
     ? [{ id: 'youtube', ok: false, error: previewError }]
     : preview === 'success'
       ? [{ id: 'youtube', ok: true, searched: 3, found: 15, stored: 12 }]
-      : scanResult?.sources || [];
+      : scanResult?.sources || []
+  ).filter((source) => stalkerSourceEnabled(source.id));
   const duplicates = preview === 'success' ? 3 : scanResult?.totals?.duplicates || 0;
   const showResult = !showScanning && (previewError || preview === 'success' || !!scanResult);
   const topError = previewError || (!sources.length ? scanResult?.error : '');

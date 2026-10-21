@@ -22,6 +22,7 @@ import {
   SAMPLE_KEYWORDS,
 } from '@gitroom/frontend/components/stalker/stalker.sample';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
+import { stalkerSourceEnabled } from '@gitroom/helpers/utils/stalker.sources';
 import { decodeHtmlEntities } from '@gitroom/helpers/utils/stalker.text';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import {
@@ -159,28 +160,52 @@ const chartIsEmpty = (rows: DayRow[]) => !rows.length || rows.every((row) => day
 
 const ChartMark = () => <HugeIcon name="chart-line" size={24} />;
 
-const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
+type CompareLine = { name: string; points: { date: string; count: number }[] };
+
+const COMPARE_TOKENS = [
+  ['--c8-cyan', '#00d9ff'],
+  ['--c8-app-stalker', '#b197fc'],
+  ['--c8-warn', '#f59e0b'],
+  ['--c8-app-schedule', '#ff8a4c'],
+  ['--c8-app-lib', '#c2f23d'],
+  ['--c8-danger', '#ff5a5f'],
+] as const;
+
+const SENTIMENT_SERIES = [
+  { key: 'positive' as const, label: 'Positive', token: '--c8-sentiment-pos', fallback: '#d9f99d' },
+  { key: 'neutral' as const, label: 'Neutral', token: '--c8-muted', fallback: '#6b6875' },
+  { key: 'negative' as const, label: 'Negative', token: '--c8-danger', fallback: '#ff5a5f' },
+];
+
+const MentionsChart = ({
+  rows,
+  compare,
+  mode,
+}: {
+  rows: DayRow[];
+  compare?: CompareLine[] | null;
+  mode: string;
+}) => {
   const ref = useRef<HTMLCanvasElement>(null);
-  const empty = chartIsEmpty(rows);
-  const signature = rows
-    .map((row) => `${row.date}:${row.positive}:${row.negative}:${row.neutral}`)
-    .join('|');
+  const lines = compare ?? [];
+  const comparing = lines.length > 0;
+  const empty = comparing
+    ? lines.every((line) => line.points.every((point) => !point.count))
+    : chartIsEmpty(rows);
+  const signature = comparing
+    ? lines.map((line) => `${line.name}:${line.points.map((point) => point.count).join(',')}`).join('|')
+    : rows.map((row) => `${row.date}:${row.positive}:${row.negative}:${row.neutral}`).join('|');
 
   useEffect(() => {
     if (empty) return;
     const canvas = ref.current;
     if (!canvas) return;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    const height = canvas.parentElement?.clientHeight || 220;
-    const gradient = context.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, 'rgba(0, 217, 255, 0.34)');
-    gradient.addColorStop(1, 'rgba(0, 217, 255, 0.02)');
     const grid = cssColor('--new-border', mode === 'light' ? '#E6E6E8' : '#2A2A2E');
     const text = cssColor('--new-textItemBlur', '#71717A');
     const ink = cssColor('--new-btn-text', mode === 'light' ? '#18181B' : '#F4F4F5');
     const raised = cssColor('--arc-raised', mode === 'light' ? '#FFFFFF' : '#161618');
-    const labels = rows.map((row) => {
+    const labelSource = comparing ? lines[0]?.points || [] : rows;
+    const labels = labelSource.map((row) => {
       const date = new Date(`${row.date}T00:00:00`);
       return Number.isNaN(date.getTime())
         ? row.date
@@ -194,21 +219,40 @@ const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
       type: 'line',
       data: {
         labels,
-        datasets: [
-          {
-            label: 'Mentions',
-            data: rows.map((row) => row.positive + row.negative + row.neutral),
-            borderColor: '#00D9FF',
-            backgroundColor: gradient,
-            fill: true,
-            tension: 0.35,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            pointHoverBackgroundColor: '#00D9FF',
-            pointHoverBorderColor: '#00D9FF',
-            borderWidth: 2,
-          },
-        ],
+        datasets: comparing
+          ? lines.map((line, index) => {
+              const [token, fallback] = COMPARE_TOKENS[index % COMPARE_TOKENS.length];
+              const color = cssColor(token, fallback);
+              return {
+                label: line.name,
+                data: line.points.map((point) => point.count),
+                borderColor: color,
+                backgroundColor: 'transparent',
+                fill: false,
+                tension: 0.35,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: color,
+                pointHoverBorderColor: color,
+                borderWidth: 2,
+              };
+            })
+          : SENTIMENT_SERIES.map((tone) => {
+              const color = cssColor(tone.token, tone.fallback);
+              return {
+                label: tone.label,
+                data: rows.map((row) => row[tone.key]),
+                borderColor: color,
+                backgroundColor: 'transparent',
+                fill: false,
+                tension: 0.35,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: color,
+                pointHoverBorderColor: color,
+                borderWidth: 2,
+              };
+            }),
       },
       options: {
         maintainAspectRatio: false,
@@ -225,15 +269,11 @@ const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
             borderWidth: 1,
             padding: 10,
             cornerRadius: 12,
-            displayColors: false,
+            displayColors: true,
             titleFont: { family: 'Plus Jakarta Sans', size: 13, weight: 600 },
             bodyFont: { family: 'Plus Jakarta Sans', size: 13 },
             callbacks: {
-              label: (item) => {
-                const row = rows[item.dataIndex];
-                if (!row) return `${item.parsed.y} mentions`;
-                return `${item.parsed.y} mentions · ${row.positive} positive, ${row.neutral} neutral, ${row.negative} negative`;
-              },
+              label: (item) => `${item.dataset.label}: ${item.parsed.y}`,
             },
           },
         },
@@ -266,7 +306,7 @@ const MentionsChart = ({ rows, mode }: { rows: DayRow[]; mode: string }) => {
       },
     });
     return () => chart.destroy();
-  }, [empty, signature, mode, rows]);
+  }, [comparing, empty, lines, mode, rows, signature]);
 
   if (empty) {
     return (
@@ -292,9 +332,10 @@ export const StalkerAnalytics = () => {
     ...emptyFilters(),
     preset: '30d',
   });
+  const [scope, setScope] = useState<'brand' | 'competitors' | 'compare'>('brand');
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [mode, setMode] = useState('dark');
-  const search = filtersToSearch(filters);
+  const search = [filtersToSearch(filters), `group=${scope}`].filter(Boolean).join('&');
   const analytics = useStalkerAnalytics(sample ? null : projectId, search || 'date=30d');
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
   const authorsQuery = useStalkerAuthors(sample ? null : projectId);
@@ -302,6 +343,10 @@ export const StalkerAnalytics = () => {
   const series = useMemo<DayRow[]>(
     () => (Array.isArray(data?.series) ? data.series : []),
     [data]
+  );
+  const compare = useMemo<CompareLine[] | null>(
+    () => (scope === 'compare' && Array.isArray(data?.compare) ? data.compare : null),
+    [data, scope]
   );
   const total = data?.totals?.mentions || 0;
   const accounts = useMemo<CountRow[]>(
@@ -326,7 +371,7 @@ export const StalkerAnalytics = () => {
   const sources = useMemo<SourceRow[]>(
     () =>
       (Array.isArray(data?.bySource) ? data.bySource : [])
-        .filter((row: SourceRow) => row.count > 0)
+        .filter((row: SourceRow) => row.count > 0 && stalkerSourceEnabled(row.source))
         .sort((left: SourceRow, right: SourceRow) => right.count - left.count),
     [data]
   );
@@ -461,12 +506,43 @@ export const StalkerAnalytics = () => {
             title="Mentions over time"
             extra={selected ? `Chart range · ${selected}` : 'Chart range'}
           >
+            <SegmentedControl
+              aria-label="Whose mentions"
+              className="stk-segments stk-scope"
+              size="sm"
+              value={scope}
+              onValueChange={(value) =>
+                setScope(value === 'competitors' || value === 'compare' ? value : 'brand')
+              }
+              options={[
+                { value: 'brand', label: 'My brand' },
+                { value: 'competitors', label: 'Competitors' },
+                { value: 'compare', label: 'Compare' },
+              ]}
+            />
             <div className="stk-an-legend">
-              <span className="is-ok">Positive</span>
-              <span>Neutral</span>
-              <span className="is-bad">Negative</span>
+              {compare ? (
+                compare.map((line, index) => {
+                  const [token, fallback] = COMPARE_TOKENS[index % COMPARE_TOKENS.length];
+                  return (
+                    <span
+                      key={line.name}
+                      className="is-line"
+                      style={{ ['--stk-dot' as string]: `var(${token}, ${fallback})` }}
+                    >
+                      {line.name}
+                    </span>
+                  );
+                })
+              ) : (
+                <>
+                  <span className="is-ok">Positive</span>
+                  <span>Neutral</span>
+                  <span className="is-bad">Negative</span>
+                </>
+              )}
             </div>
-            <MentionsChart rows={series} mode={mode} />
+            <MentionsChart rows={series} compare={compare} mode={mode} />
           </Card>
           <div className="stk-an-grid">
             <Card title="Where people mention you">

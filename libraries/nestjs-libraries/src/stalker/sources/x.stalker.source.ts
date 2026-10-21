@@ -136,6 +136,8 @@ type SearchPage = {
   data?: {
     id: string;
     text?: string;
+    created_at?: string;
+    note_tweet?: { text?: string };
     author_id?: string;
     public_metrics?: { like_count?: number; reply_count?: number };
   }[];
@@ -494,7 +496,7 @@ export class XStalkerSource implements StalkerSourceProvider {
       const params = new URLSearchParams({
         query,
         max_results: String(pageSize),
-        'tweet.fields': 'created_at,author_id,public_metrics',
+        'tweet.fields': 'created_at,author_id,public_metrics,note_tweet',
         expansions: 'author_id',
         'user.fields': 'name,username',
       });
@@ -518,23 +520,26 @@ export class XStalkerSource implements StalkerSourceProvider {
       let added = 0;
       for (const tweet of json.data || []) {
         newestId = newerPostId(newestId, tweet.id);
-        if (!(tweet.text || '').trim() || !tweet.id || seen.has(tweet.id)) {
+        const fullText = (tweet.note_tweet?.text || tweet.text || '').trim();
+        if (!fullText || !tweet.id || seen.has(tweet.id)) {
           continue;
         }
         seen.add(tweet.id);
         added += 1;
         const user = tweet.author_id ? users.get(tweet.author_id) : undefined;
+        const posted = tweet.created_at ? new Date(tweet.created_at) : null;
         collected.push({
           externalId: `x-post:${tweet.id}`,
           source: 'X_POST',
           authorName: user?.name || user?.username || 'Someone',
           authorHandle: user?.username || '',
-          text: (tweet.text || '').slice(0, 2000),
+          text: fullText.slice(0, 2000),
           url: `https://x.com/i/web/status/${tweet.id}`,
           postExternalId: tweet.id,
           keywordPhrase: keyword,
           likeCount: tweet.public_metrics?.like_count || 0,
           replyCount: tweet.public_metrics?.reply_count || 0,
+          ...(posted && !Number.isNaN(posted.getTime()) ? { postedAt: posted.toISOString() } : {}),
         });
         if (collected.length >= limit) {
           break;

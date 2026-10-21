@@ -22,3 +22,4 @@ export * from './process.media.workflow';
 export * from './clipping.workflow';
 export * from './stalker.poll.workflow';
 export * from './stalker.scan.workflow';
+export * from './stalker.digest.workflow';

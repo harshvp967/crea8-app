@@ -2082,6 +2082,8 @@ model StalkerMention {
   url            String?
   postExternalId String?
   classifiedAt   DateTime?
+  postedAt       DateTime?
+  deletedAt      DateTime?
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
   organization   Organization          @relation(fields: [organizationId], references: [id])
@@ -2109,6 +2111,8 @@ model StalkerMention {
   @@index([projectId, relevant])
   @@index([projectId, createdAt(sort: Desc)])
   @@index([projectId, relevant, createdAt(sort: Desc)])
+  @@index([projectId, deletedAt])
+  @@index([projectId, postedAt(sort: Desc)])
 }
 
 // One row per Stalker scan of a project. Written when a scan is queued and
