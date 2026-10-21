@@ -39,7 +39,9 @@ export const LinkLive = ({ initial, gated }: { initial: PublicLink; gated: boole
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: data.slug, ...context() }),
-    }).catch(() => undefined);
+    }).catch((error) => {
+      console.error('Link page view was not recorded', error);
+    });
   }, [shown, data.slug]);
 
   const reveal = async () => {
@@ -66,7 +68,9 @@ export const LinkLive = ({ initial, gated }: { initial: PublicLink; gated: boole
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ slug: data.slug, blockId, ...context() }),
-          }).catch(() => undefined);
+          }).catch((error) => {
+            console.error('Link click was not recorded', error);
+          });
         }}
         onSubscribe={async (input) => {
           const response = await fetch(linkCollectUrl('subscribe'), {

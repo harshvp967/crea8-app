@@ -12,6 +12,8 @@ import {
   domainProblem,
   emailProblem,
   embedProblem,
+  eventLabel,
+  eventTime,
   faviconFor,
   fillDays,
   formatRate,
@@ -26,6 +28,7 @@ import {
   mapHostnameStatus,
   mapProblem,
   normalizeDesign,
+  normalizeEvents,
   pageUrl,
   paidFeatureProblem,
   parseCalendly,
@@ -39,6 +42,8 @@ import {
   slugProblem,
   sourceLabel,
   suggestSlug,
+  themePalette,
+  upcomingEvents,
   urlProblem,
   utcToZonedInput,
   webhookProblem,
@@ -400,13 +405,36 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(parseEmbed('https://www.threads.net/@crea8/post/Abcde12')?.src).toBe(
       'https://www.threads.net/@crea8/post/Abcde12/embed'
     );
-    expect(parseEmbed('https://vm.tiktok.com/short')).toBeNull();
+    expect(parseEmbed('https://vm.tiktok.com/short')?.provider).toBe('tiktok');
+    expect(parseEmbed('https://www.tiktok.com/t/Zabc1234')?.src).toContain('tiktok.com');
+    expect(parseEmbed('https://vt.tiktok.com/Zabc1234')?.provider).toBe('tiktok');
+    expect(embedProblem('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'instagram')).toMatch(/Instagram/);
+    expect(embedProblem('https://www.instagram.com/p/Abcde12/', 'instagram')).toBeNull();
     expect(embedProblem('https://example.com')).toMatch(/YouTube/);
     expect(parseMap('https://www.google.com/maps/place/Crea8+Studio')?.src).toContain('output=embed');
-    expect(parseMap('https://maps.app.goo.gl/abc')).toBeNull();
-    expect(mapProblem('https://maps.app.goo.gl/abc')).toMatch(/Google Maps/);
+    expect(parseMap('https://maps.app.goo.gl/abc')?.provider).toBe('maps');
+    expect(parseMap('https://www.google.com/maps/@12.9716,77.5946,15z')?.src).toContain('12.9716,77.5946');
+    expect(mapProblem('https://maps.app.goo.gl/abc')).toBeNull();
+    expect(themePalette('paper').button).toBe('#ffffff');
+    expect(themePalette('paper').pageText).toBe('#161616');
     expect(parseCalendly('https://calendly.com/crea8/intro')?.src).toContain('hide_gdpr_banner=1');
     expect(parseCalendly('https://cal.com/crea8')).toBeNull();
+  });
+
+  it('keeps upcoming events and hides ones that already happened', () => {
+    const events = normalizeEvents({
+      events: [
+        { title: 'Later', when: '2099-01-02T15:00', place: 'Hall', url: '' },
+        { title: 'Earlier', when: '2000-01-02T15:00', place: '', url: '' },
+        { title: 'Note', when: 'soon', place: 'Park', url: '' },
+      ],
+    });
+    const visible = upcomingEvents(events, Date.UTC(2026, 9, 21, 12, 0), 'UTC');
+    expect(visible.map((item) => item.title)).toEqual(['Later', 'Note']);
+    expect(eventLabel('2099-01-02T15:00')).toBe('2 Jan 2099, 15:00');
+    expect(eventLabel('soon')).toBe('soon');
+    const ist = eventTime('2026-10-21T18:00', 'Asia/Kolkata');
+    expect(ist).toBe(Date.UTC(2026, 9, 21, 12, 30));
   });
 
   it('applies the first matching visitor rule and checks a date of birth', () => {

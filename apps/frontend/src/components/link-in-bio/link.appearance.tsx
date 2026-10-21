@@ -15,7 +15,10 @@ import {
   LINK_TITLE_MODES,
   LINK_WALLPAPERS,
   LinkDesign,
+  imagePathProblem,
   normalizeDesign,
+  themePalette,
+  urlProblem,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
@@ -41,6 +44,21 @@ type Draft = {
 };
 
 const colours = ['#0a0a0a', '#ffffff', '#00D9FF', '#111111', '#6b4a32', '#e11d74'];
+const emptyColors = { background: '', button: '', buttonText: '', pageText: '', title: '' };
+
+const radiusPreset = (radius: number, buttonStyle: string) => {
+  if (radius < 0) return buttonStyle;
+  if (radius >= 24) return 'pill';
+  if (radius >= 12) return 'rounded';
+  return 'square';
+};
+
+const copyLink = async (value: string) => {
+  if (!navigator.clipboard?.writeText) {
+    throw new Error('Could not copy that link');
+  }
+  await navigator.clipboard.writeText(value);
+};
 
 const toDraft = (page: LinkEditor): Draft => {
   const design = normalizeDesign(page.design);
@@ -52,7 +70,7 @@ const toDraft = (page: LinkEditor): Draft => {
     buttonStyle: page.buttonStyle,
     font: page.font || 'Plus Jakarta Sans',
     backgroundMode: page.backgroundMode || 'colour',
-    backgroundColor: page.backgroundColor || '#0a0a0a',
+    backgroundColor: page.backgroundColor && page.backgroundColor.toLowerCase() !== '#0a0a0a' ? page.backgroundColor : '',
     backgroundImage: page.backgroundImage,
     socials: page.socials.map((item) => ({ ...item })),
     design,
@@ -69,6 +87,10 @@ export const LinkAppearanceScreen = () => {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const [socialErrors, setSocialErrors] = useState<Array<string | null>>([]);
+  const [removeSocial, setRemoveSocial] = useState<number | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
   const connect = useAddProvider(() => {
     mutate();
   });
@@ -133,6 +155,14 @@ export const LinkAppearanceScreen = () => {
   };
 
   const save = async () => {
+    const logoProblem = design.logoUrl.trim() ? imagePathProblem(design.logoUrl) : null;
+    const nextSocialErrors = draft.socials.map((item) => (item.url.trim() ? urlProblem(item.url) : null));
+    setLogoError(logoProblem || '');
+    setSocialErrors(nextSocialErrors);
+    if (logoProblem || nextSocialErrors.some(Boolean)) {
+      toast.show(logoProblem || nextSocialErrors.find(Boolean) || 'Check that link', 'warning');
+      return;
+    }
     setBusy(true);
     try {
       const next = await linkSend(fetch, '/link-in-bio', 'PUT', {
@@ -140,7 +170,7 @@ export const LinkAppearanceScreen = () => {
         bio: draft.bio,
         avatarPath: draft.avatarPath,
         theme: draft.theme,
-        buttonStyle: draft.buttonStyle,
+        buttonStyle: radiusPreset(design.radius, draft.buttonStyle),
         font: draft.font,
         backgroundMode: design.wallpaperChosen ? 'colour' : draft.backgroundMode,
         backgroundColor: design.colors.background || draft.backgroundColor,
@@ -172,9 +202,13 @@ export const LinkAppearanceScreen = () => {
       onPreviewClose={() => setPreview(false)}
       preview={
         <LinkPreview
-          onCopy={() => {
-            navigator.clipboard?.writeText(data.publicUrl);
-            toast.show('Link copied', 'success');
+          onCopy={async () => {
+            try {
+              await copyLink(data.publicUrl);
+              toast.show('Link copied', 'success');
+            } catch (err) {
+              toast.show(err instanceof Error ? err.message : 'Could not copy that link', 'warning');
+            }
           }}
           onClose={preview ? () => setPreview(false) : undefined}
         >
@@ -243,9 +277,28 @@ export const LinkAppearanceScreen = () => {
                 }}
               />
             </label>
-            <button type="button" className="lib-quiet" onClick={() => setDraft({ ...draft, avatarPath: '' })}>
-              Remove
-            </button>
+            <span className="relative">
+              <button type="button" className="lib-quiet" onClick={() => setRemoveAvatar((value) => !value)}>
+                Remove
+              </button>
+              {removeAvatar ? (
+                <div className="lib-confirm" role="dialog" aria-label="Remove photo">
+                  <button type="button" onClick={() => setRemoveAvatar(false)}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="is-remove"
+                    onClick={() => {
+                      setDraft({ ...draft, avatarPath: '' });
+                      setRemoveAvatar(false);
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : null}
+            </span>
           </div>
           <div className="mb-[12px]">
             <LinkSegments
@@ -257,14 +310,41 @@ export const LinkAppearanceScreen = () => {
           </div>
           {design.titleMode === 'logo' ? (
             <div className="mb-[12px]">
-              <LinkField label="Logo URL">
+              <LinkField label="Logo">
                 <input
                   value={design.logoUrl}
-                  placeholder={draft.avatarPath || 'https://'}
-                  onChange={(event) => setDesign({ logoUrl: event.target.value })}
+                  placeholder="https:// or upload"
+                  onChange={(event) => {
+                    setLogoError('');
+                    setDesign({ logoUrl: event.target.value });
+                  }}
                 />
               </LinkField>
-              <p className="mt-[6px] text-[13px] text-textItemBlur">Uses this URL, or the photo above when the URL is empty. No extra upload.</p>
+              {logoError ? <p className="lib-field-error mt-[6px]">{logoError}</p> : null}
+              <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
+                <label className={linkSecondary}>
+                  Upload logo
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = '';
+                      if (!file) return;
+                      try {
+                        setLogoError('');
+                        setDesign({ logoUrl: await upload(file) });
+                      } catch (err) {
+                        const message = err instanceof Error ? err.message : 'Could not upload that image';
+                        setLogoError(message);
+                        toast.show(message, 'warning');
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <p className="mt-[6px] text-[13px] text-textItemBlur">Shown in full, not cropped to a circle. The photo above is the avatar when title text is on.</p>
             </div>
           ) : null}
           <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
@@ -313,7 +393,12 @@ export const LinkAppearanceScreen = () => {
                 className="lib-theme"
                 onClick={() => {
                   if (!guard(theme.pro, 'That theme is on a paid plan')) return;
-                  setDraft({ ...draft, theme: theme.id });
+                  setDraft({
+                    ...draft,
+                    theme: theme.id,
+                    backgroundColor: '',
+                    design: { ...design, colors: { ...emptyColors } },
+                  });
                 }}
               >
                 <span className={`lib-swatch${draft.theme === theme.id ? ' is-active' : ''}`} data-theme={theme.id}>
@@ -393,7 +478,7 @@ export const LinkAppearanceScreen = () => {
                 <button
                   key={item.id}
                   type="button"
-                  className={draft.buttonStyle === item.id && design.radius < 0 ? linkChoice : linkSecondary}
+                  className={radiusPreset(design.radius, draft.buttonStyle) === item.id ? linkChoice : linkSecondary}
                   onClick={() => {
                     const radius = item.id === 'pill' ? 32 : item.id === 'rounded' ? 16 : 8;
                     setDraft({ ...draft, buttonStyle: item.id, design: { ...design, radius } });
@@ -409,7 +494,11 @@ export const LinkAppearanceScreen = () => {
                 min={0}
                 max={32}
                 value={Math.max(0, design.radius)}
-                onChange={(event) => setDesign({ radius: Number(event.target.value) })}
+                onChange={(event) => {
+                  const radius = Number(event.target.value);
+                  const buttonStyle = radius >= 24 ? 'pill' : radius >= 12 ? 'rounded' : 'square';
+                  setDraft({ ...draft, buttonStyle, design: { ...design, radius } });
+                }}
               />
             </LinkField>
             <div className="mt-[12px] flex flex-wrap gap-[8px]">
@@ -445,11 +534,11 @@ export const LinkAppearanceScreen = () => {
             </LinkField>
           </div>
           <div className="mt-[14px] flex flex-wrap gap-[12px]">
-            <ColorField label="Background" value={design.colors.background || draft.backgroundColor || '#0a0a0a'} onChange={(background) => setDesign({ colors: { ...design.colors, background } })} swatches={colours} />
-            <ColorField label="Buttons" value={design.colors.button || '#17191c'} onChange={(button) => setDesign({ colors: { ...design.colors, button } })} />
-            <ColorField label="Button text" value={design.colors.buttonText || '#f4f4f5'} onChange={(buttonText) => setDesign({ colors: { ...design.colors, buttonText } })} />
-            <ColorField label="Page text" value={design.colors.pageText || '#f5f5f5'} onChange={(pageText) => setDesign({ colors: { ...design.colors, pageText } })} />
-            <ColorField label="Title" value={design.colors.title || '#f5f5f5'} onChange={(title) => setDesign({ colors: { ...design.colors, title } })} />
+            <ColorField label="Background" value={design.colors.background || themePalette(draft.theme).background} onChange={(background) => setDesign({ colors: { ...design.colors, background } })} swatches={colours} />
+            <ColorField label="Buttons" value={design.colors.button || themePalette(draft.theme).button} onChange={(button) => setDesign({ colors: { ...design.colors, button } })} />
+            <ColorField label="Button text" value={design.colors.buttonText || themePalette(draft.theme).buttonText} onChange={(buttonText) => setDesign({ colors: { ...design.colors, buttonText } })} />
+            <ColorField label="Page text" value={design.colors.pageText || themePalette(draft.theme).pageText} onChange={(pageText) => setDesign({ colors: { ...design.colors, pageText } })} />
+            <ColorField label="Title" value={design.colors.title || themePalette(draft.theme).title} onChange={(title) => setDesign({ colors: { ...design.colors, title } })} />
           </div>
         </section>
 
@@ -533,16 +622,34 @@ export const LinkAppearanceScreen = () => {
                   onChange={(event) => {
                     const socials = draft.socials.slice();
                     socials[index] = { ...item, url: event.target.value };
+                    setSocialErrors(socialErrors.map((problem, itemIndex) => (itemIndex === index ? null : problem)));
                     setDraft({ ...draft, socials });
                   }}
                 />
-                <button
-                  type="button"
-                  className={linkSecondary}
-                  onClick={() => setDraft({ ...draft, socials: draft.socials.filter((_, itemIndex) => itemIndex !== index) })}
-                >
-                  Remove
-                </button>
+                <span className="relative">
+                  <button type="button" className={linkSecondary} onClick={() => setRemoveSocial(removeSocial === index ? null : index)}>
+                    Remove
+                  </button>
+                  {removeSocial === index ? (
+                    <div className="lib-confirm" role="dialog" aria-label="Remove social link">
+                      <button type="button" onClick={() => setRemoveSocial(null)}>
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="is-remove"
+                        onClick={() => {
+                          setDraft({ ...draft, socials: draft.socials.filter((_, itemIndex) => itemIndex !== index) });
+                          setSocialErrors(socialErrors.filter((_, itemIndex) => itemIndex !== index));
+                          setRemoveSocial(null);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : null}
+                </span>
+                {socialErrors[index] ? <p className="lib-field-error sm:col-span-3">{socialErrors[index]}</p> : null}
               </div>
             ))}
             {draft.socials.length < 8 ? (
