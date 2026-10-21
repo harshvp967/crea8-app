@@ -7,6 +7,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
+import { stalkerSourceEnabled } from '@gitroom/helpers/utils/stalker.sources';
 import {
   stkClose,
   stkDialog,
@@ -75,12 +76,14 @@ const CATEGORY_DOT: Record<string, string> = {
 
 const categoryDot = (name: string) => CATEGORY_DOT[name] || '#71717a';
 
-const SOURCES = [
-  ['x', 'X', 'x', 'X'],
-  ['reddit', 'Reddit', 'reddit', 'REDDIT'],
-  ['youtube', 'YouTube', 'youtube', 'YOUTUBE'],
-  ['linkedin', 'LinkedIn', 'linkedin', 'LINKEDIN'],
-] as const;
+const SOURCES = (
+  [
+    ['x', 'X', 'x', 'X'],
+    ['reddit', 'Reddit', 'reddit', 'REDDIT'],
+    ['youtube', 'YouTube', 'youtube', 'YOUTUBE'],
+    ['linkedin', 'LinkedIn', 'linkedin', 'LINKEDIN'],
+  ] as const
+).filter((source) => stalkerSourceEnabled(source[0]));
 
 const Arrow = () => <HugeIcon name="chevron-right" size={16} />;
 

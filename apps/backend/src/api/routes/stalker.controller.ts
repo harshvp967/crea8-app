@@ -18,6 +18,8 @@ import {
   CreateStalkerViewDto,
   CreateStalkerGroupDto,
   CreateStalkerAlertRuleDto,
+  UpdateStalkerAlertRuleDto,
+  StalkerAnalyticsQueryDto,
   SaveStalkerCategoriesDto,
   StalkerDraftDto,
   StalkerMentionQueryDto,
@@ -115,6 +117,14 @@ export class StalkerController {
     );
   }
 
+  @Delete('/mentions/:id')
+  deleteMention(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._stalkerService.deleteMention(org.id, id);
+  }
+
   @Post('/mentions/:id/relevant')
   setMentionRelevant(
     @GetOrgFromRequest() org: Organization,
@@ -208,17 +218,9 @@ export class StalkerController {
   @Get('/analytics')
   analytics(
     @GetOrgFromRequest() org: Organization,
-    @Query('projectId') projectId: string,
-    @Query('date') date?: string,
-    @Query('start') start?: string,
-    @Query('end') end?: string,
-    @Query('tz') tz?: string
+    @Query() query: StalkerAnalyticsQueryDto
   ) {
-    return this._stalkerService.analytics(org.id, projectId, date, {
-      start,
-      end,
-      tz,
-    });
+    return this._stalkerService.analytics(org.id, query.projectId, query.date, query);
   }
 
   @Get('/groups')
@@ -265,6 +267,15 @@ export class StalkerController {
       body.name,
       body.filters as unknown as Record<string, unknown>
     );
+  }
+
+  @Post('/rules/:id')
+  updateRule(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: UpdateStalkerAlertRuleDto
+  ) {
+    return this._stalkerService.updateAlertRule(org.id, id, body);
   }
 
   @Delete('/rules/:id')

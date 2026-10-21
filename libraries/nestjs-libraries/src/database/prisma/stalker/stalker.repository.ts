@@ -16,7 +16,8 @@ import {
   StalkerSource,
 } from '@prisma/client';
 import { StalkerMentionDraft } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { mentionContentHash } from '@gitroom/nestjs-libraries/stalker/stalker.match';
+import { mentionContentHash, stalkerPhraseKey } from '@gitroom/nestjs-libraries/stalker/stalker.match';
+import { stalkerSourceEnabled } from '@gitroom/helpers/utils/stalker.sources';
 import {
   decodeHtmlEntities,
   normalizeHandle,
@@ -115,6 +116,128 @@ const engagementClauses = (raw?: string): Prisma.StalkerMentionWhereInput[] => {
     });
   }
   return clauses;
+};
+
+export type MentionListFilters = {
+  date?: string;
+  start?: string;
+  end?: string;
+  tz?: number | string;
+  source?: string;
+  from?: string;
+  keywordId?: string;
+  categoryId?: string;
+  sentiment?: string;
+  status?: string;
+  engagement?: string;
+  offTopic?: string;
+  group?: string;
+  enabledSourcesOnly?: boolean;
+  timeStart?: Date;
+  timeEnd?: Date;
+};
+
+const appendAnd = (
+  where: Prisma.StalkerMentionWhereInput,
+  clause: Prisma.StalkerMentionWhereInput
+) => {
+  const existing = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
+  where.AND = [...existing, clause];
+};
+
+const postedWindow = (start?: Date, end?: Date): Prisma.StalkerMentionWhereInput | null => {
+  if (!start && !end) return null;
+  const bound = {
+    ...(start ? { gte: start } : {}),
+    ...(end ? { lt: end } : {}),
+  };
+  return {
+    OR: [{ postedAt: bound }, { postedAt: null, createdAt: bound }],
+  };
+};
+
+const enabledSourceList = () =>
+  (Object.values(StalkerSource) as StalkerSource[]).filter((source) =>
+    stalkerSourceEnabled(source)
+  );
+
+export const buildMentionWhere = (
+  organizationId: string,
+  projectId: string,
+  filters: MentionListFilters
+): Prisma.StalkerMentionWhereInput => {
+  const where: Prisma.StalkerMentionWhereInput = {
+    organizationId,
+    projectId,
+    deletedAt: null,
+  };
+  if (filters.offTopic !== 'include' && filters.status !== 'IGNORED') {
+    where.relevant = true;
+  }
+  const ranged = mentionRange(filters.start, filters.end, filters.tz);
+  const since = filters.timeStart || ranged.start || mentionWindow(filters.date);
+  const end = filters.timeEnd || ranged.end;
+  const window = postedWindow(since, end);
+  if (window) appendAnd(where, window);
+
+  let sources = sourceList(filters.source);
+  if (filters.enabledSourcesOnly) {
+    const allowed = enabledSourceList();
+    sources = sources.length
+      ? sources.filter((source) => stalkerSourceEnabled(source))
+      : allowed;
+    if (!sources.length) {
+      where.externalId = { in: [] };
+    }
+  }
+  if (sources.length === 1) {
+    where.source = sources[0];
+  } else if (sources.length > 1) {
+    where.source = { in: sources };
+  }
+
+  const engagement = engagementClauses(filters.engagement);
+  if (engagement.length) appendAnd(where, { OR: engagement });
+
+  if (filters.from?.trim()) {
+    const from = filters.from.trim().replace(/^@/, '');
+    appendAnd(where, {
+      OR: [
+        { authorName: { contains: from, mode: 'insensitive' } },
+        { authorHandle: { contains: from, mode: 'insensitive' } },
+      ],
+    });
+  }
+  if (filters.keywordId) where.keywordId = filters.keywordId;
+  if (filters.categoryId === 'none') where.categoryId = null;
+  else if (filters.categoryId) where.categoryId = filters.categoryId;
+  if (filters.sentiment && SENTIMENTS.has(filters.sentiment)) {
+    where.sentiment = filters.sentiment as StalkerSentiment;
+  }
+  if (filters.status === 'DONE') {
+    where.status = { in: [StalkerMentionStatus.DONE, StalkerMentionStatus.REPLIED] };
+  } else if (filters.status === 'IGNORED') {
+    appendAnd(where, {
+      OR: [{ status: StalkerMentionStatus.IGNORED }, { relevant: false }],
+    });
+  } else if (
+    filters.status &&
+    (Object.values(StalkerMentionStatus) as string[]).includes(filters.status)
+  ) {
+    where.status = filters.status as StalkerMentionStatus;
+  }
+  const group = (filters.group || '').toLowerCase();
+  if (group === 'competitors') {
+    where.keyword = { is: { group: { is: { name: 'Competitors' } } } };
+  } else if (group === 'brand') {
+    appendAnd(where, {
+      OR: [
+        { keywordId: null },
+        { keyword: { is: { group: { is: { name: 'My brand' } } } } },
+      ],
+    });
+  }
+  return where;
 };
 
 const isDraft = (value: unknown): value is StalkerMentionDraft => {
@@ -623,12 +746,15 @@ export class StalkerRepository {
           !knownIds.has(row.draft.externalId) &&
           !knownHashes.has(row.contentHash)
       )
-      .map(({ draft, contentHash }) => ({
+      .map(({ draft, contentHash }) => {
+        const phrase = (draft.keywordPhrase || '').toLowerCase();
+        const posted = draft.postedAt ? new Date(draft.postedAt) : null;
+        return {
         organizationId,
         projectId,
         integrationId,
-        keywordId: draft.keywordPhrase
-          ? keywordIds.get(draft.keywordPhrase.toLowerCase())
+        keywordId: phrase
+          ? keywordIds.get(phrase) || keywordIds.get(stalkerPhraseKey(phrase))
           : undefined,
         externalId: draft.externalId,
         source: draft.source,
@@ -642,7 +768,9 @@ export class StalkerRepository {
         likeCount: Math.max(0, Math.round(draft.likeCount || 0)),
         replyCount: Math.max(0, Math.round(draft.replyCount || 0)),
         contentHash,
-      }));
+        ...(posted && !Number.isNaN(posted.getTime()) ? { postedAt: posted } : {}),
+        };
+      });
     if (!data.length) {
       return 0;
     }
@@ -703,59 +831,7 @@ export class StalkerRepository {
       cursor?: string;
     }
   ) {
-    const where: Prisma.StalkerMentionWhereInput = {
-      organizationId,
-      projectId: filters.projectId,
-    };
-    if (filters.offTopic !== 'include') {
-      where.relevant = true;
-    }
-    const ranged = mentionRange(filters.start, filters.end, filters.tz);
-    const since = ranged.start || mentionWindow(filters.date);
-    if (since || ranged.end) {
-      where.createdAt = {
-        ...(since ? { gte: since } : {}),
-        ...(ranged.end ? { lt: ranged.end } : {}),
-      };
-    }
-    const sources = sourceList(filters.source);
-    if (sources.length === 1) {
-      where.source = sources[0];
-    } else if (sources.length > 1) {
-      where.source = { in: sources };
-    }
-    const engagement = engagementClauses(filters.engagement);
-    if (engagement.length) {
-      const existing = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
-      where.AND = [...existing, { OR: engagement }];
-    }
-    if (filters.from?.trim()) {
-      const from = filters.from.trim().replace(/^@/, '');
-      where.OR = [
-        { authorName: { contains: from, mode: 'insensitive' } },
-        { authorHandle: { contains: from, mode: 'insensitive' } },
-      ];
-    }
-    if (filters.keywordId) {
-      where.keywordId = filters.keywordId;
-    }
-    if (filters.categoryId === 'none') {
-      where.categoryId = null;
-    } else if (filters.categoryId) {
-      where.categoryId = filters.categoryId;
-    }
-    if (
-      filters.sentiment &&
-      SENTIMENTS.has(filters.sentiment)
-    ) {
-      where.sentiment = filters.sentiment as StalkerSentiment;
-    }
-    if (
-      filters.status &&
-      (Object.values(StalkerMentionStatus) as string[]).includes(filters.status)
-    ) {
-      where.status = filters.status as StalkerMentionStatus;
-    }
+    const where = buildMentionWhere(organizationId, filters.projectId, filters);
     if (typeof filters.minUrgency === 'number' && filters.minUrgency > 0) {
       where.urgency = { gte: filters.minUrgency };
     }
@@ -816,7 +892,7 @@ export class StalkerRepository {
 
   unclassified(organizationId: string, projectId: string) {
     return this._mention.model.stalkerMention.findMany({
-      where: { organizationId, projectId, classifiedAt: null },
+      where: { organizationId, projectId, classifiedAt: null, deletedAt: null },
       orderBy: { createdAt: 'asc' },
       take: 40,
       select: {
@@ -859,10 +935,30 @@ export class StalkerRepository {
     }
   }
 
-  setMentionRelevant(organizationId: string, id: string, relevant: boolean) {
+  async setMentionRelevant(organizationId: string, id: string, relevant: boolean) {
+    const row = await this._mention.model.stalkerMention.findFirst({
+      where: { id, organizationId, deletedAt: null },
+      select: { status: true },
+    });
+    if (!row) {
+      return { count: 0 };
+    }
+    const data: Prisma.StalkerMentionUncheckedUpdateManyInput = relevant
+      ? {
+          relevant: true,
+          ...(row.status === StalkerMentionStatus.IGNORED
+            ? { status: StalkerMentionStatus.NEW }
+            : {}),
+        }
+      : {
+          relevant: false,
+          status: StalkerMentionStatus.IGNORED,
+          category: StalkerCategory.OTHER,
+          categoryId: null,
+        };
     return this._mention.model.stalkerMention.updateMany({
-      where: { id, organizationId },
-      data: { relevant },
+      where: { id, organizationId, deletedAt: null },
+      data,
     });
   }
 
@@ -871,9 +967,25 @@ export class StalkerRepository {
     id: string,
     status: StalkerMentionStatus
   ) {
+    const data: Prisma.StalkerMentionUncheckedUpdateManyInput =
+      status === StalkerMentionStatus.IGNORED
+        ? {
+            status,
+            relevant: false,
+            category: StalkerCategory.OTHER,
+            categoryId: null,
+          }
+        : { status, relevant: true };
     return this._mention.model.stalkerMention.updateMany({
-      where: { id, organizationId },
-      data: { status },
+      where: { id, organizationId, deletedAt: null },
+      data,
+    });
+  }
+
+  softDeleteMention(organizationId: string, id: string) {
+    return this._mention.model.stalkerMention.updateMany({
+      where: { id, organizationId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -881,25 +993,14 @@ export class StalkerRepository {
     organizationId: string,
     projectId: string,
     date = '30d',
-    range?: { start?: string; end?: string; tz?: number | string }
+    range?: MentionListFilters
   ) {
-    const ranged = mentionRange(range?.start, range?.end, range?.tz);
-    const since =
-      ranged.start ||
-      (date === 'all' ? undefined : mentionWindow(date) || mentionWindow('30d'));
-    const where = {
-      organizationId,
-      projectId,
-      relevant: true,
-      ...(since || ranged.end
-        ? {
-            createdAt: {
-              ...(since ? { gte: since } : {}),
-              ...(ranged.end ? { lt: ranged.end } : {}),
-            },
-          }
-        : {}),
-    };
+    const where = buildMentionWhere(organizationId, projectId, {
+      ...range,
+      date: range?.start || range?.end ? undefined : date === 'all' ? undefined : date || '30d',
+      offTopic: range?.status === 'IGNORED' ? 'include' : undefined,
+      enabledSourcesOnly: true,
+    });
     const [bySource, bySentiment, byCategory, byKeyword, byTheme, accounts] =
       await Promise.all([
         this._mention.model.stalkerMention.groupBy({
@@ -971,6 +1072,7 @@ export class StalkerRepository {
         organizationId,
         projectId,
         relevant: true,
+        deletedAt: null,
         createdAt: { gte: start, lt: end },
         ...(sentiment ? { sentiment } : {}),
       },
@@ -984,6 +1086,7 @@ export class StalkerRepository {
         projectId,
         classifiedAt: { not: null },
         relevant: true,
+        deletedAt: null,
         category: { not: 'SPAM' },
         createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
       },
@@ -1183,11 +1286,15 @@ export class StalkerRepository {
         urgency: true,
         category: true,
         sentiment: true,
+        status: true,
+        relevant: true,
         source: true,
         keywordId: true,
         categoryId: true,
         likeCount: true,
         replyCount: true,
+        postedAt: true,
+        createdAt: true,
         categoryDef: { select: { name: true } },
         keyword: { select: { group: { select: { name: true } } } },
       },
@@ -1427,6 +1534,7 @@ export class StalkerRepository {
         organizationId,
         projectId,
         relevant: true,
+        deletedAt: null,
         keywordId: { not: null },
         createdAt: { gte: since },
       },
@@ -1439,29 +1547,32 @@ export class StalkerRepository {
     organizationId: string,
     projectId: string,
     since?: Date,
-    end?: Date
+    end?: Date,
+    filters?: MentionListFilters
   ) {
+    const where = buildMentionWhere(organizationId, projectId, {
+      ...filters,
+      timeStart: since,
+      timeEnd: end,
+      offTopic: filters?.status === 'IGNORED' ? 'include' : undefined,
+      enabledSourcesOnly: filters?.enabledSourcesOnly !== false,
+    });
     return this._mention.model.stalkerMention.findMany({
-      where: {
-        organizationId,
-        projectId,
-        relevant: true,
-        ...(since || end
-          ? {
-              createdAt: {
-                ...(since ? { gte: since } : {}),
-                ...(end ? { lt: end } : {}),
-              },
-            }
-          : {}),
-      },
+      where,
       select: {
         createdAt: true,
+        postedAt: true,
         sentiment: true,
         authorName: true,
         authorHandle: true,
         source: true,
         categoryId: true,
+        status: true,
+        relevant: true,
+        likeCount: true,
+        replyCount: true,
+        keywordId: true,
+        keyword: { select: { phrase: true, group: { select: { name: true } } } },
       },
       orderBy: { createdAt: 'desc' },
       take: 4000,
@@ -1471,7 +1582,7 @@ export class StalkerRepository {
   authors(organizationId: string, projectId: string) {
     return this._mention.model.stalkerMention.groupBy({
       by: ['authorName', 'authorHandle', 'source'],
-      where: { organizationId, projectId, relevant: true },
+      where: { organizationId, projectId, relevant: true, deletedAt: null },
       _count: { _all: true },
       orderBy: { _count: { authorName: 'desc' } },
       take: 40,
@@ -1499,6 +1610,17 @@ export class StalkerRepository {
   deleteAlertRule(organizationId: string, id: string) {
     return this._rule.model.stalkerAlertRule.deleteMany({
       where: { id, organizationId },
+    });
+  }
+
+  updateAlertRule(
+    organizationId: string,
+    id: string,
+    data: { name?: string; enabled?: boolean; filters?: Prisma.InputJsonValue }
+  ) {
+    return this._rule.model.stalkerAlertRule.updateMany({
+      where: { id, organizationId },
+      data,
     });
   }
 
@@ -1581,6 +1703,44 @@ export class StalkerRepository {
     return this._project.model.stalkerProject.updateMany({
       where: { id: projectId },
       data: { digestSentOn: day },
+    });
+  }
+
+  listDigestProjects() {
+    return this._project.model.stalkerProject.findMany({
+      where: { digestEnabled: true, digestDismissed: false },
+      select: {
+        id: true,
+        organizationId: true,
+        name: true,
+        alertEmail: true,
+        digestHour: true,
+        digestTimezone: true,
+        digestSentOn: true,
+        digestGroupName: true,
+      },
+    });
+  }
+
+  digestMentions(organizationId: string, projectId: string, since: Date, groupName: string) {
+    const wanted = (groupName || 'My brand').toLowerCase();
+    const where = buildMentionWhere(organizationId, projectId, {
+      timeStart: since,
+      group: wanted === 'competitors' ? 'competitors' : wanted.startsWith('all') ? 'all' : 'brand',
+      enabledSourcesOnly: true,
+    });
+    return this._mention.model.stalkerMention.findMany({
+      where,
+      select: {
+        authorName: true,
+        text: true,
+        url: true,
+        sentiment: true,
+        postedAt: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 40,
     });
   }
 

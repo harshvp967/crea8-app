@@ -4,6 +4,7 @@ import { TemporalService } from 'nestjs-temporal-core';
 import { stalkerPollMinutes } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
 
 const SCHEDULE_ID = 'stalker-poll';
+const DIGEST_SCHEDULE_ID = 'stalker-digest';
 const LEGACY_WORKFLOW_ID = 'stalker-poll-workflow';
 
 const alreadyThere = (err: unknown) => {
@@ -30,6 +31,7 @@ export class StalkerScheduleRegister implements OnModuleInit {
     }
     await this.retireLegacyLoop(client);
     await this.ensureSchedule(client);
+    await this.ensureDigestSchedule(client);
   }
 
   private async retireLegacyLoop(client: Client) {
@@ -84,6 +86,46 @@ export class StalkerScheduleRegister implements OnModuleInit {
         console.log(`Stalker schedule ${SCHEDULE_ID} updated to every ${every}ms`);
       } catch (updateErr) {
         console.error('Stalker schedule update failed', updateErr);
+      }
+    }
+  }
+
+  private async ensureDigestSchedule(client: Client) {
+    const every = 15 * 60 * 1000;
+    const action = {
+      type: 'startWorkflow' as const,
+      workflowType: 'stalkerDigestTickWorkflow',
+      taskQueue: 'main',
+    };
+    try {
+      await client.schedule.create({
+        scheduleId: DIGEST_SCHEDULE_ID,
+        spec: { intervals: [{ every }] },
+        policies: { overlap: ScheduleOverlapPolicy.SKIP },
+        action,
+      });
+      console.log(`Stalker digest schedule ${DIGEST_SCHEDULE_ID} every ${every}ms`);
+    } catch (err) {
+      if (!alreadyThere(err)) {
+        console.error('Stalker digest schedule create failed', err);
+        return;
+      }
+      try {
+        await client.schedule.getHandle(DIGEST_SCHEDULE_ID).update((previous) => ({
+          spec: { ...previous.spec, intervals: [{ every }] },
+          policies: {
+            ...previous.policies,
+            overlap: ScheduleOverlapPolicy.SKIP,
+          },
+          action,
+          state: {
+            paused: previous.state.paused,
+            note: previous.state.note,
+            remainingActions: previous.state.remainingActions,
+          },
+        }));
+      } catch (updateErr) {
+        console.error('Stalker digest schedule update failed', updateErr);
       }
     }
   }

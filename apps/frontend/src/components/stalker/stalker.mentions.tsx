@@ -16,7 +16,7 @@ import { platformLogo, SourceIcon } from '@gitroom/frontend/components/stalker/s
 import { StalkerProjectMenu } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
-import { authorUrl, cleanMention, sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
+import { cleanMention, sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
   describeFilters,
   emptyFilters,
@@ -46,6 +46,7 @@ import {
   stkMenu,
   stkMenuItem,
   stkPage,
+  stkChip,
   stkChipOn,
   stkPrimary,
   stkSecondary,
@@ -54,9 +55,12 @@ import {
   stkPopover,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
+const LONG_POST = 600;
+
 type Mention = {
   id: string;
   createdAt?: string;
+  postedAt?: string | null;
   source?: string;
   authorName?: string;
   authorHandle?: string;
@@ -185,6 +189,10 @@ export const StalkerMentions = () => {
   const [marking, setMarking] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [extra, setExtra] = useState<Mention[]>([]);
+  const [patches, setPatches] = useState<Record<string, Partial<Mention>>>({});
+  const [removed, setRemoved] = useState<string[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [viewRemove, setViewRemove] = useState<string | null>(null);
   const search = filtersToSearch(filters);
   const mentionsQuery = useStalkerMentions(sample ? null : projectId, search);
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
@@ -195,11 +203,11 @@ export const StalkerMentions = () => {
   const viewsQuery = useStalkerViews(!sample && projectId ? projectId : null);
   const page = sample ? SAMPLE_MENTIONS : mentionsQuery.data;
   const mentions = useMemo<Mention[]>(
-    () => [
-      ...(Array.isArray(page?.mentions) ? page.mentions : []),
-      ...extra,
-    ],
-    [page, extra]
+    () =>
+      [...(Array.isArray(page?.mentions) ? page.mentions : []), ...extra]
+        .filter((mention) => !removed.includes(mention.id))
+        .map((mention) => ({ ...mention, ...patches[mention.id] })),
+    [page, extra, patches, removed]
   );
   const keywords = sample
     ? SAMPLE_KEYWORDS
@@ -219,6 +227,8 @@ export const StalkerMentions = () => {
   if (loadedKey !== queryKey) {
     setLoadedKey(queryKey);
     setExtra([]);
+    setPatches({});
+    setRemoved([]);
   }
 
   const groups = useMemo(() => {
@@ -238,6 +248,13 @@ export const StalkerMentions = () => {
             return false;
           }
           if (filters.status === 'FOLLOW_UP' && mention.status !== 'FOLLOW_UP') return false;
+          if (
+            filters.status === 'IGNORED' &&
+            mention.status !== 'IGNORED' &&
+            mention.relevant !== false
+          ) {
+            return false;
+          }
           if (filters.sources.length && !filters.sources.includes(family(mention.source))) {
             return false;
           }
@@ -258,7 +275,7 @@ export const StalkerMentions = () => {
       : mentions;
     const bag = new Map<string, Mention[]>();
     for (const mention of rows) {
-      const key = groupLabel(mention.createdAt);
+      const key = groupLabel(mention.postedAt || mention.createdAt);
       bag.set(key, [...(bag.get(key) || []), mention]);
     }
     return ['Today', 'Yesterday', 'Earlier']
@@ -277,8 +294,20 @@ export const StalkerMentions = () => {
     return () => document.removeEventListener('mousedown', close);
   }, [marking]);
 
+  const patchMention = (id: string, patch: Partial<Mention>) => {
+    setPatches((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
+  };
+
   const setStatus = async (id: string, status: string) => {
     setMarking(null);
+    const previous = mentions.find((mention) => mention.id === id);
+    patchMention(id, {
+      status,
+      relevant: status === 'IGNORED' ? false : true,
+    });
+    if (status === 'IGNORED' && !filters.offTopic) {
+      setRemoved((current) => (current.includes(id) ? current : [...current, id]));
+    }
     if (sample) {
       toaster.show('Updated');
       return;
@@ -288,6 +317,8 @@ export const StalkerMentions = () => {
       body: JSON.stringify({ status }),
     });
     if (!response.ok) {
+      if (previous) patchMention(id, previous);
+      setRemoved((current) => current.filter((item) => item !== id));
       toaster.show('Could not update the mention', 'warning');
       return;
     }
@@ -296,8 +327,17 @@ export const StalkerMentions = () => {
 
   const setRelevant = async (id: string, relevant: boolean) => {
     setMarking(null);
+    const previous = mentions.find((mention) => mention.id === id);
+    patchMention(id, {
+      relevant,
+      status: relevant ? (previous?.status === 'IGNORED' ? 'NEW' : previous?.status) : 'IGNORED',
+    });
+    if (!relevant && !filters.offTopic) {
+      setRemoved((current) => (current.includes(id) ? current : [...current, id]));
+    }
+    if (relevant) setRemoved((current) => current.filter((item) => item !== id));
     if (sample) {
-      toaster.show('Updated');
+      toaster.show(relevant ? 'Marked relevant' : 'Marked off-topic');
       return;
     }
     const response = await fetch(`/stalker/mentions/${id}/relevant`, {
@@ -305,14 +345,60 @@ export const StalkerMentions = () => {
       body: JSON.stringify({ relevant }),
     });
     if (!response.ok) {
+      if (previous) patchMention(id, previous);
+      setRemoved((current) => current.filter((item) => item !== id));
       toaster.show('Could not update the mention', 'warning');
       return;
     }
-    setExtra((current) =>
-      current.map((row) => (row.id === id ? { ...row, relevant } : row))
-    );
     toaster.show(relevant ? 'Marked relevant' : 'Marked off-topic');
     mentionsQuery.mutate();
+  };
+
+  const deleteMention = async (id: string) => {
+    setMarking(null);
+    setConfirmDelete(null);
+    setRemoved((current) => (current.includes(id) ? current : [...current, id]));
+    if (sample) {
+      toaster.show('Mention removed');
+      return;
+    }
+    const response = await fetch(`/stalker/mentions/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      setRemoved((current) => current.filter((item) => item !== id));
+      toaster.show('Could not remove the mention', 'warning');
+      return;
+    }
+    mentionsQuery.mutate();
+  };
+
+  const deleteView = async (id: string) => {
+    setViewRemove(null);
+    if (sample) {
+      toaster.show('View removed');
+      return;
+    }
+    const response = await fetch(`/stalker/views/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      toaster.show('Could not remove that view', 'warning');
+      return;
+    }
+    viewsQuery.mutate();
+  };
+
+  const viewIsActive = (raw: Record<string, string | undefined>) => {
+    const next = viewToFilters(raw);
+    return (
+      next.preset === filters.preset &&
+      next.start === filters.start &&
+      next.end === filters.end &&
+      next.sources.join(',') === filters.sources.join(',') &&
+      next.sentiment === filters.sentiment &&
+      next.status === filters.status &&
+      next.keywordId === filters.keywordId &&
+      next.categoryId === filters.categoryId &&
+      next.from === filters.from &&
+      JSON.stringify(next.engagement) === JSON.stringify(filters.engagement)
+    );
   };
 
   const hiddenOffTopic = sample ? 0 : Number(page?.hiddenOffTopic || 0);
@@ -427,16 +513,40 @@ export const StalkerMentions = () => {
       ) : null}
       {views.length ? (
         <div className="flex flex-wrap gap-[8px]">
-          {views.map((view: { id: string; name: string; filters: Record<string, string> }) => (
-            <button
-              key={view.id}
-              type="button"
-              className={stkChipOn}
-              onClick={() => setFilters(viewToFilters(view.filters || {}))}
-            >
-              {view.name}
-            </button>
-          ))}
+          {views.map((view: { id: string; name: string; filters: Record<string, string> }) => {
+            const active = viewIsActive(view.filters || {});
+            return (
+              <span key={view.id} className="relative inline-flex items-center">
+                <button
+                  type="button"
+                  className={active ? stkChipOn : stkChip}
+                  aria-pressed={active}
+                  onClick={() => setFilters(viewToFilters(view.filters || {}))}
+                >
+                  {active ? <HugeIcon name="check" size={14} /> : null}
+                  {view.name}
+                </button>
+                <button
+                  type="button"
+                  className={`${stkGhost} !h-[32px] !min-h-[32px] !px-[8px]`}
+                  aria-label={`Delete ${view.name}`}
+                  onClick={() => setViewRemove(viewRemove === view.id ? null : view.id)}
+                >
+                  <HugeIcon name="trash" size={14} />
+                </button>
+                {viewRemove === view.id ? (
+                  <div className="stk-confirm" role="dialog" aria-label={`Remove ${view.name}`}>
+                    <button type="button" onClick={() => setViewRemove(null)}>
+                      Cancel
+                    </button>
+                    <button type="button" className="is-remove" onClick={() => deleteView(view.id)}>
+                      Remove
+                    </button>
+                  </div>
+                ) : null}
+              </span>
+            );
+          })}
         </div>
       ) : null}
       <StalkerFilters
@@ -527,13 +637,15 @@ export const StalkerMentions = () => {
           <p className={stkGroup}>{key}</p>
           {feedView === 'timeline' ? <Timeline rows={rows} /> : null}
           {rows.map((mention) => {
-            const long = mention.text.length > 280;
-            const text = expanded === mention.id || !long ? mention.text : `${mention.text.slice(0, 280)}…`;
-            const profile = authorUrl(mention.source || '', mention.authorHandle || '', mention.url || '');
+            const posted = mention.postedAt || mention.createdAt;
+            const long = mention.text.length > LONG_POST;
+            const text =
+              expanded === mention.id || !long ? mention.text : `${mention.text.slice(0, LONG_POST).trimEnd()}…`;
+            const postUrl = mention.url || '';
             const sentiment = sentimentText(mention.sentiment);
             const follow = mention.status === 'FOLLOW_UP';
             const done = mention.status === 'DONE' || mention.status === 'REPLIED';
-            const ignored = mention.status === 'IGNORED';
+            const ignored = mention.status === 'IGNORED' || mention.relevant === false;
             const logo = platformLogo(mention.source);
             return (
               <article key={mention.id} className={`${stkCardTight} stk-mcard`}>
@@ -547,13 +659,24 @@ export const StalkerMentions = () => {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="stk-mwho">
-                      <a className="truncate" href={profile} target="_blank" rel="noreferrer">
-                        {whoLabel(mention)}
-                      </a>
-                      <span className="stk-mmeta" title={exactTime(mention.createdAt)}>
-                        {sourceLabel(mention.source || '')}
-                        {compactAge(mention.createdAt) ? ` · ${compactAge(mention.createdAt)}` : ''}
-                      </span>
+                      {postUrl ? (
+                        <a className="truncate" href={postUrl} target="_blank" rel="noreferrer">
+                          {whoLabel(mention)}
+                        </a>
+                      ) : (
+                        <span className="truncate">{whoLabel(mention)}</span>
+                      )}
+                      {postUrl ? (
+                        <a className="stk-mmeta" href={postUrl} target="_blank" rel="noreferrer" title={exactTime(posted)}>
+                          {sourceLabel(mention.source || '')}
+                          {compactAge(posted) ? ` · ${compactAge(posted)}` : ''}
+                        </a>
+                      ) : (
+                        <span className="stk-mmeta" title={exactTime(posted)}>
+                          {sourceLabel(mention.source || '')}
+                          {compactAge(posted) ? ` · ${compactAge(posted)}` : ''}
+                        </span>
+                      )}
                     </div>
                   </div>
                   {sentiment ? (
@@ -570,6 +693,15 @@ export const StalkerMentions = () => {
                   ) : null}
                 </div>
                 <p className="stk-mtext">{highlight(text)}</p>
+                {long ? (
+                  <button
+                    type="button"
+                    className="stk-more-inline"
+                    onClick={() => setExpanded(expanded === mention.id ? null : mention.id)}
+                  >
+                    {expanded === mention.id ? 'Show less' : 'Show more'}
+                  </button>
+                ) : null}
                 <div className="stk-mfoot">
                   <div className="stk-mtags">
                     {mention.categoryDef?.name ? (
@@ -582,7 +714,7 @@ export const StalkerMentions = () => {
                     <button
                       type="button"
                       className={clsx(follow ? stkTint : stkGhost, 'stk-act')}
-                      onClick={() => setStatus(mention.id, 'FOLLOW_UP')}
+                      onClick={() => setStatus(mention.id, follow ? 'NEW' : 'FOLLOW_UP')}
                     >
                       <LineIcon name="flag" />
                       <span>Follow up</span>
@@ -590,7 +722,7 @@ export const StalkerMentions = () => {
                     <button
                       type="button"
                       className={clsx(done ? stkTint : stkGhost, 'stk-act')}
-                      onClick={() => setStatus(mention.id, 'DONE')}
+                      onClick={() => setStatus(mention.id, done ? 'NEW' : 'DONE')}
                     >
                       <LineIcon name="check" />
                       <span>Done</span>
@@ -598,7 +730,7 @@ export const StalkerMentions = () => {
                     <button
                       type="button"
                       className={clsx(ignored ? stkTint : stkGhost, 'stk-act')}
-                      onClick={() => setStatus(mention.id, 'IGNORED')}
+                      onClick={() => setRelevant(mention.id, ignored ? true : false)}
                     >
                       <LineIcon name="close" />
                       <span>Irrelevant</span>
@@ -624,16 +756,19 @@ export const StalkerMentions = () => {
                           <div className={`${stkMenu} stk-mention-menu`} role="menu">
                             <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, true)}>
                               <LineIcon name="check" />
-                              Relevant
+                              <span className="min-w-0 flex-1 text-start">Relevant</span>
+                              {!ignored ? <HugeIcon name="check" size={16} /> : null}
                             </button>
                             <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, false)}>
                               <LineIcon name="close" />
-                              Off-topic
+                              <span className="min-w-0 flex-1 text-start">Off-topic</span>
+                              {ignored ? <HugeIcon name="check" size={16} /> : null}
                             </button>
                             <div className="stk-menu-rule" />
                             <button
                               type="button"
                               className={stkMenuItem}
+                              disabled={!mention.url}
                               onClick={async () => {
                                 if (!mention.url) return;
                                 await navigator.clipboard.writeText(mention.url);
@@ -661,6 +796,24 @@ export const StalkerMentions = () => {
                                 Open
                               </a>
                             ) : null}
+                            <button
+                              type="button"
+                              className={`${stkMenuItem} stk-menu-danger`}
+                              onClick={() => setConfirmDelete(mention.id)}
+                            >
+                              <LineIcon name="trash" />
+                              Delete
+                            </button>
+                            {confirmDelete === mention.id ? (
+                              <div className="stk-confirm" role="dialog" aria-label="Remove mention">
+                                <button type="button" onClick={() => setConfirmDelete(null)}>
+                                  Cancel
+                                </button>
+                                <button type="button" className="is-remove" onClick={() => deleteMention(mention.id)}>
+                                  Remove
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
                         </>
                       ) : null}
@@ -680,6 +833,10 @@ export const StalkerMentions = () => {
             const response = await fetch(
               `/stalker/mentions?projectId=${projectId}&${search}&cursor=${page.nextCursor}`
             );
+            if (!response.ok) {
+              toaster.show('Could not load more mentions', 'warning');
+              return;
+            }
             const payload = await response.json();
             setExtra((current) => [...current, ...(payload.mentions || []).map(cleanMention)]);
           }}
@@ -715,15 +872,17 @@ const Timeline = ({ rows }: { rows: Mention[] }) => {
     return {
       start,
       rows: rows.filter((row) => {
-        if (!row.createdAt) return false;
-        const hour = new Date(row.createdAt).getHours();
+        const posted = row.postedAt || row.createdAt;
+        if (!posted) return false;
+        const hour = new Date(posted).getHours();
         return hour >= start && hour < start + span;
       }),
     };
   });
   const now = new Date();
   const nowLeft = ((now.getHours() * 60 + now.getMinutes()) / (24 * 60)) * 100;
-  const sameDay = rows[0]?.createdAt && dayKey(rows[0].createdAt) === dayKey(new Date().toISOString());
+  const first = rows[0]?.postedAt || rows[0]?.createdAt;
+  const sameDay = first && dayKey(first) === dayKey(new Date().toISOString());
   return (
     <div className="stk-timeline relative px-[8px] py-[28px]">
       <div className="flex justify-between text-[13px] text-textItemBlur">

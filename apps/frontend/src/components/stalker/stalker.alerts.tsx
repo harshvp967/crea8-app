@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
+  useStalkerAlerts,
   useStalkerAuthors,
   useStalkerKeywords,
   useStalkerRules,
@@ -17,6 +18,7 @@ import {
   filtersToView,
   MentionFilters,
   StalkerFilters,
+  viewToFilters,
 } from '@gitroom/frontend/components/stalker/stalker.filters';
 import {
   SAMPLE_AUTHORS,
@@ -61,6 +63,14 @@ const ZONES = [
 
 const digestClock = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
+const browserZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+};
+
 const PlusIcon = () => <HugeIcon name="plus" size={16} />;
 
 type Rule = {
@@ -88,16 +98,21 @@ export const StalkerAlerts = () => {
   const toaster = useToaster();
   const { project, projectId, status, sample, refreshProjects } = useStalkerProject();
   const rulesQuery = useStalkerRules(sample ? null : projectId);
+  const alertsQuery = useStalkerAlerts(sample ? null : projectId);
   const keywordsQuery = useStalkerKeywords(sample ? null : projectId);
   const authorsQuery = useStalkerAuthors(sample ? null : projectId);
   const [localRules, setLocalRules] = useState<Rule[]>(SAMPLE_RULES);
   const [digestEnabled, setDigestEnabled] = useState(project ? project.digestEnabled !== false : true);
   const [digestDismissed, setDigestDismissed] = useState(!!project?.digestDismissed);
   const [digestHour, setDigestHour] = useState(typeof project?.digestHour === 'number' ? project.digestHour : 8);
-  const [digestTimezone, setDigestTimezone] = useState(project?.digestTimezone || 'UTC');
+  const [digestTimezone, setDigestTimezone] = useState(
+    project?.digestTimezone && project.digestTimezone !== 'UTC' ? project.digestTimezone : browserZone()
+  );
   const [digestGroupName, setDigestGroupName] = useState(project?.digestGroupName || 'My brand');
   const [configure, setConfigure] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [removeId, setRemoveId] = useState<string | null>(null);
   const [name, setName] = useState('Negative X posts with traction');
   const [filters, setFilters] = useState<MentionFilters>(emptyFilters());
   const [saving, setSaving] = useState(false);
@@ -117,9 +132,28 @@ export const StalkerAlerts = () => {
     setDigestEnabled(project?.digestEnabled !== false);
     setDigestDismissed(!!project?.digestDismissed);
     setDigestHour(typeof project?.digestHour === 'number' ? project.digestHour : 8);
-    setDigestTimezone(project?.digestTimezone || 'UTC');
+    setDigestTimezone(
+      project?.digestTimezone && project.digestTimezone !== 'UTC' ? project.digestTimezone : browserZone()
+    );
     setDigestGroupName(project?.digestGroupName || 'My brand');
   }
+
+  useEffect(() => {
+    const zone = browserZone();
+    if (sample || !project?.id || !zone || zone === 'UTC') return;
+    if (project.digestTimezone && project.digestTimezone !== 'UTC') return;
+    let cancelled = false;
+    (async () => {
+      const response = await fetch(`/stalker/projects/${project.id}`, {
+        method: 'POST',
+        body: JSON.stringify({ digestTimezone: zone }),
+      });
+      if (!cancelled && response.ok) refreshProjects();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetch, project?.digestTimezone, project?.id, refreshProjects, sample]);
 
   const rules: Rule[] = sample
     ? localRules
@@ -139,10 +173,12 @@ export const StalkerAlerts = () => {
   const categories = project?.categories || [];
   const email = project?.alertEmail || status?.ownerEmail || '';
   const cap = status?.emailCap || 3;
-  const zones = useMemo(
-    () => (ZONES.includes(digestTimezone) ? ZONES : [digestTimezone, ...ZONES]),
-    [digestTimezone]
-  );
+  const zones = useMemo(() => {
+    const zone = browserZone();
+    const list = ZONES.includes(digestTimezone) ? [...ZONES] : [digestTimezone, ...ZONES];
+    if (!list.includes(zone)) list.unshift(zone);
+    return list;
+  }, [digestTimezone]);
 
   const saveDigest = async (patch: Record<string, unknown>) => {
     if (!project) return;
@@ -166,47 +202,86 @@ export const StalkerAlerts = () => {
     refreshProjects();
   };
 
+  const failures = sample
+    ? []
+    : ((alertsQuery.data?.alerts || []) as { id: string; status?: string; channel?: string; error?: string; title?: string }[])
+        .filter((alert) => alert.status === 'FAILED' && alert.channel === 'EMAIL')
+        .slice(0, 3);
+
   const createRule = async () => {
     const clean = name.trim();
     if (clean.length < 2 || !projectId) return;
-    const body = { projectId, name: clean, filters: filtersToView(filters) };
+    const body = { name: clean, filters: filtersToView(filters), enabled: true };
     if (sample) {
-      setLocalRules((current) => [
-        ...current,
-        { id: `rule-${Date.now()}`, name: clean, enabled: true, filters: body.filters },
-      ]);
+      setLocalRules((current) =>
+        draftId
+          ? current.map((rule) => (rule.id === draftId ? { ...rule, ...body } : rule))
+          : [...current, { id: `rule-${Date.now()}`, ...body }]
+      );
       setCreating(false);
-      toaster.show(`Alert created. ${clean} is on.`);
+      setDraftId(null);
+      toaster.show(draftId ? 'Alert updated' : `Alert created. ${clean} is on.`);
       return;
     }
     setSaving(true);
-    const response = await fetch('/stalker/rules', {
+    const response = await fetch(draftId ? `/stalker/rules/${draftId}` : '/stalker/rules', {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify(draftId ? body : { projectId, ...body }),
     });
     setSaving(false);
     if (!response.ok) {
-      toaster.show('Could not create that alert', 'warning');
+      toaster.show(draftId ? 'Could not update that alert' : 'Could not create that alert', 'warning');
       return;
     }
     setCreating(false);
+    setDraftId(null);
     setFilters(emptyFilters());
     rulesQuery.mutate();
-    toaster.show(`Alert created. ${clean} is on.`);
+    toaster.show(draftId ? 'Alert updated' : `Alert created. ${clean} is on.`);
+  };
+
+  const toggleRule = async (rule: Rule) => {
+    const enabled = rule.enabled === false;
+    if (sample) {
+      setLocalRules((current) => current.map((item) => (item.id === rule.id ? { ...item, enabled } : item)));
+      return;
+    }
+    const response = await fetch(`/stalker/rules/${rule.id}`, {
+      method: 'POST',
+      body: JSON.stringify({ enabled }),
+    });
+    if (!response.ok) {
+      toaster.show('Could not update that alert', 'warning');
+      return;
+    }
+    rulesQuery.mutate();
   };
 
   const removeRule = async (id: string) => {
+    setRemoveId(null);
     if (sample) {
       setLocalRules((current) => current.filter((rule) => rule.id !== id));
       return;
     }
-    await fetch(`/stalker/rules/${id}`, { method: 'DELETE' });
+    const response = await fetch(`/stalker/rules/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      toaster.show('Could not delete that alert', 'warning');
+      return;
+    }
     rulesQuery.mutate();
   };
 
   const openNew = () => {
+    setDraftId(null);
     setName('Negative X posts with traction');
     setFilters(emptyFilters());
+    setCreating(true);
+  };
+
+  const openEdit = (rule: Rule) => {
+    setDraftId(rule.id);
+    setName(rule.name);
+    setFilters(viewToFilters(rule.filters || {}));
     setCreating(true);
   };
 
@@ -313,14 +388,6 @@ export const StalkerAlerts = () => {
               </button>
               <button
                 type="button"
-                className="stk-al-icon"
-                aria-label="Configure daily digest"
-                onClick={() => setConfigure(true)}
-              >
-                <HugeIcon name="settings" size={18} />
-              </button>
-              <button
-                type="button"
                 role="switch"
                 aria-checked={digestEnabled}
                 aria-label="Daily digest"
@@ -331,6 +398,15 @@ export const StalkerAlerts = () => {
               </button>
             </section>
           )}
+          {failures.length ? (
+            <section className={`${stkCard} text-[14px] text-[color:var(--arc-danger)]`}>
+              {failures.map((alert) => (
+                <p key={alert.id}>
+                  {alert.title || 'Email'} was not sent.{alert.error ? ` ${alert.error}` : ''}
+                </p>
+              ))}
+            </section>
+          ) : null}
           <section className="stk-al-list">
             <h2 className="text-[16px] font-[600]">Custom alerts</h2>
             {!rules.length ? (
@@ -353,14 +429,44 @@ export const StalkerAlerts = () => {
                           {keywordLine(rule)}
                         </p>
                         {meta ? <p className="stk-al-meta">{meta}</p> : null}
-                        <button
-                          type="button"
-                          aria-label={`Delete ${rule.name}`}
-                          className="stk-al-icon stk-al-delete"
-                          onClick={() => removeRule(rule.id)}
-                        >
-                          <HugeIcon name="trash" size={16} />
-                        </button>
+                        <div className="stk-al-actions relative flex items-center justify-end gap-[6px]">
+                          <button
+                            type="button"
+                            className="stk-al-icon"
+                            aria-label={`Edit ${rule.name}`}
+                            onClick={() => openEdit(rule)}
+                          >
+                            <HugeIcon name="pencil" size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={rule.enabled !== false}
+                            aria-label={`${rule.enabled === false ? 'Turn on' : 'Turn off'} ${rule.name}`}
+                            className="stk-switch"
+                            onClick={() => toggleRule(rule)}
+                          >
+                            <span />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete ${rule.name}`}
+                            className="stk-al-icon stk-al-delete"
+                            onClick={() => setRemoveId(removeId === rule.id ? null : rule.id)}
+                          >
+                            <HugeIcon name="trash" size={16} />
+                          </button>
+                          {removeId === rule.id ? (
+                            <div className="stk-confirm" role="dialog" aria-label={`Remove ${rule.name}`}>
+                              <button type="button" onClick={() => setRemoveId(null)}>
+                                Cancel
+                              </button>
+                              <button type="button" className="is-remove" onClick={() => removeRule(rule.id)}>
+                                Remove
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
                       </li>
                     );
                   })}
@@ -469,7 +575,7 @@ export const StalkerAlerts = () => {
           <div className={`${stkDialog} max-w-[640px]`}>
             <div className={stkDialogHead}>
               <div className="min-w-0 flex-1">
-                <h2 className="text-[18px] font-[600]">New alert</h2>
+                <h2 className="text-[18px] font-[600]">{draftId ? 'Edit alert' : 'New alert'}</h2>
                 <p className="mt-[4px] text-[14px] text-textItemBlur">
                   Email you the moment a mention matches these filters.
                 </p>
@@ -496,7 +602,7 @@ export const StalkerAlerts = () => {
               <input className={`${field} mt-[6px]`} value={email} readOnly />
             </label>
             <p className="text-[13px] text-textItemBlur">
-              Alerts are sent to the workspace owner. Digests and alerts share a limit of {cap} emails per day, resetting at midnight UTC.
+              Alerts are sent to the workspace owner. Digests and alerts share a limit of {cap} emails per day, resetting at midnight in {digestTimezone}.
             </p>
             </div>
             <div className={`${stkDialogFoot} stk-al-foot`}>
@@ -510,7 +616,7 @@ export const StalkerAlerts = () => {
                 onClick={createRule}
               >
                 <PlusIcon />
-                New alert
+                {draftId ? 'Save alert' : 'New alert'}
               </button>
             </div>
           </div>

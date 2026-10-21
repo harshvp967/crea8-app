@@ -14,6 +14,10 @@ import {
   stkPopover,
   stkPrimary,
 } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import {
+  STALKER_ENGAGEMENT_SOURCES,
+  STALKER_FILTER_SOURCES,
+} from '@gitroom/helpers/utils/stalker.sources';
 
 export type MentionFilters = {
   preset: string;
@@ -152,6 +156,7 @@ export const filtersToView = (filters: MentionFilters) => ({
   sentiment: filters.sentiment,
   status: filters.status,
   offTopic: filters.offTopic ? 'include' : '',
+  tz: String(new Date().getTimezoneOffset()),
 });
 
 export const viewToFilters = (raw: Record<string, string | undefined>): MentionFilters => {
@@ -179,7 +184,15 @@ export const filtersActive = (filters: MentionFilters, baseline: MentionFilters)
   JSON.stringify(filters) !== JSON.stringify(baseline);
 
 const statusText = (status: string) =>
-  status === 'NEW' ? 'Open' : status === 'DONE' ? 'Done' : status === 'FOLLOW_UP' ? 'Follow up' : '';
+  status === 'NEW'
+    ? 'Open'
+    : status === 'DONE'
+      ? 'Done'
+      : status === 'FOLLOW_UP'
+        ? 'Follow up'
+        : status === 'IGNORED'
+          ? 'Irrelevant'
+          : '';
 
 /** Short label for the save-view hint. Uses the filters the user actually set. */
 export const describeFilters = (filters: MentionFilters, keywords: { id: string; phrase: string }[] = []) => {
@@ -391,7 +404,15 @@ export const StalkerFilters = ({
                       type="button"
                       className={clsx(stkMenuItem, draft.preset === id && 'is-on')}
                       aria-pressed={draft.preset === id}
-                      onClick={() => setDraft({ ...draft, preset: id, start: '', end: '' })}
+                      onClick={() => {
+                        if (draft.preset === id) {
+                          setDraft({ ...draft, preset: '', start: '', end: '' });
+                          onChange({ ...filters, preset: '', start: '', end: '' });
+                          setOpen(null);
+                          return;
+                        }
+                        setDraft({ ...draft, preset: id, start: '', end: '' });
+                      }}
                     >
                       <span className="min-w-0 flex-1 truncate text-start">{text}</span>
                       <ActiveCheck on={draft.preset === id} />
@@ -490,7 +511,7 @@ export const StalkerFilters = ({
         open={open === 'source'}
         onToggle={() => setOpen(open === 'source' ? null : 'source')}
       >
-        {['X', 'REDDIT', 'YOUTUBE', 'LINKEDIN'].map((source) => {
+        {STALKER_FILTER_SOURCES.map((source) => {
           const checked = filters.sources.includes(source);
           return (
             <button
@@ -533,7 +554,7 @@ export const StalkerFilters = ({
             className={stkMenuItem}
             aria-pressed={filters.sentiment === sentiment}
             onClick={() => {
-              onChange({ ...filters, sentiment });
+              onChange({ ...filters, sentiment: filters.sentiment === sentiment ? '' : sentiment });
               setOpen(null);
             }}
           >
@@ -562,7 +583,10 @@ export const StalkerFilters = ({
             className={stkMenuItem}
             aria-pressed={filters.categoryId === category.id}
             onClick={() => {
-              onChange({ ...filters, categoryId: category.id });
+              onChange({
+                ...filters,
+                categoryId: filters.categoryId === category.id ? '' : category.id,
+              });
               setOpen(null);
             }}
           >
@@ -576,7 +600,7 @@ export const StalkerFilters = ({
           className={stkMenuItem}
           aria-pressed={filters.categoryId === 'none'}
           onClick={() => {
-            onChange({ ...filters, categoryId: 'none' });
+            onChange({ ...filters, categoryId: filters.categoryId === 'none' ? '' : 'none' });
             setOpen(null);
           }}
         >
@@ -599,6 +623,7 @@ export const StalkerFilters = ({
           ['NEW', 'Open'],
           ['DONE', 'Done'],
           ['FOLLOW_UP', 'Follow up'],
+          ['IGNORED', 'Irrelevant'],
         ].map(([value, text]) => (
           <button
             key={value}
@@ -606,7 +631,7 @@ export const StalkerFilters = ({
             className={stkMenuItem}
             aria-pressed={filters.status === value}
             onClick={() => {
-              onChange({ ...filters, status: value });
+              onChange({ ...filters, status: filters.status === value ? '' : value });
               setOpen(null);
             }}
           >
@@ -634,7 +659,12 @@ export const StalkerFilters = ({
                   type="button"
                   className="min-w-0 flex-1 truncate text-start"
                   aria-pressed={filters.keywordId === keyword.id}
-                  onClick={() => onChange({ ...filters, keywordId: keyword.id })}
+                  onClick={() =>
+                    onChange({
+                      ...filters,
+                      keywordId: filters.keywordId === keyword.id ? '' : keyword.id,
+                    })
+                  }
                 >
                   {keyword.phrase}
                 </button>
@@ -677,7 +707,8 @@ export const StalkerFilters = ({
                   filters.from === (author.authorHandle || author.authorName)
                 }
                 onClick={() => {
-                  onChange({ ...filters, from: author.authorHandle || author.authorName });
+                  const value = author.authorHandle || author.authorName;
+                  onChange({ ...filters, from: filters.from === value ? '' : value });
                   setOpen(null);
                 }}
               >
@@ -706,10 +737,23 @@ export const StalkerFilters = ({
         open={open === 'engagement'}
         onToggle={() => setOpen(open === 'engagement' ? null : 'engagement')}
       >
-        {['X', 'YOUTUBE', 'LINKEDIN'].map((source) => (
+        {STALKER_ENGAGEMENT_SOURCES.map((source) => (
           <label key={source} className="stk-engage-row flex items-center gap-[8px] px-[8px] py-[6px] text-[14px]">
             <SourceIcon source={source} />
-            <span className="w-[88px] shrink-0 truncate">{sourceLabel(source)}</span>
+            <button
+              type="button"
+              className="w-[88px] shrink-0 truncate text-start"
+              onClick={() => {
+                if (Number(filters.engagement[source]) > 0) {
+                  onChange({
+                    ...filters,
+                    engagement: { ...filters.engagement, [source]: '' },
+                  });
+                }
+              }}
+            >
+              {sourceLabel(source)}
+            </button>
             <ActiveCheck on={Number(filters.engagement[source]) > 0} />
             <input
               className="h-[36px] min-w-0 flex-1 rounded-[14px] border border-newBorder bg-newBgColorInner px-[10px] text-[14px]"
