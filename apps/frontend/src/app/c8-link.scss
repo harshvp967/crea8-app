@@ -487,6 +487,7 @@ body:has(.link-screen) .lib-dialog textarea:focus-visible {
 
 .link-screen .lib-pill {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   height: auto;
   padding: 3px 8px;
@@ -497,6 +498,7 @@ body:has(.link-screen) .lib-dialog textarea:focus-visible {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .link-screen .lib-pill-cyan {
@@ -735,7 +737,7 @@ body:has(.link-screen) .stk-close {
   box-shadow: none !important;
 }
 
-/* ---------- Live preview frame (border only) ---------- */
+/* ---------- Live preview: device frame, sticky on desktop ---------- */
 .link-screen .lib-split {
   gap: 28px !important;
 }
@@ -745,7 +747,7 @@ body:has(.link-screen) .stk-close {
   flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
-  width: 340px;
+  width: min(390px, 100%);
   max-width: 100%;
   min-width: 0;
 }
@@ -755,8 +757,15 @@ body:has(.link-screen) .stk-close {
 }
 
 .link-screen .lib-preview {
-  max-width: 340px !important;
+  width: 100%;
+  max-width: 100% !important;
   gap: 10px;
+}
+
+.link-screen .lib-preview-tools {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  max-width: 100%;
 }
 
 .link-screen .lib-preview-tools > span:first-child {
@@ -779,9 +788,19 @@ body:has(.link-screen) .stk-close {
 }
 
 .link-screen .lib-preview-col .lib-phone {
-  border: 1.5px solid var(--c8-hard);
-  border-radius: 32px;
-  box-shadow: 0 6px 0 var(--c8-hard);
+  border: 12px solid var(--c8-hard);
+  border-radius: 48px;
+  background: var(--c8-hard);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--c8-hard) 16%, transparent);
+}
+
+.link-screen .lib-preview-col .lib-phone::before {
+  background: var(--c8-hard);
+}
+
+.link-screen .lib-preview-col .lib-phone::after {
+  background: color-mix(in srgb, var(--c8-hard) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--c8-surface) 55%, transparent);
 }
 
 .link-screen .lib-preview-col.is-open {
@@ -801,7 +820,8 @@ body:has(.link-screen) .stk-close {
 
 .link-screen .lib-preview-col.is-open .lib-preview-sheet-head {
   display: flex;
-  width: min(440px, calc(100vw - 32px));
+  width: min(390px, 100%);
+  max-width: 100%;
   align-items: center;
   justify-content: space-between;
   color: var(--c8-surface);
@@ -821,7 +841,18 @@ body:has(.link-screen) .stk-close {
 }
 
 .link-screen .lib-preview-col.is-open .lib-preview {
-  width: min(440px, calc(100vw - 32px));
+  width: min(390px, 100%);
+  max-width: 100%;
+}
+
+@media (min-width: 1200px) {
+  .link-screen .lib-preview-col {
+    position: sticky;
+    top: 12px;
+    align-self: flex-start;
+    width: min(390px, calc((100dvh - 210px) * 390 / 844));
+    max-height: calc(100dvh - 160px);
+  }
 }
 
 .link-screen .lib-settings,
@@ -856,6 +887,8 @@ body:has(.link-screen) .stk-close {
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
@@ -883,6 +916,7 @@ body:has(.link-screen) .stk-close {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  max-width: 100%;
   color: var(--c8-ink);
   font-size: 13px;
   font-weight: 500;
