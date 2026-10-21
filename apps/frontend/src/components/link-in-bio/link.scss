@@ -109,6 +109,7 @@
 
 .lib-public {
   --lib-radius: 999px;
+  position: relative;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -201,11 +202,19 @@
 }
 
 .lib-stack {
+  position: relative;
+  z-index: 1;
   width: min(400px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
+}
+
+.lib-public[data-shadow='hard'] .lib-stack {
+  box-sizing: border-box;
+  padding-right: 6px;
+  padding-bottom: 6px;
 }
 
 .lib-avatar {
@@ -227,6 +236,16 @@
   object-fit: cover;
 }
 
+.lib-logo {
+  display: block;
+  width: auto;
+  max-width: min(240px, 100%);
+  height: auto;
+  max-height: 72px;
+  object-fit: contain;
+  border-radius: 0;
+}
+
 .lib-name {
   margin: 8px 0 0;
   font-size: 22px;
@@ -244,6 +263,9 @@
 
 .lib-socials {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
   gap: 14px;
 }
 
@@ -590,6 +612,12 @@
   text-align: center;
 }
 
+.lib-text-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+
 .lib-text a {
   color: var(--lib-accent);
 }
@@ -782,7 +810,9 @@
 }
 
 .lib-public[data-fill='glass'] .lib-link {
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--lib-btn) 28%, transparent);
+  border-color: color-mix(in srgb, var(--lib-btn) 50%, transparent);
+  color: var(--lib-btn-text);
   backdrop-filter: blur(10px);
 }
 
@@ -790,7 +820,7 @@
   background: transparent;
   border-width: 2px;
   border-color: var(--lib-btn);
-  color: var(--lib-btn-text);
+  color: var(--lib-btn);
 }
 
 .lib-link {
@@ -819,18 +849,20 @@
 }
 
 .lib-public[data-wallpaper='blur'] {
-  background:
-    radial-gradient(40% 30% at 20% 20%, var(--lib-glow), transparent 70%),
-    radial-gradient(50% 40% at 80% 10%, var(--lib-accent), transparent 60%),
-    var(--lib-bg);
+  background: var(--lib-bg);
 }
 
 .lib-public[data-wallpaper='blur']::before {
   content: '';
   position: absolute;
-  inset: 0;
+  z-index: 0;
+  inset: -8%;
   pointer-events: none;
-  backdrop-filter: blur(18px);
+  background:
+    radial-gradient(42% 34% at 18% 18%, var(--lib-glow), transparent 70%),
+    radial-gradient(48% 38% at 84% 10%, var(--lib-accent), transparent 62%);
+  filter: blur(28px);
+  transform: scale(1.08);
 }
 
 .lib-public[data-wallpaper='pattern'][data-pattern='dots'] {

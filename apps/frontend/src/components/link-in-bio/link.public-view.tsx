@@ -1,9 +1,9 @@
 'use client';
 
-import { CSSProperties, FormEvent, useState } from 'react';
+import { CSSProperties, FormEvent, useEffect, useRef, useState } from 'react';
 import { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { fontStack, normalizeDesign, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { eventLabel, fontStack, normalizeDesign, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 const SOCIAL_LOGO: Record<string, string> = {
   instagram: '/icons/platforms/instagram.png',
@@ -77,20 +77,29 @@ export const LinkPublicView = ({
   const design = normalizeDesign(data.design);
   const legacyImage = !design.wallpaperChosen && data.backgroundMode === 'image' && data.backgroundImage;
   const radius = design.radius < 0 ? undefined : design.radius >= 28 ? '999px' : `${design.radius}px`;
-  const style = {
-    ...(legacyImage
+  const chosenBg =
+    design.colors.background ||
+    (data.backgroundMode === 'colour' && data.backgroundColor && data.backgroundColor.toLowerCase() !== '#0a0a0a'
+      ? data.backgroundColor
+      : '');
+  const wallpaper =
+    legacyImage
       ? {
           backgroundImage: `linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.72)), url(${data.backgroundImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }
       : design.wallpaper === 'gradient'
-      ? { background: `linear-gradient(160deg, ${design.gradientFrom || 'var(--lib-glow)'}, ${design.gradientTo || design.colors.background || 'var(--lib-bg)'})` }
-      : design.colors.background
-      ? { background: design.colors.background }
-      : data.backgroundMode === 'colour' && data.backgroundColor
-      ? { background: data.backgroundColor }
-      : undefined),
+      ? { background: `linear-gradient(160deg, ${design.gradientFrom || 'var(--lib-glow)'}, ${design.gradientTo || chosenBg || 'var(--lib-bg)'})` }
+      : design.wallpaper === 'pattern' || design.wallpaper === 'blur'
+      ? chosenBg
+        ? { '--lib-bg': chosenBg }
+        : undefined
+      : chosenBg
+      ? { background: chosenBg }
+      : undefined;
+  const style = {
+    ...wallpaper,
     '--lib-font': fontStack(data.font),
     '--lib-title-font': fontStack(design.titleFont),
     ...(design.colors.button ? { '--lib-btn': design.colors.button } : {}),
@@ -129,13 +138,13 @@ export const LinkPublicView = ({
     >
       <div className="lib-stack">
         <header className="lib-header">
-          <div className="lib-avatar">
-            {(design.titleMode === 'logo' && design.logoUrl) || data.avatarPath ? (
-              <img src={design.titleMode === 'logo' && design.logoUrl ? design.logoUrl : data.avatarPath} alt="" />
-            ) : (
-              linkInitials(data.name || data.slug || 'c')
-            )}
-          </div>
+          {design.titleMode === 'logo' && design.logoUrl ? (
+            <img className="lib-logo" src={design.logoUrl} alt={data.name || data.slug || ''} />
+          ) : (
+            <div className="lib-avatar">
+              {data.avatarPath ? <img src={data.avatarPath} alt="" /> : linkInitials(data.name || data.slug || 'c')}
+            </div>
+          )}
           <div>
             {design.titleMode === 'logo' ? null : <h1 className="lib-name">{data.name || data.slug}</h1>}
             {data.bio ? <p className="lib-bio">{data.bio}</p> : null}
@@ -158,7 +167,9 @@ export const LinkPublicView = ({
                 if (onContinue) {
                   try {
                     await onContinue();
-                  } catch {
+                  } catch (err) {
+                    console.error('Could not open this page', err);
+                    setError(err instanceof Error ? err.message : 'Could not open this page');
                     return;
                   }
                 }
@@ -167,6 +178,7 @@ export const LinkPublicView = ({
             >
               Continue
             </button>
+            {error ? <p>{error}</p> : null}
           </div>
         ) : (
           data.blocks.map((block) => {
@@ -247,19 +259,16 @@ export const LinkPublicView = ({
               );
             }
             if (block.type === 'TEXT') {
-              return <RichText key={block.id} value={block.body} />;
+              return <RichText key={block.id} value={block.body} title={block.title} />;
             }
             if (block.type === 'EMBED' && block.embed) {
               return (
-                <div key={block.id} className="lib-embed" data-provider={block.embed.provider}>
-                  <iframe
-                    src={block.embed.src}
-                    title={block.title || `${block.embed.provider} embed`}
-                    loading="lazy"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                  />
-                </div>
+                <EmbedFrame
+                  key={block.id}
+                  src={block.embed.src}
+                  provider={block.embed.provider}
+                  title={block.title || `${block.embed.provider} embed`}
+                />
               );
             }
             if (block.type === 'FAQ') {
@@ -344,7 +353,7 @@ export const LinkPublicView = ({
                     <div key={`${item.title}-${item.when}`}>
                       <strong>{item.title}</strong>
                       <p>
-                        {[item.when, item.place].filter(Boolean).join(' · ')}
+                        {[eventLabel(item.when), item.place].filter(Boolean).join(' · ')}
                       </p>
                       {item.url && mode !== 'preview' ? (
                         <a href={item.url} target="_blank" rel="noreferrer">
@@ -491,9 +500,17 @@ const DiscountCard = ({
       {title ? <strong>{title}</strong> : null}
       <button
         type="button"
-        onClick={() => {
-          navigator.clipboard?.writeText(discount.code);
-          setCopied(true);
+        onClick={async () => {
+          try {
+            if (!navigator.clipboard?.writeText) {
+              throw new Error('Could not copy that code');
+            }
+            await navigator.clipboard.writeText(discount.code);
+            setCopied(true);
+          } catch (err) {
+            console.error('Could not copy the discount code', err);
+            setCopied(false);
+          }
         }}
       >
         {discount.code}
@@ -508,8 +525,65 @@ const DiscountCard = ({
   );
 };
 
-const RichText = ({ value }: { value: string }) => (
+const embedMessageHeight = (data: unknown) => {
+  let payload = data;
+  if (typeof data === 'string') {
+    try {
+      payload = JSON.parse(data);
+    } catch {
+      return 0;
+    }
+  }
+  if (!payload || typeof payload !== 'object') {
+    return 0;
+  }
+  const row = payload as Record<string, unknown>;
+  if (typeof row.height === 'number' && row.height > 0) {
+    return row.height;
+  }
+  const details = row.details as { height?: number } | undefined;
+  if (typeof details?.height === 'number' && details.height > 0) {
+    return details.height;
+  }
+  const twitter = row['twttr.embed'] as { params?: Array<{ height?: number }> } | undefined;
+  const tweetHeight = twitter?.params?.[0]?.height;
+  return typeof tweetHeight === 'number' && tweetHeight > 0 ? tweetHeight : 0;
+};
+
+const EmbedFrame = ({ src, title, provider }: { src: string; title: string; provider: string }) => {
+  const frame = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frame.current?.contentWindow) {
+        return;
+      }
+      const next = embedMessageHeight(event.data);
+      if (next) {
+        setHeight(Math.min(Math.ceil(next), 1800));
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+  return (
+    <div className="lib-embed" data-provider={provider}>
+      <iframe
+        ref={frame}
+        src={src}
+        title={title}
+        loading="lazy"
+        style={height ? { height } : undefined}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        referrerPolicy="strict-origin-when-cross-origin"
+      />
+    </div>
+  );
+};
+
+const RichText = ({ value, title }: { value: string; title?: string }) => (
   <div className="lib-text">
+    {title ? <strong className="lib-text-title">{title}</strong> : null}
     {parseRichText(value).map((part, index) => {
       if (part.type === 'break') {
         return <br key={index} />;

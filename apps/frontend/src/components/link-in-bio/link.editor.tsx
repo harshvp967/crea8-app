@@ -13,17 +13,47 @@ import {
   useLinkPosts,
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, LinkMenuRow, LinkModal, LinkToggle, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, LinkMenuRow, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { scheduleLabel, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { embedProblem, parseEmbed, scheduleLabel, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+
+type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
+
+const embedCopy = (provider?: EmbedOnly) => {
+  if (provider === 'instagram') {
+    return { title: 'Instagram post', hint: 'Paste an Instagram post, reel or TV URL.', placeholder: 'https://www.instagram.com/p/...' };
+  }
+  if (provider === 'tiktok') {
+    return { title: 'TikTok post', hint: 'Paste a TikTok video URL. Short links from vm.tiktok.com and tiktok.com/t work too.', placeholder: 'https://www.tiktok.com/@name/video/...' };
+  }
+  if (provider === 'x') {
+    return { title: 'X post', hint: 'Paste an X post URL.', placeholder: 'https://x.com/name/status/...' };
+  }
+  if (provider === 'threads') {
+    return { title: 'Threads post', hint: 'Paste a Threads post URL.', placeholder: 'https://www.threads.net/@name/post/...' };
+  }
+  return {
+    title: 'Embed',
+    hint: 'YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads. The player is loaded from that provider.',
+    placeholder: 'https://',
+  };
+};
+
+const embedOnly = (url: string): EmbedOnly | undefined => {
+  const provider = parseEmbed(url)?.provider;
+  if (provider === 'instagram' || provider === 'tiktok' || provider === 'x' || provider === 'threads') {
+    return provider;
+  }
+  return undefined;
+};
 
 type Modal =
   | { kind: 'link'; block?: LinkBlock }
   | { kind: 'heading'; block?: LinkBlock }
   | { kind: 'post'; block?: LinkBlock }
-  | { kind: 'embed'; block?: LinkBlock }
+  | { kind: 'embed'; block?: LinkBlock; provider?: EmbedOnly }
   | { kind: 'text'; block?: LinkBlock }
   | { kind: 'faq'; block?: LinkBlock }
   | { kind: 'carousel'; block?: LinkBlock }
@@ -33,7 +63,6 @@ type Modal =
   | { kind: 'details'; block?: LinkBlock }
   | { kind: 'discount'; block?: LinkBlock }
   | { kind: 'events'; block?: LinkBlock }
-  | { kind: 'delete'; block: LinkBlock }
   | { kind: 'capture' }
   | null;
 
@@ -128,7 +157,6 @@ export const LinkEditorScreen = () => {
   const [faq, setFaq] = useState<Array<{ question: string; answer: string }>>([{ question: '', answer: '' }]);
   const [images, setImages] = useState<Array<{ path: string; alt: string }>>([]);
   const [contact, setContact] = useState({ title: 'Get in touch', body: '', button: 'Send', askName: false });
-  const [embedHint, setEmbedHint] = useState('YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads. The player is loaded from that provider.');
   const [mapTitle, setMapTitle] = useState('');
   const [mapUrl, setMapUrl] = useState('');
   const [calendlyTitle, setCalendlyTitle] = useState('');
@@ -141,6 +169,7 @@ export const LinkEditorScreen = () => {
   ]);
   const [visitor, setVisitor] = useState({ country: '', platform: '', language: '' });
   const [busy, setBusy] = useState(false);
+  const [confirmId, setConfirmId] = useState('');
 
   const upload = async (file: File) => {
     const form = new FormData();
@@ -244,7 +273,38 @@ export const LinkEditorScreen = () => {
       return;
     }
     ids.splice(to, 0, ids.splice(from, 1)[0]);
-    save('/link-in-bio/blocks/reorder', 'PUT', { ids });
+    save('/link-in-bio/blocks/reorder', 'PUT', { ids }, undefined, false);
+  };
+
+  const move = (id: string, delta: number) => {
+    const ids = data.blocks.map((block) => block.id);
+    const from = ids.indexOf(id);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= ids.length) {
+      return;
+    }
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    save('/link-in-bio/blocks/reorder', 'PUT', { ids }, undefined, false);
+  };
+
+  const copy = async (value: string) => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Could not copy that link');
+      }
+      await navigator.clipboard.writeText(value);
+      toast.show('Link copied', 'success');
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : 'Could not copy that link', 'warning');
+    }
+  };
+
+  const openEmbed = (provider?: EmbedOnly, block?: LinkBlock) => {
+    setEmbedTitle(block?.title || '');
+    setEmbedUrl(block?.url || '');
+    setModal({ kind: 'embed', block, provider });
+    setAddOpen(false);
+    setMenu('');
   };
 
   return (
@@ -253,10 +313,7 @@ export const LinkEditorScreen = () => {
       onPreviewClose={() => setPreview(false)}
       preview={
         <LinkPreview
-          onCopy={() => {
-            navigator.clipboard?.writeText(data.publicUrl);
-            toast.show('Link copied', 'success');
-          }}
+          onCopy={() => copy(data.publicUrl)}
           onClose={preview ? () => setPreview(false) : undefined}
         >
           <LinkPublicView
@@ -323,64 +380,19 @@ export const LinkEditorScreen = () => {
                   >
                     Header
                   </LinkMenuRow>
-                  <LinkMenuRow
-                    icon="code"
-                    onClick={() => {
-                      setEmbedTitle('');
-                      setEmbedUrl('');
-                      setEmbedHint('YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads. The player is loaded from that provider.');
-                      setModal({ kind: 'embed' });
-                      setAddOpen(false);
-                    }}
-                  >
+                  <LinkMenuRow icon="code" onClick={() => openEmbed()}>
                     Embed
                   </LinkMenuRow>
-                  <LinkMenuRow
-                    icon="image"
-                    onClick={() => {
-                      setEmbedTitle('');
-                      setEmbedUrl('');
-                      setEmbedHint('Paste an Instagram post URL. The player is loaded from Instagram.');
-                      setModal({ kind: 'embed' });
-                      setAddOpen(false);
-                    }}
-                  >
+                  <LinkMenuRow icon="image" onClick={() => openEmbed('instagram')}>
                     Instagram post
                   </LinkMenuRow>
-                  <LinkMenuRow
-                    icon="play"
-                    onClick={() => {
-                      setEmbedTitle('');
-                      setEmbedUrl('');
-                      setEmbedHint('Paste a TikTok post URL. The player is loaded from TikTok.');
-                      setModal({ kind: 'embed' });
-                      setAddOpen(false);
-                    }}
-                  >
+                  <LinkMenuRow icon="play" onClick={() => openEmbed('tiktok')}>
                     TikTok post
                   </LinkMenuRow>
-                  <LinkMenuRow
-                    icon="at"
-                    onClick={() => {
-                      setEmbedTitle('');
-                      setEmbedUrl('');
-                      setEmbedHint('Paste an X post URL. The player is loaded from X.');
-                      setModal({ kind: 'embed' });
-                      setAddOpen(false);
-                    }}
-                  >
+                  <LinkMenuRow icon="at" onClick={() => openEmbed('x')}>
                     X post
                   </LinkMenuRow>
-                  <LinkMenuRow
-                    icon="comment"
-                    onClick={() => {
-                      setEmbedTitle('');
-                      setEmbedUrl('');
-                      setEmbedHint('Paste a Threads post URL. The player is loaded from Threads.');
-                      setModal({ kind: 'embed' });
-                      setAddOpen(false);
-                    }}
-                  >
+                  <LinkMenuRow icon="comment" onClick={() => openEmbed('threads')}>
                     Threads post
                   </LinkMenuRow>
                   <LinkMenuRow
@@ -547,23 +559,39 @@ export const LinkEditorScreen = () => {
             </button>
           </div>
         ) : (
-          data.blocks.map((block) => (
+          data.blocks.map((block, index) => (
             <article
               key={block.id}
               className={`lib-editor-row ${stkCard} !p-[14px]${
                 block.type === 'FEATURED_POST' ? ' is-feature' : ''
               }`}
-              draggable
-              onDragStart={(event) => event.dataTransfer.setData('text/plain', block.id)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault();
                 reorder(event.dataTransfer.getData('text/plain'), block.id);
               }}
             >
-              <span className="lib-editor-drag cursor-grab text-textItemBlur" aria-hidden>
-                <HugeIcon name="drag" size={16} />
-              </span>
+              <div className="lib-editor-move">
+                <button type="button" aria-label="Move up" disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
+                  <HugeIcon name="chevron-up" size={14} />
+                </button>
+                <span
+                  className="lib-editor-drag cursor-grab text-textItemBlur"
+                  draggable
+                  aria-label="Drag to reorder"
+                  onDragStart={(event) => event.dataTransfer.setData('text/plain', block.id)}
+                >
+                  <HugeIcon name="drag" size={16} />
+                </span>
+                <button
+                  type="button"
+                  aria-label="Move down"
+                  disabled={busy || index === data.blocks.length - 1}
+                  onClick={() => move(block.id, 1)}
+                >
+                  <HugeIcon name="chevron-down" size={14} />
+                </button>
+              </div>
               <span className="lib-type-tile" aria-hidden>
                 <HugeIcon name={blockIcon(block.type)} size={18} />
               </span>
@@ -586,6 +614,9 @@ export const LinkEditorScreen = () => {
                   {block.state === 'hidden' ? <span className="lib-pill">Hidden</span> : null}
                 </div>
                 <p className="lib-editor-note">{blockNote(block)}</p>
+                {block.type === 'FEATURED_POST' && !block.post ? (
+                  <p className="lib-editor-warn">This post is no longer available. Choose another published post.</p>
+                ) : null}
                 {block.scheduleOn && block.startsAt && block.state === 'scheduled' ? (
                   <p className="lib-editor-note">
                     {scheduleLabel('Starts', new Date(block.startsAt), data.timezone)}
@@ -633,7 +664,7 @@ export const LinkEditorScreen = () => {
                 </span>
               )}
               <div className="relative shrink-0">
-                <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={() => setMenu(menu === block.id ? '' : block.id)}>
+                <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={() => { setMenu(menu === block.id ? '' : block.id); setConfirmId(''); }}>
                   <HugeIcon name="more" size={18} />
                 </button>
                 {menu === block.id ? (
@@ -643,8 +674,7 @@ export const LinkEditorScreen = () => {
                         <LinkMenuRow
                           icon="copy"
                           onClick={() => {
-                            navigator.clipboard?.writeText(block.url);
-                            toast.show('Link copied', 'success');
+                            copy(block.url);
                             setMenu('');
                           }}
                         >
@@ -673,14 +703,7 @@ export const LinkEditorScreen = () => {
                       </LinkMenuRow>
                     ) : null}
                     {block.type === 'EMBED' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setEmbedTitle(block.title);
-                          setEmbedUrl(block.url);
-                          setModal({ kind: 'embed', block });
-                        }}
-                      >
+                      <LinkMenuRow icon="pencil" onClick={() => openEmbed(embedOnly(block.url), block)}>
                         Edit
                       </LinkMenuRow>
                     ) : null}
@@ -814,9 +837,24 @@ export const LinkEditorScreen = () => {
                         Edit
                       </LinkMenuRow>
                     ) : null}
-                    <LinkMenuRow icon="trash" danger onClick={() => setModal({ kind: 'delete', block })}>
+                    <LinkMenuRow icon="trash" danger onClick={() => setConfirmId(block.id)}>
                       Delete
                     </LinkMenuRow>
+                    {confirmId === block.id ? (
+                      <div className="lib-confirm" role="dialog" aria-label="Remove block">
+                        <button type="button" onClick={() => setConfirmId('')}>
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="is-remove"
+                          disabled={busy}
+                          onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'DELETE', undefined, 'Removed')}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -1200,7 +1238,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'post' ? (
-        <LinkModal title="Change post" onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Change post' : 'Add featured post'} onClose={() => setModal(null)}>
           <p className="mb-[10px] text-[14px] text-textItemBlur">Pick a published post from Schedule</p>
           <div className="flex max-h-[320px] flex-col gap-[8px] overflow-auto">
             {(posts.data || []).map((post) => (
@@ -1236,55 +1274,41 @@ export const LinkEditorScreen = () => {
                 )
               }
             >
-              Change post
-            </button>
-          </div>
-        </LinkModal>
-      ) : null}
-
-      {modal?.kind === 'delete' ? (
-        <LinkModal title="Delete link?" onClose={() => setModal(null)}>
-          <p className="text-[14px]">“{modal.block.title || 'This block'}” will be removed from your page.</p>
-          <div className="mt-[16px] flex justify-end gap-[8px]">
-            <button type="button" className={linkSecondary} onClick={() => setModal(null)}>
-              No, cancel!
-            </button>
-            <button
-              type="button"
-              className={linkDanger}
-              disabled={busy}
-              onClick={() => save(`/link-in-bio/blocks/${modal.block.id}`, 'DELETE', undefined, 'Deleted')}
-            >
-              Yes, delete it!
+              {modal.block ? 'Change post' : 'Add post'}
             </button>
           </div>
         </LinkModal>
       ) : null}
 
       {modal?.kind === 'embed' ? (
-        <LinkModal title={modal.block ? 'Edit embed' : 'Add embed'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? `Edit ${embedCopy(modal.provider).title.toLowerCase()}` : `Add ${embedCopy(modal.provider).title.toLowerCase()}`} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={embedTitle} onChange={(event) => setEmbedTitle(event.target.value)} />
             </LinkField>
             <LinkField label="URL">
-              <input value={embedUrl} placeholder="https://" onChange={(event) => setEmbedUrl(event.target.value)} />
+              <input value={embedUrl} placeholder={embedCopy(modal.provider).placeholder} onChange={(event) => setEmbedUrl(event.target.value)} />
             </LinkField>
-            <p className="text-[13px] text-textItemBlur">{embedHint}</p>
+            <p className="text-[13px] text-textItemBlur">{embedCopy(modal.provider).hint}</p>
             <div className="flex justify-end gap-[8px]">
               <button type="button" className={linkSecondary} onClick={() => setModal(null)}>Cancel</button>
               <button
                 type="button"
                 className={linkPrimary}
                 disabled={busy}
-                onClick={() =>
+                onClick={() => {
+                  const problem = embedProblem(embedUrl, modal.provider);
+                  if (problem) {
+                    toast.show(problem, 'warning');
+                    return;
+                  }
                   save(
                     modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
                     modal.block ? 'PUT' : 'POST',
                     modal.block ? { title: embedTitle, url: embedUrl } : { type: 'EMBED', title: embedTitle, url: embedUrl },
                     'Embed saved'
-                  )
-                }
+                  );
+                }}
               >
                 Save
               </button>
@@ -1643,7 +1667,8 @@ export const LinkEditorScreen = () => {
                 <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-2">
                   <LinkField label="When">
                     <input
-                      value={item.when}
+                      type="datetime-local"
+                      value={/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(item.when) ? item.when.slice(0, 16) : ''}
                       onChange={(event) => setEvents(events.map((row, rowIndex) => (rowIndex === index ? { ...row, when: event.target.value } : row)))}
                     />
                   </LinkField>

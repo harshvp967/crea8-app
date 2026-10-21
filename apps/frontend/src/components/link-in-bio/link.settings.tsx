@@ -66,6 +66,7 @@ export const LinkSettingsScreen = () => {
   const [qr, setQr] = useState('');
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [badgeUpsell, setBadgeUpsell] = useState(false);
 
   if (data && !ready) {
     setSlug(data.slug);
@@ -352,21 +353,22 @@ export const LinkSettingsScreen = () => {
               label="Show made with crea8.one"
               onChange={(show) => {
                 if (!show && linkLocked(data)) {
-                  setDomainNote('');
+                  setBadgeUpsell(true);
                   toast.show('Removing the badge is on a paid plan', 'warning');
                   return;
                 }
+                setBadgeUpsell(false);
                 setHideBadge(!show);
               }}
             />
           </span>
         </div>
-        {linkLocked(data) ? (
+        {linkLocked(data) || badgeUpsell ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">
+            Removing the badge is on a paid plan.{' '}
             <Link href="/account?section=billing" className="text-[#00D9FF]">
               Upgrade
-            </Link>{' '}
-            to remove the badge.
+            </Link>
           </p>
         ) : null}
       </section>

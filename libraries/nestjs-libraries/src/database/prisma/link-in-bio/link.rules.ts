@@ -21,6 +21,23 @@ export const LINK_THEMES = [
   { id: 'forest', label: 'Forest', pro: true },
   { id: 'sunset', label: 'Sunset', pro: true },
 ] as const;
+
+/** Matches the theme variables in link.scss. Title follows page text. */
+const THEME_PALETTE: Record<string, { background: string; button: string; buttonText: string; pageText: string; title: string }> = {
+  midnight: { background: '#071418', button: '#17191c', buttonText: '#f4f4f5', pageText: '#f5f5f5', title: '#f5f5f5' },
+  paper: { background: '#f6f3ee', button: '#ffffff', buttonText: '#161616', pageText: '#161616', title: '#161616' },
+  sand: { background: '#e7d3b4', button: '#6b4a32', buttonText: '#fff8ef', pageText: '#2b2118', title: '#2b2118' },
+  ocean: { background: '#071824', button: '#123041', buttonText: '#e7f6f8', pageText: '#e7f6f8', title: '#e7f6f8' },
+  bloom: { background: '#f7e7ee', button: '#e11d74', buttonText: '#ffffff', pageText: '#2a1520', title: '#2a1520' },
+  aurora: { background: '#12081f', button: '#24143a', buttonText: '#f6f1ff', pageText: '#f6f1ff', title: '#f6f1ff' },
+  noir: { background: '#0e0e0e', button: '#f5f5f5', buttonText: '#111111', pageText: '#f5f5f5', title: '#f5f5f5' },
+  forest: { background: '#102117', button: '#1d3b2c', buttonText: '#eef8f1', pageText: '#eef8f1', title: '#eef8f1' },
+  sunset: { background: '#2a120c', button: '#4a2418', buttonText: '#fff7ed', pageText: '#fff7ed', title: '#fff7ed' },
+};
+
+export function themePalette(theme: string) {
+  return THEME_PALETTE[theme] || THEME_PALETTE.midnight;
+}
 export const LINK_BUTTONS = [
   { id: 'pill', label: 'Pill' },
   { id: 'rounded', label: 'Rounded' },
@@ -861,13 +878,19 @@ export function parseEmbed(raw: string): EmbedFrame | null {
     }
     return { provider: 'instagram', src: `https://www.instagram.com/${kind}/${code}/embed` };
   }
-  if (host === 'tiktok.com') {
+  if (host === 'tiktok.com' || host === 'vm.tiktok.com' || host === 'vt.tiktok.com') {
     const parts = url.pathname.split('/').filter(Boolean);
-    const id = parts[0] === 'embed' && parts[1] === 'v2' ? parts[2] || '' : parts[1] === 'video' ? parts[2] || '' : '';
-    if (!/^\d{8,22}$/.test(id)) {
-      return null;
+    const id = host === 'tiktok.com' && parts[0] === 'embed' && parts[1] === 'v2' ? parts[2] || '' : parts[1] === 'video' ? parts[2] || '' : '';
+    if (/^\d{8,22}$/.test(id)) {
+      return { provider: 'tiktok', src: `https://www.tiktok.com/embed/v2/${id}` };
     }
-    return { provider: 'tiktok', src: `https://www.tiktok.com/embed/v2/${id}` };
+    const short = tiktokShortCode(host, parts);
+    if (short) {
+      const share =
+        host === 'tiktok.com' ? `https://www.tiktok.com/t/${short}` : `https://${host}/${short}`;
+      return { provider: 'tiktok', src: `https://www.tiktok.com/embed/v2/?url=${encodeURIComponent(share)}` };
+    }
+    return null;
   }
   if (host === 'x.com' || host === 'twitter.com') {
     const parts = url.pathname.split('/').filter(Boolean);
@@ -895,6 +918,9 @@ export function parseMap(raw: string): EmbedFrame | null {
     return null;
   }
   const host = bareHost(url.hostname);
+  if (host === 'maps.app.goo.gl' || host === 'goo.gl') {
+    return mapShare(url);
+  }
   if (host !== 'google.com' && host !== 'maps.google.com') {
     return null;
   }
@@ -928,7 +954,40 @@ export function parseMap(raw: string): EmbedFrame | null {
     }
     return { provider: 'maps', src: `https://maps.google.com/maps?q=${encodeURIComponent(name)}&output=embed` };
   }
+  const at = url.pathname.match(/@(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)(?:,(\d{1,2}(?:\.\d+)?)z)?/);
+  if (at) {
+    return mapPoint(at[1], at[2], at[3]);
+  }
   return null;
+}
+
+function mapShare(url: URL): EmbedFrame | null {
+  const host = bareHost(url.hostname);
+  const parts = url.pathname.split('/').filter(Boolean);
+  const code = host === 'goo.gl' ? parts[1] || '' : parts[0] || '';
+  if (host === 'goo.gl' && parts[0] !== 'maps') {
+    return null;
+  }
+  if (!/^[A-Za-z0-9_-]{3,64}$/.test(code)) {
+    return null;
+  }
+  const share = `${url.origin}${url.pathname}`;
+  return { provider: 'maps', src: `https://maps.google.com/maps?q=${encodeURIComponent(share)}&output=embed` };
+}
+
+function mapPoint(latRaw: string, lngRaw: string, zoomRaw?: string): EmbedFrame | null {
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return null;
+  }
+  const zoom = zoomRaw ? `&z=${Math.min(21, Math.max(1, Math.round(Number(zoomRaw))))}` : '';
+  return { provider: 'maps', src: `https://maps.google.com/maps?q=${lat},${lng}${zoom}&output=embed` };
+}
+
+function tiktokShortCode(host: string, parts: string[]) {
+  const code = host === 'vm.tiktok.com' || host === 'vt.tiktok.com' ? parts[0] || '' : host === 'tiktok.com' && parts[0] === 't' ? parts[1] || '' : '';
+  return /^[A-Za-z0-9]{3,32}$/.test(code) ? code : '';
 }
 
 export function parseCalendly(raw: string): EmbedFrame | null {
@@ -943,12 +1002,30 @@ export function parseCalendly(raw: string): EmbedFrame | null {
   return { provider: 'calendly', src: `https://calendly.com/${parts.join('/')}?hide_gdpr_banner=1` };
 }
 
-export function embedProblem(raw: string) {
+const EMBED_LABEL: Record<EmbedProvider, string> = {
+  youtube: 'YouTube',
+  spotify: 'Spotify',
+  soundcloud: 'SoundCloud',
+  vimeo: 'Vimeo',
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  x: 'X',
+  threads: 'Threads',
+  maps: 'Google Maps',
+  calendly: 'Calendly',
+};
+
+export function embedProblem(raw: string, only?: EmbedProvider) {
+  const label = only ? EMBED_LABEL[only] : '';
   if (!raw.trim()) {
-    return 'Paste a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads link';
+    return only ? `Paste a ${label} post link` : 'Paste a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads link';
   }
-  if (!parseEmbed(raw)) {
-    return 'Use a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads link';
+  const frame = parseEmbed(raw);
+  if (!frame) {
+    return only ? `Use a ${label} post link` : 'Use a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads link';
+  }
+  if (only && frame.provider !== only) {
+    return `Use a ${label} post link`;
   }
   return null;
 }
@@ -1145,7 +1222,7 @@ export type PublicBlockInput = {
   payload?: unknown;
 };
 
-export function presentPublicBlock(block: PublicBlockInput, paid: boolean, visitor?: VisitorContext) {
+export function presentPublicBlock(block: PublicBlockInput, paid: boolean, visitor?: VisitorContext, timeZone?: string) {
   const extras = block.type === 'LINK' ? normalizeLinkExtras(block.payload) : emptyLinkExtras();
   const effect = block.type === 'LINK' && visitor ? applyVisitorRules(extras.rules, visitor) : { action: 'none' as const, title: '', url: '' };
   const title = effect.action === 'title' && effect.title ? effect.title : block.title;
@@ -1188,7 +1265,7 @@ export function presentPublicBlock(block: PublicBlockInput, paid: boolean, visit
     form: block.type === 'CONTACT_FORM' ? normalizeForm(block) : null,
     details: block.type === 'CONTACT_DETAILS' ? normalizeDetails(block.payload) : null,
     discount: block.type === 'DISCOUNT' ? normalizeDiscount(block) : null,
-    events: block.type === 'EVENTS' ? normalizeEvents(block.payload) : [],
+    events: block.type === 'EVENTS' ? upcomingEvents(normalizeEvents(block.payload), Date.now(), timeZone) : [],
   };
 }
 
@@ -1627,6 +1704,82 @@ export function normalizeDiscount(input: { title?: string; url?: string; body?: 
     note: String(discount.note || input.body || '').trim().slice(0, 160),
     url: url && !urlProblem(url) ? url : '',
   };
+}
+
+const EVENT_WHEN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+const EVENT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function eventTime(when: string, timeZone?: string) {
+  const match = EVENT_WHEN.exec((when || '').trim());
+  if (!match) {
+    return null;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
+    return null;
+  }
+  const utc = Date.UTC(year, month - 1, day, hour, minute);
+  const check = new Date(utc);
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) {
+    return null;
+  }
+  if (!timeZone) {
+    return utc;
+  }
+  try {
+    const offsetAt = (instant: number) => {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hourCycle: 'h23',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }).formatToParts(new Date(instant));
+      const read = (type: string) => Number(parts.find((part) => part.type === type)?.value);
+      return Date.UTC(read('year'), read('month') - 1, read('day'), read('hour'), read('minute'), read('second')) - instant;
+    };
+    let guess = utc;
+    guess = utc - offsetAt(guess);
+    return utc - offsetAt(guess);
+  } catch {
+    return utc;
+  }
+}
+
+export function eventLabel(when: string) {
+  const match = EVENT_WHEN.exec((when || '').trim());
+  if (!match) {
+    return when;
+  }
+  const month = EVENT_MONTHS[Number(match[2]) - 1];
+  if (!month) {
+    return when;
+  }
+  return `${Number(match[3])} ${month} ${match[1]}, ${match[4]}:${match[5]}`;
+}
+
+export function upcomingEvents(events: EventItem[], now = Date.now(), timeZone?: string) {
+  const dated: Array<{ item: EventItem; time: number }> = [];
+  const undated: EventItem[] = [];
+  for (const item of events) {
+    const time = eventTime(item.when, timeZone);
+    if (time === null) {
+      undated.push(item);
+      continue;
+    }
+    if (time >= now) {
+      dated.push({ item, time });
+    }
+  }
+  dated.sort((a, b) => a.time - b.time);
+  return [...dated.map((row) => row.item), ...undated];
 }
 
 export function normalizeEvents(payload: unknown): EventItem[] {

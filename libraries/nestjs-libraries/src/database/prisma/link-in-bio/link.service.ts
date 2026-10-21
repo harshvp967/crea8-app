@@ -143,10 +143,22 @@ export class LinkService {
     if (body.timezone && !isValidTimeZone(body.timezone)) {
       throw new BadRequestException('Choose a valid timezone');
     }
+    const logo = body.design?.logoUrl?.trim();
+    if (logo && imagePathProblem(logo)) {
+      throw new BadRequestException(imagePathProblem(logo));
+    }
     const socials = body.socials
-      ? body.socials
-          .map((item) => ({ network: item.network, url: item.url.trim() }))
-          .filter((item) => item.url && !urlProblem(item.url))
+      ? body.socials.flatMap((item) => {
+          const url = item.url.trim();
+          if (!url) {
+            return [];
+          }
+          const problem = urlProblem(url);
+          if (problem) {
+            throw new BadRequestException(problem);
+          }
+          return [{ network: item.network, url }];
+        })
       : undefined;
     const next = await this._repository.update(record.id, {
       ...(body.name !== undefined ? { name: body.name.trim().slice(0, 30) } : {}),
@@ -228,6 +240,9 @@ export class LinkService {
     const type = current ? current.type : body.type;
     if (!type) {
       throw new BadRequestException('Choose a block type');
+    }
+    if (type === 'EMBED' && body.url) {
+      body.url = await this.canonicalTikTok(body.url);
     }
     if (!id && type === 'EMAIL_CAPTURE') {
       const existing = record.blocks.find((block) => block.type === 'EMAIL_CAPTURE');
@@ -1369,7 +1384,7 @@ export class LinkService {
       : [];
     const capture = visible.some((block) => block.type === 'EMAIL_CAPTURE');
     const blocks = await Promise.all(visible.map(async (block) => {
-      const view = presentPublicBlock(block, open, visitor);
+      const view = presentPublicBlock(block, open, visitor, record.timezone);
       const post = block.post ? this.postCard(block.post, record.timezone, true) : null;
       return {
         ...view,
@@ -1439,6 +1454,46 @@ export class LinkService {
       image: absolute ? publicAsset(image) : image,
       url: release || (absolute ? publicAsset(local) : local),
     };
+  }
+
+  private async canonicalTikTok(raw: string) {
+    const trimmed = raw.trim();
+    let current = trimmed;
+    try {
+      for (let hop = 0; hop < 4; hop += 1) {
+        const url = new URL(current);
+        const host = url.hostname.replace(/^www\./, '').toLowerCase();
+        if (!['vm.tiktok.com', 'vt.tiktok.com', 'tiktok.com', 'm.tiktok.com'].includes(host)) {
+          return trimmed;
+        }
+        const parts = url.pathname.split('/').filter(Boolean);
+        if (parts[1] === 'video' && /^\d{8,22}$/.test(parts[2] || '')) {
+          return `https://www.tiktok.com${url.pathname}`;
+        }
+        const short = host === 'vm.tiktok.com' || host === 'vt.tiktok.com' || (host === 'tiktok.com' && parts[0] === 't');
+        if (!short) {
+          return trimmed;
+        }
+        const response = await fetch(url.toString(), {
+          method: 'GET',
+          redirect: 'manual',
+          signal: AbortSignal.timeout(4000),
+          headers: { 'user-agent': 'crea8.one' },
+        });
+        const location = response.headers.get('location');
+        if (!location) {
+          return trimmed;
+        }
+        const next = new URL(location, url);
+        if (!['https:', 'http:'].includes(next.protocol)) {
+          return trimmed;
+        }
+        current = next.toString();
+      }
+    } catch {
+      return trimmed;
+    }
+    return trimmed;
   }
 
   private socials(value: unknown) {

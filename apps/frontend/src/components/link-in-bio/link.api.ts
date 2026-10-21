@@ -341,7 +341,8 @@ export function toPublic(page: LinkEditor, visitor?: VisitorContext): PublicLink
           payload: blockPayload(block),
         },
         open,
-        visitor
+        visitor,
+        page.timezone
       ),
       post: block.post,
     })),
