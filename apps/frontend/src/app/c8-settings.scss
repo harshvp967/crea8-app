@@ -2046,3 +2046,366 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
     margin-left: auto;
   }
 }
+
+/* Account settings. Modal page from 768 up, full sheet on the phone. */
+.account-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  max-width: 100vw;
+}
+
+.account-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(18 16 22 / 0.45);
+}
+
+.account-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, 100%);
+  max-height: calc(100dvh - 48px);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--c8-line);
+  border-radius: 28px;
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+}
+
+.account-scroll {
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 28px 32px 32px;
+}
+
+.account-screen,
+.account-screen .settings-main,
+.account-screen .settings-detail,
+.account-screen .settings-section,
+.account-screen .settings-group,
+.account-screen .settings-row,
+.account-screen .account-stack {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.account-screen .settings-main {
+  gap: 20px;
+}
+
+.account-screen.settings-screen .settings-head-v2 {
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.account-screen.settings-screen .settings-kicker {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.account-screen.settings-screen .settings-head-v2 > h1 {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  font-size: clamp(26px, 7.2vw, 48px);
+  white-space: nowrap;
+}
+
+.account-close {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  justify-self: end;
+  border: 1px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  cursor: pointer;
+}
+
+.account-close:focus-visible,
+.account-chip:focus-visible,
+.account-open:focus-visible,
+.account-remove-pop button:focus-visible {
+  outline: 2px solid var(--arc-focus, var(--c8-ink));
+  outline-offset: 2px;
+}
+
+.account-screen.settings-screen .settings-settabs.c8-seg {
+  display: flex !important;
+  flex-flow: row wrap !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  overflow: visible !important;
+  border-radius: 20px !important;
+}
+
+.account-screen .settings-head {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.account-screen .settings-head h1,
+.account-screen .settings-danger-card .settings-row-title {
+  white-space: nowrap;
+}
+
+.account-screen .settings-head > button,
+.account-open,
+.account-chip,
+.account-save {
+  white-space: nowrap;
+}
+
+.account-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.account-photo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.account-photo-face {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--c8-app-schedule);
+  color: #121016;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.account-photo-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.account-chip,
+.account-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  flex: none;
+  padding: 0 14px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-save {
+  align-self: flex-start;
+  width: auto;
+}
+
+.account-remove {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-remove-pop {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-surface);
+  box-shadow: 0 4px 0 var(--c8-hard);
+}
+
+.account-remove-pop button {
+  height: 32px;
+  flex: none;
+  padding: 0 10px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.account-remove-pop button.is-remove {
+  border-color: transparent;
+  background: var(--arc-danger, #e11d48);
+  color: #fff;
+}
+
+.account-email {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.account-email > span:first-child {
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.account-email input,
+.account-session-email {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.account-email input {
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--c8-line);
+  border-radius: 18px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 14px;
+}
+
+.account-email-note,
+.account-note,
+.account-screen .settings-row-sub {
+  color: var(--c8-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.account-note {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.account-theme-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.account-screen .settings-row .text-red-400 {
+  white-space: nowrap;
+}
+
+.account-languages .grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.account-languages .grid > div {
+  min-width: 0;
+  padding: 12px 8px;
+}
+
+.account-languages .grid > div > * {
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.account-screen .billing-plans,
+.account-screen .billing-grid,
+.account-screen .billing-card,
+.account-screen .billing-plans-head,
+.account-screen .billing-footer {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 1099px) {
+  .account-languages .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .account-layer {
+    padding: 16px;
+  }
+
+  .account-panel {
+    max-height: calc(100dvh - 32px);
+  }
+
+  .account-scroll {
+    padding: 20px 16px 24px;
+  }
+
+  .account-screen .settings-head h1 {
+    font-size: 18px;
+  }
+
+  .account-languages .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .account-layer {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .account-panel {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .account-scroll {
+    padding: 12px 12px calc(16px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 389px) {
+  .account-screen .settings-head h1,
+  .account-screen .settings-danger-card .settings-row-title {
+    font-size: 16px;
+  }
+
+  .account-screen .settings-section {
+    padding: 12px;
+  }
+}

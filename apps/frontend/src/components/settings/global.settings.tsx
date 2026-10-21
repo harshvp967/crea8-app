@@ -1,11 +1,10 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import dynamic from 'next/dynamic';
-import EmailNotificationsComponent from '@gitroom/frontend/components/settings/email-notifications.component';
 import ShortlinkPreferenceComponent from '@gitroom/frontend/components/settings/shortlink-preference.component';
-import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
 
 const MetricComponent = dynamic(
   () => import('@gitroom/frontend/components/settings/metric.component'),
@@ -26,13 +25,25 @@ export const GlobalSettings = () => {
           <h1>{t('global_settings', 'Global Settings')}</h1>
         </div>
         <div className="settings-group">
+          <div className="settings-row">
+            <div className="settings-row-copy">
+              <div className="settings-row-title">
+                {t('account_settings', 'Account settings')}
+              </div>
+              <div className="settings-row-sub">
+                {t(
+                  'account_settings_holds',
+                  'Profile, workspace and security'
+                )}
+              </div>
+            </div>
+            <Link href="/account" className="account-open">
+              {t('open_account_settings', 'Open account settings')}
+            </Link>
+          </div>
           <MetricComponent />
-          <EmailNotificationsComponent />
           <ShortlinkPreferenceComponent />
         </div>
-      </div>
-      <div className="settings-section">
-        <DeleteAccountComponent />
       </div>
     </>
   );
