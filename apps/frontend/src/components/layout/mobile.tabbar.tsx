@@ -87,7 +87,7 @@ export const MobileTabBar = ({ onAccount }: { onAccount?: () => void }) => {
       ) : null}
       {more ? (
         <div className="mobile-sheet" role="menu">
-          {!link && !stalker && onAccount ? (
+          {onAccount ? (
             <button
               type="button"
               onClick={() => {

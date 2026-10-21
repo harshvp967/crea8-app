@@ -363,7 +363,7 @@ export const LinkSettingsScreen = () => {
         </div>
         {linkLocked(data) ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">
-            <Link href="/billing" className="text-[#00D9FF]">
+            <Link href="/account?section=billing" className="text-[#00D9FF]">
               Upgrade
             </Link>{' '}
             to remove the badge.
@@ -424,7 +424,7 @@ export const LinkSettingsScreen = () => {
                 Connect domain
               </button>
             ) : (
-              <Link href="/billing" className={linkSecondary}>
+              <Link href="/account?section=billing" className={linkSecondary}>
                 Get the add-on
               </Link>
             )}
@@ -484,14 +484,14 @@ export const LinkSettingsScreen = () => {
         {!data.customDomainAddon ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">
             Custom domains are a separate add-on. They are not included in a plan.{' '}
-            <Link href="/billing" className="text-[#00D9FF]">
+            <Link href="/account?section=billing" className="text-[#00D9FF]">
               Get the add-on
             </Link>
           </p>
         ) : domainNote === 'upgrade' ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">
             Custom domains are a separate add-on. They are not included in a plan.{' '}
-            <Link href="/billing" className="text-[#00D9FF]">
+            <Link href="/account?section=billing" className="text-[#00D9FF]">
               Get the add-on
             </Link>
           </p>

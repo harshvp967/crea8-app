@@ -1,7 +1,7 @@
 'use client';
 
 import { csrfHeaders } from '@gitroom/helpers/utils/custom.fetch.func';
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useRef } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
@@ -15,7 +15,7 @@ import clsx from 'clsx';
 import dynamic from 'next/dynamic';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
@@ -57,11 +57,9 @@ import { C8Sidebar } from '@gitroom/frontend/components/layout/c8.sidebar';
 
 const HeaderAvatar = ({
   name,
-  pressed,
   onClick,
 }: {
   name: string;
-  pressed: boolean;
   onClick: () => void;
 }) => {
   const initials =
@@ -76,9 +74,7 @@ const HeaderAvatar = ({
       type="button"
       className="header-avatar"
       title={name || undefined}
-      aria-label={name ? `${name} account` : 'Account'}
-      aria-haspopup="menu"
-      aria-expanded={pressed}
+      aria-label={name ? `${name}, account settings` : 'Account settings'}
       onClick={onClick}
     >
       {initials}
@@ -101,12 +97,11 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const [accountOpen, setAccountOpen] = useState(false);
-  const [seenPath, setSeenPath] = useState(pathname);
-  if (seenPath !== pathname) {
-    setSeenPath(pathname);
-    setAccountOpen(false);
-  }
+  const router = useRouter();
+  const openAccount = useCallback(() => {
+    if (pathname?.startsWith('/account')) return;
+    router.push('/account');
+  }, [pathname, router]);
   const accountRef = useRef<HTMLDivElement>(null);
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
@@ -210,8 +205,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <C8Sidebar
                       name={user?.name || ''}
                       email={user?.email || ''}
-                      accountOpen={accountOpen}
-                      onAccount={() => setAccountOpen((value) => !value)}
+                      onAccount={openAccount}
                     />
                   <div className="c8-main">
                   <header
@@ -227,13 +221,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <div className="header-account relative flex items-center" ref={accountRef}>
                         <HeaderAvatar
                           name={user?.name || user?.email || ''}
-                          pressed={accountOpen}
-                          onClick={() => setAccountOpen((value) => !value)}
+                          onClick={openAccount}
                         />
-                        <OrganizationSelector
-                          menuOpen={accountOpen}
-                          onClose={() => setAccountOpen(false)}
-                        />
+                        <OrganizationSelector />
                       </div>
                       <div className="flex items-center justify-center">
                         <ModeComponent />
@@ -258,13 +248,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   </div>
                   </div>
                   </div>
-                  <MobileTabBar
-                    onAccount={
-                      !stalker && !link
-                        ? () => setAccountOpen((value) => !value)
-                        : undefined
-                    }
-                  />
+                  <MobileTabBar onAccount={openAccount} />
                 </>
               )}
             </div>

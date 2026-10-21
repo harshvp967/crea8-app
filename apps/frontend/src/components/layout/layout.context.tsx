@@ -122,7 +122,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
 
           )
         ) {
-          window.open('/billing?finishTrial=true', '_blank');
+          window.open('/account?section=billing&finishTrial=true', '_blank');
           return false;
         }
         return false;
@@ -138,7 +138,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
             'Payment Required'
           )
         ) {
-          window.open('/billing', '_blank');
+          window.open('/account?section=billing', '_blank');
           return false;
         }
         return true;

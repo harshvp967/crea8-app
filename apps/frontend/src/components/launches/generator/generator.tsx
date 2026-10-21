@@ -344,7 +344,7 @@ export const GeneratorComponent = () => {
           t('payment_required', 'Payment Required')
         )
       ) {
-        router.push('/billing');
+        router.push('/account?section=billing');
       }
       return;
     }

@@ -37,7 +37,7 @@ const GenerateTab = observer(({ store }: any) => {
 
   const handleGenerate = async () => {
     if (data?.credits <= 0) {
-      window.open('/billing', '_blank');
+      window.open('/account?section=billing', '_blank');
       return;
     }
     if (!inputRef.current.value) {
