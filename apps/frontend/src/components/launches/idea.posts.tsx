@@ -217,6 +217,60 @@ function clearPanel(key: string) {
   }
 }
 
+function storedDrafts(
+  drafts: Array<{
+    integrationId: string;
+    provider: string;
+    name: string;
+    picture?: string | null;
+    content: string;
+    publishAt: string;
+    settings?: Record<string, any>;
+    media?: DraftMedia[];
+    saved?: boolean;
+  }>
+) {
+  return (drafts || []).map((item) => ({
+    integrationId: item.integrationId,
+    provider: item.provider,
+    name: item.name,
+    picture: item.picture,
+    content: item.content,
+    publishAt: item.publishAt,
+    settings: item.settings || {},
+    media: item.media || [],
+    saved: !!item.saved,
+  }));
+}
+
+function panelSerial(data: {
+  idea: string;
+  allWhen: string;
+  voice: boolean;
+  tray: DraftMedia[];
+  drafts: Parameters<typeof storedDrafts>[0];
+}) {
+  return JSON.stringify({
+    idea: data.idea || '',
+    allWhen: data.allWhen || '',
+    voice: !!data.voice,
+    tray: data.tray || [],
+    drafts: storedDrafts(data.drafts),
+  });
+}
+
+function panelEmpty(data: {
+  idea: string;
+  tray: DraftMedia[];
+  drafts: unknown[];
+}) {
+  return (
+    !String(data.idea || '').trim() &&
+    !(data.drafts || []).length &&
+    !(data.tray || []).length
+  );
+}
+
 function htmlToPlain(html: string) {
   const text = String(html || '');
   if (!/<[a-z][\s\S]*>/i.test(text)) {
@@ -473,6 +527,7 @@ const IdeaPostsPanel = ({
   const modal = useModals();
   const sheetRef = useRef<HTMLElement>(null);
   const key = panelKey(orgId, userId, customer);
+  const [hydrateKey, setHydrateKey] = useState<string | null>(null);
   const [phone, setPhone] = useState(false);
   const [idea, setIdea] = useState('');
   const [used, setUsed] = useState(0);
@@ -499,11 +554,30 @@ const IdeaPostsPanel = ({
   const fileRef = useRef<HTMLInputElement>(null);
   const catalogRef = useRef<Integrations[]>([]);
   const closeRef = useRef<() => void>(() => undefined);
+  const lastWritten = useRef('');
+  const sealed = useRef(false);
+  const persistLive = useRef(false);
+  const persistTimer = useRef(0);
+  const keyRef = useRef(key);
+  const packRef = useRef<() => StoredPanel>(() => ({
+    at: 0,
+    idea: '',
+    allWhen: '',
+    voice: false,
+    tray: [],
+    drafts: [],
+  }));
   const seenInvalid = useRef<Record<string, boolean>>({});
   const addTarget = useRef<number | 'all'>('all');
   const trayRef = useRef<DraftMedia[]>([]);
   const receiveFiles = useRef<(files: DraftMedia[]) => void>(() => undefined);
   trayRef.current = tray;
+  const dropPanel = useCallback(() => {
+    window.clearTimeout(persistTimer.current);
+    sealed.current = true;
+    lastWritten.current = '';
+    clearPanel(key);
+  }, [key]);
   const uppy = useUppyUploader({
     allowedFileTypes: 'image/*,video/mp4',
     onStart: () => setUploading(true),
@@ -564,8 +638,11 @@ const IdeaPostsPanel = ({
   }, [catalog, customer]);
 
   useEffect(() => {
+    persistLive.current = false;
+    sealed.current = false;
     const saved = readPanel(key);
     if (!saved) {
+      lastWritten.current = '';
       setIdea('');
       setAllWhen('');
       setVoice(false);
@@ -576,8 +653,10 @@ const IdeaPostsPanel = ({
       setUpgrade('');
       setSettingsOpen({});
       seenInvalid.current = {};
+      setHydrateKey(key);
       return;
     }
+    lastWritten.current = panelSerial(saved);
     setIdea(saved.idea);
     setAllWhen(saved.allWhen || '');
     setVoice(!!saved.voice);
@@ -592,6 +671,7 @@ const IdeaPostsPanel = ({
       }))
     );
     setRestored(true);
+    setHydrateKey(key);
   }, [key]);
 
   const draft = useCallback(async () => {
@@ -824,10 +904,10 @@ const IdeaPostsPanel = ({
       reload?.();
     }
     if (saved && next.every((item) => item.saved)) {
-      clearPanel(key);
+      dropPanel();
       onClose();
     }
-  }, [drafts, fetch, key, onClose, reload, t]);
+  }, [drafts, dropPanel, fetch, onClose, reload, t]);
 
   useEffect(() => {
     if (!focusId) {
@@ -1027,26 +1107,78 @@ const IdeaPostsPanel = ({
       allWhen,
       voice,
       tray,
-      drafts: drafts.map((item) => ({
-        integrationId: item.integrationId,
-        provider: item.provider,
-        name: item.name,
-        picture: item.picture,
-        content: item.content,
-        publishAt: item.publishAt,
-        settings: item.settings || {},
-        media: item.media || [],
-        saved: !!item.saved,
-      })),
+      drafts: storedDrafts(drafts),
     };
   }, [allWhen, drafts, idea, tray, voice]);
+  packRef.current = packPanel;
+  keyRef.current = key;
+
+  const flushPanel = useCallback(() => {
+    if (sealed.current) {
+      return;
+    }
+    const payload = packRef.current();
+    const storageKey = keyRef.current;
+    if (panelEmpty(payload)) {
+      if (lastWritten.current) {
+        clearPanel(storageKey);
+        lastWritten.current = '';
+      }
+      return;
+    }
+    const serial = panelSerial(payload);
+    if (serial === lastWritten.current) {
+      return;
+    }
+    lastWritten.current = serial;
+    writePanel(storageKey, payload);
+  }, []);
+
+  useEffect(() => {
+    if (hydrateKey !== key) {
+      return;
+    }
+    if (sealed.current) {
+      if (panelEmpty(packPanel())) {
+        sealed.current = false;
+        lastWritten.current = '';
+        persistLive.current = true;
+      }
+      return;
+    }
+    persistLive.current = true;
+    persistTimer.current = window.setTimeout(flushPanel, 300);
+    const onHide = () => {
+      window.clearTimeout(persistTimer.current);
+      flushPanel();
+    };
+    window.addEventListener('pagehide', onHide);
+    window.addEventListener('beforeunload', onHide);
+    return () => {
+      window.clearTimeout(persistTimer.current);
+      window.removeEventListener('pagehide', onHide);
+      window.removeEventListener('beforeunload', onHide);
+    };
+  }, [flushPanel, hydrateKey, key, packPanel]);
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(persistTimer.current);
+      if (!persistLive.current || sealed.current) {
+        return;
+      }
+      flushPanel();
+    };
+  }, [flushPanel]);
 
   const persistClose = useCallback(() => {
+    window.clearTimeout(persistTimer.current);
     const payload = packPanel();
-    const empty = !payload.idea.trim() && !payload.drafts.length && !payload.tray.length;
-    if (empty) {
+    if (panelEmpty(payload)) {
       clearPanel(key);
+      lastWritten.current = '';
     } else {
+      lastWritten.current = panelSerial(payload);
       writePanel(key, payload);
     }
     onClose();
@@ -1073,12 +1205,12 @@ const IdeaPostsPanel = ({
     if (!remove) {
       return;
     }
-    clearPanel(key);
+    dropPanel();
     onClose();
-  }, [drafts.length, key, onClose, persistClose, t]);
+  }, [drafts.length, dropPanel, onClose, persistClose, t]);
 
   const startFresh = useCallback(() => {
-    clearPanel(key);
+    dropPanel();
     setIdea('');
     setDrafts([]);
     setTray([]);
@@ -1089,11 +1221,11 @@ const IdeaPostsPanel = ({
     setRestored(false);
     setSettingsOpen({});
     seenInvalid.current = {};
-  }, [key]);
+  }, [dropPanel]);
 
   const discard = useCallback(async () => {
     if (!drafts.length && !idea.trim() && !tray.length) {
-      clearPanel(key);
+      dropPanel();
       onClose();
       return;
     }
@@ -1111,9 +1243,9 @@ const IdeaPostsPanel = ({
     if (keep) {
       return;
     }
-    clearPanel(key);
+    dropPanel();
     onClose();
-  }, [drafts.length, idea, key, onClose, t, tray.length]);
+  }, [drafts.length, dropPanel, idea, onClose, t, tray.length]);
 
   const pickFiles = (target: number | 'all') => {
     addTarget.current = target;
