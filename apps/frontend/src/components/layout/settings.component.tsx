@@ -18,7 +18,6 @@ import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
-import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useSearchParams } from 'next/navigation';
@@ -43,7 +42,7 @@ const SettingsPageHead: FC<{
     <div className="settings-kicker">
       <span className="settings-sticker">{t('schedule', 'Schedule')}</span>
       <span className="settings-period">
-        {t('settings_kicker', 'Team, webhooks & API keys')}
+        {t('settings_kicker', 'Webhooks & API keys')}
       </span>
     </div>
     <h1>{t('settings', 'Settings')}</h1>
@@ -142,10 +141,6 @@ export const SettingsPopup: FC<{
   const list = useMemo(() => {
     const arr = [];
     arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings') });
-    // Populate tabs based on user permissions
-    if (user?.tier?.team_members && isGeneral) {
-      arr.push({ tab: 'teams', label: t('teams', 'Teams') });
-    }
     if (user?.tier?.webhooks) {
       arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks') });
     }
@@ -223,12 +218,6 @@ export const SettingsPopup: FC<{
                   <BrandVoiceSettings />
                 </div>
               )}
-              {tab === 'teams' && !!user?.tier?.team_members && isGeneral && (
-                <div>
-                  <TeamsComponent />
-                </div>
-              )}
-
               {tab === 'webhooks' && !!user?.tier?.webhooks && (
                 <div>
                   <Webhooks />

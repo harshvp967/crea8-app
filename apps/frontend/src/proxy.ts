@@ -19,6 +19,7 @@ const LINK_API_ORIGINS = new Set([
   'http://www.crea8.one',
 ]);
 const APP_SECTIONS = new Set([
+  'account',
   'admin',
   'agents',
   'analytics',

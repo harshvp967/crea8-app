@@ -158,7 +158,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
         </div>
       );
     }
-    if (pathname?.startsWith('/settings')) {
+    if (pathname?.startsWith('/settings') || pathname?.startsWith('/account')) {
       return (
         <div className="flex flex-col min-h-screen text-newTextColor p-[16px] gap-[12px]">
           <div className="min-h-[64px] bg-newBgColorInner rounded-[24px] border border-newBorder" />
