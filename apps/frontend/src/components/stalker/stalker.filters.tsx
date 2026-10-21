@@ -229,6 +229,44 @@ const ChipIcon = ({ name }: { name: string }) => (
   <HugeIcon name={chipIcons[name] || 'plus'} size={16} />
 );
 
+const ActiveCheck = ({ on }: { on: boolean }) =>
+  on ? <HugeIcon name="check" size={16} className="stk-opt-check" aria-hidden /> : null;
+
+const BugGlyph = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M9 9.5V8a3 3 0 016 0v1.5" />
+    <rect x="7" y="9" width="10" height="8" rx="4" />
+    <path d="M4.5 11.5H7M17 11.5h2.5M5 16H7.5M16.5 16H19M12 9v8M8.5 6.5 7 5M15.5 6.5 17 5" />
+  </svg>
+);
+
+const BulbGlyph = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M9 18h6M10 21h4" />
+    <path d="M8.5 14.2c-1.4-1-2.3-2.6-2.3-4.4a5.8 5.8 0 1111.6 0c0 1.8-.9 3.4-2.3 4.4-.6.4-1 1.1-1 1.8v.2h-5v-.2c0-.7-.4-1.4-1-1.8z" />
+  </svg>
+);
+
+const categoryTone = (name: string) => {
+  const key = name.trim().toLowerCase();
+  if (key === 'praise') return 'praise';
+  if (key === 'bug report') return 'bug';
+  if (key === 'feature request') return 'feature';
+  if (key === 'complaint') return 'complaint';
+  return 'muted';
+};
+
+const CategoryMark = ({ name }: { name: string }) => {
+  const tone = categoryTone(name);
+  const icon =
+    tone === 'praise' ? 'thumbs-up' : tone === 'complaint' ? 'alert' : 'tag';
+  return (
+    <span className={`stk-cat-mark is-${tone}`} aria-hidden>
+      {tone === 'bug' ? <BugGlyph /> : tone === 'feature' ? <BulbGlyph /> : <HugeIcon name={icon} size={12} />}
+    </span>
+  );
+};
+
 const chipClass = (on: boolean) => (on ? stkChipOn : stkChip);
 
 const monthGrid = (cursor: Date) => {
@@ -352,9 +390,11 @@ export const StalkerFilters = ({
                       key={id}
                       type="button"
                       className={clsx(stkMenuItem, draft.preset === id && 'is-on')}
+                      aria-pressed={draft.preset === id}
                       onClick={() => setDraft({ ...draft, preset: id, start: '', end: '' })}
                     >
-                      {text}
+                      <span className="min-w-0 flex-1 truncate text-start">{text}</span>
+                      <ActiveCheck on={draft.preset === id} />
                     </button>
                   ))}
                 </div>
@@ -465,9 +505,9 @@ export const StalkerFilters = ({
                 onChange({ ...filters, sources });
               }}
             >
-              <SourceIcon source={source} />
-              <span className="min-w-0 flex-1 text-start">{sourceLabel(source)}</span>
               <span className={clsx('stk-box', checked && 'is-on')} />
+              <SourceIcon source={source} />
+              <span className="min-w-0 flex-1 truncate text-start">{sourceLabel(source)}</span>
             </button>
           );
         })}
@@ -479,17 +519,27 @@ export const StalkerFilters = ({
         open={open === 'sentiment'}
         onToggle={() => setOpen(open === 'sentiment' ? null : 'sentiment')}
       >
-        {['POSITIVE', 'NEUTRAL', 'NEGATIVE'].map((sentiment) => (
+        <p className="stk-menu-hint">How they feel</p>
+        {(
+          [
+            ['POSITIVE', 'Positive', 'is-ok'],
+            ['NEUTRAL', 'Neutral', 'is-mid'],
+            ['NEGATIVE', 'Negative', 'is-bad'],
+          ] as const
+        ).map(([sentiment, text, tone]) => (
           <button
             key={sentiment}
             type="button"
             className={stkMenuItem}
+            aria-pressed={filters.sentiment === sentiment}
             onClick={() => {
               onChange({ ...filters, sentiment });
               setOpen(null);
             }}
           >
-            {sentiment[0] + sentiment.slice(1).toLowerCase()}
+            <i className={`stk-sent-dot ${tone}`} />
+            <span className="min-w-0 flex-1 truncate text-start">{text}</span>
+            <ActiveCheck on={filters.sentiment === sentiment} />
           </button>
         ))}
       </FilterMenu>
@@ -504,28 +554,35 @@ export const StalkerFilters = ({
         open={open === 'category'}
         onToggle={() => setOpen(open === 'category' ? null : 'category')}
       >
+        <p className="stk-menu-hint">What it&apos;s about</p>
         {categories.map((category) => (
           <button
             key={category.id}
             type="button"
             className={stkMenuItem}
+            aria-pressed={filters.categoryId === category.id}
             onClick={() => {
               onChange({ ...filters, categoryId: category.id });
               setOpen(null);
             }}
           >
-            {category.name}
+            <CategoryMark name={category.name} />
+            <span className="min-w-0 flex-1 truncate text-start">{category.name}</span>
+            <ActiveCheck on={filters.categoryId === category.id} />
           </button>
         ))}
         <button
           type="button"
           className={stkMenuItem}
+          aria-pressed={filters.categoryId === 'none'}
           onClick={() => {
             onChange({ ...filters, categoryId: 'none' });
             setOpen(null);
           }}
         >
-          Uncategorized
+          <CategoryMark name="Uncategorized" />
+          <span className="min-w-0 flex-1 truncate text-start">Uncategorized</span>
+          <ActiveCheck on={filters.categoryId === 'none'} />
         </button>
         <a href="/stalker/settings" className={`${stkMenuItem} text-[color:var(--arc-accent-text)]`}>
           + Manage categories
@@ -547,12 +604,14 @@ export const StalkerFilters = ({
             key={value}
             type="button"
             className={stkMenuItem}
+            aria-pressed={filters.status === value}
             onClick={() => {
               onChange({ ...filters, status: value });
               setOpen(null);
             }}
           >
-            {text}
+            <span className="min-w-0 flex-1 truncate text-start">{text}</span>
+            <ActiveCheck on={filters.status === value} />
           </button>
         ))}
       </FilterMenu>
@@ -570,10 +629,16 @@ export const StalkerFilters = ({
           <div key={name} className="mt-[6px]">
             <p className="px-[8px] text-[13px] font-[500] text-textItemBlur">{name}</p>
             {rows.map((keyword) => (
-              <div key={keyword.id} className="flex items-center justify-between px-[8px] py-[4px] text-[14px]">
-                <button type="button" onClick={() => onChange({ ...filters, keywordId: keyword.id })}>
+              <div key={keyword.id} className="stk-key-row flex items-center gap-[8px] px-[8px] py-[4px] text-[14px]">
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 truncate text-start"
+                  aria-pressed={filters.keywordId === keyword.id}
+                  onClick={() => onChange({ ...filters, keywordId: keyword.id })}
+                >
                   {keyword.phrase}
                 </button>
+                <ActiveCheck on={filters.keywordId === keyword.id} />
                 <button
                   type="button"
                   className="text-[13px] text-[color:var(--arc-accent-text)]"
@@ -608,6 +673,9 @@ export const StalkerFilters = ({
               <button
                 type="button"
                 className={stkMenuItem}
+                aria-pressed={
+                  filters.from === (author.authorHandle || author.authorName)
+                }
                 onClick={() => {
                   onChange({ ...filters, from: author.authorHandle || author.authorName });
                   setOpen(null);
@@ -622,6 +690,9 @@ export const StalkerFilters = ({
                 </span>
                 <SourceIcon source={author.source} />
                 <span className="text-[13px] text-textItemBlur">{author.count}</span>
+                <ActiveCheck
+                  on={filters.from === (author.authorHandle || author.authorName)}
+                />
               </button>
             </li>
           ))}
@@ -636,9 +707,10 @@ export const StalkerFilters = ({
         onToggle={() => setOpen(open === 'engagement' ? null : 'engagement')}
       >
         {['X', 'YOUTUBE', 'LINKEDIN'].map((source) => (
-          <label key={source} className="flex items-center gap-[8px] px-[8px] py-[6px] text-[14px]">
+          <label key={source} className="stk-engage-row flex items-center gap-[8px] px-[8px] py-[6px] text-[14px]">
             <SourceIcon source={source} />
-            <span className="w-[88px]">{sourceLabel(source)}</span>
+            <span className="w-[88px] shrink-0 truncate">{sourceLabel(source)}</span>
+            <ActiveCheck on={Number(filters.engagement[source]) > 0} />
             <input
               className="h-[36px] min-w-0 flex-1 rounded-[14px] border border-newBorder bg-newBgColorInner px-[10px] text-[14px]"
               inputMode="numeric"

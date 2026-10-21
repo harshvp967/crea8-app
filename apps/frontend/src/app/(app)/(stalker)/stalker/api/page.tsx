@@ -1,5 +1,5 @@
-import { StalkerApi } from '@gitroom/frontend/components/stalker/stalker.api';
+import { redirect } from 'next/navigation';
 
 export default function StalkerApiPage() {
-  return <StalkerApi />;
+  redirect('/stalker/mentions');
 }
