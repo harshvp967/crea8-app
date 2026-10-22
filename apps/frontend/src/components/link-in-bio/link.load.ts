@@ -1,5 +1,45 @@
 import type { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
 
+// Files in /public are not rewritten by Next assetPrefix. Bios on crea8.one
+// and custom domains still request them from the app, which is where they live.
+const APP_ICON_ORIGIN = 'https://app.crea8.one';
+
+const SOCIAL_ICON: Record<string, string> = {
+  instagram: '/icons/platforms/instagram.png',
+  x: '/icons/platforms/x.png',
+  youtube: '/icons/platforms/youtube.png',
+  linkedin: '/icons/platforms/linkedin.png',
+  tiktok: '/icons/platforms/tiktok.png',
+  threads: '/icons/platforms/threads.png',
+  facebook: '/icons/platforms/facebook.png',
+  bluesky: '/icons/platforms/bluesky.png',
+  twitch: '/icons/platforms/twitch.png',
+  pinterest: '/icons/platforms/pinterest.png',
+  reddit: '/icons/platforms/reddit.png',
+};
+
+export function publicIconSrc(
+  path: string,
+  env: { nodeEnv?: string; assetPrefix?: string } = {}
+) {
+  if (!path.startsWith('/')) {
+    return path;
+  }
+  const prefix = (env.assetPrefix ?? process.env.NEXT_PUBLIC_ASSET_PREFIX ?? '').trim().replace(/\/$/, '');
+  if (prefix) {
+    return `${prefix}${path}`;
+  }
+  if ((env.nodeEnv ?? process.env.NODE_ENV) !== 'production') {
+    return path;
+  }
+  return `${APP_ICON_ORIGIN}${path}`;
+}
+
+export function publicSocialIconSrc(network: string, env: { nodeEnv?: string; assetPrefix?: string } = {}) {
+  const path = SOCIAL_ICON[network];
+  return path ? publicIconSrc(path, env) : '';
+}
+
 export function publicLinkCacheSeconds() {
   if (process.env.PUBLIC_LINK_CACHE_SECONDS === '0') {
     return 0;
