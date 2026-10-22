@@ -250,7 +250,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <AccountMenu
                           open={accountMenu.open}
                           helpOpen={accountMenu.helpOpen}
+                          planOpen={accountMenu.planOpen}
                           onHelpToggle={accountMenu.onHelpToggle}
+                          onPlanToggle={accountMenu.onPlanToggle}
                           onClose={accountMenu.close}
                           onSettings={accountMenu.onSettings}
                           onBilling={accountMenu.onBilling}
