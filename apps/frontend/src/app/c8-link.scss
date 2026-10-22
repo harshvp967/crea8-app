@@ -1226,6 +1226,73 @@ body:has(.link-screen) .stk-close {
   text-overflow: clip;
 }
 
+body:has(.link-screen) .lib-add-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+body:has(.link-screen) .lib-add-grid button {
+  min-height: 46px;
+  border: 1px solid var(--c8-line) !important;
+  border-radius: 14px !important;
+  background: var(--c8-soft) !important;
+  color: var(--c8-ink) !important;
+  box-shadow: none !important;
+}
+
+body:has(.link-screen) .lib-add-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+body:has(.link-screen) .lib-add-copy small {
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+body:has(.link-screen) .lib-block-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body:has(.link-screen) .lib-block-move {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+body:has(.link-screen) .lib-block-move button,
+body:has(.link-screen) .lib-block-sheet > button,
+body:has(.link-screen) .lib-anim-chips button {
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+body:has(.link-screen) .lib-block-sheet > button {
+  justify-content: flex-start;
+  min-height: 52px !important;
+  height: auto !important;
+  border-radius: 14px !important;
+}
+
+.link-screen .lib-anim-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 639px) {
+  body:has(.link-screen) .lib-add-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .link-screen .lib-acc {
   border: 1px solid var(--c8-line);
   border-radius: 24px;
