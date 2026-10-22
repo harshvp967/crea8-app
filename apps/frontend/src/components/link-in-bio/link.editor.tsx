@@ -680,6 +680,22 @@ export const LinkEditorScreen = () => {
                 </button>
                 {menu === block.id ? (
                   <div className="lib-menu">
+                    {confirmId === block.id ? (
+                      <div className="lib-confirm" role="dialog" aria-label="Remove block">
+                        <button type="button" onClick={() => setConfirmId('')}>
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="is-remove"
+                          disabled={busy}
+                          onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'DELETE', undefined, 'Removed')}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                    <>
                     {block.type === 'LINK' ? (
                       <>
                         <LinkMenuRow
@@ -851,21 +867,8 @@ export const LinkEditorScreen = () => {
                     <LinkMenuRow icon="trash" danger onClick={() => setConfirmId(block.id)}>
                       Delete
                     </LinkMenuRow>
-                    {confirmId === block.id ? (
-                      <div className="lib-confirm" role="dialog" aria-label="Remove block">
-                        <button type="button" onClick={() => setConfirmId('')}>
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          className="is-remove"
-                          disabled={busy}
-                          onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'DELETE', undefined, 'Removed')}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ) : null}
+                    </>
+                    )}
                   </div>
                 ) : null}
               </div>

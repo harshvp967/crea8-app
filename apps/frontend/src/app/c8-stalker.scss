@@ -1748,6 +1748,48 @@ body:has(.stalker-screen) .stk-dialog-foot {
   color: #fff;
 }
 
+/* Confirm sits in the mention sheet. The old top: 100% placement
+   put Cancel/Remove in the sheet's scroll overflow. */
+.stalker-screen .stk-mention-menu .stk-confirm {
+  position: static;
+  top: auto;
+  inset-inline-end: auto;
+  margin: 4px;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+.stalker-screen .stk-mention-menu .stk-confirm button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .stalker-screen .stk-sheet-backdrop:has(+ .stk-mention-menu > .stk-confirm) {
+    display: block;
+    position: fixed;
+    z-index: 80;
+    inset: 0;
+    border: 0;
+    background: var(--c8-scrim-sheet);
+  }
+
+  .stalker-screen .stk-mention-menu:has(> .stk-confirm) {
+    position: fixed !important;
+    z-index: 85;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 50% !important;
+    width: min(320px, calc(100vw - 32px)) !important;
+    max-height: none !important;
+    margin: 0 !important;
+    overflow: visible;
+    transform: translate(-50%, -50%);
+    border-radius: 28px !important;
+  }
+}
+
 .stalker-screen .stk-menu-danger {
   color: var(--c8-danger);
 }
@@ -1913,13 +1955,15 @@ body:has(.stalker-screen) .stk-dialog-foot {
     font-size: 16px;
   }
 
-  .stalker-screen .stk-analytics .stk-filters {
+  .stalker-screen .stk-analytics .stk-filters,
+  .stalker-screen .stk-mentions .stk-filters {
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
   }
 
-  .stalker-screen .stk-analytics .stk-filters::-webkit-scrollbar {
+  .stalker-screen .stk-analytics .stk-filters::-webkit-scrollbar,
+  .stalker-screen .stk-mentions .stk-filters::-webkit-scrollbar {
     display: none;
   }
 
@@ -2947,4 +2991,25 @@ body:has(.stalker-screen) .stk-dialog-foot {
   .stalker-screen .stk-filters .stk-date-pop {
     width: min(560px, 100%) !important;
   }
+}
+
+/* Portaled filter menus follow the chip. Later rules win over the
+   sheet and the row's left: 0 placement. */
+.stalker-screen .stk-filter-pop.stk-popover {
+  position: fixed !important;
+  top: var(--stk-pop-top) !important;
+  left: var(--stk-pop-left) !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: var(--stk-pop-width) !important;
+  max-width: none !important;
+  max-height: var(--stk-pop-max) !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: 90 !important;
+  overflow: auto !important;
+  border-width: 1.5px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 6px 0 var(--c8-hard) !important;
+  padding: 14px !important;
 }
