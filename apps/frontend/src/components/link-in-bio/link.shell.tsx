@@ -48,11 +48,13 @@ export const LinkSplit = ({
 export const LinkViewTabs = ({
   preview,
   onPreview,
+  className,
 }: {
   preview: boolean;
   onPreview: (open: boolean) => void;
+  className?: string;
 }) => (
-  <div className="lib-view-tabs min-[1200px]:hidden" role="tablist" aria-label="Page view">
+  <div className={className ? `lib-view-tabs ${className}` : 'lib-view-tabs min-[1200px]:hidden'} role="tablist" aria-label="Page view">
     <button type="button" role="tab" aria-selected={!preview} onClick={() => onPreview(false)}>
       Edit
     </button>
