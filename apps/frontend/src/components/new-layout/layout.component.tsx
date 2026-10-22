@@ -54,14 +54,16 @@ import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settin
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
 import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
 import { C8Sidebar } from '@gitroom/frontend/components/layout/c8.sidebar';
-import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
+import { AccountMenu, useAccountMenu } from '@gitroom/frontend/components/layout/account.menu';
 
 const HeaderAvatar = ({
   name,
   onClick,
+  expanded,
 }: {
   name: string;
   onClick: () => void;
+  expanded?: boolean;
 }) => {
   const initials =
     name
@@ -75,7 +77,9 @@ const HeaderAvatar = ({
       type="button"
       className="header-avatar"
       title={name || undefined}
-      aria-label={name ? `${name}, account settings` : 'Account settings'}
+      aria-haspopup="menu"
+      aria-expanded={!!expanded}
+      aria-label={name ? `${name}, account menu` : 'Account menu'}
       onClick={onClick}
     >
       {initials}
@@ -103,6 +107,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     if (pathname?.startsWith('/account')) return;
     router.push('/account');
   }, [pathname, router]);
+  const accountMenu = useAccountMenu();
   const accountRef = useRef<HTMLDivElement>(null);
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
@@ -206,7 +211,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <C8Sidebar
                       name={user?.name || ''}
                       email={user?.email || ''}
-                      onAccount={openAccount}
+                      menu={accountMenu}
                     />
                   <div className="c8-main">
                   <header
@@ -232,15 +237,16 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <div className="header-avatar-wrap relative flex items-center">
                         <HeaderAvatar
                           name={user?.name || user?.email || ''}
-                          onClick={openAccount}
+                          expanded={accountMenu.open}
+                          onClick={accountMenu.toggle}
                         />
                         <AccountMenu
-                          open={false}
-                          helpOpen={false}
-                          onHelpToggle={() => undefined}
-                          onClose={() => undefined}
-                          onSettings={openAccount}
-                          onBilling={openAccount}
+                          open={accountMenu.open}
+                          helpOpen={accountMenu.helpOpen}
+                          onHelpToggle={accountMenu.onHelpToggle}
+                          onClose={accountMenu.close}
+                          onSettings={accountMenu.onSettings}
+                          onBilling={accountMenu.onBilling}
                         />
                       </div>
                       <HeaderOverflow>

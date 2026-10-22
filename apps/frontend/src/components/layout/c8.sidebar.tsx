@@ -34,11 +34,19 @@ const initialsOf = (name: string) =>
 export const C8Sidebar = ({
   name,
   email,
-  onAccount,
+  menu,
 }: {
   name: string;
   email: string;
-  onAccount: () => void;
+  menu: {
+    open: boolean;
+    helpOpen: boolean;
+    onHelpToggle: () => void;
+    close: () => void;
+    onSettings: () => void;
+    onBilling: () => void;
+    toggle: () => void;
+  };
 }) => {
   const pathname = usePathname() || '';
   const openComposer = useOpenComposer();
@@ -190,12 +198,12 @@ export const C8Sidebar = ({
         <button
           type="button"
           className="c8-side-user"
+          aria-haspopup="menu"
+          aria-expanded={menu.open}
           aria-label={
-            name || email
-              ? `${name || email}, account settings`
-              : 'Account settings'
+            name || email ? `${name || email}, account menu` : 'Account menu'
           }
-          onClick={onAccount}
+          onClick={menu.toggle}
         >
           <span className="c8-side-avatar">{initialsOf(name || email)}</span>
           <span className="c8-side-user-copy">
@@ -204,12 +212,12 @@ export const C8Sidebar = ({
           </span>
         </button>
         <AccountMenu
-          open={false}
-          helpOpen={false}
-          onHelpToggle={() => undefined}
-          onClose={() => undefined}
-          onSettings={onAccount}
-          onBilling={onAccount}
+          open={menu.open}
+          helpOpen={menu.helpOpen}
+          onHelpToggle={menu.onHelpToggle}
+          onClose={menu.close}
+          onSettings={menu.onSettings}
+          onBilling={menu.onBilling}
         />
         <NotificationComponent />
         <ModeComponent />
