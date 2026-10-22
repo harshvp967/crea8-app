@@ -1226,6 +1226,64 @@ body:has(.link-screen) .stk-close {
   text-overflow: clip;
 }
 
+.link-screen .lib-acc {
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+}
+
+.link-screen .lib-acc-item + .lib-acc-item {
+  border-top: 1px solid var(--c8-line);
+}
+
+.link-screen .lib-acc-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  min-height: 63px;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link-screen .lib-acc-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.link-screen .lib-acc-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.link-screen .lib-acc-sub {
+  overflow: hidden;
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-screen .lib-acc-head svg {
+  flex: none;
+  color: var(--c8-muted);
+}
+
+.link-screen .lib-acc-body {
+  padding: 0 16px 16px;
+}
+
 .link-screen .lib-themes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

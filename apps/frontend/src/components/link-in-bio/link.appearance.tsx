@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
@@ -80,6 +80,33 @@ const toDraft = (page: LinkEditor): Draft => {
 
 const Pro = () => <span className="lib-pill lib-pill-pro">★ Pro</span>;
 
+const labelOf = (value: string) => (value ? value[0].toUpperCase() + value.slice(1) : value);
+
+const AccItem = ({
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) => (
+  <div className={open ? 'lib-acc-item is-open' : 'lib-acc-item'}>
+    <button type="button" className="lib-acc-head" aria-expanded={open} onClick={onToggle}>
+      <span className="lib-acc-copy">
+        <span className="lib-acc-title">{title}</span>
+        <span className="lib-acc-sub">{summary}</span>
+      </span>
+      <HugeIcon name={open ? 'chevron-down' : 'chevron-right'} size={18} />
+    </button>
+    {open ? <div className="lib-acc-body">{children}</div> : null}
+  </div>
+);
+
 export const LinkAppearanceScreen = () => {
   const fetch = useFetch();
   const toast = useToaster();
@@ -91,6 +118,7 @@ export const LinkAppearanceScreen = () => {
   const [socialErrors, setSocialErrors] = useState<Array<string | null>>([]);
   const [removeSocial, setRemoveSocial] = useState<number | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
+  const [section, setSection] = useState<string | null>(null);
   const connect = useAddProvider(() => {
     mutate();
   });
@@ -187,6 +215,14 @@ export const LinkAppearanceScreen = () => {
     }
   };
 
+  const toggleSection = (id: string) => setSection((current) => (current === id ? null : id));
+  const themeLabel = LINK_THEMES.find((theme) => theme.id === draft.theme)?.label || draft.theme;
+  const buttonLabel = LINK_BUTTONS.find((item) => item.id === radiusPreset(design.radius, draft.buttonStyle))?.label || 'Pill';
+  const buttonSummary = `${labelOf(design.buttonFill)} · ${buttonLabel} · ${labelOf(design.shadow)}`;
+  const shownIcons =
+    data.accounts.filter((account) => !draft.hidden.includes(account.id)).length + draft.socials.filter((item) => item.url.trim()).length;
+  const socialSummary = `${shownIcons} icons · ${design.socialPosition === 'bottom' ? 'Bottom' : 'Top'}`;
+
   const previewPage = toPublic({
     ...data,
     ...draft,
@@ -221,7 +257,9 @@ export const LinkAppearanceScreen = () => {
           <div className="min-w-0">
             <div className="lib-kicker">
               <span className="lib-sticker">Link-in-Bio</span>
-              <span className={`${stkSub} lib-period`}>The phone preview updates as you edit.</span>
+              <span className={`${stkSub} lib-period truncate`}>
+                {data.publicOrigin.replace(/^https?:\/\//, '')}/{data.slug}
+              </span>
             </div>
             <h1 className={stkTitle}>Appearance</h1>
           </div>
@@ -236,8 +274,8 @@ export const LinkAppearanceScreen = () => {
           </div>
         </div>
 
-        <section className={stkCard}>
-          <h2 className="text-[16px] font-[600]">Profile</h2>
+        <div className="lib-acc">
+        <AccItem title="Profile" summary="Avatar, name, bio, logo" open={section === 'profile'} onToggle={() => toggleSection('profile')}>
           <p className="mb-[12px] text-[13px] text-textItemBlur">Photo, title and bio. Title is 30 characters, bio is 160.</p>
           <div className="mb-[14px] flex flex-wrap items-center gap-[12px]">
             <div className="lib-avatar">
@@ -346,31 +384,8 @@ export const LinkAppearanceScreen = () => {
               <span className="text-[12px] font-[400] text-textItemBlur">{draft.bio.length}/160</span>
             </LinkField>
           </div>
-        </section>
-
-        <section className={stkCard}>
-          <h2 className="text-[16px] font-[600]">Header</h2>
-          <p className="lib-help mb-[12px] text-[13px] text-textItemBlur">Classic is included. Other layouts are Pro.</p>
-          <div className="flex flex-wrap gap-[8px]">
-            {LINK_HEADERS.map((header) => (
-              <button
-                key={header}
-                type="button"
-                className={design.header === header ? linkChoice : linkSecondary}
-                onClick={() => {
-                  if (!guard(header !== 'classic', 'That layout is on a paid plan')) return;
-                  setDesign({ header });
-                }}
-              >
-                {header[0].toUpperCase() + header.slice(1)}
-                {header !== 'classic' ? <Pro /> : null}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className={stkCard}>
-          <h2 className="text-[16px] font-[600]">Themes</h2>
+        </AccItem>
+        <AccItem title="Theme" summary={themeLabel} open={section === 'theme'} onToggle={() => toggleSection('theme')}>
           <p className="lib-help mb-[12px] text-[13px] text-textItemBlur">Pro themes show a badge.</p>
           <div className="lib-themes">
             {LINK_THEMES.map((theme) => (
@@ -404,11 +419,27 @@ export const LinkAppearanceScreen = () => {
               </button>
             ))}
           </div>
-        </section>
-
-        <div className="grid min-w-0 grid-cols-1 gap-[16px] xl:grid-cols-2">
-          <section className={stkCard}>
-            <h2 className="mb-[12px] text-[16px] font-[600]">Wallpaper</h2>
+        </AccItem>
+        <AccItem title="Header" summary={labelOf(design.header)} open={section === 'header'} onToggle={() => toggleSection('header')}>
+          <p className="lib-help mb-[12px] text-[13px] text-textItemBlur">Classic is included. Other layouts are Pro.</p>
+          <div className="flex flex-wrap gap-[8px]">
+            {LINK_HEADERS.map((header) => (
+              <button
+                key={header}
+                type="button"
+                className={design.header === header ? linkChoice : linkSecondary}
+                onClick={() => {
+                  if (!guard(header !== 'classic', 'That layout is on a paid plan')) return;
+                  setDesign({ header });
+                }}
+              >
+                {header[0].toUpperCase() + header.slice(1)}
+                {header !== 'classic' ? <Pro /> : null}
+              </button>
+            ))}
+          </div>
+        </AccItem>
+        <AccItem title="Background" summary={labelOf(design.wallpaper)} open={section === 'background'} onToggle={() => toggleSection('background')}>
             <div className="mb-[12px] flex flex-wrap gap-[8px]">
               {LINK_WALLPAPERS.map((item) => (
                 <button
@@ -444,10 +475,8 @@ export const LinkAppearanceScreen = () => {
             {!design.wallpaperChosen && draft.backgroundMode === 'image' && draft.backgroundImage ? (
               <p className="text-[13px] text-textItemBlur">The current background image stays until you pick a wallpaper.</p>
             ) : null}
-          </section>
-
-          <section className={stkCard}>
-            <h2 className="mb-[12px] text-[16px] font-[600]">Buttons</h2>
+        </AccItem>
+        <AccItem title="Buttons" summary={buttonSummary} open={section === 'buttons'} onToggle={() => toggleSection('buttons')}>
             <div className="mb-[12px] flex flex-wrap gap-[8px]">
               {LINK_BUTTON_FILLS.map((item) => (
                 <button
@@ -499,11 +528,8 @@ export const LinkAppearanceScreen = () => {
                 </button>
               ))}
             </div>
-          </section>
-        </div>
-
-        <section className={stkCard}>
-          <h2 className="mb-[12px] text-[16px] font-[600]">Fonts and colours</h2>
+        </AccItem>
+        <AccItem title="Text & colours" summary={draft.font} open={section === 'text'} onToggle={() => toggleSection('text')}>
           <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
             <LinkField label="Page font">
               <select value={draft.font} onChange={(event) => setDraft({ ...draft, font: event.target.value })}>
@@ -531,14 +557,10 @@ export const LinkAppearanceScreen = () => {
             <ColorField label="Page text" value={design.colors.pageText || themePalette(draft.theme).pageText} onChange={(pageText) => setDesign({ colors: { ...design.colors, pageText } })} />
             <ColorField label="Title" value={design.colors.title || themePalette(draft.theme).title} onChange={(title) => setDesign({ colors: { ...design.colors, title } })} />
           </div>
-        </section>
-
-        <section className={stkCard}>
+        </AccItem>
+        <AccItem title="Socials" summary={socialSummary} open={section === 'socials'} onToggle={() => toggleSection('socials')}>
           <div className="mb-[12px] flex flex-wrap items-start justify-between gap-[8px]">
-            <div>
-              <h2 className="text-[16px] font-[600]">Social icons</h2>
-              <p className="text-[13px] text-textItemBlur">Accounts connected in Schedule show up here. Stalker uses the same accounts.</p>
-            </div>
+            <p className="text-[13px] text-textItemBlur">Accounts connected in Schedule show up here. Stalker uses the same accounts.</p>
             <LinkSegments
               label="Social position"
               value={design.socialPosition}
@@ -650,7 +672,8 @@ export const LinkAppearanceScreen = () => {
               </button>
             ) : null}
           </div>
-        </section>
+        </AccItem>
+        </div>
         <button type="button" className={`${linkSecondary} lib-reset-phone`} onClick={() => setDraft(toDraft(data))}>
           Reset
         </button>
