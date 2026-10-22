@@ -13,7 +13,7 @@ import {
   useLinkPosts,
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, LinkMenuRow, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
@@ -308,9 +308,9 @@ export const LinkEditorScreen = () => {
     setMenu('');
   };
 
+  const hasFeatured = data.blocks.some((block) => block.type === 'FEATURED_POST');
   const addMenu = (
-                <div className="lib-menu">
-                  <p className="lib-menu-kicker">Add block</p>
+                <div className="lib-add-grid">
                   <LinkMenuRow icon="link" onClick={() => openLink()}>
                     Link
                   </LinkMenuRow>
@@ -322,7 +322,10 @@ export const LinkEditorScreen = () => {
                       setAddOpen(false);
                     }}
                   >
-                    Featured post
+                    <span className="lib-add-copy">
+                      Featured post
+                      {hasFeatured ? <small>Already on page</small> : null}
+                    </span>
                   </LinkMenuRow>
                   <LinkMenuRow
                     icon="mail"
@@ -331,7 +334,10 @@ export const LinkEditorScreen = () => {
                       setAddOpen(false);
                     }}
                   >
-                    Email capture
+                    <span className="lib-add-copy">
+                      Email capture
+                      <small>1 per page</small>
+                    </span>
                   </LinkMenuRow>
                   <LinkMenuRow
                     icon="heading"
@@ -500,7 +506,6 @@ export const LinkEditorScreen = () => {
                   <HugeIcon name="plus" size={16} />
                   Add block
                 </button>
-                {addOpen && addAnchor === 'head' ? addMenu : null}
               </div>
             </div>
           </div>
@@ -536,7 +541,6 @@ export const LinkEditorScreen = () => {
               <HugeIcon name="plus" size={16} />
               Add block
             </button>
-            {addOpen && addAnchor === 'row' ? addMenu : null}
           </div>
           <details className="lib-preview-as">
             <summary className="lib-preview-as-summary">
@@ -733,7 +737,18 @@ export const LinkEditorScreen = () => {
                   <HugeIcon name="more" size={18} />
                 </button>
                 {menu === block.id ? (
-                  <div className="lib-menu">
+                  <LinkModal title={blockName(block)} onClose={() => { setMenu(''); setConfirmId(''); }}>
+                  <div className="lib-block-sheet">
+                    <div className="lib-block-move">
+                      <button type="button" disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
+                        <HugeIcon name="chevron-up" size={16} />
+                        Move up
+                      </button>
+                      <button type="button" disabled={busy || index === data.blocks.length - 1} onClick={() => move(block.id, 1)}>
+                        <HugeIcon name="chevron-down" size={16} />
+                        Move down
+                      </button>
+                    </div>
                     {confirmId === block.id ? (
                       <div className="lib-confirm" role="dialog" aria-label="Remove block">
                         <button type="button" onClick={() => setConfirmId('')}>
@@ -924,6 +939,7 @@ export const LinkEditorScreen = () => {
                     </>
                     )}
                   </div>
+                  </LinkModal>
                 ) : null}
               </div>
               </div>
@@ -938,6 +954,12 @@ export const LinkEditorScreen = () => {
         )}
       </div>
 
+      {addOpen ? (
+        <LinkModal title="Add block" onClose={() => setAddOpen(false)}>
+          {addMenu}
+        </LinkModal>
+      ) : null}
+
       {modal?.kind === 'link' ? (
         <LinkModal title={modal.block ? 'Edit link' : 'Add link'} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-[14px]">
@@ -947,45 +969,44 @@ export const LinkEditorScreen = () => {
             <LinkField label="URL">
               <input value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} placeholder="https://" />
             </LinkField>
-            <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2">
-              <LinkField label="Layout">
-                <select
-                  value={draft.layout}
-                  onChange={(event) => {
-                    const layout = event.target.value === 'featured' ? 'featured' : 'classic';
-                    if (layout === 'featured' && linkLocked(data)) {
-                      toast.show('Featured cards are on a paid plan', 'warning');
-                      return;
-                    }
-                    setDraft({ ...draft, layout });
-                  }}
-                >
-                  <option value="classic">Classic</option>
-                  <option value="featured">Featured card</option>
-                </select>
-              </LinkField>
-              <LinkField label="Animation">
-                <select
-                  value={draft.animation}
-                  onChange={(event) => {
-                    const animation = event.target.value;
-                    if (animation !== 'none' && linkLocked(data)) {
-                      toast.show('Link animations are on a paid plan', 'warning');
-                      return;
-                    }
-                    setDraft({ ...draft, animation });
-                  }}
-                >
-                  <option value="none">None</option>
-                  <option value="wiggle">Wiggle</option>
-                  <option value="pop">Pop</option>
-                  <option value="electricity">Electricity</option>
-                  <option value="glitch">Glitch</option>
-                  <option value="shimmer">Shimmer</option>
-                  <option value="bounce">Bounce</option>
-                  <option value="pulse">Pulse</option>
-                </select>
-              </LinkField>
+            <div className="lib-field">
+              <span>Layout</span>
+              <LinkSegments
+                label="Layout"
+                value={draft.layout}
+                options={[
+                  { id: 'classic', label: 'Classic' },
+                  { id: 'featured', label: 'Featured' },
+                ]}
+                onChange={(layout) => {
+                  if (layout === 'featured' && linkLocked(data)) {
+                    toast.show('Featured cards are on a paid plan', 'warning');
+                    return;
+                  }
+                  setDraft({ ...draft, layout });
+                }}
+              />
+            </div>
+            <div className="lib-field">
+              <span>Animation</span>
+              <div className="lib-anim-chips">
+                {['none', 'wiggle', 'pop', 'electricity', 'glitch', 'shimmer', 'bounce', 'pulse'].map((animation) => (
+                  <button
+                    key={animation}
+                    type="button"
+                    className={draft.animation === animation ? linkChoice : linkSecondary}
+                    onClick={() => {
+                      if (animation !== 'none' && linkLocked(data)) {
+                        toast.show('Link animations are on a paid plan', 'warning');
+                        return;
+                      }
+                      setDraft({ ...draft, animation });
+                    }}
+                  >
+                    {animation[0].toUpperCase() + animation.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
             <p className="text-[13px] text-textItemBlur">Only one link can animate at a time. Featured cards are Pro.</p>
             <div className="flex items-center justify-between gap-[12px]">
