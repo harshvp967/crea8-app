@@ -66,11 +66,13 @@ const AccountProfile = () => {
   const fetch = useFetch();
   const toast = useToaster();
   const user = useUser();
+  const nameRef = useRef(user?.name || '');
+  nameRef.current = user?.name || '';
   const resolver = useMemo(() => classValidatorResolver(UserDetailDto), []);
   const form = useForm({
     resolver,
     defaultValues: {
-      fullname: '',
+      fullname: user?.name || '',
       bio: '',
       picture: null as { id: string; path: string } | null,
     },
@@ -84,7 +86,10 @@ const AccountProfile = () => {
 
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
-    formRef.current.setValue('fullname', personal.name || '');
+    formRef.current.setValue(
+      'fullname',
+      (typeof personal?.name === 'string' && personal.name.trim()) || nameRef.current
+    );
     formRef.current.setValue('bio', personal.bio || '');
     formRef.current.setValue('picture', personal.picture);
   }, [fetch]);

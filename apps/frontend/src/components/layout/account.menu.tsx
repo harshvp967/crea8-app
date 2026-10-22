@@ -1,9 +1,53 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import dynamic from 'next/dynamic';
+
+export const useAccountMenu = () => {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const close = useCallback(() => {
+    setOpen(false);
+    setHelpOpen(false);
+  }, []);
+  const toggle = useCallback(() => {
+    setOpen((value) => {
+      if (value) setHelpOpen(false);
+      return !value;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (document.querySelector('.arc-dialog-wrap')) return;
+      event.preventDefault();
+      close();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [close, open]);
+
+  const onSettings = useCallback(() => {
+    close();
+    router.push('/account?section=profile');
+  }, [close, router]);
+  const onBilling = useCallback(() => {
+    close();
+    router.push('/account?section=billing');
+  }, [close, router]);
+  const onHelpToggle = useCallback(() => {
+    setHelpOpen((value) => !value);
+  }, []);
+
+  return { open, helpOpen, toggle, close, onSettings, onBilling, onHelpToggle };
+};
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
