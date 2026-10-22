@@ -16,7 +16,7 @@ import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/
 import { LinkField, LinkMenuRow, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
-import { LinkPublicView } from '@gitroom/frontend/components/link-in-bio/link.public-view';
+import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { embedProblem, parseEmbed, scheduleLabel, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
@@ -145,6 +145,7 @@ export const LinkEditorScreen = () => {
   const [modal, setModal] = useState<Modal>(null);
   const [menu, setMenu] = useState('');
   const [addOpen, setAddOpen] = useState(false);
+  const [addAnchor, setAddAnchor] = useState<'head' | 'row'>('row');
   const [preview, setPreview] = useState(false);
   const [draft, setDraft] = useState(emptyLink);
   const [heading, setHeading] = useState('');
@@ -307,42 +308,7 @@ export const LinkEditorScreen = () => {
     setMenu('');
   };
 
-  return (
-    <LinkSplit
-      previewOpen={preview}
-      onPreviewClose={() => setPreview(false)}
-      preview={
-        <LinkPreview
-          onCopy={() => copy(data.publicUrl)}
-          onClose={preview ? () => setPreview(false) : undefined}
-        >
-          <LinkPublicView
-            key={`${data.slug}-${data.isPublic}-${data.sensitive}`}
-            data={toPublic(data, visitor)}
-            mode="preview"
-          />
-        </LinkPreview>
-      }
-    >
-      <div className="lib-editor-page flex min-w-0 flex-col gap-[12px] pb-[24px]">
-        <div className="lib-head flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <div className="lib-kicker">
-              <span className="lib-sticker">Link-in-Bio</span>
-              <span className={`${stkSub} lib-period truncate`}>
-                {data.publicOrigin.replace(/^https?:\/\//, '')}/{data.slug}
-              </span>
-            </div>
-            <h1 className={stkTitle}>Editor</h1>
-          </div>
-          <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
-            <LinkViewTabs preview={preview} onPreview={setPreview} />
-            <div className="relative">
-              <button type="button" className={linkPrimary} onClick={() => setAddOpen((value) => !value)}>
-                <HugeIcon name="plus" size={16} />
-                Add block
-              </button>
-              {addOpen ? (
+  const addMenu = (
                 <div className="lib-menu">
                   <p className="lib-menu-kicker">Add block</p>
                   <LinkMenuRow icon="link" onClick={() => openLink()}>
@@ -488,15 +454,95 @@ export const LinkEditorScreen = () => {
                     Contact form
                   </LinkMenuRow>
                 </div>
-              ) : null}
+  );
+
+  const toggleAdd = (anchor: 'head' | 'row') => {
+    setAddOpen((open) => (addAnchor === anchor ? !open : true));
+    setAddAnchor(anchor);
+  };
+
+  const pageHost = `${data.publicOrigin.replace(/^https?:\/\//, '')}/${data.slug}`;
+
+  return (
+    <LinkSplit
+      previewOpen={preview}
+      onPreviewClose={() => setPreview(false)}
+      preview={
+        <LinkPreview
+          onCopy={() => copy(data.publicUrl)}
+          onClose={preview ? () => setPreview(false) : undefined}
+        >
+          <LinkPublicView
+            key={`${data.slug}-${data.isPublic}-${data.sensitive}`}
+            data={toPublic(data, visitor)}
+            mode="preview"
+          />
+        </LinkPreview>
+      }
+    >
+      <div className="lib-editor-page flex min-w-0 flex-col gap-[12px] pb-[24px]">
+        <div className="lib-head">
+          <div className="lib-kicker">
+            <span className="lib-sticker">Link-in-Bio</span>
+            <span className={`${stkSub} lib-period truncate`}>{pageHost}</span>
+          </div>
+          <div className="lib-title-row">
+            <h1 className={stkTitle}>Editor</h1>
+            <div className="lib-head-actions">
+              <LinkViewTabs className="lib-editor-tabs" preview={preview} onPreview={setPreview} />
+              <div className="lib-add-slot lib-add-slot-head relative">
+                <button
+                  type="button"
+                  className={linkPrimary}
+                  aria-expanded={addOpen && addAnchor === 'head'}
+                  onClick={() => toggleAdd('head')}
+                >
+                  <HugeIcon name="plus" size={16} />
+                  Add block
+                </button>
+                {addOpen && addAnchor === 'head' ? addMenu : null}
+              </div>
             </div>
           </div>
         </div>
 
-        <details className={`${stkCard} lib-preview-as`}>
-          <summary className="lib-preview-as-summary">
-            <span className="text-[16px] font-[600]">Preview as</span>
-          </summary>
+        <section className={`${stkCard} lib-page-card`}>
+          <span className="lib-avatar" aria-hidden>
+            {data.avatarPath ? <img src={data.avatarPath} alt="" /> : linkInitials(data.name || data.slug)}
+          </span>
+          <div className="lib-page-copy">
+            <strong>{data.name || data.slug}</strong>
+            <span className="lib-page-url">
+              <i className="lib-page-live" data-live={data.isPublic ? 'true' : 'false'} />
+              <span className="truncate">{pageHost}</span>
+            </span>
+          </div>
+          <button type="button" className="lib-icon-btn" aria-label="Copy link" onClick={() => copy(data.publicUrl)}>
+            <HugeIcon name="copy" size={16} />
+          </button>
+          <button type="button" className="lib-icon-btn" aria-label="Share link" onClick={() => copy(data.publicUrl)}>
+            <HugeIcon name="share" size={16} />
+          </button>
+        </section>
+
+        <div className="lib-editor-actions">
+          <div className="lib-add-slot relative">
+            <button
+              type="button"
+              className={linkPrimary}
+              aria-expanded={addOpen && addAnchor === 'row'}
+              onClick={() => toggleAdd('row')}
+            >
+              <HugeIcon name="plus" size={16} />
+              Add block
+            </button>
+            {addOpen && addAnchor === 'row' ? addMenu : null}
+          </div>
+          <details className="lib-preview-as">
+            <summary className="lib-preview-as-summary">
+              <HugeIcon name="globe" size={14} />
+              <span>Preview as: {visitor.platform || 'Any'}</span>
+            </summary>
           <div className="lib-preview-as-body">
           <div className="mb-[8px] flex items-center justify-end gap-[8px]">
             <button
@@ -546,6 +592,7 @@ export const LinkEditorScreen = () => {
           </p>
           </div>
         </details>
+        </div>
 
         {!data.blocks.length ? (
           <div className={`${stkCard} ${stkEmpty} stk-state`}>
@@ -554,7 +601,14 @@ export const LinkEditorScreen = () => {
             </span>
             <h2 className="text-[16px] font-[600]">No links yet</h2>
             <p className="max-w-[320px] text-[14px] text-textItemBlur">Add your first link or block to start your page.</p>
-            <button type="button" className={`${linkSecondary} mt-[6px]`} onClick={() => setAddOpen(true)}>
+            <button
+              type="button"
+              className={`${linkSecondary} mt-[6px]`}
+              onClick={() => {
+                setAddAnchor('row');
+                setAddOpen(true);
+              }}
+            >
               <HugeIcon name="plus" size={16} />
               Add block
             </button>
@@ -872,6 +926,12 @@ export const LinkEditorScreen = () => {
               </div>
             </article>
           ))
+        )}
+        {preview ? null : (
+          <button type="button" className={`${linkPrimary} lib-preview-fab`} onClick={() => setPreview(true)}>
+            <HugeIcon name="eye" size={18} />
+            Preview
+          </button>
         )}
       </div>
 
