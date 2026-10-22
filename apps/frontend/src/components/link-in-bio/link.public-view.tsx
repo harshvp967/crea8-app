@@ -315,7 +315,7 @@ export const LinkPublicView = ({
             if (block.type === 'MAP' && block.embed) {
               return (
                 <div key={block.id} className="lib-embed" data-provider="maps">
-                  <iframe src={block.embed.src} title={block.title || 'Map'} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
+                  <iframe src={mapEmbedSrc(block.embed.src)} title={block.title || 'Map'} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
                 </div>
               );
             }
@@ -537,9 +537,33 @@ const embedMessageHeight = (data: unknown) => {
   return typeof tweetHeight === 'number' && tweetHeight > 0 ? tweetHeight : 0;
 };
 
+const instagramHref = (src: string) => {
+  try {
+    const url = new URL(src);
+    if (url.hostname.replace(/^www\./, '') !== 'instagram.com') {
+      return '';
+    }
+    const path = url.pathname.replace(/\/embed\/?$/, '');
+    if (!path || path === '/') {
+      return '';
+    }
+    return `https://www.instagram.com${path}`;
+  } catch {
+    return '';
+  }
+};
+
+const mapEmbedSrc = (src: string) => {
+  if (!src.includes('output=embed') || /[?&]iwloc=/.test(src)) {
+    return src;
+  }
+  return `${src}&iwloc=`;
+};
+
 const EmbedFrame = ({ src, title, provider }: { src: string; title: string; provider: string }) => {
   const frame = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(0);
+  const instagram = provider === 'instagram' ? instagramHref(src) : '';
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow) {
@@ -553,6 +577,13 @@ const EmbedFrame = ({ src, title, provider }: { src: string; title: string; prov
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, []);
+  if (instagram) {
+    return (
+      <a className="lib-link" href={instagram} target="_blank" rel="noreferrer">
+        {title || 'Instagram'}
+      </a>
+    );
+  }
   return (
     <div className="lib-embed" data-provider={provider}>
       <iframe

@@ -493,12 +493,15 @@ export const LinkEditorScreen = () => {
           </div>
         </div>
 
-        <section className={`${stkCard} lib-preview-as`}>
-          <div className="mb-[8px] flex items-center justify-between gap-[8px]">
-            <h2 className="text-[16px] font-[600]">Preview as</h2>
+        <details className={`${stkCard} lib-preview-as`}>
+          <summary className="lib-preview-as-summary">
+            <span className="text-[16px] font-[600]">Preview as</span>
+          </summary>
+          <div className="lib-preview-as-body">
+          <div className="mb-[8px] flex items-center justify-end gap-[8px]">
             <button
               type="button"
-              className="lib-text-btn text-[13px] text-textItemBlur"
+              className="lib-preview-as-reset lib-text-btn text-[13px] text-textItemBlur"
               onClick={() => setVisitor({ country: '', platform: '', language: '' })}
             >
               Reset
@@ -538,10 +541,11 @@ export const LinkEditorScreen = () => {
               />
             </LinkField>
           </div>
-          <p className="mt-[6px] text-[13px] text-textItemBlur">
-            Visitor rules hide a link or change its title and URL in this preview. Rules are Pro.
+          <p className="lib-preview-as-note mt-[6px] text-[13px] text-textItemBlur">
+            Rules hide a link or change its title and URL in this preview. Rules are Pro.
           </p>
-        </section>
+          </div>
+        </details>
 
         {!data.blocks.length ? (
           <div className={`${stkCard} ${stkEmpty} stk-state`}>
@@ -635,6 +639,7 @@ export const LinkEditorScreen = () => {
                   </div>
                 ) : null}
               </div>
+              <div className="lib-editor-tools">
               {block.type === 'LINK' ? (
                 <span className="lib-editor-clicks shrink-0 text-[13px] text-textItemBlur">
                   {block.clicks.toLocaleString('en-US')} clicks
@@ -651,6 +656,15 @@ export const LinkEditorScreen = () => {
                 >
                   Change post
                 </button>
+              ) : null}
+              {block.type === 'FEATURED_POST' ? (
+                <span className="lib-editor-toggle lib-editor-toggle-feature shrink-0">
+                  <LinkToggle
+                    checked={block.enabled}
+                    label={block.enabled ? 'Hide block' : 'Show block'}
+                    onChange={(enabled) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled })}
+                  />
+                </span>
               ) : (
                 <span className="lib-editor-toggle shrink-0">
                   <LinkToggle
@@ -660,7 +674,7 @@ export const LinkEditorScreen = () => {
                   />
                 </span>
               )}
-              <div className="relative shrink-0">
+              <div className="lib-editor-menu relative shrink-0">
                 <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={() => { setMenu(menu === block.id ? '' : block.id); setConfirmId(''); }}>
                   <HugeIcon name="more" size={18} />
                 </button>
@@ -854,6 +868,7 @@ export const LinkEditorScreen = () => {
                     ) : null}
                   </div>
                 ) : null}
+              </div>
               </div>
             </article>
           ))

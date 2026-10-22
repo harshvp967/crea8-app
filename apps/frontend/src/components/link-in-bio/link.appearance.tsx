@@ -221,7 +221,7 @@ export const LinkAppearanceScreen = () => {
           <div className="min-w-0">
             <div className="lib-kicker">
               <span className="lib-sticker">Link-in-Bio</span>
-              <span className={`${stkSub} lib-period`}>Themes, wallpaper and the phone preview update as you edit</span>
+              <span className={`${stkSub} lib-period`}>The phone preview updates as you edit.</span>
             </div>
             <h1 className={stkTitle}>Appearance</h1>
           </div>
@@ -235,9 +235,6 @@ export const LinkAppearanceScreen = () => {
             </button>
           </div>
         </div>
-        <button type="button" className={`${linkSecondary} lib-reset-phone`} onClick={() => setDraft(toDraft(data))}>
-          Reset
-        </button>
 
         <section className={stkCard}>
           <h2 className="text-[16px] font-[600]">Profile</h2>
@@ -353,7 +350,7 @@ export const LinkAppearanceScreen = () => {
 
         <section className={stkCard}>
           <h2 className="text-[16px] font-[600]">Header</h2>
-          <p className="mb-[12px] text-[13px] text-textItemBlur">Classic is included. The other layouts are Pro.</p>
+          <p className="lib-help mb-[12px] text-[13px] text-textItemBlur">Classic is included. Other layouts are Pro.</p>
           <div className="flex flex-wrap gap-[8px]">
             {LINK_HEADERS.map((header) => (
               <button
@@ -374,9 +371,7 @@ export const LinkAppearanceScreen = () => {
 
         <section className={stkCard}>
           <h2 className="text-[16px] font-[600]">Themes</h2>
-          <p className="mb-[12px] text-[13px] text-textItemBlur">
-            Pro themes are marked
-          </p>
+          <p className="lib-help mb-[12px] text-[13px] text-textItemBlur">Pro themes show a badge.</p>
           <div className="lib-themes">
             {LINK_THEMES.map((theme) => (
               <button
@@ -398,9 +393,13 @@ export const LinkAppearanceScreen = () => {
                   <i />
                 </span>
                 <span className="lib-theme-label">
-                  {theme.label}
-                  {draft.theme === theme.id ? <span className="lib-pill lib-pill-active">Active</span> : null}
-                  {theme.pro ? <Pro /> : null}
+                  <span className="lib-theme-name">{theme.label}</span>
+                  {draft.theme === theme.id || theme.pro ? (
+                    <span className="lib-theme-badges">
+                      {draft.theme === theme.id ? <span className="lib-pill lib-pill-active">Active</span> : null}
+                      {theme.pro ? <Pro /> : null}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             ))}
@@ -652,6 +651,9 @@ export const LinkAppearanceScreen = () => {
             ) : null}
           </div>
         </section>
+        <button type="button" className={`${linkSecondary} lib-reset-phone`} onClick={() => setDraft(toDraft(data))}>
+          Reset
+        </button>
       </div>
     </LinkSplit>
   );
