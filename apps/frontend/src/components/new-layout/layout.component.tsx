@@ -15,7 +15,7 @@ import clsx from 'clsx';
 import dynamic from 'next/dynamic';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
@@ -107,11 +107,6 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const router = useRouter();
-  const openAccount = useCallback(() => {
-    if (pathname?.startsWith('/account')) return;
-    router.push('/account');
-  }, [pathname, router]);
   const accountMenu = useAccountMenu();
   const accountRef = useRef<HTMLDivElement>(null);
   const headerAvatarRef = useRef<HTMLButtonElement>(null);
@@ -276,7 +271,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   </div>
                   </div>
                   </div>
-                  <MobileTabBar onAccount={openAccount} />
+                  <MobileTabBar />
                 </>
               )}
             </div>
