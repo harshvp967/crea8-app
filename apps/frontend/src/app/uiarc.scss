@@ -1020,6 +1020,18 @@ body :focus-visible {
   cursor: pointer;
 }
 
+.header-avatar:hover,
+.header-avatar:focus-visible,
+.header-avatar[aria-expanded='true'] {
+  background: var(--c8-soft);
+  box-shadow: 0 0 0 2px var(--c8-cyan);
+}
+
+.header-avatar:focus-visible {
+  outline: 2px solid var(--c8-cyan);
+  outline-offset: 2px;
+}
+
 .org-menu {
   z-index: 90;
   border-radius: 18px;

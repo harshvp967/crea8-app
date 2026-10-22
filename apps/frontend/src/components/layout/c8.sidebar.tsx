@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
@@ -16,12 +17,6 @@ import NotificationComponent from '@gitroom/frontend/components/notifications/no
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
 import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
-import dynamic from 'next/dynamic';
-
-const ModeComponent = dynamic(
-  () => import('@gitroom/frontend/components/layout/mode.component'),
-  { ssr: false }
-);
 
 const initialsOf = (name: string) =>
   name
@@ -49,6 +44,7 @@ export const C8Sidebar = ({
   };
 }) => {
   const pathname = usePathname() || '';
+  const anchorRef = useRef<HTMLButtonElement>(null);
   const openComposer = useOpenComposer();
   const { stalkerEnabled } = useVariables();
   const { firstMenu, secondMenu } = useMenuItem();
@@ -196,8 +192,10 @@ export const C8Sidebar = ({
       <div className="c8-side-spacer" />
       <div className="c8-side-foot">
         <button
+          ref={anchorRef}
           type="button"
           className="c8-side-user"
+          title={name || email || undefined}
           aria-haspopup="menu"
           aria-expanded={menu.open}
           aria-label={
@@ -218,9 +216,10 @@ export const C8Sidebar = ({
           onClose={menu.close}
           onSettings={menu.onSettings}
           onBilling={menu.onBilling}
+          anchorRef={anchorRef}
+          surface="sidebar"
         />
         <NotificationComponent />
-        <ModeComponent />
       </div>
     </aside>
   );
