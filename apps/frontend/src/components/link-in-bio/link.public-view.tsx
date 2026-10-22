@@ -4,20 +4,7 @@ import { CSSProperties, FormEvent, useEffect, useRef, useState } from 'react';
 import { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { eventLabel, fontStack, normalizeDesign, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
-
-const SOCIAL_LOGO: Record<string, string> = {
-  instagram: '/icons/platforms/instagram.png',
-  x: '/icons/platforms/x.png',
-  youtube: '/icons/platforms/youtube.png',
-  linkedin: '/icons/platforms/linkedin.png',
-  tiktok: '/icons/platforms/tiktok.png',
-  threads: '/icons/platforms/threads.png',
-  facebook: '/icons/platforms/facebook.png',
-  bluesky: '/icons/platforms/bluesky.png',
-  twitch: '/icons/platforms/twitch.png',
-  pinterest: '/icons/platforms/pinterest.png',
-  reddit: '/icons/platforms/reddit.png',
-};
+import { publicSocialIconSrc } from '@gitroom/frontend/components/link-in-bio/link.load';
 
 export const linkInitials = (value: string) => {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -28,7 +15,7 @@ export const linkInitials = (value: string) => {
 };
 
 export const SocialMark = ({ network }: { network: string }) => {
-  const logo = SOCIAL_LOGO[network];
+  const logo = publicSocialIconSrc(network);
   if (logo) {
     return <img src={logo} alt="" className="lib-social-mark" />;
   }

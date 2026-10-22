@@ -20,7 +20,9 @@ import { LinkService } from '@gitroom/nestjs-libraries/database/prisma/link-in-b
 import {
   loadPublicLink,
   presentPublicLink,
+  publicIconSrc,
   publicLinkCacheSeconds,
+  publicSocialIconSrc,
 } from '@gitroom/frontend/components/link-in-bio/link.load';
 
 const page = {
@@ -92,6 +94,18 @@ describe('Link-in-Bio public page and lead capture', () => {
     expect(gated.initial.blocks).toEqual([]);
     expect(gated.initial.capture).toBeNull();
     expect(gated.initial.redirectUrl).toBe('');
+  });
+
+  it('resolves public social icons from the app origin in production', () => {
+    expect(publicSocialIconSrc('instagram', { nodeEnv: 'development' })).toBe('/icons/platforms/instagram.png');
+    expect(publicSocialIconSrc('instagram', { nodeEnv: 'production' })).toBe(
+      'https://app.crea8.one/icons/platforms/instagram.png'
+    );
+    expect(publicSocialIconSrc('x', { nodeEnv: 'production', assetPrefix: 'https://cdn.example' })).toBe(
+      'https://cdn.example/icons/platforms/x.png'
+    );
+    expect(publicSocialIconSrc('website', { nodeEnv: 'production' })).toBe('');
+    expect(publicIconSrc('https://cdn.example/icon.png', { nodeEnv: 'production' })).toBe('https://cdn.example/icon.png');
   });
 
   it('caches the public page fetch and returns null without a backend', async () => {
