@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { CSSProperties, ReactNode, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
 import { SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
@@ -324,6 +325,7 @@ export const StalkerFilters = ({
   authors: AuthorRow[];
 }) => {
   const [open, setOpen] = useState<string | null>(null);
+  const dateAnchor = useRef<HTMLButtonElement>(null);
   const [draft, setDraft] = useState(filters);
   const [cursor, setCursor] = useState(() => {
     const date = new Date();
@@ -382,6 +384,7 @@ export const StalkerFilters = ({
       <div className="relative min-w-0">
         <button
           type="button"
+          ref={dateAnchor}
           className={clsx(chipClass(!!dateLabel() || open === 'date'), 'stk-fchip')}
           onClick={() => {
             setDraft(filters);
@@ -392,10 +395,7 @@ export const StalkerFilters = ({
           <span className="min-w-0 flex-1 truncate text-start">{dateLabel() || 'Date'}</span>
           <ChipIcon name="down" />
         </button>
-        {open === 'date' ? (
-          <>
-            <button type="button" className="stk-sheet-backdrop" aria-label="Close" onClick={() => setOpen(null)} />
-            <div className={`${stkPopover} stk-date-pop`}>
+        <FilterPop open={open === 'date'} onClose={() => setOpen(null)} anchor={dateAnchor} wide>
               <div className="stk-date-layout">
                 <div className="stk-date-presets">
                   {PRESETS.map(([id, text]) => (
@@ -468,6 +468,7 @@ export const StalkerFilters = ({
                       );
                     })}
                   </div>
+                </div>
                   <div className="stk-date-fields">
                     <input
                       className={stkField}
@@ -499,10 +500,7 @@ export const StalkerFilters = ({
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </>
-        ) : null}
+        </FilterPop>
       </div>
       <FilterMenu
         icon="globe"
@@ -777,6 +775,122 @@ export const StalkerFilters = ({
   );
 };
 
+type PopPlace = { top: number; left: number; width: number; maxHeight: number };
+
+const placeFilterPop = (anchor: HTMLElement, menu: HTMLElement, wide: boolean): PopPlace => {
+  const rect = anchor.getBoundingClientRect();
+  const margin = 8;
+  const gap = 8;
+  const sidebar = document.querySelector('.c8-sidebar');
+  const sidebarBox = sidebar?.getBoundingClientRect();
+  const sidebarRight = sidebarBox && sidebarBox.width > 0 && sidebarBox.bottom > 0 ? sidebarBox.right : 0;
+  const boundLeft = Math.max(margin, sidebarRight);
+  const boundRight = window.innerWidth - margin;
+  const width = Math.max(160, Math.min(wide ? 560 : 280, boundRight - boundLeft));
+  let left = rect.left;
+  if (left + width > boundRight) left = rect.right - width;
+  if (left < boundLeft) left = boundLeft;
+  if (left + width > boundRight) left = Math.max(boundLeft, boundRight - width);
+
+  const spaceBelow = window.innerHeight - margin - rect.bottom - gap;
+  const spaceAbove = rect.top - margin - gap;
+  const content = menu.scrollHeight;
+  const openAbove = spaceBelow < Math.min(content, 240) && spaceAbove > spaceBelow;
+  const room = openAbove ? spaceAbove : spaceBelow;
+  const maxHeight = Math.max(120, Math.min(content, wide ? 640 : 480, room, window.innerHeight - margin * 2));
+  const height = Math.min(content, maxHeight);
+  let top = openAbove ? rect.top - gap - height : rect.bottom + gap;
+  if (top < margin) top = margin;
+  if (top + height > window.innerHeight - margin) top = Math.max(margin, window.innerHeight - margin - height);
+  return { top, left, width, maxHeight };
+};
+
+const FilterPop = ({
+  open,
+  onClose,
+  anchor,
+  wide,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  anchor: RefObject<HTMLElement | null>;
+  wide?: boolean;
+  children: ReactNode;
+}) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<PopPlace | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPlace(null);
+      return;
+    }
+    const update = (event?: Event) => {
+      const node = anchor.current;
+      const menu = menuRef.current;
+      if (!node || !menu) return;
+      if (event?.target instanceof Node && menu.contains(event.target)) return;
+      const next = placeFilterPop(node, menu, !!wide);
+      setPlace((current) =>
+        current &&
+        current.top === next.top &&
+        current.left === next.left &&
+        current.width === next.width &&
+        current.maxHeight === next.maxHeight
+          ? current
+          : next
+      );
+    };
+    update();
+    const menu = menuRef.current;
+    const observer = menu && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => update()) : null;
+    if (menu && observer) observer.observe(menu);
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [open, anchor, wide]);
+
+  if (!open || typeof document === 'undefined') return null;
+  const host = document.querySelector('.stalker-screen') || document.body;
+  const style: CSSProperties = place
+    ? {
+        position: 'fixed',
+        top: place.top,
+        left: place.left,
+        width: place.width,
+        maxHeight: place.maxHeight,
+        zIndex: 90,
+        margin: 0,
+        right: 'auto',
+        bottom: 'auto',
+        transform: 'none',
+        ['--stk-pop-top' as string]: `${place.top}px`,
+        ['--stk-pop-left' as string]: `${place.left}px`,
+        ['--stk-pop-width' as string]: `${place.width}px`,
+        ['--stk-pop-max' as string]: `${place.maxHeight}px`,
+        visibility: 'visible',
+      }
+    : { visibility: 'hidden' };
+  return createPortal(
+    <>
+      <button type="button" className="stk-sheet-backdrop" aria-label="Close" onClick={onClose} />
+      <div
+        ref={menuRef}
+        className={clsx(stkPopover, 'stk-filter-pop', wide && 'stk-date-pop')}
+        style={style}
+      >
+        {children}
+      </div>
+    </>,
+    host
+  );
+};
+
 const FilterMenu = ({
   icon,
   label,
@@ -793,18 +907,23 @@ const FilterMenu = ({
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
-}) => (
-  <div className="relative min-w-0">
-    <button type="button" className={clsx(chipClass(!!label || open), 'stk-fchip', chipClassName)} onClick={onToggle}>
-      <ChipIcon name={icon} />
-      <span className="min-w-0 flex-1 truncate text-start">{label || title}</span>
-      {icon === 'plus' ? null : <ChipIcon name="down" />}
-    </button>
-    {open ? (
-      <>
-        <button type="button" className="stk-sheet-backdrop" aria-label="Close" onClick={onToggle} />
-        <div className={`${stkPopover} w-[280px]`}>{children}</div>
-      </>
-    ) : null}
-  </div>
-);
+}) => {
+  const anchor = useRef<HTMLButtonElement>(null);
+  return (
+    <div className="relative min-w-0">
+      <button
+        type="button"
+        ref={anchor}
+        className={clsx(chipClass(!!label || open), 'stk-fchip', chipClassName)}
+        onClick={onToggle}
+      >
+        <ChipIcon name={icon} />
+        <span className="min-w-0 flex-1 truncate text-start">{label || title}</span>
+        {icon === 'plus' ? null : <ChipIcon name="down" />}
+      </button>
+      <FilterPop open={open} onClose={onToggle} anchor={anchor}>
+        {children}
+      </FilterPop>
+    </div>
+  );
+};

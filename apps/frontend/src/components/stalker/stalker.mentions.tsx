@@ -430,7 +430,7 @@ export const StalkerMentions = () => {
   };
 
   return (
-    <div className={stkPage}>
+    <div className={`${stkPage} stk-mentions`}>
       <div className={stkHead}>
         <div className="min-w-0">
           <div className="stk-kicker">
@@ -754,6 +754,17 @@ export const StalkerMentions = () => {
                             onClick={() => setMarking(null)}
                           />
                           <div className={`${stkMenu} stk-mention-menu`} role="menu">
+                            {confirmDelete === mention.id ? (
+                              <div className="stk-confirm" role="dialog" aria-label="Remove mention">
+                                <button type="button" onClick={() => setConfirmDelete(null)}>
+                                  Cancel
+                                </button>
+                                <button type="button" className="is-remove" onClick={() => deleteMention(mention.id)}>
+                                  Remove
+                                </button>
+                              </div>
+                            ) : (
+                            <>
                             <button type="button" className={stkMenuItem} onClick={() => setRelevant(mention.id, true)}>
                               <LineIcon name="check" />
                               <span className="min-w-0 flex-1 text-start">Relevant</span>
@@ -804,16 +815,8 @@ export const StalkerMentions = () => {
                               <LineIcon name="trash" />
                               Delete
                             </button>
-                            {confirmDelete === mention.id ? (
-                              <div className="stk-confirm" role="dialog" aria-label="Remove mention">
-                                <button type="button" onClick={() => setConfirmDelete(null)}>
-                                  Cancel
-                                </button>
-                                <button type="button" className="is-remove" onClick={() => deleteMention(mention.id)}>
-                                  Remove
-                                </button>
-                              </div>
-                            ) : null}
+                            </>
+                            )}
                           </div>
                         </>
                       ) : null}
