@@ -38,7 +38,9 @@ export const C8Sidebar = ({
   menu: {
     open: boolean;
     helpOpen: boolean;
+    planOpen: boolean;
     onHelpToggle: () => void;
+    onPlanToggle: () => void;
     close: () => void;
     onSettings: () => void;
     onBilling: () => void;
@@ -216,7 +218,9 @@ export const C8Sidebar = ({
         <AccountMenu
           open={menu.open}
           helpOpen={menu.helpOpen}
+          planOpen={menu.planOpen}
           onHelpToggle={menu.onHelpToggle}
+          onPlanToggle={menu.onPlanToggle}
           onClose={menu.close}
           onSettings={menu.onSettings}
           onBilling={menu.onBilling}
