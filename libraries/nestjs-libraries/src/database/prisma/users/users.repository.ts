@@ -2,7 +2,7 @@ import {
   PrismaRepository,
   PrismaTransaction,
 } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { Provider, Role } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -261,17 +261,52 @@ export class UsersRepository {
       data: {
         name: body.fullname,
         bio: body.bio,
-        picture: body.picture
-          ? {
-              connect: {
-                id: body.picture.id,
-              },
-            }
-          : {
-              disconnect: true,
-            },
+        ...(await this.picturePatch(userId, body.picture)),
       },
     });
+  }
+
+  // The library hands back a short-lived read URL. The saved avatar is the
+  // media row itself, and only a file in one of this user's organizations.
+  // An omitted picture leaves the current avatar in place. Null clears it.
+  private async picturePatch(
+    userId: string,
+    picture: UserDetailDto['picture']
+  ): Promise<{ pictureId: string | null } | Record<string, never>> {
+    if (picture === undefined) {
+      return {};
+    }
+    if (!picture?.id) {
+      return { pictureId: null };
+    }
+
+    const owner = await this._user.model.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+        organizations: {
+          some: {
+            disabled: false,
+            organization: {
+              deletedAt: null,
+              media: {
+                some: {
+                  id: picture.id,
+                  deletedAt: null,
+                },
+              },
+            },
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!owner) {
+      throw new HttpException('Picture not found', 400);
+    }
+
+    return { pictureId: picture.id };
   }
 
   async getEmailNotifications(userId: string) {

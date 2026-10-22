@@ -1,4 +1,5 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
+import { presentMediaRecord } from '@gitroom/nestjs-libraries/upload/media.deliver';
 import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users/users.repository';
 import { Provider, Role } from '@prisma/client';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
@@ -135,12 +136,34 @@ export class UsersService {
     return this._usersRepository.updatePassword(id, password);
   }
 
-  getPersonal(userId: string) {
-    return this._usersRepository.getPersonal(userId);
+  async getPersonal(userId: string) {
+    return this.withReadablePicture(
+      await this._usersRepository.getPersonal(userId)
+    );
   }
 
-  changePersonal(userId: string, body: UserDetailDto) {
-    return this._usersRepository.changePersonal(userId, body);
+  async changePersonal(userId: string, body: UserDetailDto) {
+    await this._usersRepository.changePersonal(userId, body);
+    return this.getPersonal(userId);
+  }
+
+  // Avatars render this path in an image tag. A private file needs a signed
+  // read URL; if signing fails, keep the stored path instead of failing the
+  // profile request.
+  private async withReadablePicture<
+    T extends { picture?: { id: string; path: string } | null }
+  >(user: T | null) {
+    if (!user?.picture?.path) {
+      return user;
+    }
+    try {
+      return {
+        ...user,
+        picture: await presentMediaRecord(user.picture),
+      };
+    } catch {
+      return user;
+    }
   }
 
   getEmailNotifications(userId: string) {

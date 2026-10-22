@@ -14,6 +14,7 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useSWRConfig } from 'swr';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Input } from '@gitroom/react/form/input';
 import { Button } from '@gitroom/react/form/button';
@@ -65,6 +66,7 @@ const AccountProfile = () => {
   const t = useT();
   const fetch = useFetch();
   const toast = useToaster();
+  const { mutate } = useSWRConfig();
   const user = useUser();
   const nameRef = useRef(user?.name || '');
   nameRef.current = user?.name || '';
@@ -134,20 +136,44 @@ const AccountProfile = () => {
     async (val: {
       fullname: string;
       bio: string;
-      picture: { id: string; path: string } | null;
+      picture: { id: string; path?: string } | null;
     }) => {
       setSaving(true);
       try {
-        await fetch('/user/personal', {
+        const response = await fetch('/user/personal', {
           method: 'POST',
-          body: JSON.stringify(val),
+          body: JSON.stringify({
+            fullname: val.fullname,
+            bio: val.bio || '',
+            picture: val.picture?.id ? { id: val.picture.id } : null,
+          }),
         });
-        toast.show(t('profile_updated', 'Profile updated'));
+        if (!response.ok) {
+          toast.show(t('could_not_update_profile', 'Could not update profile'), 'error');
+          return;
+        }
+        const saved = await response.json();
+        formRef.current.setValue('picture', saved?.picture ?? null);
+        await mutate(
+          '/user/self',
+          (current: any) =>
+            current
+              ? {
+                  ...current,
+                  name: typeof saved?.name === 'string' ? saved.name : val.fullname,
+                  picture: saved?.picture ?? null,
+                }
+              : current,
+          { revalidate: true }
+        );
+        toast.show(t('profile_updated', 'Profile updated'), 'success');
+      } catch {
+        toast.show(t('could_not_update_profile', 'Could not update profile'), 'error');
       } finally {
         setSaving(false);
       }
     },
-    [fetch, t, toast]
+    [fetch, mutate, t, toast]
   );
 
   const photo = picture?.path || '';
@@ -155,7 +181,12 @@ const AccountProfile = () => {
 
   return (
     <FormProvider {...form}>
-      <form className="settings-section" onSubmit={form.handleSubmit(submit)}>
+      <form
+        className="settings-section"
+        onSubmit={form.handleSubmit(submit, () => {
+          toast.show(t('could_not_update_profile', 'Could not update profile'), 'error');
+        })}
+      >
         <div className="settings-head">
           <h1>{t('profile', 'Profile')}</h1>
         </div>

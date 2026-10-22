@@ -34,10 +34,12 @@ const initialsOf = (name: string) =>
 export const C8Sidebar = ({
   name,
   email,
+  picture,
   menu,
 }: {
   name: string;
   email: string;
+  picture?: string;
   menu: {
     open: boolean;
     helpOpen: boolean;
@@ -205,7 +207,9 @@ export const C8Sidebar = ({
           }
           onClick={menu.toggle}
         >
-          <span className="c8-side-avatar">{initialsOf(name || email)}</span>
+          <span className="c8-side-avatar">
+            {picture ? <img src={picture} alt="" /> : initialsOf(name || email)}
+          </span>
           <span className="c8-side-user-copy">
             <span className="c8-side-user-name">{name || email}</span>
             <span className="c8-side-user-handle">crea8.one</span>

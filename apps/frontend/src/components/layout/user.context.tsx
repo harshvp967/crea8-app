@@ -20,6 +20,7 @@ export const UserContext = createContext<
       isTrailing: boolean;
       streakSince: string | null;
       aiDrafts?: boolean;
+      picture?: { id: string; path: string } | null;
     })
 >(undefined);
 export const ContextWrapper: FC<{
