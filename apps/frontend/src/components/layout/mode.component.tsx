@@ -6,7 +6,7 @@ import EventEmitter from 'events';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 export const modeEmitter = new EventEmitter();
 
-const ModeComponent = () => {
+const ModeComponent = ({ applyOnly = false }: { applyOnly?: boolean }) => {
   const [mode, setMode] = useCookie('mode', 'dark');
 
   const changeMode = useCallback(
@@ -23,6 +23,8 @@ const ModeComponent = () => {
     document.body.classList.remove('dark', 'light');
     document.body.classList.add(mode);
   }, [mode]);
+
+  if (applyOnly) return null;
 
   return (
     <button

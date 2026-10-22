@@ -61,11 +61,13 @@ const HeaderAvatar = ({
   picture,
   onClick,
   expanded,
+  ref,
 }: {
   name: string;
   picture?: string;
   onClick: () => void;
   expanded?: boolean;
+  ref?: React.Ref<HTMLButtonElement>;
 }) => {
   const initials =
     name
@@ -76,6 +78,7 @@ const HeaderAvatar = ({
       .join('') || '•';
   return (
     <button
+      ref={ref}
       type="button"
       className="header-avatar"
       title={name || undefined}
@@ -111,6 +114,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   }, [pathname, router]);
   const accountMenu = useAccountMenu();
   const accountRef = useRef<HTMLDivElement>(null);
+  const headerAvatarRef = useRef<HTMLButtonElement>(null);
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, [fetch]);
@@ -209,6 +213,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                 <>
                   <AnnouncementBanner />
                   <Support />
+                  <ModeComponent applyOnly />
                   <div className="c8-frame">
                     <C8Sidebar
                       name={user?.name || ''}
@@ -230,15 +235,13 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <div className="header-account relative flex items-center" ref={accountRef}>
                         <OrganizationSelector />
                       </div>
-                      <div className="flex items-center justify-center">
-                        <ModeComponent />
-                      </div>
                       <div className="header-gear">
                         <SettingsMenuItem variant="header" />
                       </div>
                       <NotificationComponent />
                       <div className="header-avatar-wrap relative flex items-center">
                         <HeaderAvatar
+                          ref={headerAvatarRef}
                           name={user?.name || user?.email || ''}
                           picture={user?.picture?.path || ''}
                           expanded={accountMenu.open}
@@ -251,6 +254,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                           onClose={accountMenu.close}
                           onSettings={accountMenu.onSettings}
                           onBilling={accountMenu.onBilling}
+                          anchorRef={headerAvatarRef}
+                          surface="header"
                         />
                       </div>
                       <HeaderOverflow>
