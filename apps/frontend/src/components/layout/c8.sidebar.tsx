@@ -15,6 +15,7 @@ import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav'
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
 import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
+import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
 import dynamic from 'next/dynamic';
 
 const ModeComponent = dynamic(
@@ -202,6 +203,14 @@ export const C8Sidebar = ({
             <span className="c8-side-user-handle">crea8.one</span>
           </span>
         </button>
+        <AccountMenu
+          open={false}
+          helpOpen={false}
+          onHelpToggle={() => undefined}
+          onClose={() => undefined}
+          onSettings={onAccount}
+          onBilling={onAccount}
+        />
         <NotificationComponent />
         <ModeComponent />
       </div>

@@ -877,10 +877,14 @@ body:has(.link-screen) .stk-close {
 }
 
 .link-screen .lib-preview-col .lib-phone {
+  width: min(100%, 390px, calc((100dvh - 200px) * 390 / 844));
+  height: auto;
+  max-height: none;
   border: 12px solid var(--c8-hard);
   border-radius: 48px;
   background: var(--c8-hard);
   box-shadow: 0 18px 40px color-mix(in srgb, var(--c8-hard) 16%, transparent);
+  aspect-ratio: 390 / 844;
 }
 
 .link-screen .lib-preview-col .lib-phone::before {
@@ -934,13 +938,31 @@ body:has(.link-screen) .stk-close {
   max-width: 100%;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (min-height: 501px) {
+  .link-screen .lib-split {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.2fr) minmax(240px, 380px);
+    align-items: start;
+    gap: 24px !important;
+  }
+
   .link-screen .lib-preview-col {
     position: sticky;
-    top: 12px;
-    align-self: flex-start;
-    width: min(390px, calc((100dvh - 210px) * 390 / 844));
-    max-height: calc(100dvh - 160px);
+    top: 0;
+    align-self: start;
+    justify-self: end;
+    width: 100%;
+    max-width: 380px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .link-screen .lib-preview-col .lib-phone {
+    width: min(100%, 390px, calc((100dvh - 200px) * 390 / 844));
+    height: auto;
+    max-height: none;
+    margin-inline: auto;
+    aspect-ratio: 390 / 844;
   }
 }
 
@@ -1904,5 +1926,73 @@ body:has(.link-screen) .stk-close {
     max-width: 1104px;
     margin-right: auto;
     margin-left: auto;
+  }
+}
+
+.link-screen .lib-view-tabs {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--c8-soft);
+}
+
+.link-screen .lib-view-tabs button {
+  height: 36px;
+  flex: none;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c8-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.link-screen .lib-view-tabs button[aria-selected='true'] {
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  box-shadow: 0 1px 3px rgb(18 16 22 / 0.12);
+}
+
+@media (max-width: 1024px) {
+  .link-screen,
+  .link-screen .lib-split,
+  .link-screen .lib-split > *,
+  .link-screen .lib-editor-page,
+  .link-screen .lib-head,
+  .link-screen .lib-head-actions,
+  .link-screen .lib-editor-row,
+  .link-screen .lib-appearance,
+  .link-screen .lib-settings,
+  .link-screen .lib-analytics,
+  .link-screen .lib-leads {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .c8-shell .app-main:has(.link-screen) {
+    overflow-x: hidden !important;
+  }
+
+  .link-screen .lib-head-actions {
+    flex-wrap: wrap;
+  }
+
+  .link-screen .stk-btn,
+  .link-screen .lib-view-tabs button,
+  .link-screen .lib-head-actions button {
+    white-space: nowrap;
+  }
+
+  .link-screen .lib-preview-col.is-open {
+    overflow: auto;
   }
 }

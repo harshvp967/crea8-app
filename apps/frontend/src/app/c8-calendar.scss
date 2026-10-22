@@ -817,6 +817,18 @@ body.c8-schedule .phone-day-strip button.arc-selected {
     display: none !important;
   }
 
+  .c8-shell .header-avatar {
+    display: inline-flex !important;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--c8-line);
+    border-radius: 999px;
+    background: var(--c8-surface);
+    color: var(--c8-ink);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
   body.c8-schedule .channel-strip > .flex,
   body.c8-schedule .strip-create,
   body.c8-schedule .strip-create button,

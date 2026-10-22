@@ -745,18 +745,10 @@
 
 .lib-preview-col.is-open .lib-phone {
   order: 1;
-  width: min(390px, 100%, calc((100dvh - 260px) * 390 / 844));
+  width: min(390px, calc(100vw - 32px), calc((100dvh - 220px) * 390 / 844));
   height: auto;
-  max-height: calc(100dvh - 240px);
+  max-height: none;
   aspect-ratio: 390 / 844;
-}
-
-@media (max-width: 767px) {
-  .lib-preview-col.is-open .lib-phone {
-    width: min(390px, 100%, calc((100dvh - 300px) * 390 / 844));
-    height: auto;
-    max-height: calc(100dvh - 280px);
-  }
 }
 
 .lib-public {

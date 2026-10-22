@@ -54,6 +54,7 @@ import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settin
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
 import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
 import { C8Sidebar } from '@gitroom/frontend/components/layout/c8.sidebar';
+import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
 
 const HeaderAvatar = ({
   name,
@@ -219,10 +220,6 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     {link || stalker ? null : <TopMenu />}
                     <div className="header-tools flex items-center text-textItemBlur shrink-0 ms-auto gap-[8px]">
                       <div className="header-account relative flex items-center" ref={accountRef}>
-                        <HeaderAvatar
-                          name={user?.name || user?.email || ''}
-                          onClick={openAccount}
-                        />
                         <OrganizationSelector />
                       </div>
                       <div className="flex items-center justify-center">
@@ -232,6 +229,20 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <SettingsMenuItem variant="header" />
                       </div>
                       <NotificationComponent />
+                      <div className="header-avatar-wrap relative flex items-center">
+                        <HeaderAvatar
+                          name={user?.name || user?.email || ''}
+                          onClick={openAccount}
+                        />
+                        <AccountMenu
+                          open={false}
+                          helpOpen={false}
+                          onHelpToggle={() => undefined}
+                          onClose={() => undefined}
+                          onSettings={openAccount}
+                          onBilling={openAccount}
+                        />
+                      </div>
                       <HeaderOverflow>
                         <StreakComponent />
                         <LanguageComponent />

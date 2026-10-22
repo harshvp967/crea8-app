@@ -23,7 +23,7 @@ import {
 import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkSegments, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
-import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
+import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
@@ -226,15 +226,7 @@ export const LinkAppearanceScreen = () => {
             <h1 className={stkTitle}>Appearance</h1>
           </div>
           <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
-            <button
-              type="button"
-              className={`${linkSecondary} min-[1200px]:hidden`}
-              aria-label={preview ? 'Close preview' : 'Preview'}
-              onClick={() => setPreview((value) => !value)}
-            >
-              <HugeIcon name="eye" size={16} />
-              {preview ? 'Close preview' : 'Preview'}
-            </button>
+            <LinkViewTabs preview={preview} onPreview={setPreview} />
             <button type="button" className={`${linkSecondary} lib-reset`} onClick={() => setDraft(toDraft(data))}>
               Reset
             </button>

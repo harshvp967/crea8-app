@@ -2070,7 +2070,8 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(1040px, 100%);
+  width: min(920px, 100%);
+  height: min(680px, calc(100dvh - 48px));
   max-height: calc(100dvh - 48px);
   min-width: 0;
   overflow: hidden;
@@ -2082,6 +2083,7 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 
 .account-scroll {
   min-width: 0;
+  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2115,8 +2117,28 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 .account-screen.settings-screen .settings-head-v2 > h1 {
   grid-column: 1 / -1;
   grid-row: 2;
-  font-size: clamp(26px, 7.2vw, 48px);
+  font-size: 32px;
+  line-height: 1.1;
   white-space: nowrap;
+}
+
+.account-mark {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.light .account-mark,
+.dark .account-mark,
+.account-mark img {
+  width: 30px;
+  height: 30px;
+  display: block;
+  filter: none;
+  background: transparent;
 }
 
 .account-close {
@@ -2144,13 +2166,24 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 
 .account-screen.settings-screen .settings-settabs.c8-seg {
   display: flex !important;
-  flex-flow: row wrap !important;
-  gap: 8px !important;
+  flex-flow: row nowrap !important;
+  gap: 2px !important;
   width: 100% !important;
   max-width: 100% !important;
   height: auto !important;
-  overflow: visible !important;
-  border-radius: 20px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  border-radius: 999px !important;
+  scrollbar-width: none;
+}
+
+.account-screen.settings-screen .settings-settabs.c8-seg::-webkit-scrollbar {
+  display: none;
+}
+
+.account-screen.settings-screen .settings-settabs.c8-seg > [role='radio'] {
+  flex: 0 0 auto !important;
 }
 
 .account-screen .settings-head {
@@ -2281,11 +2314,16 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   color: #fff;
 }
 
+.account-screen form.settings-section {
+  gap: 12px;
+}
+
 .account-email {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  margin-top: 0;
 }
 
 .account-email > span:first-child {
@@ -2363,17 +2401,85 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   }
 }
 
+.account-org {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.account-org > span {
+  color: var(--c8-ink);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.account-org-select {
+  width: 100%;
+  height: 44px;
+  min-width: 0;
+  padding: 0 16px;
+  border: 1px solid var(--c8-line);
+  border-radius: 18px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 14px;
+}
+
+.account-billing-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.account-billing-empty h2,
+.account-billing-kicker {
+  margin: 0;
+}
+
+.account-billing-kicker {
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.account-billing-empty h2 {
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.account-billing-empty .account-note {
+  white-space: normal;
+}
+
+.account-screen .settings-section {
+  width: 100%;
+}
+
 @media (max-width: 767px) {
   .account-layer {
-    padding: 16px;
+    padding: 12px;
   }
 
   .account-panel {
-    max-height: calc(100dvh - 32px);
+    width: 100%;
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
   }
 
   .account-scroll {
-    padding: 20px 16px 24px;
+    padding: 16px 12px 20px;
+  }
+
+  .account-screen.settings-screen .settings-head-v2 > h1 {
+    font-size: 22px;
   }
 
   .account-screen .settings-head h1 {
@@ -2400,17 +2506,163 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   }
 
   .account-scroll {
-    padding: 12px 12px calc(16px + env(safe-area-inset-bottom));
+    padding: 12px 10px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .account-screen.settings-screen .settings-head-v2 > h1 {
+    font-size: 22px;
   }
 }
 
-@media (max-width: 389px) {
+@media (max-width: 420px) {
+  .account-screen.settings-screen .settings-head-v2 > h1 {
+    font-size: 20px;
+  }
+
   .account-screen .settings-head h1,
   .account-screen .settings-danger-card .settings-row-title {
     font-size: 16px;
   }
 
   .account-screen .settings-section {
+    width: 100%;
     padding: 12px;
+  }
+
+  .account-scroll {
+    padding: 12px 8px calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Account menu. Popover above the sidebar avatar, sheet on a phone. */
+.c8-side-foot,
+.header-avatar-wrap {
+  position: relative;
+}
+
+.c8-account-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.c8-account-pop {
+  position: absolute;
+  z-index: 90;
+  bottom: calc(100% + 8px);
+  left: 0;
+  display: flex;
+  width: min(280px, calc(100vw - 24px));
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid var(--c8-line);
+  border-radius: 18px;
+  background: var(--c8-surface);
+  box-shadow: 0 8px 24px rgb(18 16 22 / 0.16);
+  color: var(--c8-ink);
+}
+
+.c8-account-pop button,
+.c8-account-pop a {
+  white-space: nowrap;
+}
+
+.c8-account-plan,
+.c8-account-item,
+.c8-account-sub a {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.c8-account-plan-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c8-account-plan-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.c8-account-usage {
+  overflow: hidden;
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.c8-account-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 4px 4px 12px;
+  padding-left: 8px;
+  border-left: 1px solid var(--c8-line);
+}
+
+.c8-account-theme .header-theme,
+.c8-account-theme .arc-icon-btn {
+  width: 36px;
+  height: 36px;
+  flex: none;
+}
+
+.c8-account-rule {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--c8-line);
+}
+
+.c8-account-logout .text-red-400 {
+  color: var(--c8-danger, #e11d48);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.c8-account-logout .cursor-pointer {
+  display: flex;
+  width: 100%;
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .header-avatar-wrap .c8-account-scrim {
+    background: rgb(18 16 22 / 0.45);
+  }
+
+  .header-avatar-wrap .c8-account-pop {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: min(80dvh, 520px);
+    overflow: auto;
+    border-radius: 20px 20px 0 0;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
   }
 }

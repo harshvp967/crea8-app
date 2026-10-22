@@ -7,7 +7,10 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
+export const LogoutComponent: FC<{ isIcon?: boolean; label?: string }> = ({
+  isIcon,
+  label,
+}) => {
   const fetch = useFetch();
   const { isSecured } = useVariables();
   const t = useT();
@@ -49,8 +52,12 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
           />
         ) : (
           <span className="text-red-400">
-            {t('logout_from', 'Logout from')}
-            {' Crea8one'}
+            {label || (
+              <>
+                {t('logout_from', 'Logout from')}
+                {' Crea8one'}
+              </>
+            )}
           </span>
         )}
       </div>
