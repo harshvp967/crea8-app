@@ -1117,11 +1117,18 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   height: 36px;
   place-items: center;
   flex: none;
+  overflow: hidden;
   border-radius: 999px;
   background: var(--c8-app-schedule);
   color: #121016;
   font-size: 13px;
   font-weight: 700;
+}
+
+.c8-side-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .c8-side-user-copy {

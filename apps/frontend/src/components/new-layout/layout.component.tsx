@@ -58,11 +58,13 @@ import { AccountMenu, useAccountMenu } from '@gitroom/frontend/components/layout
 
 const HeaderAvatar = ({
   name,
+  picture,
   onClick,
   expanded,
   ref,
 }: {
   name: string;
+  picture?: string;
   onClick: () => void;
   expanded?: boolean;
   ref?: React.Ref<HTMLButtonElement>;
@@ -85,7 +87,7 @@ const HeaderAvatar = ({
       aria-label={name ? `${name}, account menu` : 'Account menu'}
       onClick={onClick}
     >
-      {initials}
+      {picture ? <img src={picture} alt="" /> : initials}
     </button>
   );
 };
@@ -216,6 +218,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <C8Sidebar
                       name={user?.name || ''}
                       email={user?.email || ''}
+                      picture={user?.picture?.path || ''}
                       menu={accountMenu}
                     />
                   <div className="c8-main">
@@ -240,6 +243,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <HeaderAvatar
                           ref={headerAvatarRef}
                           name={user?.name || user?.email || ''}
+                          picture={user?.picture?.path || ''}
                           expanded={accountMenu.open}
                           onClick={accountMenu.toggle}
                         />

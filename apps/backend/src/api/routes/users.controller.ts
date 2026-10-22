@@ -109,9 +109,11 @@ export class UsersController {
     }
 
     const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    const personal = await this._userService.getPersonal(user.id);
     // @ts-ignore
     return {
       ...user,
+      picture: personal?.picture || null,
       orgId: organization.id,
       totalChannels: !process.env.STRIPE_PUBLISHABLE_KEY
         ? 10000
