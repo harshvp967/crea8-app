@@ -69,10 +69,19 @@
 }
 
 .lib-phone .lib-socials {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
+  align-items: center;
+  width: 100%;
   max-width: 100%;
-  row-gap: 10px;
+  gap: 8px;
+}
+
+.lib-phone .lib-socials a,
+.lib-phone .lib-socials span {
+  width: 18px;
+  height: 18px;
+  flex: 0 1 18px;
 }
 
 .lib-phone .lib-public[data-shadow='hard'] .lib-stack {
@@ -95,16 +104,17 @@
   min-width: 0;
 }
 
-.lib-phone .lib-capture input,
-.lib-phone .lib-row input {
-  width: 0;
-  min-width: 0;
-  flex: 1 1 0%;
+.lib-phone .lib-row {
+  flex-direction: column;
+  align-items: stretch;
 }
 
+.lib-phone .lib-capture input,
+.lib-phone .lib-row input,
 .lib-phone .lib-subscribe {
-  flex: 0 1 auto;
-  max-width: 100%;
+  width: 100%;
+  min-width: 0;
+  flex: none;
 }
 
 .lib-public {
@@ -953,8 +963,18 @@
   min-height: 320px;
 }
 
+.lib-embed[data-provider='maps'] {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  height: auto;
+}
+
 .lib-embed[data-provider='maps'] iframe {
-  height: 240px;
+  position: absolute;
+  left: 0;
+  top: -64px;
+  width: 100%;
+  height: calc(100% + 120px);
 }
 
 .lib-embed[data-provider='calendly'] iframe {
