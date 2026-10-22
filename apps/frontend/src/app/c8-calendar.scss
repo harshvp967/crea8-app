@@ -3059,13 +3059,20 @@ body.c8-schedule .arc-dialog-wrap {
 }
 
 body.c8-schedule .channels-scrim,
-body.c8-schedule .sheet-backdrop,
+body.c8-schedule .sheet-backdrop:not(.more-backdrop),
 body.c8-schedule .bg-c8-scrim,
 body.c8-schedule .bg-c8-scrim-sheet {
   background: var(--c8-hard) !important;
   background-image: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+body.c8-schedule .sheet-backdrop.more-backdrop {
+  background: var(--c8-scrim) !important;
+  background-image: none !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
 }
 
 body.c8-schedule .notify-panel,
@@ -3461,6 +3468,13 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     background: var(--c8-hard) !important;
   }
 
+  body.c8-schedule .sheet-backdrop.more-backdrop {
+    background: var(--c8-scrim) !important;
+    background-image: none !important;
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
+  }
+
   body.c8-schedule .mobile-sheet {
     left: 0 !important;
     right: 0 !important;
@@ -3468,11 +3482,13 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     z-index: 80;
     max-height: 80vh;
     padding-top: 8px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
     border: 1.5px solid var(--c8-hard);
     border-radius: 28px 28px 0 0 !important;
     background: var(--c8-surface);
     box-shadow: none;
     font-size: 14px;
+    animation: c8-more-sheet 300ms var(--c8-ease-out);
   }
 
   body.c8-schedule .mobile-sheet::before {

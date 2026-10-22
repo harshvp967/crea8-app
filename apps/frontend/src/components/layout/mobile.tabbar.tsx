@@ -10,7 +10,9 @@ import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.na
 import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
 
-export const MobileTabBar = ({ onAccount }: { onAccount?: () => void }) => {
+const phoneBarLimit = 5;
+
+export const MobileTabBar = () => {
   const pathname = (usePathname() || '').replace(/^\/stalker-preview/, '/stalker');
   const router = useRouter();
   const openComposer = useOpenComposer();
@@ -47,37 +49,46 @@ export const MobileTabBar = ({ onAccount }: { onAccount?: () => void }) => {
     sessionStorage.setItem('c8-open-channels', '1');
     router.push('/launches');
   };
-  const tabs = link
-    ? linkNavLinks
-        .slice(0, 4)
-        .map((item) => asItem({ ...item, icon: item.tabIcon || item.icon }))
+
+  const direct = link
+    ? linkNavLinks.map((item) => asItem({ ...item, icon: item.tabIcon || item.icon }))
     : stalker
-    ? stalkerNavLinks
-        .slice(0, 4)
-        .map((item) => asItem({ ...item, icon: item.tabIcon || item.icon }))
-    : [
-        ...primary.slice(0, 1).map(asItem),
-        {
-          name: 'Composer',
-          path: '#',
-          icon: <HugeIcon name="pencil" size={18} />,
-          onClick: openComposer,
-        },
-        ...primary.slice(1, 3).map(asItem),
-      ];
-  const overflow = (
-    link ? linkNavLinks.slice(4) : stalker ? stalkerNavLinks.slice(4) : [...primary.slice(3), ...extra]
-  ).map(asItem);
+    ? stalkerNavLinks.map((item) => asItem({ ...item, icon: item.tabIcon || item.icon }))
+    : null;
+  const schedulerTabs = [
+    ...primary.slice(0, 1).map(asItem),
+    {
+      name: 'Composer',
+      path: '#',
+      icon: <HugeIcon name="pencil" size={18} />,
+      onClick: openComposer,
+    },
+    ...primary.slice(1, 3).map(asItem),
+  ];
+  const schedulerOverflow = [
+    {
+      name: 'Channels',
+      path: '#',
+      icon: <HugeIcon name="plug" size={18} />,
+      onClick: openChannels,
+    },
+    ...[...primary.slice(3), ...extra].map(asItem),
+  ];
+  const all = direct ?? [...schedulerTabs, ...schedulerOverflow];
+  const showMore = all.length > phoneBarLimit;
+  const tabs = showMore ? (direct ? direct.slice(0, 4) : schedulerTabs) : all;
+  const overflow = showMore ? (direct ? direct.slice(4) : schedulerOverflow) : [];
 
   const active = (path: string) =>
     path === '/link' ? pathname === '/link' : path !== '#' && pathname.indexOf(path) === 0;
   const moreActive = !tabs.some((item) => active(item.path));
+  const sheetOpen = more && showMore;
 
   return (
     <div className="contents">
-      {more ? (
+      {sheetOpen ? (
         <div
-          className="sheet-backdrop"
+          className="sheet-backdrop more-backdrop"
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -85,32 +96,8 @@ export const MobileTabBar = ({ onAccount }: { onAccount?: () => void }) => {
           }}
         />
       ) : null}
-      {more ? (
+      {sheetOpen ? (
         <div className="mobile-sheet" role="menu">
-          {onAccount ? (
-            <button
-              type="button"
-              onClick={() => {
-                onAccount();
-                setMore(false);
-              }}
-            >
-              <HugeIcon name="user" size={18} />
-              <span>Account</span>
-            </button>
-          ) : null}
-          {!link && !stalker ? (
-            <button
-              type="button"
-              onClick={() => {
-                openChannels();
-                setMore(false);
-              }}
-            >
-              <HugeIcon name="plug" size={18} />
-              <span>Channels</span>
-            </button>
-          ) : null}
           {overflow.map((item) => {
             const click = item.onClick;
             if (click) {
@@ -161,17 +148,19 @@ export const MobileTabBar = ({ onAccount }: { onAccount?: () => void }) => {
             </Link>
           )
         )}
-        <button
-          type="button"
-          className={clsx((more || moreActive) && 'arc-selected')}
-          aria-expanded={more}
-          aria-current={moreActive ? 'page' : undefined}
-          aria-label="More"
-          onClick={() => setMore((value) => !value)}
-        >
-          <HugeIcon name="more" size={18} />
-          <span>More</span>
-        </button>
+        {showMore ? (
+          <button
+            type="button"
+            className={clsx((more || moreActive) && 'arc-selected')}
+            aria-expanded={more}
+            aria-current={moreActive ? 'page' : undefined}
+            aria-label="More"
+            onClick={() => setMore((value) => !value)}
+          >
+            <HugeIcon name="more" size={18} />
+            <span>More</span>
+          </button>
+        ) : null}
       </nav>
     </div>
   );
