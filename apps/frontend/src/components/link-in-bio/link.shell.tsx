@@ -45,6 +45,23 @@ export const LinkSplit = ({
   </div>
 );
 
+export const LinkViewTabs = ({
+  preview,
+  onPreview,
+}: {
+  preview: boolean;
+  onPreview: (open: boolean) => void;
+}) => (
+  <div className="lib-view-tabs min-[1200px]:hidden" role="tablist" aria-label="Page view">
+    <button type="button" role="tab" aria-selected={!preview} onClick={() => onPreview(false)}>
+      Edit
+    </button>
+    <button type="button" role="tab" aria-selected={preview} onClick={() => onPreview(true)}>
+      Preview
+    </button>
+  </div>
+);
+
 export const LinkPreview = ({
   children,
   onCopy,

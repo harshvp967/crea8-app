@@ -195,7 +195,7 @@ const AccountProfile = () => {
           label={t('name', 'Name')}
           translationKey="label_name"
           name="fullname"
-          removeError={false}
+          removeError
         />
         <label className="account-email">
           <span>{t('email', 'Email')}</span>
@@ -229,6 +229,34 @@ const AccountWorkspace = () => {
   );
 };
 
+const planTitle = (current: string | undefined) => {
+  const name = (current || 'FREE').toLowerCase();
+  return name.charAt(0).toUpperCase() + name.slice(1);
+};
+
+const AccountBillingEmpty = ({ note }: { note?: string }) => {
+  const t = useT();
+  const user = useUser();
+  const posts = user?.tier?.posts_per_month || 0;
+  const limit = user?.tier?.channel || 0;
+  const used = user?.totalChannels || 0;
+  const postLine =
+    posts > 10000 ? 'Unlimited posts' : posts ? `${posts} posts / month` : 'No monthly posts';
+  const usage = limit ? `${used} of ${limit} channels · ${postLine}` : postLine;
+
+  return (
+    <div className="account-billing-empty">
+      <p className="account-billing-kicker">{t('current_plan', 'Current plan')}</p>
+      <h2>{planTitle(user?.tier?.current)}</h2>
+      <p className="account-note">{usage}</p>
+      {note ? <p className="account-note">{note}</p> : null}
+      <button type="button" className="account-chip" disabled>
+        {t('manage_plan', 'Manage plan')}
+      </button>
+    </div>
+  );
+};
+
 const AccountBilling = () => {
   const t = useT();
   const user = useUser();
@@ -245,11 +273,13 @@ const AccountBilling = () => {
       {canBill ? (
         <BillingComponent />
       ) : (
-        <p className="account-note">
-          {billingEnabled
-            ? t('billing_admin_only', 'An admin manages the plan.')
-            : t('billing_unavailable', 'Billing is unavailable.')}
-        </p>
+        <AccountBillingEmpty
+          note={
+            billingEnabled
+              ? t('billing_admin_only', 'An admin manages the plan.')
+              : undefined
+          }
+        />
       )}
     </div>
   );
@@ -452,7 +482,9 @@ export const AccountSettings = ({
             <div className="settings-main">
               <header className="settings-head-v2">
                 <div className="settings-kicker">
-                  <span className="settings-sticker">crea8.one</span>
+                  <span className="account-mark">
+                    <img src="/crea8one-icon-cyan.svg" alt="" />
+                  </span>
                 </div>
                 <h1 id="account-settings-title">
                   {t('account_settings', 'Account settings')}

@@ -14,7 +14,7 @@ import {
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkMenuRow, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
-import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
+import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { embedProblem, parseEmbed, scheduleLabel, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
@@ -336,10 +336,7 @@ export const LinkEditorScreen = () => {
             <h1 className={stkTitle}>Editor</h1>
           </div>
           <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
-            <button type="button" className={`${linkSecondary} min-[1200px]:hidden`} onClick={() => setPreview((value) => !value)}>
-              <HugeIcon name="eye" size={16} />
-              {preview ? 'Close preview' : 'Preview'}
-            </button>
+            <LinkViewTabs preview={preview} onPreview={setPreview} />
             <div className="relative">
               <button type="button" className={linkPrimary} onClick={() => setAddOpen((value) => !value)}>
                 <HugeIcon name="plus" size={16} />
