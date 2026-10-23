@@ -1489,6 +1489,7 @@ body:has(.link-screen) .lib-block-sheet > button {
   line-height: 1.45;
 }
 
+/* Shared stack for the non-link block editors. */
 .link-screen .lib-block-form > .flex.items-center.justify-between {
   min-height: 52px;
   gap: 12px;
