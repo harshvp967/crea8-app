@@ -1489,6 +1489,39 @@ body:has(.link-screen) .lib-block-sheet > button {
   line-height: 1.45;
 }
 
+/* Shared stack for the non-link block editors. */
+.link-screen .lib-block-form > .flex.items-center.justify-between {
+  min-height: 52px;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--c8-line);
+}
+
+.link-screen .lib-block-form > .flex.justify-end {
+  position: sticky;
+  bottom: 0;
+  margin-top: 4px;
+  padding-top: 12px;
+  background: var(--c8-surface);
+}
+
+.link-screen .lib-post-pick {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--c8-line);
+  border-radius: 16px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.link-screen .lib-post-pick.is-on {
+  border: 1.5px solid var(--c8-hard);
+  background: var(--c8-surface);
+  box-shadow: 0 3px 0 var(--c8-hard);
+}
+
 .link-screen .lib-opt-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
