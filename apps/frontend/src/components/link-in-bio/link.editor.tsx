@@ -1314,7 +1314,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'heading' ? (
         <LinkModal title={modal.block ? 'Edit header' : 'Add header'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[14px]">
+          <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Header">
               <input value={heading} onChange={(event) => setHeading(event.target.value)} />
             </LinkField>
@@ -1350,7 +1350,7 @@ export const LinkEditorScreen = () => {
               <button
                 key={post.id}
                 type="button"
-                className={postId === post.id ? 'rounded-[16px] border border-[rgba(0,217,255,.45)] bg-[rgba(0,217,255,.08)] px-[12px] py-[10px] text-left' : 'rounded-[16px] border border-newBorder px-[12px] py-[10px] text-left'}
+                className={postId === post.id ? 'lib-post-pick is-on' : 'lib-post-pick'}
                 onClick={() => setPostId(post.id)}
               >
                 <strong className="block text-[14px]">{post.title}</strong>
@@ -1387,7 +1387,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'embed' ? (
         <LinkModal title={modal.block ? `Edit ${embedCopy(modal.provider).title.toLowerCase()}` : `Add ${embedCopy(modal.provider).title.toLowerCase()}`} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[14px]">
+          <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={embedTitle} onChange={(event) => setEmbedTitle(event.target.value)} />
             </LinkField>
@@ -1424,7 +1424,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'text' ? (
         <LinkModal title={modal.block ? 'Edit text' : 'Add text'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[14px]">
+          <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={textTitle} onChange={(event) => setTextTitle(event.target.value)} />
             </LinkField>
@@ -1456,7 +1456,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'faq' ? (
         <LinkModal title={modal.block ? 'Edit FAQ' : 'Add FAQ'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[12px]">
+          <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Heading">
               <input value={faqTitle} onChange={(event) => setFaqTitle(event.target.value)} />
             </LinkField>
@@ -1505,7 +1505,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'carousel' ? (
         <LinkModal title={modal.block ? 'Edit carousel' : 'Add carousel'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[12px]">
+          <div className="lib-block-form flex flex-col gap-[12px]">
             <div className="grid grid-cols-3 gap-[8px]">
               {images.map((image, index) => (
                 <div key={`${image.path}-${index}`} className="relative">
@@ -1563,7 +1563,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'contact' ? (
         <LinkModal title={modal.block ? 'Edit contact form' : 'Add contact form'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[12px]">
+          <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Heading">
               <input value={contact.title} onChange={(event) => setContact({ ...contact, title: event.target.value })} />
             </LinkField>
@@ -1606,7 +1606,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'map' ? (
         <LinkModal title={modal.block ? 'Edit map' : 'Add map'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[14px]">
+          <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={mapTitle} onChange={(event) => setMapTitle(event.target.value)} />
             </LinkField>
@@ -1638,7 +1638,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'calendly' ? (
         <LinkModal title={modal.block ? 'Edit Calendly' : 'Add Calendly'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[14px]">
+          <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={calendlyTitle} onChange={(event) => setCalendlyTitle(event.target.value)} />
             </LinkField>
@@ -1670,7 +1670,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'details' ? (
         <LinkModal title={modal.block ? 'Edit contact details' : 'Add contact details'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[12px]">
+          <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Heading">
               <input value={details.title} onChange={(event) => setDetails({ ...details, title: event.target.value })} />
             </LinkField>
@@ -1717,7 +1717,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'discount' ? (
         <LinkModal title={modal.block ? 'Edit discount code' : 'Add discount code'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[12px]">
+          <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Code">
               <input value={discount.code} onChange={(event) => setDiscount({ ...discount, code: event.target.value })} />
             </LinkField>
@@ -1757,7 +1757,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'events' ? (
         <LinkModal title={modal.block ? 'Edit events' : 'Add events'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[12px]">
+          <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Heading">
               <input value={eventsTitle} onChange={(event) => setEventsTitle(event.target.value)} />
             </LinkField>
@@ -1845,7 +1845,7 @@ const CaptureModal = ({
   );
   return (
     <LinkModal title="Email capture" onClose={onClose}>
-      <div className="flex flex-col gap-[12px]">
+      <div className="lib-block-form flex flex-col gap-[12px]">
         <LinkField label="Form heading">
           <input value={form.heading} onChange={(event) => setForm({ ...form, heading: event.target.value })} />
         </LinkField>
