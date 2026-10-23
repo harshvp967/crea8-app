@@ -45,26 +45,36 @@ export function Register() {
   const [code, setCode] = useState(getQuery?.get('code') || '');
   const [state] = useState(getQuery?.get('state') || '');
   const [show, setShow] = useState(false);
+  const [blocked, setBlocked] = useState('');
   useEffect(() => {
     if (provider && code) {
       load();
     }
   }, []);
   const load = useCallback(async () => {
-    const { token } = await (
-      await fetch(`/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`, {
+    const response = await fetch(
+      `/auth/oauth/${provider?.toUpperCase() || 'LOCAL'}/exists`,
+      {
         method: 'POST',
         body: JSON.stringify({
           code,
           state,
         }),
-      })
-    ).json();
+      }
+    );
+    if (!response.ok) {
+      setBlocked((await response.text()) || 'Sign-ups are closed');
+      return;
+    }
+    const { token } = await response.json();
     if (token) {
       setCode(token);
       setShow(true);
     }
   }, [provider, code]);
+  if (blocked) {
+    return <p className="text-[15px]">{blocked}</p>;
+  }
   if (!code && !provider) {
     return <RegisterAfter token="" provider="LOCAL" />;
   }

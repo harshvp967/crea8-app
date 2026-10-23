@@ -6,6 +6,7 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { SIGNUPS_CLOSED_MESSAGE } from '@gitroom/nestjs-libraries/database/prisma/organizations/signups.closed';
 
 @ApiTags('Enterprise')
 @Controller('/enterprise')
@@ -35,10 +36,8 @@ export class EnterpriseController {
   @Post('/create-user')
   async createUser(@Body('params') params: string) {
     try {
-      const { id, name, saasName, email } = this.verifyEnterpriseToken<{
+      const { id, saasName } = this.verifyEnterpriseToken<{
         id: string;
-        name: string;
-        email: string;
         saasName: string;
       }>(params);
 
@@ -46,16 +45,7 @@ export class EnterpriseController {
         return { success: false };
       }
 
-      try {
-        return await this._organizationService.createMaxUser(
-          id,
-          name,
-          saasName,
-          email
-        );
-      } catch (err) {
-        return { create: false };
-      }
+      return { success: false, message: SIGNUPS_CLOSED_MESSAGE };
     } catch (err) {
       return { success: false };
     }

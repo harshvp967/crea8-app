@@ -12,6 +12,7 @@ import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/for
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
 import { assertOAuthRedirect } from '@gitroom/helpers/auth/oauth.link';
+import { signupsClosed } from '@gitroom/nestjs-libraries/database/prisma/organizations/signups.closed';
 
 @Injectable()
 export class AuthService {
@@ -53,34 +54,7 @@ export class AuthService {
           throw new Error('Email already exists');
         }
 
-        if (!(await this.canRegister(provider))) {
-          throw new Error('Registration is disabled');
-        }
-
-        const create = await this._organizationService.createOrgAndUser(
-          body,
-          ip,
-          userAgent
-        );
-
-        const addedOrg =
-          addToOrg && typeof addToOrg !== 'boolean'
-            ? await this._organizationService.addUserToOrg(
-                create.users[0].user.id,
-                addToOrg.id,
-                addToOrg.orgId,
-                addToOrg.role
-              )
-            : false;
-
-        const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
-        await this._emailService.sendEmail(
-          body.email,
-          'Activate your account',
-          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`,
-          'top'
-        );
-        return obj;
+        signupsClosed();
       }
 
       if (!user || !AuthChecker.comparePassword(body.password, user.password)) {
@@ -96,9 +70,7 @@ export class AuthService {
 
     const user = await this.loginOrRegisterProvider(
       provider,
-      body as CreateOrgUserDto,
-      ip,
-      userAgent
+      body as CreateOrgUserDto
     );
 
     const addedOrg =
@@ -137,9 +109,7 @@ export class AuthService {
 
   private async loginOrRegisterProvider(
     provider: Provider,
-    body: CreateOrgUserDto,
-    ip: string,
-    userAgent: string
+    body: CreateOrgUserDto
   ) {
     const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -156,38 +126,7 @@ export class AuthService {
       return user;
     }
 
-    if (!(await this.canRegister(provider))) {
-      throw new Error('Registration is disabled');
-    }
-
-    const create = await this._organizationService.createOrgAndUser(
-      {
-        company: body.company,
-        email: providerUser.email,
-        password: '',
-        provider,
-        providerId: providerUser.id,
-        datafast_visitor_id: body.datafast_visitor_id,
-      },
-      ip,
-      userAgent
-    );
-
-    this._track('register', providerUser.email, body.datafast_visitor_id).catch(
-      (err) => {}
-    );
-
-    await NewsletterService.register(providerUser.email);
-
-    try {
-      if (providerInstance?.postRegistration) {
-        await providerInstance.postRegistration(body.providerToken, create.id);
-      }
-    } catch (err) {
-      // Don't fail registration if postRegistration fails
-    }
-
-    return create.users[0].user;
+    signupsClosed();
   }
 
   private async _track(
@@ -327,7 +266,7 @@ export class AuthService {
       return { jwt: await this.jwt(checkExists) };
     }
 
-    return { token };
+    signupsClosed();
   }
 
   private async jwt(user: User) {
