@@ -178,27 +178,6 @@ export function Login() {
                     {t('sign_in_1', 'Sign In')}
                   </Button>
                 </div>
-                <p className="mt-4 text-sm">
-                  {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
-                  <Link href="/auth" className="cursor-pointer text-[color:var(--arc-accent-text)]">
-                    {t('sign_up', 'Sign Up')}
-                  </Link>
-                </p>
-                <p className="mt-4 text-sm">
-                  <Link
-                    href="/privacy"
-                    className="underline hover:font-bold cursor-pointer"
-                  >
-                    {t('privacy_policy', 'Privacy Policy')}
-                  </Link>
-                  <span className="px-[8px]">·</span>
-                  <Link
-                    href="/terms"
-                    className="underline hover:font-bold cursor-pointer"
-                  >
-                    {t('terms_of_service', 'Terms of Service')}
-                  </Link>
-                </p>
               </div>
             </div>
           </div>
