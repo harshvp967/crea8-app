@@ -17,7 +17,7 @@ import { LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle, linkChoice
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { embedProblem, parseEmbed, scheduleLabel, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { embedProblem, parseEmbed, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
 
@@ -135,6 +135,19 @@ const blockNote = (block: LinkBlock) => {
   if (block.type === 'DISCOUNT') return block.discount?.note || 'A code visitors can copy';
   if (block.type === 'EVENTS') return `${block.events.length} events`;
   return 'Section divider';
+};
+
+const rowMeta = (block: LinkBlock) => {
+  const clicks = `${block.clicks.toLocaleString('en-US')} clicks`;
+  if (block.type === 'FEATURED_POST') {
+    return `From Schedule · ${clicks}`;
+  }
+  if (block.type === 'LINK') {
+    return [clicks, block.spotlight ? 'Spotlight' : '', block.priority ? 'Priority' : '', block.lock?.type && block.lock.type !== 'NONE' ? 'Locked' : '']
+      .filter(Boolean)
+      .join(' · ');
+  }
+  return block.spotlight ? `${blockNote(block)} · Spotlight` : blockNote(block);
 };
 
 export const LinkEditorScreen = () => {
@@ -308,14 +321,108 @@ export const LinkEditorScreen = () => {
     setMenu('');
   };
 
+  const editBlock = (block: LinkBlock) => {
+    setMenu('');
+    if (block.type === 'LINK') {
+      openLink(block);
+      return;
+    }
+    if (block.type === 'HEADING') {
+      setHeading(block.title);
+      setModal({ kind: 'heading', block });
+      return;
+    }
+    if (block.type === 'EMBED') {
+      openEmbed(embedOnly(block.url), block);
+      return;
+    }
+    if (block.type === 'TEXT') {
+      setTextTitle(block.title);
+      setTextBody(block.body);
+      setModal({ kind: 'text', block });
+      return;
+    }
+    if (block.type === 'FAQ') {
+      setFaqTitle(block.title);
+      setFaq(block.faq.length ? block.faq : [{ question: '', answer: '' }]);
+      setModal({ kind: 'faq', block });
+      return;
+    }
+    if (block.type === 'IMAGE_CAROUSEL') {
+      setImages(block.images);
+      setModal({ kind: 'carousel', block });
+      return;
+    }
+    if (block.type === 'CONTACT_FORM') {
+      setContact({
+        title: block.title || block.form?.heading || '',
+        body: block.body || block.form?.consent || '',
+        button: block.form?.button || 'Send',
+        askName: !!block.form?.askName,
+      });
+      setModal({ kind: 'contact', block });
+      return;
+    }
+    if (block.type === 'MAP') {
+      setMapTitle(block.title);
+      setMapUrl(block.url);
+      setModal({ kind: 'map', block });
+      return;
+    }
+    if (block.type === 'CALENDLY') {
+      setCalendlyTitle(block.title);
+      setCalendlyUrl(block.url);
+      setModal({ kind: 'calendly', block });
+      return;
+    }
+    if (block.type === 'CONTACT_DETAILS') {
+      setDetails({
+        title: block.title || 'Contact',
+        email: block.details?.email || '',
+        phone: block.details?.phone || '',
+        address: block.details?.address || '',
+        website: block.details?.website || '',
+      });
+      setModal({ kind: 'details', block });
+      return;
+    }
+    if (block.type === 'DISCOUNT') {
+      setDiscount({
+        title: block.title,
+        code: block.discount?.code || '',
+        note: block.discount?.note || '',
+        url: block.discount?.url || block.url || '',
+      });
+      setModal({ kind: 'discount', block });
+      return;
+    }
+    if (block.type === 'EVENTS') {
+      setEventsTitle(block.title || 'Upcoming');
+      setEvents(block.events.length ? block.events : [{ title: '', when: '', place: '', url: '' }]);
+      setModal({ kind: 'events', block });
+      return;
+    }
+    if (block.type === 'FEATURED_POST') {
+      setPostId(block.postId || '');
+      setModal({ kind: 'post', block });
+      return;
+    }
+    if (block.type === 'EMAIL_CAPTURE') {
+      setModal({ kind: 'capture' });
+    }
+  };
+
   const hasFeatured = data.blocks.some((block) => block.type === 'FEATURED_POST');
   const addMenu = (
+              <>
                 <div className="lib-add-grid">
                   <LinkMenuRow icon="link" onClick={() => openLink()}>
                     Link
                   </LinkMenuRow>
                   <LinkMenuRow
                     icon="image"
+                    className={hasFeatured ? 'is-off' : ''}
+                    disabled={hasFeatured}
                     onClick={() => {
                       setPostId('');
                       setModal({ kind: 'post' });
@@ -324,7 +431,7 @@ export const LinkEditorScreen = () => {
                   >
                     <span className="lib-add-copy">
                       Featured post
-                      {hasFeatured ? <small>Already on page</small> : null}
+                      {hasFeatured ? <small className="is-accent">Already on page</small> : null}
                     </span>
                   </LinkMenuRow>
                   <LinkMenuRow
@@ -460,6 +567,10 @@ export const LinkEditorScreen = () => {
                     Contact form
                   </LinkMenuRow>
                 </div>
+                {hasFeatured ? (
+                  <p className="lib-add-note">Featured post is already on your page. Edit the existing one, or remove it to add another.</p>
+                ) : null}
+              </>
   );
 
   const toggleAdd = (anchor: 'head' | 'row') => {
@@ -531,17 +642,6 @@ export const LinkEditorScreen = () => {
         </section>
 
         <div className="lib-editor-actions">
-          <div className="lib-add-slot relative">
-            <button
-              type="button"
-              className={linkPrimary}
-              aria-expanded={addOpen && addAnchor === 'row'}
-              onClick={() => toggleAdd('row')}
-            >
-              <HugeIcon name="plus" size={16} />
-              Add block
-            </button>
-          </div>
           <details className="lib-preview-as">
             <summary className="lib-preview-as-summary">
               <HugeIcon name="globe" size={14} />
@@ -605,25 +705,12 @@ export const LinkEditorScreen = () => {
             </span>
             <h2 className="text-[16px] font-[600]">No links yet</h2>
             <p className="max-w-[320px] text-[14px] text-textItemBlur">Add your first link or block to start your page.</p>
-            <button
-              type="button"
-              className={`${linkSecondary} mt-[6px]`}
-              onClick={() => {
-                setAddAnchor('row');
-                setAddOpen(true);
-              }}
-            >
-              <HugeIcon name="plus" size={16} />
-              Add block
-            </button>
           </div>
         ) : (
           data.blocks.map((block, index) => (
             <article
               key={block.id}
-              className={`lib-editor-row ${stkCard} !p-[14px]${
-                block.type === 'FEATURED_POST' ? ' is-feature' : ''
-              }`}
+              className={`lib-editor-row ${stkCard} !p-[14px]`}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault();
@@ -676,63 +763,13 @@ export const LinkEditorScreen = () => {
                           ? 'Hidden'
                           : 'Live'}
                   </span>
-                  <p className="lib-editor-note">
-                    {block.type === 'LINK' ? `${block.clicks.toLocaleString('en-US')} clicks` : blockNote(block)}
-                    {block.spotlight ? ' · Spotlight' : ''}
-                  </p>
-                  {block.type === 'FEATURED_POST' ? <span className="lib-pill lib-pill-cyan lib-pill-schedule lib-pill-inline">From Schedule</span> : null}
-                  {block.layout === 'featured' ? <span className="lib-pill">Featured</span> : null}
-                  {block.priorityMode === 'highlight' || (block.priority && block.priorityMode === 'none') ? (
-                    <span className="lib-pill lib-pill-cyan lib-pill-priority">Priority</span>
-                  ) : null}
-                  {block.lock?.type && block.lock.type !== 'NONE' ? <span className="lib-pill">Locked</span> : null}
+                  <p className="lib-editor-note">{rowMeta(block)}</p>
                 </div>
                 {block.type === 'FEATURED_POST' && !block.post ? (
                   <p className="lib-editor-warn">This post is no longer available. Choose another published post.</p>
                 ) : null}
-                {block.scheduleOn && block.startsAt && block.state === 'scheduled' ? (
-                  <p className="lib-editor-note">
-                    {scheduleLabel('Starts', new Date(block.startsAt), data.timezone)}
-                  </p>
-                ) : null}
-                {block.type === 'FEATURED_POST' ? (
-                  <div className="lib-editor-feature-line">
-                    <span className="lib-pill lib-pill-cyan lib-pill-schedule">From Schedule</span>
-                    <button
-                      type="button"
-                      className={`${linkSecondary} !h-[36px] !min-h-[36px]`}
-                      onClick={() => {
-                        setPostId(block.postId || '');
-                        setModal({ kind: 'post', block });
-                      }}
-                    >
-                      Change post
-                    </button>
-                  </div>
-                ) : null}
               </div>
               <div className="lib-editor-tools">
-              {block.type === 'FEATURED_POST' ? (
-                <button
-                  type="button"
-                  className={`${linkSecondary} lib-editor-wide lib-editor-change`}
-                  onClick={() => {
-                    setPostId(block.postId || '');
-                    setModal({ kind: 'post', block });
-                  }}
-                >
-                  Change post
-                </button>
-              ) : null}
-              {block.type === 'FEATURED_POST' ? (
-                <span className="lib-editor-toggle lib-editor-toggle-feature shrink-0">
-                  <LinkToggle
-                    checked={block.enabled}
-                    label={block.enabled ? 'Hide block' : 'Show block'}
-                    onChange={(enabled) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled })}
-                  />
-                </span>
-              ) : (
                 <span className="lib-editor-toggle shrink-0">
                   <LinkToggle
                     checked={block.enabled}
@@ -740,7 +777,6 @@ export const LinkEditorScreen = () => {
                     onChange={(enabled) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled })}
                   />
                 </span>
-              )}
               <div className="lib-editor-menu relative shrink-0">
                 <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={() => { setMenu(menu === block.id ? '' : block.id); setConfirmId(''); }}>
                   <HugeIcon name="more" size={18} />
@@ -749,14 +785,50 @@ export const LinkEditorScreen = () => {
                   <LinkModal title={blockName(block)} onClose={() => { setMenu(''); setConfirmId(''); }}>
                   <div className="lib-block-sheet">
                     <div className="lib-block-move">
-                      <button type="button" disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
-                        <HugeIcon name="chevron-up" size={16} />
+                      <button type="button" className={linkSecondary} disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
+                        <HugeIcon name="chevron-left" size={16} />
                         Move up
                       </button>
-                      <button type="button" disabled={busy || index === data.blocks.length - 1} onClick={() => move(block.id, 1)}>
-                        <HugeIcon name="chevron-down" size={16} />
+                      <button type="button" className={linkSecondary} disabled={busy || index === data.blocks.length - 1} onClick={() => move(block.id, 1)}>
+                        <HugeIcon name="chevron-right" size={16} />
                         Move down
                       </button>
+                    </div>
+                    <div className="lib-block-list">
+                      <LinkMenuRow icon="settings" onClick={() => editBlock(block)}>
+                        Edit
+                      </LinkMenuRow>
+                      <LinkMenuRow
+                        icon="copy"
+                        onClick={() => {
+                          if (!block.url) return;
+                          copy(block.url);
+                          setMenu('');
+                        }}
+                      >
+                        Copy link
+                      </LinkMenuRow>
+                      <LinkMenuRow icon="star" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { priority: !block.priority })}>
+                        {block.priority ? 'Remove priority' : 'Make priority'}
+                      </LinkMenuRow>
+                      <LinkMenuRow icon="clock" onClick={() => (block.type === 'LINK' ? openLink(block) : editBlock(block))}>
+                        Schedule
+                      </LinkMenuRow>
+                      <div className="lib-block-hide">
+                        <HugeIcon name="eye" size={16} />
+                        <span>
+                          Hidden
+                          <small>Hide from your page</small>
+                        </span>
+                        <LinkToggle
+                          checked={!block.enabled}
+                          label="Hidden"
+                          onChange={(hidden) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !hidden })}
+                        />
+                      </div>
+                      <LinkMenuRow icon="trash" danger onClick={() => setConfirmId(block.id)}>
+                        Delete
+                      </LinkMenuRow>
                     </div>
                     {confirmId === block.id ? (
                       <div className="lib-confirm" role="dialog" aria-label="Remove block">
@@ -772,181 +844,7 @@ export const LinkEditorScreen = () => {
                           Remove
                         </button>
                       </div>
-                    ) : (
-                    <>
-                    {block.type === 'LINK' ? (
-                      <>
-                        <LinkMenuRow
-                          icon="copy"
-                          onClick={() => {
-                            copy(block.url);
-                            setMenu('');
-                          }}
-                        >
-                          Copy link
-                        </LinkMenuRow>
-                        <LinkMenuRow icon="star" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { priority: !block.priority })}>
-                          {block.priority ? 'Remove priority' : 'Make priority'}
-                        </LinkMenuRow>
-                        <LinkMenuRow icon="clock" onClick={() => openLink(block)}>
-                          Schedule
-                        </LinkMenuRow>
-                        <LinkMenuRow icon={block.enabled ? 'eye-off' : 'eye'} onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
-                          {block.enabled ? 'Hidden' : 'Show'}
-                        </LinkMenuRow>
-                      </>
                     ) : null}
-                    {block.type === 'HEADING' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setHeading(block.title);
-                          setModal({ kind: 'heading', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'EMBED' ? (
-                      <LinkMenuRow icon="pencil" onClick={() => openEmbed(embedOnly(block.url), block)}>
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'TEXT' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setTextTitle(block.title);
-                          setTextBody(block.body);
-                          setModal({ kind: 'text', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'FAQ' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setFaqTitle(block.title);
-                          setFaq(block.faq.length ? block.faq : [{ question: '', answer: '' }]);
-                          setModal({ kind: 'faq', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'IMAGE_CAROUSEL' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setImages(block.images);
-                          setModal({ kind: 'carousel', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'CONTACT_FORM' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setContact({
-                            title: block.title || block.form?.heading || '',
-                            body: block.body || block.form?.consent || '',
-                            button: block.form?.button || 'Send',
-                            askName: !!block.form?.askName,
-                          });
-                          setModal({ kind: 'contact', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'MAP' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setMapTitle(block.title);
-                          setMapUrl(block.url);
-                          setModal({ kind: 'map', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'CALENDLY' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setCalendlyTitle(block.title);
-                          setCalendlyUrl(block.url);
-                          setModal({ kind: 'calendly', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'CONTACT_DETAILS' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setDetails({
-                            title: block.title || 'Contact',
-                            email: block.details?.email || '',
-                            phone: block.details?.phone || '',
-                            address: block.details?.address || '',
-                            website: block.details?.website || '',
-                          });
-                          setModal({ kind: 'details', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'DISCOUNT' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setDiscount({
-                            title: block.title,
-                            code: block.discount?.code || '',
-                            note: block.discount?.note || '',
-                            url: block.discount?.url || block.url || '',
-                          });
-                          setModal({ kind: 'discount', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'EVENTS' ? (
-                      <LinkMenuRow
-                        icon="pencil"
-                        onClick={() => {
-                          setEventsTitle(block.title || 'Upcoming');
-                          setEvents(block.events.length ? block.events : [{ title: '', when: '', place: '', url: '' }]);
-                          setModal({ kind: 'events', block });
-                        }}
-                      >
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'FEATURED_POST' ? (
-                      <LinkMenuRow icon={block.enabled ? 'eye-off' : 'eye'} onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !block.enabled })}>
-                        {block.enabled ? 'Hidden' : 'Show'}
-                      </LinkMenuRow>
-                    ) : null}
-                    {block.type === 'EMAIL_CAPTURE' ? (
-                      <LinkMenuRow icon="pencil" onClick={() => setModal({ kind: 'capture' })}>
-                        Edit
-                      </LinkMenuRow>
-                    ) : null}
-                    <LinkMenuRow icon="trash" danger onClick={() => setConfirmId(block.id)}>
-                      Delete
-                    </LinkMenuRow>
-                    </>
-                    )}
                   </div>
                   </LinkModal>
                 ) : null}

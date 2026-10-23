@@ -21,7 +21,7 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
@@ -78,7 +78,11 @@ const toDraft = (page: LinkEditor): Draft => {
   };
 };
 
-const Pro = () => <span className="lib-pill lib-pill-pro">★ Pro</span>;
+const Star = () => (
+  <span className="lib-tile-star" aria-hidden>
+    <HugeIcon name="star" size={10} />
+  </span>
+);
 
 const labelOf = (value: string) => (value ? value[0].toUpperCase() + value.slice(1) : value);
 
@@ -119,6 +123,8 @@ export const LinkAppearanceScreen = () => {
   const [removeSocial, setRemoveSocial] = useState<number | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [section, setSection] = useState<string | null>(null);
+  const [customColour, setCustomColour] = useState(false);
+  const [editSocial, setEditSocial] = useState<number | null>(null);
   const connect = useAddProvider(() => {
     mutate();
   });
@@ -392,13 +398,12 @@ export const LinkAppearanceScreen = () => {
           </div>
         </AccItem>
         <AccItem title="Theme" summary={themeLabel} open={section === 'theme'} onToggle={() => toggleSection('theme')}>
-          <p className="lib-help mb-[12px] text-[13px] text-textItemBlur">Pro themes show a badge.</p>
-          <div className="lib-themes">
+          <div className="lib-tiles">
             {LINK_THEMES.map((theme) => (
               <button
                 key={theme.id}
                 type="button"
-                className="lib-theme"
+                className={`lib-tile${draft.theme === theme.id ? ' is-on' : ''}`}
                 onClick={() => {
                   if (!guard(theme.pro, 'That theme is on a paid plan')) return;
                   setDraft({
@@ -409,143 +414,158 @@ export const LinkAppearanceScreen = () => {
                   });
                 }}
               >
-                <span className={`lib-swatch${draft.theme === theme.id ? ' is-active' : ''}`} data-theme={theme.id}>
+                {theme.pro ? <Star /> : null}
+                <span className="lib-swatch" data-theme={theme.id} aria-hidden>
+                  <b />
                   <i />
                   <i />
                 </span>
-                <span className="lib-theme-label">
-                  <span className="lib-theme-name">{theme.label}</span>
-                  {draft.theme === theme.id || theme.pro ? (
-                    <span className="lib-theme-badges">
-                      {draft.theme === theme.id ? <span className="lib-pill lib-pill-active">Active</span> : null}
-                      {theme.pro ? <Pro /> : null}
-                    </span>
-                  ) : null}
-                </span>
+                <span className="lib-tile-name">{theme.label}</span>
               </button>
             ))}
           </div>
         </AccItem>
         <AccItem title="Header" summary={labelOf(design.header)} open={section === 'header'} onToggle={() => toggleSection('header')}>
-          <p className="lib-help mb-[12px] text-[13px] text-textItemBlur">Classic is included. Other layouts are Pro.</p>
-          <div className="lib-opt-grid">
+          <div className="lib-tiles">
             {LINK_HEADERS.map((header) => (
               <button
                 key={header}
                 type="button"
-                className={`lib-opt${design.header === header ? ' is-on' : ''}`}
+                className={`lib-tile${design.header === header ? ' is-on' : ''}`}
                 onClick={() => {
                   if (!guard(header !== 'classic', 'That layout is on a paid plan')) return;
                   setDesign({ header });
                 }}
               >
+                {header !== 'classic' ? <Star /> : null}
                 <span className="lib-opt-art" data-opt="header" data-value={header} />
-                <span className="lib-opt-name">
-                  {labelOf(header)}
-                  {header !== 'classic' ? <Pro /> : null}
-                </span>
+                <span className="lib-tile-name">{labelOf(header)}</span>
               </button>
             ))}
           </div>
         </AccItem>
         <AccItem title="Background" summary={labelOf(design.wallpaper)} open={section === 'background'} onToggle={() => toggleSection('background')}>
-            <div className="lib-opt-grid mb-[12px]">
+            <p className="lib-section-label">Wallpaper</p>
+            <div className="lib-tiles mb-[14px]">
               {LINK_WALLPAPERS.map((item) => (
                 <button
                   key={item}
                   type="button"
-                  className={`lib-opt${design.wallpaper === item ? ' is-on' : ''}`}
+                  className={`lib-tile${design.wallpaper === item ? ' is-on' : ''}`}
                   onClick={() => {
                     const pro = item === 'blur' || item === 'pattern';
                     if (!guard(pro, 'That wallpaper is on a paid plan')) return;
                     setDesign({ wallpaper: item });
                   }}
                 >
+                  {item === 'blur' || item === 'pattern' ? <Star /> : null}
                   <span className="lib-opt-art" data-opt="wallpaper" data-value={item} />
-                  <span className="lib-opt-name">
-                    {labelOf(item)}
-                    {item === 'blur' || item === 'pattern' ? <Pro /> : null}
-                  </span>
+                  <span className="lib-tile-name">{labelOf(item)}</span>
                 </button>
               ))}
             </div>
             {design.wallpaper === 'pattern' ? (
-              <SegmentedControl
-                aria-label="Pattern"
-                variant="pill"
-                size="sm"
-                className="lib-quiet-seg mb-[12px]"
-                value={design.pattern}
-                onValueChange={(pattern) => {
-                  if (pattern === 'dots' || pattern === 'grid' || pattern === 'diagonal' || pattern === 'waves') {
-                    setDesign({ pattern });
-                  }
-                }}
-                options={LINK_PATTERNS.map((item) => ({ value: item, label: labelOf(item) }))}
-              />
+              <>
+                <p className="lib-section-label">Pattern</p>
+                <div className="lib-tiles mb-[14px]">
+                  {LINK_PATTERNS.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`lib-tile${design.pattern === item ? ' is-on' : ''}`}
+                      onClick={() => setDesign({ pattern: item })}
+                    >
+                      <span className="lib-opt-art" data-opt="pattern" data-value={item} />
+                      <span className="lib-tile-name">{labelOf(item)}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
             ) : null}
             {design.wallpaper === 'gradient' ? (
-              <div className="flex flex-wrap gap-[12px]">
+              <div className="mb-[14px] flex flex-col gap-[8px]">
                 <ColorField label="From" value={design.gradientFrom || '#12343a'} onChange={(gradientFrom) => setDesign({ gradientFrom })} />
                 <ColorField label="To" value={design.gradientTo || '#071418'} onChange={(gradientTo) => setDesign({ gradientTo })} />
               </div>
             ) : null}
+            <p className="lib-section-label">Colour</p>
+            <div className="lib-round-row">
+              {colours.map((colour) => (
+                <button
+                  key={colour}
+                  type="button"
+                  aria-label={colour}
+                  className={`lib-round${(design.colors.background || '').toLowerCase() === colour.toLowerCase() ? ' is-on' : ''}`}
+                  style={{ background: colour }}
+                  onClick={() => setDesign({ colors: { ...design.colors, background: colour } })}
+                />
+              ))}
+              <button type="button" className={`${linkSecondary} lib-custom-pill`} onClick={() => setCustomColour((open) => !open)}>
+                + Custom
+              </button>
+            </div>
+            {customColour ? (
+              <div className="mt-[10px]">
+                <ColorField
+                  label="Custom"
+                  value={design.colors.background || themePalette(draft.theme).background}
+                  onChange={(background) => setDesign({ colors: { ...design.colors, background } })}
+                />
+              </div>
+            ) : null}
             {!design.wallpaperChosen && draft.backgroundMode === 'image' && draft.backgroundImage ? (
-              <p className="text-[13px] text-textItemBlur">The current background image stays until you pick a wallpaper.</p>
+              <p className="mt-[10px] text-[13px] text-textItemBlur">The current background image stays until you pick a wallpaper.</p>
             ) : null}
         </AccItem>
         <AccItem title="Buttons" summary={buttonSummary} open={section === 'buttons'} onToggle={() => toggleSection('buttons')}>
-            <p className="lib-help mb-[8px] text-[13px] text-textItemBlur">Style</p>
-            <div className="lib-opt-grid mb-[12px]">
+            <p className="lib-section-label">Style</p>
+            <div className="lib-tiles mb-[14px]">
               {LINK_BUTTON_FILLS.map((item) => (
                 <button
                   key={item}
                   type="button"
-                  className={`lib-opt${design.buttonFill === item ? ' is-on' : ''}`}
+                  className={`lib-tile${design.buttonFill === item ? ' is-on' : ''}`}
                   onClick={() => {
                     if (!guard(item === 'glass', 'Glass buttons are on a paid plan')) return;
                     setDesign({ buttonFill: item });
                   }}
                 >
+                  {item === 'glass' ? <Star /> : null}
                   <span className="lib-opt-art" data-opt="fill" data-value={item} />
-                  <span className="lib-opt-name">
-                    {labelOf(item)}
-                    {item === 'glass' ? <Pro /> : null}
-                  </span>
+                  <span className="lib-tile-name">{labelOf(item)}</span>
                 </button>
               ))}
             </div>
-            <p className="lib-help mb-[8px] text-[13px] text-textItemBlur">Shape</p>
-            <div className="lib-opt-grid mb-[12px]">
-              {LINK_BUTTONS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`lib-opt${radiusPreset(design.radius, draft.buttonStyle) === item.id ? ' is-on' : ''}`}
-                  onClick={() => {
-                    const radius = item.id === 'pill' ? 32 : item.id === 'rounded' ? 16 : 8;
-                    setDraft({ ...draft, buttonStyle: item.id, design: { ...design, radius } });
-                  }}
-                >
-                  <span className="lib-opt-art" data-opt="shape" data-value={item.id} />
-                  <span className="lib-opt-name">{item.label}</span>
-                </button>
-              ))}
+            <p className="lib-section-label">Shape</p>
+            <SegmentedControl
+              aria-label="Shape"
+              variant="pill"
+              size="sm"
+              className="lib-quiet-seg mb-[14px]"
+              value={radiusPreset(design.radius, draft.buttonStyle)}
+              onValueChange={(id) => {
+                const radius = id === 'pill' ? 32 : id === 'rounded' ? 16 : 8;
+                setDraft({ ...draft, buttonStyle: id, design: { ...design, radius } });
+              }}
+              options={LINK_BUTTONS.map((item) => ({ value: item.id, label: item.label }))}
+            />
+            <div className="lib-slider-head">
+              <span>Corner radius</span>
+              <span>{Math.max(0, design.radius)} px</span>
             </div>
-            <LinkField label={`Corner roundness ${Math.max(0, design.radius)}`}>
-              <input
-                type="range"
-                min={0}
-                max={32}
-                value={Math.max(0, design.radius)}
-                onChange={(event) => {
-                  const radius = Number(event.target.value);
-                  const buttonStyle = radius >= 24 ? 'pill' : radius >= 12 ? 'rounded' : 'square';
-                  setDraft({ ...draft, buttonStyle, design: { ...design, radius } });
-                }}
-              />
-            </LinkField>
-            <p className="lib-help mb-[8px] mt-[12px] text-[13px] text-textItemBlur">Shadow</p>
+            <input
+              type="range"
+              min={0}
+              max={32}
+              aria-label="Corner radius"
+              value={Math.max(0, design.radius)}
+              onChange={(event) => {
+                const radius = Number(event.target.value);
+                const buttonStyle = radius >= 24 ? 'pill' : radius >= 12 ? 'rounded' : 'square';
+                setDraft({ ...draft, buttonStyle, design: { ...design, radius } });
+              }}
+            />
+            <p className="lib-section-label mt-[14px]">Shadow</p>
             <SegmentedControl
               aria-label="Shadow"
               variant="pill"
@@ -581,17 +601,24 @@ export const LinkAppearanceScreen = () => {
               </select>
             </LinkField>
           </div>
-          <div className="mt-[14px] flex flex-wrap gap-[12px]">
-            <ColorField label="Background" value={design.colors.background || themePalette(draft.theme).background} onChange={(background) => setDesign({ colors: { ...design.colors, background } })} swatches={colours} />
+          <div className="mt-[14px] flex flex-col gap-[8px]">
+            <ColorField label="Background" value={design.colors.background || themePalette(draft.theme).background} onChange={(background) => setDesign({ colors: { ...design.colors, background } })} />
             <ColorField label="Buttons" value={design.colors.button || themePalette(draft.theme).button} onChange={(button) => setDesign({ colors: { ...design.colors, button } })} />
             <ColorField label="Button text" value={design.colors.buttonText || themePalette(draft.theme).buttonText} onChange={(buttonText) => setDesign({ colors: { ...design.colors, buttonText } })} />
             <ColorField label="Page text" value={design.colors.pageText || themePalette(draft.theme).pageText} onChange={(pageText) => setDesign({ colors: { ...design.colors, pageText } })} />
             <ColorField label="Title" value={design.colors.title || themePalette(draft.theme).title} onChange={(title) => setDesign({ colors: { ...design.colors, title } })} />
           </div>
+          <button
+            type="button"
+            className="lib-reset-colours"
+            onClick={() => setDraft({ ...draft, backgroundColor: '', design: { ...design, colors: { ...emptyColors } } })}
+          >
+            Reset to theme colours
+          </button>
         </AccItem>
         <AccItem title="Socials" summary={socialSummary} open={section === 'socials'} onToggle={() => toggleSection('socials')}>
-          <div className="mb-[12px] flex flex-wrap items-start justify-between gap-[8px]">
-            <p className="text-[13px] text-textItemBlur">Accounts connected in Schedule show up here. Stalker uses the same accounts.</p>
+          <div className="lib-social-position mb-[12px]">
+            <span>Position</span>
             <SegmentedControl
               aria-label="Social position"
               variant="pill"
@@ -605,101 +632,121 @@ export const LinkAppearanceScreen = () => {
               ]}
             />
           </div>
-          <div className="lib-social-chips mb-[12px]">
-            {data.accounts.map((account) => (
-              <label key={account.id} className={`lib-social-chip${!draft.hidden.includes(account.id) ? ' is-on' : ''}`}>
-                <span className="lib-socials" aria-hidden>
-                  <span title={account.network}>
-                    <SocialMark network={account.network} />
-                  </span>
+          <div className="lib-social-tiles mb-[8px]">
+            {draft.socials.map((item, index) => (
+              <button
+                key={`${item.network}-${index}`}
+                type="button"
+                className={`lib-tile${editSocial === index ? ' is-on' : ''}`}
+                onClick={() => setEditSocial(editSocial === index ? null : index)}
+              >
+                <span className="lib-social-mark" aria-hidden>
+                  <SocialMark network={item.network} />
                 </span>
-                <span className="lib-social-chip-name">{account.name}</span>
-                <input
-                  type="checkbox"
+                <span className="lib-tile-name">{LINK_SOCIALS.find((network) => network.id === item.network)?.label || item.network}</span>
+              </button>
+            ))}
+            {draft.socials.length < 8 ? (
+              <button
+                type="button"
+                className="lib-tile lib-tile-add"
+                onClick={() => {
+                  const next = [...draft.socials, { network: 'website', url: '' }];
+                  setDraft({ ...draft, socials: next });
+                  setEditSocial(next.length - 1);
+                }}
+              >
+                <HugeIcon name="plus" size={16} />
+                <span className="lib-tile-name">Add</span>
+              </button>
+            ) : null}
+          </div>
+          {editSocial !== null && draft.socials[editSocial] ? (
+            <div className="lib-social-edit mb-[12px]">
+              <select
+                aria-label="Network"
+                className="lib-input h-[44px] min-h-[44px] min-w-0 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
+                value={draft.socials[editSocial].network}
+                onChange={(event) => {
+                  const socials = draft.socials.slice();
+                  socials[editSocial] = { ...socials[editSocial], network: event.target.value };
+                  setDraft({ ...draft, socials });
+                }}
+              >
+                {LINK_SOCIALS.map((network) => (
+                  <option key={network.id} value={network.id}>
+                    {network.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                aria-label="Profile URL"
+                className="lib-input h-[44px] min-h-[44px] min-w-0 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
+                value={draft.socials[editSocial].url}
+                placeholder="https://"
+                onChange={(event) => {
+                  const socials = draft.socials.slice();
+                  socials[editSocial] = { ...socials[editSocial], url: event.target.value };
+                  setSocialErrors(socialErrors.map((problem, itemIndex) => (itemIndex === editSocial ? null : problem)));
+                  setDraft({ ...draft, socials });
+                }}
+              />
+              <span className="relative">
+                <button type="button" className={linkSecondary} onClick={() => setRemoveSocial(removeSocial === editSocial ? null : editSocial)}>
+                  Remove
+                </button>
+                {removeSocial === editSocial ? (
+                  <div className="lib-confirm" role="dialog" aria-label="Remove social link">
+                    <button type="button" onClick={() => setRemoveSocial(null)}>
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="is-remove"
+                      onClick={() => {
+                        setDraft({ ...draft, socials: draft.socials.filter((_, itemIndex) => itemIndex !== editSocial) });
+                        setSocialErrors(socialErrors.filter((_, itemIndex) => itemIndex !== editSocial));
+                        setRemoveSocial(null);
+                        setEditSocial(null);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : null}
+              </span>
+              {socialErrors[editSocial] ? <p className="lib-field-error">{socialErrors[editSocial]}</p> : null}
+            </div>
+          ) : null}
+          <p className="mb-[12px] text-[13px] text-textItemBlur">Connected accounts show automatically. Tap an icon to edit or hide it.</p>
+          <p className="lib-section-label">Connected accounts (from Schedule)</p>
+          <div className="lib-account-card">
+            {data.accounts.map((account) => (
+              <div key={account.id} className="lib-account-line">
+                <span className="lib-social-mark" aria-hidden>
+                  <SocialMark network={account.network} />
+                </span>
+                <span className="min-w-0">
+                  <strong>{account.name}</strong>
+                  <small>{account.network}</small>
+                </span>
+                <LinkToggle
                   checked={!draft.hidden.includes(account.id)}
-                  onChange={(event) =>
+                  label={`Show ${account.name}`}
+                  onChange={(shown) =>
                     setDraft({
                       ...draft,
-                      hidden: event.target.checked ? draft.hidden.filter((id) => id !== account.id) : [...draft.hidden, account.id],
+                      hidden: shown ? draft.hidden.filter((id) => id !== account.id) : [...draft.hidden, account.id],
                     })
                   }
                 />
-              </label>
+              </div>
             ))}
             {!data.accounts.length ? <p className="text-[14px] text-textItemBlur">No connected accounts yet.</p> : null}
-            <button type="button" className={linkSecondary} onClick={() => connect()}>
+            <button type="button" className={`${linkSecondary} mt-[8px]`} onClick={() => connect()}>
               <HugeIcon name="plus" size={16} />
               Connect account
             </button>
-          </div>
-          <div className="flex flex-col gap-[8px]">
-            {draft.socials.map((item, index) => (
-              <div key={`${item.network}-${index}`} className="lib-social-row grid min-w-0 grid-cols-1 gap-[8px] sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)_auto]">
-                <span className="flex min-w-0 items-center gap-[8px]">
-                  <span className="lib-socials" aria-hidden>
-                    <span title={item.network}>
-                      <SocialMark network={item.network} />
-                    </span>
-                  </span>
-                <select
-                  className="lib-input h-[44px] min-h-[44px] min-w-0 flex-1 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
-                  value={item.network}
-                  onChange={(event) => {
-                    const socials = draft.socials.slice();
-                    socials[index] = { ...item, network: event.target.value };
-                    setDraft({ ...draft, socials });
-                  }}
-                >
-                  {LINK_SOCIALS.map((network) => (
-                    <option key={network.id} value={network.id}>
-                      {network.label}
-                    </option>
-                  ))}
-                </select>
-                </span>
-                <input
-                  className="lib-input h-[44px] min-h-[44px] min-w-0 rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500]"
-                  value={item.url}
-                  placeholder="https://"
-                  onChange={(event) => {
-                    const socials = draft.socials.slice();
-                    socials[index] = { ...item, url: event.target.value };
-                    setSocialErrors(socialErrors.map((problem, itemIndex) => (itemIndex === index ? null : problem)));
-                    setDraft({ ...draft, socials });
-                  }}
-                />
-                <span className="relative">
-                  <button type="button" className={linkSecondary} onClick={() => setRemoveSocial(removeSocial === index ? null : index)}>
-                    Remove
-                  </button>
-                  {removeSocial === index ? (
-                    <div className="lib-confirm" role="dialog" aria-label="Remove social link">
-                      <button type="button" onClick={() => setRemoveSocial(null)}>
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        className="is-remove"
-                        onClick={() => {
-                          setDraft({ ...draft, socials: draft.socials.filter((_, itemIndex) => itemIndex !== index) });
-                          setSocialErrors(socialErrors.filter((_, itemIndex) => itemIndex !== index));
-                          setRemoveSocial(null);
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : null}
-                </span>
-                {socialErrors[index] ? <p className="lib-field-error sm:col-span-3">{socialErrors[index]}</p> : null}
-              </div>
-            ))}
-            {draft.socials.length < 8 ? (
-              <button type="button" className={linkSecondary} onClick={() => setDraft({ ...draft, socials: [...draft.socials, { network: 'website', url: '' }] })}>
-                <HugeIcon name="plus" size={16} />
-                Add a link
-              </button>
-            ) : null}
           </div>
         </AccItem>
         </div>
@@ -724,7 +771,7 @@ const ColorField = ({
 }) => (
   <label className="lib-color">
     <span>{label}</span>
-    <span className="lib-color-row">
+    <span className="lib-color-pill">
       <span className="lib-color-chip">
         <input
           type="color"
