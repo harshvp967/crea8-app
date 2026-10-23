@@ -6,7 +6,8 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { LinkRequestError, linkLocked, linkSend, useLinkLeads, useLinkPage, type LinkLead } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, LinkSegments, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { stkCard, stkCardTight, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const SOURCE_LOGO: Record<string, string> = {
@@ -121,7 +122,15 @@ export const LinkLeadsScreen = () => {
       {error ? null : (
         <div className="flex flex-col items-stretch gap-[8px] md:flex-row md:items-center md:justify-between">
           <div className="max-w-full overflow-x-auto">
-            <LinkSegments label="Lead status" value={status} options={filters} onChange={setStatus} />
+            <SegmentedControl
+              aria-label="Lead status"
+              variant="pill"
+              size="sm"
+              className="lib-quiet-seg"
+              value={status}
+              onValueChange={setStatus}
+              options={filters.map((item) => ({ value: item.id, label: item.label }))}
+            />
           </div>
           <label className="lib-search-field relative block w-full md:w-[240px]">
             <HugeIcon name="search" size={16} className="pointer-events-none absolute start-[14px] top-[14px]" />
