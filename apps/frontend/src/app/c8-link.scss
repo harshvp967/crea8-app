@@ -1129,6 +1129,31 @@ body:has(.link-screen) .stk-close {
   box-shadow: 0 6px 0 var(--c8-hard);
 }
 
+.link-screen .lib-preview-as-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.link-screen .lib-preview-as-chips button {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link-screen .lib-preview-as-chips button.is-on {
+  border-color: var(--c8-hard);
+  background: var(--c8-surface);
+  box-shadow: 0 2px 0 var(--c8-hard);
+}
+
 @media (max-width: 639px) {
   .link-screen .lib-preview-as-summary {
     min-height: 44px;

@@ -313,9 +313,18 @@ export const LinkPublicView = ({
               );
             }
             if (block.type === 'MAP' && block.embed) {
+              const place = mapCaption(block.embed.src, block.title);
               return (
-                <div key={block.id} className="lib-embed" data-provider="maps">
-                  <iframe src={mapEmbedSrc(block.embed.src)} title={block.title || 'Map'} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
+                <div key={block.id} className="lib-place">
+                  <div className="lib-embed" data-provider="maps">
+                    <iframe src={mapEmbedSrc(block.embed.src)} title={block.title || 'Map'} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
+                  </div>
+                  {block.title || place ? (
+                    <div className="lib-place-cap">
+                      {block.title ? <strong>{block.title}</strong> : null}
+                      {place ? <p>{place}</p> : null}
+                    </div>
+                  ) : null}
                 </div>
               );
             }
@@ -335,20 +344,30 @@ export const LinkPublicView = ({
             if (block.type === 'EVENTS' && block.events.length) {
               return (
                 <div key={block.id} className="lib-events">
-                  {block.title ? <strong>{block.title}</strong> : null}
-                  {block.events.map((item) => (
-                    <div key={`${item.title}-${item.when}`}>
-                      <strong>{item.title}</strong>
-                      <p>
-                        {[eventLabel(item.when), item.place].filter(Boolean).join(' · ')}
-                      </p>
-                      {item.url && mode !== 'preview' ? (
-                        <a href={item.url} target="_blank" rel="noreferrer">
-                          Details
-                        </a>
-                      ) : null}
-                    </div>
-                  ))}
+                  {block.title ? <strong className="lib-events-title">{block.title}</strong> : null}
+                  {block.events.map((item) => {
+                    const face = eventFace(item.when);
+                    const detail = [item.place, face.time].filter(Boolean).join(' · ') || (face.day ? '' : eventLabel(item.when));
+                    return (
+                      <div key={`${item.title}-${item.when}`} className="lib-event">
+                        {face.day ? (
+                          <span className="lib-event-date">
+                            <strong>{face.day}</strong>
+                            <small>{face.month}</small>
+                          </span>
+                        ) : null}
+                        <span className="lib-event-copy">
+                          <strong>{item.title}</strong>
+                          {detail ? <p>{detail}</p> : null}
+                          {item.url && mode !== 'preview' ? (
+                            <a href={item.url} target="_blank" rel="noreferrer">
+                              Details
+                            </a>
+                          ) : null}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             }
@@ -419,11 +438,8 @@ export const LinkPublicView = ({
         {data.showBadge ? (
           <footer className="lib-footer">
             <a className="lib-made" href="https://crea8.one">
-              made with crea8.one
+              crea8.one
             </a>
-            <p>
-              Want to schedule posts and track competitors? <a href="https://crea8.one">Try crea8.one</a>
-            </p>
           </footer>
         ) : null}
       </div>
@@ -558,6 +574,40 @@ const mapEmbedSrc = (src: string) => {
     return src;
   }
   return `${src}&iwloc=`;
+};
+
+const mapCaption = (src: string, title: string) => {
+  try {
+    const url = new URL(src);
+    const query = (url.searchParams.get('q') || url.searchParams.get('query') || '').replace(/\+/g, ' ').trim();
+    if (!query || query === title.trim() || /^-?\d+(?:\.\d+)?\s*,\s*-?\d+/.test(query)) {
+      return '';
+    }
+    return query.slice(0, 200);
+  } catch {
+    return '';
+  }
+};
+
+const EVENT_FACE_MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+const eventFace = (when: string) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec((when || '').trim());
+  if (!match) {
+    return { day: '', month: '', time: '' };
+  }
+  const month = EVENT_FACE_MONTHS[Number(match[2]) - 1];
+  if (!month) {
+    return { day: '', month: '', time: '' };
+  }
+  const hour = Number(match[4]);
+  const minute = match[5];
+  const clock = `${hour % 12 || 12}${minute === '00' ? '' : `:${minute}`} ${hour < 12 ? 'AM' : 'PM'}`;
+  return {
+    day: String(Number(match[3])),
+    month,
+    time: clock,
+  };
 };
 
 const EmbedFrame = ({ src, title, provider }: { src: string; title: string; provider: string }) => {
