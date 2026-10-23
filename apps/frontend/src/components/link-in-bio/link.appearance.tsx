@@ -12,7 +12,6 @@ import {
   LINK_SHADOWS,
   LINK_SOCIALS,
   LINK_THEMES,
-  LINK_TITLE_MODES,
   LINK_WALLPAPERS,
   LinkDesign,
   imagePathProblem,
@@ -22,7 +21,8 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, LinkSegments, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
@@ -328,11 +328,17 @@ export const LinkAppearanceScreen = () => {
             </span>
           </div>
           <div className="mb-[12px]">
-            <LinkSegments
-              label="Title display"
+            <SegmentedControl
+              aria-label="Title display"
+              variant="pill"
+              size="sm"
+              className="lib-quiet-seg"
               value={design.titleMode}
-              options={LINK_TITLE_MODES.map((mode) => ({ id: mode, label: mode === 'text' ? 'Title text' : 'Logo' }))}
-              onChange={(titleMode) => setDesign({ titleMode })}
+              onValueChange={(titleMode) => setDesign({ titleMode: titleMode === 'logo' ? 'logo' : 'text' })}
+              options={[
+                { value: 'text', label: 'Text' },
+                { value: 'logo', label: 'Logo' },
+              ]}
             />
           </div>
           {design.titleMode === 'logo' ? (
@@ -375,7 +381,7 @@ export const LinkAppearanceScreen = () => {
             </div>
           ) : null}
           <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
-            <LinkField label="Title">
+            <LinkField label="Name">
               <input value={draft.name} maxLength={30} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
               <span className="text-[12px] font-[400] text-textItemBlur">{draft.name.length}/30</span>
             </LinkField>
@@ -422,49 +428,61 @@ export const LinkAppearanceScreen = () => {
         </AccItem>
         <AccItem title="Header" summary={labelOf(design.header)} open={section === 'header'} onToggle={() => toggleSection('header')}>
           <p className="lib-help mb-[12px] text-[13px] text-textItemBlur">Classic is included. Other layouts are Pro.</p>
-          <div className="flex flex-wrap gap-[8px]">
+          <div className="lib-opt-grid">
             {LINK_HEADERS.map((header) => (
               <button
                 key={header}
                 type="button"
-                className={design.header === header ? linkChoice : linkSecondary}
+                className={`lib-opt${design.header === header ? ' is-on' : ''}`}
                 onClick={() => {
                   if (!guard(header !== 'classic', 'That layout is on a paid plan')) return;
                   setDesign({ header });
                 }}
               >
-                {header[0].toUpperCase() + header.slice(1)}
-                {header !== 'classic' ? <Pro /> : null}
+                <span className="lib-opt-art" data-opt="header" data-value={header} />
+                <span className="lib-opt-name">
+                  {labelOf(header)}
+                  {header !== 'classic' ? <Pro /> : null}
+                </span>
               </button>
             ))}
           </div>
         </AccItem>
         <AccItem title="Background" summary={labelOf(design.wallpaper)} open={section === 'background'} onToggle={() => toggleSection('background')}>
-            <div className="mb-[12px] flex flex-wrap gap-[8px]">
+            <div className="lib-opt-grid mb-[12px]">
               {LINK_WALLPAPERS.map((item) => (
                 <button
                   key={item}
                   type="button"
-                  className={design.wallpaper === item ? linkChoice : linkSecondary}
+                  className={`lib-opt${design.wallpaper === item ? ' is-on' : ''}`}
                   onClick={() => {
                     const pro = item === 'blur' || item === 'pattern';
                     if (!guard(pro, 'That wallpaper is on a paid plan')) return;
                     setDesign({ wallpaper: item });
                   }}
                 >
-                  {item[0].toUpperCase() + item.slice(1)}
-                  {item === 'blur' || item === 'pattern' ? <Pro /> : null}
+                  <span className="lib-opt-art" data-opt="wallpaper" data-value={item} />
+                  <span className="lib-opt-name">
+                    {labelOf(item)}
+                    {item === 'blur' || item === 'pattern' ? <Pro /> : null}
+                  </span>
                 </button>
               ))}
             </div>
             {design.wallpaper === 'pattern' ? (
-              <div className="mb-[12px] flex flex-wrap gap-[8px]">
-                {LINK_PATTERNS.map((item) => (
-                  <button key={item} type="button" className={design.pattern === item ? linkChoice : linkSecondary} onClick={() => setDesign({ pattern: item })}>
-                    {item}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                aria-label="Pattern"
+                variant="pill"
+                size="sm"
+                className="lib-quiet-seg mb-[12px]"
+                value={design.pattern}
+                onValueChange={(pattern) => {
+                  if (pattern === 'dots' || pattern === 'grid' || pattern === 'diagonal' || pattern === 'waves') {
+                    setDesign({ pattern });
+                  }
+                }}
+                options={LINK_PATTERNS.map((item) => ({ value: item, label: labelOf(item) }))}
+              />
             ) : null}
             {design.wallpaper === 'gradient' ? (
               <div className="flex flex-wrap gap-[12px]">
@@ -477,34 +495,40 @@ export const LinkAppearanceScreen = () => {
             ) : null}
         </AccItem>
         <AccItem title="Buttons" summary={buttonSummary} open={section === 'buttons'} onToggle={() => toggleSection('buttons')}>
-            <div className="mb-[12px] flex flex-wrap gap-[8px]">
+            <p className="lib-help mb-[8px] text-[13px] text-textItemBlur">Style</p>
+            <div className="lib-opt-grid mb-[12px]">
               {LINK_BUTTON_FILLS.map((item) => (
                 <button
                   key={item}
                   type="button"
-                  className={design.buttonFill === item ? linkChoice : linkSecondary}
+                  className={`lib-opt${design.buttonFill === item ? ' is-on' : ''}`}
                   onClick={() => {
                     if (!guard(item === 'glass', 'Glass buttons are on a paid plan')) return;
                     setDesign({ buttonFill: item });
                   }}
                 >
-                  {item[0].toUpperCase() + item.slice(1)}
-                  {item === 'glass' ? <Pro /> : null}
+                  <span className="lib-opt-art" data-opt="fill" data-value={item} />
+                  <span className="lib-opt-name">
+                    {labelOf(item)}
+                    {item === 'glass' ? <Pro /> : null}
+                  </span>
                 </button>
               ))}
             </div>
-            <div className="mb-[12px] flex flex-wrap gap-[8px]">
+            <p className="lib-help mb-[8px] text-[13px] text-textItemBlur">Shape</p>
+            <div className="lib-opt-grid mb-[12px]">
               {LINK_BUTTONS.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  className={radiusPreset(design.radius, draft.buttonStyle) === item.id ? linkChoice : linkSecondary}
+                  className={`lib-opt${radiusPreset(design.radius, draft.buttonStyle) === item.id ? ' is-on' : ''}`}
                   onClick={() => {
                     const radius = item.id === 'pill' ? 32 : item.id === 'rounded' ? 16 : 8;
                     setDraft({ ...draft, buttonStyle: item.id, design: { ...design, radius } });
                   }}
                 >
-                  {item.label}
+                  <span className="lib-opt-art" data-opt="shape" data-value={item.id} />
+                  <span className="lib-opt-name">{item.label}</span>
                 </button>
               ))}
             </div>
@@ -521,13 +545,20 @@ export const LinkAppearanceScreen = () => {
                 }}
               />
             </LinkField>
-            <div className="mt-[12px] flex flex-wrap gap-[8px]">
-              {LINK_SHADOWS.map((item) => (
-                <button key={item} type="button" className={design.shadow === item ? linkChoice : linkSecondary} onClick={() => setDesign({ shadow: item })}>
-                  {item[0].toUpperCase() + item.slice(1)}
-                </button>
-              ))}
-            </div>
+            <p className="lib-help mb-[8px] mt-[12px] text-[13px] text-textItemBlur">Shadow</p>
+            <SegmentedControl
+              aria-label="Shadow"
+              variant="pill"
+              size="sm"
+              className="lib-quiet-seg"
+              value={design.shadow}
+              onValueChange={(shadow) => {
+                if (shadow === 'none' || shadow === 'soft' || shadow === 'strong' || shadow === 'hard') {
+                  setDesign({ shadow });
+                }
+              }}
+              options={LINK_SHADOWS.map((item) => ({ value: item, label: labelOf(item) }))}
+            />
         </AccItem>
         <AccItem title="Text & colours" summary={draft.font} open={section === 'text'} onToggle={() => toggleSection('text')}>
           <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
@@ -561,30 +592,28 @@ export const LinkAppearanceScreen = () => {
         <AccItem title="Socials" summary={socialSummary} open={section === 'socials'} onToggle={() => toggleSection('socials')}>
           <div className="mb-[12px] flex flex-wrap items-start justify-between gap-[8px]">
             <p className="text-[13px] text-textItemBlur">Accounts connected in Schedule show up here. Stalker uses the same accounts.</p>
-            <LinkSegments
-              label="Social position"
+            <SegmentedControl
+              aria-label="Social position"
+              variant="pill"
+              size="sm"
+              className="lib-quiet-seg"
               value={design.socialPosition}
+              onValueChange={(socialPosition) => setDesign({ socialPosition: socialPosition === 'bottom' ? 'bottom' : 'top' })}
               options={[
-                { id: 'top', label: 'Top' },
-                { id: 'bottom', label: 'Bottom' },
+                { value: 'top', label: 'Top' },
+                { value: 'bottom', label: 'Bottom' },
               ]}
-              onChange={(socialPosition) => setDesign({ socialPosition })}
             />
           </div>
-          <div className="mb-[12px] flex flex-col gap-[8px]">
+          <div className="lib-social-chips mb-[12px]">
             {data.accounts.map((account) => (
-              <label key={account.id} className="lib-account-row">
-                <span className="flex min-w-0 items-center gap-[10px]">
-                  <span className="lib-socials" aria-hidden>
-                    <span title={account.network}>
-                      <SocialMark network={account.network} />
-                    </span>
-                  </span>
-                  <span className="min-w-0">
-                    <strong className="block truncate text-[14px]">{account.name}</strong>
-                    <span className="lib-account-url block truncate">{account.url}</span>
+              <label key={account.id} className={`lib-social-chip${!draft.hidden.includes(account.id) ? ' is-on' : ''}`}>
+                <span className="lib-socials" aria-hidden>
+                  <span title={account.network}>
+                    <SocialMark network={account.network} />
                   </span>
                 </span>
+                <span className="lib-social-chip-name">{account.name}</span>
                 <input
                   type="checkbox"
                   checked={!draft.hidden.includes(account.id)}
@@ -605,7 +634,7 @@ export const LinkAppearanceScreen = () => {
           </div>
           <div className="flex flex-col gap-[8px]">
             {draft.socials.map((item, index) => (
-              <div key={`${item.network}-${index}`} className="grid min-w-0 grid-cols-1 gap-[8px] sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)_auto]">
+              <div key={`${item.network}-${index}`} className="lib-social-row grid min-w-0 grid-cols-1 gap-[8px] sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)_auto]">
                 <span className="flex min-w-0 items-center gap-[8px]">
                   <span className="lib-socials" aria-hidden>
                     <span title={item.network}>
