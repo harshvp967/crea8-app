@@ -7,7 +7,8 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { formatRate } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkRequestError, linkLocked, useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkSegments, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const ranges: Array<{ id: string; label: string }> = [
@@ -170,14 +171,17 @@ export const LinkAnalyticsScreen = () => {
 
       <div className="flex flex-wrap items-center gap-[8px]">
         <div className="max-w-full overflow-x-auto">
-          <LinkSegments
-            label="Range"
+          <SegmentedControl
+            aria-label="Range"
+            variant="pill"
+            size="sm"
+            className="lib-quiet-seg"
             value={applied.from ? '' : range}
-            options={ranges}
-            onChange={(id) => {
+            onValueChange={(id) => {
               setRange(id);
               setApplied({ from: '', to: '' });
             }}
+            options={ranges.map((item) => ({ value: item.id, label: item.label }))}
           />
         </div>
         <div className="hidden flex-wrap items-center gap-[8px] sm:flex">
