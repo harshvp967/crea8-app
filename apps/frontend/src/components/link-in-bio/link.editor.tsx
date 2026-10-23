@@ -657,22 +657,36 @@ export const LinkEditorScreen = () => {
               <div className="lib-editor-copy">
                 <div className="lib-editor-titleline">
                   <strong className="lib-editor-name">{blockName(block)}</strong>
+                </div>
+                <div className="lib-editor-meta">
+                  <span
+                    className={`lib-pill${
+                      block.state === 'scheduled'
+                        ? ' lib-pill-scheduled'
+                        : !block.enabled || block.state === 'hidden' || block.state === 'ended'
+                          ? ''
+                          : ' lib-pill-live'
+                    }`}
+                  >
+                    {block.state === 'scheduled'
+                      ? 'Scheduled'
+                      : block.state === 'ended'
+                        ? 'Ended'
+                        : !block.enabled || block.state === 'hidden'
+                          ? 'Hidden'
+                          : 'Live'}
+                  </span>
+                  <p className="lib-editor-note">
+                    {block.type === 'LINK' ? `${block.clicks.toLocaleString('en-US')} clicks` : blockNote(block)}
+                    {block.spotlight ? ' · Spotlight' : ''}
+                  </p>
                   {block.type === 'FEATURED_POST' ? <span className="lib-pill lib-pill-cyan lib-pill-schedule lib-pill-inline">From Schedule</span> : null}
                   {block.layout === 'featured' ? <span className="lib-pill">Featured</span> : null}
-                  {block.animation && block.animation !== 'none' ? <span className="lib-pill lib-pill-cyan">Animated</span> : null}
-                  {block.priorityMode === 'expand' ? <span className="lib-pill lib-pill-cyan lib-pill-soft">Expand</span> : null}
-                  {block.priorityMode === 'redirect' ? <span className="lib-pill lib-pill-cyan lib-pill-soft">Redirect</span> : null}
                   {block.priorityMode === 'highlight' || (block.priority && block.priorityMode === 'none') ? (
                     <span className="lib-pill lib-pill-cyan lib-pill-priority">Priority</span>
                   ) : null}
-                  {block.rules?.length ? <span className="lib-pill">Rules</span> : null}
-                  {block.spotlight ? <span className="lib-pill lib-pill-cyan">Spotlight</span> : null}
                   {block.lock?.type && block.lock.type !== 'NONE' ? <span className="lib-pill">Locked</span> : null}
-                  {block.state === 'scheduled' ? <span className="lib-pill lib-pill-amber lib-pill-scheduled">Scheduled</span> : null}
-                  {block.state === 'ended' ? <span className="lib-pill">Ended</span> : null}
-                  {block.state === 'hidden' ? <span className="lib-pill">Hidden</span> : null}
                 </div>
-                <p className="lib-editor-note">{blockNote(block)}</p>
                 {block.type === 'FEATURED_POST' && !block.post ? (
                   <p className="lib-editor-warn">This post is no longer available. Choose another published post.</p>
                 ) : null}
@@ -698,11 +712,6 @@ export const LinkEditorScreen = () => {
                 ) : null}
               </div>
               <div className="lib-editor-tools">
-              {block.type === 'LINK' ? (
-                <span className="lib-editor-clicks shrink-0 text-[13px] text-textItemBlur">
-                  {block.clicks.toLocaleString('en-US')} clicks
-                </span>
-              ) : null}
               {block.type === 'FEATURED_POST' ? (
                 <button
                   type="button"
@@ -962,7 +971,7 @@ export const LinkEditorScreen = () => {
 
       {modal?.kind === 'link' ? (
         <LinkModal title={modal.block ? 'Edit link' : 'Add link'} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-[14px]">
+          <div className="lib-link-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} />
             </LinkField>
@@ -987,6 +996,40 @@ export const LinkEditorScreen = () => {
                 }}
               />
             </div>
+            <div className="lib-option-row">
+              <div>
+                <div className="text-[14px] font-[500]">Thumbnail</div>
+                <p className="text-[13px] text-textItemBlur">Upload an icon or use the site favicon</p>
+              </div>
+              <LinkToggle
+                checked={draft.iconMode === 'favicon'}
+                label="Use favicon"
+                onChange={(favicon) => setDraft({ ...draft, iconMode: favicon ? 'favicon' : draft.thumbnail ? 'upload' : '' })}
+              />
+            </div>
+            {draft.iconMode !== 'favicon' ? (
+              <div className="flex items-center gap-[10px]">
+                {draft.thumbnail ? <img src={draft.thumbnail} alt="" className="h-[36px] w-[36px] rounded-full object-cover" /> : null}
+                <label className={linkSecondary}>
+                  Upload icon
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = '';
+                      if (!file) return;
+                      try {
+                        setDraft({ ...draft, thumbnail: await upload(file), iconMode: 'upload' });
+                      } catch (err) {
+                        toast.show(err instanceof Error ? err.message : 'Could not upload that image', 'warning');
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            ) : null}
             <div className="lib-field">
               <span>Animation</span>
               <div className="lib-anim-chips">
@@ -1009,7 +1052,7 @@ export const LinkEditorScreen = () => {
               </div>
             </div>
             <p className="text-[13px] text-textItemBlur">Only one link can animate at a time. Featured cards are Pro.</p>
-            <div className="flex items-center justify-between gap-[12px]">
+            <div className="lib-option-row">
               <div>
                 <div className="text-[14px] font-[500]">Schedule</div>
                 <p className="text-[13px] text-textItemBlur">Hidden until it starts, removed after it ends · {data.timezone}</p>
@@ -1045,41 +1088,7 @@ export const LinkEditorScreen = () => {
               </select>
             </LinkField>
             <p className="text-[13px] text-textItemBlur">Only one link can be prioritized. A redirect cannot be locked.</p>
-            <div className="flex items-center justify-between gap-[12px]">
-              <div>
-                <div className="text-[14px] font-[500]">Thumbnail</div>
-                <p className="text-[13px] text-textItemBlur">Upload an icon or use the site favicon</p>
-              </div>
-              <LinkToggle
-                checked={draft.iconMode === 'favicon'}
-                label="Use favicon"
-                onChange={(favicon) => setDraft({ ...draft, iconMode: favicon ? 'favicon' : draft.thumbnail ? 'upload' : '' })}
-              />
-            </div>
-            {draft.iconMode !== 'favicon' ? (
-              <div className="flex items-center gap-[10px]">
-                {draft.thumbnail ? <img src={draft.thumbnail} alt="" className="h-[36px] w-[36px] rounded-full object-cover" /> : null}
-                <label className={linkSecondary}>
-                  Upload icon
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (event) => {
-                      const file = event.target.files?.[0];
-                      event.target.value = '';
-                      if (!file) return;
-                      try {
-                        setDraft({ ...draft, thumbnail: await upload(file), iconMode: 'upload' });
-                      } catch (err) {
-                        toast.show(err instanceof Error ? err.message : 'Could not upload that image', 'warning');
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-            ) : null}
-            <div className="flex items-center justify-between gap-[12px]">
+            <div className="lib-option-row">
               <div>
                 <div className="text-[14px] font-[500]">Spotlight</div>
                 <p className="text-[13px] text-textItemBlur">
@@ -1140,7 +1149,7 @@ export const LinkEditorScreen = () => {
                 />
               </LinkField>
             ) : null}
-            <div className="flex items-center justify-between gap-[12px]">
+            <div className="lib-option-row">
               <div>
                 <div className="text-[14px] font-[500]">Visitor rules</div>
                 <p className="text-[13px] text-textItemBlur">If country, platform or language match, hide the link or change its title or URL</p>
