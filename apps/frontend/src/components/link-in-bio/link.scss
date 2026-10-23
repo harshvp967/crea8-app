@@ -293,6 +293,22 @@
   text-decoration: none;
 }
 
+.lib-public .lib-socials a,
+.lib-public .lib-socials span {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--lib-line);
+  background: color-mix(in srgb, var(--lib-card) 82%, transparent);
+}
+
+.lib-phone .lib-public .lib-socials a,
+.lib-phone .lib-public .lib-socials span {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+}
+
 .lib-socials .lib-social-mark {
   width: 18px;
   height: 18px;
@@ -458,6 +474,16 @@
 .lib-row {
   display: flex;
   gap: 8px;
+}
+
+.lib-capture .lib-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.lib-capture .lib-subscribe,
+.lib-lock-form .lib-subscribe {
+  width: 100%;
 }
 
 .lib-capture input {
@@ -699,12 +725,12 @@
 
 .lib-lock-form {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 }
 
 .lib-lock-form input {
-  flex: 1 1 140px;
+  width: 100%;
 }
 
 .lib-lock-form input,
@@ -813,16 +839,16 @@
 
 .lib-public[data-fill='glass'] .lib-link {
   background: color-mix(in srgb, var(--lib-btn) 28%, transparent);
-  border-color: color-mix(in srgb, var(--lib-btn) 50%, transparent);
-  color: var(--lib-btn-text);
+  border-color: color-mix(in srgb, var(--lib-text) 28%, transparent);
+  color: var(--lib-text);
   backdrop-filter: blur(10px);
 }
 
 .lib-public[data-fill='outline'] .lib-link {
   background: transparent;
   border-width: 2px;
-  border-color: var(--lib-btn);
-  color: var(--lib-btn);
+  border-color: var(--lib-text);
+  color: var(--lib-text);
 }
 
 .lib-link {
@@ -963,6 +989,36 @@
   min-height: 320px;
 }
 
+.lib-place {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--lib-line);
+  background: var(--lib-card);
+}
+
+.lib-place .lib-embed {
+  border: 0;
+  border-radius: 0;
+}
+
+.lib-place-cap {
+  padding: 12px 14px 14px;
+  text-align: left;
+}
+
+.lib-place-cap strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lib-place-cap p {
+  margin: 4px 0 0;
+  color: var(--lib-muted);
+  font-size: 13px;
+}
+
 .lib-embed[data-provider='maps'] {
   position: relative;
   aspect-ratio: 16 / 9;
@@ -1018,11 +1074,58 @@
   gap: 10px;
 }
 
-.lib-events div {
-  padding: 10px 12px;
+.lib-events-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lib-event {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
   border-radius: 14px;
   border: 1px solid var(--lib-line);
   background: var(--lib-card);
+}
+
+.lib-event-date {
+  display: flex;
+  width: 40px;
+  flex: 0 0 40px;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.05;
+}
+
+.lib-event-date strong {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.lib-event-date small {
+  color: var(--lib-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.lib-event-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lib-event-copy strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lib-event-copy a {
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .lib-footer p,

@@ -557,7 +557,20 @@ export const LinkEditorScreen = () => {
               Reset
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-3">
+          <div className="lib-preview-as-chips" role="group" aria-label="Preview platform">
+            {['', 'Instagram', 'TikTok', 'X', 'Threads', 'YouTube', 'Facebook', 'LinkedIn', 'Google', 'Direct'].map((item) => (
+              <button
+                key={item || 'any'}
+                type="button"
+                className={visitor.platform === item ? 'is-on' : ''}
+                aria-pressed={visitor.platform === item}
+                onClick={() => setVisitor({ ...visitor, platform: item })}
+              >
+                {item || 'Any'}
+              </button>
+            ))}
+          </div>
+          <div className="mt-[12px] grid grid-cols-1 gap-[8px] sm:grid-cols-2">
             <LinkField label="Country">
               <input
                 value={visitor.country}
@@ -566,20 +579,6 @@ export const LinkEditorScreen = () => {
                 aria-label="Preview country"
                 onChange={(event) => setVisitor({ ...visitor, country: event.target.value.toUpperCase() })}
               />
-            </LinkField>
-            <LinkField label="Platform">
-              <select
-                value={visitor.platform}
-                aria-label="Preview platform"
-                onChange={(event) => setVisitor({ ...visitor, platform: event.target.value })}
-              >
-                <option value="">Any</option>
-                {['Instagram', 'TikTok', 'X', 'Threads', 'YouTube', 'Facebook', 'LinkedIn', 'Google', 'Direct'].map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
             </LinkField>
             <LinkField label="Language">
               <input
@@ -591,8 +590,9 @@ export const LinkEditorScreen = () => {
               />
             </LinkField>
           </div>
-          <p className="lib-preview-as-note mt-[6px] text-[13px] text-textItemBlur">
-            Rules hide a link or change its title and URL in this preview. Rules are Pro.
+          <p className="lib-preview-as-note mt-[10px] flex flex-wrap items-center gap-[8px] text-[13px] text-textItemBlur">
+            <span>Rules hide a link or change its title and URL in this preview.</span>
+            <span className="lib-pill lib-pill-pro">★ Pro</span>
           </p>
           </div>
         </details>
