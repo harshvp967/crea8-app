@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Organization, ShortLinkPreference, User } from '@prisma/client';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
+import { signupsClosed } from '@gitroom/nestjs-libraries/database/prisma/organizations/signups.closed';
 
 @Injectable()
 export class OrganizationService {
@@ -22,6 +23,7 @@ export class OrganizationService {
     ip: string,
     userAgent: string
   ) {
+    signupsClosed();
     return this._organizationRepository.createOrgAndUser(
       body,
       this._notificationsService.hasEmailProvider(),
@@ -35,6 +37,7 @@ export class OrganizationService {
   }
 
   async createMaxUser(id: string, name: string, saasName: string, email: string) {
+    signupsClosed();
     return this._organizationRepository.createMaxUser(id, name, saasName, email);
   }
 

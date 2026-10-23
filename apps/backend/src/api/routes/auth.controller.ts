@@ -32,6 +32,7 @@ import { Provider } from '@prisma/client';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import * as Sentry from '@sentry/nestjs';
 import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social/farcaster.provider';
+import { SIGNUPS_CLOSED_MESSAGE } from '@gitroom/nestjs-libraries/database/prisma/organizations/signups.closed';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -356,16 +357,22 @@ export class AuthController {
       return response.status(400).send('Invalid request');
     }
 
-    const { jwt, token } = await this._authService.checkExists(
-      provider,
-      code,
-      redirect_uri,
-      state,
-      req?.cookies?.oauth_state
-    );
-
-    if (token) {
-      return response.json({ token });
+    let jwt: string;
+    try {
+      jwt = (
+        await this._authService.checkExists(
+          provider,
+          code,
+          redirect_uri,
+          state,
+          req?.cookies?.oauth_state
+        )
+      ).jwt;
+    } catch (e: any) {
+      if (e?.message === SIGNUPS_CLOSED_MESSAGE) {
+        return response.status(400).send(SIGNUPS_CLOSED_MESSAGE);
+      }
+      throw e;
     }
 
     response.cookie('auth', jwt, {
