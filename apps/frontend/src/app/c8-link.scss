@@ -552,6 +552,74 @@ body:has(.link-screen) .lib-dialog textarea:focus-visible {
   flex: 1 1 auto;
 }
 
+.link-screen .lib-editor-move button {
+  display: none;
+}
+
+.link-screen .lib-editor-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+.link-screen .lib-editor-meta .lib-editor-note {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.link-screen .lib-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 0;
+  border-top: 1px solid var(--c8-line);
+}
+
+.link-screen .lib-option-row p {
+  margin: 2px 0 0;
+  color: var(--c8-muted);
+  font-size: 13px;
+}
+
+.link-screen .lib-anim-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.link-screen .lib-anim-chips .stk-btn,
+.link-screen .lib-anim-chips .lib-choice {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--c8-soft) !important;
+  box-shadow: none !important;
+  color: var(--c8-ink) !important;
+  font-size: 13px !important;
+}
+
+.link-screen .lib-anim-chips .lib-choice {
+  background: var(--c8-ink) !important;
+  color: var(--c8-surface) !important;
+}
+
+@media (max-width: 639px) {
+  .link-screen .lib-editor-meta {
+    flex-wrap: wrap;
+  }
+
+  .link-screen .lib-option-row {
+    align-items: flex-start;
+  }
+}
+
 .link-screen .lib-editor-titleline {
   display: flex;
   align-items: center;
@@ -884,7 +952,7 @@ body:has(.link-screen) .lib-dialog textarea:focus-visible {
 }
 
 .link-screen .lib-editor-move button {
-  display: grid;
+  display: none;
   width: 32px;
   height: 28px;
   place-items: center;
