@@ -1,6 +1,7 @@
 import {
   analyticsToCsv,
   applyVisitorRules,
+  blockPriority,
   blockState,
   buildAnalytics,
   captureUtm,
@@ -38,6 +39,7 @@ import {
   presentPublicBlock,
   rangeWindow,
   sanitizeReferrer,
+  shareMenu,
   showBadge,
   slugProblem,
   sourceLabel,
@@ -431,10 +433,25 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     });
     const visible = upcomingEvents(events, Date.UTC(2026, 9, 21, 12, 0), 'UTC');
     expect(visible.map((item) => item.title)).toEqual(['Later', 'Note']);
+    expect(blockPriority('HEADING', { priority: true }, 'none')).toBe(true);
+    expect(blockPriority('EMAIL_CAPTURE', { priority: false }, 'highlight')).toBe(false);
+    expect(blockPriority('LINK', { priority: true }, 'none')).toBe(false);
+    expect(blockPriority('LINK', { priority: false }, 'highlight')).toBe(true);
     expect(eventLabel('2099-01-02T15:00')).toBe('2 Jan 2099, 15:00');
     expect(eventLabel('soon')).toBe('soon');
     const ist = eventTime('2026-10-21T18:00', 'Asia/Kolkata');
     expect(ist).toBe(Date.UTC(2026, 9, 21, 12, 30));
+  });
+
+  it('opens the share menu when share is clicked', () => {
+    const menu = shareMenu('https://crea8.one/harsh', 'Harsh');
+    expect(menu.open).toBe(true);
+    expect(menu.items).toEqual(['Copy link', 'X', 'WhatsApp', 'Facebook', 'LinkedIn', 'Email', 'QR code', 'More…']);
+    expect(menu.links.x).toContain('twitter.com/intent/tweet');
+    expect(menu.links.whatsapp).toContain('wa.me');
+    expect(menu.links.facebook).toContain('facebook.com/sharer');
+    expect(menu.links.linkedin).toContain('linkedin.com/sharing');
+    expect(menu.links.email.startsWith('mailto:')).toBe(true);
   });
 
   it('applies the first matching visitor rule and checks a date of birth', () => {

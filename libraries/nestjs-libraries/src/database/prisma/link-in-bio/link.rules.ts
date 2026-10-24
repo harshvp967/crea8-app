@@ -1753,6 +1753,31 @@ export function eventTime(when: string, timeZone?: string) {
   }
 }
 
+export function blockPriority(type: string, body: { priority?: boolean }, priorityMode: string) {
+  if (type === 'LINK') {
+    return priorityMode !== 'none';
+  }
+  return body.priority === true;
+}
+
+export const SHARE_MENU_ITEMS = ['Copy link', 'X', 'WhatsApp', 'Facebook', 'LinkedIn', 'Email', 'QR code', 'More…'] as const;
+
+export function shareMenu(url: string, title: string) {
+  const page = encodeURIComponent(url);
+  const text = encodeURIComponent(title || url);
+  return {
+    open: true,
+    items: SHARE_MENU_ITEMS,
+    links: {
+      x: `https://twitter.com/intent/tweet?url=${page}&text=${text}`,
+      whatsapp: `https://wa.me/?text=${text}%20${page}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${page}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${page}`,
+      email: `mailto:?subject=${text}&body=${page}`,
+    },
+  };
+}
+
 export function eventLabel(when: string) {
   const match = EVENT_WHEN.exec((when || '').trim());
   if (!match) {

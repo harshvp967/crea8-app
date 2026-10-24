@@ -37,6 +37,7 @@ import {
   designProKind,
   detailsProblem,
   dobProblem,
+  blockPriority,
   domainProblem,
   domainRecords,
   emailProblem,
@@ -302,6 +303,9 @@ export class LinkService {
           payload: {},
           ...(data as Prisma.LinkBlockUncheckedCreateInput),
         });
+    if (type !== 'LINK' && data.priority === true) {
+      await this._repository.clearPriority(record.id, block.id);
+    }
     if (type === 'LINK') {
       const extras = normalizeLinkExtras(data.payload || current?.payload);
       if (extras.animation !== 'none' || (extras.priorityMode !== 'none' && data.priority !== false)) {
@@ -1221,7 +1225,7 @@ export class LinkService {
       ...(body.url !== undefined ? { url } : {}),
       ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
       ...(body.priority !== undefined || body.priorityMode !== undefined
-        ? { priority: type === 'LINK' ? nextExtras.priorityMode !== 'none' : false }
+        ? { priority: blockPriority(type, body, nextExtras.priorityMode) }
         : {}),
       ...(body.scheduleOn !== undefined ? { scheduleOn: body.scheduleOn } : {}),
       ...(body.startsLocal !== undefined ? { startsAt } : {}),
