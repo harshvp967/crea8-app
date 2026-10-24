@@ -208,6 +208,83 @@ $c8-body: var(--font-body), Inter, sans-serif;
   cursor: pointer;
 }
 
+.link-screen .lib-share {
+  position: relative;
+}
+
+.link-screen .lib-share-backdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  border: 0;
+  background: transparent;
+}
+
+.link-screen .lib-share-menu {
+  position: absolute;
+  z-index: 41;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  width: min(280px, calc(100vw - 32px));
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--c8-line);
+  border-radius: 20px;
+  background: var(--c8-surface);
+  box-shadow: 0 6px 0 var(--c8-hard);
+}
+
+.link-screen .lib-share-menu button,
+.link-screen .lib-share-menu a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.link-screen .lib-share-qr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.link-screen .lib-share-qr img {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+@media (max-width: 639px) {
+  .link-screen .lib-share-menu {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 28px 28px 0 0;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
 .link-screen .lib-editor-actions {
   display: flex;
   align-items: flex-start;

@@ -17,7 +17,7 @@ import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { embedProblem, parseEmbed, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { embedProblem, parseEmbed, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
 
@@ -199,6 +199,9 @@ export const LinkEditorScreen = () => {
   const [confirmId, setConfirmId] = useState('');
   const [sheetAnchor, setSheetAnchor] = useState<LinkAnchor | null>(null);
   const [copied, setCopied] = useState('');
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareQr, setShareQr] = useState('');
 
   useEffect(() => {
     if (!copied) return undefined;
@@ -267,6 +270,37 @@ export const LinkEditorScreen = () => {
     );
     setModal({ kind: 'link', block });
   };
+
+  useEffect(() => {
+    if (!shareOpen) {
+      return undefined;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShareOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    let alive = true;
+    let objectUrl = '';
+    (async () => {
+      const response = await fetch('/link-in-bio/qr.png', { headers: { Accept: 'image/png' } });
+      if (!response.ok || !alive) {
+        return;
+      }
+      objectUrl = URL.createObjectURL(await response.blob());
+      if (alive) {
+        setShareQr(objectUrl);
+      }
+    })();
+    return () => {
+      alive = false;
+      window.removeEventListener('keydown', onKey);
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [shareOpen, fetch]);
 
   if (isLoading || !data) {
     return (
@@ -680,9 +714,67 @@ export const LinkEditorScreen = () => {
               <HugeIcon name="copy" size={16} />
             )}
           </button>
-          <button type="button" className="lib-icon-btn" aria-label="Share link" onClick={() => copy(data.publicUrl)}>
-            <HugeIcon name="share" size={16} />
-          </button>
+          <span className="lib-share">
+            <button
+              type="button"
+              className="lib-icon-btn"
+              aria-label="Share link"
+              aria-expanded={shareOpen}
+              onClick={() => {
+                setShareCopied(false);
+                setShareOpen((open) => !open);
+              }}
+            >
+              <HugeIcon name="share" size={16} />
+            </button>
+            {shareOpen ? (
+              <>
+                <button type="button" className="lib-share-backdrop" aria-label="Close share" onClick={() => setShareOpen(false)} />
+                <div className="lib-share-menu" role="dialog" aria-label="Share">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      copy(data.publicUrl);
+                      setShareCopied(true);
+                    }}
+                  >
+                    <HugeIcon name={shareCopied ? 'check' : 'copy'} size={16} />
+                    {shareCopied ? 'Link copied' : 'Copy link'}
+                  </button>
+                  {(
+                    [
+                      ['X', shareMenu(data.publicUrl, data.name || data.slug).links.x],
+                      ['WhatsApp', shareMenu(data.publicUrl, data.name || data.slug).links.whatsapp],
+                      ['Facebook', shareMenu(data.publicUrl, data.name || data.slug).links.facebook],
+                      ['LinkedIn', shareMenu(data.publicUrl, data.name || data.slug).links.linkedin],
+                      ['Email', shareMenu(data.publicUrl, data.name || data.slug).links.email],
+                    ] as const
+                  ).map(([label, href]) => (
+                    <a key={label} href={href} target="_blank" rel="noopener noreferrer">
+                      {label}
+                    </a>
+                  ))}
+                  <div className="lib-share-qr">
+                    {shareQr ? <img src={shareQr} alt={`QR code for ${data.publicUrl}`} /> : null}
+                    <span>QR code</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const menu = shareMenu(data.publicUrl, data.name || data.slug);
+                      if (navigator.share) {
+                        navigator.share({ title: data.name || data.slug, url: data.publicUrl }).catch(() => undefined);
+                        return;
+                      }
+                      window.open(menu.links.x, '_blank', 'noopener');
+                    }}
+                  >
+                    More…
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </span>
         </section>
 
         <div className="lib-editor-actions">
