@@ -18,6 +18,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
   min-width: 0;
   min-height: 0;
   max-width: 100%;
+  overflow: visible !important;
   padding: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -102,9 +103,11 @@ $c8-body: var(--font-body), Inter, sans-serif;
 
 .link-screen .lib-editor-page .lib-head {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px !important;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px !important;
 }
 
 .link-screen .lib-title-row {
@@ -121,13 +124,29 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .link-screen .lib-editor-page .lib-head-actions {
+  display: flex;
+  flex-direction: row;
   flex-wrap: nowrap;
+  align-items: center;
 }
 
+.link-screen .lib-head-add,
 .link-screen .lib-add-slot-head .stk-btn-primary {
   height: 40px !important;
   min-height: 40px !important;
-  padding: 0 16px !important;
+  padding: 0 14px !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+}
+
+.link-screen .lib-editor-tabs {
+  height: 40px;
+  box-sizing: border-box;
+  padding: 3px;
+}
+
+.link-screen .lib-editor-tabs button {
+  height: 34px;
 }
 
 .link-screen .stk-card.lib-page-card {
@@ -402,14 +421,20 @@ body:has(.link-screen) .lib-dialog textarea:focus-visible {
   font-size: 12px !important;
 }
 
-.link-screen .lib-toggle {
+.link-screen .lib-toggle,
+body:has(.link-screen) .lib-dialog .lib-toggle {
   position: relative;
-  width: 46px;
-  height: 28px;
-  flex: 0 0 auto;
-  border: 0;
-  border-radius: 999px;
-  background: var(--c8-toggle-off);
+  display: inline-flex !important;
+  width: 46px !important;
+  height: 28px !important;
+  min-width: 46px !important;
+  min-height: 28px !important;
+  flex: 0 0 46px;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--c8-toggle-off) !important;
+  box-shadow: none !important;
   cursor: pointer;
 }
 
@@ -639,13 +664,64 @@ body:has(.link-screen) .lib-dialog textarea:focus-visible {
 }
 
 .link-screen .lib-editor-name {
+  display: inline-flex;
   min-width: 0;
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
   color: var(--c8-ink);
   font-size: 14px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.link-screen .lib-priority-star {
+  flex: none;
+  color: var(--c8-warn);
+  fill: var(--c8-warn);
+  stroke: var(--c8-warn);
+}
+
+.link-screen .lib-icon-btn.is-copied {
+  width: auto;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: padding 0.15s ease;
+}
+
+.link-screen .lib-live-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-screen .lib-live-link svg {
+  flex: none;
+}
+
+.link-screen .lib-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.link-screen .lib-social-remove {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-screen .lib-social-remove .lib-social-mark {
+  margin: 0;
 }
 
 .link-screen .lib-editor-note,
@@ -1044,6 +1120,25 @@ body:has(.link-screen) .stk-close {
 /* ---------- Live preview: device frame, sticky on desktop ---------- */
 .link-screen .lib-split {
   gap: 28px !important;
+  overflow: visible;
+}
+
+.link-screen .lib-split > div:first-child {
+  overflow: visible;
+  padding-bottom: calc(48px + env(safe-area-inset-bottom));
+}
+
+.link-screen .lib-appearance,
+.link-screen .lib-editor-page {
+  padding-bottom: 32px;
+}
+
+@media (min-width: 1200px) {
+  .link-screen .lib-preview-col {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+  }
 }
 
 .link-screen .lib-preview-col {
@@ -1465,6 +1560,12 @@ body:has(.link-screen) .lib-block-list > button.danger svg {
   color: var(--c8-danger) !important;
 }
 
+body:has(.link-screen) .lib-block-list > button.is-priority svg {
+  color: var(--c8-warn) !important;
+  fill: var(--c8-warn) !important;
+  stroke: var(--c8-warn) !important;
+}
+
 body:has(.link-screen) .lib-block-move button {
   display: inline-flex !important;
   align-items: center;
@@ -1473,11 +1574,21 @@ body:has(.link-screen) .lib-block-move button {
   width: 100%;
 }
 
+body:has(.link-screen) .lib-block-move {
+  overflow: visible;
+  padding: 4px 2px 6px;
+}
+
+body:has(.link-screen) .lib-block-move button:hover,
+body:has(.link-screen) .lib-block-move button:active,
+body:has(.link-screen) .lib-block-move button:disabled {
+  transform: none !important;
+}
+
 body:has(.link-screen) .lib-block-move button:disabled {
   opacity: 0.38;
   cursor: default;
   box-shadow: none !important;
-  transform: none;
 }
 
 body:has(.link-screen) .lib-block-hide {
@@ -2330,7 +2441,12 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 .link-screen .lib-color-row {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
+  box-sizing: border-box;
+  width: 148px;
+  height: 36px;
+  flex: none;
   padding: 4px 12px 4px 4px;
   border-radius: 999px;
   background: var(--c8-soft);
@@ -2359,9 +2475,12 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 }
 
 .link-screen .lib-color-value {
+  width: 78px;
   color: var(--c8-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 13px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
   text-transform: uppercase;
 }
 
@@ -2922,6 +3041,30 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
     border-radius: 28px !important;
     box-shadow: 0 6px 0 var(--c8-hard) !important;
   }
+
+  body:has(.link-screen) .lib-modal.lib-anchored {
+    align-items: flex-start !important;
+    justify-content: flex-end !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  body:has(.link-screen) .lib-modal.lib-anchored .lib-dialog {
+    position: fixed !important;
+    top: var(--lib-pop-top) !important;
+    right: var(--lib-pop-right) !important;
+    bottom: auto !important;
+    width: min(420px, calc(100vw - 24px)) !important;
+    max-width: min(420px, calc(100vw - 24px)) !important;
+    max-height: min(70dvh, calc(100dvh - var(--lib-pop-top) - 16px)) !important;
+    margin: 0 !important;
+  }
+
+  body:has(.link-screen) .lib-modal.lib-anchored[data-flip='true'] .lib-dialog {
+    top: auto !important;
+    bottom: var(--lib-pop-bottom) !important;
+    max-height: min(70dvh, calc(100dvh - var(--lib-pop-bottom) - 16px)) !important;
+  }
 }
 
 /* ---------- Phone ≤639 ---------- */
@@ -2975,7 +3118,7 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
   }
 
   .link-screen .lib-head-actions {
-    flex-basis: 100%;
+    flex-basis: auto;
     justify-content: flex-end;
   }
 
