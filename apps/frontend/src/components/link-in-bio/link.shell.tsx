@@ -68,14 +68,25 @@ export const LinkPreview = ({
   children,
   onCopy,
   onClose,
+  href,
+  label,
 }: {
   children: ReactNode;
   onCopy: () => void;
   onClose?: () => void;
+  href?: string;
+  label?: string;
 }) => (
   <div className={`lib-preview flex w-full flex-col items-center gap-[10px] ${onClose ? 'max-w-[440px]' : 'max-w-[320px]'}`}>
     <div className="lib-preview-tools flex w-full items-center justify-between text-[14px]">
-      <span className="font-[600] tracking-[-0.02em]">Live preview</span>
+      {href ? (
+        <a className="lib-live-link" href={href} target="_blank" rel="noopener noreferrer">
+          {label || href}
+          <HugeIcon name="external" size={14} />
+        </a>
+      ) : (
+        <span className="font-[600] tracking-[-0.02em]">Live preview</span>
+      )}
       <span className="inline-flex items-center gap-[14px]">
         <button type="button" className="inline-flex items-center gap-[6px] text-[14px] font-[500]" onClick={onCopy}>
           <HugeIcon name="copy" size={16} />

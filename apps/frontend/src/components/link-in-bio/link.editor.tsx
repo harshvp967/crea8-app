@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
@@ -13,7 +13,7 @@ import {
   useLinkPosts,
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
@@ -143,11 +143,24 @@ const rowMeta = (block: LinkBlock) => {
     return `From Schedule · ${clicks}`;
   }
   if (block.type === 'LINK') {
-    return [clicks, block.spotlight ? 'Spotlight' : '', block.priority ? 'Priority' : '', block.lock?.type && block.lock.type !== 'NONE' ? 'Locked' : '']
+    return [clicks, block.spotlight ? 'Spotlight' : '', block.lock?.type && block.lock.type !== 'NONE' ? 'Locked' : '']
       .filter(Boolean)
       .join(' · ');
   }
   return block.spotlight ? `${blockNote(block)} · Spotlight` : blockNote(block);
+};
+
+const menuAnchor = (node: HTMLElement): LinkAnchor => {
+  const rect = node.getBoundingClientRect();
+  const gap = 8;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const flip = spaceBelow < 280 && rect.top > spaceBelow;
+  return {
+    top: rect.bottom + gap,
+    right: Math.max(12, window.innerWidth - rect.right),
+    bottom: window.innerHeight - rect.top + gap,
+    flip,
+  };
 };
 
 export const LinkEditorScreen = () => {
@@ -184,6 +197,14 @@ export const LinkEditorScreen = () => {
   const [visitor, setVisitor] = useState({ country: '', platform: '', language: '' });
   const [busy, setBusy] = useState(false);
   const [confirmId, setConfirmId] = useState('');
+  const [sheetAnchor, setSheetAnchor] = useState<LinkAnchor | null>(null);
+  const [copied, setCopied] = useState('');
+
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timer = window.setTimeout(() => setCopied(''), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
 
   const upload = async (file: File) => {
     const form = new FormData();
@@ -206,6 +227,7 @@ export const LinkEditorScreen = () => {
         setModal(null);
         setMenu('');
         setAddOpen(false);
+        setSheetAnchor(null);
       }
       if (note) {
         toast.show(note, 'success');
@@ -220,6 +242,7 @@ export const LinkEditorScreen = () => {
   };
 
   const openLink = (block?: LinkBlock) => {
+    if (!block) setSheetAnchor(null);
     setDraft(
       block
         ? {
@@ -574,6 +597,7 @@ export const LinkEditorScreen = () => {
   );
 
   const toggleAdd = (anchor: 'head' | 'row') => {
+    setSheetAnchor(null);
     setAddOpen((open) => (addAnchor === anchor ? !open : true));
     setAddAnchor(anchor);
   };
@@ -586,7 +610,12 @@ export const LinkEditorScreen = () => {
       onPreviewClose={() => setPreview(false)}
       preview={
         <LinkPreview
-          onCopy={() => copy(data.publicUrl)}
+          href={data.publicUrl}
+          label={pageHost}
+          onCopy={() => {
+            copy(data.publicUrl);
+            setCopied('page');
+          }}
           onClose={preview ? () => setPreview(false) : undefined}
         >
           <LinkPublicView
@@ -599,25 +628,25 @@ export const LinkEditorScreen = () => {
     >
       <div className="lib-editor-page flex min-w-0 flex-col gap-[12px] pb-[24px]">
         <div className="lib-head">
-          <div className="lib-kicker">
-            <span className="lib-sticker">Link-in-Bio</span>
-            <span className={`${stkSub} lib-period truncate`}>{pageHost}</span>
-          </div>
-          <div className="lib-title-row">
+          <div className="min-w-0">
+            <div className="lib-kicker">
+              <span className="lib-sticker">Link-in-Bio</span>
+              <span className={`${stkSub} lib-period truncate`}>{pageHost}</span>
+            </div>
             <h1 className={stkTitle}>Editor</h1>
-            <div className="lib-head-actions">
-              <LinkViewTabs className="lib-editor-tabs" preview={preview} onPreview={setPreview} />
-              <div className="lib-add-slot lib-add-slot-head relative">
-                <button
-                  type="button"
-                  className={linkPrimary}
-                  aria-expanded={addOpen && addAnchor === 'head'}
-                  onClick={() => toggleAdd('head')}
-                >
-                  <HugeIcon name="plus" size={16} />
-                  Add block
-                </button>
-              </div>
+          </div>
+          <div className="lib-head-actions">
+            <LinkViewTabs className="lib-editor-tabs" preview={preview} onPreview={setPreview} />
+            <div className="lib-add-slot lib-add-slot-head relative">
+              <button
+                type="button"
+                className={`${linkPrimary} lib-head-add`}
+                aria-expanded={addOpen && addAnchor === 'head'}
+                onClick={() => toggleAdd('head')}
+              >
+                <HugeIcon name="plus" size={16} />
+                Add block
+              </button>
             </div>
           </div>
         </div>
@@ -633,8 +662,23 @@ export const LinkEditorScreen = () => {
               <span className="truncate">{pageHost}</span>
             </span>
           </div>
-          <button type="button" className="lib-icon-btn" aria-label="Copy link" onClick={() => copy(data.publicUrl)}>
-            <HugeIcon name="copy" size={16} />
+          <button
+            type="button"
+            className={copied === 'page' ? 'lib-icon-btn is-copied' : 'lib-icon-btn'}
+            aria-label={copied === 'page' ? 'Link copied' : 'Copy link'}
+            onClick={() => {
+              copy(data.publicUrl);
+              setCopied('page');
+            }}
+          >
+            {copied === 'page' ? (
+              <>
+                <HugeIcon name="check" size={16} />
+                Link copied
+              </>
+            ) : (
+              <HugeIcon name="copy" size={16} />
+            )}
           </button>
           <button type="button" className="lib-icon-btn" aria-label="Share link" onClick={() => copy(data.publicUrl)}>
             <HugeIcon name="share" size={16} />
@@ -743,7 +787,10 @@ export const LinkEditorScreen = () => {
               </span>
               <div className="lib-editor-copy">
                 <div className="lib-editor-titleline">
-                  <strong className="lib-editor-name">{blockName(block)}</strong>
+                  <strong className="lib-editor-name">
+                    {blockName(block)}
+                    {block.priority ? <HugeIcon className="lib-priority-star" name="star" size={14} aria-label="Priority" /> : null}
+                  </strong>
                 </div>
                 <div className="lib-editor-meta">
                   <span
@@ -778,11 +825,11 @@ export const LinkEditorScreen = () => {
                   />
                 </span>
               <div className="lib-editor-menu relative shrink-0">
-                <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={() => { setMenu(menu === block.id ? '' : block.id); setConfirmId(''); }}>
+                <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={(event) => { if (menu === block.id) { setMenu(''); setSheetAnchor(null); } else { setSheetAnchor(menuAnchor(event.currentTarget)); setMenu(block.id); } setConfirmId(''); }}>
                   <HugeIcon name="more" size={18} />
                 </button>
                 {menu === block.id ? (
-                  <LinkModal title={blockName(block)} onClose={() => { setMenu(''); setConfirmId(''); }}>
+                  <LinkModal anchor={sheetAnchor} title={blockName(block)} onClose={() => { setMenu(''); setConfirmId(''); setSheetAnchor(null); }}>
                   <div className="lib-block-sheet">
                     <div className="lib-block-move">
                       <button type="button" className={linkSecondary} disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
@@ -799,16 +846,27 @@ export const LinkEditorScreen = () => {
                         Edit
                       </LinkMenuRow>
                       <LinkMenuRow
-                        icon="copy"
+                        icon={copied === block.id ? 'check' : 'copy'}
                         onClick={() => {
                           if (!block.url) return;
                           copy(block.url);
-                          setMenu('');
+                          setCopied(block.id);
                         }}
                       >
-                        Copy link
+                        {copied === block.id ? 'Link copied' : 'Copy link'}
                       </LinkMenuRow>
-                      <LinkMenuRow icon="star" onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { priority: !block.priority })}>
+                      <LinkMenuRow
+                        className={block.priority ? 'is-priority' : ''}
+                        icon="star"
+                        onClick={() =>
+                          save(
+                            `/link-in-bio/blocks/${block.id}`,
+                            'PUT',
+                            { priority: !block.priority },
+                            block.priority ? 'Priority removed' : 'Marked as priority'
+                          )
+                        }
+                      >
                         {block.priority ? 'Remove priority' : 'Make priority'}
                       </LinkMenuRow>
                       <LinkMenuRow icon="clock" onClick={() => (block.type === 'LINK' ? openLink(block) : editBlock(block))}>
@@ -868,7 +926,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'link' ? (
-        <LinkModal title={modal.block ? 'Edit link' : 'Add link'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit link' : 'Add link'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-link-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} />
@@ -1211,7 +1269,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'heading' ? (
-        <LinkModal title={modal.block ? 'Edit header' : 'Add header'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit header' : 'Add header'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Header">
               <input value={heading} onChange={(event) => setHeading(event.target.value)} />
@@ -1241,7 +1299,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'post' ? (
-        <LinkModal title={modal.block ? 'Change post' : 'Add featured post'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Change post' : 'Add featured post'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <p className="mb-[10px] text-[14px] text-textItemBlur">Pick a published post from Schedule</p>
           <div className="flex max-h-[320px] flex-col gap-[8px] overflow-auto">
             {(posts.data || []).map((post) => (
@@ -1284,7 +1342,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'embed' ? (
-        <LinkModal title={modal.block ? `Edit ${embedCopy(modal.provider).title.toLowerCase()}` : `Add ${embedCopy(modal.provider).title.toLowerCase()}`} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? `Edit ${embedCopy(modal.provider).title.toLowerCase()}` : `Add ${embedCopy(modal.provider).title.toLowerCase()}`} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={embedTitle} onChange={(event) => setEmbedTitle(event.target.value)} />
@@ -1321,7 +1379,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'text' ? (
-        <LinkModal title={modal.block ? 'Edit text' : 'Add text'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit text' : 'Add text'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={textTitle} onChange={(event) => setTextTitle(event.target.value)} />
@@ -1353,7 +1411,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'faq' ? (
-        <LinkModal title={modal.block ? 'Edit FAQ' : 'Add FAQ'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit FAQ' : 'Add FAQ'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Heading">
               <input value={faqTitle} onChange={(event) => setFaqTitle(event.target.value)} />
@@ -1402,7 +1460,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'carousel' ? (
-        <LinkModal title={modal.block ? 'Edit carousel' : 'Add carousel'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit carousel' : 'Add carousel'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[12px]">
             <div className="grid grid-cols-3 gap-[8px]">
               {images.map((image, index) => (
@@ -1460,7 +1518,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'contact' ? (
-        <LinkModal title={modal.block ? 'Edit contact form' : 'Add contact form'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit contact form' : 'Add contact form'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Heading">
               <input value={contact.title} onChange={(event) => setContact({ ...contact, title: event.target.value })} />
@@ -1503,7 +1561,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'map' ? (
-        <LinkModal title={modal.block ? 'Edit map' : 'Add map'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit map' : 'Add map'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={mapTitle} onChange={(event) => setMapTitle(event.target.value)} />
@@ -1535,7 +1593,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'calendly' ? (
-        <LinkModal title={modal.block ? 'Edit Calendly' : 'Add Calendly'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit Calendly' : 'Add Calendly'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[14px]">
             <LinkField label="Title">
               <input value={calendlyTitle} onChange={(event) => setCalendlyTitle(event.target.value)} />
@@ -1567,7 +1625,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'details' ? (
-        <LinkModal title={modal.block ? 'Edit contact details' : 'Add contact details'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit contact details' : 'Add contact details'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Heading">
               <input value={details.title} onChange={(event) => setDetails({ ...details, title: event.target.value })} />
@@ -1614,7 +1672,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'discount' ? (
-        <LinkModal title={modal.block ? 'Edit discount code' : 'Add discount code'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit discount code' : 'Add discount code'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Code">
               <input value={discount.code} onChange={(event) => setDiscount({ ...discount, code: event.target.value })} />
@@ -1654,7 +1712,7 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {modal?.kind === 'events' ? (
-        <LinkModal title={modal.block ? 'Edit events' : 'Add events'} onClose={() => setModal(null)}>
+        <LinkModal title={modal.block ? 'Edit events' : 'Add events'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
           <div className="lib-block-form flex flex-col gap-[12px]">
             <LinkField label="Heading">
               <input value={eventsTitle} onChange={(event) => setEventsTitle(event.target.value)} />
@@ -1720,7 +1778,7 @@ export const LinkEditorScreen = () => {
         </LinkModal>
       ) : null}
 
-      {modal?.kind === 'capture' ? <CaptureModal page={data} busy={busy} onClose={() => setModal(null)} onSave={save} /> : null}
+      {modal?.kind === 'capture' ? <CaptureModal page={data} busy={busy} anchor={sheetAnchor} onClose={() => setModal(null)} onSave={save} /> : null}
     </LinkSplit>
   );
 };
@@ -1728,11 +1786,13 @@ export const LinkEditorScreen = () => {
 const CaptureModal = ({
   page,
   busy,
+  anchor,
   onClose,
   onSave,
 }: {
   page: LinkEditor;
   busy: boolean;
+  anchor?: LinkAnchor | null;
   onClose: () => void;
   onSave: (path: string, method: string, body?: unknown, note?: string, close?: boolean) => Promise<boolean>;
 }) => {
@@ -1742,7 +1802,7 @@ const CaptureModal = ({
     existing && page.blocks[0]?.id === existing.id ? 'above' : 'below'
   );
   return (
-    <LinkModal title="Email capture" onClose={onClose}>
+    <LinkModal title="Email capture" anchor={anchor} onClose={onClose}>
       <div className="lib-block-form flex flex-col gap-[12px]">
         <LinkField label="Form heading">
           <input value={form.heading} onChange={(event) => setForm({ ...form, heading: event.target.value })} />

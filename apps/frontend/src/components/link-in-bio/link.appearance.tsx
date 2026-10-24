@@ -21,7 +21,7 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, LinkModal, LinkToggle, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
@@ -244,6 +244,8 @@ export const LinkAppearanceScreen = () => {
       onPreviewClose={() => setPreview(false)}
       preview={
         <LinkPreview
+          href={data.publicUrl}
+          label={`${data.publicOrigin.replace(/^https?:\/\//, '')}/${data.slug}`}
           onCopy={async () => {
             try {
               await copyLink(data.publicUrl);
@@ -691,29 +693,13 @@ export const LinkAppearanceScreen = () => {
                   setDraft({ ...draft, socials });
                 }}
               />
-              <span className="relative">
+              <span className="lib-social-remove">
+                <span className="lib-social-mark" aria-hidden>
+                  <SocialMark network={draft.socials[editSocial].network} />
+                </span>
                 <button type="button" className={linkSecondary} onClick={() => setRemoveSocial(removeSocial === editSocial ? null : editSocial)}>
-                  Remove
+                  Remove {LINK_SOCIALS.find((network) => network.id === draft.socials[editSocial].network)?.label || draft.socials[editSocial].network}
                 </button>
-                {removeSocial === editSocial ? (
-                  <div className="lib-confirm" role="dialog" aria-label="Remove social link">
-                    <button type="button" onClick={() => setRemoveSocial(null)}>
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="is-remove"
-                      onClick={() => {
-                        setDraft({ ...draft, socials: draft.socials.filter((_, itemIndex) => itemIndex !== editSocial) });
-                        setSocialErrors(socialErrors.filter((_, itemIndex) => itemIndex !== editSocial));
-                        setRemoveSocial(null);
-                        setEditSocial(null);
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : null}
               </span>
               {socialErrors[editSocial] ? <p className="lib-field-error">{socialErrors[editSocial]}</p> : null}
             </div>
@@ -753,6 +739,31 @@ export const LinkAppearanceScreen = () => {
         <button type="button" className={`${linkSecondary} lib-reset-phone`} onClick={() => setDraft(toDraft(data))}>
           Reset
         </button>
+        {removeSocial !== null && draft.socials[removeSocial] ? (
+          <LinkModal
+            title={`Remove ${LINK_SOCIALS.find((network) => network.id === draft.socials[removeSocial].network)?.label || draft.socials[removeSocial].network} icon?`}
+            onClose={() => setRemoveSocial(null)}
+          >
+            <p className="text-[14px] text-textItemBlur">This takes the icon off your page. You can add it again later.</p>
+            <div className="lib-confirm-actions">
+              <button type="button" className={linkSecondary} onClick={() => setRemoveSocial(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={linkDanger}
+                onClick={() => {
+                  setDraft({ ...draft, socials: draft.socials.filter((_, itemIndex) => itemIndex !== removeSocial) });
+                  setSocialErrors(socialErrors.filter((_, itemIndex) => itemIndex !== removeSocial));
+                  setRemoveSocial(null);
+                  setEditSocial(null);
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          </LinkModal>
+        ) : null}
       </div>
     </LinkSplit>
   );

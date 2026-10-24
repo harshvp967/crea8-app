@@ -1,6 +1,6 @@
 'use client';
 
-import { ButtonHTMLAttributes, ReactNode, useEffect } from 'react';
+import { ButtonHTMLAttributes, CSSProperties, ReactNode, useEffect } from 'react';
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
 import {
   stkClose,
@@ -33,14 +33,18 @@ export const LinkToggle = ({
   </button>
 );
 
+export type LinkAnchor = { top: number; right: number; bottom: number; flip: boolean };
+
 export const LinkModal = ({
   title,
   children,
   onClose,
+  anchor,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  anchor?: LinkAnchor | null;
 }) => {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -53,7 +57,17 @@ export const LinkModal = ({
   }, [onClose]);
   return (
     <div
-      className="lib-modal"
+      className={anchor ? 'lib-modal lib-anchored' : 'lib-modal'}
+      data-flip={anchor?.flip ? 'true' : 'false'}
+      style={
+        anchor
+          ? ({
+              '--lib-pop-top': `${anchor.top}px`,
+              '--lib-pop-right': `${anchor.right}px`,
+              '--lib-pop-bottom': `${anchor.bottom}px`,
+            } as CSSProperties)
+          : undefined
+      }
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
