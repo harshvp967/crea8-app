@@ -786,11 +786,11 @@ export const LinkEditorScreen = () => {
                   <div className="lib-block-sheet">
                     <div className="lib-block-move">
                       <button type="button" className={linkSecondary} disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
-                        <HugeIcon name="chevron-left" size={16} />
+                        <HugeIcon name="chevron-up" size={16} />
                         Move up
                       </button>
                       <button type="button" className={linkSecondary} disabled={busy || index === data.blocks.length - 1} onClick={() => move(block.id, 1)}>
-                        <HugeIcon name="chevron-right" size={16} />
+                        <HugeIcon name="chevron-down" size={16} />
                         Move down
                       </button>
                     </div>
@@ -816,8 +816,8 @@ export const LinkEditorScreen = () => {
                       </LinkMenuRow>
                       <div className="lib-block-hide">
                         <HugeIcon name="eye" size={16} />
-                        <span>
-                          Hidden
+                        <span className="lib-block-hide-copy">
+                          <strong>Hidden</strong>
                           <small>Hide from your page</small>
                         </span>
                         <LinkToggle
