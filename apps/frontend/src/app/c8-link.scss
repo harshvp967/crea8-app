@@ -1425,20 +1425,43 @@ body:has(.link-screen) .lib-block-list {
   background: var(--c8-soft);
 }
 
-body:has(.link-screen) .lib-block-list button {
+body:has(.link-screen) .lib-block-list > button {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
   justify-content: flex-start !important;
+  gap: 12px;
+  width: 100%;
   height: auto !important;
-  min-height: 48px !important;
+  min-height: 44px !important;
+  padding: 10px 14px !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
   color: var(--c8-ink) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
   text-align: left;
 }
 
-body:has(.link-screen) .lib-block-list button.danger,
-body:has(.link-screen) .lib-block-list button.danger svg {
+body:has(.link-screen) .lib-block-list > button + button,
+body:has(.link-screen) .lib-block-list > .lib-block-hide {
+  border-top: 1px solid var(--c8-line);
+}
+
+body:has(.link-screen) .lib-block-list > button svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+body:has(.link-screen) .lib-block-list > button span {
+  min-width: 0;
+}
+
+body:has(.link-screen) .lib-block-list > button.danger,
+body:has(.link-screen) .lib-block-list > button.danger svg {
   color: var(--c8-danger) !important;
 }
 
@@ -1450,14 +1473,43 @@ body:has(.link-screen) .lib-block-move button {
   width: 100%;
 }
 
+body:has(.link-screen) .lib-block-move button:disabled {
+  opacity: 0.38;
+  cursor: default;
+  box-shadow: none !important;
+  transform: none;
+}
+
 body:has(.link-screen) .lib-block-hide {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  min-height: 44px;
+  padding: 10px 14px;
   color: var(--c8-ink);
   font-size: 14px;
   font-weight: 600;
+}
+
+body:has(.link-screen) .lib-block-hide > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+body:has(.link-screen) .lib-block-hide-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+body:has(.link-screen) .lib-block-hide-copy strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 body:has(.link-screen) .lib-block-hide small {
@@ -1465,10 +1517,41 @@ body:has(.link-screen) .lib-block-hide small {
   color: var(--c8-muted);
   font-size: 12px;
   font-weight: 400;
+  line-height: 1.2;
 }
 
 body:has(.link-screen) .lib-block-hide .lib-toggle {
+  width: 46px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  flex: 0 0 46px;
   margin-left: auto;
+  padding: 0 !important;
+}
+
+body:has(.link-screen) .lib-modal:has(.lib-block-sheet) {
+  align-items: center !important;
+  overflow: auto;
+  padding: 80px 24px 24px !important;
+}
+
+body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
+  max-height: calc(100dvh - 104px) !important;
+}
+
+@media (max-width: 639px) {
+  body:has(.link-screen) .lib-modal:has(.lib-block-sheet) {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 28px 28px 0 0 !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+  }
 }
 
 .link-screen .lib-acc {
