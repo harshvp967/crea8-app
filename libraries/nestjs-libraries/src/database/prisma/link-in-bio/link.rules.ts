@@ -1557,6 +1557,7 @@ export type LinkDesign = {
   titleMode: (typeof LINK_TITLE_MODES)[number];
   logoUrl: string;
   mediaUrl: string;
+  ogImage: string;
   socialPosition: (typeof LINK_SOCIAL_POSITIONS)[number];
   hiddenSocials: string[];
   wallpaperChosen: boolean;
@@ -1621,6 +1622,7 @@ export function emptyDesign(): LinkDesign {
     titleMode: 'text',
     logoUrl: '',
     mediaUrl: '',
+    ogImage: '',
     socialPosition: 'top',
     hiddenSocials: [],
     wallpaperChosen: false,
@@ -1632,6 +1634,7 @@ export function normalizeDesign(value: unknown): LinkDesign {
   const colors = asRecord(row.colors);
   const logo = String(row.logoUrl || '').trim().slice(0, 2000);
   const media = String(row.mediaUrl || '').trim().slice(0, 2000);
+  const og = String(row.ogImage || '').trim().slice(0, 2000);
   const hidden = Array.isArray(row.hiddenSocials) ? row.hiddenSocials : [];
   const radius = Number(row.radius);
   return {
@@ -1654,6 +1657,7 @@ export function normalizeDesign(value: unknown): LinkDesign {
     titleMode: pick(row.titleMode, LINK_TITLE_MODES, 'text'),
     logoUrl: logo && !imagePathProblem(logo) ? logo : '',
     mediaUrl: media && !imagePathProblem(media) ? media : '',
+    ogImage: og && !imagePathProblem(og) ? og : '',
     socialPosition: pick(row.socialPosition, LINK_SOCIAL_POSITIONS, 'top'),
     hiddenSocials: hidden
       .map((item) => String(item || '').trim())

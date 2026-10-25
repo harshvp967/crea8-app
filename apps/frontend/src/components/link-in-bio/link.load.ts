@@ -1,4 +1,6 @@
+import type { Metadata } from 'next';
 import type { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { normalizeDesign, publicAsset } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 // Files in /public are not rewritten by Next assetPrefix. Bios on crea8.one
 // and custom domains still request them from the app, which is where they live.
@@ -74,6 +76,24 @@ export async function loadPublicLink(path: string, revalidate = publicLinkCacheS
   } catch {
     return null;
   }
+}
+
+export function publicShareMetadata(page: PublicLink): Metadata {
+  const title = page.seoTitle || page.name || page.slug;
+  const description = page.seoDescription || page.bio || '';
+  const image = publicAsset(normalizeDesign(page.design).ogImage);
+  const hidden = !page.isPublic || page.sensitive;
+  return {
+    title,
+    description,
+    robots: hidden ? { index: false, follow: false } : { index: true, follow: true },
+    ...(image
+      ? {
+          openGraph: { title, description, images: [image] },
+          twitter: { card: 'summary_large_image', title, description, images: [image] },
+        }
+      : {}),
+  };
 }
 
 export function presentPublicLink(page: PublicLink) {

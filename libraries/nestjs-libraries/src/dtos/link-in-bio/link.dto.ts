@@ -134,6 +134,11 @@ export class LinkDesignDto {
   mediaUrl?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  ogImage?: string;
+
+  @IsOptional()
   @IsIn([...LINK_SOCIAL_POSITIONS])
   socialPosition?: string;
 
