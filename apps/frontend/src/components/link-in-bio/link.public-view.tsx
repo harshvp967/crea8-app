@@ -277,7 +277,7 @@ export const LinkPublicView = ({
               );
             }
             if (block.type === 'TEXT') {
-              return <RichText key={block.id} value={block.body} title={block.title} />;
+              return <RichText key={block.id} value={block.body} title={block.title} onClick={() => onClick?.(block.id)} />;
             }
             if (block.type === 'EMBED' && block.embed) {
               return (
@@ -367,10 +367,10 @@ export const LinkPublicView = ({
               );
             }
             if (block.type === 'CONTACT_DETAILS' && block.details) {
-              return <DetailsCard key={block.id} title={block.title} details={block.details} />;
+              return <DetailsCard key={block.id} title={block.title} details={block.details} onClick={() => onClick?.(block.id)} />;
             }
             if (block.type === 'DISCOUNT' && block.discount) {
-              return <DiscountCard key={block.id} title={block.title} discount={block.discount} />;
+              return <DiscountCard key={block.id} title={block.title} discount={block.discount} onClick={() => onClick?.(block.id)} />;
             }
             if (block.type === 'EVENTS' && block.events.length) {
               return (
@@ -395,7 +395,14 @@ export const LinkPublicView = ({
                     );
                     const key = `${item.title}-${item.when}`;
                     return item.url && mode !== 'preview' ? (
-                      <a key={key} className="lib-event" href={item.url} target="_blank" rel="noreferrer">
+                      <a
+                        key={key}
+                        className="lib-event"
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => onClick?.(block.id)}
+                      >
                         {body}
                       </a>
                     ) : (
@@ -511,17 +518,27 @@ const SocialRow = ({
 const DetailsCard = ({
   title,
   details,
+  onClick,
 }: {
   title: string;
   details: { email: string; phone: string; address: string; website: string };
+  onClick?: () => void;
 }) => (
   <div className="lib-details">
     {title ? <strong>{title}</strong> : null}
-    {details.email ? <a href={`mailto:${details.email}`}>{details.email}</a> : null}
-    {details.phone ? <a href={`tel:${details.phone.replace(/[^\d+]/g, '')}`}>{details.phone}</a> : null}
+    {details.email ? (
+      <a href={`mailto:${details.email}`} onClick={onClick}>
+        {details.email}
+      </a>
+    ) : null}
+    {details.phone ? (
+      <a href={`tel:${details.phone.replace(/[^\d+]/g, '')}`} onClick={onClick}>
+        {details.phone}
+      </a>
+    ) : null}
     {details.address ? <p>{details.address}</p> : null}
     {details.website ? (
-      <a href={details.website} target="_blank" rel="noreferrer">
+      <a href={details.website} target="_blank" rel="noreferrer" onClick={onClick}>
         {linkHost(details.website)}
       </a>
     ) : null}
@@ -531,9 +548,11 @@ const DetailsCard = ({
 const DiscountCard = ({
   title,
   discount,
+  onClick,
 }: {
   title: string;
   discount: { code: string; note: string; url: string };
+  onClick?: () => void;
 }) => {
   const [copied, setCopied] = useState(false);
   return (
@@ -558,7 +577,7 @@ const DiscountCard = ({
       </button>
       {discount.note || copied ? <p>{copied ? 'Copied' : discount.note}</p> : null}
       {discount.url ? (
-        <a href={discount.url} target="_blank" rel="noreferrer">
+        <a href={discount.url} target="_blank" rel="noreferrer" onClick={onClick}>
           {linkHost(discount.url)}
         </a>
       ) : null}
@@ -721,7 +740,7 @@ const EmbedFrame = ({ src, title, provider }: { src: string; title: string; prov
   );
 };
 
-const RichText = ({ value, title }: { value: string; title?: string }) => (
+const RichText = ({ value, title, onClick }: { value: string; title?: string; onClick?: () => void }) => (
   <div className="lib-text">
     {title ? <strong className="lib-text-title">{title}</strong> : null}
     {parseRichText(value).map((part, index) => {
@@ -736,7 +755,7 @@ const RichText = ({ value, title }: { value: string; title?: string }) => (
       }
       if (part.type === 'link') {
         return (
-          <a key={index} href={part.href} target="_blank" rel="noreferrer">
+          <a key={index} href={part.href} target="_blank" rel="noreferrer" onClick={onClick}>
             {part.text}
           </a>
         );
