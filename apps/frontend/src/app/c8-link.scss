@@ -622,6 +622,16 @@ body:has(.link-screen) .lib-dialog .lib-toggle {
   border-radius: 20px !important;
 }
 
+.link-screen .lib-editor-row.is-press,
+.link-screen .lib-editor-row.is-press-over {
+  outline: 2px solid var(--c8-ink);
+  outline-offset: 2px;
+}
+
+.link-screen .lib-editor-row.is-press-over {
+  outline-style: dashed;
+}
+
 .link-screen .lib-editor-tools {
   display: flex;
   flex: none;
