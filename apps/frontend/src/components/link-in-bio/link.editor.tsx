@@ -1165,6 +1165,8 @@ export const LinkEditorScreen = () => {
                 value={draft.layout}
                 options={[
                   { id: 'classic', label: 'Classic' },
+                  { id: 'card', label: 'Card' },
+                  { id: 'tile', label: 'Tile' },
                   { id: 'featured', label: 'Featured' },
                 ]}
                 onChange={(layout) => {

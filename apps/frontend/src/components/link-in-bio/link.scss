@@ -975,6 +975,43 @@
   margin-bottom: 8px;
 }
 
+.lib-link.is-card {
+  min-height: 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+}
+
+.lib-link.is-card .lib-thumb {
+  position: static;
+  width: 100%;
+  height: 140px;
+  border-radius: 0;
+}
+
+.lib-link.is-card span {
+  padding: 12px 14px 14px;
+}
+
+.lib-link.is-tile {
+  min-height: 72px;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.lib-link.is-tile .lib-thumb {
+  position: static;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 12px;
+}
+
 .lib-link.is-expanded {
   min-height: 168px;
 }
