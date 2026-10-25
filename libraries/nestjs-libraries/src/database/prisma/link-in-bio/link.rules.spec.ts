@@ -302,6 +302,10 @@ describe('link-in-bio paid gates and public blocks', () => {
     expect(open.spotlight).toBe(true);
     expect(open.thumbnail).toBe(faviconFor('https://example.com/drop'));
     expect(faviconFor('javascript:alert(1)')).toBe('');
+    expect(presentPublicBlock({ ...link, lockType: 'NONE', payload: { layout: 'card' } }, false).layout).toBe('card');
+    expect(presentPublicBlock({ ...link, lockType: 'NONE', payload: { layout: 'tile' } }, false).layout).toBe('tile');
+    expect(presentPublicBlock({ ...link, lockType: 'NONE', payload: { layout: 'featured' } }, false).layout).toBe('classic');
+    expect(presentPublicBlock({ ...link, lockType: 'NONE', payload: { layout: 'featured' } }, true).layout).toBe('featured');
   });
 
   it('asks for a password only when a password lock has no saved hash', () => {

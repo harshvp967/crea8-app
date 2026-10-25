@@ -51,7 +51,7 @@ export const LINK_SHADOWS = ['none', 'soft', 'strong', 'hard'] as const;
 export const LINK_HEADERS = ['classic', 'hero', 'banner', 'cutout', 'shape'] as const;
 export const LINK_TITLE_MODES = ['text', 'logo'] as const;
 export const LINK_SOCIAL_POSITIONS = ['top', 'bottom'] as const;
-export const LINK_LAYOUTS = ['classic', 'featured'] as const;
+export const LINK_LAYOUTS = ['classic', 'featured', 'card', 'tile'] as const;
 export const LINK_ANIMATIONS = ['none', 'wiggle', 'pop', 'electricity', 'glitch', 'shimmer', 'bounce', 'pulse'] as const;
 export const LINK_PRIORITY_MODES = ['none', 'highlight', 'expand', 'redirect'] as const;
 export const LINK_RULE_ACTIONS = ['hide', 'title', 'url'] as const;
@@ -1278,7 +1278,12 @@ export function presentPublicBlock(block: PublicBlockInput, paid: boolean, visit
     embed,
     priority: !!block.priority,
     priorityMode: open ? extras.priorityMode : extras.priorityMode === 'highlight' ? 'highlight' : 'none',
-    layout: block.type === 'LINK' && open && extras.layout === 'featured' ? 'featured' : 'classic',
+    layout:
+      block.type === 'LINK' && (extras.layout === 'card' || extras.layout === 'tile')
+        ? extras.layout
+        : block.type === 'LINK' && open && extras.layout === 'featured'
+          ? 'featured'
+          : 'classic',
     animation: block.type === 'LINK' && open ? extras.animation : 'none',
     expand: block.type === 'LINK' && open && extras.priorityMode === 'expand',
     spotlight: block.type === 'LINK' && !!block.spotlight && open,
