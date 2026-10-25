@@ -761,13 +761,20 @@ body:has(.link-screen) .lib-dialog .lib-toggle {
 }
 
 .link-screen .lib-icon-btn.is-copied {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
   width: auto;
+  height: 36px;
+  min-height: 36px;
   gap: 6px;
   padding: 0 12px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
-  transition: padding 0.15s ease;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .link-screen .lib-live-link {
@@ -1353,14 +1360,26 @@ body:has(.link-screen) .stk-close {
 }
 
 .link-screen .lib-preview-col .lib-phone {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
   width: min(100%, 390px, calc((100dvh - 200px) * 390 / 844));
   height: auto;
   max-height: none;
+  overflow: hidden;
   border: 12px solid var(--c8-hard);
   border-radius: 48px;
   background: var(--c8-hard);
   box-shadow: 0 18px 40px color-mix(in srgb, var(--c8-hard) 16%, transparent);
   aspect-ratio: 390 / 844;
+}
+
+.link-screen .lib-phone .lib-public {
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .link-screen .lib-preview-col .lib-phone::before {
@@ -2991,6 +3010,12 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 }
 
 @media (max-width: 1199px) {
+  .link-screen .lib-preview-fab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .link-screen .lib-preview-col {
     display: none;
   }
@@ -3146,6 +3171,16 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 
 /* ---------- Phone ≤639 ---------- */
 @media (max-width: 639px) {
+  .link-screen .lib-editor-tabs {
+    display: none;
+  }
+
+  .link-screen .lib-preview-fab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .c8-shell .app-stage:has(.link-screen) {
     flex: none !important;
     height: auto !important;
