@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
@@ -638,6 +639,13 @@ export const LinkEditorScreen = () => {
 
   const pageHost = `${data.publicOrigin.replace(/^https?:\/\//, '')}/${data.slug}`;
 
+  const profileGaps = [
+    !data.avatarPath ? { id: 'photo', label: 'Add photo' } : null,
+    !data.name.trim() ? { id: 'name', label: 'Add name' } : null,
+    !data.bio.trim() ? { id: 'bio', label: 'Add bio' } : null,
+  ].filter((item): item is { id: string; label: string } => !!item);
+  const fewLinks = data.blocks.length > 0 && data.blocks.length < 3;
+
   return (
     <LinkSplit
       previewOpen={preview}
@@ -775,6 +783,21 @@ export const LinkEditorScreen = () => {
             ) : null}
           </span>
         </section>
+
+        {profileGaps.length || fewLinks ? (
+          <div className="lib-nudge">
+            {profileGaps.map((item) => (
+              <Link key={item.id} className="lib-nudge-chip" href="/link/appearance">
+                {item.label}
+              </Link>
+            ))}
+            {fewLinks ? (
+              <button type="button" className="lib-nudge-chip" onClick={() => toggleAdd('head')}>
+                Add a link
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="lib-editor-actions">
           <details className="lib-preview-as">
