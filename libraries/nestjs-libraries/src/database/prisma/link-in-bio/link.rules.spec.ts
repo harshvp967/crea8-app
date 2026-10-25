@@ -36,6 +36,7 @@ import {
   parseCalendly,
   parseEmbed,
   parseMap,
+  pastedBlockType,
   parseRichText,
   presentPublicBlock,
   rangeWindow,
@@ -428,6 +429,12 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(themePalette('paper').pageText).toBe('#161616');
     expect(parseCalendly('https://calendly.com/crea8/intro')?.src).toContain('hide_gdpr_banner=1');
     expect(parseCalendly('https://cal.com/crea8')).toBeNull();
+    expect(pastedBlockType('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toEqual({ type: 'EMBED', provider: 'youtube' });
+    expect(pastedBlockType('https://www.instagram.com/p/Abcde12/')).toEqual({ type: 'EMBED', provider: 'instagram' });
+    expect(pastedBlockType('https://www.google.com/maps/place/Crea8+Studio')).toEqual({ type: 'MAP', provider: 'maps' });
+    expect(pastedBlockType('https://calendly.com/crea8/intro')).toEqual({ type: 'CALENDLY', provider: 'calendly' });
+    expect(pastedBlockType('https://crea8.one/p/one-post')).toEqual({ type: 'LINK', provider: null });
+    expect(pastedBlockType('not a url')).toEqual({ type: 'LINK', provider: null });
   });
 
   it('keeps upcoming events and hides ones that already happened', () => {

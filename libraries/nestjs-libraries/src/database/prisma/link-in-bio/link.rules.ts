@@ -1012,6 +1012,20 @@ export function parseCalendly(raw: string): EmbedFrame | null {
   return { provider: 'calendly', src: `https://calendly.com/${parts.join('/')}?hide_gdpr_banner=1` };
 }
 
+export function pastedBlockType(raw: string): { type: 'LINK' | 'EMBED' | 'MAP' | 'CALENDLY'; provider: EmbedProvider | null } {
+  if (parseMap(raw)) {
+    return { type: 'MAP', provider: 'maps' };
+  }
+  if (parseCalendly(raw)) {
+    return { type: 'CALENDLY', provider: 'calendly' };
+  }
+  const embed = parseEmbed(raw);
+  if (embed) {
+    return { type: 'EMBED', provider: embed.provider };
+  }
+  return { type: 'LINK', provider: null };
+}
+
 const EMBED_LABEL: Record<EmbedProvider, string> = {
   youtube: 'YouTube',
   spotify: 'Spotify',

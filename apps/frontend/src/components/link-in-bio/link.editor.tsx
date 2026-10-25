@@ -18,7 +18,7 @@ import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { blockDeleteRequest, embedProblem, parseEmbed, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { blockDeleteRequest, embedProblem, parseEmbed, pastedBlockType, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
 
@@ -1029,7 +1029,37 @@ export const LinkEditorScreen = () => {
               <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} />
             </LinkField>
             <LinkField label="URL">
-              <input value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} placeholder="https://" />
+              <input
+                value={draft.url}
+                onChange={(event) => setDraft({ ...draft, url: event.target.value })}
+                onPaste={(event) => {
+                  if (modal.block) {
+                    return;
+                  }
+                  const text = event.clipboardData.getData('text').trim();
+                  const next = pastedBlockType(text);
+                  if (next.type === 'LINK') {
+                    return;
+                  }
+                  event.preventDefault();
+                  if (next.type === 'MAP') {
+                    setMapTitle(draft.title);
+                    setMapUrl(text);
+                    setModal({ kind: 'map' });
+                    return;
+                  }
+                  if (next.type === 'CALENDLY') {
+                    setCalendlyTitle(draft.title);
+                    setCalendlyUrl(text);
+                    setModal({ kind: 'calendly' });
+                    return;
+                  }
+                  setEmbedTitle(draft.title);
+                  setEmbedUrl(text);
+                  setModal({ kind: 'embed', provider: embedOnly(text) });
+                }}
+                placeholder="https://"
+              />
             </LinkField>
             <div className="lib-field">
               <span>Layout</span>
