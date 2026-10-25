@@ -1782,6 +1782,20 @@ export function blockDeleteRequest(id: string) {
   return { path: `/link-in-bio/blocks/${id}`, method: 'DELETE' as const };
 }
 
+export function blockRestoreRequest(id: string) {
+  return { path: `/link-in-bio/blocks/${id}/restore`, method: 'POST' as const };
+}
+
+export function restoreBlockProblem(type: string, liveTypes: string[]) {
+  if (type !== 'EMAIL_CAPTURE' && type !== 'FEATURED_POST') {
+    return null;
+  }
+  if (liveTypes.includes(type)) {
+    return 'That block is already on your page';
+  }
+  return null;
+}
+
 export function blockPriority(type: string, body: { priority?: boolean }, priorityMode: string) {
   if (type === 'LINK') {
     return priorityMode !== 'none';

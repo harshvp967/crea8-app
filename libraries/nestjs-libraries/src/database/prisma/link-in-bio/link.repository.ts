@@ -104,6 +104,12 @@ export class LinkRepository {
     });
   }
 
+  findDeletedBlock(pageId: string, id: string) {
+    return this._block.model.linkBlock.findFirst({
+      where: { id, pageId, deletedAt: { not: null } },
+    });
+  }
+
   createBlock(data: Prisma.LinkBlockUncheckedCreateInput) {
     return this._block.model.linkBlock.create({ data });
   }
