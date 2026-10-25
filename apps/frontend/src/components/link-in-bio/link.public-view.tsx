@@ -59,7 +59,11 @@ export const LinkPublicView = ({
   const [openFaq, setOpenFaq] = useState('');
   const [slide, setSlide] = useState<Record<string, number>>({});
   const [opened, setOpened] = useState<Record<string, string>>({});
+  const [avatarBroken, setAvatarBroken] = useState(false);
   const open = unlocked || dismissed || !data.sensitive || !data.isPublic;
+  useEffect(() => {
+    setAvatarBroken(false);
+  }, [data.avatarPath]);
 
   const design = normalizeDesign(data.design);
   const legacyImage = !design.wallpaperChosen && data.backgroundMode === 'image' && data.backgroundImage;
@@ -129,7 +133,11 @@ export const LinkPublicView = ({
             <img className="lib-logo" src={design.logoUrl} alt={data.name || data.slug || ''} />
           ) : (
             <div className="lib-avatar">
-              {data.avatarPath ? <img src={data.avatarPath} alt="" /> : linkInitials(data.name || data.slug || 'c')}
+              {data.avatarPath && !avatarBroken ? (
+                <img src={data.avatarPath} alt="" onError={() => setAvatarBroken(true)} />
+              ) : (
+                <span className="lib-initials">{linkInitials(data.name || data.slug || 'c')}</span>
+              )}
             </div>
           )}
           <div>
@@ -194,9 +202,6 @@ export const LinkPublicView = ({
                     {block.post.image ? <img src={block.post.image} alt="" /> : null}
                   </div>
                   <div>
-                    <small>
-                      Featured post · {block.post.platform} · {block.post.dateLabel}
-                    </small>
                     <strong>{block.post.title}</strong>
                   </div>
                 </>
@@ -220,7 +225,7 @@ export const LinkPublicView = ({
             }
             if (block.type === 'EMAIL_CAPTURE' && data.capture) {
               return (
-                <div key={block.id} className="lib-capture">
+                <div key={block.id} className="lib-capture lib-email">
                   <strong>{data.capture.heading}</strong>
                   <p>{data.capture.consent}</p>
                   {done ? (
@@ -356,11 +361,11 @@ export const LinkPublicView = ({
               return (
                 <div key={block.id} className="lib-events">
                   {block.title ? <strong className="lib-events-title">{block.title}</strong> : null}
-                  {block.events.map((item) => {
+                  {upcomingEvents(block.events).map((item) => {
                     const face = eventFace(item.when);
                     const detail = [item.place, face.time].filter(Boolean).join(' · ') || (face.day ? '' : eventLabel(item.when));
-                    return (
-                      <div key={`${item.title}-${item.when}`} className="lib-event">
+                    const body = (
+                      <>
                         {face.day ? (
                           <span className="lib-event-date">
                             <strong>{face.day}</strong>
@@ -370,12 +375,17 @@ export const LinkPublicView = ({
                         <span className="lib-event-copy">
                           <strong>{item.title}</strong>
                           {detail ? <p>{detail}</p> : null}
-                          {item.url && mode !== 'preview' ? (
-                            <a href={item.url} target="_blank" rel="noreferrer">
-                              Details
-                            </a>
-                          ) : null}
                         </span>
+                      </>
+                    );
+                    const key = `${item.title}-${item.when}`;
+                    return item.url && mode !== 'preview' ? (
+                      <a key={key} className="lib-event" href={item.url} target="_blank" rel="noreferrer">
+                        {body}
+                      </a>
+                    ) : (
+                      <div key={key} className="lib-event">
+                        {body}
                       </div>
                     );
                   })}
@@ -495,7 +505,7 @@ const DetailsCard = ({
     {details.address ? <p>{details.address}</p> : null}
     {details.website ? (
       <a href={details.website} target="_blank" rel="noreferrer">
-        Website
+        {linkHost(details.website)}
       </a>
     ) : null}
   </div>
@@ -529,10 +539,10 @@ const DiscountCard = ({
       >
         {discount.code}
       </button>
-      <p>{copied ? 'Copied' : discount.note || 'Tap the code to copy it'}</p>
+      {discount.note || copied ? <p>{copied ? 'Copied' : discount.note}</p> : null}
       {discount.url ? (
         <a href={discount.url} target="_blank" rel="noreferrer">
-          Use code
+          {linkHost(discount.url)}
         </a>
       ) : null}
     </div>
@@ -600,6 +610,39 @@ const mapCaption = (src: string, title: string) => {
   }
 };
 
+const linkHost = (raw: string) => {
+  try {
+    return new URL(raw).hostname.replace(/^www\./, '');
+  } catch {
+    return raw.replace(/^https?:\/\//, '').split('/')[0] || raw;
+  }
+};
+
+const eventStamp = (when: string) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec((when || '').trim());
+  if (!match) {
+    return Number.NaN;
+  }
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5])).getTime();
+};
+
+const upcomingEvents = <T extends { when: string }>(events: T[]) => {
+  const now = Date.now();
+  return [...events].sort((a, b) => {
+    const at = eventStamp(a.when);
+    const bt = eventStamp(b.when);
+    const aUp = Number.isFinite(at) && at >= now;
+    const bUp = Number.isFinite(bt) && bt >= now;
+    if (aUp !== bUp) {
+      return aUp ? -1 : 1;
+    }
+    if (!Number.isFinite(at) || !Number.isFinite(bt)) {
+      return 0;
+    }
+    return aUp ? at - bt : bt - at;
+  });
+};
+
 const EVENT_FACE_MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 const eventFace = (when: string) => {
@@ -645,11 +688,12 @@ const EmbedFrame = ({ src, title, provider }: { src: string; title: string; prov
       </a>
     );
   }
+  const frameSrc = provider === 'x' && !src.includes('theme=') ? `${src}${src.includes('?') ? '&' : '?'}theme=dark` : src;
   return (
     <div className="lib-embed" data-provider={provider}>
       <iframe
         ref={frame}
-        src={src}
+        src={frameSrc}
         title={title}
         loading="lazy"
         style={height ? { height } : undefined}
