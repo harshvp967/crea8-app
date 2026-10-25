@@ -1033,6 +1033,33 @@
   min-height: 168px;
 }
 
+.lib-wallpaper-media {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.lib-phone .lib-wallpaper-media {
+  position: sticky;
+  top: 0;
+  height: 100%;
+  margin-bottom: -100%;
+}
+
+.lib-public[data-wallpaper='motion'] {
+  background-size: 140% 140%;
+  animation: lib-motion 18s ease-in-out infinite alternate;
+}
+
+@keyframes lib-motion {
+  from { background-position: 0% 40%; }
+  to { background-position: 100% 60%; }
+}
+
 .lib-public[data-wallpaper='blur'] {
   background: var(--lib-bg);
 }
@@ -1359,7 +1386,12 @@ a.lib-event {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lib-link[data-anim] {
+  .lib-link[data-anim],
+  .lib-public[data-wallpaper='motion'] {
     animation: none;
+  }
+
+  .lib-wallpaper-media {
+    display: none;
   }
 }

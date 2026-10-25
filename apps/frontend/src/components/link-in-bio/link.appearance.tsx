@@ -240,11 +240,12 @@ export const LinkAppearanceScreen = () => {
     const silent = quiet === true;
     const currentDesign = current.design;
     const logoProblem = currentDesign.logoUrl.trim() ? imagePathProblem(currentDesign.logoUrl) : null;
+    const mediaProblem = currentDesign.mediaUrl.trim() ? imagePathProblem(currentDesign.mediaUrl) : null;
     const nextSocialErrors = current.socials.map((item) => (item.url.trim() ? urlProblem(item.url) : null));
     setLogoError(logoProblem || '');
     setSocialErrors(nextSocialErrors);
-    if (logoProblem || nextSocialErrors.some(Boolean)) {
-      toast.show(logoProblem || nextSocialErrors.find(Boolean) || 'Check that link', 'warning');
+    if (logoProblem || mediaProblem || nextSocialErrors.some(Boolean)) {
+      toast.show(logoProblem || mediaProblem || nextSocialErrors.find(Boolean) || 'Check that link', 'warning');
       return;
     }
     const snapshot = JSON.stringify(current);
@@ -532,12 +533,12 @@ export const LinkAppearanceScreen = () => {
                   type="button"
                   className={`lib-tile${design.wallpaper === item ? ' is-on' : ''}`}
                   onClick={() => {
-                    const pro = item === 'blur' || item === 'pattern';
+                    const pro = item === 'blur' || item === 'pattern' || item === 'video' || item === 'motion';
                     if (!guard(pro, 'That wallpaper is on a paid plan')) return;
                     setDesign({ wallpaper: item });
                   }}
                 >
-                  {item === 'blur' || item === 'pattern' ? <Star /> : null}
+                  {item === 'blur' || item === 'pattern' || item === 'video' || item === 'motion' ? <Star /> : null}
                   <span className="lib-opt-art" data-opt="wallpaper" data-value={item} />
                   <span className="lib-tile-name">{labelOf(item)}</span>
                 </button>
@@ -560,6 +561,17 @@ export const LinkAppearanceScreen = () => {
                   ))}
                 </div>
               </>
+            ) : null}
+            {design.wallpaper === 'video' || design.wallpaper === 'motion' ? (
+              <div className="mb-[14px]">
+                <LinkField label="Background video">
+                  <input
+                    value={design.mediaUrl}
+                    placeholder="https://cdn.example.com/background.mp4"
+                    onChange={(event) => setDesign({ mediaUrl: event.target.value })}
+                  />
+                </LinkField>
+              </div>
             ) : null}
             {design.wallpaper === 'gradient' ? (
               <div className="mb-[14px] flex flex-col gap-[8px]">
