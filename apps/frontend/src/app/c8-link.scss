@@ -980,6 +980,21 @@ body:has(.link-screen) .lib-dialog .lib-toggle {
   cursor: pointer;
 }
 
+.link-screen .lib-undo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--c8-line);
+  border-radius: 16px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .link-screen .stk-state p {
   margin: 0;
   max-width: 360px;

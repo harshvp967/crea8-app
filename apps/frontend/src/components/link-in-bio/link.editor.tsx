@@ -176,6 +176,7 @@ export const LinkEditorScreen = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [addAnchor, setAddAnchor] = useState<'head' | 'row'>('row');
   const [preview, setPreview] = useState(false);
+  const [undoId, setUndoId] = useState('');
   const pressTimer = useRef(0);
   const [pressId, setPressId] = useState('');
   const [pressOver, setPressOver] = useState('');
@@ -845,6 +846,26 @@ export const LinkEditorScreen = () => {
           </div>
         ) : null}
 
+        {undoId ? (
+          <div className="lib-undo" role="status">
+            <span>Block removed</span>
+            <button
+              type="button"
+              className={linkSecondary}
+              disabled={busy}
+              onClick={async () => {
+                const id = undoId;
+                const ok = await save(`/link-in-bio/blocks/${id}/restore`, 'POST', undefined, 'Restored');
+                if (ok) {
+                  setUndoId('');
+                }
+              }}
+            >
+              Undo
+            </button>
+          </div>
+        ) : null}
+
         <div className="lib-editor-actions">
           <details className="lib-preview-as">
             <summary className="lib-preview-as-summary">
@@ -1113,9 +1134,13 @@ export const LinkEditorScreen = () => {
               type="button"
               className={linkDanger}
               disabled={busy}
-              onClick={() => {
-                const request = blockDeleteRequest(confirmId);
-                void save(request.path, request.method, undefined, 'Removed');
+              onClick={async () => {
+                const id = confirmId;
+                const request = blockDeleteRequest(id);
+                const ok = await save(request.path, request.method, undefined, 'Removed');
+                if (ok) {
+                  setUndoId(id);
+                }
               }}
             >
               Remove
