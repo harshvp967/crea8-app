@@ -744,6 +744,7 @@ export const LINK_BLOCK_TYPES = [
   'CONTACT_DETAILS',
   'DISCOUNT',
   'EVENTS',
+  'MUSIC',
 ] as const;
 
 export const LINK_LOCKS = ['NONE', 'AGE', 'EMAIL', 'PASSWORD', 'CODE', 'DOB', 'SENSITIVE'] as const;
@@ -752,6 +753,7 @@ export type EmbedProvider =
   | 'youtube'
   | 'spotify'
   | 'soundcloud'
+  | 'apple'
   | 'vimeo'
   | 'instagram'
   | 'tiktok'
@@ -1026,10 +1028,47 @@ export function pastedBlockType(raw: string): { type: 'LINK' | 'EMBED' | 'MAP' |
   return { type: 'LINK', provider: null };
 }
 
+export function parseMusic(raw: string): EmbedFrame | null {
+  const url = httpUrl(raw);
+  if (!url) {
+    return null;
+  }
+  const host = bareHost(url.hostname);
+  if (host === 'music.apple.com' || host === 'embed.music.apple.com') {
+    const parts = url.pathname.split('/').filter(Boolean);
+    if (parts.length < 2 || parts.some((part) => part.length > 200)) {
+      return null;
+    }
+    return { provider: 'apple', src: `https://embed.music.apple.com${url.pathname}${url.search}` };
+  }
+  const embed = parseEmbed(raw);
+  if (!embed) {
+    return null;
+  }
+  if (embed.provider === 'spotify' || embed.provider === 'soundcloud') {
+    return embed;
+  }
+  if (embed.provider === 'youtube' && host === 'music.youtube.com') {
+    return embed;
+  }
+  return null;
+}
+
+export function musicProblem(raw: string) {
+  if (!raw.trim()) {
+    return 'Paste a Spotify, SoundCloud, Apple Music, or YouTube Music link';
+  }
+  if (!parseMusic(raw)) {
+    return 'Use a Spotify, SoundCloud, Apple Music, or YouTube Music link';
+  }
+  return null;
+}
+
 const EMBED_LABEL: Record<EmbedProvider, string> = {
   youtube: 'YouTube',
   spotify: 'Spotify',
   soundcloud: 'SoundCloud',
+  apple: 'Apple Music',
   vimeo: 'Vimeo',
   instagram: 'Instagram',
   tiktok: 'TikTok',
@@ -1254,9 +1293,11 @@ export function presentPublicBlock(block: PublicBlockInput, paid: boolean, visit
   const rawUrl = effect.action === 'url' && effect.url ? effect.url : block.url;
   const lock = block.type === 'LINK' ? normalizeLock(block.lockType) : 'NONE';
   const locked = lock !== 'NONE';
-  const embed =
+    const embed =
     block.type === 'EMBED'
       ? parseEmbed(block.url)
+      : block.type === 'MUSIC'
+      ? parseMusic(block.url)
       : block.type === 'MAP'
       ? parseMap(block.url)
       : block.type === 'CALENDLY'

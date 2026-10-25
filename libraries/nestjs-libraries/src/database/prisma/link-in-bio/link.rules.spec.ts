@@ -31,6 +31,8 @@ import {
   lockProblem,
   mapHostnameStatus,
   mapProblem,
+  parseMusic,
+  musicProblem,
   normalizeDesign,
   normalizeEvents,
   pageUrl,
@@ -451,6 +453,12 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(pastedBlockType('https://calendly.com/crea8/intro')).toEqual({ type: 'CALENDLY', provider: 'calendly' });
     expect(pastedBlockType('https://crea8.one/p/one-post')).toEqual({ type: 'LINK', provider: null });
     expect(pastedBlockType('not a url')).toEqual({ type: 'LINK', provider: null });
+    expect(parseMusic('https://open.spotify.com/track/1234567890abcDEF123456')?.provider).toBe('spotify');
+    expect(parseMusic('https://music.apple.com/us/album/kind-of-blue/1440812345')?.src).toContain('embed.music.apple.com');
+    expect(parseMusic('https://music.youtube.com/watch?v=dQw4w9WgXcQ')?.provider).toBe('youtube');
+    expect(parseMusic('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBeNull();
+    expect(musicProblem('https://crea8.one')).toMatch(/Spotify/);
+    expect(musicProblem('https://open.spotify.com/track/1234567890abcDEF123456')).toBeNull();
   });
 
   it('keeps upcoming events and hides ones that already happened', () => {

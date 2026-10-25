@@ -2215,6 +2215,7 @@ enum LinkBlockType {
   CONTACT_DETAILS
   DISCOUNT
   EVENTS
+  MUSIC
 }
 
 enum LinkLockType {
