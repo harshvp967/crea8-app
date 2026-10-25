@@ -273,6 +273,19 @@
   outline-offset: 2px;
 }
 
+.lib-hot-hit {
+  width: 100%;
+  align-self: stretch;
+  border-radius: 18px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lib-hot-hit.is-hot {
+    outline: 2px solid var(--lib-accent);
+    outline-offset: 2px;
+  }
+}
+
 .lib-public[data-shadow='hard'] .lib-stack {
   box-sizing: border-box;
   padding-right: 6px;

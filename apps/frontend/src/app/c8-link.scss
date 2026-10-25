@@ -632,6 +632,13 @@ body:has(.link-screen) .lib-dialog .lib-toggle {
   outline-style: dashed;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .link-screen .lib-editor-row.is-hot {
+    outline: 2px solid var(--c8-ink);
+    outline-offset: 2px;
+  }
+}
+
 .link-screen .lib-editor-tools {
   display: flex;
   flex: none;
