@@ -397,6 +397,11 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(designProKind('midnight', classic)).toBeNull();
     expect(designProKind('midnight', normalizeDesign({ header: 'hero' }))).toBe('layout');
     expect(designProKind('midnight', normalizeDesign({ wallpaper: 'blur' }))).toBe('wallpaper');
+    expect(designProKind('midnight', normalizeDesign({ wallpaper: 'video', mediaUrl: 'https://cdn.crea8.one/bg.mp4' }))).toBe('wallpaper');
+    expect(designProKind('midnight', normalizeDesign({ wallpaper: 'motion' }))).toBe('wallpaper');
+    expect(normalizeDesign({ wallpaper: 'video', mediaUrl: 'https://cdn.crea8.one/bg.mp4' }).mediaUrl).toBe('https://cdn.crea8.one/bg.mp4');
+    expect(normalizeDesign({ mediaUrl: '/uploads/bg.mp4' }).mediaUrl).toBe('/uploads/bg.mp4');
+    expect(normalizeDesign({ wallpaper: 'video', mediaUrl: 'javascript:alert(1)' }).mediaUrl).toBe('');
     expect(designProKind('midnight', normalizeDesign({ buttonFill: 'glass' }))).toBe('button');
     expect(designProKind('aurora', classic)).toBe('theme');
     expect(normalizeDesign({}).titleMode).toBe('text');

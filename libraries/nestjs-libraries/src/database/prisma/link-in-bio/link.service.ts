@@ -148,6 +148,10 @@ export class LinkService {
     if (logo && imagePathProblem(logo)) {
       throw new BadRequestException(imagePathProblem(logo));
     }
+    const media = body.design?.mediaUrl?.trim();
+    if (media && imagePathProblem(media)) {
+      throw new BadRequestException(imagePathProblem(media));
+    }
     const socials = body.socials
       ? body.socials.flatMap((item) => {
           const url = item.url.trim();
