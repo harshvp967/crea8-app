@@ -34,6 +34,8 @@ export const LinkPublicView = ({
   mode = 'live',
   onClick,
   onEdit,
+  hotId = '',
+  onHover,
   onSubscribe,
   onContinue,
   onUnlock,
@@ -44,6 +46,8 @@ export const LinkPublicView = ({
   mode?: 'live' | 'preview';
   onClick?: (blockId: string) => void;
   onEdit?: (blockId: string) => void;
+  hotId?: string;
+  onHover?: (blockId: string) => void;
   onSubscribe?: (input: { email: string; name: string }) => Promise<'confirmed' | 'pending'>;
   onContinue?: () => Promise<void> | void;
   onUnlock?: (
@@ -103,14 +107,25 @@ export const LinkPublicView = ({
     '--lib-shadow': SHADOW[design.shadow] || 'none',
   } as unknown as CSSProperties;
 
-  const withEdit = (id: string, node: ReactNode) => {
-    if (node == null || mode !== 'preview' || !onEdit) {
+  const withPreview = (id: string, node: ReactNode) => {
+    const editable = mode === 'preview' && !!onEdit;
+    if (node == null || (!editable && !onHover)) {
       return node;
     }
+    const className = [editable ? 'lib-edit-hit' : '', onHover ? 'lib-hot-hit' : '', onHover && hotId === id ? 'is-hot' : '']
+      .filter(Boolean)
+      .join(' ');
     return (
-      <div key={id} className="lib-edit-hit">
+      <div
+        key={id}
+        className={className}
+        onMouseEnter={onHover ? () => onHover(id) : undefined}
+        onMouseLeave={onHover ? () => onHover('') : undefined}
+      >
         {node}
-        <button type="button" className="lib-edit-tap" aria-label="Edit block" onClick={() => onEdit(id)} />
+        {editable ? (
+          <button type="button" className="lib-edit-tap" aria-label="Edit block" onClick={() => onEdit(id)} />
+        ) : null}
       </div>
     );
   };
@@ -476,7 +491,7 @@ export const LinkPublicView = ({
             }
             return null;
             })();
-            return withEdit(block.id, painted);
+            return withPreview(block.id, painted);
           })
         )}
         {design.socialPosition === 'bottom' ? <SocialRow items={data.socials} preview={mode === 'preview'} /> : null}

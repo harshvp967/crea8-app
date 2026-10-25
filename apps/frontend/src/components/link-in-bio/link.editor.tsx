@@ -179,6 +179,7 @@ export const LinkEditorScreen = () => {
   const pressTimer = useRef(0);
   const [pressId, setPressId] = useState('');
   const [pressOver, setPressOver] = useState('');
+  const [hotId, setHotId] = useState('');
   const [draft, setDraft] = useState(emptyLink);
   const [heading, setHeading] = useState('');
   const [postId, setPostId] = useState('');
@@ -701,6 +702,8 @@ export const LinkEditorScreen = () => {
             key={`${data.slug}-${data.isPublic}-${data.sensitive}`}
             data={toPublic(data, visitor)}
             mode="preview"
+            hotId={hotId}
+            onHover={setHotId}
             onEdit={(id) => {
               const block = data.blocks.find((item) => item.id === id);
               if (block) {
@@ -940,7 +943,9 @@ export const LinkEditorScreen = () => {
             <article
               key={block.id}
               data-block-id={block.id}
-              className={`lib-editor-row ${stkCard} !p-[14px]${pressId === block.id ? ' is-press' : ''}${pressOver === block.id && pressId && pressOver !== pressId ? ' is-press-over' : ''}`}
+              className={`lib-editor-row ${stkCard} !p-[14px]${pressId === block.id ? ' is-press' : ''}${pressOver === block.id && pressId && pressOver !== pressId ? ' is-press-over' : ''}${hotId === block.id ? ' is-hot' : ''}`}
+              onMouseEnter={() => setHotId(block.id)}
+              onMouseLeave={() => setHotId('')}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault();
