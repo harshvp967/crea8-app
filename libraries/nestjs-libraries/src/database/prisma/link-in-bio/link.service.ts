@@ -56,6 +56,7 @@ import {
   linkProKind,
   lockProblem,
   mapProblem,
+  restoreBlockProblem,
   normalizeDesign,
   normalizeDetails,
   normalizeDiscount,
@@ -327,6 +328,23 @@ export class LinkService {
     const record = await this.ensure(org);
     await this.requireBlock(record.id, id);
     await this._repository.updateBlock(id, { deletedAt: new Date(), priority: false });
+    return this.toEditor(await this.requirePage(org.id));
+  }
+
+  async restoreBlock(org: PlanOrg, id: string) {
+    const record = await this.ensure(org);
+    const block = await this._repository.findDeletedBlock(record.id, id);
+    if (!block) {
+      throw new NotFoundException('Block not found');
+    }
+    const problem = restoreBlockProblem(
+      block.type,
+      record.blocks.map((item) => item.type)
+    );
+    if (problem) {
+      throw new BadRequestException(problem);
+    }
+    await this._repository.updateBlock(id, { deletedAt: null });
     return this.toEditor(await this.requirePage(org.id));
   }
 

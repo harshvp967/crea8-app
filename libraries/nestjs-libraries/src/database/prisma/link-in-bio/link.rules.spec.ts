@@ -3,6 +3,8 @@ import {
   applyVisitorRules,
   blockPriority,
   blockDeleteRequest,
+  blockRestoreRequest,
+  restoreBlockProblem,
   blockState,
   buildAnalytics,
   captureUtm,
@@ -412,6 +414,11 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     });
     expect(parseEmbed('https://crea8.one/p/one-post')).toBeNull();
     expect(blockDeleteRequest('block-1')).toEqual({ path: '/link-in-bio/blocks/block-1', method: 'DELETE' });
+    expect(blockRestoreRequest('block-1')).toEqual({ path: '/link-in-bio/blocks/block-1/restore', method: 'POST' });
+    expect(restoreBlockProblem('LINK', ['LINK'])).toBeNull();
+    expect(restoreBlockProblem('EMAIL_CAPTURE', [])).toBeNull();
+    expect(restoreBlockProblem('EMAIL_CAPTURE', ['EMAIL_CAPTURE'])).toMatch(/already/);
+    expect(restoreBlockProblem('FEATURED_POST', ['FEATURED_POST'])).toMatch(/already/);
     expect(parseEmbed('https://www.threads.net/@crea8/post/Abcde12')?.src).toBe(
       'https://www.threads.net/@crea8/post/Abcde12/embed'
     );

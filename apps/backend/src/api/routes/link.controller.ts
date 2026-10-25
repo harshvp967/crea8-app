@@ -77,6 +77,11 @@ export class LinkController {
     return this._linkService.deleteBlock(org, id);
   }
 
+  @Post('/blocks/:id/restore')
+  restoreBlock(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
+    return this._linkService.restoreBlock(org, id);
+  }
+
   @Get('/analytics.csv')
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="crea8-analytics.csv"')
