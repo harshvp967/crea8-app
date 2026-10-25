@@ -757,6 +757,10 @@
   height: 166px;
 }
 
+.lib-embed[data-provider='apple'] iframe {
+  height: 175px;
+}
+
 .lib-text {
   color: var(--lib-text);
   font-size: 14px;

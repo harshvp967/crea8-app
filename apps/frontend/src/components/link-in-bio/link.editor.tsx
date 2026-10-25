@@ -19,7 +19,7 @@ import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { blockDeleteRequest, blockRestoreRequest, embedProblem, parseEmbed, pastedBlockType, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { blockDeleteRequest, blockRestoreRequest, embedProblem, musicProblem, parseEmbed, pastedBlockType, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
 
@@ -62,6 +62,7 @@ type Modal =
   | { kind: 'contact'; block?: LinkBlock }
   | { kind: 'map'; block?: LinkBlock }
   | { kind: 'calendly'; block?: LinkBlock }
+  | { kind: 'music'; block?: LinkBlock }
   | { kind: 'details'; block?: LinkBlock }
   | { kind: 'discount'; block?: LinkBlock }
   | { kind: 'events'; block?: LinkBlock }
@@ -94,7 +95,7 @@ const blockIcon = (type: LinkBlock['type']): HugeIconName => {
   if (type === 'FEATURED_POST' || type === 'IMAGE_CAROUSEL') return 'image';
   if (type === 'EMAIL_CAPTURE' || type === 'CONTACT_FORM') return 'mail';
   if (type === 'TEXT') return 'text';
-  if (type === 'EMBED') return 'play';
+  if (type === 'EMBED' || type === 'MUSIC') return 'play';
   if (type === 'FAQ') return 'list';
   if (type === 'MAP') return 'location';
   if (type === 'CALENDLY') return 'calendar';
@@ -108,6 +109,7 @@ const blockName = (block: LinkBlock) => {
   if (block.type === 'FEATURED_POST') return 'Featured post';
   if (block.type === 'EMAIL_CAPTURE') return block.title || 'Email capture';
   if (block.type === 'EMBED') return block.title || 'Embed';
+  if (block.type === 'MUSIC') return block.title || 'Music';
   if (block.type === 'TEXT') return block.title || 'Text';
   if (block.type === 'FAQ') return block.title || 'FAQ';
   if (block.type === 'IMAGE_CAROUSEL') return block.title || 'Image carousel';
@@ -127,6 +129,7 @@ const blockNote = (block: LinkBlock) => {
   if (block.type === 'LINK') return block.url;
   if (block.type === 'EMAIL_CAPTURE') return 'Collects subscribers on your page';
   if (block.type === 'EMBED') return block.url || 'YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X, Bluesky or Threads';
+  if (block.type === 'MUSIC') return block.url || 'Spotify, SoundCloud, Apple Music, or YouTube Music';
   if (block.type === 'TEXT') return block.body || 'Text';
   if (block.type === 'FAQ') return `${block.faq.length} questions`;
   if (block.type === 'IMAGE_CAROUSEL') return `${block.images.length} images`;
@@ -196,6 +199,8 @@ export const LinkEditorScreen = () => {
   const [mapUrl, setMapUrl] = useState('');
   const [calendlyTitle, setCalendlyTitle] = useState('');
   const [calendlyUrl, setCalendlyUrl] = useState('');
+  const [musicTitle, setMusicTitle] = useState('');
+  const [musicUrl, setMusicUrl] = useState('');
   const [details, setDetails] = useState({ title: 'Contact', email: '', phone: '', address: '', website: '' });
   const [discount, setDiscount] = useState({ title: '', code: '', note: '', url: '' });
   const [eventsTitle, setEventsTitle] = useState('Upcoming');
@@ -433,6 +438,12 @@ export const LinkEditorScreen = () => {
       openEmbed(embedOnly(block.url), block);
       return;
     }
+    if (block.type === 'MUSIC') {
+      setMusicTitle(block.title);
+      setMusicUrl(block.url);
+      setModal({ kind: 'music', block });
+      return;
+    }
     if (block.type === 'TEXT') {
       setTextTitle(block.title);
       setTextBody(block.body);
@@ -589,6 +600,17 @@ export const LinkEditorScreen = () => {
                     }}
                   >
                     Calendly
+                  </LinkMenuRow>
+                  <LinkMenuRow
+                    icon="play"
+                    onClick={() => {
+                      setMusicTitle('');
+                      setMusicUrl('');
+                      setModal({ kind: 'music' });
+                      setAddOpen(false);
+                    }}
+                  >
+                    Music
                   </LinkMenuRow>
                   <LinkMenuRow
                     icon="mail"
@@ -1873,6 +1895,46 @@ export const LinkEditorScreen = () => {
                     'Calendly saved'
                   )
                 }
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
+
+      {modal?.kind === 'music' ? (
+        <LinkModal title={modal.block ? 'Edit music' : 'Add music'} anchor={modal?.block ? sheetAnchor : null} onClose={() => setModal(null)}>
+          <div className="lib-block-form flex flex-col gap-[14px]">
+            <LinkField label="Title">
+              <input value={musicTitle} onChange={(event) => setMusicTitle(event.target.value)} />
+            </LinkField>
+            <LinkField label="URL">
+              <input
+                value={musicUrl}
+                placeholder="https://open.spotify.com/track/..."
+                onChange={(event) => setMusicUrl(event.target.value)}
+              />
+            </LinkField>
+            <div className="flex justify-end gap-[8px]">
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>Cancel</button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() => {
+                  const problem = musicProblem(musicUrl);
+                  if (problem) {
+                    toast.show(problem, 'warning');
+                    return;
+                  }
+                  save(
+                    modal.block ? `/link-in-bio/blocks/${modal.block.id}` : '/link-in-bio/blocks',
+                    modal.block ? 'PUT' : 'POST',
+                    modal.block ? { title: musicTitle, url: musicUrl } : { type: 'MUSIC', title: musicTitle, url: musicUrl },
+                    'Music saved'
+                  );
+                }}
               >
                 Save
               </button>

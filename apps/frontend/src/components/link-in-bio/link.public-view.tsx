@@ -294,7 +294,7 @@ export const LinkPublicView = ({
             if (block.type === 'TEXT') {
               return <RichText key={block.id} value={block.body} title={block.title} onClick={() => onClick?.(block.id)} />;
             }
-            if (block.type === 'EMBED' && block.embed) {
+            if ((block.type === 'EMBED' || block.type === 'MUSIC') && block.embed) {
               return (
                 <EmbedFrame
                   key={block.id}

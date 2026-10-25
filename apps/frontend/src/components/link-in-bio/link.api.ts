@@ -33,7 +33,8 @@ export type LinkBlockType =
   | 'CALENDLY'
   | 'CONTACT_DETAILS'
   | 'DISCOUNT'
-  | 'EVENTS';
+  | 'EVENTS'
+  | 'MUSIC';
 
 export type LinkFaq = { question: string; answer: string };
 export type LinkImage = { path: string; alt: string };
