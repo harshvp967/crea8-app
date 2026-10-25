@@ -1,6 +1,6 @@
 'use client';
 
-import { CSSProperties, FormEvent, useEffect, useRef, useState } from 'react';
+import { CSSProperties, FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { eventLabel, fontStack, normalizeDesign, parseEmbed, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
@@ -33,6 +33,7 @@ export const LinkPublicView = ({
   data,
   mode = 'live',
   onClick,
+  onEdit,
   onSubscribe,
   onContinue,
   onUnlock,
@@ -42,6 +43,7 @@ export const LinkPublicView = ({
   data: PublicLink;
   mode?: 'live' | 'preview';
   onClick?: (blockId: string) => void;
+  onEdit?: (blockId: string) => void;
   onSubscribe?: (input: { email: string; name: string }) => Promise<'confirmed' | 'pending'>;
   onContinue?: () => Promise<void> | void;
   onUnlock?: (
@@ -100,6 +102,18 @@ export const LinkPublicView = ({
     ...(radius ? { '--lib-radius': radius } : {}),
     '--lib-shadow': SHADOW[design.shadow] || 'none',
   } as unknown as CSSProperties;
+
+  const withEdit = (id: string, node: ReactNode) => {
+    if (node == null || mode !== 'preview' || !onEdit) {
+      return node;
+    }
+    return (
+      <div key={id} className="lib-edit-hit">
+        {node}
+        <button type="button" className="lib-edit-tap" aria-label="Edit block" onClick={() => onEdit(id)} />
+      </div>
+    );
+  };
 
   const subscribe = async (event: FormEvent) => {
     event.preventDefault();
@@ -177,6 +191,7 @@ export const LinkPublicView = ({
           </div>
         ) : (
           data.blocks.map((block) => {
+            const painted = (() => {
             if (block.type === 'HEADING') {
               return (
                 <h2 key={block.id} className="lib-heading">
@@ -453,6 +468,8 @@ export const LinkPublicView = ({
               );
             }
             return null;
+            })();
+            return withEdit(block.id, painted);
           })
         )}
         {design.socialPosition === 'bottom' ? <SocialRow items={data.socials} preview={mode === 'preview'} /> : null}
