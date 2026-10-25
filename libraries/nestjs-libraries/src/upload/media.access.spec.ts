@@ -18,7 +18,7 @@ const env = mediaAccessEnv({
   MEDIA_URL_SECRET: 'media-secret',
   MEDIA_SIGNED_URL_TTL_SECONDS: '900',
   MEDIA_PUBLIC_URL_TTL_SECONDS: '3600',
-} as NodeJS.ProcessEnv);
+} as unknown as NodeJS.ProcessEnv);
 
 describe('stored media resolver', () => {
   it('keeps external URLs and turns signed or public bucket URLs back into the stored key', () => {
@@ -70,7 +70,7 @@ describe('stored media resolver', () => {
         STORAGE_PROVIDER: 'local',
         MEDIA_URL_SECRET: 'media-secret',
         MEDIA_PUBLIC_URL_TTL_SECONDS: '3600',
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     });
     const url = localPublicUrl('2024/01/02/abcd.png', local, 1_700_000_000_000);
     expect(url.startsWith('https://app.example.com/uploads/public/2024/01/02/abcd.png?')).toBe(
