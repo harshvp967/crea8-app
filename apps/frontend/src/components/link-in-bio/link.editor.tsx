@@ -19,7 +19,7 @@ import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { blockDeleteRequest, embedProblem, parseEmbed, pastedBlockType, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { blockDeleteRequest, blockRestoreRequest, embedProblem, parseEmbed, pastedBlockType, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
 
@@ -855,7 +855,8 @@ export const LinkEditorScreen = () => {
               disabled={busy}
               onClick={async () => {
                 const id = undoId;
-                const ok = await save(`/link-in-bio/blocks/${id}/restore`, 'POST', undefined, 'Restored');
+                const restore = blockRestoreRequest(id);
+                const ok = await save(restore.path, restore.method, undefined, 'Restored');
                 if (ok) {
                   setUndoId('');
                 }
