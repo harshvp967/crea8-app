@@ -125,6 +125,7 @@ export const LinkAppearanceScreen = () => {
   const [section, setSection] = useState<string | null>(null);
   const [customColour, setCustomColour] = useState(false);
   const [editSocial, setEditSocial] = useState<number | null>(null);
+  const [savedTick, setSavedTick] = useState(false);
   const connect = useAddProvider(() => {
     mutate();
   });
@@ -149,11 +150,20 @@ export const LinkAppearanceScreen = () => {
     if (snapshot === savedDraft.current) {
       return undefined;
     }
+    setSavedTick(false);
     const timer = window.setTimeout(() => {
       void saveRef.current(true);
     }, 700);
     return () => window.clearTimeout(timer);
   }, [draft]);
+
+  useEffect(() => {
+    if (!savedTick) {
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setSavedTick(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [savedTick]);
 
   if (data && !draft) {
     setDraft(toDraft(data));
@@ -266,7 +276,9 @@ export const LinkAppearanceScreen = () => {
       }
       savedDraft.current = JSON.stringify(normalized);
       setDraft(normalized);
-      if (!silent) {
+      if (silent) {
+        setSavedTick(true);
+      } else {
         toast.show('Changes saved', 'success');
       }
     } catch (err) {
@@ -331,6 +343,12 @@ export const LinkAppearanceScreen = () => {
             <h1 className={stkTitle}>Appearance</h1>
           </div>
           <div className="lib-head-actions flex flex-wrap items-center justify-start gap-[8px] sm:justify-end">
+            {savedTick ? (
+              <span className="lib-saved-tick" role="status">
+                <HugeIcon name="check" size={16} />
+                Saved
+              </span>
+            ) : null}
             <LinkViewTabs preview={preview} onPreview={setPreview} />
             <button type="button" className={`${linkSecondary} lib-reset`} onClick={() => setDraft(toDraft(data))}>
               Reset

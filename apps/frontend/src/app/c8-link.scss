@@ -101,6 +101,17 @@ $c8-body: var(--font-body), Inter, sans-serif;
   gap: 8px !important;
 }
 
+.link-screen .lib-saved-tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .link-screen .lib-editor-page .lib-head {
   display: flex;
   flex-direction: row;
