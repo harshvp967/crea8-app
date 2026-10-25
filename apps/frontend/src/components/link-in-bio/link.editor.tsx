@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { TouchEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -176,6 +176,9 @@ export const LinkEditorScreen = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [addAnchor, setAddAnchor] = useState<'head' | 'row'>('row');
   const [preview, setPreview] = useState(false);
+  const pressTimer = useRef(0);
+  const [pressId, setPressId] = useState('');
+  const [pressOver, setPressOver] = useState('');
   const [draft, setDraft] = useState(emptyLink);
   const [heading, setHeading] = useState('');
   const [postId, setPostId] = useState('');
@@ -361,6 +364,36 @@ export const LinkEditorScreen = () => {
     }
     ids.splice(to, 0, ids.splice(from, 1)[0]);
     save('/link-in-bio/blocks/reorder', 'PUT', { ids }, undefined, false);
+  };
+
+  const pressStart = (id: string) => {
+    window.clearTimeout(pressTimer.current);
+    pressTimer.current = window.setTimeout(() => setPressId(id), 450);
+  };
+
+  const pressMove = (event: TouchEvent<HTMLElement>) => {
+    if (!pressId) {
+      window.clearTimeout(pressTimer.current);
+      pressTimer.current = 0;
+      return;
+    }
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+    const node = document.elementFromPoint(touch.clientX, touch.clientY);
+    const row = node instanceof Element ? node.closest('[data-block-id]') : null;
+    setPressOver(row?.getAttribute('data-block-id') || '');
+  };
+
+  const pressEnd = () => {
+    window.clearTimeout(pressTimer.current);
+    pressTimer.current = 0;
+    if (pressId && pressOver) {
+      reorder(pressId, pressOver);
+    }
+    setPressId('');
+    setPressOver('');
   };
 
   const copy = async (value: string) => {
@@ -906,7 +939,8 @@ export const LinkEditorScreen = () => {
           data.blocks.map((block, index) => (
             <article
               key={block.id}
-              className={`lib-editor-row ${stkCard} !p-[14px]`}
+              data-block-id={block.id}
+              className={`lib-editor-row ${stkCard} !p-[14px]${pressId === block.id ? ' is-press' : ''}${pressOver === block.id && pressId && pressOver !== pressId ? ' is-press-over' : ''}`}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault();
@@ -921,7 +955,12 @@ export const LinkEditorScreen = () => {
                   className="lib-editor-drag cursor-grab text-textItemBlur"
                   draggable
                   aria-label="Drag to reorder"
+                  style={pressId === block.id ? { touchAction: 'none' } : undefined}
                   onDragStart={(event) => event.dataTransfer.setData('text/plain', block.id)}
+                  onTouchStart={() => pressStart(block.id)}
+                  onTouchMove={pressMove}
+                  onTouchEnd={pressEnd}
+                  onTouchCancel={pressEnd}
                 >
                   <HugeIcon name="drag" size={16} />
                 </span>
