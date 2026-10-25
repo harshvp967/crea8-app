@@ -659,6 +659,12 @@ export const LinkEditorScreen = () => {
             key={`${data.slug}-${data.isPublic}-${data.sensitive}`}
             data={toPublic(data, visitor)}
             mode="preview"
+            onEdit={(id) => {
+              const block = data.blocks.find((item) => item.id === id);
+              if (block) {
+                editBlock(block);
+              }
+            }}
           />
         </LinkPreview>
       }
