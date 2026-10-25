@@ -14,7 +14,7 @@ import {
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
-import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
+import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { embedProblem, parseEmbed, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
@@ -670,7 +670,6 @@ export const LinkEditorScreen = () => {
             <h1 className={stkTitle}>Editor</h1>
           </div>
           <div className="lib-head-actions">
-            <LinkViewTabs className="lib-editor-tabs" preview={preview} onPreview={setPreview} />
             <div className="lib-add-slot lib-add-slot-head relative">
               <button
                 type="button"
@@ -964,18 +963,6 @@ export const LinkEditorScreen = () => {
                       <LinkMenuRow icon="clock" onClick={() => (block.type === 'LINK' ? openLink(block) : editBlock(block))}>
                         Schedule
                       </LinkMenuRow>
-                      <div className="lib-block-hide">
-                        <HugeIcon name="eye" size={16} />
-                        <span className="lib-block-hide-copy">
-                          <strong>Hidden</strong>
-                          <small>Hide from your page</small>
-                        </span>
-                        <LinkToggle
-                          checked={!block.enabled}
-                          label="Hidden"
-                          onChange={(hidden) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled: !hidden })}
-                        />
-                      </div>
                       <LinkMenuRow icon="trash" danger onClick={() => setConfirmId(block.id)}>
                         Delete
                       </LinkMenuRow>
