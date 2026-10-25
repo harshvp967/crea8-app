@@ -129,6 +129,11 @@ export class LinkDesignDto {
   logoUrl?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  mediaUrl?: string;
+
+  @IsOptional()
   @IsIn([...LINK_SOCIAL_POSITIONS])
   socialPosition?: string;
 

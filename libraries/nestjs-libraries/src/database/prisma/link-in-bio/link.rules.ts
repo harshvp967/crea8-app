@@ -44,7 +44,7 @@ export const LINK_BUTTONS = [
   { id: 'square', label: 'Square' },
 ] as const;
 export const LINK_FONTS = ['Plus Jakarta Sans', 'Georgia', 'Palatino', 'Trebuchet MS', 'Courier New'] as const;
-export const LINK_WALLPAPERS = ['fill', 'gradient', 'blur', 'pattern'] as const;
+export const LINK_WALLPAPERS = ['fill', 'gradient', 'blur', 'pattern', 'video', 'motion'] as const;
 export const LINK_PATTERNS = ['dots', 'grid', 'diagonal', 'waves'] as const;
 export const LINK_BUTTON_FILLS = ['solid', 'glass', 'outline'] as const;
 export const LINK_SHADOWS = ['none', 'soft', 'strong', 'hard'] as const;
@@ -1472,6 +1472,7 @@ export type LinkDesign = {
   header: (typeof LINK_HEADERS)[number];
   titleMode: (typeof LINK_TITLE_MODES)[number];
   logoUrl: string;
+  mediaUrl: string;
   socialPosition: (typeof LINK_SOCIAL_POSITIONS)[number];
   hiddenSocials: string[];
   wallpaperChosen: boolean;
@@ -1535,6 +1536,7 @@ export function emptyDesign(): LinkDesign {
     header: 'classic',
     titleMode: 'text',
     logoUrl: '',
+    mediaUrl: '',
     socialPosition: 'top',
     hiddenSocials: [],
     wallpaperChosen: false,
@@ -1545,6 +1547,7 @@ export function normalizeDesign(value: unknown): LinkDesign {
   const row = asRecord(value);
   const colors = asRecord(row.colors);
   const logo = String(row.logoUrl || '').trim().slice(0, 2000);
+  const media = String(row.mediaUrl || '').trim().slice(0, 2000);
   const hidden = Array.isArray(row.hiddenSocials) ? row.hiddenSocials : [];
   const radius = Number(row.radius);
   return {
@@ -1566,6 +1569,7 @@ export function normalizeDesign(value: unknown): LinkDesign {
     header: pick(row.header, LINK_HEADERS, 'classic'),
     titleMode: pick(row.titleMode, LINK_TITLE_MODES, 'text'),
     logoUrl: logo && !imagePathProblem(logo) ? logo : '',
+    mediaUrl: media && !imagePathProblem(media) ? media : '',
     socialPosition: pick(row.socialPosition, LINK_SOCIAL_POSITIONS, 'top'),
     hiddenSocials: hidden
       .map((item) => String(item || '').trim())
@@ -1582,7 +1586,7 @@ export function designProKind(theme: string, design: LinkDesign): PaidFeature | 
   if (design.header !== 'classic') {
     return 'layout';
   }
-  if (design.wallpaper === 'blur' || design.wallpaper === 'pattern') {
+  if (design.wallpaper === 'blur' || design.wallpaper === 'pattern' || design.wallpaper === 'video' || design.wallpaper === 'motion') {
     return 'wallpaper';
   }
   if (design.buttonFill === 'glass') {
