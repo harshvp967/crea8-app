@@ -8,16 +8,17 @@ import {
   LinkBlock,
   linkLocked,
   linkSend,
+  revalidatePublicLink,
   toPublic,
   useLinkPage,
   useLinkPosts,
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle, linkChoice, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle, linkChoice, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { embedProblem, parseEmbed, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { blockDeleteRequest, embedProblem, parseEmbed, shareMenu, utcToZonedInput } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
 
@@ -36,7 +37,7 @@ const embedCopy = (provider?: EmbedOnly) => {
   }
   return {
     title: 'Embed',
-    hint: 'YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads. The player is loaded from that provider.',
+    hint: 'YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X, Bluesky or Threads. The player is loaded from that provider.',
     placeholder: 'https://',
   };
 };
@@ -124,7 +125,7 @@ const blockNote = (block: LinkBlock) => {
   }
   if (block.type === 'LINK') return block.url;
   if (block.type === 'EMAIL_CAPTURE') return 'Collects subscribers on your page';
-  if (block.type === 'EMBED') return block.url || 'YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads';
+  if (block.type === 'EMBED') return block.url || 'YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X, Bluesky or Threads';
   if (block.type === 'TEXT') return block.body || 'Text';
   if (block.type === 'FAQ') return `${block.faq.length} questions`;
   if (block.type === 'IMAGE_CAROUSEL') return `${block.images.length} images`;
@@ -231,10 +232,12 @@ export const LinkEditorScreen = () => {
         setMenu('');
         setAddOpen(false);
         setSheetAnchor(null);
+        setConfirmId('');
       }
       if (note) {
         toast.show(note, 'success');
       }
+      revalidatePublicLink();
       return true;
     } catch (err) {
       toast.show(err instanceof Error ? err.message : 'Something went wrong', 'warning');
@@ -963,25 +966,18 @@ export const LinkEditorScreen = () => {
                       <LinkMenuRow icon="clock" onClick={() => (block.type === 'LINK' ? openLink(block) : editBlock(block))}>
                         Schedule
                       </LinkMenuRow>
-                      <LinkMenuRow icon="trash" danger onClick={() => setConfirmId(block.id)}>
+                      <LinkMenuRow
+                        icon="trash"
+                        danger
+                        onClick={() => {
+                          setMenu('');
+                          setSheetAnchor(null);
+                          setConfirmId(block.id);
+                        }}
+                      >
                         Delete
                       </LinkMenuRow>
                     </div>
-                    {confirmId === block.id ? (
-                      <div className="lib-confirm" role="dialog" aria-label="Remove block">
-                        <button type="button" onClick={() => setConfirmId('')}>
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          className="is-remove"
-                          disabled={busy}
-                          onClick={() => save(`/link-in-bio/blocks/${block.id}`, 'DELETE', undefined, 'Removed')}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ) : null}
                   </div>
                   </LinkModal>
                 ) : null}
@@ -1001,6 +997,28 @@ export const LinkEditorScreen = () => {
       {addOpen ? (
         <LinkModal title="Add block" onClose={() => setAddOpen(false)}>
           {addMenu}
+        </LinkModal>
+      ) : null}
+
+      {confirmId ? (
+        <LinkModal title="Remove this block?" onClose={() => setConfirmId('')}>
+          <p className="text-[14px] text-textItemBlur">This removes it from your page.</p>
+          <div className="lib-confirm-actions">
+            <button type="button" className={linkSecondary} onClick={() => setConfirmId('')}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={linkDanger}
+              disabled={busy}
+              onClick={() => {
+                const request = blockDeleteRequest(confirmId);
+                void save(request.path, request.method, undefined, 'Removed');
+              }}
+            >
+              Remove
+            </button>
+          </div>
         </LinkModal>
       ) : null}
 

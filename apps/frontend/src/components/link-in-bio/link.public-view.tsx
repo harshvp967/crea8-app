@@ -3,7 +3,7 @@
 import { CSSProperties, FormEvent, useEffect, useRef, useState } from 'react';
 import { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { eventLabel, fontStack, normalizeDesign, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { eventLabel, fontStack, normalizeDesign, parseEmbed, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { publicSocialIconSrc } from '@gitroom/frontend/components/link-in-bio/link.load';
 
 export const linkInitials = (value: string) => {
@@ -177,6 +177,17 @@ export const LinkPublicView = ({
               );
             }
             if (block.type === 'FEATURED_POST' && block.post) {
+              const embed = parseEmbed(block.post.url);
+              if (embed) {
+                return (
+                  <EmbedFrame
+                    key={block.id}
+                    src={embed.src}
+                    provider={embed.provider}
+                    title={block.post.title}
+                  />
+                );
+              }
               const inner = (
                 <>
                   <div className="lib-feature-media">

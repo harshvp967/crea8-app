@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import {
@@ -19,7 +19,7 @@ import {
   themePalette,
   urlProblem,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
-import { LinkEditor, linkLocked, linkSend, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { LinkEditor, linkLocked, linkSend, revalidatePublicLink, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkModal, LinkToggle, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
@@ -128,6 +128,32 @@ export const LinkAppearanceScreen = () => {
   const connect = useAddProvider(() => {
     mutate();
   });
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const savedDraft = useRef('');
+  const sawDraft = useRef(false);
+  const busyRef = useRef(false);
+  const saveToken = useRef(0);
+  const saveRef = useRef<(quiet?: boolean) => Promise<void>>(async () => undefined);
+
+  useEffect(() => {
+    if (!draft) {
+      return undefined;
+    }
+    const snapshot = JSON.stringify(draft);
+    if (!sawDraft.current) {
+      savedDraft.current = snapshot;
+      sawDraft.current = true;
+      return undefined;
+    }
+    if (snapshot === savedDraft.current) {
+      return undefined;
+    }
+    const timer = window.setTimeout(() => {
+      void saveRef.current(true);
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [draft]);
 
   if (data && !draft) {
     setDraft(toDraft(data));
@@ -188,38 +214,71 @@ export const LinkAppearanceScreen = () => {
     return String(body.path);
   };
 
-  const save = async () => {
-    const logoProblem = design.logoUrl.trim() ? imagePathProblem(design.logoUrl) : null;
-    const nextSocialErrors = draft.socials.map((item) => (item.url.trim() ? urlProblem(item.url) : null));
+  const save = async (quiet?: boolean) => {
+    const current = draftRef.current;
+    if (!current) {
+      return;
+    }
+    if (busyRef.current) {
+      if (quiet === true) {
+        window.setTimeout(() => {
+          void saveRef.current(true);
+        }, 700);
+      }
+      return;
+    }
+    const silent = quiet === true;
+    const currentDesign = current.design;
+    const logoProblem = currentDesign.logoUrl.trim() ? imagePathProblem(currentDesign.logoUrl) : null;
+    const nextSocialErrors = current.socials.map((item) => (item.url.trim() ? urlProblem(item.url) : null));
     setLogoError(logoProblem || '');
     setSocialErrors(nextSocialErrors);
     if (logoProblem || nextSocialErrors.some(Boolean)) {
       toast.show(logoProblem || nextSocialErrors.find(Boolean) || 'Check that link', 'warning');
       return;
     }
+    const snapshot = JSON.stringify(current);
+    const token = ++saveToken.current;
+    busyRef.current = true;
     setBusy(true);
     try {
       const next = await linkSend(fetch, '/link-in-bio', 'PUT', {
-        name: draft.name,
-        bio: draft.bio,
-        avatarPath: draft.avatarPath,
-        theme: draft.theme,
-        buttonStyle: radiusPreset(design.radius, draft.buttonStyle),
-        font: draft.font,
-        backgroundMode: design.wallpaperChosen ? 'colour' : draft.backgroundMode,
-        backgroundColor: design.colors.background || draft.backgroundColor,
-        socials: draft.socials.filter((item) => item.url.trim()),
-        design: { ...design, hiddenSocials: draft.hidden, wallpaperChosen: design.wallpaperChosen },
+        name: current.name,
+        bio: current.bio,
+        avatarPath: current.avatarPath,
+        theme: current.theme,
+        buttonStyle: radiusPreset(currentDesign.radius, current.buttonStyle),
+        font: current.font,
+        backgroundMode: currentDesign.wallpaperChosen ? 'colour' : current.backgroundMode,
+        backgroundColor: currentDesign.colors.background || current.backgroundColor,
+        socials: current.socials.filter((item) => item.url.trim()),
+        design: { ...currentDesign, hiddenSocials: current.hidden, wallpaperChosen: currentDesign.wallpaperChosen },
       });
+      revalidatePublicLink();
+      if (token !== saveToken.current || JSON.stringify(draftRef.current) !== snapshot) {
+        return;
+      }
       await mutate(next, { revalidate: false });
-      setDraft(toDraft(next));
-      toast.show('Changes saved', 'success');
+      const normalized = toDraft(next);
+      const pendingSocials = current.socials.filter((item) => !item.url.trim());
+      if (pendingSocials.length) {
+        normalized.socials = [...normalized.socials, ...pendingSocials];
+      }
+      savedDraft.current = JSON.stringify(normalized);
+      setDraft(normalized);
+      if (!silent) {
+        toast.show('Changes saved', 'success');
+      }
     } catch (err) {
       toast.show(err instanceof Error ? err.message : 'Something went wrong', 'warning');
     } finally {
-      setBusy(false);
+      if (token === saveToken.current) {
+        busyRef.current = false;
+        setBusy(false);
+      }
     }
   };
+  saveRef.current = save;
 
   const toggleSection = (id: string) => setSection((current) => (current === id ? null : id));
   const themeLabel = LINK_THEMES.find((theme) => theme.id === draft.theme)?.label || draft.theme;
@@ -276,7 +335,7 @@ export const LinkAppearanceScreen = () => {
             <button type="button" className={`${linkSecondary} lib-reset`} onClick={() => setDraft(toDraft(data))}>
               Reset
             </button>
-            <button type="button" className={linkPrimary} disabled={busy} onClick={save}>
+            <button type="button" className={linkPrimary} disabled={busy} onClick={() => void save()}>
               Save changes
             </button>
           </div>

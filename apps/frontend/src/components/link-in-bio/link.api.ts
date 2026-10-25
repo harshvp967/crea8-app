@@ -261,6 +261,13 @@ export const useLinkLeads = (status: string, query: string) => {
   });
 };
 
+export function revalidatePublicLink() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  void window.fetch('/api/link-revalidate', { method: 'POST' }).catch(() => undefined);
+}
+
 export async function linkSend(
   fetch: (url: string, options?: RequestInit) => Promise<Response>,
   path: string,

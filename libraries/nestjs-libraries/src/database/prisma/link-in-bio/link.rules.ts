@@ -756,6 +756,7 @@ export type EmbedProvider =
   | 'instagram'
   | 'tiktok'
   | 'x'
+  | 'bluesky'
   | 'threads'
   | 'maps'
   | 'calendly';
@@ -900,6 +901,15 @@ export function parseEmbed(raw: string): EmbedFrame | null {
     }
     return { provider: 'x', src: `https://platform.twitter.com/embed/Tweet.html?id=${id}` };
   }
+  if (host === 'bsky.app') {
+    const parts = url.pathname.split('/').filter(Boolean);
+    const handle = parts[1] || '';
+    const rkey = parts[3] || '';
+    if (parts[0] !== 'profile' || parts[2] !== 'post' || !/^[A-Za-z0-9._:-]{1,80}$/.test(handle) || !/^[A-Za-z0-9]{3,30}$/.test(rkey)) {
+      return null;
+    }
+    return { provider: 'bluesky', src: `https://embed.bsky.app/embed/${handle}/app.bsky.feed.post/${rkey}` };
+  }
   if (host === 'threads.net' || host === 'threads.com') {
     const parts = url.pathname.split('/').filter(Boolean);
     const user = (parts[0] || '').replace(/^@/, '');
@@ -1010,6 +1020,7 @@ const EMBED_LABEL: Record<EmbedProvider, string> = {
   instagram: 'Instagram',
   tiktok: 'TikTok',
   x: 'X',
+  bluesky: 'Bluesky',
   threads: 'Threads',
   maps: 'Google Maps',
   calendly: 'Calendly',
@@ -1018,11 +1029,11 @@ const EMBED_LABEL: Record<EmbedProvider, string> = {
 export function embedProblem(raw: string, only?: EmbedProvider) {
   const label = only ? EMBED_LABEL[only] : '';
   if (!raw.trim()) {
-    return only ? `Paste a ${label} post link` : 'Paste a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads link';
+    return only ? `Paste a ${label} post link` : 'Paste a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X, Bluesky or Threads link';
   }
   const frame = parseEmbed(raw);
   if (!frame) {
-    return only ? `Use a ${label} post link` : 'Use a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X or Threads link';
+    return only ? `Use a ${label} post link` : 'Use a YouTube, Spotify, SoundCloud, Vimeo, Instagram, TikTok, X, Bluesky or Threads link';
   }
   if (only && frame.provider !== only) {
     return `Use a ${label} post link`;
@@ -1751,6 +1762,10 @@ export function eventTime(when: string, timeZone?: string) {
   } catch {
     return utc;
   }
+}
+
+export function blockDeleteRequest(id: string) {
+  return { path: `/link-in-bio/blocks/${id}`, method: 'DELETE' as const };
 }
 
 export function blockPriority(type: string, body: { priority?: boolean }, priorityMode: string) {

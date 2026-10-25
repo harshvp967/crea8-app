@@ -2,6 +2,7 @@ import {
   analyticsToCsv,
   applyVisitorRules,
   blockPriority,
+  blockDeleteRequest,
   blockState,
   buildAnalytics,
   captureUtm,
@@ -404,6 +405,12 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(parseEmbed('https://www.instagram.com/p/Abcde12/')?.src).toBe('https://www.instagram.com/p/Abcde12/embed');
     expect(parseEmbed('https://www.tiktok.com/@crea8/video/1234567890123456789')?.provider).toBe('tiktok');
     expect(parseEmbed('https://x.com/crea8/status/1234567890')?.src).toContain('id=1234567890');
+    expect(parseEmbed('https://bsky.app/profile/crea8.bsky.social/post/3kabcdefghij')).toEqual({
+      provider: 'bluesky',
+      src: 'https://embed.bsky.app/embed/crea8.bsky.social/app.bsky.feed.post/3kabcdefghij',
+    });
+    expect(parseEmbed('https://crea8.one/p/one-post')).toBeNull();
+    expect(blockDeleteRequest('block-1')).toEqual({ path: '/link-in-bio/blocks/block-1', method: 'DELETE' });
     expect(parseEmbed('https://www.threads.net/@crea8/post/Abcde12')?.src).toBe(
       'https://www.threads.net/@crea8/post/Abcde12/embed'
     );

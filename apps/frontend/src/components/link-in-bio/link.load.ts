@@ -40,6 +40,8 @@ export function publicSocialIconSrc(network: string, env: { nodeEnv?: string; as
   return path ? publicIconSrc(path, env) : '';
 }
 
+export const PUBLIC_LINK_CACHE_TAG = 'public-link';
+
 export function publicLinkCacheSeconds() {
   if (process.env.PUBLIC_LINK_CACHE_SECONDS === '0') {
     return 0;
@@ -58,7 +60,7 @@ export async function loadPublicLink(path: string, revalidate = publicLinkCacheS
   }
   try {
     const init = (
-      revalidate > 0 ? { next: { revalidate, tags: ['public-link'] } } : { cache: 'no-store' }
+      revalidate > 0 ? { next: { revalidate, tags: [PUBLIC_LINK_CACHE_TAG] } } : { cache: 'no-store' }
     ) as RequestInit;
     const response = await fetch(`${base}${path}`, init);
     if (!response.ok) {
