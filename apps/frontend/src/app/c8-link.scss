@@ -950,6 +950,22 @@ body:has(.link-screen) .lib-dialog .lib-toggle {
   line-height: 1.45;
 }
 
+.link-screen .lib-teach {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(280px, 100%);
+}
+
+.link-screen .lib-teach button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+}
+
 .link-screen .lib-loading {
   border-radius: 24px !important;
   background: var(--c8-soft) !important;

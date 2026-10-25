@@ -839,7 +839,35 @@ export const LinkEditorScreen = () => {
               <HugeIcon name="link" size={24} />
             </span>
             <h2 className="text-[16px] font-[600]">No links yet</h2>
-            <p className="max-w-[320px] text-[14px] text-textItemBlur">Add your first link or block to start your page.</p>
+            <div className="lib-teach">
+              <button type="button" className={linkSecondary} onClick={() => openLink()}>
+                <HugeIcon name="link" size={16} />
+                Link
+              </button>
+              <button
+                type="button"
+                className={linkSecondary}
+                onClick={() => {
+                  setPostId('');
+                  setModal({ kind: 'post' });
+                  setAddOpen(false);
+                }}
+              >
+                <HugeIcon name="image" size={16} />
+                Featured post
+              </button>
+              <button
+                type="button"
+                className={linkSecondary}
+                onClick={() => {
+                  setModal({ kind: 'capture' });
+                  setAddOpen(false);
+                }}
+              >
+                <HugeIcon name="mail" size={16} />
+                Email capture
+              </button>
+            </div>
           </div>
         ) : (
           data.blocks.map((block, index) => (
