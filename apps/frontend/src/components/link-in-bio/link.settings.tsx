@@ -13,6 +13,7 @@ import {
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { imagePathProblem } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const fieldClass =
@@ -56,6 +57,7 @@ export const LinkSettingsScreen = () => {
   const [slug, setSlug] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
+  const [ogImage, setOgImage] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [sensitive, setSensitive] = useState(false);
   const [hideBadge, setHideBadge] = useState(false);
@@ -72,6 +74,7 @@ export const LinkSettingsScreen = () => {
     setSlug(data.slug);
     setSeoTitle(data.seoTitle);
     setSeoDescription(data.seoDescription);
+    setOgImage(data.design.ogImage || '');
     setIsPublic(data.isPublic);
     setSensitive(data.sensitive);
     setHideBadge(data.hideBadge);
@@ -167,6 +170,12 @@ export const LinkSettingsScreen = () => {
     if (slugState && !slugState.ok) {
       return;
     }
+    const image = ogImage.trim();
+    const imageProblem = image ? imagePathProblem(image) : null;
+    if (imageProblem) {
+      toast.show(imageProblem, 'warning');
+      return;
+    }
     setBusy(true);
     try {
       let current = data;
@@ -178,6 +187,7 @@ export const LinkSettingsScreen = () => {
         seoDescription,
         isPublic,
         sensitive,
+        design: { ogImage: image },
       };
       if (!linkLocked(data) && hideBadge !== data.hideBadge) {
         body.hideBadge = hideBadge;
@@ -382,6 +392,15 @@ export const LinkSettingsScreen = () => {
           <LinkField label="Meta description">
             <textarea value={seoDescription} maxLength={160} onChange={(event) => setSeoDescription(event.target.value)} />
           </LinkField>
+          <div className="md:col-span-2">
+            <LinkField label="Share image">
+              <input
+                value={ogImage}
+                placeholder="https://cdn.example.com/share.png"
+                onChange={(event) => setOgImage(event.target.value)}
+              />
+            </LinkField>
+          </div>
         </div>
       </section>
       </div>

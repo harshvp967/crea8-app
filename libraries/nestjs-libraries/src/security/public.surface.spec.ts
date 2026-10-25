@@ -62,12 +62,12 @@ describe('public surface guards', () => {
   it('hides swagger in production unless ENABLE_SWAGGER=true', () => {
     delete process.env.ENABLE_SWAGGER;
     delete process.env.RAILWAY_ENVIRONMENT;
-    process.env.NODE_ENV = 'production';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
     expect(swaggerEnabled()).toBe(false);
     process.env.ENABLE_SWAGGER = 'true';
     expect(swaggerEnabled()).toBe(true);
     process.env.ENABLE_SWAGGER = 'false';
-    process.env.NODE_ENV = 'development';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
     expect(swaggerEnabled()).toBe(false);
   });
 

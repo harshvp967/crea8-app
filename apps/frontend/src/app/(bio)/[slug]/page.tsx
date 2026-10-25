@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { slugProblem } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
-import { loadPublicLink, presentPublicLink, visitorSearch } from '@gitroom/frontend/components/link-in-bio/link.load';
+import { loadPublicLink, presentPublicLink, publicShareMetadata, visitorSearch } from '@gitroom/frontend/components/link-in-bio/link.load';
 import { LinkLive } from '@gitroom/frontend/components/link-in-bio/link.live';
 
 async function load(slug: string, personalized = false) {
@@ -19,14 +19,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
   if (!page) {
     return { title: 'Page not found', robots: { index: false, follow: false } };
   }
-  const hidden = !page.isPublic || page.sensitive;
-  const title = page.seoTitle || page.name || page.slug;
-  const description = page.seoDescription || page.bio || '';
-  return {
-    title,
-    description,
-    robots: hidden ? { index: false, follow: false } : { index: true, follow: true },
-  };
+  return publicShareMetadata(page);
 }
 
 export default async function PublicLinkPage(props: { params: Promise<{ slug: string }> }) {

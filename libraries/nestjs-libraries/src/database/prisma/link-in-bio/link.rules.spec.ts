@@ -414,6 +414,9 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(normalizeDesign({ wallpaper: 'video', mediaUrl: 'https://cdn.crea8.one/bg.mp4' }).mediaUrl).toBe('https://cdn.crea8.one/bg.mp4');
     expect(normalizeDesign({ mediaUrl: '/uploads/bg.mp4' }).mediaUrl).toBe('/uploads/bg.mp4');
     expect(normalizeDesign({ wallpaper: 'video', mediaUrl: 'javascript:alert(1)' }).mediaUrl).toBe('');
+    expect(normalizeDesign({ ogImage: 'https://cdn.crea8.one/og.png' }).ogImage).toBe('https://cdn.crea8.one/og.png');
+    expect(normalizeDesign({ ogImage: '/uploads/og.png' }).ogImage).toBe('/uploads/og.png');
+    expect(normalizeDesign({ ogImage: 'javascript:alert(1)' }).ogImage).toBe('');
     expect(designProKind('midnight', normalizeDesign({ buttonFill: 'glass' }))).toBe('button');
     expect(designProKind('aurora', classic)).toBe('theme');
     expect(normalizeDesign({}).titleMode).toBe('text');

@@ -18,7 +18,7 @@ describe('integration token crypto', () => {
 
   beforeEach(() => {
     process.env.INTEGRATION_TOKEN_KEY = KEY;
-    delete process.env.NODE_ENV;
+    delete (process.env as Record<string, string | undefined>).NODE_ENV;
     delete process.env.RAILWAY_ENVIRONMENT;
   });
 
@@ -84,7 +84,7 @@ describe('integration token crypto', () => {
 
   it('fails in production when the key is missing', () => {
     delete process.env.INTEGRATION_TOKEN_KEY;
-    process.env.NODE_ENV = 'production';
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
     expect(() => sealIntegrationSecret('plain-token')).toThrow(
       INTEGRATION_TOKEN_KEY_MESSAGE
     );
