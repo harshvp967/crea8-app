@@ -56,6 +56,7 @@ import {
   linkProKind,
   lockProblem,
   mapProblem,
+  musicProblem,
   restoreBlockProblem,
   normalizeDesign,
   normalizeDetails,
@@ -270,6 +271,9 @@ export class LinkService {
     }
     if (!id && type === 'EMBED' && embedProblem(body.url || '')) {
       throw new BadRequestException(embedProblem(body.url || ''));
+    }
+    if (!id && type === 'MUSIC' && musicProblem(body.url || '')) {
+      throw new BadRequestException(musicProblem(body.url || ''));
     }
     if (!id && type === 'TEXT' && !(body.body || '').trim()) {
       throw new BadRequestException('Add some text');
@@ -1094,6 +1098,9 @@ export class LinkService {
     }
     if (type === 'EMBED' && body.url !== undefined && embedProblem(url)) {
       throw new BadRequestException(embedProblem(url));
+    }
+    if (type === 'MUSIC' && body.url !== undefined && musicProblem(url)) {
+      throw new BadRequestException(musicProblem(url));
     }
     if (type === 'MAP' && body.url !== undefined && mapProblem(url)) {
       throw new BadRequestException(mapProblem(url));
