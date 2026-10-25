@@ -989,6 +989,10 @@
   min-height: 320px;
 }
 
+.lib-embed[data-provider='bluesky'] iframe {
+  min-height: 520px;
+}
+
 .lib-place {
   width: 100%;
   overflow: hidden;
