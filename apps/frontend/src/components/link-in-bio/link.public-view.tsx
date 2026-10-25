@@ -431,9 +431,12 @@ export const LinkPublicView = ({
             }
             if (block.type === 'LINK') {
               const href = opened[block.id] || block.url;
+              const layout = String(block.layout);
               const className = [
                 'lib-link',
-                block.layout === 'featured' ? 'is-featured' : '',
+                layout === 'featured' ? 'is-featured' : '',
+                layout === 'card' ? 'is-card' : '',
+                layout === 'tile' ? 'is-tile' : '',
                 block.expand ? 'is-expanded' : '',
                 block.priority ? 'priority' : '',
                 block.spotlight ? 'spotlight' : '',
@@ -879,7 +882,14 @@ const LockCard = ({
   const [dob, setDob] = useState('');
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
-  const className = ['lib-link', layout === 'featured' ? 'is-featured' : '', priority ? 'priority' : '', spotlight ? 'spotlight' : '']
+  const className = [
+    'lib-link',
+    layout === 'featured' ? 'is-featured' : '',
+    layout === 'card' ? 'is-card' : '',
+    layout === 'tile' ? 'is-tile' : '',
+    priority ? 'priority' : '',
+    spotlight ? 'spotlight' : '',
+  ]
     .filter(Boolean)
     .join(' ');
   const anim = animation && animation !== 'none' ? animation : undefined;

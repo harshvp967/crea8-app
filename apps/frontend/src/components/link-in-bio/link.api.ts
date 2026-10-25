@@ -64,7 +64,7 @@ export type LinkBlock = {
   details: { email: string; phone: string; address: string; website: string } | null;
   discount: { code: string; note: string; url: string } | null;
   events: Array<{ title: string; when: string; place: string; url: string }>;
-  layout: 'classic' | 'featured';
+  layout: 'classic' | 'featured' | 'card' | 'tile';
   animation: string;
   priorityMode: 'none' | 'highlight' | 'expand' | 'redirect';
   rules: Array<{ country: string; platform: string; language: string; action: 'hide' | 'title' | 'url'; title: string; url: string }>;
