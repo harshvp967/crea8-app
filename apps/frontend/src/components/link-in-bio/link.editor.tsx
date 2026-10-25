@@ -148,7 +148,8 @@ const rowMeta = (block: LinkBlock) => {
       .filter(Boolean)
       .join(' · ');
   }
-  return block.spotlight ? `${blockNote(block)} · Spotlight` : blockNote(block);
+  const note = block.spotlight ? `${blockNote(block)} · Spotlight` : blockNote(block);
+  return `${note} · ${clicks}`;
 };
 
 const menuAnchor = (node: HTMLElement): LinkAnchor => {
