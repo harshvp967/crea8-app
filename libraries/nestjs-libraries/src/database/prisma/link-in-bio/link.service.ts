@@ -58,6 +58,10 @@ import {
   mapProblem,
   musicProblem,
   restoreBlockProblem,
+  latestYoutubeVideoId,
+  youtubeChannelIdFromHtml,
+  youtubeChannelTarget,
+  youtubeWatchEmbed,
   normalizeDesign,
   normalizeDetails,
   normalizeDiscount,
@@ -274,6 +278,9 @@ export class LinkService {
     }
     if (!id && type === 'MUSIC' && musicProblem(body.url || '')) {
       throw new BadRequestException(musicProblem(body.url || ''));
+    }
+    if (!id && type === 'LATEST_YOUTUBE' && !youtubeChannelTarget(body.url || '')) {
+      throw new BadRequestException('Use a YouTube channel link');
     }
     if (!id && type === 'TEXT' && !(body.body || '').trim()) {
       throw new BadRequestException('Add some text');
@@ -1102,6 +1109,9 @@ export class LinkService {
     if (type === 'MUSIC' && body.url !== undefined && musicProblem(url)) {
       throw new BadRequestException(musicProblem(url));
     }
+    if (type === 'LATEST_YOUTUBE' && body.url !== undefined && !youtubeChannelTarget(url)) {
+      throw new BadRequestException('Use a YouTube channel link');
+    }
     if (type === 'MAP' && body.url !== undefined && mapProblem(url)) {
       throw new BadRequestException(mapProblem(url));
     }
@@ -1400,6 +1410,44 @@ export class LinkService {
     };
   }
 
+  private async latestYoutube(raw: string) {
+    const target = youtubeChannelTarget(raw);
+    if (!target) {
+      return null;
+    }
+    let feed = target.kind === 'feed' ? target.url : '';
+    if (target.kind === 'page') {
+      const html = await this.readPublicText(target.url);
+      const channel = html ? youtubeChannelIdFromHtml(html) : '';
+      if (!channel) {
+        return null;
+      }
+      feed = `https://www.youtube.com/feeds/videos.xml?channel_id=${channel}`;
+    }
+    const xml = await this.readPublicText(feed);
+    const id = xml ? latestYoutubeVideoId(xml) : '';
+    const embed = id ? youtubeWatchEmbed(id) : null;
+    if (!embed || !id) {
+      return null;
+    }
+    return { embed, url: `https://www.youtube.com/watch?v=${id}` };
+  }
+
+  private async readPublicText(url: string) {
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(4000),
+        headers: { 'user-agent': 'crea8.one' },
+      });
+      if (!response.ok) {
+        return '';
+      }
+      return await response.text();
+    } catch {
+      return '';
+    }
+  }
+
   private async toPublic(record: LinkPageRecord, visitor = normalizeVisitor({})) {
     const open = linkFeatureOpen(record.organization.subscription);
     const design = normalizeDesign(record.design);
@@ -1418,9 +1466,11 @@ export class LinkService {
     const capture = visible.some((block) => block.type === 'EMAIL_CAPTURE');
     const blocks = await Promise.all(visible.map(async (block) => {
       const view = presentPublicBlock(block, open, visitor, record.timezone);
+      const latest = block.type === 'LATEST_YOUTUBE' ? await this.latestYoutube(block.url) : null;
       const post = block.post ? this.postCard(block.post, record.timezone, true) : null;
       return {
         ...view,
+        ...(latest ? { embed: latest.embed, url: latest.url } : {}),
         thumbnail: await this.readable(view.thumbnail, 'public'),
         images: await Promise.all(view.images.map(async (image) => ({
           ...image,

@@ -41,6 +41,10 @@ import {
   parseEmbed,
   parseMap,
   pastedBlockType,
+  latestYoutubeVideoId,
+  youtubeChannelIdFromHtml,
+  youtubeChannelTarget,
+  youtubeWatchEmbed,
   parseRichText,
   presentPublicBlock,
   rangeWindow,
@@ -459,6 +463,16 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(parseMusic('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBeNull();
     expect(musicProblem('https://crea8.one')).toMatch(/Spotify/);
     expect(musicProblem('https://open.spotify.com/track/1234567890abcDEF123456')).toBeNull();
+    expect(youtubeChannelTarget('https://www.youtube.com/channel/UC1234567890123456789012')).toEqual({
+      kind: 'feed',
+      url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012',
+    });
+    expect(youtubeChannelTarget('https://www.youtube.com/@crea8')?.kind).toBe('page');
+    expect(youtubeChannelTarget('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBeNull();
+    expect(youtubeChannelIdFromHtml('{"externalId":"UC1234567890123456789012"}')).toBe('UC1234567890123456789012');
+    expect(latestYoutubeVideoId('<feed><yt:videoId>dQw4w9WgXcQ</yt:videoId></feed>')).toBe('dQw4w9WgXcQ');
+    expect(youtubeWatchEmbed('dQw4w9WgXcQ')?.src).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+    expect(latestYoutubeVideoId('<feed></feed>')).toBeNull();
   });
 
   it('keeps upcoming events and hides ones that already happened', () => {
