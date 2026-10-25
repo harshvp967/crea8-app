@@ -34,7 +34,8 @@ export type LinkBlockType =
   | 'CONTACT_DETAILS'
   | 'DISCOUNT'
   | 'EVENTS'
-  | 'MUSIC';
+  | 'MUSIC'
+  | 'LATEST_YOUTUBE';
 
 export type LinkFaq = { question: string; answer: string };
 export type LinkImage = { path: string; alt: string };
