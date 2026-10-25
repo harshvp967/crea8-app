@@ -745,6 +745,7 @@ export const LINK_BLOCK_TYPES = [
   'DISCOUNT',
   'EVENTS',
   'MUSIC',
+  'LATEST_YOUTUBE',
 ] as const;
 
 export const LINK_LOCKS = ['NONE', 'AGE', 'EMAIL', 'PASSWORD', 'CODE', 'DOB', 'SENSITIVE'] as const;
@@ -1062,6 +1063,48 @@ export function musicProblem(raw: string) {
     return 'Use a Spotify, SoundCloud, Apple Music, or YouTube Music link';
   }
   return null;
+}
+
+export function youtubeChannelTarget(raw: string): { kind: 'feed'; url: string } | { kind: 'page'; url: string } | null {
+  const url = httpUrl(raw);
+  if (!url) {
+    return null;
+  }
+  const host = bareHost(url.hostname);
+  if (host !== 'youtube.com' && host !== 'm.youtube.com') {
+    return null;
+  }
+  const parts = url.pathname.split('/').filter(Boolean);
+  const channel = parts[0] === 'channel' ? parts[1] || '' : '';
+  if (/^UC[\w-]{22}$/.test(channel) && parts.length === 2) {
+    return { kind: 'feed', url: `https://www.youtube.com/feeds/videos.xml?channel_id=${channel}` };
+  }
+  const user = parts[0] === 'user' ? parts[1] || '' : '';
+  if (/^[\w.-]{1,40}$/.test(user) && parts.length === 2) {
+    return { kind: 'feed', url: `https://www.youtube.com/feeds/videos.xml?user=${encodeURIComponent(user)}` };
+  }
+  const handle = parts[0] || '';
+  if (/^@[\w.-]{1,40}$/.test(handle) && parts.length === 1) {
+    return { kind: 'page', url: `https://www.youtube.com/${handle}` };
+  }
+  return null;
+}
+
+export function youtubeChannelIdFromHtml(html: string) {
+  const match = html.match(/"externalId":"(UC[\w-]{22})"/) || html.match(/channel_id=(UC[\w-]{22})/);
+  return match ? match[1] : null;
+}
+
+export function latestYoutubeVideoId(xml: string) {
+  const match = xml.match(/<yt:videoId>([A-Za-z0-9_-]{11})<\/yt:videoId>/);
+  return match ? match[1] : null;
+}
+
+export function youtubeWatchEmbed(id: string): EmbedFrame | null {
+  if (!YOUTUBE_ID.test(id)) {
+    return null;
+  }
+  return { provider: 'youtube', src: `https://www.youtube-nocookie.com/embed/${id}` };
 }
 
 const EMBED_LABEL: Record<EmbedProvider, string> = {

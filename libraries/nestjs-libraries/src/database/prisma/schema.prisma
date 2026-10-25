@@ -2216,6 +2216,7 @@ enum LinkBlockType {
   DISCOUNT
   EVENTS
   MUSIC
+  LATEST_YOUTUBE
 }
 
 enum LinkLockType {
