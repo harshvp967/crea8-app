@@ -3832,7 +3832,7 @@ body.composer-open .copilotKitWindow,
 
 .po-menu-row.is-on,
 .po-menu-row:hover {
-  background: rgba(0, 217, 255, 0.1);
+  background: var(--new-bgColor);
 }
 
 .po-menu-row.is-cancel {

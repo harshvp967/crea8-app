@@ -209,7 +209,7 @@ export const DatePicker: FC<{
             }}
           />
           <div className="po-date-time">
-            <div className="text-[12px] font-[500] text-textItemBlur px-[4px]">
+            <div className="po-date-zone text-[12px] font-[500] text-textItemBlur px-[4px]">
               {getTimezone()}
             </div>
             <label className="po-date-clock">

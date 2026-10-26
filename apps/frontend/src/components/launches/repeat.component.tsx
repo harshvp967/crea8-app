@@ -11,39 +11,39 @@ import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/gr
 const getList = (t: (key: string, fallback: string) => string) => [
   {
     value: 1,
-    label: t('day', 'Day'),
+    label: t('every_day', 'Every day'),
   },
   {
     value: 2,
-    label: t('two_days', 'Two Days'),
+    label: t('every_2_days', 'Every 2 days'),
   },
   {
     value: 3,
-    label: t('three_days', 'Three Days'),
+    label: t('every_3_days', 'Every 3 days'),
   },
   {
     value: 4,
-    label: t('four_days', 'Four Days'),
+    label: t('every_4_days', 'Every 4 days'),
   },
   {
     value: 5,
-    label: t('five_days', 'Five Days'),
+    label: t('every_5_days', 'Every 5 days'),
   },
   {
     value: 6,
-    label: t('six_days', 'Six Days'),
+    label: t('every_6_days', 'Every 6 days'),
   },
   {
     value: 7,
-    label: t('week', 'Week'),
+    label: t('every_week', 'Every week'),
   },
   {
     value: 14,
-    label: t('two_weeks', 'Two Weeks'),
+    label: t('every_2_weeks', 'Every 2 weeks'),
   },
   {
     value: 30,
-    label: t('month', 'Month'),
+    label: t('every_month', 'Every month'),
   },
   {
     value: null,
