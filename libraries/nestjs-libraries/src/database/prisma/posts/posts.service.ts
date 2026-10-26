@@ -8,7 +8,10 @@ import {
   PostsRepository,
   channelPublishDate,
   postWorkflowPlan,
+  rememberValidation,
   siblingPostGroups,
+  takeCachedValidation,
+  validationCacheKey,
 } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
@@ -848,6 +851,32 @@ export class PostsService {
    * posts.
    */
   async validatePosts(
+    orgId: string,
+    posts: Array<{
+      integration: { id: string };
+      value: Array<{
+        content?: string;
+        image?: Array<{ path: string; thumbnail?: string }>;
+      }>;
+      settings?: any;
+    }>
+  ) {
+    // /posts/valid and the following POST /posts send the same body. Pinterest,
+    // TikTok, and Dribbble download each image here. Reuse that result briefly
+    // so the save does not download it again.
+    const cacheKey = validationCacheKey(orgId, posts);
+    const cached = takeCachedValidation<
+      Awaited<ReturnType<PostsService['validatePostsUncached']>>
+    >(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    const value = await this.validatePostsUncached(orgId, posts);
+    rememberValidation(cacheKey, value);
+    return value;
+  }
+
+  private async validatePostsUncached(
     orgId: string,
     posts: Array<{
       integration: { id: string };
