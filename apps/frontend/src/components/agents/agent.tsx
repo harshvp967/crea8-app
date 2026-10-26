@@ -282,7 +282,7 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
     (thread: { id: string }) => thread.id === id
   );
   const title =
-    current?.title || t('your_assistant', 'Crea8one AI Agent');
+    current?.title || t('your_assistant', 'crea8.one agent');
   const count = integrations?.length || 0;
 
   return (
@@ -291,9 +291,6 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
         <div className="agent-page-kicker">
           <span className="agent-page-sticker">
             {t('schedule', 'Schedule')}
-          </span>
-          <span className="agent-page-sub">
-            {t('agent_page_sub', 'Your AI social assistant')}
           </span>
         </div>
         <h1 className="agent-page-title">{t('agent', 'Agent')}</h1>
