@@ -14,6 +14,7 @@ import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
+  analyticsFailureNeedsReconnect,
   BadBody,
   RefreshToken,
   SocialAbstract,
@@ -1777,6 +1778,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       return result;
     } catch (err) {
       console.log(err);
+      if (analyticsFailureNeedsReconnect(err)) {
+        throw err;
+      }
       throw new Error('X analytics is unavailable for this account');
     }
   }

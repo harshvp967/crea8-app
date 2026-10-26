@@ -15,6 +15,7 @@ import {
   BadBody,
   RefreshToken,
   SocialAbstract,
+  throwIfAnalyticsReconnect,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
@@ -555,20 +556,21 @@ export class PinterestProvider
       .subtract(Math.min(date, 89), 'day')
       .format('YYYY-MM-DD');
 
+    const response = await fetch(
+      `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    const payload = await response.json();
+    throwIfAnalyticsReconnect(payload, response.status);
     const {
       all: { daily_metrics },
-    } = await (
-      await fetch(
-        `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-    ).json();
+    } = payload;
 
     return daily_metrics.reduce(
       (acc: any, item: any) => {

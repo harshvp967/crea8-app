@@ -9,8 +9,10 @@ import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id'
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import {
+  analyticsFailureNeedsReconnect,
   BadBody,
   SocialAbstract,
+  throwIfAnalyticsReconnect,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
@@ -586,6 +588,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       );
 
       const data = await response.json();
+      throwIfAnalyticsReconnect(data, response.status);
 
       // Response structure: { multiDailyMetricTimeSeries: [{ dailyMetricTimeSeries: [...] }] }
       const dailyMetricTimeSeries =
@@ -630,6 +633,9 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
 
       return analytics;
     } catch (error) {
+      if (analyticsFailureNeedsReconnect(error)) {
+        throw error;
+      }
       console.error('Error fetching GMB analytics:', error);
       return [];
     }

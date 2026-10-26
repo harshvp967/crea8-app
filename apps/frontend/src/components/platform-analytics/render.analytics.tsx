@@ -3,10 +3,27 @@ import { Integration } from '@prisma/client';
 import useSWR from 'swr';
 import dayjs from 'dayjs';
 import useCookie from 'react-use-cookie';
+import { useRouter } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartLine } from '@gitroom/frontend/components/analytics/chart-line';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+
+class AnalyticsLoadError extends Error {
+  readonly reconnect: boolean;
+
+  constructor(message: string, reconnect = false) {
+    super(message);
+    this.name = 'AnalyticsLoadError';
+    this.reconnect = reconnect;
+  }
+}
+
+function isReconnectError(error: unknown) {
+  return error instanceof AnalyticsLoadError && error.reconnect;
+}
 
 interface AnalyticsDataItem {
   label: string;
@@ -133,20 +150,25 @@ export const AnalyticsSkeleton: FC<{ toolbar?: boolean }> = ({ toolbar }) => (
 );
 
 const PanelMessage: FC<{
-  title: string;
+  title?: string;
   actionLabel?: string;
   onAction?: () => void;
-  tone?: 'empty' | 'error';
+  tone?: 'empty' | 'error' | 'reconnect';
   heading?: string;
 }> = ({ title, actionLabel, onAction, tone = 'empty', heading }) => {
+  const icon =
+    tone === 'error' ? 'alert' : tone === 'reconnect' ? 'plug' : 'analytics-bars';
   return (
-    <div className={`analytics-note analytics-state-card is-${tone}`}>
+    <div
+      className={`analytics-note analytics-state-card is-${tone}`}
+      role={tone === 'error' ? 'alert' : 'status'}
+    >
       <span className={`analytics-state-tile is-${tone}`} aria-hidden="true">
-        <HugeIcon name={tone === 'error' ? 'alert' : 'analytics-bars'} size={25} />
+        <HugeIcon name={icon} size={25} />
       </span>
       <div className="analytics-state-text">
         {heading ? <h2 className="analytics-state-title">{heading}</h2> : null}
-        <p className="analytics-state-body">{title}</p>
+        {title ? <p className="analytics-state-body">{title}</p> : null}
       </div>
       {actionLabel && onAction && (
         <button type="button" onClick={onAction}>
@@ -163,6 +185,23 @@ export const RenderAnalytics: FC<{
 }> = (props) => {
   const { integration, date } = props;
   const fetch = useFetch();
+  const t = useT();
+  const router = useRouter();
+  const modal = useModals();
+  const channel = integration as Integration & {
+    identifier: string;
+    refreshNeeded?: boolean;
+    isCustomFields?: boolean;
+    customFields?: Array<{
+      key: string;
+      label: string;
+      defaultValue?: string;
+      validation: string;
+      type: 'text' | 'password';
+      hint?: string;
+    }>;
+  };
+  const refreshNeeded = !!channel.refreshNeeded;
 
   const load = useCallback(async () => {
     const controller = new AbortController();
@@ -173,30 +212,28 @@ export const RenderAnalytics: FC<{
         { signal: controller.signal }
       );
       const body = await response.json().catch(() => null);
+      if (body && !Array.isArray(body) && body.code === 'reconnect') {
+        throw new AnalyticsLoadError('Reconnect this channel', true);
+      }
       if (!response.ok || !Array.isArray(body)) {
-        const rawMessage = body?.message || body?.error;
-        const message = Array.isArray(rawMessage)
-          ? rawMessage.join(', ')
-          : rawMessage;
-        throw new Error(
-          message || 'Could not load analytics for this channel.'
-        );
+        throw new AnalyticsLoadError("Couldn't load analytics");
       }
       return body as AnalyticsDataItem[];
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error(
-          'Analytics took too long to load for this channel. Try again, or pick another channel.'
-        );
+      if (error instanceof AnalyticsLoadError) {
+        throw error;
       }
-      throw error;
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new AnalyticsLoadError("Couldn't load analytics");
+      }
+      throw new AnalyticsLoadError("Couldn't load analytics");
     } finally {
       clearTimeout(timerId);
     }
-  }, [integration, date]);
+  }, [fetch, integration, date]);
 
   const { data, error, isLoading, mutate } = useSWR(
-    `/analytics-${integration?.id}-${date}`,
+    refreshNeeded ? null : `/analytics-${integration?.id}-${date}`,
     load,
     {
       refreshInterval: 0,
@@ -213,11 +250,40 @@ export const RenderAnalytics: FC<{
 
   const refreshChannel = useCallback(
     (
-        integrationData: Integration & {
-          identifier: string;
-        }
-      ) =>
+      integrationData: Integration & {
+        identifier: string;
+        isCustomFields?: boolean;
+        customFields?: Array<{
+          key: string;
+          label: string;
+          defaultValue?: string;
+          validation: string;
+          type: 'text' | 'password';
+          hint?: string;
+        }>;
+      }
+    ) =>
       async () => {
+        // Custom-fields providers have no OAuth URL. Reconnect by re-entering
+        // the credentials, the same way the calendar does.
+        if (integrationData.isCustomFields) {
+          modal.openModal({
+            title: t('custom_url', 'Custom URL'),
+            withCloseButton: false,
+            classNames: {
+              modal: 'md',
+            },
+            children: (
+              <CustomVariables
+                identifier={integrationData.identifier}
+                gotoUrl={(url: string) => router.push(url)}
+                variables={integrationData.customFields || []}
+              />
+            ),
+          });
+          return;
+        }
+
         const { url } = await (
           await fetch(
             `/integrations/social/${integrationData.identifier}?refresh=${integrationData.internalId}`,
@@ -226,12 +292,13 @@ export const RenderAnalytics: FC<{
             }
           )
         ).json();
-        window.location.href = url;
+        if (url) {
+          window.location.href = url;
+        }
       },
-    []
+    [fetch, modal, router, t]
   );
 
-  const t = useT();
   const [mode] = useCookie('mode', 'dark');
 
   const totals = useMemo(() => {
@@ -256,6 +323,17 @@ export const RenderAnalytics: FC<{
     return buildOverview(data);
   }, [data]);
 
+  if (refreshNeeded || isReconnectError(error)) {
+    return (
+      <PanelMessage
+        tone="reconnect"
+        heading={t('reconnect_this_channel', 'Reconnect this channel')}
+        actionLabel={t('reconnect', 'Reconnect')}
+        onAction={refreshChannel(channel)}
+      />
+    );
+  }
+
   if (isLoading) {
     return <AnalyticsSkeleton />;
   }
@@ -265,15 +343,7 @@ export const RenderAnalytics: FC<{
       <PanelMessage
         tone="error"
         heading={t('analytics_load_error_title', "Couldn't load analytics")}
-        title={
-          error instanceof Error
-            ? error.message
-            : t(
-                'analytics_channel_error',
-                'Could not load analytics for this channel.'
-              )
-        }
-        actionLabel={t('try_again', 'Try again')}
+        actionLabel={t('retry', 'Retry')}
         onAction={() => mutate()}
       />
     );
@@ -289,16 +359,6 @@ export const RenderAnalytics: FC<{
               'analytics_empty_period',
               'No analytics for this channel in the selected period.'
             )}
-            actionLabel={
-              (integration as { refreshNeeded?: boolean }).refreshNeeded
-                ? t('refresh_channel', 'Refresh Channel')
-                : undefined
-            }
-            onAction={
-              (integration as { refreshNeeded?: boolean }).refreshNeeded
-                ? refreshChannel(integration as any)
-                : undefined
-            }
           />
         )}
         {data?.map((item: AnalyticsDataItem, index: number) => (

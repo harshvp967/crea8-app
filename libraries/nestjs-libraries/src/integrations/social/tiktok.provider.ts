@@ -9,10 +9,12 @@ import {
 import dayjs from 'dayjs';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import {
+  analyticsFailureNeedsReconnect,
   BadBody,
   Disconnect,
   RefreshToken,
   SocialAbstract,
+  throwIfAnalyticsReconnect,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
@@ -976,6 +978,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       );
 
       const userStatsData = await userStatsResponse.json();
+      throwIfAnalyticsReconnect(userStatsData, userStatsResponse.status);
       const userStats = userStatsData?.data?.user;
 
       const result: AnalyticsData[] = [];
@@ -1092,6 +1095,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
       return result;
     } catch (err) {
+      if (analyticsFailureNeedsReconnect(err)) {
+        throw err;
+      }
       console.error('Error fetching TikTok analytics:', err);
       return [];
     }

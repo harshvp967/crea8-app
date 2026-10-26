@@ -35,7 +35,10 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
 }
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import {
+  ANALYTICS_RECONNECT_CODE,
+  analyticsFailureNeedsReconnect,
   BadBody,
+  Disconnect,
   NotEnoughScopes,
   RefreshToken,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -47,6 +50,16 @@ import utc from 'dayjs/plugin/utc';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { TemporalService } from 'nestjs-temporal-core';
+
+function analyticsReconnectException() {
+  return new HttpException(
+    {
+      code: ANALYTICS_RECONNECT_CODE,
+      message: 'Reconnect this channel',
+    },
+    HttpStatus.CONFLICT
+  );
+}
 
 dayjs.extend(utc);
 
@@ -492,7 +505,7 @@ export class IntegrationService {
         getIntegration
       );
       if (!data) {
-        return [];
+        throw analyticsReconnectException();
       }
 
       const { accessToken } = data;
@@ -505,7 +518,7 @@ export class IntegrationService {
         }
       } else {
         await this.disconnectChannel(org.id, getIntegration);
-        return [];
+        throw analyticsReconnectException();
       }
     }
 
@@ -540,8 +553,19 @@ export class IntegrationService {
         );
         return loadAnalytics;
       } catch (e) {
-        if (e instanceof RefreshToken && !forceRefresh) {
+        const reconnect = analyticsFailureNeedsReconnect(e);
+        // One refresh, then the screen can tell this apart from a normal
+        // load failure. A disconnect or missing scopes will not refresh.
+        if (
+          reconnect &&
+          !forceRefresh &&
+          !(e instanceof Disconnect) &&
+          !(e instanceof NotEnoughScopes)
+        ) {
           return this.checkAnalytics(org, integration, date, true);
+        }
+        if (reconnect) {
+          throw analyticsReconnectException();
         }
         console.error(
           `Analytics failed for ${getIntegration.providerIdentifier}`,
