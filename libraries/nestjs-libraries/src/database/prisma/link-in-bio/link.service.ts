@@ -91,7 +91,7 @@ import {
   urlProblem,
   utcDay,
   webhookProblem,
-  zonedLocalToUtc,
+  scheduleInstant,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import {
   PublicLinkContactDto,
@@ -1252,15 +1252,15 @@ export class LinkService {
     if (type === 'FEATURED_POST' && body.postId === '') {
       throw new BadRequestException('Pick a published post');
     }
-    const startsAt = body.startsLocal ? zonedLocalToUtc(body.startsLocal, timeZone) : undefined;
-    const endsAt = body.endsLocal ? zonedLocalToUtc(body.endsLocal, timeZone) : undefined;
-    if (body.startsLocal && !startsAt) {
+    const startsAt = scheduleInstant(body.startsLocal, timeZone);
+    const endsAt = scheduleInstant(body.endsLocal, timeZone);
+    if (typeof body.startsLocal === 'string' && body.startsLocal.trim() && !startsAt) {
       throw new BadRequestException('Choose a valid start time');
     }
-    if (body.endsLocal && !endsAt) {
+    if (typeof body.endsLocal === 'string' && body.endsLocal.trim() && !endsAt) {
       throw new BadRequestException('Choose a valid end time');
     }
-    if (startsAt && endsAt && endsAt <= startsAt) {
+    if (startsAt instanceof Date && endsAt instanceof Date && endsAt <= startsAt) {
       throw new BadRequestException('The end time has to be after the start');
     }
     return {
@@ -1271,8 +1271,8 @@ export class LinkService {
         ? { priority: blockPriority(type, body, nextExtras.priorityMode) }
         : {}),
       ...(body.scheduleOn !== undefined ? { scheduleOn: body.scheduleOn } : {}),
-      ...(body.startsLocal !== undefined ? { startsAt } : {}),
-      ...(body.endsLocal !== undefined ? { endsAt } : {}),
+      ...(body.startsLocal !== undefined ? { startsAt: startsAt ?? null } : {}),
+      ...(body.endsLocal !== undefined ? { endsAt: endsAt ?? null } : {}),
       ...(body.postId ? { postId: body.postId } : {}),
       ...(body.thumbnail !== undefined
         ? { thumbnail: canonicalizeStoredMedia((body.thumbnail || '').trim()) }

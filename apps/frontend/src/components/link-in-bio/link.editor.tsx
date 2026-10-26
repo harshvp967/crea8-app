@@ -67,6 +67,7 @@ type Modal =
   | { kind: 'details'; block?: LinkBlock }
   | { kind: 'discount'; block?: LinkBlock }
   | { kind: 'events'; block?: LinkBlock }
+  | { kind: 'schedule'; block: LinkBlock }
   | { kind: 'capture' }
   | null;
 
@@ -179,6 +180,8 @@ export const LinkEditorScreen = () => {
   const posts = useLinkPosts();
   const [modal, setModal] = useState<Modal>(null);
   const [menu, setMenu] = useState('');
+  const [scheduleStart, setScheduleStart] = useState('');
+  const [scheduleEnd, setScheduleEnd] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [addAnchor, setAddAnchor] = useState<'head' | 'row'>('row');
   const [preview, setPreview] = useState(false);
@@ -262,6 +265,15 @@ export const LinkEditorScreen = () => {
     } finally {
       setBusy(false);
     }
+  };
+
+  const openSchedule = (block: LinkBlock) => {
+    const zone = data?.timezone || 'UTC';
+    setScheduleStart(block.startsAt ? utcToZonedInput(new Date(block.startsAt), zone) : '');
+    setScheduleEnd(block.endsAt ? utcToZonedInput(new Date(block.endsAt), zone) : '');
+    setMenu('');
+    setSheetAnchor(null);
+    setModal({ kind: 'schedule', block });
   };
 
   const openLink = (block?: LinkBlock) => {
@@ -1131,7 +1143,7 @@ export const LinkEditorScreen = () => {
                       >
                         {block.priority ? 'Remove priority' : 'Make priority'}
                       </LinkMenuRow>
-                      <LinkMenuRow icon="clock" onClick={() => (block.type === 'LINK' ? openLink(block) : editBlock(block))}>
+                      <LinkMenuRow icon="clock" onClick={() => openSchedule(block)}>
                         Schedule
                       </LinkMenuRow>
                       <LinkMenuRow
@@ -1161,6 +1173,64 @@ export const LinkEditorScreen = () => {
           </button>
         )}
       </div>
+
+      {modal?.kind === 'schedule' ? (
+        <LinkModal title={`Schedule · ${data.timezone}`} onClose={() => setModal(null)}>
+          <div className="lib-block-form flex flex-col gap-[14px]">
+            <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2">
+              <LinkField label="Starts">
+                <input type="datetime-local" value={scheduleStart} onChange={(event) => setScheduleStart(event.target.value)} />
+              </LinkField>
+              <LinkField label="Ends">
+                <input type="datetime-local" value={scheduleEnd} onChange={(event) => setScheduleEnd(event.target.value)} />
+              </LinkField>
+            </div>
+            <div className="flex flex-wrap justify-end gap-[8px]">
+              <button
+                type="button"
+                className={linkSecondary}
+                disabled={busy}
+                onClick={() =>
+                  save(
+                    `/link-in-bio/blocks/${modal.block.id}`,
+                    'PUT',
+                    { scheduleOn: false, startsLocal: '', endsLocal: '' },
+                    'Schedule cleared'
+                  )
+                }
+              >
+                Clear
+              </button>
+              <button type="button" className={linkSecondary} onClick={() => setModal(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={linkPrimary}
+                disabled={busy}
+                onClick={() => {
+                  if (!scheduleStart && !scheduleEnd) {
+                    toast.show('Choose a start or end time', 'warning');
+                    return;
+                  }
+                  if (scheduleStart && scheduleEnd && scheduleEnd <= scheduleStart) {
+                    toast.show('The end time has to be after the start', 'warning');
+                    return;
+                  }
+                  save(
+                    `/link-in-bio/blocks/${modal.block.id}`,
+                    'PUT',
+                    { scheduleOn: true, startsLocal: scheduleStart, endsLocal: scheduleEnd },
+                    'Schedule saved'
+                  );
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </LinkModal>
+      ) : null}
 
       {addOpen ? (
         <LinkModal title="Add block" onClose={() => setAddOpen(false)}>
