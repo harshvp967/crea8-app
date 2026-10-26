@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -9,6 +9,7 @@ import { useMenuItem, useVisibleMenuItems } from '@gitroom/frontend/components/l
 import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
+import { WorkspaceSwitchList } from '@gitroom/frontend/components/layout/organization.selector';
 
 const phoneBarLimit = 5;
 
@@ -84,6 +85,18 @@ export const MobileTabBar = () => {
   const moreActive = !tabs.some((item) => active(item.path));
   const sheetOpen = more && showMore;
 
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (document.querySelector('.arc-dialog-wrap')) return;
+      event.preventDefault();
+      setMore(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sheetOpen]);
+
   return (
     <div className="contents">
       {sheetOpen ? (
@@ -98,6 +111,7 @@ export const MobileTabBar = () => {
       ) : null}
       {sheetOpen ? (
         <div className="mobile-sheet" role="menu">
+          <WorkspaceSwitchList showLabel onDone={() => setMore(false)} />
           {overflow.map((item) => {
             const click = item.onClick;
             if (click) {

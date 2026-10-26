@@ -2845,3 +2845,125 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   padding-inline-start: 32px;
   border-radius: inherit;
 }
+
+.c8-account-workspaces {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c8-account-workspaces-title,
+.c8-account-workspace-label {
+  overflow: hidden;
+  padding: 4px 8px 2px;
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c8-account-workspace-label {
+  display: none;
+}
+
+.c8-account-workspace-label.is-visible,
+.c8-account-pop.is-sheet .c8-account-workspace-label {
+  display: block;
+}
+
+.c8-account-pop.is-sheet .c8-account-workspace,
+.c8-account-pop.is-sheet .c8-account-workspace-new {
+  min-height: 44px;
+}
+
+.c8-account-workspace,
+.c8-account-workspace-new {
+  display: flex;
+  width: 100%;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: start;
+  cursor: pointer;
+}
+
+.c8-account-workspace:hover,
+.c8-account-workspace:focus-visible,
+.c8-account-workspace[aria-checked='true'],
+.c8-account-workspace-new:hover,
+.c8-account-workspace-new:focus-visible {
+  background: var(--c8-soft);
+}
+
+.c8-account-workspace:focus-visible,
+.c8-account-workspace-new:focus-visible {
+  outline: 2px solid var(--c8-cyan);
+  outline-offset: 2px;
+}
+
+.c8-account-workspace-name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c8-account-workspace-role,
+.c8-account-workspace-check {
+  flex: none;
+}
+
+.c8-account-workspace-role {
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.c8-account-workspace-check {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  color: var(--c8-ink);
+}
+
+@media (max-width: 1199px) {
+  .c8-account-workspace-label {
+    display: block;
+  }
+
+  .c8-account-workspace,
+  .c8-account-workspace-new {
+    min-height: 44px;
+  }
+}
+
+.mobile-sheet .c8-account-workspaces {
+  margin: 0 0 4px;
+}
+
+.mobile-sheet .c8-account-workspace,
+.mobile-sheet .c8-account-workspace-new {
+  min-height: 44px;
+  border-radius: 10px;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mobile-sheet .c8-account-rule {
+  margin-bottom: 6px;
+}

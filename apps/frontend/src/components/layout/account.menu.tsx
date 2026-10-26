@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
+import { WorkspaceSwitchList } from '@gitroom/frontend/components/layout/organization.selector';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import dynamic from 'next/dynamic';
 
@@ -357,6 +358,7 @@ export const AccountMenu = ({
               }
         }
       >
+        <WorkspaceSwitchList onDone={onClose} />
         <button
           ref={planRowRef}
           type="button"
