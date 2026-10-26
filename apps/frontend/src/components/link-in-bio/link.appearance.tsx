@@ -21,7 +21,7 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkEditor, linkLocked, linkSend, revalidatePublicLink, toPublic, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { LinkField, LinkModal, LinkToggle, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { LinkField, LinkModal, LinkToggle, linkDanger, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
 import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
@@ -351,18 +351,11 @@ export const LinkAppearanceScreen = () => {
               </span>
             ) : null}
             <LinkViewTabs preview={preview} onPreview={setPreview} />
-            <button type="button" className={`${linkSecondary} lib-reset`} onClick={() => setDraft(toDraft(data))}>
-              Reset
-            </button>
-            <button type="button" className={linkPrimary} disabled={busy} onClick={() => void save()}>
-              Save changes
-            </button>
           </div>
         </div>
 
         <div className="lib-acc">
         <AccItem title="Profile" summary="Avatar, name, bio, logo" open={section === 'profile'} onToggle={() => toggleSection('profile')}>
-          <p className="mb-[12px] text-[13px] text-textItemBlur">Photo, title and bio. Title is 30 characters, bio is 160.</p>
           <div className="mb-[14px] flex flex-wrap items-center gap-[12px]">
             <div className="lib-avatar">
               {draft.avatarPath ? (
@@ -463,7 +456,6 @@ export const LinkAppearanceScreen = () => {
                   />
                 </label>
               </div>
-              <p className="mt-[6px] text-[13px] text-textItemBlur">Shown in full, not cropped to a circle. The photo above is the avatar when title text is on.</p>
             </div>
           ) : null}
           <div className="grid grid-cols-1 gap-[12px] md:grid-cols-2">
@@ -793,7 +785,6 @@ export const LinkAppearanceScreen = () => {
               {socialErrors[editSocial] ? <p className="lib-field-error">{socialErrors[editSocial]}</p> : null}
             </div>
           ) : null}
-          <p className="mb-[12px] text-[13px] text-textItemBlur">Connected accounts show automatically. Tap an icon to edit or hide it.</p>
           <p className="lib-section-label">Connected accounts (from Schedule)</p>
           <div className="lib-account-card">
             {data.accounts.map((account) => (
@@ -825,9 +816,6 @@ export const LinkAppearanceScreen = () => {
           </div>
         </AccItem>
         </div>
-        <button type="button" className={`${linkSecondary} lib-reset-phone`} onClick={() => setDraft(toDraft(data))}>
-          Reset
-        </button>
         {removeSocial !== null && draft.socials[removeSocial] ? (
           <LinkModal
             title={`Remove ${LINK_SOCIALS.find((network) => network.id === draft.socials[removeSocial].network)?.label || draft.socials[removeSocial].network} icon?`}
