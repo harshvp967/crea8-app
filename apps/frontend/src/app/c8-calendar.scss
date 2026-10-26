@@ -6881,3 +6881,98 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[role='radio'][aria-checked='true
     font-size: 13px !important;
   }
 }
+
+/* Phone widths only. The open Channels sheet was still the collapsed rail:
+   a centered, overflow-hidden card, so "Channels" was clipped and the list
+   sat in a narrow column. Desktop and tablet keep the rules above. */
+@media (max-width: 639px) {
+  body.c8-schedule .channel-rail.is-open {
+    display: flex !important;
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: min(80vh, calc(100vh - 16px));
+    margin: 0 !important;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div,
+  body.c8-schedule .channel-rail.is-open.sidebar > div {
+    position: relative !important;
+    align-items: stretch !important;
+    box-sizing: border-box;
+    width: 100% !important;
+    height: auto !important;
+    max-height: min(80vh, calc(100vh - 16px));
+    padding: 16px 24px calc(28px + env(safe-area-inset-bottom)) !important;
+    gap: 20px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div::before {
+    margin: 4px auto 12px;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div > .flex.items-center:first-child {
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    gap: 12px;
+  }
+
+  body.c8-schedule .channel-rail.is-open h2,
+  body.c8-schedule .channel-rail.is-open.sidebar h2,
+  body.c8-schedule .channel-rail.is-open > div > .flex.items-center:first-child h2 {
+    display: block !important;
+    flex: 1 1 auto !important;
+    align-self: center;
+    width: auto !important;
+    min-width: max-content;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    text-align: start !important;
+    white-space: nowrap !important;
+    color: var(--c8-ink);
+    font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+    font-variation-settings: 'opsz' 14, 'wdth' 100;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.44px;
+    line-height: 1.25 !important;
+  }
+
+  body.c8-schedule .channel-rail.is-open > div > .flex.flex-col,
+  body.c8-schedule .channel-rail.is-open .group-\[\.sidebar\]\:w-\[44px\] {
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+  }
+
+  body.c8-schedule .channel-rail.is-open .channel-row,
+  body.c8-schedule .channel-rail.is-open.sidebar .channel-row {
+    justify-content: flex-start !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 48px !important;
+    max-height: none !important;
+    margin-inline: 0 !important;
+    padding: 10px 8px !important;
+  }
+}
