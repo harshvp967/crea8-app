@@ -53,11 +53,11 @@ export const TimeTable: FC<{
   const askClose = useCallback(async () => {
     if (
       !(await deleteDialog(
-        t(
-          'are_you_sure_you_want_to_close_the_window',
-          'Are you sure you want to close the window?'
-        ),
-        t('yes_close', 'Yes, close')
+        '',
+        t('close', 'Close'),
+        t('close_this_window', 'Close this window?'),
+        t('cancel', 'Cancel'),
+        'primary'
       ))
     ) {
       return;
@@ -71,10 +71,10 @@ export const TimeTable: FC<{
     (index: number) => async () => {
       if (
         !(await deleteDialog(
-          t(
-            'are_you_sure_you_want_to_delete_this_slot',
-            'Are you sure you want to delete this slot?'
-          )
+          t('cant_be_undone', "This can't be undone."),
+          t('delete', 'Delete'),
+          t('delete_this_slot', 'Delete this slot?'),
+          t('cancel', 'Cancel')
         ))
       ) {
         return;

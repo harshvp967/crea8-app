@@ -151,7 +151,10 @@ export const TeamsComponent = () => {
       async () => {
         if (
           !(await deleteDialog(
-            t('are_you_sure_remove_team_member', 'Are you sure you want to remove this team member?')
+            t('cant_be_undone', "This can't be undone."),
+            t('remove', 'Remove'),
+            t('remove_this_team_member', 'Remove this team member?'),
+            t('cancel', 'Cancel')
           ))
         ) {
           return;

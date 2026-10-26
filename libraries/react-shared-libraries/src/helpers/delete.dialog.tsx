@@ -8,12 +8,13 @@ export const deleteDialog = async (
   cancelButton?: string,
   tone?: 'danger' | 'primary'
 ) => {
+  const heading = (title || '').trim();
+  const body = (message || '').trim();
   return areYouSure({
-    title: title || i18next.t('are_you_sure', 'Are you sure?'),
-    description: message,
-    approveLabel:
-      confirmButton || i18next.t('yes_delete_it', 'Yes, delete it!'),
-    cancelLabel: cancelButton || i18next.t('no_cancel', 'No, cancel!'),
-    tone,
+    title: heading || body,
+    description: heading && body && body !== heading ? body : '',
+    approveLabel: confirmButton || i18next.t('delete', 'Delete'),
+    cancelLabel: cancelButton || i18next.t('cancel', 'Cancel'),
+    tone: tone ?? 'destructive',
   });
 };

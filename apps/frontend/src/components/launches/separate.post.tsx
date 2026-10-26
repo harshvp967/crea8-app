@@ -16,8 +16,10 @@ export const SeparatePost: FC<{
   const notReversible = useCallback(async () => {
     if (
       await deleteDialog(
-        'Are you sure you want to separate all posts? This action is not reversible.',
-        'Yes'
+        "This can't be undone.",
+        'Separate',
+        'Separate this post?',
+        'Cancel'
       )
     ) {
       props.changeLoading(true);

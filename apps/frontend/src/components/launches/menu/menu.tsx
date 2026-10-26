@@ -210,10 +210,10 @@ export const Menu: FC<{
   const disableChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
-        t('are_you_sure_disable_channel', 'Are you sure you want to disable this channel?'),
-        t('disable_channel_title', 'Disable Channel'),
-        t('disable_channel_title', 'Disable Channel'),
-        t('no_cancel', 'No, cancel!'),
+        t('cant_be_undone', "This can't be undone."),
+        t('disable', 'Disable'),
+        t('disable_this_channel', 'Disable this channel?'),
+        t('cancel', 'Cancel'),
         'danger'
       ))
     ) {
@@ -232,10 +232,10 @@ export const Menu: FC<{
   const deleteChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
-        t('are_you_sure_delete_channel', 'Are you sure you want to delete this channel?'),
-        t('delete_channel_title', 'Delete Channel'),
-        t('delete_channel_title', 'Delete Channel'),
-        t('no_cancel', 'No, cancel!'),
+        t('cant_be_undone', "This can't be undone."),
+        t('delete', 'Delete'),
+        t('delete_this_channel', 'Delete this channel?'),
+        t('cancel', 'Cancel'),
         'danger'
       ))
     ) {

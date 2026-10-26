@@ -339,9 +339,14 @@ export const GeneratorComponent = () => {
     if (!user?.tier?.ai) {
       if (
         await deleteDialog(
-          t('upgrade_required', 'You need to upgrade to use this feature'),
+          t(
+            'upgrade_required',
+            'You need to upgrade to use this feature'
+          ),
           t('move_to_billing', 'Move to billing'),
-          t('payment_required', 'Payment Required')
+          t('upgrade_required_title', 'Upgrade required'),
+          t('cancel', 'Cancel'),
+          'primary'
         )
       ) {
         router.push('/account?section=billing');

@@ -573,12 +573,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
     if (
       !(await deleteDialog(
-        t(
-          'are_you_sure_you_want_to_delete_post',
-          'Are you sure you want to delete this post?'
-        ),
+        t('cant_be_undone', "This can't be undone."),
         t('delete', 'Delete'),
-        t('are_you_sure', 'Are you sure?'),
+        t('delete_this_post', 'Delete this post?'),
         t('cancel', 'Cancel'),
         'danger'
       ))
@@ -1018,15 +1015,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           shortLink = true;
         } else {
           // ASK: Show the dialog
-          shortLink = await deleteDialog(
-            t(
-              'shortlink_urls_question',
-              'Shorten the links in this post so you can see how many people click them?'
-            ),
-            t('yes_shortlink_it', 'Shorten links'),
-            undefined,
-            t('no_original_urls', 'Keep the links')
-          );
+            shortLink = await deleteDialog(
+              t(
+                'shorten_links_body',
+                'You can see how many people click them.'
+              ),
+              t('yes_shortlink_it', 'Shorten links'),
+              t('shorten_these_links', 'Shorten these links?'),
+              t('no_original_urls', 'Keep the links'),
+              'primary'
+            );
         }
       }
 

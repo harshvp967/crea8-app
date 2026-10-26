@@ -17,11 +17,11 @@ export const ModalWrapperComponent: FC<{
     if (
       ask &&
       !(await deleteDialog(
-        t(
-          'are_you_sure_you_want_to_close_the_window',
-          'Are you sure you want to close the window?'
-        ),
-        t('yes_close', 'Yes, close')
+        '',
+        t('close', 'Close'),
+        t('close_this_window', 'Close this window?'),
+        t('cancel', 'Cancel'),
+        'primary'
       ))
     ) {
       return;

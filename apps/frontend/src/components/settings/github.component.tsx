@@ -18,7 +18,10 @@ const ConnectedComponent: FC<{
   const disconnect = useCallback(async () => {
     if (
       !(await deleteDialog(
-        'Are you sure you want to disconnect this repository?'
+        "This can't be undone.",
+        'Disconnect',
+        'Disconnect this repository?',
+        'Cancel'
       ))
     ) {
       return;

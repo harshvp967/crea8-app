@@ -27,10 +27,10 @@ const WrapcastProvider: FC = () => {
     (index: number) => async () => {
       if (
         !(await deleteDialog(
-          t(
-            'are_you_sure_you_want_to_delete_this_subreddit',
-            'Are you sure you want to delete this Subreddit?'
-          )
+          t('cant_be_undone', "This can't be undone."),
+          t('delete', 'Delete'),
+          t('delete_this_channel', 'Delete this channel?'),
+          t('cancel', 'Cancel')
         ))
       )
         return;

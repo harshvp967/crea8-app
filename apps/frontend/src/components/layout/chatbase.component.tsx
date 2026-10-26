@@ -110,14 +110,14 @@ const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
             };
           }
 
+          const tier = String(preview.tier || '').trim();
           const approved = await deleteDialog(
-            `You are cancelling your ${
-              preview.tier || ''
-            } subscription and will receive a refund of ${preview.amount} ${(
+            `You will receive a refund of ${preview.amount} ${(
               preview.currency || ''
-            ).toUpperCase()}. Do you approve?`,
-            'Yes, cancel and refund',
-            'Cancel subscription'
+            ).toUpperCase()}.`,
+            'Cancel and refund',
+            tier ? `Cancel the ${tier} subscription?` : 'Cancel this subscription?',
+            'Go back'
           );
 
           if (!approved) {

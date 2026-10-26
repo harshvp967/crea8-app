@@ -21,10 +21,12 @@ const DeleteAccountComponent: FC<{ isLink?: boolean }> = ({ isLink }) => {
     if (
       !(await deleteDialog(
         t(
-          'delete_account_confirm',
-          'Your account, organizations, channels and posts will be deleted. This action cannot be undone, are you sure?'
+          'delete_account_body',
+          "Your account, organizations, channels and posts will be deleted. This can't be undone."
         ),
-        t('yes_delete_my_account', 'Yes, delete my account')
+        t('delete', 'Delete'),
+        t('delete_your_account', 'Delete your account?'),
+        t('cancel', 'Cancel')
       ))
     ) {
       return;

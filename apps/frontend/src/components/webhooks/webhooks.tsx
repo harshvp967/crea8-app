@@ -43,11 +43,10 @@ export const Webhooks: FC = () => {
     (data: any) => async () => {
       if (
         await deleteDialog(
-          t(
-            'are_you_sure_you_want_to_delete',
-            `Are you sure you want to delete ${data.name}?`,
-            { name: data.name }
-          )
+          t('cant_be_undone', "This can't be undone."),
+          t('delete', 'Delete'),
+          t('delete_named', 'Delete {{name}}?', { name: data.name }),
+          t('cancel', 'Cancel')
         )
       ) {
         await fetch(`/webhooks/${data.id}`, {

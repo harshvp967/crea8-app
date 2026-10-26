@@ -18,11 +18,11 @@ export const LogoutComponent: FC<{ isIcon?: boolean; label?: string }> = ({
   const logout = useCallback(async () => {
     if (
       await deleteDialog(
-        t(
-          'are_you_sure_you_want_to_logout',
-          'Are you sure you want to logout?'
-        ),
-        t('yes_logout', 'Yes logout')
+        '',
+        t('log_out', 'Log out'),
+        t('log_out_question', 'Log out?'),
+        t('cancel', 'Cancel'),
+        'primary'
       )
     ) {
       if (!isSecured) {

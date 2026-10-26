@@ -31,11 +31,12 @@ export const ApprovedAppsComponent: FC = () => {
     (app: any) => async () => {
       if (
         await deleteDialog(
-          t(
-            'are_you_sure_revoke_access',
-            `Are you sure you want to revoke access for ${app.oauthApp?.name}?`,
-            { name: app.oauthApp?.name }
-          )
+          t('cant_be_undone', "This can't be undone."),
+          t('revoke_access', 'Revoke'),
+          t('revoke_access_title', 'Revoke access for {{name}}?', {
+            name: app.oauthApp?.name,
+          }),
+          t('cancel', 'Cancel')
         )
       ) {
         try {

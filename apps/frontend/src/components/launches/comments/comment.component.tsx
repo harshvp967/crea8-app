@@ -87,8 +87,10 @@ export const EditableCommentComponent: FC<{
   const deleteCommentFunction = useCallback(async () => {
     if (
       await deleteDialog(
-        'Are you sure you want to delete this comment?',
-        'Yes, Delete'
+        "This can't be undone.",
+        'Delete',
+        'Delete this comment?',
+        'Cancel'
       )
     ) {
       onDelete();
