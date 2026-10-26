@@ -24,6 +24,7 @@ import { Integration } from '@prisma/client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { toggleChannelSelection } from '@gitroom/frontend/components/agents/agent.channels';
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
@@ -75,7 +76,6 @@ const useIntegrations = () => {
     revalidateOnMount: true,
     refreshWhenHidden: false,
     refreshWhenOffline: false,
-    fallbackData: [],
   });
 };
 
@@ -88,24 +88,20 @@ const useThreads = () => {
   return useSWR('threads', threads);
 };
 
-export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
-  onChange,
-}) => {
+export const AgentList: FC<{
+  selected: { id: string }[];
+  onChange: (arr: any[]) => void;
+}> = ({ selected, onChange }) => {
   const t = useT();
-  const [selected, setSelected] = useState([]);
-  const { data } = useIntegrations();
+  const { data, isLoading } = useIntegrations();
 
   const setIntegration = useCallback(
-    (integration: Integration) => () => {
-      if (selected.some((p) => p.id === integration.id)) {
-        onChange(selected.filter((p) => p.id !== integration.id));
-        setSelected(selected.filter((p) => p.id !== integration.id));
-      } else {
-        onChange([...selected, integration]);
-        setSelected([...selected, integration]);
-      }
+    (integration: Integration) => (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onChange(toggleChannelSelection(selected, integration));
     },
-    [selected]
+    [onChange, selected]
   );
 
   const sortedIntegrations = useMemo(() => {
@@ -125,7 +121,13 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
           </h2>
         </div>
         <div className={clsx('flex flex-col gap-[8px]')}>
-          {sortedIntegrations.map((integration) => {
+          {isLoading ? (
+            <div className="px-[8px] py-[8px] text-[14px] font-[500] text-textItemBlur">
+              {t('loading', 'Loading')}
+            </div>
+          ) : null}
+          {!isLoading &&
+            sortedIntegrations.map((integration) => {
             const isSelected = selected.some((p) => p.id === integration.id);
             return (
               <div
@@ -226,7 +228,11 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
         type="button"
         className="agent-sheet-backdrop"
         aria-label={t('close', 'Close')}
-        onClick={() => {
+        onClick={(event) => {
+          const target = event.target as HTMLElement | null;
+          if (target?.closest('.agent-channels-sheet, .agent-threads')) {
+            return;
+          }
           setChannelsOpen(false);
           setThreadsOpen(false);
         }}
@@ -257,8 +263,13 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
         ? createPortal(
             <>
               {sheet}
-              <div className="agent-channels-sheet" role="dialog">
-                <AgentList onChange={setProperties} />
+              <div
+                className="agent-channels-sheet"
+                role="dialog"
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <AgentList selected={properties} onChange={setProperties} />
               </div>
             </>,
             document.body
@@ -277,7 +288,7 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
   const t = useT();
   const { id } = useParams<{ id?: string }>();
   const { data: threads } = useThreads();
-  const { data: integrations } = useIntegrations();
+  const { data: integrations, isLoading: channelsLoading } = useIntegrations();
   const current = threads?.threads?.find(
     (thread: { id: string }) => thread.id === id
   );
@@ -308,7 +319,9 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
         <button type="button" className="agent-channels-pill" onClick={onChannels}>
           <HugeIcon name="users" size={16} />
           <span>
-            {t('channels', 'Channels')} · {count}
+            {channelsLoading
+              ? t('loading', 'Loading')
+              : `${t('channels', 'Channels')} · ${count}`}
           </span>
         </button>
       </div>

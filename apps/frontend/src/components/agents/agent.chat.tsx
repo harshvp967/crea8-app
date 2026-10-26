@@ -44,6 +44,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { agentIntegrationsBlock } from '@gitroom/frontend/components/agents/agent.channels';
 
 export const AgentChat: FC = () => {
   const { backendUrl } = useVariables();
@@ -442,20 +443,7 @@ const NewInput: FC<InputProps> = (props) => {
                   '\n[--Media--]'
                 : '') +
               `
-${
-  properties.length
-    ? `[--integrations--]
-Use the following social media platforms: ${JSON.stringify(
-        properties.map((p) => ({
-          id: p.id,
-          platform: p.identifier,
-          profilePicture: p.picture,
-          additionalSettings: p.additionalSettings,
-        }))
-      )}
-[--integrations--]`
-    : ``
-}`
+${agentIntegrationsBlock(properties)}`
           );
           setValue('');
           setMedia([]);
