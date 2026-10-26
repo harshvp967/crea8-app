@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import clsx from 'clsx';
+import dynamic from 'next/dynamic';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import dayjs from 'dayjs';
 import {
   Integrations,
   useCalendar,
@@ -9,10 +9,16 @@ import {
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SetSelectionModal } from '@gitroom/frontend/components/launches/calendar';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { IdeaPostsButton } from '@gitroom/frontend/components/launches/idea.posts';
+const IdeaPostsButton = dynamic(
+  () =>
+    import('@gitroom/frontend/components/launches/idea.posts').then(
+      (mod) => mod.IdeaPostsButton
+    ),
+  { ssr: false }
+);
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { mutate } from 'swr';
 
@@ -33,7 +39,6 @@ export const openCreatePost = async ({
   reload: () => void;
   customer?: string | null;
 }) => {
-  const date = (await (await fetch('/posts/find-slot')).json()).date;
   const again = () =>
     openCreatePost({ fetch, modal, t, integrations, sets, reload, customer });
   const channels = composerChannels({
@@ -83,7 +88,7 @@ export const openCreatePost = async ({
       modal: 'w-[100%] max-w-[1400px] text-textColor',
     },
     children: (
-      <AddEditModal
+      <ComposerModal
         allIntegrations={channels.allIntegrations.map((p) => ({
           ...p,
         }))}
@@ -95,7 +100,6 @@ export const openCreatePost = async ({
         reopenModal={again}
         mutate={reload}
         integrations={channels.allIntegrations}
-        date={dayjs.utc(date).local()}
       />
     ),
     size: '80%',
@@ -103,39 +107,87 @@ export const openCreatePost = async ({
   });
 };
 
+const SidebarComposer = ({
+  customer,
+  onReady,
+}: {
+  customer: string | null;
+  onReady: (integrations: Integrations[], sets: any[]) => void;
+}) => {
+  const fetch = useFetch();
+  const readyRef = useRef(onReady);
+  readyRef.current = onReady;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [listResponse, setsResponse] = await Promise.all([
+        fetch('/integrations/list'),
+        fetch('/sets'),
+      ]);
+      const list = await listResponse.json();
+      const sets = await setsResponse.json();
+      if (cancelled) {
+        return;
+      }
+      readyRef.current(
+        (Array.isArray(list) ? list : list?.integrations || []) as Integrations[],
+        Array.isArray(sets) ? sets : []
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetch]);
+  return (
+    <div className="min-h-[160px] rounded-[20px] bg-newBgColorInner animate-pulse" role="status">
+      <span className="sr-only">Loading</span>
+    </div>
+  );
+};
+
 export const useOpenComposer = () => {
   const fetch = useFetch();
   const modal = useModals();
   const t = useT();
 
-  return useCallback(async () => {
-    const [listResponse, setsResponse] = await Promise.all([
-      fetch('/integrations/list'),
-      fetch('/sets'),
-    ]);
-    const list = await listResponse.json();
-    const sets = await setsResponse.json();
-    const integrations = (
-      Array.isArray(list) ? list : list?.integrations || []
-    ) as Integrations[];
+  return useCallback(() => {
     const customer =
       typeof window === 'undefined'
         ? null
         : new URLSearchParams(window.location.search).get('customer');
-    await openCreatePost({
-      fetch,
-      modal,
-      t,
-      integrations,
-      customer,
-      sets: Array.isArray(sets) ? sets : [],
-      reload: () => {
-        mutate(
-          (key) =>
-            typeof key === 'string' &&
-            (key.startsWith('/posts') || key === 'sets')
-        );
+    modal.openModal({
+      id: 'composer-boot',
+      title: '',
+      withCloseButton: false,
+      closeOnClickOutside: false,
+      closeOnEscape: true,
+      size: '420px',
+      classNames: {
+        modal: 'text-textColor',
       },
+      children: (
+        <SidebarComposer
+          customer={customer}
+          onReady={(integrations, sets) => {
+            modal.closeById('composer-boot');
+            return openCreatePost({
+              fetch,
+              modal,
+              t,
+              integrations,
+              customer,
+              sets,
+              reload: () => {
+                mutate(
+                  (key) =>
+                    typeof key === 'string' &&
+                    (key.startsWith('/posts') || key === 'sets')
+                );
+              },
+            });
+          }}
+        />
+      ),
     });
   }, [fetch, modal, t]);
 };

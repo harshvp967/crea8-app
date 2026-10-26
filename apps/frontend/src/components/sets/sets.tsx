@@ -11,7 +11,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 
@@ -104,7 +104,7 @@ export const Sets: FC = () => {
           modal: 'w-[100%] max-w-[1400px] text-textColor',
         },
         children: (
-          <AddEditModal
+          <ComposerModal
             allIntegrations={integrations.map((p: any) => ({
               ...p,
             }))}

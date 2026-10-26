@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 
 export const useStalkerComposer = () => {
@@ -48,7 +48,7 @@ export const useStalkerComposer = () => {
           modal: 'w-[100%] max-w-[1400px] text-textColor',
         },
         children: (
-          <AddEditModal
+          <ComposerModal
             allIntegrations={integrations.map((item) => ({ ...item }))}
             integrations={integrations.map((item) => ({ ...item }))}
             mutate={() => ({})}

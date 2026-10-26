@@ -20,7 +20,7 @@ import {
 import dayjs from 'dayjs';
 import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
@@ -192,7 +192,7 @@ const FirstStep: FC = (props) => {
             modal: 'w-[100%] max-w-[1400px] text-textColor',
           },
           children: (
-            <AddEditModal
+            <ComposerModal
               allIntegrations={channels.allIntegrations.map((p) => ({
                 ...p,
               }))}

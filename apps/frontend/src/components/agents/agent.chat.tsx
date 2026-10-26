@@ -38,7 +38,7 @@ import {
   Message as CopilotMessage,
   TextMessage,
 } from '@copilotkit/runtime-client-gql';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
@@ -596,7 +596,7 @@ const OpenModal: FC<{
                 })),
               }}
             >
-              <AddEditModal
+              <ComposerModal
                 date={dayjs.utc(integration.date)}
                 allIntegrations={properties}
                 integrations={properties.filter(

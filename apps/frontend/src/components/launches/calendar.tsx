@@ -54,7 +54,7 @@ import { StatisticsModal } from '@gitroom/frontend/components/launches/statistic
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -154,7 +154,7 @@ const usePostActions = (onMutate?: () => void) => {
         },
         children: (
           <ExistingData value={data}>
-            <AddEditModal
+            <ComposerModal
               {...(isDuplicate
                 ? {
                     onlyValues: data.posts.map(
@@ -1101,7 +1101,7 @@ export const CalendarColumn: FC<{
         modal: 'w-[100%] max-w-[1400px] text-textColor',
       },
       children: (
-        <AddEditModal
+        <ComposerModal
           allIntegrations={channels.allIntegrations.map((p) => ({
             ...p,
           }))}
