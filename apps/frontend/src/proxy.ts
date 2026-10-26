@@ -28,6 +28,7 @@ const APP_SECTIONS = new Set([
   'err',
   'icons',
   'integrations',
+  'join',
   'launches',
   'link',
   'media',
@@ -258,14 +259,28 @@ export async function proxy(request: NextRequest) {
   }
   try {
     if (org) {
-      const { id } = await (
-        await internalFetch('/user/join-org', {
-          body: JSON.stringify({
-            org,
-          }),
-          method: 'POST',
-        })
-      ).json();
+      const response = await internalFetch('/user/join-org', {
+        body: JSON.stringify({
+          org,
+        }),
+        method: 'POST',
+      });
+      let payload: { id?: string | null; message?: string | string[] } = {};
+      try {
+        payload = await response.json();
+      } catch {
+        payload = {};
+      }
+      const raw = payload.message;
+      const message = Array.isArray(raw)
+        ? raw.filter(Boolean).join(', ')
+        : raw || 'This invite could not be used.';
+      if (!response.ok || !payload.id) {
+        return NextResponse.redirect(
+          new URL(`/join?error=${encodeURIComponent(message)}`, nextUrl.href)
+        );
+      }
+      const id = payload.id;
       const redirect = NextResponse.redirect(
         new URL(`/?added=true`, nextUrl.href)
       );

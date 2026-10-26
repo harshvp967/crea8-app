@@ -1,13 +1,77 @@
 'use client';
 
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { createPortal } from 'react-dom';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
+
+async function readMessage(response: Response) {
+  const text = await response.text();
+  try {
+    const body = JSON.parse(text);
+    if (typeof body?.message === 'string') {
+      return body.message;
+    }
+    if (Array.isArray(body?.message)) {
+      return body.message.join(', ');
+    }
+  } catch {
+    return text;
+  }
+  return text || 'Something went wrong';
+}
+
+const NewWorkspaceForm = () => {
+  const fetch = useFetch();
+  const toast = useToaster();
+  const t = useT();
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.show(t('enter_workspace_name', 'Enter a workspace name'), 'error');
+      return;
+    }
+    setSaving(true);
+    const response = await fetch('/user/workspace', {
+      method: 'POST',
+      body: JSON.stringify({ name: trimmed }),
+    });
+    if (!response.ok) {
+      toast.show(await readMessage(response), 'error');
+      setSaving(false);
+      return;
+    }
+    window.location.reload();
+  };
+  return (
+    <form
+      className="org-new-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit();
+      }}
+    >
+      <input
+        className="org-new-input"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        placeholder={t('workspace_name', 'Workspace name')}
+        aria-label={t('workspace_name', 'Workspace name')}
+      />
+      <button className="org-new" type="submit" disabled={saving}>
+        {t('new_workspace', 'New workspace')}
+      </button>
+    </form>
+  );
+};
 
 const orgRole = (role?: 'SUPERADMIN' | 'ADMIN' | 'USER') =>
   role === 'SUPERADMIN'
@@ -26,6 +90,16 @@ export const OrganizationSelector: FC<{
   const fetch = useFetch();
   const user = useUser();
   const t = useT();
+  const modals = useModals();
+  const openNewWorkspace = useCallback(() => {
+    onClose?.();
+    modals.openModal({
+      title: t('new_workspace', 'New workspace'),
+      withCloseButton: true,
+      size: '420px',
+      children: <NewWorkspaceForm />,
+    });
+  }, [modals, onClose, t]);
   const load = useCallback(async () => {
     return await (await fetch('/user/organizations')).json();
   }, []);
@@ -57,6 +131,7 @@ export const OrganizationSelector: FC<{
   if (asOpenSelect) {
     const options = data || [];
     return (
+      <div className="account-org-wrap">
       <label className="account-org">
         <span>{t('organization', 'Organization')}</span>
         <select
@@ -92,9 +167,17 @@ export const OrganizationSelector: FC<{
           )}
         </select>
       </label>
+      <button
+        type="button"
+        className="account-new-workspace"
+        onClick={openNewWorkspace}
+      >
+        {t('new_workspace', 'New workspace')}
+      </button>
+      </div>
     );
   }
-  if (isLoading || (!menuOpen && data?.length === 1)) {
+  if (isLoading || !data) {
     return null;
   }
   return (
@@ -111,7 +194,7 @@ export const OrganizationSelector: FC<{
               <div className="org-name max-w-[240px] truncate">{current?.name}</div>
             )}
           </div>
-          {data?.length > 1 && !menuOpen && (
+          {!menuOpen && (
             <div
               className={clsx(
                 'org-menu hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col'
@@ -144,6 +227,9 @@ export const OrganizationSelector: FC<{
                   </div>
                 )
               )}
+              <button type="button" className="org-new" onClick={openNewWorkspace}>
+                {t('new_workspace', 'New workspace')}
+              </button>
             </div>
           )}
           {menuOpen &&
@@ -187,6 +273,9 @@ export const OrganizationSelector: FC<{
                       </button>
                     )
                   )}
+                  <button type="button" className="org-new" onClick={openNewWorkspace}>
+                    {t('new_workspace', 'New workspace')}
+                  </button>
                 </div>
               </>,
               document.body

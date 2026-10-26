@@ -405,7 +405,7 @@ export const Menu: FC<{
       classNames: {
         modal: 'md',
       },
-      title: t('move_add_to_group', 'Move / Add to group'),
+      title: t('rename_customer', 'Rename customer'),
       withCloseButton: false,
       closeOnEscape: true,
       closeOnClickOutside: true,
@@ -549,7 +549,7 @@ export const Menu: FC<{
               <HugeIcon name="user-add" size={18} />
             </div>
             <div className="text-[14px]">
-              {t('move_add_to_group', 'Move / add to group')}
+              {t('rename_customer', 'Rename customer')}
             </div>
           </div>
           <div
