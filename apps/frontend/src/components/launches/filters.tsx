@@ -384,7 +384,7 @@ export const Filters = () => {
         )}
       </div>
       <h1 className="c8-cal-title">
-        {isListView ? t('upcoming', 'Calendar') : t('calendar', 'Calendar')}
+        {isListView ? t('calendar', 'Calendar') : t('calendar', 'Calendar')}
       </h1>
     </div>
     <div
