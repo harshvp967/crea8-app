@@ -5,6 +5,7 @@ import {
   Get,
   HttpException,
   Param,
+  ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -14,6 +15,7 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
 import { AdminAddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/admin.add.team.member.dto';
+import { ChangeTeamMemberRoleDto } from '@gitroom/nestjs-libraries/dtos/settings/change.team.member.role.dto';
 import { ShortlinkPreferenceDto } from '@gitroom/nestjs-libraries/dtos/settings/shortlink-preference.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
@@ -47,6 +49,65 @@ export class SettingsController {
     return this._organizationService.inviteTeamMember(org, user, body);
   }
 
+  @Get('/team/invites')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async listInvites(@GetOrgFromRequest() org: Organization) {
+    return this._organizationService.listPendingInvites(org.id);
+  }
+
+  @Post('/team/invites/:id/resend')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async resendInvite(
+    @GetOrgFromRequest() org: Organization,
+    @GetUserFromRequest() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string
+  ) {
+    return this._organizationService.resendInvite(org, user, id);
+  }
+
+  @Post('/team/invites/:id/link')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async copyInviteLink(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string
+  ) {
+    return this._organizationService.copyInviteLink(org.id, id);
+  }
+
+  @Delete('/team/invites/:id')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  revokeInvite(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string
+  ) {
+    return this._organizationService.revokeInvite(org.id, id);
+  }
+
+  @Post('/team/:id/role')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  updateTeamMemberRole(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() body: ChangeTeamMemberRoleDto
+  ) {
+    return this._organizationService.updateTeamMemberRole(org, id, body.role);
+  }
+
   @Post('/team/add')
   async addTeamMember(
     @GetUserFromRequest() user: User,
@@ -67,7 +128,7 @@ export class SettingsController {
   )
   deleteTeamMember(
     @GetOrgFromRequest() org: Organization,
-    @Param('id') id: string
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string
   ) {
     return this._organizationService.deleteTeamMember(org, id);
   }

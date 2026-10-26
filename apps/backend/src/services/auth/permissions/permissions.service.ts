@@ -1,6 +1,7 @@
 import { Ability, AbilityBuilder, AbilityClass } from '@casl/ability';
 import { Injectable } from '@nestjs/common';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { defaultPlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/default.plan';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -22,9 +23,7 @@ export class PermissionsService {
     const subscription =
       await this._subscriptionService.getSubscriptionByOrganizationId(orgId);
 
-    const tier =
-      subscription?.subscriptionTier ||
-      (!process.env.STRIPE_PUBLISHABLE_KEY ? 'PRO' : 'FREE');
+    const tier = subscription?.subscriptionTier || defaultPlanTier();
 
     const { channel, ...all } = pricing[tier];
     return {

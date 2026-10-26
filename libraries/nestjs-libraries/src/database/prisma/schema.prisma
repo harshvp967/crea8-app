@@ -56,6 +56,7 @@ model Organization {
   stalkerScanRuns     StalkerScanRun[]
   linkPage            LinkPage?
   brandVoice          BrandVoice?
+  organizationInvites OrganizationInvite[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -74,6 +75,24 @@ model BrandVoice {
   organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
+}
+
+// Additive. Not applied to production from this change.
+// One row per invite. The link carries a signed token; only the hash is stored.
+model OrganizationInvite {
+  id             String                   @id
+  email          String
+  role           Role
+  organizationId String
+  tokenHash      String                   @unique
+  expiresAt      DateTime
+  status         OrganizationInviteStatus @default(PENDING)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([email])
 }
 
 model Tags {
@@ -1793,6 +1812,13 @@ enum Role {
   SUPERADMIN
   ADMIN
   USER
+}
+
+enum OrganizationInviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
 }
 
 enum APPROVED_SUBMIT_FOR_ORDER {

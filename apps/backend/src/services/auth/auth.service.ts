@@ -3,7 +3,10 @@ import { Provider, User } from '@prisma/client';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
-import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import {
+  OrganizationInviteClaims,
+  OrganizationService,
+} from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
 import dayjs from 'dayjs';
@@ -39,7 +42,7 @@ export class AuthService {
     body: CreateOrgUserDto | LoginUserDto,
     ip: string,
     userAgent: string,
-    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+    addToOrg?: boolean | OrganizationInviteClaims
   ) {
     if (provider === Provider.LOCAL) {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
@@ -54,7 +57,27 @@ export class AuthService {
           throw new Error('Email already exists');
         }
 
-        signupsClosed();
+        const invite = this.inviteClaims(addToOrg);
+        if (!invite) {
+          signupsClosed();
+        }
+        if (invite.email !== body.email) {
+          throw new Error('This invite is for a different email');
+        }
+        await this._organizationService.assertInviteMatches(invite, body.email);
+        const create = await this._organizationService.createOrgAndUser(
+          body,
+          ip,
+          userAgent,
+          { invited: true }
+        );
+        const created = create.users[0].user;
+        const addedOrg = await this._organizationService.addUserToOrg(
+          created.id,
+          created.email,
+          invite
+        );
+        return { addedOrg, jwt: await this.jwt(created) };
       }
 
       if (!user || !AuthChecker.comparePassword(body.password, user.password)) {
@@ -65,51 +88,102 @@ export class AuthService {
         throw new Error('User is not activated');
       }
 
-      return { addedOrg: false, jwt: await this.jwt(user) };
+      const invite = this.inviteClaims(addToOrg);
+      const addedOrg = invite
+        ? await this._organizationService.addUserToOrg(
+            user.id,
+            user.email,
+            invite
+          )
+        : false;
+      return { addedOrg, jwt: await this.jwt(user) };
     }
 
     const user = await this.loginOrRegisterProvider(
       provider,
-      body as CreateOrgUserDto
+      body as CreateOrgUserDto,
+      ip,
+      userAgent,
+      addToOrg
     );
 
-    const addedOrg =
-      addToOrg && typeof addToOrg !== 'boolean'
-        ? await this._organizationService.addUserToOrg(
-            user.id,
-            addToOrg.id,
-            addToOrg.orgId,
-            addToOrg.role
-          )
-        : false;
+    const invite = this.inviteClaims(addToOrg);
+    const addedOrg = invite
+      ? await this._organizationService.addUserToOrg(user.id, user.email, invite)
+      : false;
     return { addedOrg, jwt: await this.jwt(user) };
   }
 
-  public getOrgFromCookie(cookie?: string) {
+  public readOrgInvite(cookie?: string) {
     if (!cookie) {
-      return false;
+      return { state: 'missing' as const };
     }
 
     try {
-      const getOrg: any = AuthChecker.verifyJWT(cookie);
-      if (dayjs(getOrg.timeLimit).isBefore(dayjs())) {
-        return false;
-      }
-
-      return getOrg as {
-        email: string;
-        role: 'USER' | 'ADMIN';
-        orgId: string;
-        id: string;
+      const getOrg = AuthChecker.verifyJWT(cookie) as Partial<OrganizationInviteClaims>;
+      const invite: OrganizationInviteClaims = {
+        email: String(getOrg.email || '').trim().toLowerCase(),
+        role: getOrg.role === 'ADMIN' ? 'ADMIN' : getOrg.role === 'USER' ? 'USER' : ('' as 'USER'),
+        orgId: String(getOrg.orgId || ''),
+        id: String(getOrg.id || ''),
+        token: String(getOrg.token || ''),
+        timeLimit: String(getOrg.timeLimit || ''),
       };
+      if (
+        !invite.email ||
+        !invite.orgId ||
+        !invite.id ||
+        !invite.token ||
+        (invite.role !== 'USER' && invite.role !== 'ADMIN')
+      ) {
+        return { state: 'invalid' as const };
+      }
+      if (!invite.timeLimit || dayjs(invite.timeLimit).isBefore(dayjs())) {
+        return { state: 'expired' as const };
+      }
+      return { state: 'ok' as const, invite };
     } catch (err) {
+      return { state: 'invalid' as const };
+    }
+  }
+
+  public inviteFromCookie(cookie?: string) {
+    const read = this.readOrgInvite(cookie);
+    if (read.state === 'missing') {
       return false;
     }
+    if (read.state === 'expired') {
+      throw new Error('This invite link has expired');
+    }
+    if (read.state !== 'ok') {
+      throw new Error('This invite link is not valid');
+    }
+    return read.invite;
+  }
+
+  private inviteClaims(
+    addToOrg?: boolean | OrganizationInviteClaims
+  ): OrganizationInviteClaims | false {
+    if (!addToOrg || typeof addToOrg === 'boolean') {
+      return false;
+    }
+    return addToOrg;
+  }
+
+  public getOrgFromCookie(cookie?: string) {
+    const read = this.readOrgInvite(cookie);
+    if (read.state !== 'ok') {
+      return false;
+    }
+    return read.invite;
   }
 
   private async loginOrRegisterProvider(
     provider: Provider,
-    body: CreateOrgUserDto
+    body: CreateOrgUserDto,
+    ip: string,
+    userAgent: string,
+    addToOrg?: boolean | OrganizationInviteClaims
   ) {
     const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -126,7 +200,29 @@ export class AuthService {
       return user;
     }
 
-    signupsClosed();
+    const invite = this.inviteClaims(addToOrg);
+    if (!invite) {
+      signupsClosed();
+    }
+    const email = String(providerUser.email || '').trim().toLowerCase();
+    if (!email || email !== invite.email) {
+      throw new Error('This invite is for a different email');
+    }
+    await this._organizationService.assertInviteMatches(invite, email);
+    const create = await this._organizationService.createOrgAndUser(
+      {
+        company: body.company,
+        email,
+        password: '',
+        provider,
+        providerId: providerUser.id,
+        datafast_visitor_id: body.datafast_visitor_id,
+      },
+      ip,
+      userAgent,
+      { invited: true }
+    );
+    return create.users[0].user;
   }
 
   private async _track(
@@ -240,7 +336,8 @@ export class AuthService {
     code: string,
     redirectUri?: string,
     state?: string,
-    stateCookie?: string
+    stateCookie?: string,
+    orgCookie?: string
   ) {
     // the mobile app passes redirect_uri and keeps no cookies, the web flow
     // never passes it, so the state nonce is only enforced for the web flow
@@ -263,10 +360,34 @@ export class AuthService {
       provider as Provider
     );
     if (checkExists) {
+      const invite = this.optionalInvite(orgCookie);
+      if (invite) {
+        await this._organizationService.addUserToOrg(
+          checkExists.id,
+          checkExists.email,
+          invite
+        );
+      }
       return { jwt: await this.jwt(checkExists) };
     }
 
-    signupsClosed();
+    const invite = this.optionalInvite(orgCookie);
+    if (!invite) {
+      signupsClosed();
+    }
+    const email = String(user.email || '').trim().toLowerCase();
+    if (!email || email !== invite.email) {
+      throw new Error('This invite is for a different email');
+    }
+    await this._organizationService.assertInviteMatches(invite, email);
+    return { token };
+  }
+
+  private optionalInvite(orgCookie?: string) {
+    if (!orgCookie) {
+      return false;
+    }
+    return this.inviteFromCookie(orgCookie);
   }
 
   private async jwt(user: User) {

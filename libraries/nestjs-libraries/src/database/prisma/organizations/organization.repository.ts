@@ -1,5 +1,10 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
+import {
+  OrganizationInviteStatus,
+  Role,
+  ShortLinkPreference,
+  SubscriptionTier,
+} from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -11,7 +16,8 @@ export class OrganizationRepository {
   constructor(
     private _organization: PrismaRepository<'organization'>,
     private _userOrg: PrismaRepository<'userOrganization'>,
-    private _user: PrismaRepository<'user'>
+    private _user: PrismaRepository<'user'>,
+    private _invite: PrismaRepository<'organizationInvite'>
   ) {}
 
   createMaxUser(id: string, name: string, saasName: string, email: string) {
@@ -628,6 +634,137 @@ export class OrganizationRepository {
       },
       data: {
         shortlink,
+      },
+    });
+  }
+
+  getSubscriptionTier(orgId: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        id: orgId,
+      },
+      select: {
+        subscription: {
+          select: {
+            subscriptionTier: true,
+          },
+        },
+      },
+    });
+  }
+
+  getOrgMember(orgId: string, userId: string) {
+    return this._userOrg.model.userOrganization.findUnique({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: orgId,
+        },
+      },
+      select: {
+        role: true,
+        userId: true,
+        organizationId: true,
+      },
+    });
+  }
+
+  updateTeamMemberRole(
+    orgId: string,
+    userId: string,
+    role: 'USER' | 'ADMIN'
+  ) {
+    return this._userOrg.model.userOrganization.update({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: orgId,
+        },
+      },
+      data: {
+        role,
+      },
+    });
+  }
+
+  createOrganizationInvite(data: {
+    id: string;
+    email: string;
+    role: 'USER' | 'ADMIN';
+    organizationId: string;
+    tokenHash: string;
+    expiresAt: Date;
+  }) {
+    return this._invite.model.organizationInvite.create({
+      data: {
+        ...data,
+        status: OrganizationInviteStatus.PENDING,
+      },
+    });
+  }
+
+  updateOrganizationInvite(
+    id: string,
+    data: {
+      email?: string;
+      role?: 'USER' | 'ADMIN';
+      tokenHash?: string;
+      expiresAt?: Date;
+      status?: OrganizationInviteStatus;
+    }
+  ) {
+    return this._invite.model.organizationInvite.update({
+      where: {
+        id,
+      },
+      data,
+    });
+  }
+
+  getOrganizationInvite(id: string) {
+    return this._invite.model.organizationInvite.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  findReusableInvite(orgId: string, email: string) {
+    return this._invite.model.organizationInvite.findFirst({
+      where: {
+        organizationId: orgId,
+        email,
+        status: {
+          in: [
+            OrganizationInviteStatus.PENDING,
+            OrganizationInviteStatus.EXPIRED,
+          ],
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  listPendingInvites(orgId: string, now: Date) {
+    return this._invite.model.organizationInvite.findMany({
+      where: {
+        organizationId: orgId,
+        status: OrganizationInviteStatus.PENDING,
+        expiresAt: {
+          gt: now,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        expiresAt: true,
+        status: true,
       },
     });
   }
