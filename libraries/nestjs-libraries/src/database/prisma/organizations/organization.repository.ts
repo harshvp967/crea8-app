@@ -6,6 +6,24 @@ import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 
+// Same org shape as a new sign-up on main: trial flags, no subscription row.
+// The creator is Super Admin. The default plan is whatever the app already
+// uses when an organization has no subscription.
+export function workspaceCreateInput(userId: string, name: string, apiKey: string) {
+  return {
+    name,
+    apiKey,
+    allowTrial: true,
+    isTrailing: true,
+    users: {
+      create: {
+        role: Role.SUPERADMIN,
+        userId,
+      },
+    },
+  };
+}
+
 @Injectable()
 export class OrganizationRepository {
   constructor(
@@ -456,6 +474,20 @@ export class OrganizationRepository {
     });
 
     return create;
+  }
+
+  createWorkspace(userId: string, name: string) {
+    return this._organization.model.organization.create({
+      data: workspaceCreateInput(
+        userId,
+        name,
+        AuthService.fixedEncryption(makeSecureId(20))
+      ),
+      select: {
+        id: true,
+        name: true,
+      },
+    });
   }
 
   async createOrgAndUser(

@@ -18,6 +18,10 @@ export class OrganizationService {
     private _organizationRepository: OrganizationRepository,
     private _notificationsService: NotificationService
   ) {}
+  createWorkspace(userId: string, name: string) {
+    return this._organizationRepository.createWorkspace(userId, name);
+  }
+
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
     ip: string,
