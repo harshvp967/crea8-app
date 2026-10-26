@@ -27,6 +27,7 @@ import { JoinOrgDto } from '@gitroom/nestjs-libraries/dtos/users/join.org.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
+import { CreateWorkspaceDto } from '@gitroom/nestjs-libraries/dtos/users/create.workspace.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { RealIP } from 'nestjs-real-ip';
@@ -305,6 +306,37 @@ export class UsersController {
     return (await this._orgService.getOrgsByUserId(user.id)).filter(
       (f) => !f.users[0].disabled
     );
+  }
+
+  @Post('/workspace')
+  async createWorkspace(
+    @GetUserFromRequest() user: User,
+    @Body() body: CreateWorkspaceDto,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const name = body.name.trim();
+    if (!name) {
+      throw new HttpException('Enter a workspace name', 400);
+    }
+
+    const created = await this._orgService.createWorkspace(user.id, name);
+    response.cookie('showorg', created.id, {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: authCookieSameSite(),
+          }
+        : {}),
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+    });
+
+    if (process.env.NOT_SECURED) {
+      response.header('showorg', created.id);
+    }
+
+    return created;
   }
 
   @Post('/change-org')

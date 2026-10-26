@@ -180,7 +180,14 @@ export class IntegrationService {
     return this._integrationRepository.updateIntegrationGroup(org, id, group);
   }
 
-  updateOnCustomerName(org: string, id: string, name: string) {
+  async updateOnCustomerName(org: string, id: string, name: string) {
+    const integration = await this._integrationRepository.getIntegrationById(
+      org,
+      id
+    );
+    if (!integration) {
+      throw new HttpException('Channel not found', 404);
+    }
     return this._integrationRepository.updateOnCustomerName(org, id, name);
   }
 
