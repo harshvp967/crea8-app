@@ -611,7 +611,8 @@ $c8-body: var(--font-body), Inter, sans-serif;
   max-width: none;
 }
 
-.settings-screen .settings-control .text-\[14px\] {
+/* Label wrapper only. The select also has text-[14px] and must stay visible. */
+.settings-screen .settings-control div.text-\[14px\] {
   display: none;
 }
 
