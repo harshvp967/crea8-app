@@ -501,10 +501,7 @@ export const DayView = () => {
             return (
               <div key={hour} className="phone-slot" data-hour={hour}>
                 <span className="phone-slot-time">
-                  {currentDay
-                    .startOf('day')
-                    .add(hour, 'hour')
-                    .format(isUSCitizen() ? 'h A' : 'LT')}
+                  {convertTimeFormatBasedOnLocality(hour)}
                 </span>
                 <div className="phone-slot-posts">
                   {rows.length ? (
