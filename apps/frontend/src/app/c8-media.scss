@@ -434,14 +434,23 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .media-library .media-img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
+.media-library .media-img.is-broken {
+  display: none;
+}
+
 .media-library .media-kind {
-  display: flex;
+  display: none;
+  position: absolute;
+  inset: 0;
   align-items: center;
   justify-content: center;
   width: 100%;
@@ -450,14 +459,14 @@ $c8-body: var(--font-body), Inter, sans-serif;
   color: var(--c8-muted);
 }
 
+.media-library .media-thumb:has(.is-broken) .media-kind,
+.media-library .media-thumb:not(:has(img)):not(:has(video)) .media-kind {
+  display: flex;
+}
+
 .media-library .media-kind svg {
   width: 28px;
   height: 28px;
-}
-
-.media-library .media-kind.is-video {
-  background: #121016;
-  color: #f5f3ee;
 }
 
 .media-library .media-caption {
@@ -935,4 +944,58 @@ $c8-body: var(--font-body), Inter, sans-serif;
     margin-right: auto;
     margin-left: auto;
   }
+}
+
+/* Preview opens from the page and from the composer picker, so it is not
+   scoped to .media-library. The dialog stays inside the viewport; the file
+   is contained inside the padded modal. The grid above is unchanged. */
+.arc-dialog.media-preview-modal {
+  box-sizing: border-box;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100dvh - 72px) !important;
+  gap: 12px !important;
+  padding: 16px 16px 20px !important;
+  overflow: hidden;
+}
+
+.media-preview-modal .arc-dialog-head {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  min-height: 32px;
+}
+
+.media-preview-modal .mantine-Modal-close {
+  position: static !important;
+  top: auto !important;
+  inset-inline-end: auto !important;
+  margin-left: auto;
+}
+
+.media-preview-modal .arc-dialog-body {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.media-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 4px;
+}
+
+.media-preview-media,
+.media-preview video {
+  display: block;
+  width: auto !important;
+  height: auto !important;
+  max-width: calc(100vw - 64px);
+  max-height: calc(100dvh - 168px);
+  object-fit: contain !important;
 }
