@@ -12,7 +12,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { plainToPostHtml } from '@gitroom/nestjs-libraries/database/prisma/posts/idea.posts';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import {
   composerChannels,
   integrationsForCustomer,
@@ -756,7 +756,7 @@ const IdeaPostsPanel = ({
         size: '80%',
         title: '',
         children: (
-          <AddEditModal
+          <ComposerModal
             allIntegrations={channels.allIntegrations.map((row) => ({ ...row }))}
             integrations={channels.allIntegrations}
             selectedChannels={[item.integrationId]}

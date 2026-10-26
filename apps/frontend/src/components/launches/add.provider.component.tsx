@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useMemo, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -70,12 +70,44 @@ const InviteLinkModal: FC<{
   );
 };
 
+const AddProviderLoader: FC<{ invite: boolean; update?: () => void }> = ({
+  invite,
+  update,
+}) => {
+  const fetch = useFetch();
+  const [data, setData] = useState<null | {
+    social: Array<{ identifier: string; name: string; isExternal: boolean; isWeb3: boolean }>;
+    article: Array<{ identifier: string; name: string }>;
+  }>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const json = await (await fetch('/integrations')).json();
+      if (!cancelled) {
+        setData(json);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetch]);
+  if (!data) {
+    return (
+      <div
+        className="min-h-[240px] animate-pulse rounded-[20px] bg-newBgColorInner"
+        role="status"
+      >
+        <span className="sr-only">Loading</span>
+      </div>
+    );
+  }
+  return <AddProviderComponent invite={invite} update={update} {...data} />;
+};
+
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
   const modal = useModals();
-  const fetch = useFetch();
   const t = useT();
-  return useCallback(async () => {
-    const data = await (await fetch('/integrations')).json();
+  return useCallback(() => {
     modal.openModal({
       title: invite
         ? t('invite_link_title', 'Invite link')
@@ -85,11 +117,9 @@ export const useAddProvider = (update?: () => void, invite?: boolean) => {
       classNames: {
         modal: 'cc-picker-modal',
       },
-      children: (
-        <AddProviderComponent invite={!!invite} update={update} {...data} />
-      ),
+      children: <AddProviderLoader invite={!!invite} update={update} />,
     });
-  }, [fetch, invite, modal, t, update]);
+  }, [invite, modal, t, update]);
 };
 export const AddProviderButton: FC<{
   update?: () => void;

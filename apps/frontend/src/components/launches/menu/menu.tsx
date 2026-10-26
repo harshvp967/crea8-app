@@ -29,7 +29,7 @@ import { CustomVariables } from '@gitroom/frontend/components/launches/add.provi
 import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import { composerChannels } from '@gitroom/frontend/components/launches/customer.filter';
 import dayjs from 'dayjs';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
@@ -336,7 +336,7 @@ export const Menu: FC<{
           modal: 'w-[100%] max-w-[1400px] text-textColor',
         },
         children: (
-          <AddEditModal
+          <ComposerModal
             allIntegrations={channels.allIntegrations.map((p) => ({
               ...p,
             }))}
