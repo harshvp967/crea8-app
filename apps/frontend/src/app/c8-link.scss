@@ -1584,10 +1584,6 @@ body:has(.link-screen) .stk-close {
   padding-bottom: 0 !important;
 }
 
-.link-screen .lib-reset-phone {
-  display: none !important;
-}
-
 /* ---------- Appearance and Settings ---------- */
 .link-screen .lib-appearance .lib-period,
 .link-screen .lib-settings .lib-period,
@@ -3364,17 +3360,6 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 
   .link-screen .stk-state {
     padding: 24px 8px 8px !important;
-  }
-
-  .link-screen .lib-reset {
-    display: none !important;
-  }
-
-  .link-screen .lib-reset-phone {
-    display: inline-flex !important;
-    align-self: flex-end;
-    margin-top: 4px;
-    white-space: nowrap;
   }
 
   .link-screen .lib-editor-row.is-feature .lib-pill-inline,
