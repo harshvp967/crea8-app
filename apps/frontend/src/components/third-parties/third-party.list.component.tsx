@@ -195,6 +195,7 @@ export const ThirdPartyListComponent: FC<{
     revalidateOnMount: true,
     refreshWhenHidden: false,
     refreshWhenOffline: false,
+    dedupingInterval: 15000,
   });
 
   const addApiKey = useCallback(

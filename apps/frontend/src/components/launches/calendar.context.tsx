@@ -292,6 +292,7 @@ export const CalendarWeekProvider: FC<{
     revalidateOnMount: true,
     refreshWhenHidden: false,
     refreshWhenOffline: false,
+    dedupingInterval: 15000,
   });
   const { data: sign } = useSWR('default-sign', defaultSign, {
     revalidateOnFocus: false,
@@ -300,6 +301,7 @@ export const CalendarWeekProvider: FC<{
     revalidateOnMount: true,
     refreshWhenHidden: false,
     refreshWhenOffline: false,
+    dedupingInterval: 15000,
   });
 
   const setFiltersWrapper = useCallback(
