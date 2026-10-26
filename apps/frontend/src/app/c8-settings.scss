@@ -442,6 +442,84 @@ $c8-body: var(--font-body), Inter, sans-serif;
   padding-left: 48px;
 }
 
+.settings-screen .settings-role {
+  height: 36px;
+  max-width: 160px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-family: $c8-body;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-screen .settings-role:disabled {
+  opacity: 0.7;
+}
+
+.settings-screen .settings-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.settings-screen .settings-pending-title {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.settings-screen .settings-invite {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.settings-screen .settings-invite > .settings-muted {
+  flex: 1 1 160px;
+  padding-left: 0;
+}
+
+.settings-screen .settings-invite-actions {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+@media (max-width: 639px) {
+  .settings-screen .settings-item.cols-team,
+  .settings-screen .settings-invite {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-screen .cols-team .settings-item-actions,
+  .settings-screen .settings-invite-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .settings-screen .cols-team > .settings-muted,
+  .settings-screen .settings-invite > .settings-muted {
+    padding-left: 0;
+  }
+
+  .settings-screen .settings-role {
+    width: 100%;
+    max-width: none;
+  }
+}
+
 /* ---------- Pills ---------- */
 .settings-screen .settings-pill {
   height: auto;
@@ -2426,6 +2504,27 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   background: var(--c8-soft);
   color: var(--c8-ink);
   font-size: 14px;
+}
+
+.account-org-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.account-new-workspace {
+  align-self: flex-start;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .account-billing-empty {
