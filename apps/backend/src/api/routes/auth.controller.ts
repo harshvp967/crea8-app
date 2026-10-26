@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
   Param,
   Post,
   Query,
@@ -59,7 +60,7 @@ export class AuthController {
     @UserAgent() userAgent: string
   ) {
     try {
-      const getOrgFromCookie = this._authService.getOrgFromCookie(
+      const getOrgFromCookie = this._authService.inviteFromCookie(
         req?.cookies?.org
       );
 
@@ -70,6 +71,24 @@ export class AuthController {
         userAgent,
         getOrgFromCookie
       );
+
+      if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
+        response.cookie('showorg', addedOrg.organizationId, {
+          domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+          ...(!process.env.NOT_SECURED
+            ? {
+                secure: true,
+                httpOnly: true,
+                sameSite: authCookieSameSite(),
+              }
+            : {}),
+          expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+        });
+
+        if (process.env.NOT_SECURED) {
+          response.header('showorg', addedOrg.organizationId);
+        }
+      }
 
       const activationRequired =
         body.provider === 'LOCAL' && this._emailService.hasProvider();
@@ -96,24 +115,6 @@ export class AuthController {
         response.header('auth', jwt);
       }
 
-      if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
-        response.cookie('showorg', addedOrg.organizationId, {
-          domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-          ...(!process.env.NOT_SECURED
-            ? {
-                secure: true,
-                httpOnly: true,
-                sameSite: authCookieSameSite(),
-              }
-            : {}),
-          expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-        });
-
-        if (process.env.NOT_SECURED) {
-          response.header('showorg', addedOrg.organizationId);
-        }
-      }
-
       Sentry.metrics.count('new_user', 1);
       response.header('onboarding', 'true');
       response.status(200).json({
@@ -134,7 +135,7 @@ export class AuthController {
     @UserAgent() userAgent: string
   ) {
     try {
-      const getOrgFromCookie = this._authService.getOrgFromCookie(
+      const getOrgFromCookie = this._authService.inviteFromCookie(
         req?.cookies?.org
       );
 
@@ -359,18 +360,33 @@ export class AuthController {
 
     let jwt: string;
     try {
-      jwt = (
-        await this._authService.checkExists(
-          provider,
-          code,
-          redirect_uri,
-          state,
-          req?.cookies?.oauth_state
-        )
-      ).jwt;
+      const result = await this._authService.checkExists(
+        provider,
+        code,
+        redirect_uri,
+        state,
+        req?.cookies?.oauth_state,
+        req?.cookies?.org
+      );
+      if ('token' in result && result.token) {
+        return response.status(200).json({ token: result.token });
+      }
+      jwt = result.jwt;
     } catch (e: any) {
-      if (e?.message === SIGNUPS_CLOSED_MESSAGE) {
-        return response.status(400).send(SIGNUPS_CLOSED_MESSAGE);
+      if (e instanceof HttpException) {
+        const body = e.getResponse();
+        const message =
+          typeof body === 'string'
+            ? body
+            : (body as { message?: string })?.message || e.message;
+        return response.status(e.getStatus()).send(message);
+      }
+      const message = e?.message || '';
+      if (
+        message === SIGNUPS_CLOSED_MESSAGE ||
+        message.startsWith('This invite')
+      ) {
+        return response.status(400).send(message);
       }
       throw e;
     }

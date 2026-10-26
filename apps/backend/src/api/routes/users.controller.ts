@@ -22,6 +22,8 @@ import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permis
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { defaultPlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/default.plan';
+import { JoinOrgDto } from '@gitroom/nestjs-libraries/dtos/users/join.org.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
@@ -121,8 +123,7 @@ export class UsersController {
           organization?.subscription?.totalChannels || pricing.FREE.channel,
       tier:
         // @ts-ignore
-        organization?.subscription?.subscriptionTier ||
-        (!process.env.STRIPE_PUBLISHABLE_KEY ? 'ULTIMATE' : 'FREE'),
+        organization?.subscription?.subscriptionTier || defaultPlanTier(),
       // @ts-ignore
       role: organization?.users[0]?.role,
       // @ts-ignore
@@ -280,25 +281,23 @@ export class UsersController {
   @Post('/join-org')
   async joinOrg(
     @GetUserFromRequest() user: User,
-    @Body('org') org: string,
-    @Res({ passthrough: true }) response: Response
+    @Body() body: JoinOrgDto
   ) {
-    const getOrgFromCookie = this._authService.getOrgFromCookie(org);
-
-    if (!getOrgFromCookie) {
-      return response.status(200).json({ id: null });
+    const read = this._authService.readOrgInvite(body.org);
+    if (read.state === 'expired') {
+      throw new HttpException('This invite link has expired', 400);
+    }
+    if (read.state !== 'ok') {
+      throw new HttpException('This invite link is not valid', 400);
     }
 
     const addedOrg = await this._orgService.addUserToOrg(
       user.id,
-      getOrgFromCookie.id,
-      getOrgFromCookie.orgId,
-      getOrgFromCookie.role
+      user.email,
+      read.invite
     );
 
-    response.status(200).json({
-      id: typeof addedOrg !== 'boolean' ? addedOrg.organizationId : null,
-    });
+    return { id: addedOrg.organizationId };
   }
 
   @Get('/organizations')
