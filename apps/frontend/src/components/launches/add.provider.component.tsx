@@ -94,7 +94,7 @@ const AddProviderLoader: FC<{ invite: boolean; update?: () => void }> = ({
   if (!data) {
     return (
       <div
-        className="min-h-[240px] animate-pulse rounded-[20px] bg-newBgColorInner"
+        className="min-h-[240px] animate-pulse rounded-[20px] border border-newBorder bg-newBgColor"
         role="status"
       >
         <span className="sr-only">Loading</span>
@@ -753,10 +753,12 @@ export const AddProviderComponent: FC<{
       <div className="flex flex-col">
         <div
           className={clsx(
-            isMobile && 'gap-[20px] flex flex-col',
+            isMobile && 'flex flex-col gap-[12px]',
+            !isMobile && 'cc-grid grid w-full gap-[10px]',
             !isMobile &&
-              'cc-grid grid grid-cols-5 gap-[10px] justify-items-center justify-center',
-            isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-5'
+              (onboarding
+                ? 'grid-cols-2 min-[768px]:grid-cols-4 min-[1200px]:grid-cols-9'
+                : 'grid-cols-2 min-[480px]:grid-cols-3 min-[768px]:grid-cols-4 min-[1200px]:grid-cols-5')
           )}
         >
           {social
@@ -791,18 +793,14 @@ export const AddProviderComponent: FC<{
                     }
                   : {})}
                 className={clsx(
+                  'cc-tile relative flex w-full min-w-0 cursor-pointer items-center border border-newBorder bg-newBgColorInner text-textColor transition-colors hover:border-[color:var(--arc-selected-border)] hover:bg-[var(--arc-selected)]',
                   isMobile
-                    ? 'flex-row h-[72px] p-[16px]'
-                    : 'flex-col p-[10px] h-[100px] justify-center',
+                    ? 'min-h-[56px] flex-row justify-start gap-[12px] rounded-[18px] px-[14px] py-[10px] text-start text-[14px] font-[500]'
+                    : 'min-h-[104px] flex-col justify-center gap-[8px] rounded-[20px] px-[8px] pb-[12px] text-center text-[13px] font-[500] leading-[1.2] min-[768px]:text-[14px]',
                   item.comingSoon && 'is-soon',
-                  'cc-tile w-full text-[14px] rounded-[16px] bg-newTableHeader border border-transparent text-textColor relative items-center flex gap-[10px] cursor-pointer transition-colors hover:border-[#00D9FF] hover:bg-[#00D9FF]/10'
+                  !isMobile && (item.comingSoon ? 'pt-[32px]' : 'pt-[12px]')
                 )}
               >
-                {item.comingSoon && (
-                  <span className="cc-soon pointer-events-none absolute -top-[7px] start-[8px] z-[2] max-w-[calc(100%-16px)] truncate rounded-full bg-[#00D9FF] px-[6px] text-[9px] font-[700] leading-[16px] text-[#0a0a0a]">
-                    {t('coming_soon', 'Coming soon')}
-                  </span>
-                )}
                 {!!item.toolTip && !isMobile && (
                   <HugeIcon
                     name="info"
@@ -826,12 +824,24 @@ export const AddProviderComponent: FC<{
                 </div>
                 <div
                   className={clsx(
-                    isMobile ? '' : 'whitespace-pre-wrap',
-                    'cc-name text-center'
+                    'cc-name min-w-0 break-words',
+                    isMobile ? 'flex-1 text-start' : 'w-full text-center'
                   )}
                 >
                   {item.name}
                 </div>
+                {item.comingSoon && (
+                  <span
+                    className={clsx(
+                      'cc-soon pointer-events-none z-[2] inline-flex h-[20px] shrink-0 items-center truncate rounded-full border border-[color:var(--arc-selected-border)] bg-[var(--arc-selected)] px-[8px] text-[11px] font-[500] leading-none text-[color:var(--arc-accent-text)] min-[768px]:h-[22px] min-[768px]:text-[12px]',
+                      isMobile
+                        ? 'relative ms-auto max-w-[46%]'
+                        : 'absolute top-[8px] start-[8px] max-w-[calc(100%-36px)]'
+                    )}
+                  >
+                    {t('coming_soon', 'Coming soon')}
+                  </span>
+                )}
               </div>
             ))}
         </div>

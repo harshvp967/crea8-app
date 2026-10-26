@@ -41,7 +41,7 @@ export class TiktokBusinessProvider
     const handle = this.socialHandle(integration.profile);
     return handle ? { network: 'tiktok', url: `https://www.tiktok.com/@${handle}` } : null;
   }
-  name = 'TikTok';
+  name = 'TikTok Business';
   isBetweenSteps = false;
   convertToJPEG = true;
   scopes = [
