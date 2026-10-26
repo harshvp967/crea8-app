@@ -876,13 +876,39 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         })),
       }));
 
+      const shortlinkPreference = shortlinkPreferenceData?.shortlink || 'ASK';
+      const shortlinkMessages = allValues
+        .filter((p: any) => {
+          const integration = integrationById(p.id)?.integration;
+          if (!integration?.stripLinks) {
+            return true;
+          }
+          const settings = p.settings || {};
+          return (
+            settings.post_type === 'article' || settings.include_links === true
+          );
+        })
+        .flatMap((p: any) => p.values.flatMap((a: any) => a.content));
+      const askShortlink = !dummy && !saveToDraft && shortlinkPreference !== 'NO';
+
+      // Validation downloads media for a few channels. The shortlink check is
+      // a separate request. They do not depend on each other.
+      const [checkAllValid, shortLinkUrl] = await Promise.all([
+        dummy
+          ? Promise.resolve([])
+          : fetch('/posts/valid', {
+              method: 'POST',
+              body: JSON.stringify({ type, posts }),
+            }).then((response) => response.json()),
+        askShortlink
+          ? fetch('/posts/should-shortlink', {
+              method: 'POST',
+              body: JSON.stringify({ messages: shortlinkMessages }),
+            }).then((response) => response.json())
+          : Promise.resolve({ ask: false }),
+      ]);
+
       if (!dummy) {
-        const checkAllValid = await (
-          await fetch('/posts/valid', {
-            method: 'POST',
-            body: JSON.stringify({ type, posts }),
-          })
-        ).json();
 
         const focus = (id: string, where: 'fix' | 'preview') => {
           integrationById(id)?.ref?.current?.[where]?.();
@@ -981,49 +1007,23 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         return;
       }
 
-      const shortlinkPreference = shortlinkPreferenceData?.shortlink || 'ASK';
-
       let shortLink = false;
 
-      if (!dummy && shortlinkPreference !== 'NO') {
-        const shortLinkUrl = await (
-          await fetch('/posts/should-shortlink', {
-            method: 'POST',
-            body: JSON.stringify({
-              messages: allValues
-                // platforms that remove links won't keep shortlinks either
-                .filter((p: any) => {
-                  const integration = integrationById(p.id)?.integration;
-                  if (!integration?.stripLinks) {
-                    return true;
-                  }
-                  const settings = p.settings || {};
-                  return (
-                    settings.post_type === 'article' ||
-                    settings.include_links === true
-                  );
-                })
-                .flatMap((p: any) => p.values.flatMap((a: any) => a.content)),
-            }),
-          })
-        ).json();
-
-        if (shortLinkUrl.ask) {
-          if (shortlinkPreference === 'YES') {
-            // Automatically shortlink without asking
-            shortLink = true;
-          } else {
-            // ASK: Show the dialog
-            shortLink = await deleteDialog(
-              t(
-                'shortlink_urls_question',
-                'Shorten the links in this post so you can see how many people click them?'
-              ),
-              t('yes_shortlink_it', 'Shorten links'),
-              undefined,
-              t('no_original_urls', 'Keep the links')
-            );
-          }
+      if (askShortlink && shortLinkUrl.ask) {
+        if (shortlinkPreference === 'YES') {
+          // Automatically shortlink without asking
+          shortLink = true;
+        } else {
+          // ASK: Show the dialog
+          shortLink = await deleteDialog(
+            t(
+              'shortlink_urls_question',
+              'Shorten the links in this post so you can see how many people click them?'
+            ),
+            t('yes_shortlink_it', 'Shorten links'),
+            undefined,
+            t('no_original_urls', 'Keep the links')
+          );
         }
       }
 

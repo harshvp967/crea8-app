@@ -84,6 +84,38 @@ export function postWorkflowPlan(
   return 'start';
 }
 
+const validationMemory = new Map<string, { at: number; value: unknown }>();
+const validationTtlMs = 15000;
+
+export function validationCacheKey(orgId: string, posts: unknown) {
+  return `${orgId}:${JSON.stringify(posts ?? [])}`;
+}
+
+export function takeCachedValidation<T>(
+  key: string,
+  now = Date.now()
+): T | undefined {
+  const hit = validationMemory.get(key);
+  if (!hit) {
+    return undefined;
+  }
+  if (now - hit.at > validationTtlMs) {
+    validationMemory.delete(key);
+    return undefined;
+  }
+  return hit.value as T;
+}
+
+export function rememberValidation(key: string, value: unknown, now = Date.now()) {
+  validationMemory.set(key, { at: now, value });
+  if (validationMemory.size > 100) {
+    const oldest = validationMemory.keys().next().value;
+    if (oldest) {
+      validationMemory.delete(oldest);
+    }
+  }
+}
+
 // List view filter.
 // All is published, scheduled, draft, and error from `from` onward, with no
 // end. `from` is the start of today in the user's timezone.

@@ -1,9 +1,12 @@
 import {
   channelPublishDate,
   postWorkflowPlan,
+  rememberValidation,
   scheduledPostState,
   scheduledPublishDate,
   siblingPostGroups,
+  takeCachedValidation,
+  validationCacheKey,
 } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 
 describe('post scheduling', () => {
@@ -57,5 +60,13 @@ describe('post scheduling', () => {
     expect(
       siblingPostGroups('a', 1, groups).map((group) => group[0].integrationId)
     ).toEqual(['b']);
+  });
+
+  it('reuses a schedule validation for 15 seconds and then drops it', () => {
+    const key = validationCacheKey('org-cache', [{ integration: { id: 'a' } }]);
+    rememberValidation(key, [{ valid: true }], 1_000);
+    expect(takeCachedValidation(key, 1_000 + 15_000)).toEqual([{ valid: true }]);
+    expect(takeCachedValidation(key, 1_000 + 15_001)).toBeUndefined();
+    expect(validationCacheKey('org-cache', [{ integration: { id: 'b' } }])).not.toBe(key);
   });
 });
