@@ -100,6 +100,44 @@ const jakartaSans = Plus_Jakarta_Sans({
   preload: false,
 });
 
+// Painted on the server, before /user/self returns. The signed-in shell used
+// to be `return null`, so the first HTML was only the dark body background.
+export const AppShellSkeleton = () => {
+  const accountMenu = useAccountMenu();
+  return (
+    <div
+      className={clsx(
+        'app-shell flex flex-col min-h-screen min-w-screen text-newTextColor p-[16px] gap-[12px]',
+        'c8-shell',
+        jakartaSans.className
+      )}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="sr-only">Loading</span>
+      <div className="c8-frame">
+        <C8Sidebar name="" email="" picture="" menu={accountMenu} />
+        <div className="c8-main">
+          <header className="app-header flex items-center min-h-[64px] h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder gap-[8px] ps-[18px] pe-[12px] shrink-0">
+            <span className="h-[18px] w-[120px] animate-pulse rounded-full bg-newBoxHover" />
+            <div className="ms-auto flex shrink-0 items-center gap-[8px]" aria-hidden>
+              <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
+              <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
+              <span className="hidden h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover md:block" />
+            </div>
+          </header>
+          <div className="app-stage flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="app-main flex flex-1 gap-[12px] min-h-0 overflow-hidden p-[4px]">
+              <div className="min-h-[240px] flex-1 animate-pulse rounded-[26px] border border-newBorder bg-newBgColorInner" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <MobileTabBar />
+    </div>
+  );
+};
+
 export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
 
@@ -170,7 +208,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
         </div>
       );
     }
-    return null;
+    return <AppShellSkeleton />;
   }
 
   return (
