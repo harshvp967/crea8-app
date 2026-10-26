@@ -2841,6 +2841,11 @@ body.c8-schedule .po-sure-danger .po-sure-yes {
   font-weight: 600 !important;
 }
 
+body.c8-schedule .po-sure-modal .po-sure-yes.is-danger {
+  background: var(--c8-danger) !important;
+  color: #fff !important;
+}
+
 body.c8-schedule .po-sure-no {
   border-radius: 16px !important;
   box-shadow: 0 3px 0 var(--c8-hard) !important;

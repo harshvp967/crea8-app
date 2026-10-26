@@ -116,10 +116,11 @@ function LayoutContextInner(params: { children: ReactNode }) {
       if (response.status === 406) {
         if (
           await deleteDialog(
-            'You are currently on trial, in order to use the feature you must finish the trial',
-            'Finish the trial, charge me now',
-            'Trial',
-
+            "You'll be charged now.",
+            'Finish trial',
+            'Finish the trial?',
+            'Cancel',
+            'primary'
           )
         ) {
           window.open('/account?section=billing&finishTrial=true', '_blank');
@@ -135,7 +136,9 @@ function LayoutContextInner(params: { children: ReactNode }) {
               await response.json()
             ).message,
             'Move to billing',
-            'Payment Required'
+            'Payment required',
+            'Cancel',
+            'primary'
           )
         ) {
           window.open('/account?section=billing', '_blank');

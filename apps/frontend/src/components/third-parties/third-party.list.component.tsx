@@ -38,7 +38,12 @@ const ThirdPartyMenuComponent: FC<{
   const deleteChannel = (id: string) => async () => {
     setShow(false);
     if (
-      !(await deleteDialog('Are you sure you want to delete this integration?'))
+      !(await deleteDialog(
+        t('cant_be_undone', "This can't be undone."),
+        t('delete', 'Delete'),
+        t('delete_this_integration', 'Delete this integration?'),
+        t('cancel', 'Cancel')
+      ))
     ) {
       return;
     }

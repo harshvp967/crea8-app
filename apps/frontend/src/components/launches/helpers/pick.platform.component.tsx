@@ -94,7 +94,10 @@ export const PickPlatforms: FC<{
         if (
           !props.singleSelect &&
           !(await deleteDialog(
-            'Are you sure you want to remove this platform?'
+            "This can't be undone.",
+            'Remove',
+            'Remove this platform?',
+            'Cancel'
           ))
         ) {
           return;

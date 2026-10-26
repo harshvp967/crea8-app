@@ -212,13 +212,10 @@ const usePostActions = (onMutate?: () => void) => {
     (post: any) => async () => {
       if (
         !(await deleteDialog(
-          t(
-            'are_you_sure_you_want_to_delete_post',
-            'Are you sure you want to delete post?'
-          ),
-          t('yes', 'Yes'),
-          t('delete_post', 'Delete Post'),
-          t('no_cancel', 'No, cancel!'),
+          t('cant_be_undone', "This can't be undone."),
+          t('delete', 'Delete'),
+          t('delete_this_post', 'Delete this post?'),
+          t('cancel', 'Cancel'),
           'danger'
         ))
       ) {

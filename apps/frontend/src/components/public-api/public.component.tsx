@@ -446,6 +446,7 @@ const PublicApiContent = () => {
       ),
       approveLabel: t('rotate', 'Rotate'),
       cancelLabel: t('cancel', 'Cancel'),
+      tone: 'destructive',
     });
     if (!approved) return;
     await fetch('/user/api-key/rotate', { method: 'POST' });

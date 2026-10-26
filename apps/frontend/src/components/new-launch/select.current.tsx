@@ -77,9 +77,11 @@ export const SelectCurrent: FC = () => {
       e.stopPropagation();
       e.preventDefault();
       const open = await modals.open({
-        title: 'Remove Social Account',
-        description:
-          'Are you sure you want to remove this social from scheduling?',
+        title: t('remove_this_account', 'Remove this account?'),
+        description: t('remove_account_from_schedule', 'It leaves the schedule.'),
+        approveLabel: t('remove', 'Remove'),
+        cancelLabel: t('cancel', 'Cancel'),
+        tone: 'destructive',
       });
 
       if (!open) {

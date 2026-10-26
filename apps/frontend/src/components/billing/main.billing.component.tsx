@@ -325,10 +325,12 @@ export const MainBillingComponent: FC<{
           if (
             subscription?.cancelAt ||
             (await deleteDialog(
-              `Are you sure you want to cancel your subscription?
-              ${messages.join(', ')}`,
-              'Yes, cancel',
-              'Cancel Subscription'
+              messages.length
+                ? `${messages.join('. ')}. This can't be undone.`
+                : "This can't be undone.",
+              'Cancel subscription',
+              'Cancel this subscription?',
+              'Go back'
             ))
           ) {
             const checkDiscount = await (
@@ -391,7 +393,12 @@ export const MainBillingComponent: FC<{
         }
         if (
           messages.length &&
-          !(await deleteDialog(messages.join(', '), 'Yes, continue'))
+          !(await deleteDialog(
+            messages.join('. '),
+            'Continue',
+            'Continue with this plan?',
+            'Cancel'
+          ))
         ) {
           return;
         }
@@ -415,7 +422,9 @@ export const MainBillingComponent: FC<{
               'Another account with this email already has an active subscription. Please log off and sign in to that account to manage your subscription.'
             ),
             t('ok', 'OK'),
-            t('already_subscribed', 'Already subscribed')
+            t('already_subscribed', 'Already subscribed'),
+            t('cancel', 'Cancel'),
+            'primary'
           );
           return;
         }
@@ -432,9 +441,11 @@ export const MainBillingComponent: FC<{
         if (portal) {
           if (
             await deleteDialog(
-              'We could not charge your credit card, please update your payment method',
+              'We could not charge this card.',
               'Update',
-              'Payment Method Required'
+              'Update your payment method?',
+              'Cancel',
+              'primary'
             )
           ) {
             window.open(portal);

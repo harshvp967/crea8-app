@@ -86,12 +86,12 @@ const ApplyCouponModal: FC<{ close: () => void }> = ({ close }) => {
     if (
       !(await deleteDialog(
         t(
-          'cancel_coupon_confirm',
-          'Are you sure you want to cancel this coupon? The user will pay the full price from the next billing cycle.'
+          'cancel_coupon_body',
+          'The user pays the full price from the next billing cycle.'
         ),
-        t('yes_cancel_coupon', 'Yes, cancel coupon'),
-        t('cancel_coupon_title', 'Cancel Coupon?'),
-        t('no_go_back', 'No, go back')
+        t('cancel_this_coupon_action', 'Cancel coupon'),
+        t('cancel_this_coupon', 'Cancel this coupon?'),
+        t('go_back', 'Go back')
       ))
     ) {
       return;
@@ -358,13 +358,12 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
     if (!selected.size) return;
     if (
       !(await deleteDialog(
-        t(
-          'refund_selected_confirm',
-          `Are you sure you want to refund ${selected.size} charge(s)? This cannot be undone.`
-        ),
-        t('yes_refund', 'Yes, refund'),
-        t('confirm_refund', 'Confirm Refund'),
-        t('no_cancel', 'No, cancel')
+        t('cant_be_undone', "This can't be undone."),
+        t('refund', 'Refund'),
+        t('refund_charges', 'Refund {{count}} charges?', {
+          count: selected.size,
+        }),
+        t('cancel', 'Cancel')
       ))
     ) {
       return;
@@ -386,12 +385,12 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
     if (
       !(await deleteDialog(
         t(
-          'cancel_subscription_confirm',
-          'This will immediately cancel the subscription. The user will be downgraded to the FREE plan. This cannot be undone.'
+          'cancel_subscription_now_body',
+          "The user moves to the free plan. This can't be undone."
         ),
-        t('yes_cancel_subscription', 'Yes, cancel subscription'),
-        t('cancel_subscription_title', 'Cancel Subscription?'),
-        t('no_go_back', 'No, go back')
+        t('cancel_subscription_action', 'Cancel subscription'),
+        t('cancel_this_subscription', 'Cancel this subscription?'),
+        t('go_back', 'Go back')
       ))
     ) {
       return;
@@ -544,8 +543,11 @@ export const Subscription = () => {
       const value = e.target.value;
       if (
         await deleteDialog(
-          'Are you sure you want to add a user subscription?',
-          'Add'
+          '',
+          'Add',
+          'Add a subscription?',
+          'Cancel',
+          'primary'
         )
       ) {
         await fetch('/billing/add-subscription', {
@@ -899,12 +901,13 @@ const SwitchUser = () => {
     if (
       !(await deleteDialog(
         t(
-          'switch_user_confirm',
-          `This will replace the current account's login with ${selected.email}. All data and the subscription stay with the account — only the login changes, and the new login gains its full access. Switch back to revert.`
+          'switch_login_body',
+          `This replaces the login with ${selected.email}. Data and the subscription stay on the account. Switch back to revert.`
         ),
-        t('yes_switch', 'Yes, switch'),
-        t('switch_user_title', 'Switch User?'),
-        t('no_cancel', 'No, cancel')
+        t('switch', 'Switch'),
+        t('switch_this_login', 'Switch this login?'),
+        t('cancel', 'Cancel'),
+        'primary'
       ))
     ) {
       return;

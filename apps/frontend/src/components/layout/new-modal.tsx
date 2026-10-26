@@ -335,7 +335,7 @@ export const DecisionModal: FC<{
   onlyApprove: boolean;
   resolution: (value: boolean) => void;
   title?: string;
-  tone?: 'danger' | 'primary';
+  tone?: 'danger' | 'primary' | 'destructive';
 }> = ({
   description,
   cancelLabel,
@@ -346,9 +346,14 @@ export const DecisionModal: FC<{
   tone,
 }) => {
   const { closeCurrent } = useModals();
+  const copy = typeof description === 'string' ? description.trim() : description;
+  const hasCopy = typeof copy === 'string' ? copy.length > 0 : !!copy;
   const approve = (
     <Button
-      className="po-sure-yes"
+      className={clsx(
+        'po-sure-yes',
+        (tone === 'danger' || tone === 'destructive') && 'is-danger'
+      )}
       onClick={() => {
         resolution(true);
         closeCurrent();
@@ -378,7 +383,7 @@ export const DecisionModal: FC<{
           </span>
           <div className="min-w-0">
             <div className="po-sure-title">{title}</div>
-            <div className="po-sure-copy">{description}</div>
+            {hasCopy ? <div className="po-sure-copy">{copy}</div> : null}
           </div>
         </div>
         <div className="po-sure-actions">
@@ -390,7 +395,7 @@ export const DecisionModal: FC<{
   }
   return (
     <div className="flex flex-col">
-      <div className="max-w-[600px]">{description}</div>
+      {hasCopy ? <div className="max-w-[600px]">{copy}</div> : null}
       <div className="flex gap-[12px] mt-[16px]">
         {approve}
         {cancel}
@@ -402,11 +407,11 @@ export const DecisionModal: FC<{
 export const decisionModalEmitter = new EventEmitter();
 
 export const areYouSure = ({
-  title = 'Are you sure?',
-  description = 'Are you sure you want to close this modal?' as any,
-  approveLabel = 'Yes',
-  cancelLabel = 'No',
-  tone = undefined as 'danger' | 'primary' | undefined,
+  title = 'Close this?',
+  description = '' as any,
+  approveLabel = 'Close',
+  cancelLabel = 'Cancel',
+  tone = undefined as 'danger' | 'primary' | 'destructive' | undefined,
 } = {}): Promise<boolean> => {
   return new Promise<boolean>((newRes) => {
     decisionModalEmitter.emit('open', {
@@ -432,12 +437,12 @@ export const useDecisionModal = () => {
   const modals = useModals();
   const open = useCallback(
     ({
-      title = 'Are you sure?',
-      description = 'Are you sure you want to close this modal?' as any,
+      title = 'Close this?',
+      description = '' as any,
       onlyApprove = false,
-      approveLabel = 'Yes',
-      cancelLabel = 'No',
-      tone = undefined as 'danger' | 'primary' | undefined,
+      approveLabel = 'Close',
+      cancelLabel = 'Cancel',
+      tone = undefined as 'danger' | 'primary' | 'destructive' | undefined,
       newRes = undefined as any,
     } = {}) => {
       return new Promise<boolean>((res) => {

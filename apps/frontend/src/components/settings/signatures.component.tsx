@@ -41,11 +41,10 @@ export const SignaturesComponent: FC<{
     (data: any) => async () => {
       if (
         await deleteDialog(
-          t(
-            'are_you_sure_you_want_to_delete',
-            `Are you sure you want to delete?`,
-            { name: data.content.slice(0, 15) + '...' }
-          )
+          t('cant_be_undone', "This can't be undone."),
+          t('delete', 'Delete'),
+          t('delete_this_signature', 'Delete this signature?'),
+          t('cancel', 'Cancel')
         )
       ) {
         await fetch(`/signatures/${data.id}`, {

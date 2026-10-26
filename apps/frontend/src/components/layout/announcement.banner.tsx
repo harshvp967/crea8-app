@@ -48,13 +48,10 @@ const AnnouncementDetailModal: FC<{
   const handleDelete = useCallback(async () => {
     if (
       !(await deleteDialog(
-        t(
-          'delete_announcement_confirm',
-          'Are you sure you want to delete this announcement?'
-        ),
-        t('yes_delete', 'Yes, delete'),
-        t('confirm_delete', 'Confirm Delete'),
-        t('no_cancel', 'No, cancel')
+        t('cant_be_undone', "This can't be undone."),
+        t('delete', 'Delete'),
+        t('delete_this_announcement', 'Delete this announcement?'),
+        t('cancel', 'Cancel')
       ))
     ) {
       return;

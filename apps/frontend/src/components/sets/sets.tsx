@@ -152,7 +152,14 @@ export const Sets: FC = () => {
 
   const deleteSet = useCallback(
     (data: any) => async () => {
-      if (await deleteDialog(`Are you sure you want to delete ${data.name}?`)) {
+      if (
+        await deleteDialog(
+          "This can't be undone.",
+          'Delete',
+          `Delete ${data.name}?`,
+          'Cancel'
+        )
+      ) {
         await fetch(`/sets/${data.id}`, {
           method: 'DELETE',
         });
