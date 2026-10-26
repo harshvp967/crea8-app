@@ -59,6 +59,7 @@ import {
   urlProblem,
   utcToZonedInput,
   webhookProblem,
+  scheduleInstant,
   zonedLocalToUtc,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
@@ -165,6 +166,10 @@ describe('link-in-bio plan gate and schedule', () => {
       )
     ).toBe('live');
     expect(blockState({ enabled: false, scheduleOn: false }, now)).toBe('hidden');
+    expect(scheduleInstant(undefined, 'UTC')).toBeUndefined();
+    expect(scheduleInstant('   ', 'UTC')).toBeNull();
+    expect(scheduleInstant('2026-10-13T09:30', 'UTC')?.toISOString()).toBe('2026-10-13T09:30:00.000Z');
+    expect(scheduleInstant('not-a-time', 'UTC')).toBeNull();
   });
 
   it('stores schedule times as UTC from the page timezone', () => {

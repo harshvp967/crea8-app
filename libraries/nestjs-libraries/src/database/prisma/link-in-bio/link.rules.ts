@@ -387,6 +387,16 @@ export function zonedLocalToUtc(local: string, timeZone: string): Date | null {
   return new Date(guess.getTime() - zoneOffsetMs(utc, timeZone));
 }
 
+export function scheduleInstant(local: string | undefined, timeZone: string): Date | null | undefined {
+  if (local === undefined) {
+    return undefined;
+  }
+  if (!local.trim()) {
+    return null;
+  }
+  return zonedLocalToUtc(local, timeZone);
+}
+
 export function utcToZonedInput(date: Date, timeZone: string) {
   const parts = zoneParts(date, timeZone);
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
