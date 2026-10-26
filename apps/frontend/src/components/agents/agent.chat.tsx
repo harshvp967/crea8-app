@@ -86,17 +86,17 @@ export const AgentChat: FC = () => {
             className="w-full h-full agent-chat-shell"
             AssistantMessage={AgentAssistantMessage}
             labels={{
-              title: t('your_assistant', 'Crea8one AI Agent'),
-              initial: t('agent_welcome_message', `Hello, I'm your Crea8one AI Agent 👋🏻.
-              
-I can schedule a post or multiple posts to multiple channels and generate pictures and videos.
+              title: t('your_assistant', 'crea8.one agent'),
+              initial: t(
+                'agent_welcome_message',
+                `Hello, I'm your crea8.one agent.
 
-You can select the channels you want to use from the left menu.
+I schedule posts and generate pictures and videos.
 
-You can see your previous conversations from the right menu.
+History and Channels are at the top right. On a phone in portrait, they sit on the row under the title.
 
-You can also use me as an MCP Server, check Settings >> Public API
-`),
+For MCP, open Settings, then Developers. It is on Access. Copy the client config.`
+              ),
             }}
             UserMessage={Message}
             Input={NewInput}
