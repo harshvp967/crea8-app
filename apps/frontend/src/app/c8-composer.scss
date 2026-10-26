@@ -380,14 +380,25 @@
   box-shadow: none !important;
 }
 
-.c8-composer .po-global.po-global-on,
+.c8-composer .po-global.po-global-on {
+  background: var(--c8-ink) !important;
+  box-shadow: 0 2px 0 var(--c8-hard) !important;
+  color: var(--c8-on-ink) !important;
+}
+
 .c8-composer .po-selected.is-on {
   background: var(--c8-surface) !important;
   box-shadow: 0 2px 0 var(--c8-hard) !important;
   color: var(--c8-ink) !important;
 }
 
-.c8-composer .po-global-label {
+.c8-composer .po-selected.is-on .po-avatar {
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px var(--c8-ink);
+}
+
+.c8-composer .po-global-label,
+.c8-composer .po-channel-label {
   position: static !important;
   width: auto !important;
   height: auto !important;
@@ -395,7 +406,7 @@
   padding: 0 4px 0 0 !important;
   overflow: visible !important;
   clip: auto !important;
-  color: var(--c8-ink) !important;
+  color: inherit !important;
 }
 
 .c8-composer .po-pick {
@@ -431,26 +442,45 @@
 }
 
 .c8-composer .po-chip-remove {
-  width: 44px;
-  height: 44px;
-  top: 0;
-  inset-inline-start: 0;
+  width: 18px;
+  height: 18px;
+  top: -6px;
+  inset-inline-start: auto;
+  inset-inline-end: -6px;
   margin: 0;
   transform: none;
   border: 0;
   background: transparent;
   color: var(--c8-ink);
+  z-index: 6;
+  padding: 0;
 }
 
 .c8-composer .po-chip-remove span {
-  width: 18px;
-  height: 18px;
-  border: 1px solid var(--c8-line);
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--c8-hard);
   border-radius: 999px;
   background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 12px;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .c8-composer .po-chip-remove {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .c8-composer .po-selected:hover .po-chip-remove,
+  .c8-composer .po-selected:focus-within .po-chip-remove {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .c8-composer .po-lock {
@@ -1476,8 +1506,9 @@
     display: none !important;
   }
 
-  .c8-composer .po-global-label {
-    display: none !important;
+  .c8-composer .po-global-label,
+  .c8-composer .po-channel-label {
+    display: inline !important;
   }
 }
 
@@ -3875,7 +3906,7 @@ body.c8-schedule .customer-menu,
   }
 }
 
-/* Time row: timezone shrinks, the hh:mm field keeps its width, Done stays beside it.
+/* Time row: the timezone shows in full, the hh:mm field keeps its width, Done stays beside it.
    Mantine's input paints a white box; the field follows the app ink in both themes. */
 .c8-composer .po-date-pop .po-date-time,
 .c8-date-pop .po-date-time {
@@ -3887,12 +3918,13 @@ body.c8-schedule .customer-menu,
   min-width: 0;
 }
 
-.c8-composer .po-date-pop .po-date-time > div:first-child,
-.c8-date-pop .po-date-time > div:first-child {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.c8-composer .po-date-pop .po-date-time > .po-date-zone,
+.c8-date-pop .po-date-time > .po-date-zone {
+  flex: 0 0 auto;
+  min-width: max-content;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 

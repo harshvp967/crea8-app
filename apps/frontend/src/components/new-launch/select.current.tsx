@@ -11,6 +11,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import { capitalize } from 'lodash';
 import {
   useDecisionModal,
   useModals,
@@ -129,67 +130,84 @@ export const SelectCurrent: FC = () => {
               </span>
             )}
           </button>
-          {selectedIntegrations.map(({ integration }) => (
-            <div
-              onClick={() => {
-                setHide(true);
-                setCurrent(integration.id);
-              }}
-              key={integration.id}
-              className={clsx(
-                'po-selected border cursor-pointer relative flex gap-[8px] w-[44px] h-[44px] rounded-full items-center bg-newBgColorInner justify-center',
-                current === integration.id
-                  ? 'is-on border-[#00D9FF] text-[#00D9FF]'
-                  : 'border-newBorder'
-              )}
-            >
-              <button
-                type="button"
-                onClick={removeSocial(integration)}
-                className="po-chip-remove"
-                aria-label={t('remove', 'Remove')}
-              >
-                <span aria-hidden>×</span>
-              </button>
-              <IsGlobal id={integration.id} />
+          {selectedIntegrations.map(({ integration }) => {
+            const platform = capitalize(
+              (integration.identifier || '').split('-')[0]
+            );
+            const channelLabel = platform
+              ? `${platform} · ${integration.name}`
+              : integration.name;
+            const selected = current === integration.id;
+            return (
               <div
-                {...{
-                  'data-tooltip-id': 'tooltip',
-                  'data-tooltip-content': integration.name,
+                onClick={() => {
+                  setHide(true);
+                  setCurrent(integration.id);
                 }}
+                key={integration.id}
+                aria-label={channelLabel}
                 className={clsx(
-                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
+                  'po-selected border cursor-pointer relative flex gap-[8px] h-[44px] items-center bg-newBgColorInner justify-center',
+                  selected
+                    ? 'is-on po-selected-on rounded-[18px] ps-[2px] pe-[12px]'
+                    : 'rounded-full w-[44px] border-newBorder'
                 )}
               >
-                <SafeImage
-                  src={integration.picture || '/no-picture.jpg'}
-                  className="rounded-full w-[36px] h-[36px] min-w-[36px] object-cover"
-                  alt={integration.identifier}
-                  width={36}
-                  height={36}
-                  onError={(e) => {
-                    e.currentTarget.src = '/no-picture.jpg';
-                    e.currentTarget.srcset = '/no-picture.jpg';
-                  }}
-                />
-                {integration.identifier === 'youtube' ? (
-                  <img
-                    src="/icons/platforms/youtube.svg"
-                    className="absolute z-10 bottom-[2px] end-[2px] min-w-[12px]"
-                    width={12}
-                  />
-                ) : (
-                  <SafeImage
-                    src={`/icons/platforms/${integration.identifier}.png`}
-                    className="min-w-[12px] min-h-[12px] rounded-[3px] absolute z-10 bottom-[6px] end-[6px]"
-                    alt={integration.identifier}
-                    width={12}
-                    height={12}
-                  />
+                <div className="po-avatar relative w-[40px] h-[40px] shrink-0">
+                  <button
+                    type="button"
+                    onClick={removeSocial(integration)}
+                    className="po-chip-remove"
+                    aria-label={t('remove', 'Remove')}
+                  >
+                    <span aria-hidden>×</span>
+                  </button>
+                  <IsGlobal id={integration.id} />
+                  <div
+                    {...{
+                      'data-tooltip-id': 'tooltip',
+                      'data-tooltip-content': channelLabel,
+                    }}
+                    className={clsx(
+                      'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
+                    )}
+                  >
+                    <SafeImage
+                      src={integration.picture || '/no-picture.jpg'}
+                      className="rounded-full w-[36px] h-[36px] min-w-[36px] object-cover"
+                      alt={integration.identifier}
+                      width={36}
+                      height={36}
+                      onError={(e) => {
+                        e.currentTarget.src = '/no-picture.jpg';
+                        e.currentTarget.srcset = '/no-picture.jpg';
+                      }}
+                    />
+                    {integration.identifier === 'youtube' ? (
+                      <img
+                        src="/icons/platforms/youtube.svg"
+                        className="absolute z-10 bottom-[2px] end-[2px] min-w-[12px]"
+                        width={12}
+                      />
+                    ) : (
+                      <SafeImage
+                        src={`/icons/platforms/${integration.identifier}.png`}
+                        className="min-w-[12px] min-h-[12px] rounded-[3px] absolute z-10 bottom-[6px] end-[6px]"
+                        alt={integration.identifier}
+                        width={12}
+                        height={12}
+                      />
+                    )}
+                  </div>
+                </div>
+                {selected && (
+                  <span className="po-channel-label text-[14px] font-[600] whitespace-nowrap">
+                    {channelLabel}
+                  </span>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       <div className="po-current-spacer h-[44px]" />
@@ -216,7 +234,7 @@ export const IsGlobal: FC<{ id: string }> = ({ id }) => {
         'no_longer_global_mode',
         'No longer in global mode'
       )}
-      className="w-[8px] h-[8px] bg-[#00D9FF] -top-[1px] -end-[3px] absolute rounded-full"
+      className="w-[8px] h-[8px] bg-[#00D9FF] -top-[1px] -start-[3px] absolute rounded-full"
     />
   );
 };

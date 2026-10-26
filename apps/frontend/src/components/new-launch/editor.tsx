@@ -68,11 +68,10 @@ import { Dropcursor, Placeholder, TrailingNode } from '@tiptap/extensions';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { InformationComponent } from '@gitroom/frontend/components/launches/information.component';
 import {
-  LockIcon,
-  ResetIcon,
   TrashIcon,
   EmojiIcon,
 } from '@gitroom/frontend/components/ui/icons';
+import { capitalize } from 'lodash';
 import { DelayComponent } from '@gitroom/frontend/components/new-launch/delay.component';
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
@@ -333,20 +332,26 @@ export const EditorWrapper: FC<{
     [changeOrderInternal, changeOrderGlobal, current, global, internal]
   );
 
+  const platformLabel = useMemo(() => {
+    return capitalize((internalFromAll?.identifier || '').split('-')[0]);
+  }, [internalFromAll?.identifier]);
+
   const goBackToGlobal = useCallback(async () => {
+    const platform = platformLabel || t('this_channel', 'this channel');
     if (
       await deleteDialog(
         t(
-          'are_you_sure_go_back_to_global_mode',
-          'This action is irreversible. Are you sure you want to go back to global mode?'
+          'use_the_same_post_again_removed',
+          'Use the same post again? Your {{platform}}-only text will be removed.',
+          { platform }
         ),
-        t('yes_go_back_to_global_mode', 'Yes, go back to global mode')
+        t('use_same_post_again', 'Use same post again')
       )
     ) {
       setLoaded(false);
       addRemoveInternal(current);
     }
-  }, [addRemoveInternal, current, t]);
+  }, [addRemoveInternal, current, platformLabel, t]);
 
   const addValue = useCallback(
     (index: number) => () => {
@@ -439,14 +444,7 @@ export const EditorWrapper: FC<{
           <div className="po-lock c8-lock-banner">
             <div className="c8-lock-copy">
               <div className="text-[14px] font-[600]">
-                {t('editing_all_channels', 'Editing all channels')}
-              </div>
-              <div className="text-[13px] font-[500]">
-                {t(
-                  'customize_for_channel',
-                  'Customize for {{name}}',
-                  { name: internalFromAll?.name || t('this_channel', 'this channel') }
-                )}
+                {t('same_post_on_every_channel', 'Same post on every channel')}
               </div>
             </div>
             <button
@@ -457,29 +455,32 @@ export const EditorWrapper: FC<{
                 addRemoveInternal(current);
               }}
             >
-              {t('edit_content', 'Customize')}
+              {t('edit_for_platform_only', 'Edit for {{platform}} only', {
+                platform:
+                  platformLabel || t('this_channel', 'this channel'),
+              })}
             </button>
           </div>
           <div className="po-lock-scrim absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
         </>
       )}
       {!!internal && !existingData?.integration && (
-        <div
-          className="po-specific flex items-center gap-[16px] cursor-pointer select-none"
-          onClick={goBackToGlobal}
-        >
-          <div className="flex gap-[6px] items-center">
-            <ResetIcon />
-            <div className="text-[13px] font-[600]">
-              {t('back_to_global', 'Back to global')}
-            </div>
-          </div>
-          <div className="flex gap-[6px] items-center text-[#00D9FF]">
-            <div className="w-[8px] h-[8px] rounded-full bg-[#00D9FF]" />
+        <div className="po-lock c8-lock-banner">
+          <div className="c8-lock-copy">
             <div className="text-[14px] font-[600]">
-              {t('editing_a_specific_network', 'Editing a Specific Network')}
+              {t('editing_for_platform_only', 'Editing for {{platform}} only', {
+                platform:
+                  platformLabel || t('this_channel', 'this channel'),
+              })}
             </div>
           </div>
+          <button
+            type="button"
+            className="c8-lock-btn"
+            onClick={goBackToGlobal}
+          >
+            {t('use_same_post_again', 'Use same post again')}
+          </button>
         </div>
       )}
       {items.map((g, index) => (

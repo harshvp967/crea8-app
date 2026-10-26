@@ -360,6 +360,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     }
 
     const currentIntegration = integrations.find((p) => p.id === current);
+    const platform = capitalize(
+      (currentIntegration?.identifier || '').split('-')[0]
+    );
 
     return (
       <div className="flex items-center gap-[8px]">
@@ -371,8 +374,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           />
         )}
         <div>
-          {currentIntegration
-            ? `${currentIntegration.name} ${t('channel_settings', 'Settings')}`
+          {platform
+            ? t('platform_settings', '{{platform}} settings', { platform })
             : t('settings', 'Settings')}
         </div>
       </div>
