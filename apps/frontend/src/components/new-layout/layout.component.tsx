@@ -51,6 +51,7 @@ import { DashboardSwitcher } from '@gitroom/frontend/components/dashboard/dashbo
 import { StalkerTopNav } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { LinkTopNav } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settings.component';
+import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
 import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
 import { C8Sidebar } from '@gitroom/frontend/components/layout/c8.sidebar';
@@ -92,6 +93,16 @@ const HeaderAvatar = ({
   );
 };
 
+const startupQuery = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: false,
+  revalidateIfStale: false,
+  revalidateOnMount: true,
+  refreshWhenHidden: false,
+  refreshWhenOffline: false,
+  dedupingInterval: 15000,
+};
+
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
@@ -120,6 +131,33 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     refreshWhenOffline: false,
     refreshWhenHidden: false,
   });
+  // These used to start only after /user/self rendered the page. SWR keeps the
+  // result, and the page hooks share these keys, so a mount inside the dedupe
+  // window does not send them again.
+  const launchesRoute = pathname === '/launches';
+  const thirdPartyRoute =
+    pathname === '/third-party' || !!pathname?.startsWith('/third-party/');
+  useIntegrationList(launchesRoute);
+  useSWR(
+    launchesRoute ? 'sets' : null,
+    async () => (await fetch('/sets')).json(),
+    startupQuery
+  );
+  useSWR(
+    launchesRoute ? 'default-sign' : null,
+    async () => (await fetch('/signatures/default')).json(),
+    startupQuery
+  );
+  useSWR(
+    thirdPartyRoute ? 'third-party' : null,
+    async () => (await fetch('/third-party')).json(),
+    startupQuery
+  );
+  useSWR(
+    thirdPartyRoute ? 'third-party-list' : null,
+    async () => (await fetch('/third-party/list')).json(),
+    startupQuery
+  );
 
   useEffect(() => {
     setSentryUser(

@@ -30,6 +30,7 @@ export const ContinueProvider: FC = () => {
     revalidateOnMount: true,
     refreshWhenHidden: false,
     refreshWhenOffline: false,
+    dedupingInterval: 15000,
     fallbackData: [],
   });
   const refreshList = useCallback(() => {

@@ -25,6 +25,7 @@ export const ThirdPartyComponent = () => {
     revalidateOnMount: true,
     refreshWhenHidden: false,
     refreshWhenOffline: false,
+    dedupingInterval: 15000,
   });
 
   return (
