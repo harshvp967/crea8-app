@@ -70,43 +70,144 @@ const InviteLinkModal: FC<{
   );
 };
 
+type ChannelTile = {
+  identifier: string;
+  name: string;
+  toolTip?: string;
+  isExternal: boolean;
+  isWeb3: boolean;
+  isChromeExtension?: boolean;
+  comingSoon?: boolean;
+  extensionCookies?: Array<{ name: string; domain: string }>;
+  customFields?: Array<{
+    key: string;
+    label: string;
+    validation: string;
+    defaultValue?: string;
+    type: 'text' | 'password';
+    hint?: string;
+  }>;
+};
+
+type ChannelList = {
+  social: ChannelTile[];
+  article: Array<{ identifier: string; name: string }>;
+};
+
+// Painted on the first modal frame. GET /integrations replaces this with the
+// org's hidden and coming-soon flags, and supplies custom field forms.
+const STATIC_CHANNELS: ChannelList = {
+  social: [
+    ['x', 'X'],
+    ['linkedin', 'LinkedIn'],
+    ['linkedin-page', 'LinkedIn Page'],
+    ['reddit', 'Reddit'],
+    ['instagram', 'Instagram\n(Facebook Business)', 'Instagram must be business and connected to a Facebook page'],
+    ['instagram-standalone', 'Instagram\n(Standalone)'],
+    ['facebook', 'Facebook Page'],
+    ['threads', 'Threads'],
+    ['youtube', 'YouTube'],
+    ['gmb', 'Google My Business', '', 'soon'],
+    ['tiktok', 'Tiktok'],
+    ['tiktok-business', 'TikTok Business', '', 'soon'],
+    ['pinterest', 'Pinterest'],
+    ['dribbble', 'Dribbble'],
+    ['discord', 'Discord'],
+    ['slack', 'Slack'],
+    ['kick', 'Kick'],
+    ['twitch', 'Twitch'],
+    ['mastodon', 'Mastodon'],
+    ['bluesky', 'Bluesky', '', 'fields'],
+    ['lemmy', 'Lemmy', '', 'fields'],
+    ['wrapcast', 'Farcaster', '', 'web3'],
+    ['telegram', 'Telegram', '', 'web3'],
+    ['nostr', 'Nostr', 'Make sure you private a HEX key of your Nostr private key, you can get it from websites like iris.to', 'fields'],
+    ['vk', 'VK', '', 'soon'],
+    ['medium', 'Medium', '', 'soon-fields'],
+    ['devto', 'Dev.to', '', 'fields'],
+    ['hashnode', 'Hashnode', '', 'fields'],
+    ['wordpress', 'WordPress', '', 'fields'],
+    ['listmonk', 'ListMonk', '', 'fields'],
+    ['moltbook', 'Moltbook', '', 'web3'],
+    ['whop', 'Whop', 'Schedule posts to forums', 'soon'],
+    ['skool', 'Skool', '', 'extension'],
+    ['mewe', 'MeWe', '', 'soon'],
+    ['tumblr', 'Tumblr'],
+  ].map(([identifier, name, toolTip, flag]) => ({
+    identifier,
+    name,
+    ...(toolTip ? { toolTip } : {}),
+    isExternal: false,
+    isWeb3: flag === 'web3',
+    ...(flag === 'extension' ? { isChromeExtension: true } : {}),
+    ...(flag === 'soon' || flag === 'soon-fields' ? { comingSoon: true } : {}),
+  })),
+  article: [],
+};
+
+const CHANNEL_FIELDS = new Set([
+  'bluesky',
+  'lemmy',
+  'nostr',
+  'medium',
+  'devto',
+  'hashnode',
+  'wordpress',
+  'listmonk',
+]);
+
+let channelCache: ChannelList | null = null;
+let channelLoad: Promise<ChannelList> | null = null;
+
+function loadChannels(fetch: (url: string) => Promise<{ json: () => Promise<ChannelList> }>) {
+  if (channelCache) {
+    return Promise.resolve(channelCache);
+  }
+  if (!channelLoad) {
+    channelLoad = fetch('/integrations')
+      .then((response) => response.json())
+      .then((json) => {
+        channelCache = json;
+        channelLoad = null;
+        return json;
+      })
+      .catch((error) => {
+        channelLoad = null;
+        throw error;
+      });
+  }
+  return channelLoad;
+}
+
 const AddProviderLoader: FC<{ invite: boolean; update?: () => void }> = ({
   invite,
   update,
 }) => {
   const fetch = useFetch();
-  const [data, setData] = useState<null | {
-    social: Array<{ identifier: string; name: string; isExternal: boolean; isWeb3: boolean }>;
-    article: Array<{ identifier: string; name: string }>;
-  }>(null);
+  const [data, setData] = useState<ChannelList>(channelCache ?? STATIC_CHANNELS);
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const json = await (await fetch('/integrations')).json();
-      if (!cancelled) {
-        setData(json);
-      }
-    })();
+    loadChannels(fetch)
+      .then((json) => {
+        if (!cancelled) {
+          setData(json);
+        }
+      })
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };
   }, [fetch]);
-  if (!data) {
-    return (
-      <div
-        className="min-h-[240px] animate-pulse rounded-[20px] border border-newBorder bg-newBgColor"
-        role="status"
-      >
-        <span className="sr-only">Loading</span>
-      </div>
-    );
-  }
   return <AddProviderComponent invite={invite} update={update} {...data} />;
 };
 
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
   const modal = useModals();
   const t = useT();
+  const fetch = useFetch();
+  useEffect(() => {
+    loadChannels(fetch).catch(() => undefined);
+  }, [fetch]);
   return useCallback(() => {
     modal.openModal({
       title: invite
@@ -470,7 +571,38 @@ export const AddProviderComponent: FC<{
         comingSoon?: boolean
       ) =>
       async () => {
-        if (comingSoon) {
+        const cached = channelCache?.social.find(
+          (row) => row.identifier === identifier
+        );
+        let soon = cached ? !!cached.comingSoon : !!comingSoon;
+        let external = cached ? !!cached.isExternal : isExternal;
+        let web3 = cached ? !!cached.isWeb3 : isWeb3;
+        let extension = cached ? !!cached.isChromeExtension : !!isChromeExtension;
+        let fields = cached?.customFields ?? customFields;
+        if (!fields && CHANNEL_FIELDS.has(identifier)) {
+          try {
+            const json = await loadChannels(fetch);
+            const row = json.social.find((item) => item.identifier === identifier);
+            if (!row) {
+              return;
+            }
+            soon = !!row.comingSoon;
+            external = !!row.isExternal;
+            web3 = !!row.isWeb3;
+            extension = !!row.isChromeExtension;
+            fields = row.customFields;
+          } catch {
+            toaster.show(
+              t(
+                'could_not_connect_to_platform',
+                'Could not connect to the platform'
+              ),
+              'warning'
+            );
+            return;
+          }
+        }
+        if (soon) {
           toaster.show(t('coming_soon', 'Coming soon'), 'warning');
           return;
         }
@@ -587,11 +719,11 @@ export const AddProviderComponent: FC<{
 
           window.location.href = url;
         };
-        if (isWeb3) {
+        if (web3) {
           openWeb3();
           return;
         }
-        if (isChromeExtension) {
+        if (extension) {
           const confirmed = await new Promise<boolean>((resolve) => {
           modal.openModal({
             title: t('chrome_extension_notice', 'Browser Extension Notice'),
@@ -695,7 +827,7 @@ export const AddProviderComponent: FC<{
           }
           return;
         }
-        if (isExternal) {
+        if (external) {
           modal.openModal({
             title: 'URL',
             withCloseButton: true,
@@ -708,7 +840,7 @@ export const AddProviderComponent: FC<{
           });
           return;
         }
-        if (customFields) {
+        if (fields) {
           modal.openModal({
             title: t('add_provider_title', 'Add Provider'),
             withCloseButton: true,
@@ -724,7 +856,7 @@ export const AddProviderComponent: FC<{
                 <CustomVariables
                   identifier={identifier}
                   gotoUrl={(url: string) => router.push(url)}
-                  variables={customFields}
+                  variables={fields}
                   onboarding={onboarding}
                 />
               </div>
