@@ -286,3 +286,125 @@ export const OrganizationSelector: FC<{
     </>
   );
 };
+
+export type WorkspaceRow = {
+  name: string;
+  id: string;
+  users: { role: 'SUPERADMIN' | 'ADMIN' | 'USER' }[];
+};
+
+// Same POST /user/change-org and reload as OrganizationSelector.changeOrg.
+export const useWorkspaceSwitch = () => {
+  const fetch = useFetch();
+  const user = useUser();
+  const t = useT();
+  const modals = useModals();
+  const load = useCallback(async () => {
+    return await (await fetch('/user/organizations')).json();
+  }, [fetch]);
+  const { isLoading, data } = useSWR('organizations', load, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    refreshWhenOffline: false,
+    refreshWhenHidden: false,
+    revalidateOnReconnect: false,
+  });
+  const orgs = (data || []) as WorkspaceRow[];
+  const current = orgs.find((org) => org.id === user?.orgId);
+  const changeOrg = useCallback(
+    (org: { name: string; id: string }) => async () => {
+      await fetch('/user/change-org', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: org.id,
+        }),
+      });
+      window.location.reload();
+    },
+    [fetch]
+  );
+  const openNewWorkspace = useCallback(() => {
+    modals.openModal({
+      title: t('new_workspace', 'New workspace'),
+      withCloseButton: true,
+      size: '420px',
+      children: <NewWorkspaceForm />,
+    });
+  }, [modals, t]);
+  return {
+    isLoading: isLoading || !data,
+    orgs,
+    current,
+    orgId: user?.orgId,
+    changeOrg,
+    openNewWorkspace,
+  };
+};
+
+export const WorkspaceSwitchList = ({
+  onDone,
+  showLabel,
+}: {
+  onDone?: () => void;
+  showLabel?: boolean;
+}) => {
+  const { isLoading, orgs, current, orgId, changeOrg, openNewWorkspace } =
+    useWorkspaceSwitch();
+  if (isLoading || orgs.length === 0) return null;
+  const line = current?.name ? `Workspace - ${current.name}` : '';
+  return (
+    <div className="c8-account-workspaces" role="group" aria-label="Workspaces">
+      {line ? (
+        <div
+          className={
+            showLabel
+              ? 'c8-account-workspace-label is-visible'
+              : 'c8-account-workspace-label'
+          }
+          title={line}
+        >
+          {line}
+        </div>
+      ) : null}
+      <div className="c8-account-workspaces-title">Workspaces</div>
+      {orgs.map((org) => {
+        const role = orgRole(org?.users?.[0]?.role);
+        const selected = org.id === orgId;
+        return (
+          <button
+            key={org.id}
+            type="button"
+            className="c8-account-workspace"
+            role="menuitemradio"
+            aria-checked={selected}
+            onClick={() => {
+              if (selected) {
+                onDone?.();
+                return;
+              }
+              changeOrg(org)();
+            }}
+          >
+            <span className="c8-account-workspace-name">{org.name}</span>
+            {role ? <span className="c8-account-workspace-role">{role}</span> : null}
+            <span className="c8-account-workspace-check">
+              {selected ? <HugeIcon name="check" size={16} /> : null}
+            </span>
+          </button>
+        );
+      })}
+      <button
+        type="button"
+        className="c8-account-workspace-new"
+        role="menuitem"
+        onClick={() => {
+          onDone?.();
+          openNewWorkspace();
+        }}
+      >
+        New workspace
+      </button>
+      <div className="c8-account-rule" />
+    </div>
+  );
+};

@@ -17,6 +17,7 @@ import NotificationComponent from '@gitroom/frontend/components/notifications/no
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
 import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
+import { useWorkspaceSwitch } from '@gitroom/frontend/components/layout/organization.selector';
 
 const initialsOf = (name: string) =>
   name
@@ -49,6 +50,8 @@ export const C8Sidebar = ({
 }) => {
   const pathname = usePathname() || '';
   const anchorRef = useRef<HTMLButtonElement>(null);
+  const { current } = useWorkspaceSwitch();
+  const workspaceLine = current?.name ? `Workspace - ${current.name}` : '';
   const openComposer = useOpenComposer();
   const { stalkerEnabled } = useVariables();
   const { firstMenu, secondMenu } = useMenuItem();
@@ -212,7 +215,9 @@ export const C8Sidebar = ({
           </span>
           <span className="c8-side-user-copy">
             <span className="c8-side-user-name">{name || email}</span>
-            <span className="c8-side-user-handle">crea8.one</span>
+            <span className="c8-side-user-handle" title={workspaceLine || undefined}>
+              {workspaceLine}
+            </span>
           </span>
         </button>
         <AccountMenu
