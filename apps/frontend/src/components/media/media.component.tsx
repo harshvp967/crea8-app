@@ -205,20 +205,60 @@ export const showMediaBox = (
 };
 const CHUNK_SIZE = 1024 * 1024;
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
-const libraryImageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg'];
+const libraryImageExt = [
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'avif',
+  'svg',
+  'bmp',
+  'tif',
+  'tiff',
+];
+const libraryVideoExt = ['mp4', 'mov'];
+
+// The stored path is often a signed URL. The file type is the extension on
+// the path name, not a substring of the query string. Fall back to the
+// original file name when the key itself has no extension.
+function fileExtension(value: string) {
+  const bare = (value || '').split(/[?#]/)[0];
+  const base = bare.split('/').pop() || '';
+  const dot = base.lastIndexOf('.');
+  if (dot < 0 || dot === base.length - 1) {
+    return '';
+  }
+  return base.slice(dot + 1).toLowerCase();
+}
 
 function libraryKind(path: string, name = '') {
-  const pathKnown =
-    hasExtension(path, 'mp4') ||
-    libraryImageExt.some((ext) => hasExtension(path, ext));
-  const labeled = pathKnown ? path : name || path;
-  if (hasExtension(labeled, 'mp4')) {
+  const fromPath = fileExtension(path);
+  const fromName = fileExtension(name);
+  const ext =
+    libraryImageExt.includes(fromPath) || libraryVideoExt.includes(fromPath)
+      ? fromPath
+      : fromName || fromPath;
+  if (libraryVideoExt.includes(ext)) {
     return 'video';
   }
-  if (libraryImageExt.some((ext) => hasExtension(labeled, ext))) {
+  if (libraryImageExt.includes(ext)) {
     return 'image';
   }
   return 'file';
+}
+
+function frameUrl(url: string) {
+  if (!url || url.includes('#')) {
+    return url;
+  }
+  return `${url}#t=0.1`;
+}
+
+function markMediaBroken(
+  event: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement>
+) {
+  event.currentTarget.classList.add('is-broken');
 }
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
@@ -375,30 +415,24 @@ export const MediaBox: FC<{
   const maximize = useCallback(
     (media: Media) => async (e: any) => {
       e.stopPropagation();
+      const src = mediaDirectory.set(media.path);
+      const kind = libraryKind(media.path, media.originalName || '');
       modals.openModal({
         title: '',
         top: 10,
+        classNames: { modal: 'media-preview-modal' },
         children: (
-          <div className="w-full h-full p-[50px]">
-            {hasExtension(media.path, 'mp4') ? (
-              <VideoFrame
-                autoplay={true}
-                url={mediaDirectory.set(media.path)}
-              />
+          <div className="media-preview">
+            {kind === 'video' ? (
+              <VideoFrame autoplay={true} url={src} />
             ) : (
-              <img
-                width="100%"
-                height="100%"
-                className="w-full h-full max-h-[100%] max-w-[100%] object-cover"
-                src={mediaDirectory.set(media.path)}
-                alt="media"
-              />
+              <img className="media-preview-media" src={src} alt="" />
             )}
           </div>
         ),
       });
     },
-    []
+    [mediaDirectory, modals]
   );
 
   const deleteImage = useCallback(
@@ -688,6 +722,13 @@ export const MediaBox: FC<{
                     media.originalName || media.name || ''
                   );
                   const label = media.originalName || media.name || '';
+                  const src = mediaDirectory.set(media.path);
+                  const poster =
+                    kind === 'video' &&
+                    typeof media.thumbnail === 'string' &&
+                    libraryKind(media.thumbnail, '') === 'image'
+                      ? mediaDirectory.set(media.thumbnail)
+                      : '';
                   return (
                     <div
                       className={clsx(
@@ -725,27 +766,32 @@ export const MediaBox: FC<{
                             <HugeIcon name="trash" size={12} />
                           </button>
                         </div>
-                        {kind === 'image' ? (
+                        {kind === 'video' && !poster ? (
+                          <video
+                            className="media-img"
+                            src={frameUrl(src)}
+                            muted
+                            playsInline
+                            preload="metadata"
+                            onError={markMediaBroken}
+                          />
+                        ) : kind === 'image' || poster ? (
                           <img
                             className="media-img"
-                            src={mediaDirectory.set(media.path)}
+                            src={poster || src}
                             alt=""
+                            onError={markMediaBroken}
                           />
-                        ) : (
-                          <span
-                            className={clsx(
-                              'media-kind',
-                              kind === 'video' && 'is-video'
-                            )}
-                            aria-hidden
-                          >
-                            {kind === 'video' ? (
-                              <HugeIcon name="play" size={24} />
-                            ) : (
-                              <HugeIcon name="file" size={24} />
-                            )}
-                          </span>
-                        )}
+                        ) : null}
+                        <span className="media-kind" aria-hidden>
+                          {kind === 'video' ? (
+                            <HugeIcon name="play" size={24} />
+                          ) : kind === 'image' ? (
+                            <HugeIcon name="image" size={24} />
+                          ) : (
+                            <HugeIcon name="file" size={24} />
+                          )}
+                        </span>
                       </div>
                       <div className="media-caption">
                         <span className="media-name" title={label}>
