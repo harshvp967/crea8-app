@@ -14,7 +14,6 @@ import {
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { Button } from '@gitroom/react/form/button';
 import { useRouter } from 'next/navigation';
-import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
@@ -64,7 +63,6 @@ export const PlatformAnalytics = () => {
   const [current, setCurrent] = useState(0);
   const [key, setKey] = useState(7);
   const [refresh, setRefresh] = useState(false);
-  const toaster = useToaster();
   const load = useCallback(async () => {
     const controller = new AbortController();
     const timerId = setTimeout(() => controller.abort(), 20000);
@@ -95,7 +93,7 @@ export const PlatformAnalytics = () => {
       clearTimeout(timerId);
     }
   }, [disableXAnalytics]);
-  const { data, error, isLoading } = useSWR('analytics-list', load, {
+  const { data, error, isLoading, mutate } = useSWR('analytics-list', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -183,13 +181,6 @@ export const PlatformAnalytics = () => {
   }, [key, currentIntegration]);
 
   const pickChannel = (integration: (typeof sortedIntegrations)[number], index: number) => {
-    if (integration.refreshNeeded) {
-      toaster.show(
-        'Please refresh the integration from the calendar',
-        'warning'
-      );
-      return;
-    }
     setRefresh(true);
     setTimeout(() => {
       setRefresh(false);
@@ -230,7 +221,7 @@ export const PlatformAnalytics = () => {
       <div className="analytics-screen">
         <div className="analytics-main">
           <AnalyticsPageHead period={keys} />
-          <div className="analytics-state-card is-error" role="alert">
+          <div className="analytics-note analytics-state-card is-error" role="alert">
             <span className="analytics-state-tile is-error" aria-hidden="true">
               <HugeIcon name="alert" size={25} />
             </span>
@@ -238,15 +229,10 @@ export const PlatformAnalytics = () => {
               <h2 className="analytics-state-title">
                 {t('analytics_load_error_title', "Couldn't load analytics")}
               </h2>
-              <p className="analytics-state-body">
-                {error instanceof Error
-                  ? error.message
-                  : t(
-                      'analytics_load_error',
-                      'Could not load analytics. Refresh the page and try again.'
-                    )}
-              </p>
             </div>
+            <button type="button" onClick={() => mutate()}>
+              {t('retry', 'Retry')}
+            </button>
           </div>
         </div>
       </div>

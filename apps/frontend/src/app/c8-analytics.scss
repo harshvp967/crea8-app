@@ -438,6 +438,10 @@ $c8-body: var(--font-body), Inter, sans-serif;
   background: var(--c8-danger);
 }
 
+.analytics-screen .analytics-state-tile.is-reconnect {
+  background: var(--c8-cyan);
+}
+
 .analytics-screen .analytics-state-title {
   margin: 0;
   color: var(--c8-ink);
@@ -447,6 +451,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .analytics-screen .analytics-state-body,
@@ -557,6 +562,22 @@ $c8-body: var(--font-body), Inter, sans-serif;
 .analytics-screen .analytics-note > button:focus-visible {
   outline: 2px solid var(--c8-ink);
   outline-offset: 2px;
+}
+
+.analytics-screen .analytics-note.is-reconnect > button {
+  border-color: var(--c8-hard);
+  background: var(--c8-cyan);
+  color: var(--c8-on-cyan);
+}
+
+@media (hover: hover) {
+  .analytics-screen .analytics-note.is-reconnect > button:hover {
+    background: var(--c8-cyan-hover);
+  }
+}
+
+.analytics-screen .analytics-note.is-reconnect > button:active {
+  background: var(--c8-cyan-pressed);
 }
 
 /* ---------- Loading skeleton ---------- */
@@ -733,7 +754,22 @@ $c8-body: var(--font-body), Inter, sans-serif;
   }
 
   .analytics-screen .analytics-state-card {
-    padding: 24px;
+    padding: 24px 16px;
+  }
+
+  .analytics-screen .analytics-state-title {
+    font-size: 22px;
+  }
+
+  .analytics-screen .analytics-note > button,
+  .analytics-screen .analytics-state-card.is-empty:not(.analytics-note) > button {
+    width: 100%;
+    height: auto;
+    min-height: 46px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    white-space: normal;
+    text-align: center;
   }
 
   .analytics-screen .analytics-skel-toolbar {
@@ -799,7 +835,13 @@ $c8-body: var(--font-body), Inter, sans-serif;
   }
 
   .analytics-screen .analytics-state-card {
-    padding: 24px;
+    padding: 16px;
+  }
+
+  .analytics-screen .analytics-note > button,
+  .analytics-screen .analytics-state-card.is-empty:not(.analytics-note) > button {
+    width: auto;
+    max-width: 100%;
   }
 
   .analytics-screen .analytics-state-tile {

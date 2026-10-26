@@ -13,6 +13,7 @@ import {
 import {
   NotEnoughScopes,
   readProviderError,
+  throwIfAnalyticsReconnect,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
@@ -398,51 +399,35 @@ export class LinkedinPageProvider
   ): Promise<AnalyticsData[]> {
     const endDate = dayjs().unix() * 1000;
     const startDate = dayjs().subtract(date, 'days').unix() * 1000;
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      'Linkedin-Version': '202601',
+      'X-Restli-Protocol-Version': '2.0.0',
+    };
+    const load = async (url: string) => {
+      const response = await fetch(url, { headers });
+      const body = await response.json();
+      throwIfAnalyticsReconnect(body, response.status);
+      return body;
+    };
 
-    const { elements }: { elements: Root[]; paging: any } = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
+    const { elements }: { elements: Root[]; paging: any } = await load(
+      `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
+        `urn:li:organization:${id}`
+      )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`
+    );
 
-    const { elements: elements2 }: { elements: Root[]; paging: any } = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
+    const { elements: elements2 }: { elements: Root[]; paging: any } = await load(
+      `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+        `urn:li:organization:${id}`
+      )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`
+    );
 
-    const { elements: elements3 }: { elements: Root[]; paging: any } = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
+    const { elements: elements3 }: { elements: Root[]; paging: any } = await load(
+      `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+        `urn:li:organization:${id}`
+      )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`
+    );
 
     const analytics = [...elements2, ...elements, ...elements3].reduce(
       (all, current) => {

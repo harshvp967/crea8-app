@@ -13,6 +13,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import {
+  analyticsFailureNeedsReconnect,
   BadBody,
   readThrownProviderError,
   RefreshToken,
@@ -992,6 +993,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
 
       return acc;
     } catch (err) {
+      if (analyticsFailureNeedsReconnect(err)) {
+        throw err;
+      }
       return [];
     }
   }

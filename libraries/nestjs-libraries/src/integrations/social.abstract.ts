@@ -106,6 +106,111 @@ export class NotEnoughScopes {
   ) {}
 }
 
+export const ANALYTICS_RECONNECT_CODE = 'reconnect';
+
+// Phrases providers already use for a dead token or a revoked grant. Kept
+// narrow so a timeout, an invalid metric, or a rate limit stays a normal
+// analytics failure.
+const ANALYTICS_RECONNECT_HINTS = [
+  'error validating access token',
+  'revoked_access_token',
+  'session has been invalidated',
+  'session has expired',
+  'invalid_grant',
+  'unauthenticated',
+  'access_token_invalid',
+  'access token is incorrect',
+  'access token has expired',
+  'access token expired',
+  'expired access token',
+  'invalid access token',
+  'malformed access token',
+  'oauth access token',
+  '(#190)',
+  'auth_removed',
+  'unsupported authentication',
+  'invalid_token',
+  'invalid token',
+  'unauthorized',
+  'permission_denied',
+  'not enough scopes',
+  'authorization failed',
+  'authentication failed',
+  'token has expired',
+];
+
+function analyticsErrorText(error: unknown): string {
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (error instanceof Error) {
+    const extra =
+      (error as { response?: { data?: unknown } }).response?.data ??
+      (error as { data?: unknown }).data;
+    let extraText = '';
+    if (typeof extra === 'string') {
+      extraText = extra;
+    } else if (extra) {
+      try {
+        extraText = JSON.stringify(extra);
+      } catch {
+        extraText = '';
+      }
+    }
+    return `${error.message}\n${extraText}`;
+  }
+  return '';
+}
+
+function analyticsErrorStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') {
+    return undefined;
+  }
+  const candidate = error as {
+    code?: unknown;
+    status?: unknown;
+    response?: { status?: unknown };
+  };
+  const status =
+    candidate.response?.status ?? candidate.status ?? candidate.code;
+  return typeof status === 'number' ? status : undefined;
+}
+
+// True only when this analytics attempt failed because the channel connection
+// is broken or has to be authorized again.
+export function analyticsFailureNeedsReconnect(error: unknown): boolean {
+  if (
+    error instanceof RefreshToken ||
+    error instanceof Disconnect ||
+    error instanceof NotEnoughScopes
+  ) {
+    return true;
+  }
+  if (analyticsErrorStatus(error) === 401) {
+    return true;
+  }
+  const text = analyticsErrorText(error).toLowerCase();
+  if (!text.trim()) {
+    return false;
+  }
+  return ANALYTICS_RECONNECT_HINTS.some((hint) => text.includes(hint));
+}
+
+export function throwIfAnalyticsReconnect(
+  body: unknown,
+  status?: number
+): void {
+  const error = new Error(
+    typeof body === 'string' ? body : JSON.stringify(body ?? '')
+  );
+  if (typeof status === 'number') {
+    (error as { status?: number }).status = status;
+  }
+  if (analyticsFailureNeedsReconnect(error)) {
+    throw error;
+  }
+}
+
 // User-facing text from a provider JSON body. Query-string credentials stay
 // server-side; a normal OAuth error message ("app not active", "invalid
 // code") is safe to show on the callback page.
