@@ -1,5 +1,6 @@
-// One comma-separated list of organization ids. Empty (the default) means the
-// one-idea drafts and brand voice stay off for every organization.
+// One comma-separated list of organization ids. A trimmed `*` entry turns
+// one-idea drafts and brand voice on for every organization. Empty (the
+// default) means they stay off.
 export function aiDraftsOrgAllowlist(
   raw = process.env.AI_DRAFTS_ORG_IDS
 ): string[] {
@@ -16,5 +17,9 @@ export function aiDraftsEnabledForOrg(
   if (!orgId) {
     return false;
   }
-  return aiDraftsOrgAllowlist(raw).includes(orgId);
+  const allowlist = aiDraftsOrgAllowlist(raw);
+  if (allowlist.includes('*')) {
+    return true;
+  }
+  return allowlist.includes(orgId);
 }
