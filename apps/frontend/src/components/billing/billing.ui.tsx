@@ -41,9 +41,6 @@ export function PlanPicker({
   return (
     <section data-billing-state="plan_picker" className="flex flex-col gap-[12px]">
       <BillingHeading as="h1">Choose a plan</BillingHeading>
-      <p className="m-0 text-textItemBlur">
-        Prices are in USD. Tax is added at checkout. {allowTrial ? `New subscriptions include a ${trialDays}-day free trial.` : 'This account is not eligible for another trial.'}
-      </p>
       <div className="flex gap-[8px]">
         <BillingButton kind={period === 'MONTHLY' ? 'primary' : 'secondary'} onClick={() => onPeriod('MONTHLY')}>
           Monthly
@@ -336,9 +333,8 @@ export function Paywall({
   children: ReactNode;
 }) {
   return (
-    <section data-billing-state="paywall" className="flex flex-col gap-[16px] max-w-[960px]">
-      <BillingHeading as="h1">Subscribe to keep using crea8.one</BillingHeading>
-      <p className="m-0 text-textItemBlur">There is no free plan. Pick Creator, Team, Pro, or Agency. You can log out from the account menu if you need to leave.</p>
+    <section data-billing-state="paywall" className="link-screen flex w-full flex-col items-center gap-[28px]">
+      <h1 className="stk-title m-0 w-full text-center">Subscribe to keep using crea8.one</h1>
       {children}
     </section>
   );
