@@ -19,6 +19,7 @@ import {
   BillingBlocked,
   xPostCost,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import { CREDIT_COSTS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
@@ -420,24 +421,35 @@ export class PostActivity {
               getIntegration
             )
           : () => true;
-      const cost = mappedPosts.reduce(
-        (sum, post) =>
-          sum + xPostCost(keeps(post.settings) ? post.message : stripLinks(post.message)),
-        0
-      );
-      if (cost > 0) {
+      let plain = 0;
+      let linked = 0;
+      for (const post of mappedPosts) {
+        const text = keeps(post.settings) ? post.message : stripLinks(post.message);
+        if (xPostCost(text) === CREDIT_COSTS.xPostWithUrl) {
+          linked += 1;
+        } else {
+          plain += 1;
+        }
+      }
+      if (plain > 0 || linked > 0) {
         const key = `xpost:${[...mappedPosts.map((post) => post.id)].sort().join(',')}`;
         try {
           await this._entitlements.assertCanPost(
             integration.organizationId,
             integration.id
           );
-          await this._credits.spend(
-            integration.organizationId,
-            cost,
-            'x_post',
-            key
-          );
+          await this._credits.spendParts(integration.organizationId, [
+            {
+              cost: plain * CREDIT_COSTS.xPost,
+              reason: 'x_post',
+              idempotencyKey: `${key}:plain`,
+            },
+            {
+              cost: linked * CREDIT_COSTS.xPostWithUrl,
+              reason: 'x_post_with_link',
+              idempotencyKey: `${key}:link`,
+            },
+          ]);
         } catch (err) {
           this.blocked(err);
         }

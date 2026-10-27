@@ -139,6 +139,114 @@ export function stalkerReadCost(postCount: number) {
   return Math.ceil(postCount / CREDIT_COSTS.stalkerPostsPerCredit);
 }
 
+export const AI_POST_CALL_REASON = 'ai_post_call';
+export const AI_POST_REASON = 'ai_post';
+
+export const CREDIT_USAGE_ACTIONS = [
+  'ai_post',
+  'x_post',
+  'x_post_with_link',
+  'ai_image',
+  'stalker_search',
+] as const;
+
+export type CreditUsageAction = (typeof CREDIT_USAGE_ACTIONS)[number];
+
+export type CreditLedgerRow = {
+  amount: number;
+  type: 'GRANT' | 'SPEND' | 'EXPIRE';
+  reason: string;
+  idempotencyKey: string;
+};
+
+export function aiPostCharge(callNumber: number) {
+  if (!Number.isFinite(callNumber) || callNumber <= 0) {
+    return 0;
+  }
+  return callNumber % CREDIT_COSTS.aiPostsPerCredit === 0 ? 1 : 0;
+}
+
+export function ledgerRowsForHistory<T extends { reason: string }>(rows: T[]) {
+  return rows.filter((row) => row.reason !== AI_POST_CALL_REASON);
+}
+
+function ledgerBaseKey(idempotencyKey: string) {
+  return idempotencyKey.replace(/:(monthly|pack)$/, '');
+}
+
+function netByReason(entries: CreditLedgerRow[], reasons: string[]) {
+  const totals = new Map<string, number>();
+  for (const entry of entries) {
+    if (!reasons.includes(entry.reason)) {
+      continue;
+    }
+    const key = ledgerBaseKey(entry.idempotencyKey);
+    totals.set(key, (totals.get(key) || 0) - entry.amount);
+  }
+  let credits = 0;
+  for (const value of totals.values()) {
+    credits += value;
+  }
+  return { credits, groups: totals };
+}
+
+function fixedAction(entries: CreditLedgerRow[], reason: string, refund: string, unit: number) {
+  const { credits } = netByReason(entries, refund ? [reason, refund] : [reason]);
+  return {
+    credits,
+    count: unit > 0 ? Math.round(credits / unit) : 0,
+  };
+}
+
+export function creditUsage(input: {
+  allowance: number;
+  monthlyRemaining: number;
+  packRemaining: number;
+  entries: CreditLedgerRow[];
+}) {
+  const aiCredits = netByReason(input.entries, [AI_POST_REASON, 'ai_post_refund']).credits;
+  const plain = fixedAction(input.entries, 'x_post', '', CREDIT_COSTS.xPost);
+  const linked = fixedAction(
+    input.entries,
+    'x_post_with_link',
+    '',
+    CREDIT_COSTS.xPostWithUrl
+  );
+  const image = fixedAction(input.entries, 'ai_image', 'ai_image_refund', CREDIT_COSTS.aiImage);
+  const stalker = netByReason(input.entries, ['stalker_read']);
+  const actions: { key: CreditUsageAction; count: number; credits: number }[] = [
+    {
+      key: 'ai_post',
+      count: input.entries.filter((entry) => entry.reason === AI_POST_CALL_REASON).length,
+      credits: aiCredits,
+    },
+    { key: 'x_post', count: plain.count, credits: plain.credits },
+    { key: 'x_post_with_link', count: linked.count, credits: linked.credits },
+    { key: 'ai_image', count: image.count, credits: image.credits },
+    {
+      key: 'stalker_search',
+      count: [...stalker.groups.values()].filter((value) => value > 0).length,
+      credits: stalker.credits,
+    },
+  ];
+  const used = input.entries.reduce((sum, entry) => {
+    if (entry.reason === AI_POST_CALL_REASON) {
+      return sum;
+    }
+    if (entry.type === 'SPEND' || entry.reason.endsWith('_refund')) {
+      return sum + -entry.amount;
+    }
+    return sum;
+  }, 0);
+  return {
+    allowance: input.allowance,
+    used,
+    left: input.monthlyRemaining,
+    packCredits: input.packRemaining,
+    actions,
+  };
+}
+
 export function planSpend(balance: CreditBalance, cost: number): SpendPlan {
   const monthly = Math.max(0, balance.monthly);
   const pack = Math.max(0, balance.pack);

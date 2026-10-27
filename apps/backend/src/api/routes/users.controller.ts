@@ -130,16 +130,30 @@ export class UsersController {
       monthlyRemaining: number;
       packRemaining: number;
       total: number;
+      allowance: number;
+      used: number;
+      left: number;
+      packCredits: number;
+      actions: { key: string; count: number; credits: number }[];
     } | null = null;
     if (enforced) {
       tier = await this._entitlements.tier(organization.id);
       totalChannels = pricing[tier as 'FREE'].channel;
       isTrailing = tier !== 'FREE' && !!organization.isTrailing;
       const balance = await this._credits.balance(organization.id);
+      const usage = await this._credits.usage(
+        organization.id,
+        pricing[tier as 'FREE'].monthly_credits
+      );
       credits = {
         monthlyRemaining: balance.monthlyRemaining,
         packRemaining: balance.packRemaining,
         total: balance.total,
+        allowance: usage?.allowance ?? pricing[tier as 'FREE'].monthly_credits,
+        used: usage?.used ?? 0,
+        left: usage?.left ?? balance.monthlyRemaining,
+        packCredits: usage?.packCredits ?? balance.packRemaining,
+        actions: usage?.actions ?? [],
       };
     } else {
       tier =

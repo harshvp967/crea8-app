@@ -8,11 +8,16 @@ import {
   customDomainBillingOpen,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import {
+  AI_POST_CALL_REASON,
+  AI_POST_REASON,
   MemoryWebhookStore,
   applyWebhookOnce,
+  aiPostCharge,
   canAddTeamMember,
   canConnectChannel,
+  creditUsage,
   emptyBillingSnapshot,
+  ledgerRowsForHistory,
   planSpend,
   postableChannelIds,
   postsCovered,
@@ -137,6 +142,161 @@ describe('credit deduction', () => {
     expect(plan.packSpend).toBe(11);
     expect(plan.monthlyAfter).toBe(0);
     expect(plan.packAfter).toBe(9);
+  });
+
+  it('keeps the existing credit prices and charges 1 credit on every 2nd AI post call', () => {
+    expect(CREDIT_COSTS.xPost).toBe(1);
+    expect(CREDIT_COSTS.xPostWithUrl).toBe(13);
+    expect(CREDIT_COSTS.aiImage).toBe(3);
+    expect(CREDIT_COSTS.stalkerPostsPerCredit).toBe(3);
+    expect(CREDIT_COSTS.aiPostsPerCredit).toBe(2);
+    expect(CREDIT_COSTS).not.toHaveProperty('brandVoice');
+    expect(aiPostCharge(0)).toBe(0);
+    expect(aiPostCharge(1)).toBe(0);
+    expect(aiPostCharge(2)).toBe(1);
+    expect(aiPostCharge(3)).toBe(0);
+    expect(aiPostCharge(4)).toBe(1);
+  });
+
+  it('counts a brand-voice learn as an AI post call and not as its own price', () => {
+    const usage = creditUsage({
+      allowance: 300,
+      monthlyRemaining: 299,
+      packRemaining: 40,
+      entries: [
+        {
+          amount: 0,
+          type: 'SPEND',
+          reason: AI_POST_CALL_REASON,
+          idempotencyKey: 'ai-post:1',
+        },
+        {
+          amount: 0,
+          type: 'SPEND',
+          reason: AI_POST_CALL_REASON,
+          idempotencyKey: 'brand-voice:1',
+        },
+        {
+          amount: -1,
+          type: 'SPEND',
+          reason: AI_POST_REASON,
+          idempotencyKey: 'brand-voice:1:charge',
+        },
+      ],
+    });
+    expect(usage.actions.map((action) => action.key)).toEqual([
+      'ai_post',
+      'x_post',
+      'x_post_with_link',
+      'ai_image',
+      'stalker_search',
+    ]);
+    expect(usage.actions[0]).toEqual({ key: 'ai_post', count: 2, credits: 1 });
+    expect(usage.allowance).toBe(300);
+    expect(usage.used).toBe(1);
+    expect(usage.left).toBe(299);
+    expect(usage.packCredits).toBe(40);
+    expect(usage).not.toHaveProperty('resetDate');
+    expect(usage).not.toHaveProperty('resetsIn');
+  });
+
+  it('breaks the current period into action counts and credits', () => {
+    const usage = creditUsage({
+      allowance: 300,
+      monthlyRemaining: 277,
+      packRemaining: 11,
+      entries: [
+        {
+          amount: 0,
+          type: 'SPEND',
+          reason: AI_POST_CALL_REASON,
+          idempotencyKey: 'ai:1',
+        },
+        {
+          amount: 0,
+          type: 'SPEND',
+          reason: AI_POST_CALL_REASON,
+          idempotencyKey: 'ai:2',
+        },
+        {
+          amount: -1,
+          type: 'SPEND',
+          reason: AI_POST_REASON,
+          idempotencyKey: 'ai:2:charge',
+        },
+        {
+          amount: -2,
+          type: 'SPEND',
+          reason: 'x_post',
+          idempotencyKey: 'xpost:a:plain:monthly',
+        },
+        {
+          amount: -1,
+          type: 'SPEND',
+          reason: 'x_post',
+          idempotencyKey: 'xpost:a:plain:pack',
+        },
+        {
+          amount: -13,
+          type: 'SPEND',
+          reason: 'x_post_with_link',
+          idempotencyKey: 'xpost:b:link',
+        },
+        {
+          amount: -3,
+          type: 'SPEND',
+          reason: 'ai_image',
+          idempotencyKey: 'img:1',
+        },
+        {
+          amount: 3,
+          type: 'GRANT',
+          reason: 'ai_image_refund',
+          idempotencyKey: 'img:1:refund',
+        },
+        {
+          amount: -3,
+          type: 'SPEND',
+          reason: 'ai_image',
+          idempotencyKey: 'img:2',
+        },
+        {
+          amount: -1,
+          type: 'SPEND',
+          reason: 'stalker_read',
+          idempotencyKey: 'stalker:hour:monthly',
+        },
+        {
+          amount: -1,
+          type: 'SPEND',
+          reason: 'stalker_read',
+          idempotencyKey: 'stalker:hour:pack',
+        },
+        {
+          amount: 300,
+          type: 'GRANT',
+          reason: 'cycle_grant',
+          idempotencyKey: 'monthly:org:2026-10',
+        },
+      ],
+    });
+    expect(usage.used).toBe(1 + 3 + 13 + 3 + 2);
+    expect(usage.left).toBe(277);
+    expect(usage.packCredits).toBe(11);
+    expect(usage.actions).toEqual([
+      { key: 'ai_post', count: 2, credits: 1 },
+      { key: 'x_post', count: 3, credits: 3 },
+      { key: 'x_post_with_link', count: 1, credits: 13 },
+      { key: 'ai_image', count: 1, credits: 3 },
+      { key: 'stalker_search', count: 1, credits: 2 },
+    ]);
+    expect(
+      ledgerRowsForHistory([
+        { reason: AI_POST_CALL_REASON },
+        { reason: AI_POST_REASON },
+        { reason: 'x_post' },
+      ])
+    ).toEqual([{ reason: AI_POST_REASON }, { reason: 'x_post' }]);
   });
 
   it('charges one Stalker credit for every three X posts', () => {

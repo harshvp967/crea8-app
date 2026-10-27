@@ -9,6 +9,7 @@ export const CREDIT_COSTS = {
   xPostWithUrl: 13,
   aiImage: 3,
   stalkerPostsPerCredit: 3,
+  aiPostsPerCredit: 2,
 } as const;
 
 export const CREDIT_PACKS = [

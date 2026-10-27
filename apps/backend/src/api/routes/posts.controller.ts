@@ -29,6 +29,8 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import { BillingBlocked } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -36,7 +38,8 @@ export class PostsController {
   constructor(
     private _postsService: PostsService,
     private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService
+    private _shortLinkService: ShortLinkService,
+    private _credits: CreditsService
   ) {}
 
   @Get('/:id/statistics')
@@ -240,18 +243,27 @@ export class PostsController {
     @Res({ passthrough: false }) res: Response
   ) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    const callKey = `ai-post:${org.id}:${Date.now()}`;
+    let chargeKey = '';
     try {
+      const recorded = await this._credits.recordAiPostCall(org.id, callKey);
+      if (!recorded.skipped && recorded.spent > 0) {
+        chargeKey = `${callKey}:charge`;
+      }
       for await (const event of this._agentGraphService.start(org.id, body)) {
         res.write(JSON.stringify(event) + '\n');
       }
     } catch (err) {
+      if (chargeKey) {
+        await this._credits.refund(org.id, chargeKey, 'ai_post_refund').catch(() => undefined);
+      }
       // The stream has already started, so we cannot surface a normal HTTP
       // error here. Emit a final error event on the open stream instead, so the
       // client can stop and show the message rather than hang on a truncated
       // stream. HttpExceptions carry a curated, user-facing message (e.g. the
       // AI safety rejection); anything else gets a generic message.
       const message =
-        err instanceof HttpException
+        err instanceof BillingBlocked || err instanceof HttpException
           ? err.message
           : 'Something went wrong while generating your posts, please try again.';
       res.write(JSON.stringify({ name: 'error', error: true, message }) + '\n');
