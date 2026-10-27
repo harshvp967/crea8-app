@@ -12,6 +12,9 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { AgentMediaModal } from '@gitroom/frontend/components/layout/agent.media.modal';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
+/** Schedule and phone nav. Set true to show the UGC item again. */
+export const ugcNavEnabled = false;
+
 interface MenuItemInterface {
   name: string;
   icon: ReactNode;
@@ -76,14 +79,8 @@ export const useMenuItem = () => {
       path: '#',
       role: ['ADMIN', 'SUPERADMIN', 'USER'],
       requireBilling: true,
+      hide: !ugcNavEnabled,
       onClick: handleAgentMediaClick,
-    },
-    {
-      name: t('billing', 'Billing'),
-      icon: <HugeIcon name="billing" size={18} />,
-      path: '/account?section=billing',
-      role: ['ADMIN', 'SUPERADMIN'],
-      requireBilling: true,
     },
     {
       name: t('settings', 'Settings'),
@@ -159,8 +156,8 @@ export const TopMenu: FC = () => {
 };
 
 /**
- * Secondary items (UGC, Affiliate, Billing) — not primary nav pills.
- * Settings lives in the global header next to Theme / Language / Notifications.
+ * Secondary items outside the primary pills. UGC stays in this list and is
+ * hidden while ugcNavEnabled is false. Settings lives in the global header.
  */
 export const TopMenuUtilities: FC = () => {
   const { secondMenu } = useMenuItem();

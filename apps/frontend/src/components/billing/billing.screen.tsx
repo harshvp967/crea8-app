@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 import { BillingShell } from '@gitroom/frontend/components/billing/billing.shell';
@@ -25,7 +25,6 @@ const activeEnough = new Set(['active', 'trialing', 'past_due', 'on_hold', 'canc
 export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
   const fetch = useFetch();
   const router = useRouter();
-  const pathname = usePathname();
   const params = useSearchParams();
   const checkout = params.get('checkout');
   const load = useCallback(async (path: string) => {
@@ -233,11 +232,11 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
       <div data-billing-screen={shown} className="flex flex-col gap-[12px]">
         {note ? <p className="m-0">{note}</p> : null}
         {shown === 'checkout_failure' ? (
-          <CheckoutStatus state="failure" onRetry={() => router.replace(pathname)} />
+          <CheckoutStatus state="failure" onRetry={() => router.replace('/account?section=billing')} />
         ) : null}
         {shown === 'checkout_pending' ? <CheckoutStatus state="pending" /> : null}
         {shown === 'checkout_success' ? (
-          <CheckoutStatus state="success" onRetry={() => router.replace(pathname)} />
+          <CheckoutStatus state="success" onRetry={() => router.replace('/account?section=billing')} />
         ) : null}
         {shown === 'paywall' ? (
           <Paywall>

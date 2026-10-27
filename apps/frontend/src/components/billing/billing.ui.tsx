@@ -351,7 +351,7 @@ export function LockedFeature({
     <div data-billing-state="locked_feature" className="rounded-[8px] border border-newBorder p-[10px]">
       <strong>{title}</strong>
       <p className="m-0 text-textItemBlur">{detail}</p>
-      <a href="/billing">View plans</a>
+      <a href="/account?section=billing">View plans</a>
     </div>
   );
 }
