@@ -9,8 +9,8 @@ export const LINK_BLOCK_CAP = 2000;
 /**
  * Flip this to true once payments are live.
  * While it is false, every Link-in-Bio feature stays unlocked, including
- * Pro themes and layouts and the existing paid markers (deeper analytics,
- * lead sync, badge removal, custom domain add-on).
+ * layouts and the existing paid markers (deeper analytics, lead sync,
+ * badge removal, custom domain add-on). Every theme is free on every plan.
  */
 export const LINK_PLAN_GATING_ENABLED = false;
 
@@ -20,10 +20,10 @@ export const LINK_THEMES = [
   { id: 'sand', label: 'Sand', pro: false },
   { id: 'ocean', label: 'Ocean', pro: false },
   { id: 'bloom', label: 'Bloom', pro: false },
-  { id: 'aurora', label: 'Aurora', pro: true },
-  { id: 'noir', label: 'Noir', pro: true },
-  { id: 'forest', label: 'Forest', pro: true },
-  { id: 'sunset', label: 'Sunset', pro: true },
+  { id: 'aurora', label: 'Aurora', pro: false },
+  { id: 'noir', label: 'Noir', pro: false },
+  { id: 'forest', label: 'Forest', pro: false },
+  { id: 'sunset', label: 'Sunset', pro: false },
 ] as const;
 
 /** Matches the theme variables in link.scss. Title follows page text. */
@@ -295,36 +295,40 @@ export function linkDomainOpen(org?: { customDomainAddon?: boolean | null } | nu
   return !LINK_PLAN_GATING_ENABLED || hasCustomDomainAddon(org);
 }
 
-function paidByBilling(organizationId: string, subscription?: LinkPlan) {
+const CREATOR_AND_ABOVE = new Set(['STANDARD', 'TEAM', 'PRO', 'ULTIMATE']);
+
+function creatorOrAbove(organizationId: string, subscription?: LinkPlan) {
   if (isGrandfatheredOrg(organizationId)) {
     return true;
   }
-  const tier = subscription?.deletedAt ? null : subscription?.subscriptionTier;
-  return tier === 'STANDARD' || tier === 'TEAM' || tier === 'PRO' || tier === 'ULTIMATE';
+  if (!subscription || subscription.deletedAt) {
+    return false;
+  }
+  return CREATOR_AND_ABOVE.has(subscription.subscriptionTier || '');
 }
 
-// Badge removal and custom domains follow the billing flag. Themes stay on
-// LINK_PLAN_GATING_ENABLED, which stays off.
+// Themes are free on every plan. Badge removal starts at Creator (STANDARD)
+// once billing is enforced. A custom domain is never included with a plan.
 export function badgeRemovalOpen(organizationId: string, subscription?: LinkPlan) {
   if (!isBillingEnforced(organizationId)) {
     return linkFeatureOpen(subscription);
   }
-  return paidByBilling(organizationId, subscription);
+  return creatorOrAbove(organizationId, subscription);
 }
 
 export function customDomainBillingOpen(
   organizationId: string,
-  subscription?: LinkPlan,
+  _subscription?: LinkPlan,
   org?: { customDomainAddon?: boolean | null } | null
 ) {
   if (!isBillingEnforced(organizationId)) {
     return linkDomainOpen(org);
   }
-  return paidByBilling(organizationId, subscription);
+  return hasCustomDomainAddon(org);
 }
 
 export function themeIsPro(id: string) {
-  return LINK_THEMES.find((item) => item.id === id)?.pro === true;
+  return LINK_THEMES.some((item) => item.id === id && item.pro);
 }
 
 export function showBadge(hideBadge: boolean, paid: boolean) {

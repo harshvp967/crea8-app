@@ -11,6 +11,8 @@ import {
   clientLabel,
   contactDecision,
   customWindow,
+  badgeRemovalOpen,
+  customDomainBillingOpen,
   designProKind,
   dobProblem,
   domainProblem,
@@ -28,6 +30,7 @@ import {
   linkFeatureOpen,
   linkIsHidden,
   LINK_PLAN_GATING_ENABLED,
+  LINK_THEMES,
   lockProblem,
   mapHostnameStatus,
   mapProblem,
@@ -52,6 +55,7 @@ import {
   shareMenu,
   showBadge,
   slugProblem,
+  themeIsPro,
   sourceLabel,
   suggestSlug,
   themePalette,
@@ -133,6 +137,69 @@ describe('link-in-bio plan gate and schedule', () => {
     expect(hasCustomDomainAddon({ customDomainAddon: false })).toBe(false);
     expect(hasCustomDomainAddon({ customDomainAddon: true })).toBe(true);
     expect(isPaidPlan({ subscriptionTier: 'PRO' })).toBe(true);
+  });
+
+  describe('badge removal and custom domain once billing is enforced', () => {
+    const previous = process.env.BILLING_ENABLED;
+    const previousGrandfather = process.env.BILLING_GRANDFATHERED_ORG_IDS;
+    const previousTest = process.env.BILLING_TEST_ORG_IDS;
+    const creator = { subscriptionTier: 'STANDARD' as const };
+    const free = { subscriptionTier: 'FREE' as const };
+
+    afterEach(() => {
+      if (previous === undefined) {
+        delete process.env.BILLING_ENABLED;
+      } else {
+        process.env.BILLING_ENABLED = previous;
+      }
+      if (previousGrandfather === undefined) {
+        delete process.env.BILLING_GRANDFATHERED_ORG_IDS;
+      } else {
+        process.env.BILLING_GRANDFATHERED_ORG_IDS = previousGrandfather;
+      }
+      if (previousTest === undefined) {
+        delete process.env.BILLING_TEST_ORG_IDS;
+      } else {
+        process.env.BILLING_TEST_ORG_IDS = previousTest;
+      }
+    });
+
+    it('leaves both open while billing is off', () => {
+      delete process.env.BILLING_ENABLED;
+      delete process.env.BILLING_TEST_ORG_IDS;
+      expect(badgeRemovalOpen('org-1', free)).toBe(true);
+      expect(customDomainBillingOpen('org-1', creator, { customDomainAddon: false })).toBe(true);
+    });
+
+    it('includes badge removal from Creator up and never with Free', () => {
+      process.env.BILLING_ENABLED = 'true';
+      delete process.env.BILLING_GRANDFATHERED_ORG_IDS;
+      delete process.env.BILLING_TEST_ORG_IDS;
+      expect(badgeRemovalOpen('org-1', null)).toBe(false);
+      expect(badgeRemovalOpen('org-1', free)).toBe(false);
+      expect(badgeRemovalOpen('org-1', { subscriptionTier: 'FREE', isLifetime: true })).toBe(false);
+      expect(badgeRemovalOpen('org-1', { subscriptionTier: 'STANDARD', deletedAt: new Date() })).toBe(false);
+      expect(badgeRemovalOpen('org-1', creator)).toBe(true);
+      expect(badgeRemovalOpen('org-1', { subscriptionTier: 'TEAM' })).toBe(true);
+      expect(badgeRemovalOpen('org-1', { subscriptionTier: 'PRO' })).toBe(true);
+      expect(badgeRemovalOpen('org-1', { subscriptionTier: 'ULTIMATE' })).toBe(true);
+      process.env.BILLING_GRANDFATHERED_ORG_IDS = 'gf-org';
+      expect(badgeRemovalOpen('gf-org', free)).toBe(true);
+    });
+
+    it('keeps a custom domain behind the add-on after billing is turned on', () => {
+      process.env.BILLING_ENABLED = 'true';
+      delete process.env.BILLING_GRANDFATHERED_ORG_IDS;
+      delete process.env.BILLING_TEST_ORG_IDS;
+      const paid = { subscriptionTier: 'ULTIMATE' as const };
+      expect(customDomainBillingOpen('org-1', paid, { customDomainAddon: false })).toBe(false);
+      expect(customDomainBillingOpen('org-1', paid)).toBe(false);
+      expect(customDomainBillingOpen('org-1', free, { customDomainAddon: true })).toBe(true);
+      expect(customDomainBillingOpen('org-1', creator, { customDomainAddon: true })).toBe(true);
+      process.env.BILLING_GRANDFATHERED_ORG_IDS = 'gf-org';
+      expect(customDomainBillingOpen('gf-org', paid)).toBe(false);
+      expect(customDomainBillingOpen('gf-org', free, { customDomainAddon: true })).toBe(true);
+    });
   });
 
   it('hides a link before it starts and after it ends, and keeps it in the editor', () => {
@@ -409,8 +476,13 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(isPaidPlan({ subscriptionTier: 'FREE' })).toBe(false);
   });
 
-  it('marks pro themes, blur wallpaper and glass buttons', () => {
+  it('keeps every theme free and still marks blur wallpaper and glass buttons', () => {
     const classic = normalizeDesign({ header: 'classic', wallpaper: 'fill', buttonFill: 'solid' });
+    expect(LINK_THEMES.every((theme) => theme.pro === false)).toBe(true);
+    for (const id of ['midnight', 'aurora', 'noir', 'forest', 'sunset']) {
+      expect(themeIsPro(id)).toBe(false);
+      expect(designProKind(id, classic)).toBeNull();
+    }
     expect(designProKind('midnight', classic)).toBeNull();
     expect(designProKind('midnight', normalizeDesign({ header: 'hero' }))).toBe('layout');
     expect(designProKind('midnight', normalizeDesign({ wallpaper: 'blur' }))).toBe('wallpaper');
@@ -423,7 +495,6 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(normalizeDesign({ ogImage: '/uploads/og.png' }).ogImage).toBe('/uploads/og.png');
     expect(normalizeDesign({ ogImage: 'javascript:alert(1)' }).ogImage).toBe('');
     expect(designProKind('midnight', normalizeDesign({ buttonFill: 'glass' }))).toBe('button');
-    expect(designProKind('aurora', classic)).toBe('theme');
     expect(normalizeDesign({}).titleMode).toBe('text');
   });
 

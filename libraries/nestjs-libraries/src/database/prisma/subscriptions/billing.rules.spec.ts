@@ -211,11 +211,18 @@ describe('link badge and custom domain when billing is enforced', () => {
     expect(customDomainBillingOpen('org-1', undefined, { customDomainAddon: false })).toBe(true);
   });
 
-  it('locks an unpaid org and opens a paid or grandfathered org', () => {
+  it('opens badge removal from Creator up and keeps a custom domain on the add-on', () => {
     process.env.BILLING_ENABLED = 'true';
     delete process.env.BILLING_GRANDFATHERED_ORG_IDS;
     expect(badgeRemovalOpen('org-1')).toBe(false);
-    expect(customDomainBillingOpen('org-1', undefined, { customDomainAddon: true })).toBe(false);
+    expect(badgeRemovalOpen('org-1', { subscriptionTier: 'FREE' })).toBe(false);
+    expect(
+      badgeRemovalOpen('org-1', {
+        subscriptionTier: 'STANDARD',
+        deletedAt: null,
+        isLifetime: false,
+      })
+    ).toBe(true);
     expect(
       badgeRemovalOpen('org-1', {
         subscriptionTier: 'PRO',
@@ -223,8 +230,11 @@ describe('link badge and custom domain when billing is enforced', () => {
         isLifetime: false,
       })
     ).toBe(true);
+    expect(customDomainBillingOpen('org-1', { subscriptionTier: 'PRO' }, { customDomainAddon: true })).toBe(true);
+    expect(customDomainBillingOpen('org-1', { subscriptionTier: 'PRO' }, { customDomainAddon: false })).toBe(false);
     process.env.BILLING_GRANDFATHERED_ORG_IDS = 'gf-org';
-    expect(customDomainBillingOpen('gf-org')).toBe(true);
+    expect(customDomainBillingOpen('gf-org')).toBe(false);
+    expect(customDomainBillingOpen('gf-org', undefined, { customDomainAddon: true })).toBe(true);
     expect(badgeRemovalOpen('gf-org')).toBe(true);
   });
 });
