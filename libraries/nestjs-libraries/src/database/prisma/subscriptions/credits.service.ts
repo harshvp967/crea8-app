@@ -7,9 +7,15 @@ import {
 } from '@gitroom/helpers/utils/billing.enabled';
 import { PLANS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
+  AI_POST_CALL_REASON,
+  AI_POST_REASON,
   BillingBlocked,
   CreditBalance,
+  CreditLedgerRow,
+  aiPostCharge,
   creditUpgradeMessage,
+  creditUsage,
+  ledgerRowsForHistory,
   planSpend,
   postsCovered,
   stalkerReadCost,
@@ -46,11 +52,116 @@ export class CreditsService {
     };
   }
 
-  history(organizationId: string, take = 40) {
-    return this._prisma.creditLedger.findMany({
-      where: { organizationId },
+  async history(organizationId: string, take = 40) {
+    const rows = await this._prisma.creditLedger.findMany({
+      where: { organizationId, reason: { not: AI_POST_CALL_REASON } },
       orderBy: { createdAt: 'desc' },
       take,
+    });
+    return ledgerRowsForHistory(rows);
+  }
+
+  async usage(organizationId: string, allowance: number) {
+    const balance = await this.balance(organizationId);
+    if (!balance.enforced) {
+      return null;
+    }
+    const entries = await this._prisma.creditLedger.findMany({
+      where: { organizationId, cycleKey: balance.cycleKey },
+    });
+    return creditUsage({
+      allowance,
+      monthlyRemaining: balance.monthlyRemaining,
+      packRemaining: balance.packRemaining,
+      entries: entries.map(
+        (entry): CreditLedgerRow => ({
+          amount: entry.amount,
+          type: entry.type,
+          reason: entry.reason,
+          idempotencyKey: entry.idempotencyKey,
+        })
+      ),
+    });
+  }
+
+  async recordAiPostCall(organizationId: string, idempotencyKey: string) {
+    if (!isBillingEnforced(organizationId)) {
+      return { skipped: true as const, spent: 0, callNumber: 0 };
+    }
+    await this.ensureGrandfather(organizationId);
+    return this._prisma.$transaction(async (tx) => {
+      const existing = await tx.creditLedger.findUnique({
+        where: { idempotencyKey },
+      });
+      if (existing) {
+        return { skipped: false as const, duplicate: true, spent: 0, callNumber: 0 };
+      }
+      const row = await tx.creditBalance.upsert({
+        where: { organizationId },
+        create: { organizationId, monthlyRemaining: 0, packRemaining: 0 },
+        update: {},
+      });
+      await tx.creditBalance.update({
+        where: { organizationId },
+        data: { monthlyRemaining: row.monthlyRemaining },
+      });
+      const prior = await tx.creditLedger.count({
+        where: {
+          organizationId,
+          reason: AI_POST_CALL_REASON,
+          cycleKey: row.cycleKey,
+        },
+      });
+      const callNumber = prior + 1;
+      const cost = aiPostCharge(callNumber);
+      await tx.creditLedger.create({
+        data: {
+          organizationId,
+          amount: 0,
+          bucket: 'MONTHLY',
+          type: 'SPEND',
+          reason: AI_POST_CALL_REASON,
+          cycleKey: row.cycleKey,
+          idempotencyKey,
+        },
+      });
+      if (cost > 0) {
+        await this.spendIn(
+          tx,
+          organizationId,
+          cost,
+          AI_POST_REASON,
+          `${idempotencyKey}:charge`,
+          false
+        );
+      }
+      return { skipped: false as const, duplicate: false, spent: cost, callNumber };
+    });
+  }
+
+  async spendParts(
+    organizationId: string,
+    parts: { cost: number; reason: string; idempotencyKey: string }[]
+  ) {
+    const billable = parts.filter((part) => part.cost > 0);
+    if (!isBillingEnforced(organizationId) || billable.length === 0) {
+      return { skipped: true as const, spent: 0 };
+    }
+    await this.ensureGrandfather(organizationId);
+    return this._prisma.$transaction(async (tx) => {
+      let spent = 0;
+      for (const part of billable) {
+        const result = await this.spendIn(
+          tx,
+          organizationId,
+          part.cost,
+          part.reason,
+          part.idempotencyKey,
+          false
+        );
+        spent += result.spent;
+      }
+      return { skipped: false as const, spent };
     });
   }
 
@@ -221,6 +332,7 @@ export class CreditsService {
           bucket: 'PACK',
           type: 'SPEND',
           reason,
+          cycleKey: row.cycleKey,
           idempotencyKey: plan.monthlySpend
             ? `${idempotencyKey}:pack`
             : idempotencyKey,
