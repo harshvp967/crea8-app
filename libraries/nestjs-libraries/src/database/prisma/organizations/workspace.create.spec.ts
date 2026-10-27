@@ -75,6 +75,8 @@ describe('create workspace', () => {
       {} as never,
       orgService as never,
       {} as never,
+      {} as never,
+      {} as never,
       {} as never
     );
     const response = {
@@ -117,6 +119,7 @@ describe('customer rename', () => {
       repository,
       integration: new IntegrationService(
         repository as never,
+        {} as never,
         {} as never,
         {} as never,
         {} as never,

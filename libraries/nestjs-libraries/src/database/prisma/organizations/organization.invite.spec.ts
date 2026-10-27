@@ -77,10 +77,14 @@ describe('organization invites', () => {
       deleteTeamMember: jest.fn().mockResolvedValue({ id: 'membership' }),
       updateTeamMemberRole: jest.fn().mockResolvedValue({ role: 'ADMIN' }),
     };
-    const service = new OrganizationService(repository as never, {
-      hasEmailProvider: () => hasEmailProvider,
-      sendEmail,
-    } as never);
+    const service = new OrganizationService(
+      repository as never,
+      {
+        hasEmailProvider: () => hasEmailProvider,
+        sendEmail,
+      } as never,
+      { assertCanAddMember: jest.fn().mockResolvedValue(true) } as never
+    );
     const org = {
       id: 'org-1',
       name: 'Acme',
