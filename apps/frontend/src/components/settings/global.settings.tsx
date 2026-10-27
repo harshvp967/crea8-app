@@ -25,7 +25,7 @@ const ACTION_LABELS: Record<string, string> = {
   stalker_search: 'Stalker search',
 };
 
-const CreditUsage = () => {
+export const CreditUsage = () => {
   const user = useUser();
   const credits = user?.billingEnabled ? user.credits : null;
   if (!credits) {

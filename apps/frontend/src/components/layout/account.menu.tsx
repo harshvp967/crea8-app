@@ -59,7 +59,7 @@ export const useAccountMenu = () => {
 
   const onSettings = useCallback(() => {
     close();
-    router.push('/account?section=profile');
+    router.push('/account');
   }, [close, router]);
   const onBilling = useCallback(() => {
     close();

@@ -7,7 +7,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormProvider, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
@@ -21,7 +20,6 @@ import { Button } from '@gitroom/react/form/button';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
-import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
@@ -199,19 +197,20 @@ const AccountProfile = () => {
             )}
           </span>
           <div className="account-photo-actions">
-            <button type="button" className="account-chip" onClick={openMedia}>
+            <Button type="button" secondary className="rounded-full" onClick={openMedia}>
               {t('change_photo', 'Change photo')}
-            </button>
+            </Button>
             {!!photo && (
               <div className="account-remove" ref={removeRef}>
-                <button
+                <Button
                   type="button"
-                  className="account-chip"
+                  secondary
+                  className="rounded-full"
                   aria-expanded={confirmRemove}
                   onClick={() => setConfirmRemove((open) => !open)}
                 >
                   {t('remove', 'Remove')}
-                </button>
+                </Button>
                 {confirmRemove && (
                   <div className="account-remove-pop" role="dialog" aria-label={t('remove', 'Remove')}>
                     <button type="button" onClick={() => setConfirmRemove(false)}>
@@ -236,9 +235,8 @@ const AccountProfile = () => {
         <label className="account-email">
           <span>{t('email', 'Email')}</span>
           <input value={email} readOnly tabIndex={-1} aria-readonly="true" />
-          <span className="account-email-note">{t('email_sign_in', 'Used to sign in')}</span>
         </label>
-        <Button type="submit" loading={saving} className="account-save">
+        <Button type="submit" loading={saving} className="bg-btnPrimary">
           {t('save_profile', 'Save profile')}
         </Button>
       </form>
@@ -256,7 +254,7 @@ const AccountWorkspace = () => {
     <div className="account-stack">
       <div className="settings-section">
         <div className="settings-head">
-          <h1>{t('workspace_and_team', 'Workspace & team members')}</h1>
+          <h1>{t('workspace', 'Workspace')}</h1>
         </div>
         <OrganizationSelector asOpenSelect />
       </div>
@@ -286,9 +284,9 @@ const AccountBillingEmpty = ({ note }: { note?: string }) => {
       <h2>{planTitle(user?.tier?.current)}</h2>
       <p className="account-note">{usage}</p>
       {note ? <p className="account-note">{note}</p> : null}
-      <button type="button" className="account-chip" disabled>
+      <Button type="button" secondary className="rounded-full" disabled>
         {t('manage_plan', 'Manage plan')}
-      </button>
+      </Button>
     </div>
   );
 };
@@ -307,7 +305,7 @@ const AccountBilling = () => {
         <h1>{t('billing_and_plan', 'Billing & plan')}</h1>
       </div>
       {canBill ? (
-        <BillingComponent />
+        <BillingComponent surface="account" />
       ) : (
         <AccountBillingEmpty
           note={
@@ -343,17 +341,12 @@ const AccountAppearance = () => {
         <h1>{t('appearance', 'Appearance')}</h1>
       </div>
       <div className="settings-group">
-        <div className="settings-row account-theme-row">
-          <div className="settings-row-copy">
-            <div className="settings-row-title">{t('theme', 'Theme')}</div>
-            <div className="settings-row-sub">{t('theme_light_dark', 'Light or dark')}</div>
-          </div>
-          <ModeComponent />
+        <div className="settings-row">
+          <div className="settings-row-title">{t('theme', 'Theme')}</div>
+          <ModeComponent control="segmented" />
         </div>
         <div className="settings-row">
-          <div className="settings-row-copy">
-            <div className="settings-row-title">{t('language', 'Language')}</div>
-          </div>
+          <div className="settings-row-title">{t('language', 'Language')}</div>
           <div className="account-languages">
             <ChangeLanguageComponent />
           </div>
@@ -395,31 +388,24 @@ const AccountSecurity = () => {
       </div>
       <div className="settings-group">
         <div className="settings-row">
-          <div className="settings-row-copy">
-            <div className="settings-row-title">{t('password', 'Password')}</div>
-            <div className="settings-row-sub">
-              {sent
-                ? t('reset_link_sent', 'Reset link sent')
-                : t('password_reset_for_account', 'Reset the password for this account')}
-            </div>
-          </div>
-          <button
+          <div className="settings-row-title">{t('password', 'Password')}</div>
+          <Button
             type="button"
-            className="account-chip"
+            secondary
+            className="rounded-full"
             onClick={sendReset}
             disabled={sending || sent || !email}
           >
             {sent
               ? t('reset_link_sent', 'Reset link sent')
               : t('reset_password', 'Reset password')}
-          </button>
+          </Button>
         </div>
         <div className="settings-row">
-          <div className="settings-row-copy">
-            <div className="settings-row-title">{t('this_browser', 'This browser')}</div>
-            <div className="settings-row-sub account-session-email">{email}</div>
+          <div className="settings-row-title">{t('log_out', 'Log out')}</div>
+          <div className="settings-nav-foot">
+            <LogoutComponent label={t('log_out', 'Log out')} />
           </div>
-          <LogoutComponent />
         </div>
       </div>
     </div>
@@ -443,13 +429,8 @@ export const AccountSettings = ({
   const router = useRouter();
   const params = useSearchParams();
   const querySection = accountSectionFrom(params.get('section'));
-  const [mounted, setMounted] = useState(false);
   const [localSection, setLocalSection] = useState<AccountSectionId>('profile');
   const active = section || localSection;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!section) setLocalSection(querySection);
@@ -465,33 +446,6 @@ export const AccountSettings = ({
     [onSection, router]
   );
 
-  const close = useCallback(() => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push('/launches');
-  }, [router]);
-
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      if (document.querySelector('.arc-dialog-wrap')) return;
-      if (document.querySelector('.account-remove-pop')) return;
-      close();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [close]);
-
   const labels: Record<AccountSectionId, string> = {
     profile: t('profile', 'Profile'),
     workspace: t('workspace', 'Workspace'),
@@ -502,64 +456,33 @@ export const AccountSettings = ({
     delete: t('delete_account', 'Delete account'),
   };
 
-  if (!mounted) return null;
-
-  return createPortal(
-    <div className="account-layer">
-      <div className="account-backdrop" onClick={close} />
-      <div
-        className="account-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="account-settings-title"
-      >
-        <div className="account-scroll">
-          <div className="settings-screen account-screen">
-            <div className="settings-main">
-              <header className="settings-head-v2">
-                <div className="settings-kicker">
-                  <span className="account-mark">
-                    <img src="/crea8one-icon-cyan.svg" alt="" />
-                  </span>
-                </div>
-                <h1 id="account-settings-title">
-                  {t('account_settings', 'Account settings')}
-                </h1>
-                <button
-                  type="button"
-                  className="account-close"
-                  onClick={close}
-                  aria-label={t('close', 'Close')}
-                  autoFocus
-                >
-                  <HugeIcon name="close" size={16} />
-                </button>
-              </header>
-              <SegmentedControl
-                variant="pill"
-                className="settings-settabs"
-                aria-label={t('account_settings', 'Account settings')}
-                value={active}
-                onValueChange={choose}
-                options={accountSections.map((item) => ({
-                  value: item.id,
-                  label: labels[item.id],
-                }))}
-              />
-              <div className="settings-detail">
-                {active === 'profile' && <AccountProfile />}
-                {active === 'workspace' && <AccountWorkspace />}
-                {active === 'billing' && <AccountBilling />}
-                {active === 'notifications' && <AccountNotifications />}
-                {active === 'appearance' && <AccountAppearance />}
-                {active === 'security' && <AccountSecurity />}
-                {active === 'delete' && <AccountDelete />}
-              </div>
-            </div>
-          </div>
+  return (
+    <div className="settings-screen account-screen">
+      <div className="settings-main">
+        <header className="settings-head-v2">
+          <h1 id="account-settings-title">{t('account', 'Account')}</h1>
+        </header>
+        <SegmentedControl
+          variant="pill"
+          className="settings-settabs"
+          aria-label={t('account', 'Account')}
+          value={active}
+          onValueChange={choose}
+          options={accountSections.map((item) => ({
+            value: item.id,
+            label: labels[item.id],
+          }))}
+        />
+        <div className="settings-detail">
+          {active === 'profile' && <AccountProfile />}
+          {active === 'workspace' && <AccountWorkspace />}
+          {active === 'billing' && <AccountBilling />}
+          {active === 'notifications' && <AccountNotifications />}
+          {active === 'appearance' && <AccountAppearance />}
+          {active === 'security' && <AccountSecurity />}
+          {active === 'delete' && <AccountDelete />}
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 };

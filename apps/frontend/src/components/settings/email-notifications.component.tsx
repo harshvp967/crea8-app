@@ -109,13 +109,7 @@ const EmailNotificationsComponent = () => {
       <div className="settings-row">
         <div className="settings-row-copy">
           <div className="settings-row-title">
-            {t('success_emails', 'Success Emails')}
-          </div>
-          <div className="settings-row-sub">
-            {t(
-              'success_emails_description',
-              'Receive email notifications when posts are published successfully'
-            )}
+            {t('success_emails', 'Success emails')}
           </div>
         </div>
         <Slider
@@ -127,13 +121,7 @@ const EmailNotificationsComponent = () => {
       <div className="settings-row">
         <div className="settings-row-copy">
           <div className="settings-row-title">
-            {t('failure_emails', 'Failure Emails')}
-          </div>
-          <div className="settings-row-sub">
-            {t(
-              'failure_emails_description',
-              'Receive email notifications when posts fail to publish'
-            )}
+            {t('failure_emails', 'Failure emails')}
           </div>
         </div>
         <Slider
@@ -145,13 +133,7 @@ const EmailNotificationsComponent = () => {
       <div className="settings-row">
         <div className="settings-row-copy">
           <div className="settings-row-title">
-            {t('streak_emails', 'Streak Reminder Emails')}
-          </div>
-          <div className="settings-row-sub">
-            {t(
-              'streak_emails_description',
-              'Receive email reminders when your posting streak is about to end'
-            )}
+            {t('streak_emails', 'Streak reminder emails')}
           </div>
         </div>
         <Slider
