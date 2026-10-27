@@ -19,6 +19,8 @@ import {
 } from '@prisma/client';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 import { signupsClosed } from '@gitroom/nestjs-libraries/database/prisma/organizations/signups.closed';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 export type OrganizationInviteClaims = {
   id: string;
@@ -69,7 +71,8 @@ function inviteClaims(input: OrganizationInviteClaims): OrganizationInviteClaims
 export class OrganizationService {
   constructor(
     private _organizationRepository: OrganizationRepository,
-    private _notificationsService: NotificationService
+    private _notificationsService: NotificationService,
+    private _entitlements: EntitlementService
   ) {}
   createWorkspace(userId: string, name: string) {
     return this._organizationRepository.createWorkspace(userId, name);
@@ -111,10 +114,15 @@ export class OrganizationService {
       throw new HttpException('This invite is for a different email', 400);
     }
 
+    if (isBillingEnforced(claims.orgId)) {
+      await this._entitlements.assertCanAddMember(claims.orgId);
+    }
+
     const tier = await this._organizationRepository.getSubscriptionTier(
       claims.orgId
     );
     if (
+      !isBillingEnforced(claims.orgId) &&
       process.env.STRIPE_PUBLISHABLE_KEY &&
       tier?.subscription?.subscriptionTier === 'STANDARD'
     ) {
@@ -213,6 +221,7 @@ export class OrganizationService {
   }
 
   async inviteTeamMember(org: Organization, user: User, body: AddTeamMemberDto) {
+    await this._entitlements.assertCanAddMember(org.id);
     const email = body.email.trim().toLowerCase();
     const role = body.role as 'USER' | 'ADMIN';
     const existing = await this._organizationRepository.findReusableInvite(
@@ -283,15 +292,19 @@ export class OrganizationService {
   }
 
   async addTeamMemberByEmail(org: Organization, body: AdminAddTeamMemberDto) {
-    const tier =
-      // @ts-ignore
-      org?.subscription?.subscriptionTier || defaultPlanTier();
+    if (isBillingEnforced(org.id)) {
+      await this._entitlements.assertCanAddMember(org.id);
+    } else {
+      const tier =
+        // @ts-ignore
+        org?.subscription?.subscriptionTier || defaultPlanTier();
 
-    if (!pricing[tier].team_members) {
-      throw new HttpException(
-        'The organization plan does not include team members',
-        400
-      );
+      if (!pricing[tier].team_members) {
+        throw new HttpException(
+          'The organization plan does not include team members',
+          400
+        );
+      }
     }
 
     const users = await this._organizationRepository.getUsersByEmail(

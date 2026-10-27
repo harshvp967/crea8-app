@@ -1,4 +1,4 @@
-import { IsIn } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class BillingSubscribeDto {
   @IsIn(['MONTHLY', 'YEARLY'])
@@ -13,4 +13,8 @@ export class BillingSubscribeDto {
 
   datafast_session_id: string;
   datafast_visitor_id: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
 }

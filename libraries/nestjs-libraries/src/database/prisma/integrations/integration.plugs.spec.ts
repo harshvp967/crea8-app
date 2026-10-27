@@ -48,6 +48,7 @@ function serviceWith(autoPlugPost: jest.Mock) {
     manager as any,
     {} as any,
     {} as any,
+    {} as any,
     {} as any
   );
 }

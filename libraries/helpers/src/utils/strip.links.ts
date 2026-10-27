@@ -10,7 +10,7 @@ const schemeUrl =
 // The lookbehind keeps email addresses (user@domain.com) and dotted paths
 // intact - X does not linkify those either.
 const bareDomainTlds =
-  'online|store|cloud|social|world|blog|shop|site|tech|news|live|link|info|app|dev|xyz|com|net|org|edu|gov|biz|io|co|ai|me|tv|cc|ly|gl|sh|fm|am|be|to|gg|so|is|us|uk|ca|au|de|fr|es|it|nl|se|no|dk|fi|pl|ch|at|ie|nz|za|in|jp|br|mx|ru|eu';
+  'online|store|cloud|social|world|blog|shop|site|tech|news|live|link|info|app|dev|xyz|com|net|org|edu|gov|biz|io|co|ai|me|tv|cc|ly|gl|sh|fm|am|be|to|gg|so|is|us|uk|ca|au|de|fr|es|it|nl|se|no|dk|fi|pl|ch|at|ie|nz|za|in|jp|br|mx|ru|eu|one';
 
 const bareDomain = new RegExp(
   `(?<![\\w@./-])(?:[a-zA-Z0-9-]+\\.)+(?:${bareDomainTlds})\\b(?:\\/[-a-zA-Z0-9()@:%_+.~#?&/=]*)?`

@@ -1,10 +1,21 @@
+import { PLANS, PlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+
 export interface PricingInnerInterface {
   current: string;
+  display_name: string;
   month_price: number;
   year_price: number;
+  inr_month_price: number;
+  inr_year_price: number;
   channel?: number;
   posts_per_month: number;
   team_members: boolean;
+  team_member_limit: number | null;
+  monthly_credits: number;
+  stalker_keywords: number;
+  stalker_scan_hours: number;
+  stalker_manual_checks_per_day: number | null;
+  mention_retention_days: number;
   community_features: boolean;
   featured_by_gitroom: boolean;
   ai: boolean;
@@ -12,108 +23,50 @@ export interface PricingInnerInterface {
   image_generator?: boolean;
   image_generation_count: number;
   generate_videos: number;
-  clipping_minutes: number;
   public_api: boolean;
   webhooks: number;
   autoPost: boolean;
 }
+
 export interface PricingInterface {
   [key: string]: PricingInnerInterface;
 }
+
+function toPricing(tier: PlanTier): PricingInnerInterface {
+  const plan = PLANS[tier];
+  return {
+    current: plan.key,
+    display_name: plan.displayName,
+    month_price: plan.monthPriceUsd,
+    year_price: plan.yearPriceUsd,
+    inr_month_price: plan.monthPriceInr,
+    inr_year_price: plan.yearPriceInr,
+    channel: plan.channels,
+    posts_per_month: plan.postsPerMonth,
+    team_members: plan.teamMemberLimit === null,
+    team_member_limit: plan.teamMemberLimit,
+    monthly_credits: plan.monthlyCredits,
+    stalker_keywords: plan.stalkerKeywords,
+    stalker_scan_hours: plan.stalkerScanHours,
+    stalker_manual_checks_per_day: plan.stalkerManualChecksPerDay,
+    mention_retention_days: plan.mentionRetentionDays,
+    community_features: plan.communityFeatures,
+    featured_by_gitroom: plan.featuredByGitroom,
+    ai: plan.ai,
+    import_from_channels: plan.importFromChannels,
+    image_generator: plan.imageGenerator,
+    image_generation_count: plan.imageGenerationCount,
+    generate_videos: plan.generateVideos,
+    public_api: plan.publicApi,
+    webhooks: plan.webhooks,
+    autoPost: plan.autoPost,
+  };
+}
+
 export const pricing: PricingInterface = {
-  FREE: {
-    current: 'FREE',
-    month_price: 0,
-    year_price: 0,
-    channel: 0,
-    image_generation_count: 0,
-    posts_per_month: 0,
-    team_members: false,
-    community_features: false,
-    featured_by_gitroom: false,
-    ai: false,
-    import_from_channels: false,
-    image_generator: false,
-    public_api: false,
-    webhooks: 0,
-    autoPost: false,
-    generate_videos: 0,
-    clipping_minutes: 0,
-  },
-  STANDARD: {
-    current: 'STANDARD',
-    month_price: 29,
-    year_price: 278,
-    channel: 5,
-    posts_per_month: 1000000,
-    image_generation_count: 20,
-    team_members: false,
-    ai: true,
-    community_features: false,
-    featured_by_gitroom: false,
-    import_from_channels: true,
-    image_generator: false,
-    public_api: true,
-    webhooks: 2,
-    autoPost: false,
-    generate_videos: 3,
-    clipping_minutes: 60,
-  },
-  TEAM: {
-    current: 'TEAM',
-    month_price: 39,
-    year_price: 374,
-    channel: 10,
-    posts_per_month: 1000000,
-    image_generation_count: 100,
-    community_features: true,
-    team_members: true,
-    featured_by_gitroom: true,
-    ai: true,
-    import_from_channels: true,
-    image_generator: true,
-    public_api: true,
-    webhooks: 10,
-    autoPost: true,
-    generate_videos: 10,
-    clipping_minutes: 120,
-  },
-  PRO: {
-    current: 'PRO',
-    month_price: 49,
-    year_price: 470,
-    channel: 30,
-    posts_per_month: 1000000,
-    image_generation_count: 300,
-    community_features: true,
-    team_members: true,
-    featured_by_gitroom: true,
-    ai: true,
-    import_from_channels: true,
-    image_generator: true,
-    public_api: true,
-    webhooks: 30,
-    autoPost: true,
-    generate_videos: 30,
-    clipping_minutes: 300,
-  },
-  ULTIMATE: {
-    current: 'ULTIMATE',
-    month_price: 99,
-    year_price: 950,
-    channel: 100,
-    posts_per_month: 1000000,
-    image_generation_count: 500,
-    community_features: true,
-    team_members: true,
-    featured_by_gitroom: true,
-    ai: true,
-    import_from_channels: true,
-    image_generator: true,
-    public_api: true,
-    webhooks: 10000,
-    autoPost: true,
-    generate_videos: 60,
-    clipping_minutes: 600,
-  },
+  FREE: toPricing('FREE'),
+  STANDARD: toPricing('STANDARD'),
+  TEAM: toPricing('TEAM'),
+  PRO: toPricing('PRO'),
+  ULTIMATE: toPricing('ULTIMATE'),
 };

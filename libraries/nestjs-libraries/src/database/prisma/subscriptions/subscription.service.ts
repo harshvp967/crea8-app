@@ -334,11 +334,13 @@ export class SubscriptionService {
     }
 
     const checkFromMonth = date.subtract(1, 'month');
+    if (checkType === 'clipping_minutes') {
+      return { credits: 0 };
+    }
+
     const imageGenerationCount =
       checkType === 'ai_images'
         ? pricing[type].image_generation_count
-        : checkType === 'clipping_minutes'
-        ? pricing[type].clipping_minutes
         : pricing[type].generate_videos;
 
     const totalUse = await this._subscriptionRepository.getCreditsFrom(

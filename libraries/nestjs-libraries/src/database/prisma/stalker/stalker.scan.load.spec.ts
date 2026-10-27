@@ -28,6 +28,8 @@ const serviceFor = (repository: Record<string, jest.Mock>) =>
     { hasApiKey: () => false } as never,
     {} as never,
     { refresh: jest.fn(), startRefreshWorkflow: jest.fn() } as never,
+    {} as never,
+    {} as never,
     {} as never
   );
 

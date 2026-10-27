@@ -65,9 +65,13 @@ describe('closed sign-ups', () => {
       getOrgMember: jest.fn().mockResolvedValue(null),
       updateOrganizationInvite: jest.fn(),
     };
-    const service = new OrganizationService(repository as never, {
-      hasEmailProvider: () => false,
-    } as never);
+    const service = new OrganizationService(
+      repository as never,
+      {
+        hasEmailProvider: () => false,
+      } as never,
+      { assertCanAddMember: jest.fn().mockResolvedValue(true) } as never
+    );
     return { repository, service };
   }
 

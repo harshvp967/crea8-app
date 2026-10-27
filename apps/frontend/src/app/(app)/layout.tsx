@@ -106,7 +106,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           stripeClient={process.env.STRIPE_PUBLISHABLE_KEY!}
           isChatBase={!!process.env.CHATBASE_TOKEN}
-          billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
+          billingEnabled={process.env.BILLING_ENABLED === 'true'}
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
           frontEndUrl={process.env.FRONTEND_URL!}
           isGeneral={!!process.env.IS_GENERAL}

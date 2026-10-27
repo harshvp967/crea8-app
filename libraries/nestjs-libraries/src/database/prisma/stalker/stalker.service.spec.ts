@@ -152,6 +152,8 @@ const build = (options: {
       refresh: options.refresh,
       startRefreshWorkflow: jest.fn(),
     } as never,
+    {} as never,
+    {} as never,
     {} as never
   );
   return { service, repository, source, refresh: options.refresh };
