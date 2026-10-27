@@ -2807,6 +2807,102 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   white-space: normal;
 }
 
+.c8-account-meter {
+  flex: none;
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-screen .credit-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.settings-screen .credit-usage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-screen .credit-usage-title,
+.settings-screen .credit-usage-meter {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.settings-screen .credit-usage-meter {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-screen .credit-usage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.settings-screen .credit-usage-label {
+  color: var(--c8-muted);
+  font-size: 12px;
+}
+
+.settings-screen .credit-usage-value {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-screen .credit-usage-scroll {
+  overflow-x: auto;
+}
+
+.settings-screen .credit-usage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.settings-screen .credit-usage-table th,
+.settings-screen .credit-usage-table td {
+  padding: 8px 0;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.settings-screen .credit-usage-table th {
+  color: var(--c8-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.settings-screen .credit-usage-table th:not(:first-child),
+.settings-screen .credit-usage-table td:not(:first-child) {
+  text-align: end;
+}
+
+.settings-screen .credit-usage-table tbody tr + tr td {
+  border-top: 1px solid var(--c8-line);
+}
+
+@media (max-width: 767px) {
+  .settings-screen .credit-usage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-screen .credit-usage-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
 .c8-account-theme .header-theme,
 .c8-account-theme .arc-icon-btn {
   width: 28px;

@@ -329,7 +329,11 @@ export const AccountMenu = ({
 
   if (!show || typeof document === 'undefined') return null;
 
-  const plan = planLabel(user?.tier?.current);
+  const credits = user?.billingEnabled ? user.credits : null;
+  const meter = credits ? `${credits.used}/${credits.allowance}` : null;
+  const plan = credits
+    ? user?.tier?.display_name || planLabel(user?.tier?.current)
+    : planLabel(user?.tier?.current);
   const summary = planSummary(user?.tier?.channel, user?.tier?.posts_per_month);
 
   return createPortal(
@@ -371,17 +375,20 @@ export const AccountMenu = ({
           <RowLead icon="gauge">
             <span className="c8-account-plan-copy">
               <span className="c8-account-plan-name">{plan}</span>
-              <span className="c8-account-usage">
-                {summary.channelLine ? (
-                  <span>
-                    {summary.channelLine}
-                    {' · '}
-                  </span>
-                ) : null}
-                <span>{summary.postLine}</span>
-              </span>
+              {meter ? null : (
+                <span className="c8-account-usage">
+                  {summary.channelLine ? (
+                    <span>
+                      {summary.channelLine}
+                      {' · '}
+                    </span>
+                  ) : null}
+                  <span>{summary.postLine}</span>
+                </span>
+              )}
             </span>
           </RowLead>
+          {meter ? <span className="c8-account-meter">{meter}</span> : null}
           <HugeIcon name="chevron-right" size={16} className="c8-account-chevron" />
         </button>
         <button type="button" className="c8-account-item" role="menuitem" onClick={onSettings}>
@@ -418,11 +425,15 @@ export const AccountMenu = ({
       {planOpen ? (
         <AccountFlyout rowRef={planRowRef} label={`${plan} plan`}>
           <div className="c8-account-fly-title">{plan}</div>
-          {summary.facts.map((fact) => (
-            <div key={fact} className="c8-account-fly-line">
-              {fact}
-            </div>
-          ))}
+          {meter ? (
+            <div className="c8-account-fly-line">{meter}</div>
+          ) : (
+            summary.facts.map((fact) => (
+              <div key={fact} className="c8-account-fly-line">
+                {fact}
+              </div>
+            ))
+          )}
           <div className="c8-account-rule" />
           <button type="button" className="c8-account-item" role="menuitem" onClick={onBilling}>
             Manage plan

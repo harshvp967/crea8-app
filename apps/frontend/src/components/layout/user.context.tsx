@@ -6,6 +6,14 @@ import {
   pricing,
   PricingInnerInterface,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+export type CreditUsage = {
+  allowance: number;
+  used: number;
+  left: number;
+  packCredits: number;
+  actions: { key: string; count: number; credits: number }[];
+};
+
 export const UserContext = createContext<
   | undefined
   | (User & {
@@ -21,6 +29,8 @@ export const UserContext = createContext<
       streakSince: string | null;
       aiDrafts?: boolean;
       picture?: { id: string; path: string } | null;
+      billingEnabled?: boolean;
+      credits?: CreditUsage | null;
     })
 >(undefined);
 export const ContextWrapper: FC<{
