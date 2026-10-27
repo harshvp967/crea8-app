@@ -264,6 +264,7 @@
     "@crxjs/vite-plugin": "^2.7.1",
     "@nestjs/schematics": "^11.1.0",
     "@nestjs/testing": "^11.1.21",
+    "@opennextjs/cloudflare": "^1.20.12",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
     "@svgr/webpack": "^8.0.1",
     "@swc-node/register": "1.9.2",
@@ -318,7 +319,8 @@
     "typescript": "5.5.4",
     "vite": "^8.2.1",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "3.1.4"
+    "vitest": "3.1.4",
+    "wrangler": "^4.151.1"
   },
   "volta": {
     "node": "20.17.0"

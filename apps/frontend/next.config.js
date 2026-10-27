@@ -21,6 +21,24 @@ function assetPrefix() {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Set only by `build:cloudflare`. The Vercel build leaves these off.
+  // Workers has no Next.js image optimizer unless Cloudflare Images is bound.
+  // The only next/image uses are already unoptimized. jsdom and ws load
+  // canvas, bufferutil, and utf-8-validate inside try/catch. The build script
+  // also stubs the canvas package entry so esbuild does not follow its
+  // native addon. The real package is restored when the build exits.
+  ...(process.env.OPENNEXT_CLOUDFLARE === '1'
+    ? {
+        images: { unoptimized: true },
+        outputFileTracingExcludes: {
+          '*': [
+            '../../node_modules/canvas/**/*',
+            '../../node_modules/bufferutil/**/*',
+            '../../node_modules/utf-8-validate/**/*',
+          ],
+        },
+      }
+    : {}),
   assetPrefix: assetPrefix(),
   crossOrigin: 'anonymous',
   experimental: {
