@@ -241,6 +241,59 @@ describe('trial credit cap', () => {
     expect(PLANS.ULTIMATE.monthlyCredits).toBe(1800);
   });
 
+  it('computes Left from the effective allowance minus used, with pack credits separate', () => {
+    const packCredits = 150;
+    const used = 12;
+    const spend = (key: string) => ({
+      amount: -used,
+      type: 'SPEND' as const,
+      reason: 'x_post',
+      idempotencyKey: key,
+    });
+    const agencyTrial = creditUsage({
+      allowance: monthlyCreditAllowance('ULTIMATE', true),
+      monthlyRemaining: PLANS.ULTIMATE.monthlyCredits,
+      packRemaining: packCredits,
+      entries: [],
+    });
+    expect(agencyTrial.allowance).toBe(50);
+    expect(agencyTrial.used).toBe(0);
+    expect(agencyTrial.left).toBe(50);
+    expect(agencyTrial.left).not.toBe(1800);
+    expect(agencyTrial.packCredits).toBe(packCredits);
+
+    for (const tier of plans) {
+      const duringTrial = creditUsage({
+        allowance: monthlyCreditAllowance(tier, true),
+        monthlyRemaining: PLANS[tier].monthlyCredits,
+        packRemaining: packCredits,
+        entries: [spend(`${tier}-trial`)],
+      });
+      expect(duringTrial.allowance).toBe(50);
+      expect(duringTrial.used).toBe(used);
+      expect(duringTrial.left).toBe(50 - used);
+      expect(duringTrial.left).not.toBe(PLANS[tier].monthlyCredits);
+      expect(duringTrial.left).not.toBe(50 - used + packCredits);
+      expect(duringTrial.packCredits).toBe(packCredits);
+
+      const converted = creditUsage({
+        allowance: monthlyCreditAllowance(tier, false),
+        monthlyRemaining: PLANS[tier].monthlyCredits,
+        packRemaining: packCredits,
+        entries: [spend(`${tier}-paid`)],
+      });
+      expect(converted.allowance).toBe(PLANS[tier].monthlyCredits);
+      expect(converted.used).toBe(used);
+      expect(converted.left).toBe(PLANS[tier].monthlyCredits - used);
+      expect(converted.left).not.toBe(PLANS[tier].monthlyCredits - used + packCredits);
+      expect(converted.packCredits).toBe(packCredits);
+    }
+    expect(PLANS.STANDARD.monthlyCredits - used).toBe(288);
+    expect(PLANS.TEAM.monthlyCredits - used).toBe(688);
+    expect(PLANS.PRO.monthlyCredits - used).toBe(1088);
+    expect(PLANS.ULTIMATE.monthlyCredits - used).toBe(1788);
+  });
+
   it('keeps a bought pack spendable after the trial monthly credits are gone', () => {
     const plan = planSpend({ monthly: TRIAL_MONTHLY_CREDITS, pack: 150 }, 63);
     expect(plan.ok).toBe(true);
@@ -419,7 +472,7 @@ describe('credit deduction', () => {
       ],
     });
     expect(usage.used).toBe(1 + 3 + 13 + 3 + 2);
-    expect(usage.left).toBe(277);
+    expect(usage.left).toBe(usage.allowance - usage.used);
     expect(usage.packCredits).toBe(11);
     expect(usage.actions).toEqual([
       { key: 'ai_post', count: 2, credits: 1 },
