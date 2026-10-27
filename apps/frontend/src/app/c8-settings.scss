@@ -1223,8 +1223,8 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .settings-screen .settings-tool,
-.settings-screen .settings-section button.rounded-full,
-.settings-screen .settings-section button.bg-btnSimple {
+.settings-screen :is(.settings-section, .account-bill) button.rounded-full,
+.settings-screen :is(.settings-section, .account-bill) button.bg-btnSimple {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1276,7 +1276,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .settings-screen .settings-wizard,
-.settings-screen .settings-section button.bg-btnPrimary {
+.settings-screen :is(.settings-section, .account-bill) button.bg-btnPrimary {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1370,8 +1370,8 @@ $c8-body: var(--font-body), Inter, sans-serif;
 
 @media (hover: hover) {
   .settings-screen .settings-tool:not(.settings-danger):hover,
-  .settings-screen .settings-section button.rounded-full:hover,
-  .settings-screen .settings-section button.bg-btnSimple:hover {
+  .settings-screen :is(.settings-section, .account-bill) button.rounded-full:hover,
+  .settings-screen :is(.settings-section, .account-bill) button.bg-btnSimple:hover {
     background: var(--c8-btn-hover) !important;
     box-shadow: 0 5px 0 var(--c8-hard) !important;
     transform: translateY(-2px);
@@ -1390,7 +1390,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
   }
 
   .settings-screen .settings-wizard:hover,
-  .settings-screen .settings-section button.bg-btnPrimary:hover {
+  .settings-screen :is(.settings-section, .account-bill) button.bg-btnPrimary:hover {
     background: var(--c8-cyan-hover) !important;
     box-shadow: 0 5px 0 var(--c8-hard) !important;
     transform: translateY(-2px);
@@ -1399,8 +1399,8 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .settings-screen .settings-tool:not(.settings-danger):active,
-.settings-screen .settings-section button.bg-btnSimple:active,
-.settings-screen .settings-section button.rounded-full:active {
+.settings-screen :is(.settings-section, .account-bill) button.bg-btnSimple:active,
+.settings-screen :is(.settings-section, .account-bill) button.rounded-full:active {
   background: var(--c8-btn-secondary) !important;
   box-shadow: 0 0 0 var(--c8-hard) !important;
   transform: translateY(3px);
@@ -1415,7 +1415,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .settings-screen .settings-wizard:active,
-.settings-screen .settings-section button.bg-btnPrimary:active {
+.settings-screen :is(.settings-section, .account-bill) button.bg-btnPrimary:active {
   background: var(--c8-cyan-pressed) !important;
   box-shadow: 0 0 0 var(--c8-hard) !important;
   transform: translateY(3px);
@@ -2153,8 +2153,9 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   display: flex !important;
   flex-flow: row nowrap !important;
   gap: 2px !important;
-  width: 100% !important;
+  width: max-content !important;
   max-width: 100% !important;
+  align-self: flex-start;
   height: auto !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
@@ -2169,6 +2170,12 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 
 .account-screen.settings-screen .settings-settabs.c8-seg > [role='radio'] {
   flex: 0 0 auto !important;
+}
+
+.account-screen .settings-detail {
+  width: 100%;
+  max-width: 740px;
+  align-self: flex-start;
 }
 
 .account-screen .settings-head {
@@ -2450,6 +2457,306 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 
 .account-screen .settings-section {
   width: 100%;
+}
+
+.account-billing,
+.account-bill {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+
+.account-bill-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.account-bill-card {
+  min-width: 0;
+}
+
+.account-bill-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.account-bill-title {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.account-bill-price {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: $c8-heading;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.account-bill-price span {
+  margin-left: 4px;
+  color: var(--c8-muted);
+  font-family: $c8-body;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.account-bill-tiles,
+.account-bill-actions,
+.account-bill-packs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.account-bill-actions {
+  gap: 10px;
+}
+
+.account-screen .account-bill .c8-side-tile.is-cyan {
+  background: var(--c8-cyan);
+}
+
+.account-screen .account-bill .c8-side-tile.is-warn {
+  background: var(--c8-warn);
+}
+
+.account-screen .account-bill .c8-side-tile.is-team {
+  background: var(--c8-sentiment-neg);
+}
+
+.account-bill-meter {
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid var(--c8-ink);
+  border-radius: 99px;
+  background: var(--c8-soft);
+}
+
+.account-bill-meter > span {
+  display: block;
+  height: 100%;
+  border-right: 1px solid var(--c8-ink);
+  background: var(--c8-cyan);
+}
+
+.account-bill-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.account-bill-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.account-bill-row .c8-side-tile {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.account-bill-row > span:nth-child(2) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.account-bill-row strong {
+  font-weight: 700;
+}
+
+.account-bill-lines {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-bill-lines li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--c8-line);
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.account-bill-lines li > span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.account-bill-lines strong {
+  font-weight: 700;
+}
+
+.account-bill-lines .settings-pill {
+  text-decoration: none;
+}
+
+.account-bill-empty {
+  margin: 0;
+  color: var(--c8-muted);
+  font-size: 14px;
+}
+
+.account-bill-packs {
+  width: 100%;
+}
+
+.account-bill-packs .account-bill-empty {
+  flex: 1 0 100%;
+}
+
+.account-cancel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--c8-warn);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--c8-warn) 14%, transparent);
+}
+
+.account-cancel p {
+  flex: 1 1 160px;
+  min-width: 0;
+  margin: 0;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account-bill-cancel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.account-bill-cancel-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account-bill-note {
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 12px;
+  border: 1px solid var(--c8-line);
+  border-radius: 14px;
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.account-bill-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.account-screen .lib-acc {
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+}
+
+.account-screen .lib-acc-item + .lib-acc-item {
+  border-top: 1px solid var(--c8-line);
+}
+
+.account-screen .lib-acc-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--c8-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-screen .lib-acc-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.account-screen .lib-acc-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.account-screen .lib-acc-head svg {
+  flex: none;
+  color: var(--c8-muted);
+}
+
+.account-screen .lib-acc-body {
+  padding: 0 16px 16px;
+  color: var(--c8-ink);
+}
+
+@media (max-width: 1199px), (max-height: 500px) {
+  .account-bill-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .account-bill-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .account-bill-price {
+    font-size: 36px;
+  }
 }
 
 @media (max-width: 639px), (max-height: 500px) {

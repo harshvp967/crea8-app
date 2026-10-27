@@ -236,7 +236,7 @@ const AccountProfile = () => {
           <span>{t('email', 'Email')}</span>
           <input value={email} readOnly tabIndex={-1} aria-readonly="true" />
         </label>
-        <Button type="submit" loading={saving} className="bg-btnPrimary">
+        <Button type="submit" loading={saving} className="bg-btnPrimary account-save">
           {t('save_profile', 'Save profile')}
         </Button>
       </form>
@@ -299,22 +299,23 @@ const AccountBilling = () => {
     !!billingEnabled &&
     (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN');
 
+  if (canBill) {
+    return (
+      <div className="account-billing">
+        <BillingComponent surface="account" />
+      </div>
+    );
+  }
+
   return (
     <div className="settings-section">
-      <div className="settings-head">
-        <h1>{t('billing_and_plan', 'Billing & plan')}</h1>
-      </div>
-      {canBill ? (
-        <BillingComponent surface="account" />
-      ) : (
-        <AccountBillingEmpty
-          note={
-            billingEnabled
-              ? t('billing_admin_only', 'An admin manages the plan.')
-              : undefined
-          }
-        />
-      )}
+      <AccountBillingEmpty
+        note={
+          billingEnabled
+            ? t('billing_admin_only', 'An admin manages the plan.')
+            : undefined
+        }
+      />
     </div>
   );
 };
