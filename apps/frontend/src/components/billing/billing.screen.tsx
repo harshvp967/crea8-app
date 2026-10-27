@@ -19,10 +19,17 @@ import {
 } from '@gitroom/frontend/components/billing/billing.ui';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { PricingSection } from '@gitroom/frontend/components/billing/pricing.section';
+import { CreditUsage } from '@gitroom/frontend/components/settings/global.settings';
 
 const activeEnough = new Set(['active', 'trialing', 'past_due', 'on_hold', 'cancel_scheduled']);
 
-export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
+export function BillingScreen({
+  mode,
+  surface = 'page',
+}: {
+  mode: 'settings' | 'paywall';
+  surface?: 'page' | 'account';
+}) {
   const fetch = useFetch();
   const router = useRouter();
   const params = useSearchParams();
@@ -180,6 +187,22 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
     />
   ) : null;
 
+  const accountPicker = !data.grandfathered ? (
+    <PricingSection
+      period={period}
+      busy={busy}
+      allowTrial={data.allowTrial && status !== 'trial_ended'}
+      trialDays={data.trialDays}
+      onPeriod={setPeriod}
+      onChoose={(tier) => {
+        const plan = data.plans.find((item) => item.tier === tier);
+        if (plan) {
+          void choose(plan);
+        }
+      }}
+    />
+  ) : null;
+
   const settings = (
     <BillingSettings
       overview={data}
@@ -227,6 +250,9 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
     </div>
   );
 
+  const accountView = surface === 'account' && !shown.startsWith('checkout_');
+  const accountHasPlan = activeEnough.has(status);
+
   return (
     <BillingShell>
       <div data-billing-screen={shown} className="flex flex-col gap-[12px]">
@@ -238,40 +264,56 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
         {shown === 'checkout_success' ? (
           <CheckoutStatus state="success" onRetry={() => router.replace('/account?section=billing')} />
         ) : null}
-        {shown === 'paywall' ? (
-          <Paywall>
-            <PricingSection
-              period={period}
-              busy={busy}
-              allowTrial={data.allowTrial && status !== 'trial_ended'}
-              trialDays={data.trialDays}
-              onPeriod={setPeriod}
-              onChoose={(tier) => {
-                const plan = data.plans.find((item) => item.tier === tier);
-                if (plan) {
-                  void choose(plan);
-                }
-              }}
-            />
-            <FAQComponent accordion />
-          </Paywall>
-        ) : null}
-        {shown === 'trial_ended' || shown === 'cancelled' ? (
-          <>
-            <StatusBanners overview={data} />
-            {picker}
-          </>
-        ) : null}
-        {shown === 'plan_picker' ? picker : null}
-        {shown === 'trial_active' || shown === 'past_due' || shown === 'downgrade_pending' || shown === 'billing_settings' ? (
+        {accountView ? (
           <>
             <StatusBanners overview={data} />
             {settings}
-            <button type="button" onClick={() => setCreditsOpen(true)}>Credits and invoices</button>
+            {!accountHasPlan || showPlans ? accountPicker : null}
+            <CreditUsage />
+            {!data.grandfathered ? (
+              <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
+            ) : null}
+            <InvoiceList invoices={data.invoices} />
+            <FAQComponent />
           </>
-        ) : null}
-        {shown === 'credits' ? credits : null}
-        {shown !== 'paywall' && shown !== 'credits' && shown !== 'checkout_pending' ? <FAQComponent /> : null}
+        ) : (
+          <>
+            {shown === 'paywall' ? (
+              <Paywall>
+                <PricingSection
+                  period={period}
+                  busy={busy}
+                  allowTrial={data.allowTrial && status !== 'trial_ended'}
+                  trialDays={data.trialDays}
+                  onPeriod={setPeriod}
+                  onChoose={(tier) => {
+                    const plan = data.plans.find((item) => item.tier === tier);
+                    if (plan) {
+                      void choose(plan);
+                    }
+                  }}
+                />
+                <FAQComponent accordion />
+              </Paywall>
+            ) : null}
+            {shown === 'trial_ended' || shown === 'cancelled' ? (
+              <>
+                <StatusBanners overview={data} />
+                {picker}
+              </>
+            ) : null}
+            {shown === 'plan_picker' ? picker : null}
+            {shown === 'trial_active' || shown === 'past_due' || shown === 'downgrade_pending' || shown === 'billing_settings' ? (
+              <>
+                <StatusBanners overview={data} />
+                {settings}
+                <button type="button" onClick={() => setCreditsOpen(true)}>Credits and invoices</button>
+              </>
+            ) : null}
+            {shown === 'credits' ? credits : null}
+            {shown !== 'paywall' && shown !== 'credits' && shown !== 'checkout_pending' ? <FAQComponent /> : null}
+          </>
+        )}
       </div>
       <UpgradeModal
         open={!!upgrade}
