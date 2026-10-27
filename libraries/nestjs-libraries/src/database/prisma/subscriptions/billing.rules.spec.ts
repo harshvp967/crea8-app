@@ -2,6 +2,7 @@ import { createHmac } from 'crypto';
 import {
   CREDIT_COSTS,
   PLANS,
+  TRIAL_MONTHLY_CREDITS,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
   badgeRemovalOpen,
@@ -18,6 +19,7 @@ import {
   creditUsage,
   emptyBillingSnapshot,
   ledgerRowsForHistory,
+  monthlyCreditAllowance,
   planSpend,
   postableChannelIds,
   postsCovered,
@@ -113,6 +115,142 @@ describe('webhook idempotency', () => {
     expect(first.state.pack).toBe(150);
     expect(second.duplicate).toBe(true);
     expect(second.state.pack).toBe(150);
+  });
+});
+
+describe('trial credit cap', () => {
+  const plans = ['STANDARD', 'TEAM', 'PRO', 'ULTIMATE'] as const;
+
+  it('caps every plan at 50 monthly credits during the trial and keeps pack credits', () => {
+    expect(TRIAL_MONTHLY_CREDITS).toBe(50);
+    for (const tier of plans) {
+      expect(monthlyCreditAllowance(tier, true)).toBe(50);
+      expect(PLANS[tier].monthlyCredits).toBeGreaterThan(50);
+      const trial = reduceBillingEvent(
+        { ...emptyBillingSnapshot(), pack: 150 },
+        {
+          id: `${tier}-trial`,
+          type: 'subscription.active',
+          tier,
+          period: 'MONTHLY',
+          status: 'active',
+          cycleKey: '2026-10-01',
+          inTrial: true,
+        }
+      );
+      expect(trial.status).toBe('trialing');
+      expect(trial.monthly).toBe(50);
+      expect(trial.pack).toBe(150);
+      expect(trial.cycleKey).toBe('trial:2026-10-01');
+      const shown = creditUsage({
+        allowance: monthlyCreditAllowance(tier, true),
+        monthlyRemaining: 38,
+        packRemaining: trial.pack,
+        entries: [],
+      });
+      expect(shown.allowance).toBe(50);
+      expect(shown.packCredits).toBe(150);
+      const store = new MemoryWebhookStore();
+      const event = {
+        id: `${tier}-trial`,
+        type: 'subscription.active' as const,
+        tier,
+        period: 'MONTHLY' as const,
+        status: 'active',
+        cycleKey: '2026-10-01',
+        inTrial: true,
+      };
+      const first = applyWebhookOnce(
+        store,
+        { ...emptyBillingSnapshot(), pack: 150 },
+        event
+      );
+      const again = applyWebhookOnce(store, first.state, event);
+      expect(first.duplicate).toBe(false);
+      expect(first.state.monthly).toBe(50);
+      expect(again.duplicate).toBe(true);
+      expect(again.state.monthly).toBe(50);
+      expect(again.state.pack).toBe(150);
+    }
+  });
+
+  it('grants the full plan allowance when the trial converts or the subscription starts active', () => {
+    for (const tier of plans) {
+      const trial = reduceBillingEvent(
+        { ...emptyBillingSnapshot(), pack: 500 },
+        {
+          id: `${tier}-trial`,
+          type: 'subscription.active',
+          tier,
+          period: 'MONTHLY',
+          status: 'active',
+          cycleKey: '2026-10-01',
+          inTrial: true,
+        }
+      );
+      const converted = reduceBillingEvent(trial, {
+        id: `${tier}-renewed`,
+        type: 'subscription.renewed',
+        tier,
+        period: 'MONTHLY',
+        status: 'active',
+        cycleKey: '2026-10-08',
+        inTrial: true,
+      });
+      expect(converted.status).toBe('active');
+      expect(converted.monthly).toBe(PLANS[tier].monthlyCredits);
+      expect(converted.pack).toBe(500);
+      const sameCycle = reduceBillingEvent(trial, {
+        id: `${tier}-renewed-same-cycle`,
+        type: 'subscription.renewed',
+        tier,
+        period: 'MONTHLY',
+        status: 'active',
+        cycleKey: '2026-10-01',
+        inTrial: true,
+      });
+      expect(sameCycle.status).toBe('active');
+      expect(sameCycle.cycleKey).toBe('2026-10-01');
+      expect(sameCycle.monthly).toBe(PLANS[tier].monthlyCredits);
+      expect(sameCycle.pack).toBe(500);
+      expect(monthlyCreditAllowance(tier, false)).toBe(PLANS[tier].monthlyCredits);
+      const shown = creditUsage({
+        allowance: monthlyCreditAllowance(tier, false),
+        monthlyRemaining: converted.monthly,
+        packRemaining: converted.pack,
+        entries: [],
+      });
+      expect(shown.allowance).toBe(PLANS[tier].monthlyCredits);
+      expect(shown.packCredits).toBe(500);
+
+      const started = reduceBillingEvent(emptyBillingSnapshot(), {
+        id: `${tier}-active`,
+        type: 'subscription.active',
+        tier,
+        period: 'MONTHLY',
+        status: 'active',
+        cycleKey: '2026-10-01',
+      });
+      expect(started.status).toBe('active');
+      expect(started.monthly).toBe(PLANS[tier].monthlyCredits);
+      expect(started.pack).toBe(0);
+    }
+    expect(PLANS.STANDARD.monthlyCredits).toBe(300);
+    expect(PLANS.TEAM.monthlyCredits).toBe(700);
+    expect(PLANS.PRO.monthlyCredits).toBe(1100);
+    expect(PLANS.ULTIMATE.monthlyCredits).toBe(1800);
+  });
+
+  it('keeps a bought pack spendable after the trial monthly credits are gone', () => {
+    const plan = planSpend({ monthly: TRIAL_MONTHLY_CREDITS, pack: 150 }, 63);
+    expect(plan.ok).toBe(true);
+    if (!plan.ok) {
+      return;
+    }
+    expect(plan.monthlySpend).toBe(50);
+    expect(plan.packSpend).toBe(13);
+    expect(plan.monthlyAfter).toBe(0);
+    expect(plan.packAfter).toBe(137);
   });
 });
 

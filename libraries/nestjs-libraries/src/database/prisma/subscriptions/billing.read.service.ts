@@ -5,6 +5,7 @@ import {
   isGrandfatheredOrg,
 } from '@gitroom/helpers/utils/billing.enabled';
 import { PLANS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { monthlyCreditAllowance } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { DodoProvider } from '@gitroom/nestjs-libraries/services/payment/providers/dodo.provider';
@@ -48,6 +49,7 @@ export class BillingReadService {
       pendingTier: active?.pendingTier,
     });
     const plan = PLANS[tier];
+    const shownStatus = grandfathered && !active ? 'active' : status;
     return {
       billingEnabled: enforced,
       grandfathered,
@@ -59,7 +61,7 @@ export class BillingReadService {
         tier,
         displayName: plan.displayName,
         period: active?.period || null,
-        status: grandfathered && !active ? 'active' : status,
+        status: shownStatus,
         cancelAt: active?.cancelAt ? active.cancelAt.toISOString() : null,
         currentPeriodEnd: active?.currentPeriodEnd
           ? active.currentPeriodEnd.toISOString()
@@ -75,7 +77,10 @@ export class BillingReadService {
       },
       credits: {
         monthlyRemaining: balance.monthlyRemaining,
-        monthlyAllowance: plan.monthlyCredits,
+        monthlyAllowance: monthlyCreditAllowance(
+          tier,
+          !grandfathered && shownStatus === 'trialing'
+        ),
         packRemaining: balance.packRemaining,
         total: balance.total,
         cycleKey: balance.cycleKey,

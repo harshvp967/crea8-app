@@ -3,6 +3,9 @@
 
 export const SUPPORT_EMAIL = 'support@crea8.one';
 export const TRIAL_DAYS = 7;
+// Monthly credits while a paid subscription is still inside its trial.
+// The plan's monthlyCredits apply on the first successful charge.
+export const TRIAL_MONTHLY_CREDITS = 50;
 
 export const CREDIT_COSTS = {
   xPost: 1,

@@ -21,6 +21,8 @@ import {
   dodoWebhookSecret,
   frontendUrl,
   isUpgrade,
+  monthlyCreditAllowance,
+  monthlyCycleKey,
   packCreditsFromProduct,
   subscriptionProductId,
   tierFromProductId,
@@ -116,7 +118,9 @@ export class DodoProvider extends PaymentProviderAbstract {
       return;
     }
     const status = String(source.status || 'active');
-    const inTrial = this.inTrial(source);
+    // A renewal is a successful recurring charge, including the charge that
+    // ends the trial. The trial cap applies only before that charge.
+    const inTrial = type === 'subscription.renewed' ? false : this.inTrial(source);
     const ended = ['cancelled', 'expired', 'failed'].includes(status);
     const cancelAt =
       source.cancel_at_next_billing_date && source.next_billing_date
@@ -168,8 +172,8 @@ export class DodoProvider extends PaymentProviderAbstract {
       await this._credits.grantMonthly(
         tx,
         organizationId,
-        String(cycleKey),
-        PLANS[mapped.tier].monthlyCredits
+        monthlyCycleKey(String(cycleKey), inTrial),
+        monthlyCreditAllowance(mapped.tier, inTrial)
       );
     }
   }
