@@ -48,8 +48,6 @@ import { FirstBillingComponent } from '@gitroom/frontend/components/billing/firs
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
 import { DashboardSwitcher } from '@gitroom/frontend/components/dashboard/dashboard.switcher';
-import { StalkerTopNav } from '@gitroom/frontend/components/stalker/stalker.nav';
-import { LinkTopNav } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settings.component';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
@@ -208,33 +206,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   if (!user) {
     if (stalker || link) {
-      return (
-        <div
-          className={clsx(
-            'app-shell flex flex-col min-h-screen min-w-screen text-newTextColor p-[16px] gap-[12px]',
-            jakartaSans.className
-          )}
-        >
-          <header className="app-header flex items-center gap-[8px] min-h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder px-[12px] py-[8px] shrink-0">
-            <span className="app-logo">
-            <Logo compact />
-            </span>
-            <div className="w-[1px] self-stretch my-[8px] bg-blockSeparator hidden sm:block shrink-0" />
-            <DashboardSwitcher />
-            {stalker ? <StalkerTopNav /> : <LinkTopNav />}
-            <div className="ms-auto flex shrink-0 items-center gap-[8px]" aria-hidden>
-              <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
-              <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
-              <span className="hidden h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover md:block" />
-            </div>
-          </header>
-          <div className="flex-1 bg-newBgLineColor rounded-[34px] overflow-hidden flex flex-col min-h-0 border border-newBorder">
-            <div className="app-main flex flex-1 gap-[1px] min-h-0 overflow-hidden">{children}</div>
-          </div>
-          <MobileTabBar />
-          <Toaster />
-        </div>
-      );
+      return <AppShellSkeleton />;
     }
     if (pathname?.startsWith('/settings') || pathname?.startsWith('/account')) {
       return (
