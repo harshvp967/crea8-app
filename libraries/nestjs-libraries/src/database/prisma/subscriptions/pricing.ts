@@ -23,7 +23,6 @@ export interface PricingInnerInterface {
   image_generator?: boolean;
   image_generation_count: number;
   generate_videos: number;
-  clipping_minutes: number;
   public_api: boolean;
   webhooks: number;
   autoPost: boolean;
@@ -58,7 +57,6 @@ function toPricing(tier: PlanTier): PricingInnerInterface {
     image_generator: plan.imageGenerator,
     image_generation_count: plan.imageGenerationCount,
     generate_videos: plan.generateVideos,
-    clipping_minutes: plan.clippingMinutes,
     public_api: plan.publicApi,
     webhooks: plan.webhooks,
     autoPost: plan.autoPost,

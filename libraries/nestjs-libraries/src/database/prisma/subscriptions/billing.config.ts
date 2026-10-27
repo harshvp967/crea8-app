@@ -44,7 +44,6 @@ export type PlanConfig = {
   imageGenerator: boolean;
   imageGenerationCount: number;
   generateVideos: number;
-  clippingMinutes: number;
   publicApi: boolean;
   autoPost: boolean;
 };
@@ -66,7 +65,6 @@ const paid = (
     | 'webhooks'
     | 'imageGenerationCount'
     | 'generateVideos'
-    | 'clippingMinutes'
   >
 ): PlanConfig => ({
   ...partial,
@@ -106,7 +104,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     imageGenerator: false,
     imageGenerationCount: 0,
     generateVideos: 0,
-    clippingMinutes: 0,
     publicApi: false,
     autoPost: false,
   },
@@ -125,7 +122,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     webhooks: 2,
     imageGenerationCount: 20,
     generateVideos: 3,
-    clippingMinutes: 60,
   }),
   TEAM: paid({
     key: 'TEAM',
@@ -142,7 +138,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     webhooks: 10,
     imageGenerationCount: 100,
     generateVideos: 10,
-    clippingMinutes: 120,
   }),
   PRO: paid({
     key: 'PRO',
@@ -159,7 +154,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     webhooks: 30,
     imageGenerationCount: 300,
     generateVideos: 30,
-    clippingMinutes: 300,
   }),
   ULTIMATE: paid({
     key: 'ULTIMATE',
@@ -176,7 +170,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     webhooks: 10000,
     imageGenerationCount: 500,
     generateVideos: 60,
-    clippingMinutes: 600,
   }),
 };
 
