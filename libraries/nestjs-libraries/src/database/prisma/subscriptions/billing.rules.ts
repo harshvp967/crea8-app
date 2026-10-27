@@ -11,6 +11,7 @@ import {
   PaidTier,
   PlanTier,
   ProductKey,
+  TRIAL_MONTHLY_CREDITS,
   packByKey,
   productKey,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
@@ -52,6 +53,28 @@ export function planOf(tier: string | null | undefined) {
     return pricing[tier];
   }
   return pricing.FREE;
+}
+
+export function monthlyCreditAllowance(
+  tier: string | null | undefined,
+  inTrial: boolean
+) {
+  const plan = tier && tier in PLANS ? PLANS[tier as PlanTier] : PLANS.FREE;
+  if (!inTrial) {
+    return plan.monthlyCredits;
+  }
+  return Math.min(plan.monthlyCredits, TRIAL_MONTHLY_CREDITS);
+}
+
+export function monthlyCycleKey(cycleKey: string, inTrial: boolean) {
+  return inTrial ? `trial:${cycleKey}` : cycleKey;
+}
+
+function cycleBase(cycleKey: string | null | undefined) {
+  if (!cycleKey) {
+    return null;
+  }
+  return cycleKey.startsWith('trial:') ? cycleKey.slice('trial:'.length) : cycleKey;
 }
 
 export function headerValue(
@@ -393,19 +416,27 @@ export function reduceBillingEvent(
   }
   const tier = event.tier || state.tier;
   const paidTier = tier === 'FREE' ? 'STANDARD' : tier;
-  const cycleKey = event.cycleKey || state.cycleKey;
-  const allowance = PLANS[paidTier].monthlyCredits;
+  // subscription.renewed is the recurring charge. That is the trial
+  // converting, or a later paid period, so the plan allowance applies.
+  const trialing = !!event.inTrial && event.type !== 'subscription.renewed';
+  const baseCycle = event.cycleKey || cycleBase(state.cycleKey);
+  const cycleKey = baseCycle ? monthlyCycleKey(baseCycle, trialing) : null;
+  const allowance = monthlyCreditAllowance(paidTier, trialing);
   let monthly = state.monthly;
-  if (cycleKey && cycleKey !== state.cycleKey && (event.type === 'subscription.active' || event.type === 'subscription.renewed')) {
-    monthly = allowance;
-  } else if (event.type === 'subscription.active' && state.cycleKey === null) {
+  const granting =
+    event.type === 'subscription.active' || event.type === 'subscription.renewed';
+  if (
+    granting &&
+    ((cycleKey && cycleKey !== state.cycleKey) ||
+      (event.type === 'subscription.active' && state.cycleKey === null))
+  ) {
     monthly = allowance;
   }
   return {
     ...state,
     tier: paidTier,
     period: event.period || state.period,
-    status: event.inTrial ? 'trialing' : status,
+    status: trialing ? 'trialing' : status,
     cancelAt: event.cancelAt ?? null,
     pendingTier: event.pendingTier ?? null,
     pendingPeriod: event.pendingPeriod ?? null,

@@ -30,6 +30,7 @@ import {
 } from '@gitroom/helpers/utils/billing.enabled';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import { monthlyCreditAllowance } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
@@ -141,15 +142,16 @@ export class UsersController {
       totalChannels = pricing[tier as 'FREE'].channel;
       isTrailing = tier !== 'FREE' && !!organization.isTrailing;
       const balance = await this._credits.balance(organization.id);
-      const usage = await this._credits.usage(
-        organization.id,
-        pricing[tier as 'FREE'].monthly_credits
+      const allowance = monthlyCreditAllowance(
+        tier,
+        !grandfathered && isTrailing
       );
+      const usage = await this._credits.usage(organization.id, allowance);
       credits = {
         monthlyRemaining: balance.monthlyRemaining,
         packRemaining: balance.packRemaining,
         total: balance.total,
-        allowance: usage?.allowance ?? pricing[tier as 'FREE'].monthly_credits,
+        allowance: usage?.allowance ?? allowance,
         used: usage?.used ?? 0,
         left: usage?.left ?? balance.monthlyRemaining,
         packCredits: usage?.packCredits ?? balance.packRemaining,
