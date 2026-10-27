@@ -18,6 +18,7 @@ import {
   UpgradeModal,
 } from '@gitroom/frontend/components/billing/billing.ui';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
+import { PricingSection } from '@gitroom/frontend/components/billing/pricing.section';
 
 const activeEnough = new Set(['active', 'trialing', 'past_due', 'on_hold', 'cancel_scheduled']);
 
@@ -238,7 +239,24 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
         {shown === 'checkout_success' ? (
           <CheckoutStatus state="success" onRetry={() => router.replace(pathname)} />
         ) : null}
-        {shown === 'paywall' ? <Paywall>{picker}</Paywall> : null}
+        {shown === 'paywall' ? (
+          <Paywall>
+            <PricingSection
+              period={period}
+              busy={busy}
+              allowTrial={data.allowTrial && status !== 'trial_ended'}
+              trialDays={data.trialDays}
+              onPeriod={setPeriod}
+              onChoose={(tier) => {
+                const plan = data.plans.find((item) => item.tier === tier);
+                if (plan) {
+                  void choose(plan);
+                }
+              }}
+            />
+            <FAQComponent accordion />
+          </Paywall>
+        ) : null}
         {shown === 'trial_ended' || shown === 'cancelled' ? (
           <>
             <StatusBanners overview={data} />
@@ -254,7 +272,7 @@ export function BillingScreen({ mode }: { mode: 'settings' | 'paywall' }) {
           </>
         ) : null}
         {shown === 'credits' ? credits : null}
-        {shown !== 'credits' && shown !== 'checkout_pending' ? <FAQComponent /> : null}
+        {shown !== 'paywall' && shown !== 'credits' && shown !== 'checkout_pending' ? <FAQComponent /> : null}
       </div>
       <UpgradeModal
         open={!!upgrade}

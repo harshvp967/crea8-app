@@ -15,7 +15,7 @@ const useFaqList = () => {
           {
             title: t(
               'faq_am_i_going_to_be_charged_by_postiz',
-              'Am I going to be charged by Crea8one?'
+              'Am I going to be charged by crea8.one?'
             ),
             description: t(
               'faq_to_confirm_credit_card_information_postiz_will_hold',
@@ -27,18 +27,18 @@ const useFaqList = () => {
     {
       title: t(
         'faq_can_i_trust_postiz_gitroom',
-        'Can I trust Crea8one?'
+        'Can I trust crea8.one?'
       ),
       description: t(
         'faq_postiz_gitroom_is_proudly_open_source',
-        'Crea8one is proudly open-source! We believe in an ethical and transparent culture, meaning that Crea8one will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/harshvp967/crea8-app" target="_blank" style="text-decoration: underline;">click here</a>.'
+        'crea8.one is proudly open-source! We believe in an ethical and transparent culture, meaning that crea8.one will live forever. You can check out the entire code or use it for personal projects. To view the open-source repository, <a href="https://github.com/harshvp967/crea8-app" target="_blank" style="text-decoration: underline;">click here</a>.'
       ),
     },
     {
       title: t('faq_what_are_channels', 'What are channels?'),
       description: t(
         'faq_postiz_gitroom_allows_you_to_schedule_posts',
-        `Crea8one allows you to schedule your posts between different channels.
+        `crea8.one allows you to schedule your posts between different channels.
 A channel is a publishing platform where you can schedule your posts.
 For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouTube, Reddit, Linkedin, Dribbble, Threads and Pinterest.`
       ),
@@ -59,7 +59,7 @@ For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouT
             ),
             description: t(
               'faq_delete_account_description',
-              `If you don't want to continue using Crea8one, you can delete your account, including all your organizations, channels and posts. This action cannot be undone.`
+              `If you don't want to continue using crea8.one, you can delete your account, including all your organizations, channels and posts. This action cannot be undone.`
             ),
             content: <DeleteAccountComponent isLink={true} />,
           },
@@ -71,12 +71,34 @@ export const FAQSection: FC<{
   title: string;
   description: string;
   content?: ReactNode;
+  accordion?: boolean;
 }> = (props) => {
-  const { title, description, content } = props;
+  const { title, description, content, accordion } = props;
   const [show, setShow] = useState(false);
   const changeShow = useCallback(() => {
     setShow(!show);
   }, [show]);
+  if (accordion) {
+    return (
+      <div className={show ? 'lib-acc-item is-open' : 'lib-acc-item'}>
+        <button type="button" className="lib-acc-head" aria-expanded={show} onClick={changeShow}>
+          <span className="lib-acc-copy">
+            <span className="lib-acc-title">{title}</span>
+          </span>
+          <HugeIcon name={show ? 'chevron-down' : 'chevron-right'} size={18} />
+        </button>
+        {show ? (
+          <div className="lib-acc-body" onClick={(event) => event.stopPropagation()}>
+            <div
+              className="whitespace-pre-line text-[14px]"
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+            {content}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div
       className="bg-sixth p-[24px] border border-tableBorder rounded-[8px] flex flex-col"
@@ -121,14 +143,20 @@ export const FAQSection: FC<{
     </div>
   );
 };
-export const FAQComponent: FC = () => {
+export const FAQComponent: FC<{ accordion?: boolean }> = ({ accordion }) => {
   const t = useT();
   const list = useFaqList();
+  if (accordion) {
+    return (
+      <div className="lib-acc w-full">
+        {list.map((item, index) => (
+          <FAQSection key={index} {...item} accordion />
+        ))}
+      </div>
+    );
+  }
   return (
     <div>
-      {/*<h3 className="text-[24px] mt-[48px] mb-[40px] tablet:mt-[80px]">*/}
-      {/*  {t('frequently_asked_questions', 'Frequently Asked Questions')}*/}
-      {/*</h3>*/}
       <div className="gap-[24px] flex-col flex select-none  mt-[48px] mb-[40px] tablet:mt-[80px]">
         {list.map((item, index) => (
           <FAQSection key={index} {...item} />
