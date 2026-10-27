@@ -7,7 +7,10 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 import { BillingShell } from '@gitroom/frontend/components/billing/billing.shell';
 import {
+  AccountCreditsCard,
+  AccountPlanCard,
   BillingSettings,
+  CancelStrip,
   CheckoutStatus,
   CreditPacks,
   CreditsMeter,
@@ -19,7 +22,6 @@ import {
 } from '@gitroom/frontend/components/billing/billing.ui';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { PricingSection } from '@gitroom/frontend/components/billing/pricing.section';
-import { CreditUsage } from '@gitroom/frontend/components/settings/global.settings';
 
 const activeEnough = new Set(['active', 'trialing', 'past_due', 'on_hold', 'cancel_scheduled']);
 
@@ -203,39 +205,42 @@ export function BillingScreen({
     />
   ) : null;
 
+  const openPortal = async () => {
+    setBusy(true);
+    try {
+      const response = await fetch('/billing/portal');
+      const body = await response.json();
+      if (body.portal) window.location.href = body.portal;
+    } finally {
+      setBusy(false);
+    }
+  };
+  const resume = async () => {
+    setBusy(true);
+    try {
+      await fetch('/billing/resume', { method: 'POST' });
+      await mutate();
+    } finally {
+      setBusy(false);
+    }
+  };
+  const cancel = async (feedback: string) => {
+    setBusy(true);
+    try {
+      await fetch('/billing/cancel', { method: 'POST', body: JSON.stringify({ feedback }) });
+      await mutate();
+    } finally {
+      setBusy(false);
+    }
+  };
   const settings = (
     <BillingSettings
       overview={data}
       busy={busy}
       onChangePlan={() => setShowPlans(true)}
-      onPortal={async () => {
-        setBusy(true);
-        try {
-          const response = await fetch('/billing/portal');
-          const body = await response.json();
-          if (body.portal) window.location.href = body.portal;
-        } finally {
-          setBusy(false);
-        }
-      }}
-      onResume={async () => {
-        setBusy(true);
-        try {
-          await fetch('/billing/resume', { method: 'POST' });
-          await mutate();
-        } finally {
-          setBusy(false);
-        }
-      }}
-      onCancel={async (feedback) => {
-        setBusy(true);
-        try {
-          await fetch('/billing/cancel', { method: 'POST', body: JSON.stringify({ feedback }) });
-          await mutate();
-        } finally {
-          setBusy(false);
-        }
-      }}
+      onPortal={openPortal}
+      onResume={resume}
+      onCancel={cancel}
     />
   );
 
@@ -252,10 +257,16 @@ export function BillingScreen({
 
   const accountView = surface === 'account' && !shown.startsWith('checkout_');
   const accountHasPlan = activeEnough.has(status);
+  const cancelUntil = data.subscription.cancelAt
+    ? data.subscription.cancelAt.slice(0, 10)
+    : 'the end of this period';
 
   return (
     <BillingShell>
-      <div data-billing-screen={shown} className="flex flex-col gap-[12px]">
+      <div
+        data-billing-screen={shown}
+        className={accountView ? 'account-bill flex flex-col gap-[16px]' : 'flex flex-col gap-[12px]'}
+      >
         {note ? <p className="m-0">{note}</p> : null}
         {shown === 'checkout_failure' ? (
           <CheckoutStatus state="failure" onRetry={() => router.replace('/account?section=billing')} />
@@ -266,15 +277,30 @@ export function BillingScreen({
         ) : null}
         {accountView ? (
           <>
-            <StatusBanners overview={data} />
-            {settings}
-            {!accountHasPlan || showPlans ? accountPicker : null}
-            <CreditUsage />
+            {data.subscription.status === 'cancel_scheduled' ? (
+              <CancelStrip until={cancelUntil} busy={busy} onResume={resume} />
+            ) : (
+              <StatusBanners overview={data} />
+            )}
+            <div className="account-bill-grid">
+              <AccountPlanCard
+                overview={data}
+                busy={busy}
+                onChangePlan={() => setShowPlans(true)}
+                onPortal={openPortal}
+                onCancel={cancel}
+              />
+              <AccountCreditsCard overview={data} />
+            </div>
             {!data.grandfathered ? (
-              <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
+              <CreditPacks compact packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
             ) : null}
-            <InvoiceList invoices={data.invoices} />
-            <FAQComponent />
+            <InvoiceList rows invoices={data.invoices} />
+            {!accountHasPlan || showPlans ? accountPicker : null}
+            <div className="account-bill-faq">
+              <h2 className="account-bill-title">FAQ</h2>
+              <FAQComponent accordion />
+            </div>
           </>
         ) : (
           <>
