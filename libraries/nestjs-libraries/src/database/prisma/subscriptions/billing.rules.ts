@@ -264,7 +264,10 @@ export function creditUsage(input: {
   return {
     allowance: input.allowance,
     used,
-    left: input.monthlyRemaining,
+    // The tracker allowance is the trial cap while trialing and the plan
+    // allowance after conversion. Left follows that number, not a stored
+    // balance that can still be the full plan (1800 on Agency) during a trial.
+    left: Math.max(0, input.allowance - used),
     packCredits: input.packRemaining,
     actions,
   };
