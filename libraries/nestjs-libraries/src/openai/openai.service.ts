@@ -13,6 +13,25 @@ function stalkerOpenAiModel() {
   return configured || 'gpt-4o-mini';
 }
 
+export type GptImageGenerationRequest = {
+  prompt: string;
+  model: 'chatgpt-image-latest';
+  size: '1024x1024' | '1024x1536';
+};
+
+// chatgpt-image-latest always returns b64_json. It rejects dall-e-3 fields,
+// and the API reports the first one as Unknown parameter: 'response_format'.
+export function gptImageGenerationRequest(
+  prompt: string,
+  isVertical = false
+): GptImageGenerationRequest {
+  return {
+    prompt,
+    model: 'chatgpt-image-latest',
+    size: isVertical ? '1024x1536' : '1024x1024',
+  };
+}
+
 const PicturePrompt = z.object({
   prompt: z.string(),
 });
@@ -81,14 +100,8 @@ Clips must not overlap. Write the title and the post in this language, whatever 
   }
 
   async generateImage(prompt: string, isVertical = false) {
-    // gpt-image models always return base64 (b64_json) and do not accept the
-    // `response_format` parameter, unlike the deprecated dall-e-3.
     const generate = (
-      await openai.images.generate({
-        prompt,
-        model: 'chatgpt-image-latest',
-        size: isVertical ? '1024x1536' : '1024x1024',
-      })
+      await openai.images.generate(gptImageGenerationRequest(prompt, isVertical))
     ).data[0];
 
     return generate.b64_json;
