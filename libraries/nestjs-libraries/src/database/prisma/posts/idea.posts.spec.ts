@@ -81,6 +81,27 @@ describe('ai drafts allowlist', () => {
     expect(aiDraftsEnabledForOrg('org-b')).toBe(true);
     expect(aiDraftsEnabledForOrg('org-c')).toBe(false);
   });
+
+  it('stays off for an organization that is not listed when there is no star', () => {
+    process.env.AI_DRAFTS_ORG_IDS = 'org-a,org-b';
+    expect(aiDraftsEnabledForOrg('org-c')).toBe(false);
+    expect(aiDraftsEnabledForOrg('org-a')).toBe(true);
+  });
+
+  it('turns on every organization when the list contains a star', () => {
+    process.env.AI_DRAFTS_ORG_IDS = '*';
+    expect(aiDraftsEnabledForOrg('org-1')).toBe(true);
+    expect(aiDraftsEnabledForOrg('org-2')).toBe(true);
+    expect(aiDraftsEnabledForOrg('')).toBe(false);
+    expect(aiDraftsEnabledForOrg(null)).toBe(false);
+  });
+
+  it('treats a spaced star entry as every organization', () => {
+    process.env.AI_DRAFTS_ORG_IDS = ' org-a , * ';
+    expect(aiDraftsEnabledForOrg('org-a')).toBe(true);
+    expect(aiDraftsEnabledForOrg('org-c')).toBe(true);
+    expect(aiDraftsEnabledForOrg('any-other-org')).toBe(true);
+  });
 });
 
 describe('one idea drafts', () => {
