@@ -175,16 +175,18 @@ const AccountFlyout = ({
   rowRef,
   label,
   children,
+  className = '',
 }: {
   rowRef: RefObject<HTMLElement | null>;
   label: string;
   children: ReactNode;
+  className?: string;
 }) => {
   const { flyRef, box } = useFlyoutBox(rowRef);
   return (
     <div
       ref={flyRef}
-      className="c8-account-fly"
+      className={`c8-account-fly ${className}`.trim()}
       role="menu"
       aria-label={label}
       style={{
@@ -423,7 +425,7 @@ export const AccountMenu = ({
         </div>
       </div>
       {planOpen ? (
-        <AccountFlyout rowRef={planRowRef} label={`${plan} plan`}>
+        <AccountFlyout rowRef={planRowRef} label={`${plan} plan`} className="is-plan">
           <div className="c8-account-fly-title">{plan}</div>
           {meter ? (
             <div className="c8-account-fly-line">{meter}</div>

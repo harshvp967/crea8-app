@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-export const SITE_NAME = 'Crea8one';
+export const SITE_NAME = 'crea8.one';
 export const SITE_DESCRIPTION =
   'Plan, publish and learn from your audience, in one place.';
 export const SITE_IMAGE = '/crea8one-logo.png';

@@ -86,26 +86,28 @@ export function CheckoutStatus({
   state: 'success' | 'failure' | 'pending';
   onRetry?: () => void;
 }) {
-  if (state === 'success') {
-    return (
-      <BillingBanner state="checkout_success" title="Checkout complete">
-        <p className="m-0">Your plan is active. You can manage it from billing settings.</p>
-        {onRetry ? <div className="mt-[8px]"><BillingButton kind="primary" onClick={onRetry}>Continue</BillingButton></div> : null}
-      </BillingBanner>
-    );
-  }
-  if (state === 'failure') {
-    return (
-      <BillingBanner state="checkout_failure" title="Checkout was not completed">
-        <p className="m-0">No charge was made. You can pick a plan and try again.</p>
-        {onRetry ? <div className="mt-[8px]"><BillingButton onClick={onRetry}>Try again</BillingButton></div> : null}
-      </BillingBanner>
-    );
-  }
+  const title =
+    state === 'success'
+      ? 'Checkout complete'
+      : state === 'failure'
+        ? 'Checkout was not completed'
+        : 'Waiting for checkout';
+  const copy = state === 'failure' ? 'No charge was made.' : '';
   return (
-    <BillingBanner state="checkout_pending" title="Waiting for checkout">
-      We are confirming the payment. This page updates on its own.
-    </BillingBanner>
+    <div className={state === 'failure' ? 'flex w-full justify-center' : 'flex min-h-[50vh] w-full items-center justify-center px-[16px] py-[40px]'}>
+      <section
+        data-billing-state={state === 'success' ? 'checkout_success' : state === 'failure' ? 'checkout_failure' : 'checkout_pending'}
+        className="settings-section account-bill-card flex w-full max-w-[440px] flex-col items-center gap-[12px] text-center"
+      >
+        <h2 className="account-bill-title">{title}</h2>
+        {copy ? <p className="m-0">{copy}</p> : null}
+        {onRetry ? (
+          <button type="button" className="bg-btnPrimary" onClick={onRetry}>
+            {state === 'success' ? 'Continue' : 'Try again'}
+          </button>
+        ) : null}
+      </section>
+    </div>
   );
 }
 
@@ -150,7 +152,7 @@ export function StatusBanners({ overview }: { overview: BillingOverview }) {
       {sub.pendingDisplayName ? (
         <BillingBanner state="downgrade_pending" title="Downgrade pending">
           {sub.displayName} stays in place until the next renewal, then the plan changes to {sub.pendingDisplayName}
-          {sub.pendingPeriod ? ` (${sub.pendingPeriod.toLowerCase()})` : ''}. Channels and members already connected stay as they are.
+          {sub.pendingPeriod ? ` (${sub.pendingPeriod.toLowerCase()})` : ''}.
         </BillingBanner>
       ) : null}
       {overview.grandfathered ? (
@@ -176,11 +178,9 @@ export function CreditsMeter({ overview }: { overview: BillingOverview }) {
       </div>
       {total <= 0 ? (
         <p className="m-0" data-billing-state="credits_empty">
-          You are out of credits. Buy a pack or wait for the next cycle. Actions that spend credits are blocked until then.
+          You are out of credits.
         </p>
-      ) : (
-        <p className="m-0 text-textItemBlur">Monthly credits reset each cycle and do not roll over. Pack credits are spent after monthly credits.</p>
-      )}
+      ) : null}
       {overview.history.length ? (
         <ul className="m-0 pl-[18px]">
           {overview.history.slice(0, 8).map((entry) => (
@@ -229,10 +229,11 @@ export function CreditPacks({
   );
   if (compact) {
     return (
-      <div data-billing-state="credit_packs" className="account-bill-packs">
+      <section data-billing-state="credit_packs" className="settings-section account-bill-card flex flex-col gap-[12px]">
+        <h2 className="account-bill-title">Credit packs</h2>
         {error ? <p data-billing-state="credit_pack_error" className="account-bill-empty">{error}</p> : null}
-        {buttons}
-      </div>
+        <div className="account-bill-packs">{buttons}</div>
+      </section>
     );
   }
   return (
@@ -261,9 +262,11 @@ export function InvoiceList({
           <p data-billing-state="invoices_empty" className="account-bill-empty">No invoices yet.</p>
         ) : (
           <ul className="account-bill-lines">
-            {invoices.map((invoice) => (
+            {sortedInvoices(invoices).map((invoice) => (
               <li key={invoice.id}>
                 <span>{invoiceDate(invoice.createdAt)}</span>
+                <span>{invoiceDescription(invoice.status)}</span>
+                <span className="settings-pill">{invoiceStatus(invoice.status)}</span>
                 <strong>{invoiceAmount(invoice.amount, invoice.currency)}</strong>
                 {invoice.url ? (
                   <a className="settings-pill" href={invoice.url} target="_blank" rel="noreferrer">
@@ -283,15 +286,15 @@ export function InvoiceList({
       {invoices.length === 0 ? (
         <p data-billing-state="invoices_empty" className="m-0 text-textItemBlur">No invoices yet.</p>
       ) : (
-        <ul className="m-0 pl-[18px]">
-          {invoices.map((invoice) => (
-            <li key={invoice.id}>
-              {invoice.createdAt.slice(0, 10)} · {invoice.currency} {invoice.amount} · {invoice.status}
+        <ul className="m-0 flex list-none flex-col gap-[8px] p-0">
+          {sortedInvoices(invoices).map((invoice) => (
+            <li key={invoice.id} className="flex flex-wrap items-center gap-[8px]">
+              <span>{invoiceDate(invoice.createdAt)}</span>
+              <span>{invoiceDescription(invoice.status)}</span>
+              <span className="settings-pill">{invoiceStatus(invoice.status)}</span>
+              <strong>{invoiceAmount(invoice.amount, invoice.currency)}</strong>
               {invoice.url ? (
-                <>
-                  {' '}
-                  <a href={invoice.url} target="_blank" rel="noreferrer">View</a>
-                </>
+                <a className="settings-pill" href={invoice.url} target="_blank" rel="noreferrer">View</a>
               ) : null}
             </li>
           ))}
@@ -336,20 +339,7 @@ export function BillingSettings({
         ) : null}
       </div>
       {!overview.grandfathered && sub.status !== 'cancelled' && sub.status !== 'cancel_scheduled' && sub.status !== 'none' && sub.status !== 'trial_ended' ? (
-        <form
-          className="flex flex-col gap-[8px]"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            onCancel(String(data.get('feedback') || ''));
-          }}
-        >
-          <label className="flex flex-col gap-[4px]">
-            Cancel at period end
-            <textarea name="feedback" className="rounded-[8px] border border-newBorder bg-transparent p-[8px]" rows={3} placeholder="What should we know?" />
-          </label>
-          <BillingButton kind="danger" type="submit" disabled={busy}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
-        </form>
+        <BillingButton kind="danger" disabled={busy} onClick={() => onCancel('')}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
       ) : null}
     </section>
   );
@@ -386,6 +376,18 @@ export function UpgradeModal({
     </div>
   );
 }
+
+const sortedInvoices = (invoices: BillingOverview['invoices']) =>
+  [...invoices].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+
+const invoiceStatus = (status: string) => status.replace(/_/g, ' ');
+
+const invoiceDescription = (status: string) => {
+  const normalized = status.trim().toLowerCase();
+  if (normalized === 'succeeded' || normalized === 'paid') return 'Paid invoice';
+  if (normalized === 'processing') return 'Payment processing';
+  return 'Invoice';
+};
 
 const invoiceDate = (value: string) => {
   const date = new Date(value);
@@ -431,8 +433,8 @@ export function CancelStrip({
   onResume: () => void;
 }) {
   return (
-    <section data-billing-state="cancelled" className="account-cancel">
-      <p>Access continues until {until}</p>
+    <section data-billing-state="cancelled" className="settings-section account-bill-card flex flex-wrap items-center justify-between gap-[12px]">
+      <p className="account-bill-title m-0 text-[16px]">Access continues until {until}</p>
       <button type="button" className="bg-btnPrimary" disabled={busy} onClick={onResume}>
         {busy ? 'Loading…' : 'Keep subscription'}
       </button>
@@ -504,20 +506,7 @@ export function AccountPlanCard({
         ) : null}
       </div>
       {canCancel ? (
-        <form
-          className="account-bill-cancel"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            onCancel(String(data.get('feedback') || ''));
-          }}
-        >
-          <label className="account-bill-cancel-label">
-            Cancel at period end
-            <textarea name="feedback" className="account-bill-note" rows={3} />
-          </label>
-          <BillingButton kind="danger" type="submit" disabled={busy}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
-        </form>
+        <BillingButton kind="danger" disabled={busy} onClick={() => onCancel('')}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
       ) : null}
     </section>
   );
@@ -568,7 +557,7 @@ export function Paywall({
   children: ReactNode;
 }) {
   return (
-    <section data-billing-state="paywall" className="link-screen flex w-full flex-col items-center gap-[28px]">
+    <section data-billing-state="paywall" className="link-screen billing-paywall flex w-full flex-col items-center gap-[28px] px-[16px] pb-[24px] pt-[36px] c8-tablet:px-[32px] c8-desktop:px-[40px]">
       <h1 className="stk-title m-0 w-full text-center">Subscribe to keep using crea8.one</h1>
       {children}
     </section>
