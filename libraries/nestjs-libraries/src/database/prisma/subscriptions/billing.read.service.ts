@@ -13,6 +13,7 @@ import {
   BillingOverview,
   billingStatus,
   billingSupport,
+  paywallAllowsTrial,
   planCards,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 
@@ -55,7 +56,11 @@ export class BillingReadService {
       grandfathered,
       supportEmail: billingSupport.email,
       trialDays: billingSupport.trialDays,
-      allowTrial: !!org.allowTrial && !active,
+      allowTrial: paywallAllowsTrial({
+        allowTrial: !!org.allowTrial,
+        hasActiveSubscription: !!active,
+        latestStatus: latest?.status,
+      }),
       screen: !enforced || active || grandfathered ? 'billing_settings' : 'plan_picker',
       subscription: {
         tier,

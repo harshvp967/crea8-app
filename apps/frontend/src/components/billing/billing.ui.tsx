@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { BillingButton, BillingHeading } from '@gitroom/frontend/components/billing/billing.shell';
 import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
+import { CHECKOUT_GST_NOTE } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -61,6 +62,7 @@ export function PlanPicker({
               ${period === 'YEARLY' ? plan.yearPriceUsd : plan.monthPriceUsd}
               <span className="text-[14px] text-textItemBlur">{period === 'YEARLY' ? ' / year' : ' / month'}</span>
             </p>
+            <p className="m-0 text-textItemBlur">{CHECKOUT_GST_NOTE}</p>
             <ul className="m-0 pl-[18px] text-textItemBlur">
               <li>{plan.channels} channels</li>
               <li>{plan.teamMemberLimit == null ? 'Unlimited team members' : `${plan.teamMemberLimit} team member`}</li>
@@ -68,7 +70,7 @@ export function PlanPicker({
               <li>{plan.stalkerKeywords} Stalker keywords</li>
             </ul>
             <BillingButton kind="primary" disabled={busy} onClick={() => onSelect(plan)}>
-              {allowTrial ? `Start ${trialDays}-day trial` : `Choose ${plan.displayName}`}
+              {busy ? 'Loading…' : allowTrial ? `Start ${trialDays}-day trial` : `Choose ${plan.displayName}`}
             </BillingButton>
           </article>
         ))}
@@ -96,7 +98,7 @@ export function CheckoutStatus({
     return (
       <BillingBanner state="checkout_failure" title="Checkout was not completed">
         <p className="m-0">No charge was made. You can pick a plan and try again.</p>
-        {onRetry ? <div className="mt-[8px]"><BillingButton onClick={onRetry}>Back to plans</BillingButton></div> : null}
+        {onRetry ? <div className="mt-[8px]"><BillingButton onClick={onRetry}>Try again</BillingButton></div> : null}
       </BillingBanner>
     );
   }
@@ -324,13 +326,13 @@ export function BillingSettings({
       </p>
       <div className="flex flex-wrap gap-[8px]">
         {!overview.grandfathered && sub.identifier ? (
-          <BillingButton kind="primary" disabled={busy} onClick={onPortal}>Manage payment method</BillingButton>
+          <BillingButton kind="primary" disabled={busy} onClick={onPortal}>{busy ? 'Loading…' : 'Manage payment method'}</BillingButton>
         ) : null}
         {!overview.grandfathered && sub.status !== 'none' && sub.status !== 'cancelled' && sub.status !== 'trial_ended' ? (
-          <BillingButton disabled={busy} onClick={onChangePlan}>Change plan</BillingButton>
+          <BillingButton disabled={busy} onClick={onChangePlan}>{busy ? 'Loading…' : 'Change plan'}</BillingButton>
         ) : null}
         {sub.status === 'cancel_scheduled' ? (
-          <BillingButton kind="primary" disabled={busy} onClick={onResume}>Keep subscription</BillingButton>
+          <BillingButton kind="primary" disabled={busy} onClick={onResume}>{busy ? 'Loading…' : 'Keep subscription'}</BillingButton>
         ) : null}
       </div>
       {!overview.grandfathered && sub.status !== 'cancelled' && sub.status !== 'cancel_scheduled' && sub.status !== 'none' && sub.status !== 'trial_ended' ? (
@@ -346,7 +348,7 @@ export function BillingSettings({
             Cancel at period end
             <textarea name="feedback" className="rounded-[8px] border border-newBorder bg-transparent p-[8px]" rows={3} placeholder="What should we know?" />
           </label>
-          <BillingButton kind="danger" type="submit" disabled={busy}>Cancel subscription</BillingButton>
+          <BillingButton kind="danger" type="submit" disabled={busy}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
         </form>
       ) : null}
     </section>
@@ -377,7 +379,7 @@ export function UpgradeModal({
         <BillingHeading as="h2">{title}</BillingHeading>
         <p className="m-0">{detail}</p>
         <div className="flex gap-[8px]">
-          <BillingButton kind="primary" disabled={busy} onClick={onConfirm}>Continue</BillingButton>
+          <BillingButton kind="primary" disabled={busy} onClick={onConfirm}>{busy ? 'Loading…' : 'Continue'}</BillingButton>
           <BillingButton disabled={busy} onClick={onClose}>Close</BillingButton>
         </div>
       </div>
@@ -432,7 +434,7 @@ export function CancelStrip({
     <section data-billing-state="cancelled" className="account-cancel">
       <p>Access continues until {until}</p>
       <button type="button" className="bg-btnPrimary" disabled={busy} onClick={onResume}>
-        Keep subscription
+        {busy ? 'Loading…' : 'Keep subscription'}
       </button>
     </section>
   );
@@ -492,12 +494,12 @@ export function AccountPlanCard({
       <div className="account-bill-actions">
         {canChange ? (
           <button type="button" className="bg-btnPrimary" disabled={busy} onClick={onChangePlan}>
-            Change plan
+            {busy ? 'Loading…' : 'Change plan'}
           </button>
         ) : null}
         {canPay ? (
           <button type="button" className="rounded-full" disabled={busy} onClick={onPortal}>
-            Manage payment method
+            {busy ? 'Loading…' : 'Manage payment method'}
           </button>
         ) : null}
       </div>
@@ -514,7 +516,7 @@ export function AccountPlanCard({
             Cancel at period end
             <textarea name="feedback" className="account-bill-note" rows={3} />
           </label>
-          <BillingButton kind="danger" type="submit" disabled={busy}>Cancel subscription</BillingButton>
+          <BillingButton kind="danger" type="submit" disabled={busy}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
         </form>
       ) : null}
     </section>

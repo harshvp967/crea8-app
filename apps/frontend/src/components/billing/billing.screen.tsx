@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
+import { BillingOverview, BillingPlanCard, checkoutReturnKind } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 import { BillingShell } from '@gitroom/frontend/components/billing/billing.shell';
 import {
   AccountCreditsCard,
@@ -36,6 +36,8 @@ export function BillingScreen({
   const router = useRouter();
   const params = useSearchParams();
   const checkout = params.get('checkout');
+  const paymentStatus = params.get('status');
+  const returned = checkoutReturnKind({ checkout, status: paymentStatus });
   const load = useCallback(async (path: string) => {
     const response = await fetch(path);
     if (!response.ok) {
@@ -44,7 +46,7 @@ export function BillingScreen({
     return response.json();
   }, []);
   const { data, error, isLoading, mutate } = useSWR<BillingOverview>('/billing/overview', load, {
-    refreshInterval: checkout === 'pending' || checkout === 'success' ? 2000 : 0,
+    refreshInterval: returned === 'pending' ? 2000 : 0,
   });
   const [period, setPeriod] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
   const [busy, setBusy] = useState(false);
@@ -54,6 +56,8 @@ export function BillingScreen({
   const [showPlans, setShowPlans] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
   const [upgrade, setUpgrade] = useState<{ plan: BillingPlanCard; detail: string } | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelFeedback, setCancelFeedback] = useState('');
 
   useEffect(() => {
     if (data?.subscription.period) {
@@ -62,20 +66,26 @@ export function BillingScreen({
   }, [data?.subscription.period]);
 
   const choose = async (plan: BillingPlanCard) => {
+    setBusy(true);
+    setNote('');
     const hasPlan = data && activeEnough.has(data.subscription.status) && !data.grandfathered;
     if (hasPlan) {
-      setBusy(true);
       try {
         const preview = await fetch('/billing/prorate', {
           method: 'POST',
           body: JSON.stringify({ billing: plan.tier, period }),
         });
         const body = await preview.json();
+        const when = body?.trialEndsAt ? String(body.trialEndsAt).slice(0, 10) : '';
         setUpgrade({
           plan,
-          detail: body?.price
-            ? `${plan.displayName} ${period.toLowerCase()} is about $${body.price} ${body.currency || 'USD'} today. Downgrades wait until the next renewal.`
-            : `Switch to ${plan.displayName} (${period.toLowerCase()}).`,
+          detail: body?.trial
+            ? `${plan.displayName} applies to the first charge${when ? ` on ${when}` : ''}. Nothing is charged today, and the trial end stays the same.`
+            : body?.scheduled
+              ? `${plan.displayName} is scheduled for the next renewal. ${data?.subscription.displayName || 'The current plan'} stays until then.`
+              : body?.price
+                ? `${plan.displayName} ${period.toLowerCase()} is about $${body.price} ${body.currency || 'USD'} today.`
+                : `Switch to ${plan.displayName} (${period.toLowerCase()}).`,
         });
       } catch {
         setUpgrade({ plan, detail: `Switch to ${plan.displayName}.` });
@@ -90,6 +100,7 @@ export function BillingScreen({
   const subscribe = async (plan: BillingPlanCard) => {
     setBusy(true);
     setNote('');
+    let leave = false;
     try {
       const response = await fetch('/billing/subscribe', {
         method: 'POST',
@@ -101,6 +112,7 @@ export function BillingScreen({
         return;
       }
       if (body.url) {
+        leave = true;
         window.location.href = body.url;
         return;
       }
@@ -108,18 +120,27 @@ export function BillingScreen({
         setUpgrade(null);
         setShowPlans(false);
         await mutate();
-        setNote(body.upgrade ? 'Plan upgraded.' : 'Downgrade scheduled for the next renewal.');
+        setNote(
+          body.trial
+            ? 'Plan updated. The trial end date is unchanged, and the new plan is charged then.'
+            : body.upgrade
+              ? 'Plan upgraded.'
+              : 'Downgrade scheduled for the next renewal. The current plan stays until then.'
+        );
       }
     } catch {
       setNote('Could not start checkout.');
     } finally {
-      setBusy(false);
+      if (!leave) {
+        setBusy(false);
+      }
     }
   };
 
   const buyPack = async (pack: 'PACK_150' | 'PACK_500') => {
     setPackBusy(pack);
     setPackError('');
+    let leave = false;
     try {
       const response = await fetch('/billing/packs', {
         method: 'POST',
@@ -130,11 +151,14 @@ export function BillingScreen({
         setPackError(body.message || 'Could not open pack checkout.');
         return;
       }
+      leave = true;
       window.location.href = body.url;
     } catch {
       setPackError('Could not open pack checkout.');
     } finally {
-      setPackBusy(null);
+      if (!leave) {
+        setPackBusy(null);
+      }
     }
   };
 
@@ -158,12 +182,12 @@ export function BillingScreen({
   }
 
   const status = data.subscription.status;
+  const checkoutFailed = returned === 'failure';
   const screen = (() => {
-    if (checkout === 'failure') return 'checkout_failure';
-    if ((checkout === 'pending' || checkout === 'success') && !activeEnough.has(status)) {
+    if (!checkoutFailed && returned === 'pending' && !activeEnough.has(status)) {
       return 'checkout_pending';
     }
-    if ((checkout === 'pending' || checkout === 'success') && activeEnough.has(status)) {
+    if (!checkoutFailed && returned === 'pending' && activeEnough.has(status)) {
       return 'checkout_success';
     }
     if (mode === 'paywall' && data.subscription.tier === 'FREE') return 'paywall';
@@ -207,12 +231,18 @@ export function BillingScreen({
 
   const openPortal = async () => {
     setBusy(true);
+    let leave = false;
     try {
       const response = await fetch('/billing/portal');
       const body = await response.json();
-      if (body.portal) window.location.href = body.portal;
+      if (body.portal) {
+        leave = true;
+        window.location.href = body.portal;
+      }
     } finally {
-      setBusy(false);
+      if (!leave) {
+        setBusy(false);
+      }
     }
   };
   const resume = async () => {
@@ -224,10 +254,15 @@ export function BillingScreen({
       setBusy(false);
     }
   };
-  const cancel = async (feedback: string) => {
+  const askCancel = (feedback: string) => {
+    setCancelFeedback(feedback);
+    setConfirmCancel(true);
+  };
+  const cancel = async () => {
     setBusy(true);
     try {
-      await fetch('/billing/cancel', { method: 'POST', body: JSON.stringify({ feedback }) });
+      await fetch('/billing/cancel', { method: 'POST', body: JSON.stringify({ feedback: cancelFeedback }) });
+      setConfirmCancel(false);
       await mutate();
     } finally {
       setBusy(false);
@@ -240,7 +275,7 @@ export function BillingScreen({
       onChangePlan={() => setShowPlans(true)}
       onPortal={openPortal}
       onResume={resume}
-      onCancel={cancel}
+      onCancel={askCancel}
     />
   );
 
@@ -257,9 +292,8 @@ export function BillingScreen({
 
   const accountView = surface === 'account' && !shown.startsWith('checkout_');
   const accountHasPlan = activeEnough.has(status);
-  const cancelUntil = data.subscription.cancelAt
-    ? data.subscription.cancelAt.slice(0, 10)
-    : 'the end of this period';
+  const accessUntil = data.subscription.cancelAt || data.subscription.currentPeriodEnd;
+  const cancelUntil = accessUntil ? accessUntil.slice(0, 10) : 'the end of this period';
 
   return (
     <BillingShell>
@@ -268,7 +302,7 @@ export function BillingScreen({
         className={accountView ? 'account-bill flex flex-col gap-[16px]' : 'flex flex-col gap-[12px]'}
       >
         {note ? <p className="m-0">{note}</p> : null}
-        {shown === 'checkout_failure' ? (
+        {checkoutFailed ? (
           <CheckoutStatus state="failure" onRetry={() => router.replace('/account?section=billing')} />
         ) : null}
         {shown === 'checkout_pending' ? <CheckoutStatus state="pending" /> : null}
@@ -288,7 +322,7 @@ export function BillingScreen({
                 busy={busy}
                 onChangePlan={() => setShowPlans(true)}
                 onPortal={openPortal}
-                onCancel={cancel}
+                onCancel={askCancel}
               />
               <AccountCreditsCard overview={data} />
             </div>
@@ -348,6 +382,14 @@ export function BillingScreen({
         busy={busy}
         onClose={() => setUpgrade(null)}
         onConfirm={() => upgrade && subscribe(upgrade.plan)}
+      />
+      <UpgradeModal
+        open={confirmCancel}
+        title="Cancel subscription"
+        detail={`Access continues until ${cancelUntil}.`}
+        busy={busy}
+        onClose={() => setConfirmCancel(false)}
+        onConfirm={cancel}
       />
     </BillingShell>
   );

@@ -1,13 +1,20 @@
 import { createHmac } from 'crypto';
 import {
+  CHECKOUT_GST_NOTE,
   CREDIT_COSTS,
   PLANS,
+  TRIAL_CHECKOUT_FAQ,
   TRIAL_MONTHLY_CREDITS,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
   badgeRemovalOpen,
   customDomainBillingOpen,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import {
+  billingStatus,
+  checkoutReturnKind,
+  paywallAllowsTrial,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 import {
   AI_POST_CALL_REASON,
   AI_POST_REASON,
@@ -16,13 +23,20 @@ import {
   aiPostCharge,
   canAddTeamMember,
   canConnectChannel,
+  cancelAccessUntil,
   creditUsage,
+  displayedPlanAfterEvent,
+  dodoCheckoutPrefill,
   emptyBillingSnapshot,
+  ignoreRemoteSubscription,
+  invoiceIsVisible,
   ledgerRowsForHistory,
   monthlyCreditAllowance,
+  planChangeBilling,
   planSpend,
   postableChannelIds,
   postsCovered,
+  preservedTrialEnd,
   reduceBillingEvent,
   stalkerReadCost,
   verifyDodoSignature,
@@ -537,6 +551,197 @@ describe('plan limits', () => {
     expect(PLANS.STANDARD.stalkerScanHours).toBe(12);
     expect(PLANS.ULTIMATE.stalkerManualChecksPerDay).toBeNull();
     expect(PLANS.PRO.mentionRetentionDays).toBe(365);
+  });
+});
+
+describe('checkout return and failed payment', () => {
+  it('shows a failure for status=failed or cancelled instead of waiting', () => {
+    expect(checkoutReturnKind({ checkout: 'pending', status: 'failed' })).toBe('failure');
+    expect(checkoutReturnKind({ checkout: 'pending', status: 'cancelled' })).toBe('failure');
+    expect(checkoutReturnKind({ checkout: 'pending', status: 'canceled' })).toBe('failure');
+    expect(checkoutReturnKind({ checkout: 'failure' })).toBe('failure');
+    expect(checkoutReturnKind({ checkout: 'pending' })).toBe('pending');
+    expect(checkoutReturnKind({ checkout: 'pending', status: 'succeeded' })).toBe('pending');
+  });
+
+  it('does not turn a declined checkout into a subscription that changes the paywall', () => {
+    expect(ignoreRemoteSubscription({ status: 'failed', hadLiveSubscription: false })).toBe(true);
+    expect(ignoreRemoteSubscription({ status: 'failed', hadLiveSubscription: true })).toBe(true);
+    expect(ignoreRemoteSubscription({ status: 'cancelled', hadLiveSubscription: false })).toBe(true);
+    expect(ignoreRemoteSubscription({ status: 'cancelled', hadLiveSubscription: true })).toBe(false);
+    expect(ignoreRemoteSubscription({ status: 'active', hadLiveSubscription: false })).toBe(false);
+    expect(billingStatus({ active: false, status: 'failed' })).toBe('none');
+    expect(billingStatus({ active: false, status: 'cancelled' })).toBe('cancelled');
+    expect(
+      paywallAllowsTrial({
+        allowTrial: false,
+        hasActiveSubscription: false,
+        latestStatus: 'failed',
+      })
+    ).toBe(true);
+    expect(
+      paywallAllowsTrial({
+        allowTrial: true,
+        hasActiveSubscription: false,
+        latestStatus: null,
+      })
+    ).toBe(true);
+    const before = { ...emptyBillingSnapshot(), pack: 40 };
+    const after = reduceBillingEvent(before, { id: 'pay_fail', type: 'payment.failed' });
+    expect(after).toEqual(before);
+    expect(invoiceIsVisible({ amount: 0, status: 'succeeded' })).toBe(false);
+    expect(invoiceIsVisible({ amount: 19, status: 'failed' })).toBe(false);
+    expect(invoiceIsVisible({ amount: 5, status: 'cancelled' })).toBe(false);
+    expect(invoiceIsVisible({ amount: 5, status: 'succeeded' })).toBe(true);
+  });
+
+  it('keeps the trial button copy and says GST is added, with no $2 hold', () => {
+    expect(TRIAL_CHECKOUT_FAQ).toContain('GST is added at checkout');
+    expect(TRIAL_CHECKOUT_FAQ).toContain('$0');
+    expect(TRIAL_CHECKOUT_FAQ.toLowerCase()).not.toContain('$2');
+    expect(TRIAL_CHECKOUT_FAQ.toLowerCase()).not.toContain('hold');
+    expect(CHECKOUT_GST_NOTE).toBe('GST is added at checkout.');
+  });
+});
+
+describe('trial upgrade and scheduled downgrade', () => {
+  const created = '2026-10-29T00:00:00.000Z';
+  const trialEnd = new Date(Date.parse(created) + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const restarted = new Date(Date.parse(created) + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  it('does not charge a trial upgrade now and does not restart the trial as 30 days', () => {
+    const decision = planChangeBilling({
+      inTrial: true,
+      upgrade: true,
+      trialEndsAt: trialEnd,
+    });
+    expect(decision.chargeNow).toBe(false);
+    expect(decision.prorationBillingMode).toBe('do_not_bill');
+    expect(decision.applyTierNow).toBe(true);
+    expect(decision.keepTrialEnd).toBe(trialEnd);
+    expect(decision.keepTrialEnd).not.toBe(restarted);
+    expect(preservedTrialEnd({ previousEnd: trialEnd, incomingEnd: restarted })).toBe(trialEnd);
+    expect(
+      preservedTrialEnd({
+        previousEnd: null,
+        incomingEnd: restarted,
+        createdAt: created,
+        trialDays: 7,
+      })
+    ).toBe(trialEnd);
+    const shown = displayedPlanAfterEvent({
+      currentTier: 'STANDARD',
+      currentPeriod: 'MONTHLY',
+      pendingTier: null,
+      pendingPeriod: null,
+      eventType: 'subscription.plan_changed',
+      eventTier: 'TEAM',
+      eventPeriod: 'MONTHLY',
+    });
+    expect(shown.tier).toBe('TEAM');
+    expect(shown.pendingTier).toBeNull();
+  });
+
+  it('keeps the current plan visible until a scheduled downgrade renews', () => {
+    const pending = displayedPlanAfterEvent({
+      currentTier: 'PRO',
+      currentPeriod: 'MONTHLY',
+      pendingTier: null,
+      pendingPeriod: null,
+      eventType: 'subscription.plan_changed',
+      eventTier: 'STANDARD',
+      eventPeriod: 'MONTHLY',
+    });
+    expect(pending.tier).toBe('PRO');
+    expect(pending.pendingTier).toBe('STANDARD');
+    expect(pending.pendingPeriod).toBe('MONTHLY');
+    const echoed = displayedPlanAfterEvent({
+      currentTier: 'PRO',
+      currentPeriod: 'MONTHLY',
+      pendingTier: 'STANDARD',
+      pendingPeriod: 'MONTHLY',
+      eventType: 'subscription.updated',
+      eventTier: 'PRO',
+      eventPeriod: 'MONTHLY',
+    });
+    expect(echoed.tier).toBe('PRO');
+    expect(echoed.pendingTier).toBe('STANDARD');
+    const renewed = displayedPlanAfterEvent({
+      currentTier: 'PRO',
+      currentPeriod: 'MONTHLY',
+      pendingTier: 'STANDARD',
+      pendingPeriod: 'MONTHLY',
+      eventType: 'subscription.renewed',
+      eventTier: 'STANDARD',
+      eventPeriod: 'MONTHLY',
+    });
+    expect(renewed.tier).toBe('STANDARD');
+    expect(renewed.pendingTier).toBeNull();
+    expect(
+      billingStatus({
+        active: true,
+        status: 'trialing',
+        isTrailing: true,
+        pendingTier: 'STANDARD',
+      })
+    ).toBe('trialing');
+    const decision = planChangeBilling({
+      inTrial: false,
+      upgrade: false,
+      trialEndsAt: null,
+    });
+    expect(decision.chargeNow).toBe(false);
+    expect(decision.effectiveAt).toBe('next_billing_date');
+    expect(decision.applyTierNow).toBe(false);
+  });
+
+  it('keeps the trial or period end date when a subscription is cancelled', () => {
+    const end = new Date(trialEnd);
+    expect(
+      cancelAccessUntil({
+        currentPeriodEnd: end,
+        createdAt: new Date(created),
+        inTrial: true,
+        trialDays: 7,
+      })
+    ).toEqual(end);
+    expect(
+      cancelAccessUntil({
+        currentPeriodEnd: null,
+        createdAt: new Date(created),
+        inTrial: true,
+        trialDays: 7,
+      })?.toISOString()
+    ).toBe(trialEnd);
+  });
+});
+
+describe('dodo checkout prefill', () => {
+  it('sends the full name and IN / +91 when those are known, and does not lock a first name or +1', () => {
+    const india = dodoCheckoutPrefill({
+      name: 'Harsh',
+      lastName: 'Patel',
+      country: 'in',
+      phone: '9876543210',
+    });
+    expect(india.name).toBe('Harsh Patel');
+    expect(india.country).toBe('IN');
+    expect(india.phoneNumber).toBe('+919876543210');
+    expect(india.currency).toBe('INR');
+    expect(india.lockName).toBe(false);
+    expect(india.lockPhoneToPlusOne).toBe(false);
+    const firstOnly = dodoCheckoutPrefill({ name: 'Harsh', country: 'US', phone: '+1' });
+    expect(firstOnly.name).toBeUndefined();
+    expect(firstOnly.phoneNumber).toBeUndefined();
+    expect(firstOnly.country).toBeUndefined();
+    const dropped = dodoCheckoutPrefill({
+      name: 'Harsh',
+      lastName: 'Patel',
+      country: 'IN',
+      phone: '+14155552671',
+    });
+    expect(dropped.phoneNumber).toBeUndefined();
+    expect(dropped.country).toBe('IN');
   });
 });
 

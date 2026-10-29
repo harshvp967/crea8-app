@@ -3,6 +3,9 @@
 
 export const SUPPORT_EMAIL = 'support@crea8.one';
 export const TRIAL_DAYS = 7;
+export const CHECKOUT_GST_NOTE = 'GST is added at checkout.';
+export const TRIAL_CHECKOUT_FAQ =
+  'You are not charged today. The 7-day trial checks out at $0. GST is added at checkout. Dodo Payments is the merchant of record. You can pay by card or UPI where Dodo offers it, and cancel anytime from billing. Email support@crea8.one if you need help.';
 // Monthly credits while a paid subscription is still inside its trial.
 // The plan's monthlyCredits apply on the first successful charge.
 export const TRIAL_MONTHLY_CREDITS = 50;

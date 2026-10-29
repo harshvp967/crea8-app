@@ -11,6 +11,7 @@ import {
   PaidTier,
   PlanTier,
   ProductKey,
+  TRIAL_DAYS,
   TRIAL_MONTHLY_CREDITS,
   packByKey,
   productKey,
@@ -563,6 +564,223 @@ export function isUpgrade(
     return period === 'YEARLY' ? plan.yearPriceUsd : plan.monthPriceUsd;
   };
   return price(toTier, toPeriod) > price(fromTier, fromPeriod || 'MONTHLY');
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export function ignoreRemoteSubscription(input: {
+  status: string;
+  hadLiveSubscription: boolean;
+}) {
+  const status = input.status.trim().toLowerCase();
+  if (status === 'failed') {
+    return true;
+  }
+  if (
+    !input.hadLiveSubscription &&
+    (status === 'pending' ||
+      status === 'cancelled' ||
+      status === 'canceled' ||
+      status === 'expired')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function invoiceIsVisible(input: { amount: number; status?: string | null }) {
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    return false;
+  }
+  const status = String(input.status || '').trim().toLowerCase();
+  if (
+    !status ||
+    status === 'failed' ||
+    status === 'cancelled' ||
+    status === 'canceled' ||
+    status === 'processing' ||
+    status === 'requires_customer_action' ||
+    status === 'requires_merchant_action' ||
+    status === 'requires_payment_method' ||
+    status === 'requires_confirmation' ||
+    status === 'requires_capture'
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export function planChangeBilling(input: {
+  inTrial: boolean;
+  upgrade: boolean;
+  trialEndsAt: string | null;
+}): {
+  prorationBillingMode: 'do_not_bill' | 'prorated_immediately';
+  effectiveAt: 'immediately' | 'next_billing_date';
+  chargeNow: boolean;
+  keepTrialEnd: string | null;
+  applyTierNow: boolean;
+} {
+  if (input.inTrial) {
+    return {
+      prorationBillingMode: 'do_not_bill' as const,
+      effectiveAt: input.upgrade ? ('immediately' as const) : ('next_billing_date' as const),
+      chargeNow: false,
+      keepTrialEnd: input.trialEndsAt,
+      applyTierNow: input.upgrade,
+    };
+  }
+  if (input.upgrade) {
+    return {
+      prorationBillingMode: 'prorated_immediately' as const,
+      effectiveAt: 'immediately' as const,
+      chargeNow: true,
+      keepTrialEnd: null,
+      applyTierNow: true,
+    };
+  }
+  return {
+    prorationBillingMode: 'do_not_bill' as const,
+    effectiveAt: 'next_billing_date' as const,
+    chargeNow: false,
+    keepTrialEnd: null,
+    applyTierNow: false,
+  };
+}
+
+export function preservedTrialEnd(input: {
+  previousEnd: string | null;
+  incomingEnd: string | null;
+  createdAt?: string | null;
+  trialDays?: number;
+}) {
+  const trialDays = input.trialDays ?? TRIAL_DAYS;
+  const fromCreated =
+    input.createdAt && Number.isFinite(Date.parse(input.createdAt))
+      ? new Date(Date.parse(input.createdAt) + trialDays * DAY_MS).toISOString()
+      : null;
+  const anchor = input.previousEnd || fromCreated;
+  if (!input.incomingEnd) {
+    return anchor;
+  }
+  if (!anchor || !Number.isFinite(Date.parse(anchor)) || !Number.isFinite(Date.parse(input.incomingEnd))) {
+    return anchor || input.incomingEnd;
+  }
+  if (Date.parse(input.incomingEnd) - Date.parse(anchor) > DAY_MS) {
+    return new Date(Date.parse(anchor)).toISOString();
+  }
+  return input.incomingEnd;
+}
+
+export function displayedPlanAfterEvent(input: {
+  currentTier: PlanTier;
+  currentPeriod: 'MONTHLY' | 'YEARLY' | null;
+  pendingTier: PaidTier | null;
+  pendingPeriod: 'MONTHLY' | 'YEARLY' | null;
+  eventType: string;
+  eventTier: PaidTier;
+  eventPeriod: 'MONTHLY' | 'YEARLY';
+}) {
+  if (input.eventType === 'subscription.renewed') {
+    return {
+      tier: input.eventTier,
+      period: input.eventPeriod,
+      pendingTier: null,
+      pendingPeriod: null,
+    };
+  }
+  if (input.currentTier === 'FREE') {
+    return {
+      tier: input.eventTier,
+      period: input.eventPeriod,
+      pendingTier: null,
+      pendingPeriod: null,
+    };
+  }
+  const same =
+    input.currentTier === input.eventTier &&
+    (input.currentPeriod || 'MONTHLY') === input.eventPeriod;
+  if (same) {
+    return {
+      tier: input.currentTier,
+      period: input.currentPeriod,
+      pendingTier: input.pendingTier,
+      pendingPeriod: input.pendingPeriod,
+    };
+  }
+  if (
+    !isUpgrade(input.currentTier, input.eventTier, input.currentPeriod, input.eventPeriod)
+  ) {
+    return {
+      tier: input.currentTier,
+      period: input.currentPeriod,
+      pendingTier: input.eventTier,
+      pendingPeriod: input.eventPeriod,
+    };
+  }
+  return {
+    tier: input.eventTier,
+    period: input.eventPeriod,
+    pendingTier: null,
+    pendingPeriod: null,
+  };
+}
+
+export function dodoCheckoutPrefill(input: {
+  name?: string | null;
+  lastName?: string | null;
+  country?: string | null;
+  phone?: string | null;
+}) {
+  const country = (input.country || '').trim().toUpperCase();
+  const india = country === 'IN';
+  const first = (input.name || '').trim();
+  const last = (input.lastName || '').trim();
+  const full = [first, last].filter(Boolean).join(' ').trim();
+  const hasFullName = !!last || first.includes(' ');
+  let phoneNumber: string | undefined;
+  const compact = (input.phone || '').replace(/[^\d+]/g, '');
+  if (compact) {
+    if (india) {
+      if (!compact.startsWith('+1')) {
+        if (compact.startsWith('+91')) {
+          phoneNumber = compact;
+        } else if (compact.startsWith('91') && compact.length > 10) {
+          phoneNumber = `+${compact}`;
+        } else {
+          const local = compact.replace(/^\+/, '').replace(/^0+/, '');
+          if (local.length >= 10) {
+            phoneNumber = `+91${local.slice(-10)}`;
+          }
+        }
+      }
+    } else if (compact.startsWith('+') && compact.length > 8) {
+      phoneNumber = compact;
+    }
+  }
+  return {
+    ...(hasFullName ? { name: full } : {}),
+    ...(phoneNumber ? { phoneNumber } : {}),
+    ...(india ? { country: 'IN' as const } : {}),
+    currency: india ? ('INR' as const) : ('USD' as const),
+    lockName: false as const,
+    lockPhoneToPlusOne: false as const,
+  };
+}
+
+export function cancelAccessUntil(input: {
+  currentPeriodEnd: Date | null;
+  createdAt: Date | null;
+  inTrial: boolean;
+  trialDays: number;
+}) {
+  if (input.currentPeriodEnd) {
+    return input.currentPeriodEnd;
+  }
+  if (input.inTrial && input.createdAt) {
+    return new Date(input.createdAt.getTime() + input.trialDays * DAY_MS);
+  }
+  return null;
 }
 
 export function frontendUrl() {

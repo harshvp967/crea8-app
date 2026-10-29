@@ -6,6 +6,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
+import { TRIAL_CHECKOUT_FAQ } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 const useFaqList = () => {
   const user = useUser();
   const t = useT();
@@ -19,7 +20,7 @@ const useFaqList = () => {
             ),
             description: t(
               'faq_to_confirm_credit_card_information_postiz_will_hold',
-              'Checkout is handled by Dodo Payments, the merchant of record. Tax is added there. You can pay by card or UPI where Dodo offers it, and cancel anytime from billing. Email support@crea8.one if you need help.'
+              TRIAL_CHECKOUT_FAQ
             ),
           },
         ]

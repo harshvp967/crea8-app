@@ -16,14 +16,21 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import {
+  cancelAccessUntil,
+  displayedPlanAfterEvent,
+  dodoCheckoutPrefill,
   dodoEnvironment,
   dodoProductId,
   dodoWebhookSecret,
   frontendUrl,
+  ignoreRemoteSubscription,
+  invoiceIsVisible,
   isUpgrade,
   monthlyCreditAllowance,
   monthlyCycleKey,
   packCreditsFromProduct,
+  planChangeBilling,
+  preservedTrialEnd,
   subscriptionProductId,
   tierFromProductId,
   verifyDodoSignature,
@@ -118,15 +125,43 @@ export class DodoProvider extends PaymentProviderAbstract {
       return;
     }
     const status = String(source.status || 'active');
+    const existing = await tx.subscription.findUnique({
+      where: { organizationId },
+    });
+    const hadLive = !!existing && !existing.deletedAt && existing.status !== 'failed' && existing.status !== 'pending';
+    if (ignoreRemoteSubscription({ status, hadLiveSubscription: hadLive })) {
+      return;
+    }
     // A renewal is a successful recurring charge, including the charge that
     // ends the trial. The trial cap applies only before that charge.
     const inTrial = type === 'subscription.renewed' ? false : this.inTrial(source);
-    const ended = ['cancelled', 'expired', 'failed'].includes(status);
+    const ended = ['cancelled', 'expired'].includes(status);
     const cancelAt =
       source.cancel_at_next_billing_date && source.next_billing_date
         ? new Date(source.next_billing_date)
         : null;
     const customerId = source?.customer?.customer_id || null;
+    const incomingEnd = source.next_billing_date
+      ? new Date(source.next_billing_date).toISOString()
+      : null;
+    const periodEnd = inTrial
+      ? preservedTrialEnd({
+          previousEnd: existing?.currentPeriodEnd?.toISOString() || null,
+          incomingEnd,
+          createdAt: source.created_at || existing?.createdAt?.toISOString() || null,
+          trialDays: TRIAL_DAYS,
+        })
+      : incomingEnd;
+    const shown = displayedPlanAfterEvent({
+      currentTier: existing?.subscriptionTier || 'FREE',
+      currentPeriod: existing?.period || null,
+      pendingTier: existing?.pendingTier || null,
+      pendingPeriod: existing?.pendingPeriod || null,
+      eventType: type,
+      eventTier: mapped.tier,
+      eventPeriod: mapped.period,
+    });
+    const tier = shown.tier;
     await tx.organization.update({
       where: { id: organizationId },
       data: {
@@ -135,45 +170,45 @@ export class DodoProvider extends PaymentProviderAbstract {
         allowTrial: false,
       },
     });
+    const nextStatus = ended ? (inTrial ? 'trial_ended' : status) : inTrial ? 'trialing' : status;
     await tx.subscription.upsert({
       where: { organizationId },
       create: {
         organizationId,
-        subscriptionTier: mapped.tier,
+        subscriptionTier: tier,
         provider: DODO_PROVIDER,
         identifier: source.subscription_id || null,
-        period: mapped.period,
-        totalChannels: PLANS[mapped.tier].channels,
-        status: ended ? (inTrial ? 'trial_ended' : status) : inTrial ? 'trialing' : status,
+        period: shown.period || mapped.period,
+        totalChannels: PLANS[tier].channels,
+        status: nextStatus,
         cancelAt,
-        currentPeriodEnd: source.next_billing_date
-          ? new Date(source.next_billing_date)
-          : null,
+        currentPeriodEnd: periodEnd ? new Date(periodEnd) : null,
+        pendingTier: shown.pendingTier,
+        pendingPeriod: shown.pendingPeriod,
         deletedAt: ended ? new Date() : null,
       },
       update: {
-        subscriptionTier: mapped.tier,
+        subscriptionTier: tier,
         provider: DODO_PROVIDER,
         identifier: source.subscription_id || null,
-        period: mapped.period,
-        totalChannels: PLANS[mapped.tier].channels,
-        status: ended ? (inTrial ? 'trial_ended' : status) : inTrial ? 'trialing' : status,
+        period: shown.period || mapped.period,
+        totalChannels: PLANS[tier].channels,
+        status: nextStatus,
         cancelAt,
-        currentPeriodEnd: source.next_billing_date
-          ? new Date(source.next_billing_date)
-          : null,
-        pendingTier: ended || type === 'subscription.plan_changed' ? null : undefined,
-        pendingPeriod: ended || type === 'subscription.plan_changed' ? null : undefined,
+        currentPeriodEnd: periodEnd ? new Date(periodEnd) : null,
+        pendingTier: shown.pendingTier,
+        pendingPeriod: shown.pendingPeriod,
         deletedAt: ended ? new Date() : null,
       },
     });
     if (!ended && (type === 'subscription.active' || type === 'subscription.renewed')) {
       const cycleKey = source.previous_billing_date || source.created_at || source.subscription_id;
+      const grantingTrial = inTrial && type !== 'subscription.renewed';
       await this._credits.grantMonthly(
         tx,
         organizationId,
-        monthlyCycleKey(String(cycleKey), inTrial),
-        monthlyCreditAllowance(mapped.tier, inTrial)
+        monthlyCycleKey(String(cycleKey), grantingTrial),
+        monthlyCreditAllowance(tier, grantingTrial)
       );
     }
   }
@@ -309,15 +344,29 @@ export class DodoProvider extends PaymentProviderAbstract {
     if (!org || !user?.email) {
       throw new HttpException('Account not found', 400);
     }
-    const country = (body.country || '').toUpperCase();
-    const india = country === 'IN';
+    const prefill = dodoCheckoutPrefill({
+      name: user.name,
+      lastName: user.lastName,
+      country: body.country,
+      phone: null,
+    });
     const base = frontendUrl();
     const session = await this.client().checkoutSessions.create({
       product_cart: [{ product_id: productId, quantity: 1 }],
-      customer: { email: user.email, name: user.name || org.name },
-      ...(india
+      customer: {
+        email: user.email,
+        ...(prefill.name ? { name: prefill.name } : {}),
+        ...(prefill.phoneNumber ? { phone_number: prefill.phoneNumber } : {}),
+      },
+      ...(prefill.country === 'IN'
         ? { billing_address: { country: 'IN' as const }, billing_currency: 'INR' as const }
         : { billing_currency: 'USD' as const }),
+      feature_flags: {
+        allow_customer_editing_name: true,
+        allow_customer_editing_country: true,
+        allow_phone_number_collection: true,
+        ...(kind === 'credit_pack' ? { single_page: true } : {}),
+      },
       subscription_data:
         kind === 'subscription' && allowTrial
           ? { trial_period_days: TRIAL_DAYS }
@@ -354,18 +403,41 @@ export class DodoProvider extends PaymentProviderAbstract {
       current?.period || 'MONTHLY',
       body.period
     );
+    const inTrial = current?.status === 'trialing';
+    const trialEndsAt = current?.currentPeriodEnd?.toISOString() || null;
+    const decision = planChangeBilling({ inTrial, upgrade, trialEndsAt });
     await this.client().subscriptions.changePlan(subscriptionId, {
       product_id: productId,
       quantity: 1,
-      proration_billing_mode: upgrade ? 'prorated_immediately' : 'do_not_bill',
+      proration_billing_mode: decision.prorationBillingMode,
+      effective_at: decision.effectiveAt,
+      on_payment_failure: 'prevent_change',
     });
-    if (!upgrade && current) {
+    if (decision.keepTrialEnd) {
+      await this.client().subscriptions.update(subscriptionId, {
+        next_billing_date: decision.keepTrialEnd,
+      });
+    }
+    if (current && decision.applyTierNow) {
+      await this._prisma.subscription.update({
+        where: { organizationId },
+        data: {
+          subscriptionTier: body.billing,
+          period: body.period,
+          totalChannels: PLANS[body.billing].channels,
+          pendingTier: null,
+          pendingPeriod: null,
+          status: inTrial ? 'trialing' : current.status,
+          currentPeriodEnd: decision.keepTrialEnd ? new Date(decision.keepTrialEnd) : current.currentPeriodEnd,
+        },
+      });
+    } else if (current) {
       await this._prisma.subscription.update({
         where: { organizationId },
         data: { pendingTier: body.billing, pendingPeriod: body.period },
       });
     }
-    return { changed: true, upgrade };
+    return { changed: true, upgrade, trial: inTrial, chargedNow: decision.chargeNow };
   }
 
   async prorate(organizationId: string, body: BillingSubscribeDto) {
@@ -378,6 +450,21 @@ export class DodoProvider extends PaymentProviderAbstract {
           ? pricing[body.billing].year_price
           : pricing[body.billing].month_price;
       return { price };
+    }
+    const upgrade = isUpgrade(
+      current.subscriptionTier || 'FREE',
+      body.billing,
+      current.period || 'MONTHLY',
+      body.period
+    );
+    if (current.status === 'trialing' || !upgrade) {
+      return {
+        price: 0,
+        currency: 'USD',
+        trial: current.status === 'trialing',
+        scheduled: !upgrade,
+        trialEndsAt: current.currentPeriodEnd?.toISOString() || null,
+      };
     }
     const productId = subscriptionProductId(body.billing, body.period);
     if (!productId) {
@@ -405,15 +492,30 @@ export class DodoProvider extends PaymentProviderAbstract {
       return { cancelAt: null };
     }
     const cancel = !current.cancelAt;
+    const org = await this._organizationService.getOrgById(organizationId);
+    const remote = cancel ? await this.remoteSubscription(current.identifier) : null;
+    const remoteEnd = remote?.next_billing_date ? new Date(remote.next_billing_date) : null;
+    const inTrial = current.status === 'trialing' || !!org?.isTrailing;
+    const until = cancel
+      ? cancelAccessUntil({
+          currentPeriodEnd: current.currentPeriodEnd,
+          createdAt: current.createdAt,
+          inTrial,
+          trialDays: TRIAL_DAYS,
+        }) || remoteEnd
+      : null;
     await this.client().subscriptions.update(current.identifier, {
       cancel_at_next_billing_date: cancel,
     });
-    const cancelAt = cancel ? current.currentPeriodEnd || new Date() : null;
     await this._prisma.subscription.update({
       where: { organizationId },
-      data: { cancelAt, status: cancel ? 'cancel_scheduled' : 'active' },
+      data: {
+        cancelAt: cancel ? until : null,
+        currentPeriodEnd: current.currentPeriodEnd || until,
+        status: cancel ? 'cancel_scheduled' : inTrial ? 'trialing' : 'active',
+      },
     });
-    return { cancelAt };
+    return { cancelAt: cancel ? until : null };
   }
 
   async cancelAllSubscriptions(organizationId: string) {
@@ -474,12 +576,17 @@ export class DodoProvider extends PaymentProviderAbstract {
     });
     const rows = [];
     for await (const payment of page) {
+      const amount = (payment.total_amount || 0) / 100;
+      const status = payment.status || '';
+      if (!invoiceIsVisible({ amount, status })) {
+        continue;
+      }
       rows.push({
         id: payment.payment_id,
-        amount: (payment.total_amount || 0) / 100,
+        amount,
         currency: payment.currency,
-        status: payment.status || 'succeeded',
-        createdAt: payment.created_at,
+        status,
+        createdAt: String(payment.created_at),
         url: payment.invoice_url || null,
         invoiceId: payment.invoice_id || null,
       });
@@ -487,6 +594,7 @@ export class DodoProvider extends PaymentProviderAbstract {
         break;
       }
     }
+    rows.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
     return rows;
   }
 
