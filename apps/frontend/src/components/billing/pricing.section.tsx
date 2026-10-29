@@ -73,8 +73,9 @@ export function PricingSection({
   onChoose: (tier: PaidTier) => void;
 }) {
   return (
-    <div data-billing-state="plan_picker" className="flex w-full flex-col items-center gap-[20px]">
+    <div data-billing-state="plan_picker" className="billing-plans flex w-full flex-col items-center gap-[20px]">
       <SegmentedControl
+        className="settings-seg"
         variant="pill"
         aria-label="Monthly or yearly"
         value={period}
@@ -95,9 +96,9 @@ export function PricingSection({
           const recommended = tier === 'PRO';
           return (
             <article key={tier} data-plan={tier} className={clsx(stkCard, 'flex h-full flex-col gap-[14px]')}>
-              <div className="flex min-h-[26px] items-center justify-between gap-[8px]">
-                <h2 className="min-w-0 truncate">{plan.displayName}</h2>
-                <span className={clsx(stkBadgeAcc, !recommended && 'invisible')} aria-hidden={!recommended}>
+              <div className="flex min-h-[26px] flex-wrap items-center justify-between gap-[8px]">
+                <h2 className="whitespace-normal">{plan.displayName}</h2>
+                <span className={clsx(stkBadgeAcc, 'billing-recommend', !recommended && 'invisible')} aria-hidden={!recommended}>
                   Recommended
                 </span>
               </div>

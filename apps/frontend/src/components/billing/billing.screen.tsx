@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -18,10 +18,11 @@ import {
   Paywall,
   PlanPicker,
   StatusBanners,
-  UpgradeModal,
 } from '@gitroom/frontend/components/billing/billing.ui';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { PricingSection } from '@gitroom/frontend/components/billing/pricing.section';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
 const activeEnough = new Set(['active', 'trialing', 'past_due', 'on_hold', 'cancel_scheduled']);
 
@@ -33,6 +34,7 @@ export function BillingScreen({
   surface?: 'page' | 'account';
 }) {
   const fetch = useFetch();
+  const toaster = useToaster();
   const router = useRouter();
   const params = useSearchParams();
   const checkout = params.get('checkout');
@@ -52,12 +54,9 @@ export function BillingScreen({
   const [busy, setBusy] = useState(false);
   const [packBusy, setPackBusy] = useState<string | null>(null);
   const [packError, setPackError] = useState('');
-  const [note, setNote] = useState('');
   const [showPlans, setShowPlans] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
-  const [upgrade, setUpgrade] = useState<{ plan: BillingPlanCard; detail: string } | null>(null);
-  const [confirmCancel, setConfirmCancel] = useState(false);
-  const [cancelFeedback, setCancelFeedback] = useState('');
+  const plansRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (data?.subscription.period) {
@@ -65,9 +64,15 @@ export function BillingScreen({
     }
   }, [data?.subscription.period]);
 
+  useEffect(() => {
+    if (!showPlans) {
+      return;
+    }
+    plansRef.current?.scrollIntoView({ block: 'start' });
+  }, [showPlans]);
+
   const choose = async (plan: BillingPlanCard) => {
     setBusy(true);
-    setNote('');
     const hasPlan = data && activeEnough.has(data.subscription.status) && !data.grandfathered;
     if (hasPlan) {
       try {
@@ -77,19 +82,19 @@ export function BillingScreen({
         });
         const body = await preview.json();
         const when = body?.trialEndsAt ? String(body.trialEndsAt).slice(0, 10) : '';
-        setUpgrade({
-          plan,
-          detail: body?.trial
-            ? `${plan.displayName} applies to the first charge${when ? ` on ${when}` : ''}. Nothing is charged today, and the trial end stays the same.`
-            : body?.scheduled
-              ? `${plan.displayName} is scheduled for the next renewal. ${data?.subscription.displayName || 'The current plan'} stays until then.`
-              : body?.price
-                ? `${plan.displayName} ${period.toLowerCase()} is about $${body.price} ${body.currency || 'USD'} today.`
-                : `Switch to ${plan.displayName} (${period.toLowerCase()}).`,
-        });
+        const detail = body?.trial
+          ? `${plan.displayName} applies to the first charge${when ? ` on ${when}` : ''}. Nothing is charged today, and the trial end stays the same.`
+          : body?.scheduled
+            ? `${plan.displayName} is scheduled for the next renewal. ${data?.subscription.displayName || 'The current plan'} stays until then.`
+            : body?.price
+              ? `${plan.displayName} ${period.toLowerCase()} is about $${body.price} ${body.currency || 'USD'} today.`
+              : `Switch to ${plan.displayName} (${period.toLowerCase()}).`;
+        setBusy(false);
+        if (await deleteDialog(detail, 'Continue', 'Confirm plan change', 'Close', 'primary')) {
+          await subscribe(plan);
+        }
       } catch {
-        setUpgrade({ plan, detail: `Switch to ${plan.displayName}.` });
-      } finally {
+        toaster.show('Could not preview this plan.', 'warning');
         setBusy(false);
       }
       return;
@@ -99,7 +104,6 @@ export function BillingScreen({
 
   const subscribe = async (plan: BillingPlanCard) => {
     setBusy(true);
-    setNote('');
     let leave = false;
     try {
       const response = await fetch('/billing/subscribe', {
@@ -108,7 +112,7 @@ export function BillingScreen({
       });
       const body = await response.json();
       if (body.blocked) {
-        setNote('Another account with this email already has a subscription.');
+        toaster.show('Another account with this email already has a subscription.', 'warning');
         return;
       }
       if (body.url) {
@@ -117,19 +121,19 @@ export function BillingScreen({
         return;
       }
       if (body.changed) {
-        setUpgrade(null);
         setShowPlans(false);
         await mutate();
-        setNote(
+        toaster.show(
           body.trial
             ? 'Plan updated. The trial end date is unchanged, and the new plan is charged then.'
             : body.upgrade
               ? 'Plan upgraded.'
-              : 'Downgrade scheduled for the next renewal. The current plan stays until then.'
+              : 'Downgrade scheduled for the next renewal. The current plan stays until then.',
+          'success'
         );
       }
     } catch {
-      setNote('Could not start checkout.');
+      toaster.show('Could not start checkout.', 'warning');
     } finally {
       if (!leave) {
         setBusy(false);
@@ -148,13 +152,16 @@ export function BillingScreen({
       });
       const body = await response.json();
       if (!response.ok || !body.url) {
-        setPackError(body.message || 'Could not open pack checkout.');
+        const message = body.message || 'Could not open pack checkout.';
+        setPackError(message);
+        toaster.show(message, 'warning');
         return;
       }
       leave = true;
       window.location.href = body.url;
     } catch {
       setPackError('Could not open pack checkout.');
+      toaster.show('Could not open pack checkout.', 'warning');
     } finally {
       if (!leave) {
         setPackBusy(null);
@@ -245,25 +252,38 @@ export function BillingScreen({
       }
     }
   };
+  const accessUntil = data.subscription.cancelAt || data.subscription.currentPeriodEnd;
+  const cancelUntil = accessUntil ? accessUntil.slice(0, 10) : 'the end of this period';
   const resume = async () => {
     setBusy(true);
     try {
       await fetch('/billing/resume', { method: 'POST' });
       await mutate();
+      toaster.show('Subscription kept.', 'success');
+    } catch {
+      toaster.show('Could not update the subscription.', 'warning');
     } finally {
       setBusy(false);
     }
   };
-  const askCancel = (feedback: string) => {
-    setCancelFeedback(feedback);
-    setConfirmCancel(true);
-  };
-  const cancel = async () => {
+  const askCancel = async () => {
+    const confirmed = await deleteDialog(
+      `Access continues until ${cancelUntil}.`,
+      'Cancel subscription',
+      'Cancel subscription',
+      'Keep subscription',
+      'danger'
+    );
+    if (!confirmed) {
+      return;
+    }
     setBusy(true);
     try {
-      await fetch('/billing/cancel', { method: 'POST', body: JSON.stringify({ feedback: cancelFeedback }) });
-      setConfirmCancel(false);
+      await fetch('/billing/cancel', { method: 'POST', body: JSON.stringify({ feedback: '' }) });
       await mutate();
+      toaster.show(`Access continues until ${cancelUntil}.`, 'success');
+    } catch {
+      toaster.show('Could not cancel the subscription.', 'warning');
     } finally {
       setBusy(false);
     }
@@ -292,8 +312,6 @@ export function BillingScreen({
 
   const accountView = surface === 'account' && !shown.startsWith('checkout_');
   const accountHasPlan = activeEnough.has(status);
-  const accessUntil = data.subscription.cancelAt || data.subscription.currentPeriodEnd;
-  const cancelUntil = accessUntil ? accessUntil.slice(0, 10) : 'the end of this period';
 
   return (
     <BillingShell>
@@ -301,7 +319,6 @@ export function BillingScreen({
         data-billing-screen={shown}
         className={accountView ? 'account-bill flex flex-col gap-[16px]' : 'flex flex-col gap-[12px]'}
       >
-        {note ? <p className="m-0">{note}</p> : null}
         {checkoutFailed ? (
           <CheckoutStatus state="failure" onRetry={() => router.replace('/account?section=billing')} />
         ) : null}
@@ -330,11 +347,9 @@ export function BillingScreen({
               <CreditPacks compact packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
             ) : null}
             <InvoiceList rows invoices={data.invoices} />
-            {!accountHasPlan || showPlans ? accountPicker : null}
-            <div className="account-bill-faq">
-              <h2 className="account-bill-title">FAQ</h2>
-              <FAQComponent accordion />
-            </div>
+            {!accountHasPlan || showPlans ? (
+              <div ref={plansRef} className="billing-plans w-full">{accountPicker}</div>
+            ) : null}
           </>
         ) : (
           <>
@@ -362,7 +377,7 @@ export function BillingScreen({
                 {picker}
               </>
             ) : null}
-            {shown === 'plan_picker' ? picker : null}
+            {shown === 'plan_picker' ? <div ref={plansRef} className="billing-plans w-full">{picker}</div> : null}
             {shown === 'trial_active' || shown === 'past_due' || shown === 'downgrade_pending' || shown === 'billing_settings' ? (
               <>
                 <StatusBanners overview={data} />
@@ -371,26 +386,9 @@ export function BillingScreen({
               </>
             ) : null}
             {shown === 'credits' ? credits : null}
-            {shown !== 'paywall' && shown !== 'credits' && shown !== 'checkout_pending' ? <FAQComponent /> : null}
           </>
         )}
       </div>
-      <UpgradeModal
-        open={!!upgrade}
-        title="Confirm plan change"
-        detail={upgrade?.detail || ''}
-        busy={busy}
-        onClose={() => setUpgrade(null)}
-        onConfirm={() => upgrade && subscribe(upgrade.plan)}
-      />
-      <UpgradeModal
-        open={confirmCancel}
-        title="Cancel subscription"
-        detail={`Access continues until ${cancelUntil}.`}
-        busy={busy}
-        onClose={() => setConfirmCancel(false)}
-        onConfirm={cancel}
-      />
     </BillingShell>
   );
 }

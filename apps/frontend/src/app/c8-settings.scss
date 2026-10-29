@@ -2880,6 +2880,11 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   color: var(--c8-muted);
 }
 
+.c8-account-fly.is-plan {
+  min-width: 280px;
+  max-width: min(360px, calc(100vw - 24px));
+}
+
 .c8-account-fly {
   position: fixed;
   z-index: 410;
@@ -3198,4 +3203,43 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 
 .mobile-sheet .c8-account-rule {
   margin-bottom: 6px;
+}
+
+.billing-plans .settings-seg.c8-seg {
+  display: inline-flex;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c8-soft);
+}
+
+.billing-plans .settings-seg.c8-seg > [role='radio'] {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.billing-plans .settings-seg.c8-seg > [role='radio'][aria-checked='true'] {
+  color: var(--c8-ink);
+  font-weight: 700;
+}
+
+.billing-plans .settings-seg.c8-seg > [role='radio'] > .c8-seg-thumb {
+  border-radius: 999px;
+  background: var(--c8-surface);
+  box-shadow: 0 1px 3px rgb(18 16 22 / 0.12);
+}
+
+.billing-recommend.stk-badge-acc {
+  border-color: #121016;
+  background: var(--c8-cyan);
+  color: #121016;
+  font-weight: 700;
 }
