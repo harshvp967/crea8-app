@@ -5,6 +5,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { stkBadgeAcc, stkCard, stkPrimary } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import {
+  CHECKOUT_GST_NOTE,
   PAID_TIERS,
   PLANS,
   type BillingPeriod,
@@ -104,13 +105,14 @@ export function PricingSection({
                 <span className="lib-metric-value">${price}</span>
                 <span className="lib-metric-label">{period === 'YEARLY' ? ' / year' : ' / month'}</span>
               </p>
+              <p className="m-0 lib-metric-label">{CHECKOUT_GST_NOTE}</p>
               <button
                 type="button"
                 className={clsx(stkPrimary, 'w-full')}
                 disabled={busy}
                 onClick={() => onChoose(tier)}
               >
-                {allowTrial ? `Start ${trialDays}-day trial` : `Choose ${plan.displayName}`}
+                {busy ? 'Loading…' : allowTrial ? `Start ${trialDays}-day trial` : `Choose ${plan.displayName}`}
               </button>
               <ul className="m-0 flex list-none flex-col gap-[8px] p-0">
                 {planFeatureLines(plan).map((line) => (

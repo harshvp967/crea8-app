@@ -116,13 +116,15 @@ export function billingStatus(input: {
     if (input.status === 'trial_ended') {
       return 'trial_ended';
     }
-    if (input.status === 'cancelled' || input.status === 'expired' || input.status === 'failed') {
+    // A declined checkout is not a subscription. Leaving it as "cancelled"
+    // or "failed" would replace the paywall and the trial button.
+    if (input.status === 'failed') {
+      return 'none';
+    }
+    if (input.status === 'cancelled' || input.status === 'expired') {
       return 'cancelled';
     }
     return 'none';
-  }
-  if (input.pendingTier) {
-    return 'active';
   }
   if (input.cancelAt) {
     return 'cancel_scheduled';
@@ -137,6 +139,43 @@ export function billingStatus(input: {
     return 'trialing';
   }
   return 'active';
+}
+
+export function checkoutReturnKind(input: {
+  checkout?: string | null;
+  status?: string | null;
+}): 'failure' | 'pending' | null {
+  const status = (input.status || '').trim().toLowerCase();
+  const checkout = (input.checkout || '').trim().toLowerCase();
+  if (
+    status === 'failed' ||
+    status === 'cancelled' ||
+    status === 'canceled' ||
+    checkout === 'failure' ||
+    checkout === 'failed' ||
+    checkout === 'cancelled' ||
+    checkout === 'canceled'
+  ) {
+    return 'failure';
+  }
+  if (checkout === 'pending' || checkout === 'success') {
+    return 'pending';
+  }
+  return null;
+}
+
+export function paywallAllowsTrial(input: {
+  allowTrial: boolean;
+  hasActiveSubscription: boolean;
+  latestStatus?: string | null;
+}) {
+  if (input.hasActiveSubscription) {
+    return false;
+  }
+  if (input.allowTrial) {
+    return true;
+  }
+  return (input.latestStatus || '').toLowerCase() === 'failed';
 }
 
 export const billingSupport = {
