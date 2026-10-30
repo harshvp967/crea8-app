@@ -2,29 +2,25 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { Organization } from '@prisma/client';
 import { aiDraftsEnabledForOrg } from '@gitroom/nestjs-libraries/database/prisma/posts/ai.drafts.flag';
 import {
-  limitForTier,
-  upgradeMessage,
-} from '@gitroom/nestjs-libraries/database/prisma/posts/ai.post.limits';
-import {
   clipPlain,
   futureSlot,
   ideaPrompt,
   ideaSource,
   loneUrl,
-  monthStart,
   readAdditionalSettings,
 } from '@gitroom/nestjs-libraries/database/prisma/posts/idea.posts';
 import { IdeaPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/idea.posts.dto';
-import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { SubscriptionRepository } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.repository';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { BrandVoiceService } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice.service';
-
-const AI_POSTS = 'ai_posts';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import {
+  BillingBlocked,
+  creditUpgradeMessage,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
 export type IdeaDraft = {
   integrationId: string;
@@ -38,12 +34,8 @@ export type IdeaDraft = {
 };
 
 export type IdeaPostsResult = {
-  used: number;
-  limit: number;
   channels?: number;
-  limited?: boolean;
   voice?: boolean;
-  counted?: boolean;
   message?: string;
   error?: string;
   drafts?: IdeaDraft[];
@@ -52,8 +44,7 @@ export type IdeaPostsResult = {
 @Injectable()
 export class IdeaPostsService {
   constructor(
-    private _subscriptionService: SubscriptionService,
-    private _subscriptionRepository: SubscriptionRepository,
+    private _credits: CreditsService,
     private _integrationService: IntegrationService,
     private _postsService: PostsService,
     private _integrationManager: IntegrationManager,
@@ -73,49 +64,27 @@ export class IdeaPostsService {
     return this._brandVoiceService.voiceForDrafts(orgId);
   }
 
-  private async usageCounts(org: Organization) {
-    const subscription = await this._subscriptionService.getSubscription(org.id);
-    const limit = limitForTier(subscription?.subscriptionTier);
-    const used = await this._subscriptionRepository.getCreditsFrom(
-      org.id,
-      monthStart(),
-      AI_POSTS
-    );
-    return { used, limit };
-  }
-
   async usage(org: Organization): Promise<IdeaPostsResult> {
     this.assertEnabled(org.id);
-    const counts = await this.usageCounts(org);
     const channels = await this.channels(org.id);
-    return { ...counts, channels: channels.length };
+    return { channels: channels.length };
   }
 
   async generate(org: Organization, body: IdeaPostsDto): Promise<IdeaPostsResult> {
     this.assertEnabled(org.id);
-    const { used, limit } = await this.usageCounts(org);
-    if (used >= limit) {
-      return {
-        used,
-        limit,
-        limited: true,
-        message: upgradeMessage(used, limit),
-      };
+    if (await this._credits.aiPostBlocked(org.id)) {
+      return { error: creditUpgradeMessage() };
     }
 
     const channels = await this.channels(org.id, body.customer);
     if (!channels.length) {
       return {
-        used,
-        limit,
         error: 'Connect a channel first, then try the idea again.',
       };
     }
 
     if (!this._openaiService.hasApiKey()) {
       return {
-        used,
-        limit,
         error: 'AI is not set up yet. Scheduling still works.',
       };
     }
@@ -136,19 +105,24 @@ export class IdeaPostsService {
 
     let posts: { id: string; content: string }[];
     try {
-      posts = await this._subscriptionRepository.useCredit(
-        org,
-        AI_POSTS,
-        () => this._openaiService.completeIdeaDrafts(prompt.system, prompt.user)
+      posts = await this._openaiService.completeIdeaDrafts(
+        prompt.system,
+        prompt.user
       );
     } catch {
       return {
-        used,
-        limit,
         voice: !!voice,
-        counted: false,
         error: "Couldn't write your drafts. Your idea is still here. Nothing was added, and this try did not count.",
       };
+    }
+
+    try {
+      await this._credits.recordAiPostCall(org.id, `idea:${org.id}:${Date.now()}`);
+    } catch (err) {
+      if (err instanceof BillingBlocked) {
+        return { error: err.message };
+      }
+      throw err;
     }
 
     const byId = new Map(posts.map((post) => [post.id, post.content]));
@@ -170,10 +144,7 @@ export class IdeaPostsService {
     );
 
     return {
-      used: used + 1,
-      limit,
       voice: !!voice,
-      counted: true,
       drafts: drafts.filter((draft) => draft.content),
     };
   }

@@ -530,8 +530,6 @@ const IdeaPostsPanel = ({
   const [hydrateKey, setHydrateKey] = useState<string | null>(null);
   const [phone, setPhone] = useState(false);
   const [idea, setIdea] = useState('');
-  const [used, setUsed] = useState(0);
-  const [limit, setLimit] = useState(0);
   const [voice, setVoice] = useState(false);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [removeAsk, setRemoveAsk] = useState<{
@@ -540,7 +538,6 @@ const IdeaPostsPanel = ({
     run: () => void;
   } | null>(null);
   const [error, setError] = useState('');
-  const [upgrade, setUpgrade] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [, setChecking] = useState(false);
@@ -601,22 +598,6 @@ const IdeaPostsPanel = ({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const response = await fetch('/idea-posts');
-      const data = await response.json().catch(() => ({}));
-      if (cancelled || !response.ok) {
-        return;
-      }
-      setUsed(data.used ?? 0);
-      setLimit(data.limit ?? 0);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [fetch]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
       const response = await fetch('/integrations/list');
       const list = await response.json().catch(() => []);
       if (cancelled) {
@@ -650,7 +631,6 @@ const IdeaPostsPanel = ({
       setDrafts([]);
       setRestored(false);
       setError('');
-      setUpgrade('');
       setSettingsOpen({});
       seenInvalid.current = {};
       setHydrateKey(key);
@@ -677,7 +657,6 @@ const IdeaPostsPanel = ({
   const draft = useCallback(async () => {
     setRestored(false);
     setError('');
-    setUpgrade('');
     setLoading(true);
     try {
       const response = await fetch('/idea-posts', {
@@ -694,18 +673,7 @@ const IdeaPostsPanel = ({
         );
         return;
       }
-      if (typeof data.used === 'number' && data.counted !== false) {
-        setUsed(data.used);
-      }
-      if (typeof data.limit === 'number') {
-        setLimit(data.limit);
-      }
       setVoice(!!data.voice);
-      if (data.limited) {
-        setUpgrade(data.message || '');
-        setDrafts([]);
-        return;
-      }
       if (data.error) {
         setError(data.error);
         setDrafts([]);
@@ -1216,7 +1184,6 @@ const IdeaPostsPanel = ({
     setTray([]);
     setAllWhen('');
     setError('');
-    setUpgrade('');
     setVoice(false);
     setRestored(false);
     setSettingsOpen({});
@@ -1252,7 +1219,6 @@ const IdeaPostsPanel = ({
     fileRef.current?.click();
   };
 
-  const meter = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const node = (
     <div className="c8-idea">
       <button type="button" className="c8-idea-scrim" aria-label={t('close', 'Close')} onClick={persistClose} />
@@ -1272,18 +1238,6 @@ const IdeaPostsPanel = ({
                 'Type one idea or paste a link. You get one draft for each connected channel.'
               )}
             </p>
-            <div className="c8-idea-meter">
-              <HugeIcon name="agent" size={12} />
-              <span>
-                {t('ai_posts_used', 'AI posts used: {{used}} of {{limit}}', {
-                  used,
-                  limit,
-                })}
-              </span>
-              <span className="c8-idea-bar" aria-hidden>
-                <span style={{ width: `${meter}%` }} />
-              </span>
-            </div>
           </div>
         </div>
         <input
@@ -1387,7 +1341,6 @@ const IdeaPostsPanel = ({
             {loading ? t('writing', 'Writing…') : t('generate', 'Generate')}
           </Button>
         </div>
-        {!!upgrade && <p className="c8-idea-upgrade">{upgrade}</p>}
         {!!error && (
           <div className="c8-idea-error" role="alert">
             <strong>{t('could_not_write', "Couldn't write your drafts")}</strong>

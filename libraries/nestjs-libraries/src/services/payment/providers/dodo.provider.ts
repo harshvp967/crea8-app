@@ -28,7 +28,7 @@ import {
   isUpgrade,
   monthlyCreditAllowance,
   monthlyCycleKey,
-  packCreditsFromProduct,
+  packGrantFromPayment,
   planChangeBilling,
   preservedTrialEnd,
   subscriptionProductId,
@@ -214,21 +214,27 @@ export class DodoProvider extends PaymentProviderAbstract {
   }
 
   private async applyPackPayment(tx: Tx, data: any) {
-    const metadata = data?.metadata || {};
-    const productId = data?.product_cart?.[0]?.product_id || metadata.product_id;
-    const credits = Number(metadata.credits || 0) || packCreditsFromProduct(String(productId || ''));
-    if (metadata.kind !== 'credit_pack' && !packCreditsFromProduct(String(productId || ''))) {
-      return;
+    let source = data;
+    if (
+      !packGrantFromPayment(source) &&
+      !data?.subscription_id &&
+      data?.payment_id &&
+      process.env.DODO_PAYMENTS_API_KEY
+    ) {
+      try {
+        const remote = await this.client().payments.retrieve(String(data.payment_id));
+        if (remote) {
+          source = remote;
+        }
+      } catch {
+        return;
+      }
     }
-    const organizationId = String(metadata.organizationId || '');
-    if (!organizationId || credits <= 0) {
-      return;
-    }
-    const paymentId = String(data.payment_id || metadata.payment_id || '');
-    if (!paymentId) {
-      return;
-    }
-    await this._credits.grantPack(tx, organizationId, credits, `pack:${paymentId}`);
+    await this._credits.applyReportedPackPayment(
+      tx,
+      source,
+      await this.organizationIdFor(tx, source)
+    );
   }
 
   private async organizationIdFor(tx: Tx, source: any) {

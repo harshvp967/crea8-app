@@ -17,9 +17,8 @@ import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/su
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
 import {
   BillingBlocked,
-  xPostCost,
+  xPostSpendParts,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
-import { CREDIT_COSTS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
@@ -410,65 +409,43 @@ export class PostActivity {
     );
 
     if (
-      isBillingEnforced(integration.organizationId) &&
-      integration.providerIdentifier === 'x'
+      integration.providerIdentifier === 'x' ||
+      isBillingEnforced(integration.organizationId)
     ) {
-      setHeartbeatDetails('x credits');
-      const keeps =
-        typeof (getIntegration as { keepsLinks?: (settings?: object) => boolean })
-          .keepsLinks === 'function'
-          ? (getIntegration as { keepsLinks: (settings?: object) => boolean }).keepsLinks.bind(
-              getIntegration
-            )
-          : () => true;
-      let plain = 0;
-      let linked = 0;
-      for (const post of mappedPosts) {
-        const text = keeps(post.settings) ? post.message : stripLinks(post.message);
-        if (xPostCost(text) === CREDIT_COSTS.xPostWithUrl) {
-          linked += 1;
-        } else {
-          plain += 1;
-        }
-      }
-      if (plain > 0 || linked > 0) {
-        const key = `xpost:${[...mappedPosts.map((post) => post.id)].sort().join(',')}`;
-        try {
-          await this._entitlements.assertCanPost(
-            integration.organizationId,
-            integration.id
-          );
-          await this._credits.spendParts(integration.organizationId, [
-            {
-              cost: plain * CREDIT_COSTS.xPost,
-              reason: 'x_post',
-              idempotencyKey: `${key}:plain`,
-            },
-            {
-              cost: linked * CREDIT_COSTS.xPostWithUrl,
-              reason: 'x_post_with_link',
-              idempotencyKey: `${key}:link`,
-            },
-          ]);
-        } catch (err) {
-          this.blocked(err);
-        }
-      } else {
-        try {
-          await this._entitlements.assertCanPost(
-            integration.organizationId,
-            integration.id
-          );
-        } catch (err) {
-          this.blocked(err);
-        }
-      }
-    } else if (isBillingEnforced(integration.organizationId)) {
+      setHeartbeatDetails(
+        integration.providerIdentifier === 'x' ? 'x credits' : 'subscription lookup'
+      );
       try {
-        await this._entitlements.assertCanPost(
-          integration.organizationId,
-          integration.id
-        );
+        if (isBillingEnforced(integration.organizationId)) {
+          await this._entitlements.assertCanPost(
+            integration.organizationId,
+            integration.id
+          );
+        }
+        if (integration.providerIdentifier === 'x') {
+          const keeps =
+            typeof (getIntegration as { keepsLinks?: (settings?: object) => boolean })
+              .keepsLinks === 'function'
+              ? (
+                  getIntegration as {
+                    keepsLinks: (settings?: object) => boolean;
+                  }
+                ).keepsLinks.bind(getIntegration)
+              : () => true;
+          const texts = mappedPosts.map((post) =>
+            keeps(post.settings) ? post.message : stripLinks(post.message)
+          );
+          const key = `xpost:${[...mappedPosts.map((post) => post.id)]
+            .sort()
+            .join(',')}`;
+          await this._credits.spendParts(
+            integration.organizationId,
+            xPostSpendParts(texts).map((part) => ({
+              ...part,
+              idempotencyKey: `${key}:${part.reason === 'x_post' ? 'plain' : 'link'}`,
+            }))
+          );
+        }
       } catch (err) {
         this.blocked(err);
       }

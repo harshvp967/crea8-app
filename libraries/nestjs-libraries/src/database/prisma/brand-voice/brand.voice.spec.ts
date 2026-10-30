@@ -71,8 +71,7 @@ describe('BrandVoiceService flag', () => {
     const openai = { hasApiKey: jest.fn(), extractBrandVoice: jest.fn() };
     const service = new BrandVoiceService(
       repository as any,
-      { getSubscription: jest.fn() } as any,
-      { getCreditsFrom: jest.fn(), useCredit: jest.fn() } as any,
+      { aiPostBlocked: jest.fn(), recordAiPostCall: jest.fn() } as any,
       openai as any
     );
     await expect(service.get({ id: 'org-1' } as any)).rejects.toBeInstanceOf(
@@ -86,5 +85,66 @@ describe('BrandVoiceService flag', () => {
     expect(repository.find).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
     expect(openai.extractBrandVoice).not.toHaveBeenCalled();
+  });
+
+  it('records a successful learn as an AI post call and drops the monthly cap', async () => {
+    process.env.AI_DRAFTS_ORG_IDS = 'org-1';
+    const repository = {
+      find: jest.fn(),
+      save: jest.fn().mockImplementation(async (_orgId: string, traits: string) => ({
+        enabled: false,
+        traits,
+      })),
+      setEnabled: jest.fn(),
+    };
+    const credits = {
+      aiPostBlocked: jest.fn().mockResolvedValue(false),
+      recordAiPostCall: jest.fn().mockResolvedValue({ spent: 1 }),
+    };
+    const openai = {
+      hasApiKey: jest.fn().mockReturnValue(true),
+      extractBrandVoice: jest.fn().mockResolvedValue({
+        traits: ['Warm'],
+        sample: 'Hello',
+      }),
+    };
+    const service = new BrandVoiceService(
+      repository as any,
+      credits as any,
+      openai as any
+    );
+    const result = await service.extract({ id: 'org-1' } as any, {
+      samples: ['one', 'two', 'three'],
+    });
+    expect(credits.recordAiPostCall).toHaveBeenCalledWith(
+      'org-1',
+      expect.stringMatching(/^brand-voice:org-1:/)
+    );
+    expect(result.traits).toEqual(['Warm']);
+    expect(result).not.toHaveProperty('limit');
+    expect(result).not.toHaveProperty('used');
+  });
+
+  it('does not call the model when the credit balance cannot cover the learn', async () => {
+    process.env.AI_DRAFTS_ORG_IDS = 'org-1';
+    const openai = {
+      hasApiKey: jest.fn().mockReturnValue(true),
+      extractBrandVoice: jest.fn(),
+    };
+    const credits = {
+      aiPostBlocked: jest.fn().mockResolvedValue(true),
+      recordAiPostCall: jest.fn(),
+    };
+    const service = new BrandVoiceService(
+      { find: jest.fn(), save: jest.fn(), setEnabled: jest.fn() } as any,
+      credits as any,
+      openai as any
+    );
+    const result = await service.extract({ id: 'org-1' } as any, {
+      samples: ['one', 'two', 'three'],
+    });
+    expect(result.error).toMatch(/out of credits/i);
+    expect(openai.extractBrandVoice).not.toHaveBeenCalled();
+    expect(credits.recordAiPostCall).not.toHaveBeenCalled();
   });
 });
