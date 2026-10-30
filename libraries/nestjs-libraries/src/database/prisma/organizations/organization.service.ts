@@ -14,6 +14,7 @@ import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id'
 import {
   Organization,
   OrganizationInviteStatus,
+  Provider,
   ShortLinkPreference,
   User,
 } from '@prisma/client';
@@ -78,13 +79,24 @@ export class OrganizationService {
     return this._organizationRepository.createWorkspace(userId, name);
   }
 
+  async canRegister(provider: string) {
+    if (
+      process.env.DISABLE_REGISTRATION !== 'true' ||
+      provider === Provider.GENERIC
+    ) {
+      return true;
+    }
+
+    return (await this.getCount()) === 0;
+  }
+
   async createOrgAndUser(
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
     ip: string,
     userAgent: string,
     options?: { invited?: boolean }
   ) {
-    if (!options?.invited) {
+    if (!options?.invited && !(await this.canRegister(body.provider))) {
       signupsClosed();
     }
     return this._organizationRepository.createOrgAndUser(

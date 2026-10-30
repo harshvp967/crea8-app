@@ -27,14 +27,7 @@ export class AuthService {
     private _providerManager: AuthProviderManager
   ) {}
   async canRegister(provider: string) {
-    if (
-      process.env.DISABLE_REGISTRATION !== 'true' ||
-      provider === Provider.GENERIC
-    ) {
-      return true;
-    }
-
-    return (await this._organizationService.getCount()) === 0;
+    return this._organizationService.canRegister(provider);
   }
 
   async routeAuth(
@@ -59,7 +52,26 @@ export class AuthService {
 
         const invite = this.inviteClaims(addToOrg);
         if (!invite) {
-          signupsClosed();
+          if (!(await this.canRegister(provider))) {
+            signupsClosed();
+          }
+
+          const create = await this._organizationService.createOrgAndUser(
+            body,
+            ip,
+            userAgent
+          );
+          const obj = {
+            addedOrg: false,
+            jwt: await this.jwt(create.users[0].user),
+          };
+          await this._emailService.sendEmail(
+            body.email,
+            'Activate your account',
+            `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`,
+            'top'
+          );
+          return obj;
         }
         if (invite.email !== body.email) {
           throw new Error('This invite is for a different email');
@@ -202,7 +214,40 @@ export class AuthService {
 
     const invite = this.inviteClaims(addToOrg);
     if (!invite) {
-      signupsClosed();
+      if (!(await this.canRegister(provider))) {
+        signupsClosed();
+      }
+
+      const create = await this._organizationService.createOrgAndUser(
+        {
+          company: body.company,
+          email: providerUser.email,
+          password: '',
+          provider,
+          providerId: providerUser.id,
+          datafast_visitor_id: body.datafast_visitor_id,
+        },
+        ip,
+        userAgent
+      );
+
+      this._track(
+        'register',
+        providerUser.email,
+        body.datafast_visitor_id
+      ).catch((err) => {});
+
+      await NewsletterService.register(providerUser.email);
+
+      try {
+        if (providerInstance?.postRegistration) {
+          await providerInstance.postRegistration(body.providerToken, create.id);
+        }
+      } catch (err) {
+        // Don't fail registration if postRegistration fails
+      }
+
+      return create.users[0].user;
     }
     const email = String(providerUser.email || '').trim().toLowerCase();
     if (!email || email !== invite.email) {
@@ -373,7 +418,10 @@ export class AuthService {
 
     const invite = this.optionalInvite(orgCookie);
     if (!invite) {
-      signupsClosed();
+      if (!(await this.canRegister(provider))) {
+        signupsClosed();
+      }
+      return { token };
     }
     const email = String(user.email || '').trim().toLowerCase();
     if (!email || email !== invite.email) {
