@@ -26,6 +26,7 @@ import { ResendActivationDto } from '@gitroom/nestjs-libraries/dtos/auth/resend-
 import { ApiTags } from '@nestjs/swagger';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
+import { sessionCookieOptions } from '@gitroom/helpers/auth/session.cookies';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
@@ -147,34 +148,18 @@ export class AuthController {
         getOrgFromCookie
       );
 
-      response.cookie('auth', jwt, {
-        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-              sameSite: authCookieSameSite(),
-            }
-          : {}),
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-      });
+      response.cookie('auth', jwt, sessionCookieOptions());
 
       if (process.env.NOT_SECURED) {
         response.header('auth', jwt);
       }
 
       if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
-        response.cookie('showorg', addedOrg.organizationId, {
-          domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-          ...(!process.env.NOT_SECURED
-            ? {
-                secure: true,
-                httpOnly: true,
-                sameSite: authCookieSameSite(),
-              }
-            : {}),
-          expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-        });
+        response.cookie(
+          'showorg',
+          addedOrg.organizationId,
+          sessionCookieOptions()
+        );
 
         if (process.env.NOT_SECURED) {
           response.header('showorg', addedOrg.organizationId);
@@ -391,17 +376,7 @@ export class AuthController {
       throw e;
     }
 
-    response.cookie('auth', jwt, {
-      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: authCookieSameSite(),
-          }
-        : {}),
-      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-    });
+    response.cookie('auth', jwt, sessionCookieOptions());
 
     if (process.env.NOT_SECURED) {
       response.header('auth', jwt);

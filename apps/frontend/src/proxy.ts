@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
+import {
+  clearSessionCookies,
+  logoutLoginUrl,
+} from '@gitroom/helpers/auth/session.cookies';
 import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 import acceptLanguage from 'accept-language';
 import {
@@ -188,22 +192,15 @@ export async function proxy(request: NextRequest) {
     return topResponse;
   }
 
-  // If the URL is logout, delete the cookie and redirect to login
+  // If the URL is logout, delete the cookie and redirect to login.
+  // Append Set-Cookie directly. Next's cookie jar keeps one value per name,
+  // so it cannot expire the same cookie on host-only and Domain= at once.
   if (nextUrl.href.indexOf('/auth/logout') > -1) {
-    const response = NextResponse.redirect(
-      new URL('/auth/login', nextUrl.href)
-    );
-    response.cookies.set('auth', '', {
-      path: '/',
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: authCookieSameSite(),
-          }
-        : {}),
-      maxAge: -1,
-      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+    const response = NextResponse.redirect(logoutLoginUrl(nextUrl.href));
+    clearSessionCookies({
+      append: (_field, value) => {
+        response.headers.append('set-cookie', value);
+      },
     });
     return response;
   }

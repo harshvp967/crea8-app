@@ -26,6 +26,10 @@ const EXEMPT_PREFIXES = [
   '/.well-known',
 ];
 
+// Logout has to work when the CSRF cookie is missing. A stuck token otherwise
+// leaves the session cookies in place.
+const EXEMPT_EXACT = new Set(['/user/logout']);
+
 export function createCsrfToken() {
   return randomBytes(32).toString('hex');
 }
@@ -40,6 +44,9 @@ export function requestPath(url: string | undefined) {
 
 export function csrfExemptPath(url: string | undefined) {
   const path = requestPath(url);
+  if (EXEMPT_EXACT.has(path)) {
+    return true;
+  }
   return EXEMPT_PREFIXES.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`)
   );

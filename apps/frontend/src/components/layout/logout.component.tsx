@@ -3,7 +3,6 @@
 import React, { FC, useCallback } from 'react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -11,8 +10,7 @@ export const LogoutComponent: FC<{ isIcon?: boolean; label?: string }> = ({
   isIcon,
   label,
 }) => {
-  const fetch = useFetch();
-  const { isSecured } = useVariables();
+  const { isSecured, backendUrl } = useVariables();
   const t = useT();
 
   const logout = useCallback(async () => {
@@ -30,13 +28,16 @@ export const LogoutComponent: FC<{ isIcon?: boolean; label?: string }> = ({
         setCookie('showorg', '', -10);
         setCookie('impersonate', '', -10);
       } else {
-        await fetch('/user/logout', {
+        // Raw fetch, not useFetch: the shared afterRequest handler navigates
+        // to / when it sees the logout header, which skips /auth/logout.
+        await fetch(`${backendUrl}/user/logout`, {
           method: 'POST',
-        });
+          credentials: 'include',
+        }).catch(() => undefined);
       }
-      window.location.href = '/';
+      window.location.href = '/auth/logout';
     }
-  }, []);
+  }, [backendUrl, isSecured, t]);
   return (
     <>
       <div className="cursor-pointer" onClick={logout}>

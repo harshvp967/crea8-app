@@ -21,6 +21,7 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { authCookieSameSite } from '@gitroom/helpers/auth/cookie.policy';
+import { clearSessionCookies } from '@gitroom/helpers/auth/session.cookies';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { defaultPlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/default.plan';
 import { JoinOrgDto } from '@gitroom/nestjs-libraries/dtos/users/join.org.dto';
@@ -453,45 +454,7 @@ export class UsersController {
   @Post('/logout')
   logout(@Res({ passthrough: true }) response: Response) {
     response.header('logout', 'true');
-    response.cookie('auth', '', {
-      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: authCookieSameSite(),
-          }
-        : {}),
-      maxAge: -1,
-      expires: new Date(0),
-    });
-
-    response.cookie('showorg', '', {
-      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: authCookieSameSite(),
-          }
-        : {}),
-      maxAge: -1,
-      expires: new Date(0),
-    });
-
-    response.cookie('impersonate', '', {
-      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(!process.env.NOT_SECURED
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: authCookieSameSite(),
-          }
-        : {}),
-      maxAge: -1,
-      expires: new Date(0),
-    });
-
+    clearSessionCookies(response);
     response.status(200).send();
   }
 
