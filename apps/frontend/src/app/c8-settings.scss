@@ -2791,6 +2791,13 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   background: rgb(18 16 22 / 0.45);
 }
 
+/* Log out and Cancel subscription open the existing confirm while this
+   scrim is still up. The dialog's inline z-index is 200, under the scrim
+   (390) and the menu (400), so the first click hits the scrim. */
+.arc-dialog-wrap:has(.po-sure-modal) {
+  z-index: 1000 !important;
+}
+
 .c8-account-pop {
   position: fixed;
   z-index: 400;

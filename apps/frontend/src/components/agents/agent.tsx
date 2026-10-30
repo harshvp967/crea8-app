@@ -25,6 +25,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { toggleChannelSelection } from '@gitroom/frontend/components/agents/agent.channels';
+import { NoChannels } from '@gitroom/frontend/components/launches/add.provider.component';
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
@@ -126,6 +127,9 @@ export const AgentList: FC<{
               {t('loading', 'Loading')}
             </div>
           ) : null}
+          {!isLoading && sortedIntegrations.length === 0 ? (
+            <NoChannels />
+          ) : null}
           {!isLoading &&
             sortedIntegrations.map((integration) => {
             const isSelected = selected.some((p) => p.id === integration.id);
@@ -201,6 +205,8 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   const [properties, setProperties] = useState([]);
   const [channelsOpen, setChannelsOpen] = useState(false);
   const [threadsOpen, setThreadsOpen] = useState(false);
+  const { data: integrations } = useIntegrations();
+  const noChannels = Array.isArray(integrations) && integrations.length === 0;
   const { id } = useParams<{ id?: string }>();
   const t = useT();
 
@@ -256,7 +262,9 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
           <Threads onPick={() => setThreadsOpen(false)} />
         </div>
         <div className="agent-chat-pane">
-          <div className="agent-chat-body">{children}</div>
+          <div className="agent-chat-body">
+            {noChannels ? <NoChannels fill /> : children}
+          </div>
         </div>
       </div>
       {channelsOpen

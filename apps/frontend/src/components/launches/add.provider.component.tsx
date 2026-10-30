@@ -20,6 +20,7 @@ import clsx from 'clsx';
 import copy from 'copy-to-clipboard';
 import { capitalize } from 'lodash';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import useCookie from 'react-use-cookie';
 const resolver = classValidatorResolver(ApiKeyDto);
 
 async function writeInviteLink(url: string) {
@@ -264,6 +265,51 @@ export const AddProviderButton: FC<{
       >
         <HugeIcon name="link" size={20} />
       </button>
+    </div>
+  );
+};
+
+// Same block the calendar shows for a workspace with no channels.
+export const NoChannels: FC<{ fill?: boolean; onClose?: () => void }> = ({
+  fill,
+  onClose,
+}) => {
+  const t = useT();
+  const [mode] = useCookie('mode', 'dark');
+  return (
+    <div
+      className={
+        fill
+          ? 'absolute inset-0 flex items-center justify-center overflow-auto p-[24px]'
+          : 'relative flex w-full items-center justify-center overflow-auto p-[24px]'
+      }
+    >
+      {onClose ? (
+        <button
+          type="button"
+          className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+          aria-label={t('close', 'Close')}
+          onClick={onClose}
+        >
+          <HugeIcon name="close" size={16} />
+        </button>
+      ) : null}
+      <div className="flex flex-col items-center gap-[12px]">
+        <div className="empty-state flex flex-col gap-[12px] text-center">
+          <img
+            src={
+              mode === 'dark' ? '/no-channels.svg' : '/no-channels-colors.svg'
+            }
+            alt="No channels"
+            className="mx-auto min-w-[100%]"
+          />
+          <div className="font-[600] text-[20px]">
+            {t('no_channels', 'No channels yet')}
+          </div>
+          <div className="text-[14px]">{t('connect_your_accounts')}</div>
+        </div>
+        <AddProviderButton />
+      </div>
     </div>
   );
 };
