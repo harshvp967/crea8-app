@@ -54,6 +54,14 @@ describe('csrf', () => {
     }
   });
 
+  it('lets logout clear the session without a CSRF token', () => {
+    expect(csrfExemptPath('/user/logout')).toBe(true);
+    expect(csrfExemptPath('/user/logout?next=/')).toBe(true);
+    expect(csrfProblem(request({ originalUrl: '/user/logout', headers: {} }))).toBeNull();
+    expect(csrfExemptPath('/user/logout-other')).toBe(false);
+    expect(csrfExemptPath('/user/settings')).toBe(false);
+  });
+
   it('skips safe methods, missing session cookies, and public, MCP, and webhook paths', () => {
     expect(csrfProblem(request({ method: 'GET' }))).toBeNull();
     expect(csrfProblem(request({ cookies: {} }))).toBeNull();
