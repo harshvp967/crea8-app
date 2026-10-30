@@ -38,9 +38,11 @@ import {
   postsCovered,
   preservedTrialEnd,
   reduceBillingEvent,
+  packGrantFromPayment,
   stalkerReadCost,
   verifyDodoSignature,
   xPostCost,
+  xPostSpendParts,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
 const SECRET = 'whsec_' + Buffer.from('test-webhook-secret').toString('base64');
@@ -361,6 +363,27 @@ describe('credit deduction', () => {
     expect(aiPostCharge(2)).toBe(1);
     expect(aiPostCharge(3)).toBe(0);
     expect(aiPostCharge(4)).toBe(1);
+    expect(xPostSpendParts(['hello from crea8'])).toEqual([
+      { cost: 1, reason: 'x_post' },
+      { cost: 0, reason: 'x_post_with_link' },
+    ]);
+    expect(xPostSpendParts(['read https://crea8.one/pricing'])).toEqual([
+      { cost: 0, reason: 'x_post' },
+      { cost: 13, reason: 'x_post_with_link' },
+    ]);
+    expect(
+      packGrantFromPayment({
+        payment_id: 'pay_150',
+        metadata: { organizationId: 'org-1', pack: 'PACK_150' },
+      })
+    ).toEqual({ organizationId: 'org-1', credits: 150, paymentId: 'pay_150' });
+    expect(
+      packGrantFromPayment({
+        payment_id: 'pay_sub',
+        subscription_id: 'sub_1',
+        metadata: { organizationId: 'org-1', kind: 'subscription' },
+      })
+    ).toBeNull();
   });
 
   it('counts a brand-voice learn as an AI post call and not as its own price', () => {

@@ -156,6 +156,82 @@ export function xPostCost(text?: string | null) {
   return hasLinks(text) ? CREDIT_COSTS.xPostWithUrl : CREDIT_COSTS.xPost;
 }
 
+export function xPostSpendParts(texts: Array<string | null | undefined>) {
+  let plain = 0;
+  let linked = 0;
+  for (const text of texts) {
+    if (xPostCost(text) === CREDIT_COSTS.xPostWithUrl) {
+      linked += 1;
+    } else {
+      plain += 1;
+    }
+  }
+  return [
+    { cost: plain * CREDIT_COSTS.xPost, reason: 'x_post' as const },
+    {
+      cost: linked * CREDIT_COSTS.xPostWithUrl,
+      reason: 'x_post_with_link' as const,
+    },
+  ];
+}
+
+export type PackGrant = {
+  organizationId: string;
+  credits: number;
+  paymentId: string;
+};
+
+export function packGrantFromPayment(data: any): PackGrant | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+  const metadata =
+    data.metadata && typeof data.metadata === 'object' ? data.metadata : {};
+  const kind = String(metadata.kind || '');
+  const subscriptionId = String(data.subscription_id || '');
+  if (subscriptionId && kind !== 'credit_pack') {
+    return null;
+  }
+  const productId = String(
+    data?.product_cart?.[0]?.product_id ||
+      metadata.product_id ||
+      data.product_id ||
+      ''
+  );
+  const pack = packByKey(String(metadata.pack || ''));
+  const fromProduct = packCreditsFromProduct(productId);
+  const rawCredits = Number(metadata.credits);
+  const listed =
+    Number.isFinite(rawCredits) &&
+    CREDIT_PACKS.some((item) => item.credits === rawCredits);
+  let credits = 0;
+  if (pack) {
+    credits = pack.credits;
+  } else if (fromProduct > 0) {
+    credits = fromProduct;
+  } else if (
+    Number.isFinite(rawCredits) &&
+    rawCredits > 0 &&
+    (kind === 'credit_pack' || listed)
+  ) {
+    credits = rawCredits;
+  }
+  if (!Number.isFinite(credits) || credits <= 0) {
+    return null;
+  }
+  const paymentId = String(data.payment_id || metadata.payment_id || '');
+  if (!paymentId) {
+    return null;
+  }
+  return {
+    organizationId: String(
+      metadata.organizationId || metadata.organization_id || ''
+    ),
+    credits,
+    paymentId,
+  };
+}
+
 export function stalkerReadCost(postCount: number) {
   if (postCount <= 0) {
     return 0;

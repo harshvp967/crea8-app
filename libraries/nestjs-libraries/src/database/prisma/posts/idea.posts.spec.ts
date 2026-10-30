@@ -40,10 +40,6 @@ jest.mock(
 
 import { aiDraftsEnabledForOrg } from '@gitroom/nestjs-libraries/database/prisma/posts/ai.drafts.flag';
 import {
-  limitForTier,
-  upgradeMessage,
-} from '@gitroom/nestjs-libraries/database/prisma/posts/ai.post.limits';
-import {
   clipPlain,
   futureSlot,
   ideaPrompt,
@@ -105,17 +101,10 @@ describe('ai drafts allowlist', () => {
 });
 
 describe('one idea drafts', () => {
-  it('counts a calendar month in UTC and keeps free at 1000', () => {
+  it('counts a calendar month in UTC', () => {
     expect(monthStart(new Date('2026-10-19T03:00:00.000Z')).toISOString()).toBe(
       '2026-10-01T00:00:00.000Z'
     );
-    expect(limitForTier('FREE')).toBe(1000);
-    expect(limitForTier('STANDARD')).toBeGreaterThan(10);
-    expect(limitForTier('TEAM')).toBeGreaterThan(10);
-    expect(limitForTier('PRO')).toBeGreaterThan(10);
-    expect(limitForTier('ULTIMATE')).toBeGreaterThan(10);
-    expect(limitForTier('UNKNOWN')).toBe(1000);
-    expect(upgradeMessage(10, 10)).toContain('crea8.one');
   });
 
   it('treats a lone link as a link and leaves mixed text alone', () => {
@@ -185,18 +174,27 @@ describe('IdeaPostsService flag', () => {
 
   function service() {
     const openai = { hasApiKey: jest.fn(), completeIdeaDrafts: jest.fn() };
-    const credits = { getCreditsFrom: jest.fn(), useCredit: jest.fn() };
+    const credits = {
+      aiPostBlocked: jest.fn().mockResolvedValue(false),
+      recordAiPostCall: jest.fn().mockResolvedValue({ spent: 0 }),
+    };
+    const integrations = { getIntegrationsList: jest.fn() };
     const built = new IdeaPostsService(
-      { getSubscription: jest.fn() } as any,
       credits as any,
-      { getIntegrationsList: jest.fn() } as any,
-      { findFreeDateTime: jest.fn() } as any,
-      { getSocialIntegration: jest.fn() } as any,
+      integrations as any,
+      { findFreeDateTime: jest.fn().mockResolvedValue(null) } as any,
+      {
+        getSocialIntegration: jest.fn().mockReturnValue({
+          plainPostSettings: () => ({}),
+          maxLength: () => 280,
+          draftStyle: () => 'Short',
+        }),
+      } as any,
       openai as any,
       { extractContent: jest.fn() } as any,
       { voiceForDrafts: jest.fn().mockResolvedValue(null) } as any
     );
-    return { built, openai, credits };
+    return { built, openai, credits, integrations };
   }
 
   it('blocks the draft call when the organization is not on the allowlist', async () => {
@@ -206,22 +204,72 @@ describe('IdeaPostsService flag', () => {
       built.generate({ id: 'org-1' } as any, { idea: 'a real idea' })
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(openai.completeIdeaDrafts).not.toHaveBeenCalled();
-    expect(credits.getCreditsFrom).not.toHaveBeenCalled();
+    expect(credits.recordAiPostCall).not.toHaveBeenCalled();
   });
 
-  it('stops before the model when the monthly cap is used', async () => {
+  it('stops before the model when the credit balance cannot cover the next AI post', async () => {
     process.env.AI_DRAFTS_ORG_IDS = 'org-1';
     const { built, openai, credits } = service();
-    (built as any)._subscriptionService.getSubscription.mockResolvedValue({
-      subscriptionTier: 'FREE',
-    });
-    credits.getCreditsFrom.mockResolvedValue(1000);
+    credits.aiPostBlocked.mockResolvedValue(true);
     const result = await built.generate({ id: 'org-1' } as any, {
       idea: 'a real idea',
     });
-    expect(result.limited).toBe(true);
-    expect(result.message).toContain('crea8.one');
+    expect(result.error).toMatch(/out of credits/i);
+    expect(result).not.toHaveProperty('limit');
     expect(openai.completeIdeaDrafts).not.toHaveBeenCalled();
-    expect(credits.useCredit).not.toHaveBeenCalled();
+    expect(credits.recordAiPostCall).not.toHaveBeenCalled();
+  });
+
+  it('records one credit-ledger call after a successful generation', async () => {
+    process.env.AI_DRAFTS_ORG_IDS = 'org-1';
+    const { built, openai, credits, integrations } = service();
+    integrations.getIntegrationsList.mockResolvedValue([
+      {
+        id: 'ch-1',
+        disabled: false,
+        inBetweenSteps: false,
+        providerIdentifier: 'x',
+        name: 'News',
+        picture: null,
+        additionalSettings: '[]',
+      },
+    ]);
+    openai.hasApiKey.mockReturnValue(true);
+    openai.completeIdeaDrafts.mockResolvedValue([
+      { id: 'ch-1', content: 'Ship the update' },
+    ]);
+    const result = await built.generate({ id: 'org-1' } as any, {
+      idea: 'a real idea',
+    });
+    expect(result.drafts).toHaveLength(1);
+    expect(credits.recordAiPostCall).toHaveBeenCalledWith(
+      'org-1',
+      expect.stringMatching(/^idea:org-1:/)
+    );
+    expect(result).not.toHaveProperty('used');
+    expect(result).not.toHaveProperty('limit');
+  });
+
+  it('does not record a call when the model fails', async () => {
+    process.env.AI_DRAFTS_ORG_IDS = 'org-1';
+    const { built, openai, credits, integrations } = service();
+    integrations.getIntegrationsList.mockResolvedValue([
+      {
+        id: 'ch-1',
+        disabled: false,
+        inBetweenSteps: false,
+        providerIdentifier: 'x',
+        name: 'News',
+        picture: null,
+        additionalSettings: '[]',
+      },
+    ]);
+    openai.hasApiKey.mockReturnValue(true);
+    openai.completeIdeaDrafts.mockRejectedValue(new Error('down'));
+    const result = await built.generate({ id: 'org-1' } as any, {
+      idea: 'a real idea',
+    });
+    expect(result.error).toMatch(/did not count/);
+    expect(credits.recordAiPostCall).not.toHaveBeenCalled();
   });
 });

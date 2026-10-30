@@ -2,22 +2,18 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { Organization } from '@prisma/client';
 import { aiDraftsEnabledForOrg } from '@gitroom/nestjs-libraries/database/prisma/posts/ai.drafts.flag';
 import {
-  limitForTier,
-  upgradeMessage,
-} from '@gitroom/nestjs-libraries/database/prisma/posts/ai.post.limits';
-import { monthStart } from '@gitroom/nestjs-libraries/database/prisma/posts/idea.posts';
-import {
   activeVoice,
   cleanSamples,
   parseVoice,
 } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice';
 import { BrandVoiceRepository } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice.repository';
-import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
-import { SubscriptionRepository } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.repository';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
+import {
+  BillingBlocked,
+  creditUpgradeMessage,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { BrandVoiceSamplesDto } from '@gitroom/nestjs-libraries/dtos/brand-voice/brand.voice.dto';
-
-const AI_POSTS = 'ai_posts';
 
 export type BrandVoiceResult = {
   enabled: boolean;
@@ -25,9 +21,6 @@ export type BrandVoiceResult = {
   sample: string;
   count: number;
   learnedAt: string;
-  used?: number;
-  limit?: number;
-  limited?: boolean;
   message?: string;
   error?: string;
 };
@@ -36,8 +29,7 @@ export type BrandVoiceResult = {
 export class BrandVoiceService {
   constructor(
     private _brandVoiceRepository: BrandVoiceRepository,
-    private _subscriptionService: SubscriptionService,
-    private _subscriptionRepository: SubscriptionRepository,
+    private _credits: CreditsService,
     private _openaiService: OpenaiService
   ) {}
 
@@ -93,43 +85,36 @@ export class BrandVoiceService {
       return this.empty({ error: 'Paste 3 to 5 posts.' });
     }
 
-    const subscription = await this._subscriptionService.getSubscription(org.id);
-    const limit = limitForTier(subscription?.subscriptionTier);
-    const used = await this._subscriptionRepository.getCreditsFrom(
-      org.id,
-      monthStart(),
-      AI_POSTS
-    );
-    if (used >= limit) {
-      return this.empty({
-        used,
-        limit,
-        limited: true,
-        message: upgradeMessage(used, limit),
-      });
+    if (await this._credits.aiPostBlocked(org.id)) {
+      return this.empty({ error: creditUpgradeMessage() });
     }
 
     if (!this._openaiService.hasApiKey()) {
       return this.empty({
-        used,
-        limit,
         error: 'AI is not set up yet.',
       });
     }
 
     let learned: { traits: string[]; sample: string };
     try {
-      learned = await this._subscriptionRepository.useCredit(org, AI_POSTS, () =>
-        this._openaiService.extractBrandVoice(samples)
-      );
+      learned = await this._openaiService.extractBrandVoice(samples);
     } catch {
       return this.empty({
-        used,
-        limit,
         error: 'Could not read the voice. Try again.',
       });
     }
 
+    try {
+      await this._credits.recordAiPostCall(
+        org.id,
+        `brand-voice:${org.id}:${Date.now()}`
+      );
+    } catch (err) {
+      if (err instanceof BillingBlocked) {
+        return this.empty({ error: err.message });
+      }
+      throw err;
+    }
     const saved = await this._brandVoiceRepository.save(
       org.id,
       JSON.stringify({
@@ -139,7 +124,7 @@ export class BrandVoiceService {
         learnedAt: new Date().toISOString(),
       })
     );
-    return this.present(saved, { used: used + 1, limit });
+    return this.present(saved);
   }
 
   async setEnabled(org: Organization, enabled: boolean): Promise<BrandVoiceResult> {

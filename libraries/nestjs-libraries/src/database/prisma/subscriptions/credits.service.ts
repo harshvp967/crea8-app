@@ -16,6 +16,7 @@ import {
   creditUpgradeMessage,
   creditUsage,
   ledgerRowsForHistory,
+  packGrantFromPayment,
   planSpend,
   postsCovered,
   stalkerReadCost,
@@ -84,8 +85,22 @@ export class CreditsService {
     });
   }
 
+  async aiPostBlocked(organizationId: string) {
+    if (!(await this.billingActive(organizationId))) {
+      return false;
+    }
+    const cost = await this.upcomingAiPostCost(organizationId);
+    if (cost <= 0) {
+      return false;
+    }
+    const row = await this._prisma.creditBalance.findUnique({
+      where: { organizationId },
+    });
+    return (row?.monthlyRemaining || 0) + (row?.packRemaining || 0) < cost;
+  }
+
   async recordAiPostCall(organizationId: string, idempotencyKey: string) {
-    if (!isBillingEnforced(organizationId)) {
+    if (!(await this.billingActive(organizationId))) {
       return { skipped: true as const, spent: 0, callNumber: 0 };
     }
     await this.ensureGrandfather(organizationId);
@@ -144,7 +159,7 @@ export class CreditsService {
     parts: { cost: number; reason: string; idempotencyKey: string }[]
   ) {
     const billable = parts.filter((part) => part.cost > 0);
-    if (!isBillingEnforced(organizationId) || billable.length === 0) {
+    if (billable.length === 0 || !(await this.billingActive(organizationId))) {
       return { skipped: true as const, spent: 0 };
     }
     await this.ensureGrandfather(organizationId);
@@ -171,7 +186,7 @@ export class CreditsService {
     reason: string,
     idempotencyKey: string
   ) {
-    if (!isBillingEnforced(organizationId) || cost <= 0) {
+    if (cost <= 0 || !(await this.billingActive(organizationId))) {
       return { skipped: true as const, spent: 0 };
     }
     await this.ensureGrandfather(organizationId);
@@ -185,7 +200,7 @@ export class CreditsService {
     postCount: number,
     idempotencyKey: string
   ) {
-    if (!isBillingEnforced(organizationId) || postCount <= 0) {
+    if (postCount <= 0 || !(await this.billingActive(organizationId))) {
       return { kept: postCount, spent: 0 };
     }
     const cost = stalkerReadCost(postCount);
@@ -200,7 +215,7 @@ export class CreditsService {
   }
 
   async refund(organizationId: string, idempotencyKey: string, reason: string) {
-    if (!isBillingEnforced(organizationId)) {
+    if (!(await this.billingActive(organizationId))) {
       return;
     }
     await this._prisma.$transaction(async (tx) => {
@@ -357,6 +372,23 @@ export class CreditsService {
     return this.grantMonthlyIn(tx, organizationId, cycleKey, amount);
   }
 
+  async applyReportedPackPayment(
+    tx: Tx,
+    data: any,
+    organizationId?: string | null
+  ) {
+    const grant = packGrantFromPayment(data);
+    if (!grant || grant.credits <= 0 || !grant.paymentId) {
+      return false;
+    }
+    const org = grant.organizationId || organizationId || '';
+    if (!org) {
+      return false;
+    }
+    await this.grantPack(tx, org, grant.credits, `pack:${grant.paymentId}`);
+    return true;
+  }
+
   async grantPack(tx: Tx, organizationId: string, credits: number, idempotencyKey: string) {
     const existing = await tx.creditLedger.findUnique({
       where: { idempotencyKey },
@@ -383,6 +415,31 @@ export class CreditsService {
         idempotencyKey,
       },
     });
+  }
+
+  private async billingActive(organizationId: string) {
+    if (isBillingEnforced(organizationId)) {
+      return true;
+    }
+    const row = await this._prisma.creditBalance.findUnique({
+      where: { organizationId },
+      select: { organizationId: true },
+    });
+    return !!row;
+  }
+
+  private async upcomingAiPostCost(organizationId: string) {
+    const row = await this._prisma.creditBalance.findUnique({
+      where: { organizationId },
+    });
+    const prior = await this._prisma.creditLedger.count({
+      where: {
+        organizationId,
+        reason: AI_POST_CALL_REASON,
+        cycleKey: row?.cycleKey ?? null,
+      },
+    });
+    return aiPostCharge(prior + 1);
   }
 
   private async ensureGrandfather(organizationId: string) {
