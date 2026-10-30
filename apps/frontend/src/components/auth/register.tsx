@@ -11,7 +11,6 @@ import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org
 import { GithubProvider } from '@gitroom/frontend/components/auth/providers/github.provider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
-import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { AppleProvider } from '@gitroom/frontend/components/auth/providers/apple.provider';
 import { OauthProvider } from '@gitroom/frontend/components/auth/providers/oauth.provider';
@@ -73,7 +72,11 @@ export function Register() {
     }
   }, [provider, code]);
   if (blocked) {
-    return <p className="text-[15px]">{blocked}</p>;
+    return (
+      <div className="auth-alert" role="alert">
+        {blocked}
+      </div>
+    );
   }
   if (!code && !provider) {
     return <RegisterAfter token="" provider="LOCAL" />;
@@ -179,7 +182,7 @@ export function RegisterAfter({
           <div className="auth-kicker text-[14px] mt-[20px] mb-[12px]">
             {t('continue_with', 'Continue With')}
           </div>
-          <div className="flex flex-col text-[14px]">
+          <div className="flex flex-col">
             {!isAfterProvider &&
               (!isGeneral ? (
                 <GithubProvider />
@@ -238,29 +241,7 @@ export function RegisterAfter({
                   className="cc-input"
                 />
               </div>
-              <div className={clsx('auth-terms text-[12px]')}>
-                {t(
-                  'by_registering_you_agree_to_our',
-                  'By registering you agree to our'
-                )}
-                &nbsp;
-                <Link
-                  href="/terms"
-                  className="underline hover:font-bold"
-                >
-                  {t('terms_of_service', 'Terms of Service')}
-                </Link>
-                &nbsp;
-                {t('and', 'and')}&nbsp;
-                <Link
-                  href="/privacy"
-                  className="underline hover:font-bold"
-                >
-                  {t('privacy_policy', 'Privacy Policy')}
-                </Link>
-                &nbsp;
-              </div>
-              <div className="text-center mt-6">
+              <div className="text-center mt-[8px]">
                 <div className="w-full flex">
                   <Button
                     type="submit"
@@ -270,14 +251,12 @@ export function RegisterAfter({
                     {t('create_account', 'Create Account')}
                   </Button>
                 </div>
-                <p className="mt-4 text-sm">
-                  {t('already_have_an_account', 'Already Have An Account?')}
-                  &nbsp;
+                <p className="mt-[12px] text-[14px]">
                   <Link
                     href="/auth/login"
-                    className="underline  cursor-pointer"
+                    className="cursor-pointer text-[color:var(--arc-accent-text)]"
                   >
-                    {t('sign_in', 'Sign In')}
+                    {t('log_in', 'Log in')}
                   </Link>
                 </p>
               </div>

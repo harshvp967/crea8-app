@@ -178,6 +178,14 @@ export function Login() {
                     {t('sign_in_1', 'Sign In')}
                   </Button>
                 </div>
+                <p className="mt-[12px] text-[14px]">
+                  <Link
+                    href="/auth/register"
+                    className="cursor-pointer text-[color:var(--arc-accent-text)]"
+                  >
+                    {t('sign_up', 'Sign Up')}
+                  </Link>
+                </p>
               </div>
             </div>
           </div>
