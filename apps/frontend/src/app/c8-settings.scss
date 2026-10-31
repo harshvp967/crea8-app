@@ -2492,6 +2492,14 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   min-height: 97px;
 }
 
+.billing-root {
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+.billing-display {
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+}
+
 .billing-keep-label {
   display: inline-grid;
   justify-items: center;
