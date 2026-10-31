@@ -7,7 +7,7 @@ import {
 } from '@gitroom/frontend/components/legal/legal-shell';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Crea8one',
+  title: 'Terms of Service | crea8.one',
   description:
     'Terms of Service for Crea8one, a social media scheduling and insights tool.',
 };

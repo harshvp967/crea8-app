@@ -2,7 +2,7 @@ import { SettingsPopup } from '@gitroom/frontend/components/layout/settings.comp
 export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: `Crea8one Settings`,
+  title: `crea8.one Settings`,
   description: '',
 };
 export default async function Index(props: {

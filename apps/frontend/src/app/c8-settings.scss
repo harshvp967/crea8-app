@@ -2480,6 +2480,40 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   min-width: 0;
 }
 
+.account-bill-hold {
+  min-height: 228px;
+}
+
+.account-bill-hold.is-packs {
+  min-height: 113px;
+}
+
+.account-bill-hold.is-invoices {
+  min-height: 97px;
+}
+
+.billing-root {
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+.billing-display {
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+}
+
+.billing-keep-label {
+  display: inline-grid;
+  justify-items: center;
+  align-items: center;
+}
+
+.billing-keep-label > span {
+  grid-area: 1 / 1;
+}
+
+.billing-keep-sizer {
+  visibility: hidden;
+}
+
 .account-bill-head {
   display: flex;
   align-items: center;
@@ -2757,6 +2791,18 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   .account-bill-price {
     font-size: 36px;
   }
+
+  .account-bill-hold {
+    min-height: 201px;
+  }
+
+  .account-bill-hold.is-packs {
+    min-height: 97px;
+  }
+
+  .account-bill-hold.is-invoices {
+    min-height: 81px;
+  }
 }
 
 @media (max-width: 639px), (max-height: 500px) {
@@ -2942,6 +2988,14 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   font-weight: 700;
   text-overflow: unset;
   white-space: nowrap;
+}
+
+.c8-account-pop button.c8-account-plan.is-cancelled {
+  white-space: normal;
+}
+
+.c8-account-pop button.c8-account-plan.is-cancelled .c8-account-plan-name {
+  white-space: normal;
 }
 
 .c8-account-pop .c8-account-usage {

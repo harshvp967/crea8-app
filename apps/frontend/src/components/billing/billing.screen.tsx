@@ -7,6 +7,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { BillingOverview, BillingPlanCard, checkoutReturnKind } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 import { BillingShell } from '@gitroom/frontend/components/billing/billing.shell';
 import {
+  AccountBillingPlaceholder,
   AccountCreditsCard,
   AccountPlanCard,
   BillingSettings,
@@ -170,6 +171,13 @@ export function BillingScreen({
   };
 
   if (isLoading) {
+    if (surface === 'account') {
+      return (
+        <BillingShell>
+          <AccountBillingPlaceholder />
+        </BillingShell>
+      );
+    }
     return <BillingShell><p data-billing-state="loading">Loading billing…</p></BillingShell>;
   }
   if (error || !data) {
@@ -215,6 +223,7 @@ export function BillingScreen({
       trialDays={data.trialDays}
       allowTrial={data.allowTrial && status !== 'trial_ended'}
       busy={busy}
+      currentTier={data.subscription.tier}
       onPeriod={setPeriod}
       onSelect={choose}
     />
@@ -226,6 +235,7 @@ export function BillingScreen({
       busy={busy}
       allowTrial={data.allowTrial && status !== 'trial_ended'}
       trialDays={data.trialDays}
+      currentTier={data.subscription.tier}
       onPeriod={setPeriod}
       onChoose={(tier) => {
         const plan = data.plans.find((item) => item.tier === tier);
@@ -304,7 +314,7 @@ export function BillingScreen({
       <button type="button" onClick={() => setCreditsOpen(false)}>Back to plan</button>
       <CreditsMeter overview={data} />
       {!data.grandfathered ? (
-        <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
+        <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} trial={status === 'trialing'} />
       ) : null}
       <InvoiceList invoices={data.invoices} />
     </div>
@@ -344,7 +354,7 @@ export function BillingScreen({
               <AccountCreditsCard overview={data} />
             </div>
             {!data.grandfathered ? (
-              <CreditPacks compact packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
+              <CreditPacks compact packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} trial={status === 'trialing'} />
             ) : null}
             <InvoiceList rows invoices={data.invoices} />
             {!accountHasPlan || showPlans ? (
@@ -360,6 +370,7 @@ export function BillingScreen({
                   busy={busy}
                   allowTrial={data.allowTrial && status !== 'trial_ended'}
                   trialDays={data.trialDays}
+                  currentTier={data.subscription.tier}
                   onPeriod={setPeriod}
                   onChoose={(tier) => {
                     const plan = data.plans.find((item) => item.tier === tier);

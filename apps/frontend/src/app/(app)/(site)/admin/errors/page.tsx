@@ -3,7 +3,7 @@ import { AdminErrorsComponent } from '@gitroom/frontend/components/admin/admin-e
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: `Crea8one Admin Errors`,
+  title: `crea8.one Admin Errors`,
   description: '',
 };
 

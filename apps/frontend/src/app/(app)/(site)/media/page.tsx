@@ -2,7 +2,7 @@ import { MediaLayoutComponent } from '@gitroom/frontend/components/new-layout/la
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: `Crea8one Media`,
+  title: `crea8.one Media`,
   description: '',
 };
 

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
@@ -231,6 +233,23 @@ export const AccountMenu = ({
   surface: 'sidebar' | 'header';
 }) => {
   const user = useUser();
+  const fetch = useFetch();
+  const loadBilling = useCallback(async (path: string) => {
+    const response = await fetch(path);
+    if (!response.ok) {
+      throw new Error('Could not load billing');
+    }
+    return response.json();
+  }, [fetch]);
+  const { data: billing } = useSWR<{ status?: string | null; cancelAt?: string | null } | null>(
+    open && user?.billingEnabled ? '/billing' : null,
+    loadBilling,
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
+    }
+  );
   const sheet = useAccountSheet();
   const popRef = useRef<HTMLDivElement>(null);
   const planRowRef = useRef<HTMLButtonElement>(null);
@@ -336,6 +355,11 @@ export const AccountMenu = ({
   const plan = credits
     ? user?.tier?.display_name || planLabel(user?.tier?.current)
     : planLabel(user?.tier?.current);
+  const cancelled =
+    billing?.status === 'cancelled' ||
+    billing?.status === 'cancel_scheduled' ||
+    !!billing?.cancelAt;
+  const planText = cancelled ? `${plan} · Cancelled` : plan;
   const summary = planSummary(user?.tier?.channel, user?.tier?.posts_per_month);
 
   return createPortal(
@@ -368,7 +392,7 @@ export const AccountMenu = ({
         <button
           ref={planRowRef}
           type="button"
-          className="c8-account-plan"
+          className={cancelled ? 'c8-account-plan is-cancelled' : 'c8-account-plan'}
           role="menuitem"
           aria-expanded={planOpen}
           aria-haspopup="menu"
@@ -376,7 +400,7 @@ export const AccountMenu = ({
         >
           <RowLead icon="gauge">
             <span className="c8-account-plan-copy">
-              <span className="c8-account-plan-name">{plan}</span>
+              <span className="c8-account-plan-name">{planText}</span>
               {meter ? null : (
                 <span className="c8-account-usage">
                   {summary.channelLine ? (
@@ -425,8 +449,8 @@ export const AccountMenu = ({
         </div>
       </div>
       {planOpen ? (
-        <AccountFlyout rowRef={planRowRef} label={`${plan} plan`} className="is-plan">
-          <div className="c8-account-fly-title">{plan}</div>
+        <AccountFlyout rowRef={planRowRef} label={`${planText} plan`} className="is-plan">
+          <div className="c8-account-fly-title">{planText}</div>
           {meter ? (
             <div className="c8-account-fly-line">{meter}</div>
           ) : (
