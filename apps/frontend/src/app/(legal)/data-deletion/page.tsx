@@ -8,7 +8,7 @@ import {
 } from '@gitroom/frontend/components/legal/legal-shell';
 
 export const metadata: Metadata = {
-  title: 'Data Deletion | Crea8one',
+  title: 'Data Deletion | crea8.one',
   description:
     'How to ask Crea8one to delete your account and connected-platform data.',
 };

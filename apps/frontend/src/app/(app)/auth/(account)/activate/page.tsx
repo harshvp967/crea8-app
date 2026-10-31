@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { Activate } from '@gitroom/frontend/components/auth/activate';
 export const metadata: Metadata = {
   title: `${
-    'Crea8one'
+    'crea8.one'
   } - Activate your account`,
   description: '',
 };

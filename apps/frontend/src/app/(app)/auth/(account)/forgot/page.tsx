@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { Forgot } from '@gitroom/frontend/components/auth/forgot';
 import { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: `Crea8one Forgot Password`,
+  title: `crea8.one Forgot Password`,
   description: '',
 };
 export default async function Auth() {

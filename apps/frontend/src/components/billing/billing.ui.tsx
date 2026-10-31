@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { BillingButton, BillingHeading } from '@gitroom/frontend/components/billing/billing.shell';
 import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
-import { CHECKOUT_GST_NOTE } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { PlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -32,6 +32,7 @@ export function PlanPicker({
   trialDays,
   allowTrial,
   busy,
+  currentTier,
   onPeriod,
   onSelect,
 }: {
@@ -40,6 +41,7 @@ export function PlanPicker({
   trialDays: number;
   allowTrial: boolean;
   busy: boolean;
+  currentTier?: PlanTier | null;
   onPeriod: (period: 'MONTHLY' | 'YEARLY') => void;
   onSelect: (plan: BillingPlanCard) => void;
 }) {
@@ -55,25 +57,39 @@ export function PlanPicker({
         </BillingButton>
       </div>
       <div className="grid gap-[12px] md:grid-cols-2">
-        {plans.map((plan) => (
-          <article key={plan.tier} className="rounded-[8px] border border-newBorder p-[14px] flex flex-col gap-[8px]">
-            <BillingHeading as="h2">{plan.displayName}</BillingHeading>
-            <p className="m-0 text-[20px]">
-              ${period === 'YEARLY' ? plan.yearPriceUsd : plan.monthPriceUsd}
-              <span className="text-[14px] text-textItemBlur">{period === 'YEARLY' ? ' / year' : ' / month'}</span>
-            </p>
-            <p className="m-0 text-textItemBlur">{CHECKOUT_GST_NOTE}</p>
-            <ul className="m-0 pl-[18px] text-textItemBlur">
-              <li>{plan.channels} channels</li>
-              <li>{plan.teamMemberLimit == null ? 'Unlimited team members' : `${plan.teamMemberLimit} team member`}</li>
-              <li>{plan.monthlyCredits} credits each cycle</li>
-              <li>{plan.stalkerKeywords} Stalker keywords</li>
-            </ul>
-            <BillingButton kind="primary" disabled={busy} onClick={() => onSelect(plan)}>
-              {busy ? 'Loading…' : allowTrial ? `Start ${trialDays}-day trial` : `Choose ${plan.displayName}`}
-            </BillingButton>
-          </article>
-        ))}
+        {plans.map((plan) => {
+          const isCurrent = currentTier === plan.tier;
+          return (
+            <article key={plan.tier} className="rounded-[8px] border border-newBorder p-[14px] flex flex-col gap-[8px]">
+              <BillingHeading as="h2">{plan.displayName}</BillingHeading>
+              <p className="m-0 text-[20px]">
+                ${period === 'YEARLY' ? plan.yearPriceUsd : plan.monthPriceUsd}
+                <span className="text-[14px] text-textItemBlur">{period === 'YEARLY' ? ' / year' : ' / month'}</span>
+              </p>
+              <ul className="m-0 pl-[18px] text-textItemBlur">
+                <li>{plan.channels} channels</li>
+                <li>{plan.teamMemberLimit == null ? 'Unlimited team members' : `${plan.teamMemberLimit} team member`}</li>
+                <li>{plan.monthlyCredits} credits each cycle</li>
+                <li>{plan.stalkerKeywords} Stalker keywords</li>
+              </ul>
+              <BillingButton
+                kind="primary"
+                disabled={busy || isCurrent}
+                onClick={() => {
+                  if (!isCurrent) onSelect(plan);
+                }}
+              >
+                {isCurrent
+                  ? 'Current plan'
+                  : busy
+                    ? 'Loading…'
+                    : allowTrial
+                      ? `Start ${trialDays}-day trial`
+                      : `Choose ${plan.displayName}`}
+              </BillingButton>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
@@ -335,7 +351,9 @@ export function BillingSettings({
           <BillingButton disabled={busy} onClick={onChangePlan}>{busy ? 'Loading…' : 'Change plan'}</BillingButton>
         ) : null}
         {sub.status === 'cancel_scheduled' ? (
-          <BillingButton kind="primary" disabled={busy} onClick={onResume}>{busy ? 'Loading…' : 'Keep subscription'}</BillingButton>
+          <BillingButton kind="primary" disabled={busy} onClick={onResume}>
+            <KeepSubscriptionLabel busy={busy} />
+          </BillingButton>
         ) : null}
       </div>
       {!overview.grandfathered && sub.status !== 'cancelled' && sub.status !== 'cancel_scheduled' && sub.status !== 'none' && sub.status !== 'trial_ended' ? (
@@ -436,7 +454,7 @@ export function CancelStrip({
     <section data-billing-state="cancelled" className="settings-section account-bill-card flex flex-wrap items-center justify-between gap-[12px]">
       <p className="account-bill-title m-0 text-[16px]">Access continues until {until}</p>
       <button type="button" className="bg-btnPrimary" disabled={busy} onClick={onResume}>
-        {busy ? 'Loading…' : 'Keep subscription'}
+        <KeepSubscriptionLabel busy={busy} />
       </button>
     </section>
   );
@@ -548,6 +566,37 @@ export function AccountCreditsCard({ overview }: { overview: BillingOverview }) 
         })}
       </div>
     </section>
+  );
+}
+
+function KeepSubscriptionLabel({ busy }: { busy: boolean }) {
+  return (
+    <span className="billing-keep-label">
+      <span>{busy ? 'Loading…' : 'Keep subscription'}</span>
+      <span className="billing-keep-sizer" aria-hidden="true">
+        Keep subscription
+      </span>
+    </span>
+  );
+}
+
+export function AccountBillingPlaceholder() {
+  return (
+    <div
+      className="account-bill flex flex-col gap-[16px]"
+      data-billing-state="loading"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span className="sr-only">Loading billing…</span>
+      <div className="account-bill-grid" aria-hidden="true">
+        <section className="settings-section account-bill-card account-bill-hold animate-pulse" />
+        <section className="settings-section account-bill-card account-bill-hold animate-pulse" />
+      </div>
+      <section className="settings-section account-bill-card account-bill-hold is-packs animate-pulse" aria-hidden="true" />
+      <section className="settings-section account-bill-card account-bill-hold is-invoices animate-pulse" aria-hidden="true" />
+    </div>
   );
 }
 

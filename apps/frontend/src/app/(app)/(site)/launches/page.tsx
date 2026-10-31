@@ -5,7 +5,7 @@ import { LaunchesComponent } from '@gitroom/frontend/components/launches/launche
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Crea8one Calendar' : 'Crea8one Launches'}`,
+  title: `${isGeneralServerSide() ? 'crea8.one Calendar' : 'crea8.one Launches'}`,
   description: '',
 };
 export default async function Index(props: {

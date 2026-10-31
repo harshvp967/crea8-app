@@ -5,12 +5,12 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { stkBadgeAcc, stkCard, stkPrimary } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import {
-  CHECKOUT_GST_NOTE,
   PAID_TIERS,
   PLANS,
   type BillingPeriod,
   type PaidTier,
   type PlanConfig,
+  type PlanTier,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 
 const count = (value: number) => value.toLocaleString('en-US');
@@ -20,7 +20,8 @@ const count = (value: number) => value.toLocaleString('en-US');
  * Workspaces have no numeric field: POST /user/workspace creates a workspace
  * for any signed-in user with no plan cap, so the line is unlimited.
  * postsPerMonth above 10,000 is the existing "unlimited" display rule.
- * AI images follow imageGenerator, which is off on Creator.
+ * The AI images line is the plan's image count. Creator keeps imageGenerator
+ * off; the count is still shown as a label.
  */
 export function planFeatureLines(plan: PlanConfig): string[] {
   const lines = [
@@ -44,7 +45,7 @@ export function planFeatureLines(plan: PlanConfig): string[] {
   if (plan.ai) {
     lines.push('AI post');
   }
-  if (plan.imageGenerator && plan.imageGenerationCount > 0) {
+  if (plan.imageGenerationCount > 0) {
     lines.push(`${count(plan.imageGenerationCount)} AI images`);
   }
   if (plan.generateVideos > 0) {
@@ -62,6 +63,7 @@ export function PricingSection({
   busy,
   allowTrial,
   trialDays,
+  currentTier,
   onPeriod,
   onChoose,
 }: {
@@ -69,6 +71,7 @@ export function PricingSection({
   busy: boolean;
   allowTrial: boolean;
   trialDays: number;
+  currentTier?: PlanTier | null;
   onPeriod: (period: BillingPeriod) => void;
   onChoose: (tier: PaidTier) => void;
 }) {
@@ -94,6 +97,7 @@ export function PricingSection({
           const plan = PLANS[tier];
           const price = period === 'YEARLY' ? plan.yearPriceUsd : plan.monthPriceUsd;
           const recommended = tier === 'PRO';
+          const isCurrent = currentTier === tier;
           return (
             <article key={tier} data-plan={tier} className={clsx(stkCard, 'flex h-full flex-col gap-[14px]')}>
               <div className="flex min-h-[26px] flex-wrap items-center justify-between gap-[8px]">
@@ -106,14 +110,21 @@ export function PricingSection({
                 <span className="lib-metric-value">${price}</span>
                 <span className="lib-metric-label">{period === 'YEARLY' ? ' / year' : ' / month'}</span>
               </p>
-              <p className="m-0 lib-metric-label">{CHECKOUT_GST_NOTE}</p>
               <button
                 type="button"
                 className={clsx(stkPrimary, 'w-full')}
-                disabled={busy}
-                onClick={() => onChoose(tier)}
+                disabled={busy || isCurrent}
+                onClick={() => {
+                  if (!isCurrent) onChoose(tier);
+                }}
               >
-                {busy ? 'Loading…' : allowTrial ? `Start ${trialDays}-day trial` : `Choose ${plan.displayName}`}
+                {isCurrent
+                  ? 'Current plan'
+                  : busy
+                    ? 'Loading…'
+                    : allowTrial
+                      ? `Start ${trialDays}-day trial`
+                      : `Choose ${plan.displayName}`}
               </button>
               <ul className="m-0 flex list-none flex-col gap-[8px] p-0">
                 {planFeatureLines(plan).map((line) => (

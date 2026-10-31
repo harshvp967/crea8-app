@@ -665,9 +665,6 @@ export const LaunchesComponent = () => {
                     <div className="font-[600] text-[20px]">
                       {t('no_channels', 'No channels yet')}
                     </div>
-                    <div className="text-[14px]">
-                      {t('connect_your_accounts')}
-                    </div>
                   </div>
                 </div>
               )}
@@ -773,9 +770,6 @@ export const LaunchesComponent = () => {
               />
               <div className="font-[600] text-[20px]">
                 {t('no_channels', 'No channels yet')}
-              </div>
-              <div className="text-[14px] text-textItemBlur">
-                {t('connect_your_accounts')}
               </div>
             </div>
           )}

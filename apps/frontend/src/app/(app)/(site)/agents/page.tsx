@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Crea8one - Agent',
+  title: 'crea8.one - Agent',
   description: '',
 };
 

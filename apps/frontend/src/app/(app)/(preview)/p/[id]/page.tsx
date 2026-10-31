@@ -127,7 +127,7 @@ export default async function Auth(
                 <Link
                   href="/"
                   className="c8-preview-title text-2xl flex items-center justify-center gap-[10px] text-textColor order-1"
-                  title="Crea8one"
+                  title="crea8.one"
                 >
                   <Crea8oneWordmark className="h-[40px] w-auto object-contain object-left" />
                 </Link>
