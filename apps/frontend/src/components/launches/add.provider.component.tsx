@@ -306,7 +306,6 @@ export const NoChannels: FC<{ fill?: boolean; onClose?: () => void }> = ({
           <div className="font-[600] text-[20px]">
             {t('no_channels', 'No channels yet')}
           </div>
-          <div className="text-[14px]">{t('connect_your_accounts')}</div>
         </div>
         <AddProviderButton />
       </div>
