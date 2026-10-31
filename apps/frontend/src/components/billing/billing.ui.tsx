@@ -218,31 +218,42 @@ export function CreditPacks({
   busy,
   error,
   onBuy,
+  trial = false,
   compact = false,
 }: {
   packs: BillingOverview['packs'];
   busy: string | null;
   error: string;
   onBuy: (key: BillingOverview['packs'][number]['key']) => void;
+  trial?: boolean;
   compact?: boolean;
 }) {
-  const buttons = packs.map((pack) =>
-    compact ? (
+  const buttons = packs.map((pack) => {
+    const label = trial
+      ? 'Available after trial'
+      : busy === pack.key
+        ? 'Opening checkout…'
+        : `${pack.credits} credits · $${pack.usd}`;
+    const onClick = () => {
+      if (trial) return;
+      onBuy(pack.key);
+    };
+    return compact ? (
       <button
         key={pack.key}
         type="button"
         className="account-chip"
-        disabled={busy === pack.key}
-        onClick={() => onBuy(pack.key)}
+        disabled={trial || busy === pack.key}
+        onClick={onClick}
       >
-        {busy === pack.key ? 'Opening checkout…' : `${pack.credits} credits · $${pack.usd}`}
+        {label}
       </button>
     ) : (
-      <BillingButton key={pack.key} kind="primary" disabled={busy === pack.key} onClick={() => onBuy(pack.key)}>
-        {busy === pack.key ? 'Opening checkout…' : `${pack.credits} credits · $${pack.usd}`}
+      <BillingButton key={pack.key} kind="primary" disabled={trial || busy === pack.key} onClick={onClick}>
+        {label}
       </BillingButton>
-    )
-  );
+    );
+  });
   if (compact) {
     return (
       <section data-billing-state="credit_packs" className="settings-section account-bill-card flex flex-col gap-[12px]">

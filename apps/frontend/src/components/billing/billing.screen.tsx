@@ -314,7 +314,7 @@ export function BillingScreen({
       <button type="button" onClick={() => setCreditsOpen(false)}>Back to plan</button>
       <CreditsMeter overview={data} />
       {!data.grandfathered ? (
-        <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
+        <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} trial={status === 'trialing'} />
       ) : null}
       <InvoiceList invoices={data.invoices} />
     </div>
@@ -354,7 +354,7 @@ export function BillingScreen({
               <AccountCreditsCard overview={data} />
             </div>
             {!data.grandfathered ? (
-              <CreditPacks compact packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
+              <CreditPacks compact packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} trial={status === 'trialing'} />
             ) : null}
             <InvoiceList rows invoices={data.invoices} />
             {!accountHasPlan || showPlans ? (
