@@ -31,6 +31,9 @@ export class BillingReadService {
     const active = enforced ? await this._entitlements.activeSubscription(org.id) : null;
     const latest = enforced ? await this._entitlements.latestSubscription(org.id) : null;
     const tier = await this._entitlements.tier(org.id);
+    if (enforced && org.paymentId) {
+      await this._dodo.reconcileSucceededPacks(org.id);
+    }
     const balance = await this._credits.balance(org.id);
     const history = enforced ? await this._credits.history(org.id) : [];
     let invoices: BillingOverview['invoices'] = [];

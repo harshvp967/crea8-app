@@ -62,6 +62,11 @@ export abstract class PaymentProviderAbstract {
     return this.notSupported();
   }
 
+  // Grant succeeded credit packs that the webhook missed. Default is a no-op.
+  async reconcileSucceededPacks(organizationId: string): Promise<void> {
+    void organizationId;
+  }
+
   async embedded(
     uniqueId: string,
     organizationId: string,

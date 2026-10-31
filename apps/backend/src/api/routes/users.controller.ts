@@ -31,7 +31,10 @@ import {
 } from '@gitroom/helpers/utils/billing.enabled';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
-import { monthlyCreditAllowance } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import {
+  creditTracker,
+  monthlyCreditAllowance,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
@@ -142,21 +145,23 @@ export class UsersController {
       tier = await this._entitlements.tier(organization.id);
       totalChannels = pricing[tier as 'FREE'].channel;
       isTrailing = tier !== 'FREE' && !!organization.isTrailing;
+      await this._paymentService.reconcileSucceededPacks(organization.id);
       const balance = await this._credits.balance(organization.id);
       const allowance = monthlyCreditAllowance(
         tier,
         !grandfathered && isTrailing
       );
       const usage = await this._credits.usage(organization.id, allowance);
+      const tracked = usage ? creditTracker(usage) : null;
       credits = {
         monthlyRemaining: balance.monthlyRemaining,
         packRemaining: balance.packRemaining,
         total: balance.total,
-        allowance: usage?.allowance ?? allowance,
-        used: usage?.used ?? 0,
-        left: usage?.left ?? balance.monthlyRemaining,
-        packCredits: usage?.packCredits ?? balance.packRemaining,
-        actions: usage?.actions ?? [],
+        allowance: tracked?.allowance ?? allowance,
+        used: tracked?.used ?? 0,
+        left: tracked?.left ?? balance.monthlyRemaining,
+        packCredits: tracked?.packCredits ?? balance.packRemaining,
+        actions: tracked?.actions ?? [],
       };
     } else {
       tier =

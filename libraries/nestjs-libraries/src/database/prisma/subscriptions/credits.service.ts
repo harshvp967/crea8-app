@@ -18,6 +18,7 @@ import {
   ledgerRowsForHistory,
   packGrantFromPayment,
   planSpend,
+  workspaceOnTrial,
   postsCovered,
   stalkerReadCost,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
@@ -385,8 +386,50 @@ export class CreditsService {
     if (!org) {
       return false;
     }
+    if (await this.workspaceIsOnTrial(tx, org)) {
+      return false;
+    }
     await this.grantPack(tx, org, grant.credits, `pack:${grant.paymentId}`);
     return true;
+  }
+
+  private async workspaceIsOnTrial(tx: Tx, organizationId: string) {
+    const org = await tx.organization.findUnique({
+      where: { id: organizationId },
+      select: { isTrailing: true },
+    });
+    const subscription = await tx.subscription.findFirst({
+      where: { organizationId, deletedAt: null },
+      select: { status: true, deletedAt: true },
+    });
+    if (!subscription) {
+      return false;
+    }
+    return workspaceOnTrial({
+      status: subscription.status,
+      isTrailing: org?.isTrailing,
+      deletedAt: subscription.deletedAt,
+    });
+  }
+
+  async applyCheckoutReturn(
+    tx: Tx,
+    query: { payment_id?: string | null; status?: string | null },
+    payment?: any,
+    organizationId?: string | null
+  ) {
+    const status = String(query?.status || payment?.status || '')
+      .trim()
+      .toLowerCase();
+    if (status && status !== 'succeeded' && status !== 'paid') {
+      return false;
+    }
+    const source = {
+      ...(payment && typeof payment === 'object' ? payment : {}),
+      payment_id: payment?.payment_id || query?.payment_id || '',
+      status: payment?.status || query?.status || 'succeeded',
+    };
+    return this.applyReportedPackPayment(tx, source, organizationId);
   }
 
   async grantPack(tx: Tx, organizationId: string, credits: number, idempotencyKey: string) {

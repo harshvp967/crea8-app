@@ -28,12 +28,14 @@ import {
   isUpgrade,
   monthlyCreditAllowance,
   monthlyCycleKey,
+  isSucceededPackEvent,
   packGrantFromPayment,
   planChangeBilling,
   preservedTrialEnd,
   subscriptionProductId,
   tierFromProductId,
   verifyDodoSignature,
+  creditPackCheckoutError,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   PaymentPlatform,
@@ -80,7 +82,9 @@ export class DodoProvider extends PaymentProviderAbstract {
   }
 
   async processWebhook(event: { id: string; payload: any }) {
-    const type = String(event?.payload?.type || '');
+    const type = String(event?.payload?.type || event?.payload?.event_type || '')
+      .trim()
+      .toLowerCase();
     const data = event?.payload?.data || {};
     const existing = await this._prisma.processedWebhookEvent.findUnique({
       where: { id: event.id },
@@ -97,7 +101,7 @@ export class DodoProvider extends PaymentProviderAbstract {
           await this.applySubscription(tx, type, data);
           return;
         }
-        if (type === 'payment.succeeded') {
+        if (isSucceededPackEvent(type)) {
           await this.applyPackPayment(tx, data);
         }
       });
@@ -308,6 +312,23 @@ export class DodoProvider extends PaymentProviderAbstract {
     const pack = packByKey(packKey);
     if (!pack) {
       throw new HttpException('Unknown credit pack', 400);
+    }
+    const org = await this._organizationService.getOrgById(organizationId);
+    const subscription = await this._prisma.subscription.findFirst({
+      where: { organizationId, deletedAt: null },
+      select: { status: true, deletedAt: true },
+    });
+    const trialError = creditPackCheckoutError(
+      subscription
+        ? {
+            status: subscription.status,
+            isTrailing: org?.isTrailing,
+            deletedAt: subscription.deletedAt,
+          }
+        : null
+    );
+    if (trialError) {
+      throw new HttpException(trialError, 400);
     }
     return this.checkout(
       organizationId,
@@ -569,6 +590,75 @@ export class DodoProvider extends PaymentProviderAbstract {
 
   async getCharges(organizationId: string) {
     return this.invoices(organizationId);
+  }
+
+  private packSync = new Map<string, { at: number; pending?: Promise<void> }>();
+
+  override async reconcileSucceededPacks(organizationId: string) {
+    const now = Date.now();
+    const slot = this.packSync.get(organizationId);
+    if (slot?.pending) {
+      try {
+        await slot.pending;
+      } catch {
+        return;
+      }
+      return;
+    }
+    if (slot && now - slot.at < 60_000) {
+      return;
+    }
+    const pending = this.grantListedPacks(organizationId)
+      .then(() => {
+        this.packSync.set(organizationId, { at: Date.now() });
+      })
+      .catch((err) => {
+        this.packSync.delete(organizationId);
+        throw err;
+      });
+    this.packSync.set(organizationId, { at: now, pending });
+    try {
+      await pending;
+    } catch {
+      return;
+    }
+  }
+
+  private async grantListedPacks(organizationId: string) {
+    const payments = await this.customerPayments(organizationId);
+    for (const payment of payments) {
+      const status = String(payment.status || '').trim().toLowerCase();
+      if (status !== 'succeeded') {
+        continue;
+      }
+      await this._prisma.$transaction((tx) =>
+        this._credits.applyCheckoutReturn(
+          tx,
+          { payment_id: payment.payment_id, status },
+          payment,
+          organizationId
+        )
+      );
+    }
+  }
+
+  private async customerPayments(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId || !process.env.DODO_PAYMENTS_API_KEY) {
+      return [];
+    }
+    const page = await this.client().payments.list({
+      customer_id: org.paymentId,
+      page_size: 20,
+    });
+    const rows = [];
+    for await (const payment of page) {
+      rows.push(payment);
+      if (rows.length >= 20) {
+        break;
+      }
+    }
+    return rows;
   }
 
   async invoices(organizationId: string) {
