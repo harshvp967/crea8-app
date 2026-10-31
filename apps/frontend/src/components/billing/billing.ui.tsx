@@ -415,6 +415,37 @@ const PLAN_TILES: { icon: HugeIconName; tile: string; label: string; stalker?: b
   { icon: 'users', tile: 'is-team', label: 'Team' },
 ];
 
+const USAGE_ROWS: {
+  key: keyof BillingOverview['usage'];
+  label: string;
+  icon: HugeIconName;
+  tile: string;
+  stalker?: boolean;
+}[] = [
+  { key: 'channels', label: 'Channels', icon: 'plug', tile: 'is-schedule' },
+  { key: 'teamMembers', label: 'Team members', icon: 'users', tile: 'is-team' },
+  { key: 'keywords', label: 'Stalker keywords', icon: 'search', tile: 'is-stalker', stalker: true },
+  { key: 'stalkerChecks', label: 'Stalker checks', icon: 'eye', tile: 'is-stalker', stalker: true },
+  { key: 'webhooks', label: 'Webhooks', icon: 'link', tile: 'is-link' },
+  { key: 'posts', label: 'Posts', icon: 'calendar', tile: 'is-schedule' },
+];
+
+const usageCount = (value: number) => value.toLocaleString('en-US');
+
+function usageLine(
+  key: keyof BillingOverview['usage'],
+  used: number,
+  limit: number | null
+) {
+  if (limit == null || (key === 'posts' && limit > 10000)) {
+    return { text: 'Unlimited', hit: false };
+  }
+  return {
+    text: `${usageCount(used)}/${usageCount(limit)}`,
+    hit: used >= limit,
+  };
+}
+
 const ACTION_ROWS: Record<string, { label: string; icon: HugeIconName; tile: string }> = {
   ai_post: { label: 'AI post', icon: 'sparkles', tile: 'is-cyan' },
   x_post: { label: 'X post', icon: 'calendar', tile: 'is-schedule' },
@@ -492,6 +523,31 @@ export function AccountPlanCard({
             <HugeIcon name={item.icon} size={16} />
           </span>
         ))}
+      </div>
+      <div className="account-bill-actions-list">
+        {USAGE_ROWS.filter((item) => !item.stalker || stalkerEnabled).map((item) => {
+          const slot = overview.usage[item.key];
+          const line = usageLine(item.key, slot.used, slot.limit);
+          return (
+            <div className="account-bill-row" key={item.key} data-usage={item.key}>
+              <span className={`c8-side-tile ${item.tile}`} aria-hidden>
+                <HugeIcon name={item.icon} size={15} />
+              </span>
+              <span>{item.label}</span>
+              <strong>{line.text}</strong>
+              {line.hit && canChange ? (
+                <button
+                  type="button"
+                  className="account-chip"
+                  disabled={busy}
+                  onClick={onChangePlan}
+                >
+                  Change plan
+                </button>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
       <div className="account-bill-actions">
         {canChange ? (
