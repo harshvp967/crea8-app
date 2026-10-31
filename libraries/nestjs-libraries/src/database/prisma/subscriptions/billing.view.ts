@@ -84,6 +84,14 @@ export type BillingOverview = {
   invoices: BillingInvoice[];
   plans: BillingPlanCard[];
   packs: Array<{ key: 'PACK_150' | 'PACK_500'; credits: number; usd: number; name: string }>;
+  usage: {
+    channels: { used: number; limit: number };
+    teamMembers: { used: number; limit: number | null };
+    keywords: { used: number; limit: number };
+    webhooks: { used: number; limit: number };
+    posts: { used: number; limit: number };
+    stalkerChecks: { used: number; limit: number | null };
+  };
 };
 
 export function planCards(): BillingPlanCard[] {

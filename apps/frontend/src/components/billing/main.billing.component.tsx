@@ -104,14 +104,6 @@ export const Features: FC<{
       list.push(`AI Autocomplete`);
     }
     list.push(`Advanced Picture Editor`);
-    if (currentPricing?.image_generator) {
-      list.push(
-        `${currentPricing?.image_generation_count} AI Images per month`
-      );
-    }
-    if (currentPricing?.generate_videos) {
-      list.push(`${currentPricing?.generate_videos} AI Videos per month`);
-    }
     return list;
   }, [pack]);
   return (

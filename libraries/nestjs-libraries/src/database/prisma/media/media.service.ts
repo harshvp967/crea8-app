@@ -28,6 +28,8 @@ import {
   uploadStreamToStorage,
 } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 import { presentMediaRecord } from '@gitroom/nestjs-libraries/upload/media.deliver';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 // What every upload is normalized to before a provider ever sees it. The
 // service applies exactly these, so a platform-specific need belongs in the
@@ -93,7 +95,8 @@ export class MediaService {
     private _openAi: OpenaiService,
     private _subscriptionService: SubscriptionService,
     private _videoManager: VideoManager,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _entitlements: EntitlementService
   ) {}
 
   async deleteMedia(org: string, id: string) {
@@ -499,11 +502,18 @@ export class MediaService {
       throw new Error(`Video type ${type} not found`);
     }
 
-    if (!video.trial && org.isTrailing) {
+    if (!video.trial && (await this.inTrial(org))) {
       throw new HttpException('This video is not available in trial mode', 406);
     }
 
     return true;
+  }
+
+  private async inTrial(org: Organization) {
+    if (!isBillingEnforced(org.id)) {
+      return !!org.isTrailing;
+    }
+    return (await this._entitlements.account(org.id)).isTrailing;
   }
 
   private async validateVideoRequest(org: Organization, body: VideoDto) {
@@ -512,7 +522,7 @@ export class MediaService {
       'ai_videos'
     );
 
-    if (totalCredits.credits <= 0) {
+    if (totalCredits.priced !== false && (totalCredits.credits ?? 0) <= 0) {
       throw new SubscriptionException({
         action: AuthorizationActions.Create,
         section: Sections.VIDEOS_PER_MONTH,
@@ -524,7 +534,7 @@ export class MediaService {
       throw new Error(`Video type ${body.type} not found`);
     }
 
-    if (!video.trial && org.isTrailing) {
+    if (!video.trial && (await this.inTrial(org))) {
       throw new HttpException('This video is not available in trial mode', 406);
     }
 

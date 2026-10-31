@@ -10,6 +10,7 @@ import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webho
 import { AuthorizationActions, Sections } from './permission.exception.class';
 import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
 import { accessTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 export type AppAbility = Ability<[AuthorizationActions, Sections]>;
 
@@ -19,12 +20,13 @@ export class PermissionsService {
     private _subscriptionService: SubscriptionService,
     private _postsService: PostsService,
     private _integrationService: IntegrationService,
-    private _webhooksService: WebhooksService
+    private _webhooksService: WebhooksService,
+    private _entitlements: EntitlementService
   ) {}
   async getPackageOptions(orgId: string) {
     const enforced = isBillingEnforced(orgId);
     const subscription = enforced
-      ? await this._subscriptionService.getSubscriptionByOrganizationId(orgId)
+      ? await this._entitlements.activeSubscription(orgId)
       : !process.env.STRIPE_PUBLISHABLE_KEY
       ? null
       : await this._subscriptionService.getSubscriptionByOrganizationId(orgId);
@@ -88,14 +90,16 @@ export class PermissionsService {
           }
         }
 
-        const totalChannels = (
-          await this._integrationService.getIntegrationsList(orgId)
-        ).filter((f) => !f.refreshNeeded).length;
+        const totalChannels = enforced
+          ? await this._entitlements.countChannels(orgId)
+          : (
+              await this._integrationService.getIntegrationsList(orgId)
+            ).filter((f) => !f.refreshNeeded).length;
 
         const allowed = enforced
           ? totalChannels < options.channel
           : (options.channel && options.channel > totalChannels) ||
-            (subscription?.totalChannels || 0) > totalChannels;
+            ((subscription as { totalChannels?: number } | null)?.totalChannels || 0) > totalChannels;
         if (allowed) {
           can(action, section);
           continue;
@@ -103,7 +107,9 @@ export class PermissionsService {
       }
 
       if (section === Sections.WEBHOOKS) {
-        const totalWebhooks = await this._webhooksService.getTotal(orgId);
+        const totalWebhooks = enforced
+          ? await this._entitlements.countWebhooks(orgId)
+          : await this._webhooksService.getTotal(orgId);
         if (totalWebhooks < options.webhooks) {
           can(AuthorizationActions.Create, section);
           continue;
@@ -112,17 +118,18 @@ export class PermissionsService {
 
       // check for posts per month
       if (section === Sections.POSTS_PER_MONTH) {
-        const createdAt =
-          (await this._subscriptionService.getSubscription(orgId))?.createdAt ||
-          created_at;
+        const createdAt = enforced
+          ? (await this._entitlements.activeSubscription(orgId))?.createdAt ||
+            created_at
+          : (await this._subscriptionService.getSubscription(orgId))?.createdAt ||
+            created_at;
         const totalMonthPast = Math.abs(
           dayjs(createdAt).diff(dayjs(), 'month')
         );
         const checkFrom = dayjs(createdAt).add(totalMonthPast, 'month');
-        const count = await this._postsService.countPostsFromDay(
-          orgId,
-          checkFrom.toDate()
-        );
+        const count = enforced
+          ? await this._entitlements.countPostsSince(orgId, checkFrom.toDate())
+          : await this._postsService.countPostsFromDay(orgId, checkFrom.toDate());
 
         if (count < options.posts_per_month) {
           can(action, section);

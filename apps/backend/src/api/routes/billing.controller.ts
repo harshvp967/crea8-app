@@ -22,6 +22,7 @@ import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payme
 import { BillingSyncDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.sync.dto';
 import { BillingPackDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.pack.dto';
 import { BillingReadService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.read.service';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -31,8 +32,14 @@ export class BillingController {
     private _notificationService: NotificationService,
     private _usersService: UsersService,
     private _paymentService: PaymentService,
-    private _billingRead: BillingReadService
+    private _billingRead: BillingReadService,
+    private _entitlements: EntitlementService
   ) {}
+
+  private async billingTarget(org: Organization) {
+    const account = await this._entitlements.account(org.id);
+    return account;
+  }
 
   private country(body: BillingSubscribeDto, req: Request) {
     const header = req.headers['x-vercel-ip-country'];
@@ -91,8 +98,9 @@ export class BillingController {
 
   @Get('/is-trial-finished')
   async isTrialFinished(@GetOrgFromRequest() org: Organization) {
+    const account = await this.billingTarget(org);
     return {
-      finished: !org.isTrailing,
+      finished: !account.isTrailing,
     };
   }
 
@@ -108,12 +116,13 @@ export class BillingController {
     }
 
     const uniqueId = req?.cookies?.track;
-    return (await this.provider(org)).embedded(
+    const account = await this.billingTarget(org);
+    return (await this._paymentService.getProviderForOrganization(account.billingOrganizationId, 'web')).embedded(
       uniqueId,
-      org.id,
+      account.billingOrganizationId,
       user.id,
       this.country(body, req),
-      org.allowTrial
+      account.allowTrial
     );
   }
 
@@ -129,12 +138,13 @@ export class BillingController {
     }
 
     const uniqueId = req?.cookies?.track;
-    return (await this.provider(org)).subscribe(
+    const account = await this.billingTarget(org);
+    return (await this._paymentService.getProviderForOrganization(account.billingOrganizationId, 'web')).subscribe(
       uniqueId,
-      org.id,
+      account.billingOrganizationId,
       user.id,
       this.country(body, req),
-      org.allowTrial
+      account.allowTrial
     );
   }
 
@@ -158,12 +168,19 @@ export class BillingController {
   ) {
     const header = req.headers['x-vercel-ip-country'];
     const country = Array.isArray(header) ? header[0] : header;
-    return (await this.provider(org)).buyPack(org.id, user.id, body.pack, country || '');
+    const account = await this.billingTarget(org);
+    return (await this._paymentService.getProviderForOrganization(account.billingOrganizationId, 'web')).buyPack(
+      account.billingOrganizationId,
+      user.id,
+      body.pack,
+      country || ''
+    );
   }
 
   @Post('/resume')
   async resume(@GetOrgFromRequest() org: Organization) {
-    return (await this.provider(org)).setToCancel(org.id);
+    const account = await this.billingTarget(org);
+    return (await this._paymentService.getProviderForOrganization(account.billingOrganizationId, 'web')).setToCancel(account.billingOrganizationId);
   }
 
   @Post('/sync')
@@ -189,15 +206,17 @@ export class BillingController {
 
   @Get('/portal')
   async modifyPayment(@GetOrgFromRequest() org: Organization) {
-    const { url } = await (await this.provider(org)).portalLink(org.id);
+    const account = await this.billingTarget(org);
+    const { url } = await (await this._paymentService.getProviderForOrganization(account.billingOrganizationId, 'web')).portalLink(account.billingOrganizationId);
     return {
       portal: url,
     };
   }
 
   @Get('/')
-  getCurrentBilling(@GetOrgFromRequest() org: Organization) {
-    return this._paymentService.getSubscription(org.id);
+  async getCurrentBilling(@GetOrgFromRequest() org: Organization) {
+    const account = await this.billingTarget(org);
+    return this._paymentService.getSubscription(account.billingOrganizationId);
   }
 
   @Post('/cancel')
@@ -213,7 +232,8 @@ export class BillingController {
       user.email
     );
 
-    return (await this.provider(org)).setToCancel(org.id);
+    const account = await this.billingTarget(org);
+    return (await this._paymentService.getProviderForOrganization(account.billingOrganizationId, 'web')).setToCancel(account.billingOrganizationId);
   }
 
   @Post('/prorate')
@@ -221,7 +241,8 @@ export class BillingController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: BillingSubscribeDto
   ) {
-    return (await this.provider(org)).prorate(org.id, body);
+    const account = await this.billingTarget(org);
+    return (await this._paymentService.getProviderForOrganization(account.billingOrganizationId, 'web')).prorate(account.billingOrganizationId, body);
   }
 
   @Get('/charges')

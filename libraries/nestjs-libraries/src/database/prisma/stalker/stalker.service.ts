@@ -10,10 +10,7 @@ import {
 } from '@gitroom/helpers/utils/billing.enabled';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
-import {
-  keywordUpgradeMessage,
-  manualCheckMessage,
-} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import { keywordUpgradeMessage } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   Integration,
   Prisma,
@@ -786,6 +783,9 @@ export class StalkerService {
     const seenPhrases = new Set<string>();
     const keywords = [];
     const keywordCap = (await this.keywordLimit(organizationId)).cap;
+    const keywordsAlready = isBillingEnforced(organizationId)
+      ? await this._entitlements.countKeywords(organizationId)
+      : 0;
     for (const keyword of body.keywords || []) {
       const phrase = keyword.phrase.trim().replace(/\s+/g, ' ');
       const key = phrase.toLowerCase();
@@ -793,7 +793,7 @@ export class StalkerService {
         continue;
       }
       seenPhrases.add(key);
-      if (keywords.length >= keywordCap) {
+      if (keywordsAlready + keywords.length >= keywordCap) {
         if (isBillingEnforced(organizationId)) {
           break;
         }
@@ -1185,12 +1185,14 @@ export class StalkerService {
         409
       );
     }
-    const total = await this._repository.countKeywords(
-      organizationId,
-      body.projectId
-    );
     const limit = await this.keywordLimit(organizationId, body.projectId);
-    if (total >= limit.cap) {
+    if (isBillingEnforced(organizationId)) {
+      await this._entitlements.assertCanAddKeyword(organizationId);
+    }
+    const total = isBillingEnforced(organizationId)
+      ? await this._entitlements.countKeywords(organizationId)
+      : await this._repository.countKeywords(organizationId, body.projectId);
+    if (!isBillingEnforced(organizationId) && total >= limit.cap) {
       throw new BadRequestException(
         limit.tier
           ? keywordUpgradeMessage(limit.tier as 'FREE')
@@ -1974,19 +1976,7 @@ export class StalkerService {
         );
       }
       if (isBillingEnforced(organizationId)) {
-        const limits = await this._entitlements.limits(organizationId);
-        const cap = limits?.plan.stalkerManualChecksPerDay;
-        if (cap != null) {
-          const start = new Date();
-          start.setUTCHours(0, 0, 0, 0);
-          const count = await this._repository.countManualScans(projectId, start);
-          if (count >= cap) {
-            throw new HttpException(
-              { statusCode: 429, message: manualCheckMessage(cap), upgrade: true },
-              429
-            );
-          }
-        }
+        await this._entitlements.assertCanManualCheck(organizationId);
       }
     }
     const run = await this._repository.createScanRun({

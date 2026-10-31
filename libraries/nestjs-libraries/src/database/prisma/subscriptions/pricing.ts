@@ -20,9 +20,6 @@ export interface PricingInnerInterface {
   featured_by_gitroom: boolean;
   ai: boolean;
   import_from_channels: boolean;
-  image_generator?: boolean;
-  image_generation_count: number;
-  generate_videos: number;
   public_api: boolean;
   webhooks: number;
   autoPost: boolean;
@@ -54,9 +51,6 @@ function toPricing(tier: PlanTier): PricingInnerInterface {
     featured_by_gitroom: plan.featuredByGitroom,
     ai: plan.ai,
     import_from_channels: plan.importFromChannels,
-    image_generator: plan.imageGenerator,
-    image_generation_count: plan.imageGenerationCount,
-    generate_videos: plan.generateVideos,
     public_api: plan.publicApi,
     webhooks: plan.webhooks,
     autoPost: plan.autoPost,
