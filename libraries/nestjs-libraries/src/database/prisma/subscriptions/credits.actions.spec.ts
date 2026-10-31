@@ -1,6 +1,12 @@
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
 import { CREDIT_COSTS, TRIAL_MONTHLY_CREDITS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
-import { BillingBlocked, xPostSpendParts } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import {
+  BillingBlocked,
+  CREDIT_PACK_TRIAL_ERROR,
+  creditPackCheckoutError,
+  creditTracker,
+  xPostSpendParts,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
 type Balance = {
   organizationId: string;
@@ -71,6 +77,11 @@ function memoryPrisma() {
   const balances = new Map<string, Balance>();
   const ledger: LedgerRow[] = [];
   const webhooks = new Map<string, { id: string }>();
+  const organizations = new Map<string, { id: string; isTrailing: boolean }>();
+  const subscriptions = new Map<
+    string,
+    { organizationId: string; status: string; deletedAt: Date | null }
+  >();
   let seq = 0;
   const api: any = {
     creditBalance: {
@@ -162,6 +173,41 @@ function memoryPrisma() {
         ledger.push(row);
         return row;
       },
+    },
+    organization: {
+      findUnique: async ({ where }: { where: { id: string } }) =>
+        organizations.get(where.id) || null,
+    },
+    subscription: {
+      findFirst: async ({
+        where,
+      }: {
+        where: { organizationId: string; deletedAt: null };
+      }) => {
+        const row = subscriptions.get(where.organizationId);
+        if (!row || row.deletedAt) {
+          return null;
+        }
+        return row;
+      },
+    },
+    setWorkspace(
+      organizationId: string,
+      input: { status?: string | null; isTrailing?: boolean }
+    ) {
+      organizations.set(organizationId, {
+        id: organizationId,
+        isTrailing: !!input.isTrailing,
+      });
+      if (!input.status) {
+        subscriptions.delete(organizationId);
+        return;
+      }
+      subscriptions.set(organizationId, {
+        organizationId,
+        status: input.status,
+        deletedAt: null,
+      });
     },
     processedWebhookEvent: {
       findUnique: async ({ where }: { where: { id: string } }) => webhooks.get(where.id) || null,
@@ -413,5 +459,77 @@ describe('credit ledger action charges', () => {
     const balance = await credits.balance('org-key');
     expect(balance.packRemaining).toBe(150);
     expect(balance.monthlyRemaining).toBe(0);
+  });
+
+  it('rejects credit pack checkout while the workspace is on a trial', () => {
+    expect(
+      creditPackCheckoutError({ status: 'trialing', isTrailing: true, deletedAt: null })
+    ).toBe(CREDIT_PACK_TRIAL_ERROR);
+    expect(
+      creditPackCheckoutError({ status: 'active', isTrailing: true, deletedAt: null })
+    ).toBe(CREDIT_PACK_TRIAL_ERROR);
+    expect(
+      creditPackCheckoutError({ status: 'active', isTrailing: false, deletedAt: null })
+    ).toBeNull();
+    expect(creditPackCheckoutError(null)).toBeNull();
+    expect(
+      creditPackCheckoutError({ status: 'trial_ended', isTrailing: false, deletedAt: null })
+    ).toBeNull();
+  });
+
+  it('grants a paid subscriber the 150 pack once from the payment webhook', async () => {
+    const db = memoryPrisma();
+    const credits = new CreditsService(db as any);
+    db.setWorkspace('org-paid', { status: 'active', isTrailing: false });
+    const paid = {
+      payment_id: 'pay_paid_150',
+      status: 'succeeded',
+      total_amount: 590,
+      currency: 'USD',
+      subscription_id: 'sub_paid',
+      product_cart: [{ product_id: 'pdt_pack_150', quantity: 1 }],
+      metadata: {
+        organizationId: 'org-paid',
+        userId: 'user-1',
+        kind: 'credit_pack',
+        billing: 'STANDARD',
+        period: 'MONTHLY',
+        pack: 'PACK_150',
+        credits: '150',
+      },
+    };
+    process.env.DODO_PRODUCTS = JSON.stringify({ PACK_150: 'pdt_pack_150' });
+    await paymentSucceeded(db, credits, 'evt_paid', paid);
+    await paymentSucceeded(db, credits, 'evt_paid', paid);
+    await paymentSucceeded(db, credits, 'evt_paid_replay', paid);
+    await db.$transaction((tx: any) =>
+      credits.applyCheckoutReturn(
+        tx,
+        { payment_id: paid.payment_id, status: 'succeeded' },
+        paid,
+        'org-paid'
+      )
+    );
+    const balance = await credits.balance('org-paid');
+    expect(balance.packRemaining).toBe(150);
+    expect(balance.monthlyRemaining).toBe(0);
+    const usage = await credits.usage('org-paid', 300);
+    expect(usage?.packCredits).toBe(150);
+    expect(usage?.allowance).toBe(300);
+    const tracker = creditTracker(usage!);
+    expect(tracker.allowance).toBe(450);
+    expect(tracker.packCredits).toBe(150);
+
+    const trial = memoryPrisma();
+    const trialCredits = new CreditsService(trial as any);
+    trial.setWorkspace('org-trial', { status: 'trialing', isTrailing: true });
+    await paymentSucceeded(trial, trialCredits, 'evt_trial', {
+      ...paid,
+      payment_id: 'pay_trial_150',
+      metadata: { ...paid.metadata, organizationId: 'org-trial' },
+    });
+    const trialBalance = await trialCredits.balance('org-trial');
+    expect(trialBalance.packRemaining).toBe(0);
+    expect(TRIAL_MONTHLY_CREDITS).toBe(50);
   });
 });

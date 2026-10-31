@@ -181,26 +181,103 @@ export type PackGrant = {
   paymentId: string;
 };
 
-export function packGrantFromPayment(data: any): PackGrant | null {
+function metadataRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  if (typeof value === 'string' && value.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+function paymentBody(data: any) {
   if (!data || typeof data !== 'object') {
+    return data;
+  }
+  const nested = data.payload && typeof data.payload === 'object' ? data.payload : null;
+  if (!data.payment_id && nested?.payment_id) {
+    return nested;
+  }
+  return data;
+}
+
+export function isSucceededPackEvent(type: string) {
+  return type.trim().toLowerCase().replace(/_/g, '.') === 'payment.succeeded';
+}
+
+const TRIAL_ENDED_STATUS = new Set([
+  'cancelled',
+  'canceled',
+  'expired',
+  'trial_ended',
+  'failed',
+]);
+
+export function workspaceOnTrial(input: {
+  status?: string | null;
+  isTrailing?: boolean | null;
+  deletedAt?: Date | string | null;
+} | null | undefined) {
+  if (!input || input.deletedAt) {
+    return false;
+  }
+  const status = String(input.status || '').trim().toLowerCase();
+  if (!status || TRIAL_ENDED_STATUS.has(status)) {
+    return false;
+  }
+  return status === 'trialing' || !!input.isTrailing;
+}
+
+export const CREDIT_PACK_TRIAL_ERROR =
+  "Credit packs aren't available during a trial.";
+
+export function creditPackCheckoutError(input: {
+  status?: string | null;
+  isTrailing?: boolean | null;
+  deletedAt?: Date | string | null;
+} | null | undefined) {
+  if (!workspaceOnTrial(input)) {
     return null;
   }
-  const metadata =
-    data.metadata && typeof data.metadata === 'object' ? data.metadata : {};
+  return CREDIT_PACK_TRIAL_ERROR;
+}
+
+export function packGrantFromPayment(data: any): PackGrant | null {
+  const source = paymentBody(data);
+  if (!source || typeof source !== 'object') {
+    return null;
+  }
+  const status = String(source.status || '').trim().toLowerCase();
+  if (status && status !== 'succeeded' && status !== 'paid') {
+    return null;
+  }
+  const metadata = metadataRecord(
+    source.metadata || source.custom_metadata || source.checkout?.metadata
+  );
   const kind = String(metadata.kind || '');
-  const subscriptionId = String(data.subscription_id || '');
-  if (subscriptionId && kind !== 'credit_pack') {
-    return null;
-  }
   const productId = String(
-    data?.product_cart?.[0]?.product_id ||
+    source?.product_cart?.[0]?.product_id ||
+      source?.product_cart?.[0]?.productId ||
       metadata.product_id ||
-      data.product_id ||
+      metadata.productId ||
+      source.product_id ||
       ''
   );
-  const pack = packByKey(String(metadata.pack || ''));
+  const pack = packByKey(
+    String(metadata.pack || metadata.pack_key || metadata.packKey || '')
+  );
   const fromProduct = packCreditsFromProduct(productId);
-  const rawCredits = Number(metadata.credits);
+  const rawCredits = Number(
+    metadata.credits ?? metadata.credit ?? metadata.pack_credits
+  );
   const listed =
     Number.isFinite(rawCredits) &&
     CREDIT_PACKS.some((item) => item.credits === rawCredits);
@@ -216,16 +293,25 @@ export function packGrantFromPayment(data: any): PackGrant | null {
   ) {
     credits = rawCredits;
   }
+  // Pack credits are the pack size. The 50-credit trial cap applies to the
+  // monthly grant only and must not shrink this number to zero.
   if (!Number.isFinite(credits) || credits <= 0) {
     return null;
   }
-  const paymentId = String(data.payment_id || metadata.payment_id || '');
+  const subscriptionId = String(source.subscription_id || '');
+  const identifiedPack = !!pack || fromProduct > 0 || kind === 'credit_pack' || listed;
+  if (subscriptionId && !identifiedPack) {
+    return null;
+  }
+  const paymentId = String(
+    source.payment_id || metadata.payment_id || metadata.paymentId || ''
+  );
   if (!paymentId) {
     return null;
   }
   return {
     organizationId: String(
-      metadata.organizationId || metadata.organization_id || ''
+      metadata.organizationId || metadata.organization_id || metadata.orgId || ''
     ),
     credits,
     paymentId,
@@ -347,6 +433,21 @@ export function creditUsage(input: {
     left: Math.max(0, input.allowance - used),
     packCredits: input.packRemaining,
     actions,
+  };
+}
+
+export function creditTracker<T extends {
+  allowance: number;
+  used: number;
+  left: number;
+  packCredits: number;
+}>(usage: T): T {
+  const pack = Number.isFinite(usage.packCredits) ? Math.max(0, usage.packCredits) : 0;
+  return {
+    ...usage,
+    allowance: usage.allowance + pack,
+    left: usage.left + pack,
+    packCredits: pack,
   };
 }
 

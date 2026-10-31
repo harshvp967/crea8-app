@@ -136,6 +136,16 @@ export class PaymentService {
     }
   }
 
+  async reconcileSucceededPacks(organizationId: string) {
+    try {
+      await this._paymentProviderManager
+        .getDefaultProvider('web')
+        .provider.reconcileSucceededPacks(organizationId);
+    } catch {
+      return;
+    }
+  }
+
   async syncCustomerEmailsAfterSwitch(
     accounts: { id: string; email: string }[]
   ) {
