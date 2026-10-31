@@ -128,9 +128,13 @@ export class UsersController {
     const personal = await this._userService.getPersonal(user.id);
     const enforced = isBillingEnforced(organization.id);
     const grandfathered = isGrandfatheredOrg(organization.id);
+    const account = enforced ? await this._entitlements.account(organization.id) : null;
     let tier: string;
     let totalChannels: number;
     let isTrailing: boolean;
+    let allowTrial = !!organization.allowTrial;
+    // @ts-ignore
+    let isLifetime = !!organization?.subscription?.isLifetime;
     let credits: {
       monthlyRemaining: number;
       packRemaining: number;
@@ -144,8 +148,12 @@ export class UsersController {
     if (enforced) {
       tier = await this._entitlements.tier(organization.id);
       totalChannels = pricing[tier as 'FREE'].channel;
-      isTrailing = tier !== 'FREE' && !!organization.isTrailing;
-      await this._paymentService.reconcileSucceededPacks(organization.id);
+      isTrailing = tier !== 'FREE' && !!account?.isTrailing;
+      allowTrial = !!account?.allowTrial;
+      isLifetime = !!account?.isLifetime;
+      await this._paymentService.reconcileSucceededPacks(
+        account?.billingOrganizationId || organization.id
+      );
       const balance = await this._credits.balance(organization.id);
       const allowance = monthlyCreditAllowance(
         tier,
@@ -182,15 +190,14 @@ export class UsersController {
       tier,
       // @ts-ignore
       role: organization?.users[0]?.role,
-      // @ts-ignore
-      isLifetime: grandfathered || !!organization?.subscription?.isLifetime,
+      isLifetime: grandfathered || isLifetime,
       admin: !!user.isSuperAdmin,
       impersonate: !!impersonate,
       isTrailing,
       billingEnabled: enforced,
       grandfathered,
       credits,
-      allowTrial: organization?.allowTrial,
+      allowTrial,
       streakSince: organization?.streakSince || null,
       aiDrafts: aiDraftsEnabledForOrg(organization.id),
       publicApi:
@@ -322,8 +329,9 @@ export class UsersController {
   @Get('/subscription')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async getSubscription(@GetOrgFromRequest() organization: Organization) {
+    const account = await this._entitlements.account(organization.id);
     const subscription = await this._paymentService.getSubscription(
-      organization.id
+      account.billingOrganizationId
     );
 
     return subscription ? { subscription } : { subscription: undefined };

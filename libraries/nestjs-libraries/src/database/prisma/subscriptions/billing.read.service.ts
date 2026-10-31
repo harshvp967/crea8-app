@@ -27,28 +27,35 @@ export class BillingReadService {
 
   async overview(org: Organization): Promise<BillingOverview> {
     const enforced = isBillingEnforced(org.id);
-    const grandfathered = isGrandfatheredOrg(org.id);
-    const active = enforced ? await this._entitlements.activeSubscription(org.id) : null;
-    const latest = enforced ? await this._entitlements.latestSubscription(org.id) : null;
+    const account = enforced ? await this._entitlements.account(org.id) : null;
+    const grandfathered = isGrandfatheredOrg(org.id) || !!account?.grandfathered;
+    const active = account?.subscription || null;
+    const latest = account?.latest || null;
     const tier = await this._entitlements.tier(org.id);
-    if (enforced && org.paymentId) {
-      await this._dodo.reconcileSucceededPacks(org.id);
+    const paymentId = account?.paymentId || org.paymentId;
+    const billingOrganizationId = account?.billingOrganizationId || org.id;
+    if (enforced && paymentId) {
+      await this._dodo.reconcileSucceededPacks(billingOrganizationId);
     }
     const balance = await this._credits.balance(org.id);
     const history = enforced ? await this._credits.history(org.id) : [];
+    const usage = enforced
+      ? await this._entitlements.usage(org.id)
+      : emptyUsage();
     let invoices: BillingOverview['invoices'] = [];
-    if (enforced && org.paymentId) {
+    if (enforced && paymentId) {
       try {
-        invoices = await this._dodo.invoices(org.id);
+        invoices = await this._dodo.invoices(billingOrganizationId);
       } catch {
         invoices = [];
       }
     }
     const shown = active || (!active ? latest : null);
+    const isTrailing = account ? account.isTrailing : org.isTrailing;
     const status = billingStatus({
       active: !!active,
       status: shown?.status,
-      isTrailing: org.isTrailing,
+      isTrailing,
       cancelAt: active?.cancelAt,
       pendingTier: active?.pendingTier,
     });
@@ -60,7 +67,7 @@ export class BillingReadService {
       supportEmail: billingSupport.email,
       trialDays: billingSupport.trialDays,
       allowTrial: paywallAllowsTrial({
-        allowTrial: !!org.allowTrial,
+        allowTrial: account ? account.allowTrial : !!org.allowTrial,
         hasActiveSubscription: !!active,
         latestStatus: latest?.status,
       }),
@@ -68,17 +75,17 @@ export class BillingReadService {
       subscription: {
         tier,
         displayName: plan.displayName,
-        period: active?.period || null,
+        period: (active?.period as 'MONTHLY' | 'YEARLY' | null) || null,
         status: shownStatus,
         cancelAt: active?.cancelAt ? active.cancelAt.toISOString() : null,
         currentPeriodEnd: active?.currentPeriodEnd
           ? active.currentPeriodEnd.toISOString()
           : null,
-        pendingTier: active?.pendingTier || null,
+        pendingTier: (active?.pendingTier as BillingOverview['subscription']['pendingTier']) || null,
         pendingDisplayName: active?.pendingTier
-          ? PLANS[active.pendingTier].displayName
+          ? PLANS[active.pendingTier as 'STANDARD'].displayName
           : null,
-        pendingPeriod: active?.pendingPeriod || null,
+        pendingPeriod: (active?.pendingPeriod as 'MONTHLY' | 'YEARLY' | null) || null,
         isLifetime: !!active?.isLifetime || grandfathered,
         provider: active?.provider || null,
         identifier: active?.identifier || null,
@@ -104,6 +111,18 @@ export class BillingReadService {
       invoices,
       plans: planCards(),
       packs: billingSupport.packs,
+      usage,
     };
   }
+}
+
+function emptyUsage(): BillingOverview['usage'] {
+  return {
+    channels: { used: 0, limit: 0 },
+    teamMembers: { used: 0, limit: null },
+    keywords: { used: 0, limit: 0 },
+    webhooks: { used: 0, limit: 0 },
+    posts: { used: 0, limit: 0 },
+    stalkerChecks: { used: 0, limit: null },
+  };
 }

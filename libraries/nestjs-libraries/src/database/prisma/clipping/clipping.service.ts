@@ -200,7 +200,10 @@ export class ClippingService {
       throw new HttpException('Only YouTube videos can be clipped', 400);
     }
 
-    if (org.isTrailing) {
+    const trailing = isBillingEnforced(org.id)
+      ? (await this._entitlements.account(org.id)).isTrailing
+      : org.isTrailing;
+    if (trailing) {
       throw new HttpException('Clipping is not available in trial mode', 406);
     }
 

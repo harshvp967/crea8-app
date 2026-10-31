@@ -5,6 +5,7 @@ import {
   isBillingEnforced,
   isGrandfatheredOrg,
 } from '@gitroom/helpers/utils/billing.enabled';
+import { loadBillingAccount } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.account';
 import { PLANS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
   AI_POST_CALL_REASON,
@@ -29,7 +30,19 @@ type Tx = Prisma.TransactionClient;
 export class CreditsService {
   constructor(private _prisma: PrismaService) {}
 
+  private async poolId(organizationId: string, db: any = this._prisma) {
+    if (
+      !isBillingEnforced(organizationId) ||
+      typeof db?.userOrganization?.findFirst !== 'function'
+    ) {
+      return organizationId;
+    }
+    const account = await loadBillingAccount(db, organizationId);
+    return account.billingOrganizationId;
+  }
+
   async balance(organizationId: string) {
+    organizationId = await this.poolId(organizationId);
     await this.ensureGrandfather(organizationId);
     if (!isBillingEnforced(organizationId)) {
       return {
@@ -55,6 +68,7 @@ export class CreditsService {
   }
 
   async history(organizationId: string, take = 40) {
+    organizationId = await this.poolId(organizationId);
     const rows = await this._prisma.creditLedger.findMany({
       where: { organizationId, reason: { not: AI_POST_CALL_REASON } },
       orderBy: { createdAt: 'desc' },
@@ -64,6 +78,7 @@ export class CreditsService {
   }
 
   async usage(organizationId: string, allowance: number) {
+    organizationId = await this.poolId(organizationId);
     const balance = await this.balance(organizationId);
     if (!balance.enforced) {
       return null;
@@ -87,6 +102,7 @@ export class CreditsService {
   }
 
   async aiPostBlocked(organizationId: string) {
+    organizationId = await this.poolId(organizationId);
     if (!(await this.billingActive(organizationId))) {
       return false;
     }
@@ -101,6 +117,7 @@ export class CreditsService {
   }
 
   async recordAiPostCall(organizationId: string, idempotencyKey: string) {
+    organizationId = await this.poolId(organizationId);
     if (!(await this.billingActive(organizationId))) {
       return { skipped: true as const, spent: 0, callNumber: 0 };
     }
@@ -159,6 +176,7 @@ export class CreditsService {
     organizationId: string,
     parts: { cost: number; reason: string; idempotencyKey: string }[]
   ) {
+    organizationId = await this.poolId(organizationId);
     const billable = parts.filter((part) => part.cost > 0);
     if (billable.length === 0 || !(await this.billingActive(organizationId))) {
       return { skipped: true as const, spent: 0 };
@@ -187,6 +205,7 @@ export class CreditsService {
     reason: string,
     idempotencyKey: string
   ) {
+    organizationId = await this.poolId(organizationId);
     if (cost <= 0 || !(await this.billingActive(organizationId))) {
       return { skipped: true as const, spent: 0 };
     }
@@ -201,6 +220,7 @@ export class CreditsService {
     postCount: number,
     idempotencyKey: string
   ) {
+    organizationId = await this.poolId(organizationId);
     if (postCount <= 0 || !(await this.billingActive(organizationId))) {
       return { kept: postCount, spent: 0 };
     }
@@ -216,6 +236,7 @@ export class CreditsService {
   }
 
   async refund(organizationId: string, idempotencyKey: string, reason: string) {
+    organizationId = await this.poolId(organizationId);
     if (!(await this.billingActive(organizationId))) {
       return;
     }
@@ -364,13 +385,18 @@ export class CreditsService {
     };
   }
 
-  grantMonthly(
+  async grantMonthly(
     tx: Tx,
     organizationId: string,
     cycleKey: string,
     amount: number
   ) {
-    return this.grantMonthlyIn(tx, organizationId, cycleKey, amount);
+    return this.grantMonthlyIn(
+      tx,
+      await this.poolId(organizationId, tx),
+      cycleKey,
+      amount
+    );
   }
 
   async applyReportedPackPayment(
@@ -394,6 +420,18 @@ export class CreditsService {
   }
 
   private async workspaceIsOnTrial(tx: Tx, organizationId: string) {
+    if (typeof (tx as any)?.userOrganization?.findFirst === 'function') {
+      const account = await loadBillingAccount(tx, organizationId);
+      const subscription = account.subscription || account.latest;
+      if (!subscription) {
+        return false;
+      }
+      return workspaceOnTrial({
+        status: subscription.status,
+        isTrailing: account.isTrailing,
+        deletedAt: subscription.deletedAt,
+      });
+    }
     const org = await tx.organization.findUnique({
       where: { id: organizationId },
       select: { isTrailing: true },
@@ -433,6 +471,7 @@ export class CreditsService {
   }
 
   async grantPack(tx: Tx, organizationId: string, credits: number, idempotencyKey: string) {
+    organizationId = await this.poolId(organizationId, tx);
     const existing = await tx.creditLedger.findUnique({
       where: { idempotencyKey },
     });
@@ -486,14 +525,18 @@ export class CreditsService {
   }
 
   private async ensureGrandfather(organizationId: string) {
-    if (!isGrandfatheredOrg(organizationId) || !isBillingEnforced(organizationId)) {
+    const pool = await this.poolId(organizationId);
+    if (
+      (!isGrandfatheredOrg(organizationId) && !isGrandfatheredOrg(pool)) ||
+      !isBillingEnforced(organizationId)
+    ) {
       return;
     }
     const cycleKey = `gf:${new Date().toISOString().slice(0, 7)}`;
     await this._prisma.$transaction((tx) =>
       this.grantMonthlyIn(
         tx,
-        organizationId,
+        pool,
         cycleKey,
         PLANS.ULTIMATE.monthlyCredits
       )

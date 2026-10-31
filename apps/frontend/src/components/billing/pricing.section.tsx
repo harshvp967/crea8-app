@@ -8,54 +8,10 @@ import {
   CHECKOUT_GST_NOTE,
   PAID_TIERS,
   PLANS,
+  planFeatureLines,
   type BillingPeriod,
   type PaidTier,
-  type PlanConfig,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
-
-const count = (value: number) => value.toLocaleString('en-US');
-
-/**
- * Feature lines for one paid plan. Numbers come from billing.config.
- * Workspaces have no numeric field: POST /user/workspace creates a workspace
- * for any signed-in user with no plan cap, so the line is unlimited.
- * postsPerMonth above 10,000 is the existing "unlimited" display rule.
- * AI images follow imageGenerator, which is off on Creator.
- */
-export function planFeatureLines(plan: PlanConfig): string[] {
-  const lines = [
-    `${count(plan.channels)} channels`,
-    plan.teamMemberLimit == null
-      ? 'Unlimited team members'
-      : `${count(plan.teamMemberLimit)} team ${plan.teamMemberLimit === 1 ? 'member' : 'members'}`,
-    'Unlimited workspaces',
-    `${count(plan.monthlyCredits)} credits a month`,
-    `${count(plan.stalkerKeywords)} Stalker keywords`,
-    `Stalker scan every ${plan.stalkerScanHours} ${plan.stalkerScanHours === 1 ? 'hour' : 'hours'}`,
-    plan.stalkerManualChecksPerDay == null
-      ? 'Unlimited Stalker checks a day'
-      : `${count(plan.stalkerManualChecksPerDay)} Stalker ${plan.stalkerManualChecksPerDay === 1 ? 'check' : 'checks'} a day`,
-    `${count(plan.mentionRetentionDays)} days of mentions`,
-    `${count(plan.webhooks)} webhooks`,
-    plan.postsPerMonth > 10000
-      ? 'Unlimited posts a month'
-      : `${count(plan.postsPerMonth)} posts a month`,
-  ];
-  if (plan.ai) {
-    lines.push('AI post');
-  }
-  if (plan.imageGenerator && plan.imageGenerationCount > 0) {
-    lines.push(`${count(plan.imageGenerationCount)} AI images`);
-  }
-  if (plan.generateVideos > 0) {
-    lines.push(`${count(plan.generateVideos)} AI videos`);
-  }
-  lines.push('Posting sets', 'Analytics', 'Link in Bio, all themes');
-  if (plan.key !== 'FREE') {
-    lines.push('Badge removed');
-  }
-  return lines;
-}
 
 export function PricingSection({
   period,

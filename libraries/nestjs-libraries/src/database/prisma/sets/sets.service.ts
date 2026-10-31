@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { SetsRepository } from '@gitroom/nestjs-libraries/database/prisma/sets/sets.repository';
 import { SetsDto } from '@gitroom/nestjs-libraries/dtos/sets/sets.dto';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 @Injectable()
 export class SetsService {
-  constructor(private _setsRepository: SetsRepository) {}
+  constructor(
+    private _setsRepository: SetsRepository,
+    private _entitlements: EntitlementService
+  ) {}
 
   getTotal(orgId: string) {
     return this._setsRepository.getTotal(orgId);
@@ -14,7 +18,8 @@ export class SetsService {
     return this._setsRepository.getSets(orgId);
   }
 
-  createSet(orgId: string, body: SetsDto) {
+  async createSet(orgId: string, body: SetsDto) {
+    await this._entitlements.assertFeature(orgId, 'postingSets');
     return this._setsRepository.createSet(orgId, body);
   }
 

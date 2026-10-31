@@ -7,9 +7,12 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/services/cloudflare.custom-hostname.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -120,8 +123,19 @@ export class LinkService {
     private _repository: LinkRepository,
     private _cloudflare: CloudflareCustomHostnameService,
     private _email: EmailService,
-    private _integrations: IntegrationManager
+    private _integrations: IntegrationManager,
+    @Optional() private _entitlements?: EntitlementService
   ) {}
+
+  private ownerSubscription(record: {
+    organizationId: string;
+    organization: { subscription?: any };
+  }) {
+    if (this._entitlements && isBillingEnforced(record.organizationId)) {
+      return this._entitlements.activeSubscription(record.organizationId);
+    }
+    return record.organization.subscription;
+  }
 
   async page(org: PlanOrg, timezone?: string) {
     const record = await this.ensure(org, timezone);
@@ -132,7 +146,7 @@ export class LinkService {
     const record = await this.ensure(org);
     if (
       body.hideBadge &&
-      !badgeRemovalOpen(record.organizationId, record.organization.subscription)
+      !badgeRemovalOpen(record.organizationId, await this.ownerSubscription(record))
     ) {
       throw new HttpException(
         { message: 'Removing the badge is on a paid plan', upgrade: true },
@@ -144,11 +158,11 @@ export class LinkService {
       : undefined;
     if (design) {
       const kind = designProKind(body.theme || record.theme, design);
-      if (kind && !linkFeatureOpen(record.organization.subscription)) {
+      if (kind && !linkFeatureOpen(await this.ownerSubscription(record))) {
         throw new HttpException({ message: paidFeatureProblem(false, kind), upgrade: true }, HttpStatus.PAYMENT_REQUIRED);
       }
     }
-    if (body.theme && themeIsPro(body.theme) && !linkFeatureOpen(record.organization.subscription)) {
+    if (body.theme && themeIsPro(body.theme) && !linkFeatureOpen(await this.ownerSubscription(record))) {
       throw new HttpException({ message: paidFeatureProblem(false, 'theme'), upgrade: true }, HttpStatus.PAYMENT_REQUIRED);
     }
     if (body.timezone && !isValidTimeZone(body.timezone)) {
@@ -317,7 +331,7 @@ export class LinkService {
     if (!id && type === 'EVENTS' && !normalizeEvents({ events: body.events || [] }).length) {
       throw new BadRequestException('Add at least one event');
     }
-    const data = await this.blockData(org.id, record.timezone, type, body, record.organization.subscription, current);
+    const data = await this.blockData(org.id, record.timezone, type, body, await this.ownerSubscription(record), current);
     const block = id
       ? await this._repository.updateBlock(id, data as Prisma.LinkBlockUpdateInput)
       : await this._repository.createBlock({
@@ -382,7 +396,7 @@ export class LinkService {
 
   async analytics(org: PlanOrg, range: string, from = '', to = '') {
     const record = await this.ensure(org);
-    const open = linkFeatureOpen(record.organization.subscription);
+    const open = linkFeatureOpen(await this.ownerSubscription(record));
     const custom = from || to ? customWindow(from, to) : null;
     if ((from || to) && !open) {
       throw new HttpException(
@@ -406,7 +420,7 @@ export class LinkService {
 
   async exportAnalytics(org: PlanOrg, range: string, from = '', to = '') {
     const record = await this.ensure(org);
-    if (!linkFeatureOpen(record.organization.subscription)) {
+    if (!linkFeatureOpen(await this.ownerSubscription(record))) {
       throw new HttpException(
         { message: paidFeatureProblem(false, 'deepAnalytics'), upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
@@ -463,7 +477,7 @@ export class LinkService {
 
   async integrations(org: PlanOrg, body: UpdateLinkIntegrationsDto) {
     const record = await this.ensure(org);
-    const paid = linkFeatureOpen(record.organization.subscription);
+    const paid = linkFeatureOpen(await this.ownerSubscription(record));
     const writesSecret =
       !!body.mailchimpKey ||
       !!body.convertkitKey ||
@@ -517,7 +531,7 @@ export class LinkService {
     if (
       !customDomainBillingOpen(
         record.organizationId,
-        record.organization.subscription,
+        await this.ownerSubscription(record),
         record.organization
       )
     ) {
@@ -869,7 +883,7 @@ export class LinkService {
     record: LinkPageRecord,
     window: { from: Date; to: Date; previousFrom: Date }
   ) {
-    const paid = linkFeatureOpen(record.organization.subscription);
+    const paid = linkFeatureOpen(await this.ownerSubscription(record));
     const [views, clicks, subscribers, previousViews, previousClicks, previousSubscribers, series, countries, sources, linkClicks, devices, browsers, utm] =
       await Promise.all([
         this._repository.countEvents(record.id, 'VIEW', window.from, window.to),
@@ -951,7 +965,7 @@ export class LinkService {
     record: LinkPageRecord,
     lead: { email: string; name: string; source: string; kind: string }
   ) {
-    if (!linkFeatureOpen(record.organization.subscription)) {
+    if (!linkFeatureOpen(await this.ownerSubscription(record))) {
       return;
     }
     const jobs: Array<Promise<unknown>> = [];
@@ -1316,15 +1330,15 @@ export class LinkService {
   private async toEditor(record: LinkPageRecord) {
     const clicks = await this._repository.clickCounts(record.id);
     const byBlock = new Map(clicks.filter((row) => row.blockId).map((row) => [row.blockId, row._count._all]));
-    const paid = isPaidPlan(record.organization.subscription);
-    const open = linkFeatureOpen(record.organization.subscription);
+    const paid = isPaidPlan(await this.ownerSubscription(record));
+    const open = linkFeatureOpen(await this.ownerSubscription(record));
     const badgePaid = badgeRemovalOpen(
       record.organizationId,
-      record.organization.subscription
+      await this.ownerSubscription(record)
     );
     const domainPaid = customDomainBillingOpen(
       record.organizationId,
-      record.organization.subscription,
+      await this.ownerSubscription(record),
       record.organization
     );
     const customDomainAddon = hasCustomDomainAddon(record.organization);
@@ -1474,7 +1488,7 @@ export class LinkService {
   }
 
   private async toPublic(record: LinkPageRecord, visitor = normalizeVisitor({})) {
-    const open = linkFeatureOpen(record.organization.subscription);
+    const open = linkFeatureOpen(await this.ownerSubscription(record));
     const design = normalizeDesign(record.design);
     const accounts = await this.accounts(record.organizationId, design);
     const visible = record.isPublic
@@ -1525,7 +1539,7 @@ export class LinkService {
       sensitive: record.sensitive,
       showBadge: showBadge(
         record.hideBadge,
-        badgeRemovalOpen(record.organizationId, record.organization.subscription)
+        badgeRemovalOpen(record.organizationId, await this.ownerSubscription(record))
       ),
       socials: this.mergedSocials(record.socials, accounts),
       redirectUrl: redirect && !urlProblem(redirect.url) ? redirect.url : '',

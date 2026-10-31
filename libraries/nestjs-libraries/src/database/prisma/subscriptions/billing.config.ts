@@ -18,6 +18,10 @@ export const CREDIT_COSTS = {
   aiPostsPerCredit: 2,
 } as const;
 
+// TODO: Harsh has not set the AI video credit cost. Do not charge, price, or
+// show a card line until this is a positive number.
+export const AI_VIDEO_CREDIT_COST: number | null = null;
+
 export const CREDIT_PACKS = [
   { key: 'PACK_150' as const, credits: 150, usd: 5, name: '150 credits' },
   { key: 'PACK_500' as const, credits: 500, usd: 15, name: '500 credits' },
@@ -48,9 +52,6 @@ export type PlanConfig = {
   communityFeatures: boolean;
   featuredByGitroom: boolean;
   importFromChannels: boolean;
-  imageGenerator: boolean;
-  imageGenerationCount: number;
-  generateVideos: number;
   publicApi: boolean;
   autoPost: boolean;
 };
@@ -70,8 +71,6 @@ const paid = (
     | 'stalkerManualChecksPerDay'
     | 'mentionRetentionDays'
     | 'webhooks'
-    | 'imageGenerationCount'
-    | 'generateVideos'
   >
 ): PlanConfig => ({
   ...partial,
@@ -82,7 +81,6 @@ const paid = (
   communityFeatures: partial.key !== 'STANDARD',
   featuredByGitroom: partial.key !== 'STANDARD',
   importFromChannels: true,
-  imageGenerator: partial.key !== 'STANDARD',
   publicApi: true,
   autoPost: partial.key !== 'STANDARD',
 });
@@ -108,9 +106,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     communityFeatures: false,
     featuredByGitroom: false,
     importFromChannels: false,
-    imageGenerator: false,
-    imageGenerationCount: 0,
-    generateVideos: 0,
     publicApi: false,
     autoPost: false,
   },
@@ -127,8 +122,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     stalkerManualChecksPerDay: 3,
     mentionRetentionDays: 30,
     webhooks: 2,
-    imageGenerationCount: 20,
-    generateVideos: 3,
   }),
   TEAM: paid({
     key: 'TEAM',
@@ -143,8 +136,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     stalkerManualChecksPerDay: 10,
     mentionRetentionDays: 90,
     webhooks: 10,
-    imageGenerationCount: 100,
-    generateVideos: 10,
   }),
   PRO: paid({
     key: 'PRO',
@@ -159,8 +150,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     stalkerManualChecksPerDay: 30,
     mentionRetentionDays: 365,
     webhooks: 30,
-    imageGenerationCount: 300,
-    generateVideos: 30,
   }),
   ULTIMATE: paid({
     key: 'ULTIMATE',
@@ -175,8 +164,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     stalkerManualChecksPerDay: null,
     mentionRetentionDays: 365,
     webhooks: 10000,
-    imageGenerationCount: 500,
-    generateVideos: 60,
   }),
 };
 
@@ -204,3 +191,165 @@ export function productKey(tier: PaidTier, period: BillingPeriod): ProductKey {
 export function packByKey(key: string) {
   return CREDIT_PACKS.find((pack) => pack.key === key) || null;
 }
+
+// One list for the pricing cards and for enforcement. AI images and AI videos
+// are not on the cards: images spend CREDIT_COSTS.aiImage, and AI video has
+// no cost until AI_VIDEO_CREDIT_COST is set.
+export const PLAN_CARD_KEYS = [
+  'channels',
+  'teamMembers',
+  'workspaces',
+  'monthlyCredits',
+  'stalkerKeywords',
+  'stalkerScanHours',
+  'stalkerChecks',
+  'mentionRetentionDays',
+  'webhooks',
+  'postsPerMonth',
+  'aiPost',
+  'postingSets',
+  'analytics',
+  'linkThemes',
+  'badgeRemoved',
+] as const;
+
+export type PlanCardKey = (typeof PLAN_CARD_KEYS)[number];
+
+export type PlanCardLine = {
+  key: PlanCardKey;
+  text: string;
+};
+
+const cardCount = (value: number) => value.toLocaleString('en-US');
+
+export function planCardLines(plan: PlanConfig): PlanCardLine[] {
+  const lines: PlanCardLine[] = [
+    { key: 'channels', text: `${cardCount(plan.channels)} channels` },
+    {
+      key: 'teamMembers',
+      text:
+        plan.teamMemberLimit == null
+          ? 'Unlimited team members'
+          : `${cardCount(plan.teamMemberLimit)} team ${plan.teamMemberLimit === 1 ? 'member' : 'members'}`,
+    },
+    { key: 'workspaces', text: 'Unlimited workspaces' },
+    { key: 'monthlyCredits', text: `${cardCount(plan.monthlyCredits)} credits a month` },
+    { key: 'stalkerKeywords', text: `${cardCount(plan.stalkerKeywords)} Stalker keywords` },
+    {
+      key: 'stalkerScanHours',
+      text: `Stalker scan every ${plan.stalkerScanHours} ${plan.stalkerScanHours === 1 ? 'hour' : 'hours'}`,
+    },
+    {
+      key: 'stalkerChecks',
+      text:
+        plan.stalkerManualChecksPerDay == null
+          ? 'Unlimited Stalker checks a day'
+          : `${cardCount(plan.stalkerManualChecksPerDay)} Stalker ${plan.stalkerManualChecksPerDay === 1 ? 'check' : 'checks'} a day`,
+    },
+    {
+      key: 'mentionRetentionDays',
+      text: `${cardCount(plan.mentionRetentionDays)} days of mentions`,
+    },
+    { key: 'webhooks', text: `${cardCount(plan.webhooks)} webhooks` },
+    {
+      key: 'postsPerMonth',
+      text:
+        plan.postsPerMonth > 10000
+          ? 'Unlimited posts a month'
+          : `${cardCount(plan.postsPerMonth)} posts a month`,
+    },
+  ];
+  if (plan.ai) {
+    lines.push({ key: 'aiPost', text: 'AI post' });
+  }
+  lines.push(
+    { key: 'postingSets', text: 'Posting sets' },
+    { key: 'analytics', text: 'Analytics' },
+    { key: 'linkThemes', text: 'Link in Bio, all themes' }
+  );
+  if (plan.key !== 'FREE') {
+    lines.push({ key: 'badgeRemoved', text: 'Badge removed' });
+  }
+  return lines;
+}
+
+export function planFeatureLines(plan: PlanConfig) {
+  return planCardLines(plan).map((line) => line.text);
+}
+
+// null means the card states no numeric cap.
+export function planCardQuota(plan: PlanConfig, key: PlanCardKey): number | null {
+  switch (key) {
+    case 'channels':
+      return plan.channels;
+    case 'teamMembers':
+      return plan.teamMemberLimit;
+    case 'workspaces':
+      return null;
+    case 'monthlyCredits':
+      return plan.monthlyCredits;
+    case 'stalkerKeywords':
+      return plan.stalkerKeywords;
+    case 'stalkerScanHours':
+      return plan.stalkerScanHours;
+    case 'stalkerChecks':
+      return plan.stalkerManualChecksPerDay;
+    case 'mentionRetentionDays':
+      return plan.mentionRetentionDays;
+    case 'webhooks':
+      return plan.webhooks;
+    case 'postsPerMonth':
+      return plan.postsPerMonth;
+    default:
+      return null;
+  }
+}
+
+export function cardLimitAllows(key: PlanCardKey, plan: PlanConfig, usage: number) {
+  switch (key) {
+    case 'channels':
+    case 'stalkerKeywords':
+    case 'webhooks':
+    case 'postsPerMonth':
+      return usage < (planCardQuota(plan, key) ?? 0);
+    case 'teamMembers':
+    case 'stalkerChecks': {
+      const limit = planCardQuota(plan, key);
+      return limit == null || usage < limit;
+    }
+    case 'monthlyCredits':
+      return usage <= plan.monthlyCredits;
+    case 'workspaces':
+      return true;
+    case 'stalkerScanHours':
+      return plan.stalkerScanHours > 0;
+    case 'mentionRetentionDays':
+      return plan.mentionRetentionDays > 0;
+    case 'aiPost':
+      return plan.ai;
+    case 'postingSets':
+    case 'analytics':
+    case 'linkThemes':
+    case 'badgeRemoved':
+      return plan.key !== 'FREE';
+  }
+}
+
+// Where each card line is enforced. Feature lines have no second numeric cap.
+export const PLAN_CARD_ENFORCEMENT: Record<PlanCardKey, string> = {
+  channels: 'EntitlementService.assertCanConnect',
+  teamMembers: 'EntitlementService.assertCanAddMember',
+  workspaces: 'createWorkspace has no plan cap',
+  monthlyCredits: 'CreditsService shared balance',
+  stalkerKeywords: 'EntitlementService.assertCanAddKeyword',
+  stalkerScanHours: 'StalkerService.listDueProjectScans',
+  stalkerChecks: 'EntitlementService.assertCanManualCheck',
+  mentionRetentionDays: 'StalkerService.mentions',
+  webhooks: 'PermissionsService webhook count',
+  postsPerMonth: 'PermissionsService posts per month',
+  aiPost: 'plan.ai and CreditsService AI post charge',
+  postingSets: 'EntitlementService.assertFeature postingSets',
+  analytics: 'EntitlementService.assertFeature analytics',
+  linkThemes: 'themes are not plan-locked',
+  badgeRemoved: 'badgeRemovalOpen on the owner subscription',
+};

@@ -4,15 +4,21 @@ import { SubscriptionRepository } from '@gitroom/nestjs-libraries/database/prism
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { Organization } from '@prisma/client';
-import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
+import {
+  AI_VIDEO_CREDIT_COST,
+  CREDIT_COSTS,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
 
 @Injectable()
 export class SubscriptionService {
   constructor(
     private readonly _subscriptionRepository: SubscriptionRepository,
     private readonly _integrationService: IntegrationService,
-    private readonly _organizationService: OrganizationService
+    private readonly _organizationService: OrganizationService,
+    private readonly _credits: CreditsService
   ) {}
 
   getSubscriptionByOrganizationId(organizationId: string) {
@@ -319,39 +325,33 @@ export class SubscriptionService {
     return this._subscriptionRepository.getSubscription(organizationId);
   }
 
-  async checkCredits(organization: Organization, checkType = 'ai_images') {
-    // @ts-ignore
-    const type = organization?.subscription?.subscriptionTier || 'FREE';
-
-    if (type === 'FREE') {
-      return { credits: 0 };
-    }
-
-    // @ts-ignore
-    let date = dayjs(organization.subscription.createdAt);
-    while (date.isBefore(dayjs())) {
-      date = date.add(1, 'month');
-    }
-
-    const checkFromMonth = date.subtract(1, 'month');
+  async checkCredits(
+    organization: Organization,
+    checkType = 'ai_images'
+  ): Promise<{ credits: number | null; priced: boolean }> {
     if (checkType === 'clipping_minutes') {
-      return { credits: 0 };
+      return { credits: 0, priced: true };
     }
-
-    const imageGenerationCount =
-      checkType === 'ai_images'
-        ? pricing[type].image_generation_count
-        : pricing[type].generate_videos;
-
-    const totalUse = await this._subscriptionRepository.getCreditsFrom(
-      organization.id,
-      checkFromMonth,
-      checkType
-    );
-
-    return {
-      credits: imageGenerationCount - totalUse,
-    };
+    if (isBillingEnforced(organization.id)) {
+      if (checkType === 'ai_videos') {
+        const videoCost = AI_VIDEO_CREDIT_COST;
+        if (videoCost == null || videoCost <= 0) {
+          return { credits: null, priced: false };
+        }
+        const balance = await this._credits.balance(organization.id);
+        return {
+          credits: Math.floor(balance.total / videoCost),
+          priced: true,
+        };
+      }
+      const balance = await this._credits.balance(organization.id);
+      const unit = CREDIT_COSTS.aiImage;
+      return {
+        credits: unit > 0 ? Math.floor(balance.total / unit) : 0,
+        priced: true,
+      };
+    }
+    return { credits: 1000, priced: true };
   }
 
   async addSubscription(

@@ -222,6 +222,7 @@ describe('MediaService.getMedia', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
       {} as any
     );
   }

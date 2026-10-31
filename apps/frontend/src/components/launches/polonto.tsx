@@ -92,9 +92,9 @@ const Polonto: FC<{
   const features = useMemo(() => {
     return [
       ...DEFAULT_SECTIONS,
-      ...(user?.tier?.image_generator ? [PictureGeneratorSection] : []),
+      ...(user?.tier?.ai ? [PictureGeneratorSection] : []),
     ] as any[];
-  }, [user?.tier?.image_generator]);
+  }, [user?.tier?.ai]);
   useEffect(() => {
     store.addPage({
       width: props.width || 540,
