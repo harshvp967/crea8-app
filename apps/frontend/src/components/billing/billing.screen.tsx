@@ -189,6 +189,7 @@ export function BillingScreen({
   }
 
   const status = data.subscription.status;
+  const packsClosed = status === 'cancelled' || status === 'cancel_scheduled';
   const checkoutFailed = returned === 'failure';
   const screen = (() => {
     if (!checkoutFailed && returned === 'pending' && !activeEnough.has(status)) {
@@ -304,7 +305,7 @@ export function BillingScreen({
       <button type="button" onClick={() => setCreditsOpen(false)}>Back to plan</button>
       <CreditsMeter overview={data} />
       {!data.grandfathered ? (
-        <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
+        <CreditPacks packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} locked={packsClosed} />
       ) : null}
       <InvoiceList invoices={data.invoices} />
     </div>
@@ -344,7 +345,7 @@ export function BillingScreen({
               <AccountCreditsCard overview={data} />
             </div>
             {!data.grandfathered ? (
-              <CreditPacks compact packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} />
+              <CreditPacks compact packs={data.packs} busy={packBusy} error={packError} onBuy={buyPack} locked={packsClosed} />
             ) : null}
             <InvoiceList rows invoices={data.invoices} />
             {!accountHasPlan || showPlans ? (
