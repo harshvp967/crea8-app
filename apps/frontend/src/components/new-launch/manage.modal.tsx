@@ -48,7 +48,7 @@ import { Button } from '@gitroom/react/form/button';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 import { clearComposerLayoutRemount } from '@gitroom/frontend/components/new-launch/composer.draft';
-import { persistedThreadValues } from '@gitroom/frontend/components/new-launch/preview.thread';
+import { composerHasContent, persistedThreadValues } from '@gitroom/frontend/components/new-launch/preview.thread';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 const finePointer = () =>
@@ -104,6 +104,58 @@ function composerFingerprint(
       })),
     })),
   }));
+}
+
+function savedMedia(image: unknown) {
+  if (Array.isArray(image)) return image;
+  if (typeof image !== 'string' || !image.trim()) return [];
+  try {
+    const parsed = JSON.parse(image);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function composerHasUnsavedContent(
+  ref: { current: { getAllValues?: () => Promise<Array<{ values?: unknown[] }>> } | null | undefined },
+  existing: {
+    posts?: Array<{ content?: string | null; image?: unknown }>;
+    siblings?: Array<{ posts?: Array<{ content?: string | null; image?: unknown }> }>;
+  }
+) {
+  let loaded: Array<{ values?: unknown[] }> = [];
+  try {
+    const values = await ref.current?.getAllValues?.();
+    if (Array.isArray(values)) loaded = values;
+  } catch {
+    loaded = [];
+  }
+  const state = useLaunchStore.getState();
+  if (
+    composerHasContent([
+      state.global,
+      ...state.internal.map((row) => row.integrationValue),
+      ...loaded.map((post) =>
+        (Array.isArray(post?.values) ? post.values : []) as Array<{
+          content?: unknown;
+          media?: unknown;
+          image?: unknown;
+        }>
+      ),
+    ])
+  ) {
+    return true;
+  }
+  if (state.global.length > 0) return false;
+  const saved = [
+    ...(existing.posts || []),
+    ...(existing.siblings || []).flatMap((sibling) => sibling.posts || []),
+  ].map((post) => ({
+    content: post.content || '',
+    media: savedMedia(post.image),
+  }));
+  return composerHasContent([saved]);
 }
 
 const DraftCloseChoices = ({
@@ -481,6 +533,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       return false;
     }
 
+    if (!(await composerHasUnsavedContent(ref, existingData))) {
+      if (customClose) {
+        customClose();
+        return true;
+      }
+      modal.closeAll();
+      return true;
+    }
+
     if (
       !(await deleteDialog(
         t(
@@ -501,7 +562,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     }
     modal.closeAll();
     return true;
-  }, [activateExitButton, dummy, saveToDraft, modal]);
+  }, [activateExitButton, customClose, dummy, existingData, modal, saveToDraft]);
 
   useGrabToClose(composerFrameRef, true, askClose);
   useGrabToClose(postMenuRef, postMenuOpen, () => closePostMenu(false));

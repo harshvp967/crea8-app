@@ -8,7 +8,7 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 
 export const metadata: Metadata = {
-  title: 'Pricing | crea8.one',
+  title: 'Pricing',
   description: 'crea8.one plans in USD. Tax is added at checkout.',
 };
 

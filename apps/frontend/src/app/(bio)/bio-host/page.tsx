@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { loadPublicLink, presentPublicLink, publicShareMetadata, visitorSearch } from '@gitroom/frontend/components/link-in-bio/link.load';
+import { documentTitle } from '@gitroom/frontend/components/layout/site.metadata';
 import { LinkLive } from '@gitroom/frontend/components/link-in-bio/link.live';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,7 @@ async function load() {
 export async function generateMetadata(): Promise<Metadata> {
   const page = await load();
   if (!page) {
-    return { title: 'Page not found', robots: { index: false, follow: false } };
+    return { title: documentTitle('Page not found'), robots: { index: false, follow: false } };
   }
   return publicShareMetadata(page);
 }

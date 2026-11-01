@@ -5,6 +5,11 @@ export const SITE_DESCRIPTION =
   'Plan, publish and learn from your audience, in one place.';
 export const SITE_IMAGE = '/crea8one-logo.png';
 
+/** Browser tab title. The page name comes first, then the brand. */
+export function documentTitle(label: string) {
+  return `${label} · ${SITE_NAME}`;
+}
+
 function metadataBase() {
   const value = (process.env.FRONTEND_URL || '').trim();
   if (!value) {
@@ -38,7 +43,10 @@ function socialMetadata(): Pick<Metadata, 'openGraph' | 'twitter' | 'metadataBas
 
 export function appPageMetadata(): Metadata {
   return {
-    title: SITE_NAME,
+    title: {
+      default: SITE_NAME,
+      template: `%s · ${SITE_NAME}`,
+    },
     description: SITE_DESCRIPTION,
     robots: {
       index: false,
@@ -50,7 +58,10 @@ export function appPageMetadata(): Metadata {
 
 export function publicPageMetadata(): Metadata {
   return {
-    title: SITE_NAME,
+    title: {
+      default: SITE_NAME,
+      template: `%s · ${SITE_NAME}`,
+    },
     description: SITE_DESCRIPTION,
     robots: {
       index: true,

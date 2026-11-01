@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { documentTitle } from '@gitroom/frontend/components/layout/site.metadata';
 
 export const metadata: Metadata = {
-  title: 'Confirm email',
+  title: documentTitle('Confirm email'),
   robots: { index: false, follow: false },
 };
 

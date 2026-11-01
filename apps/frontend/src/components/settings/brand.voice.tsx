@@ -216,7 +216,6 @@ export const BrandVoiceSettings = () => {
         <div className="c8-voice-toggle">
           <div>
             <strong>{t('use_my_voice', 'Use my voice for all AI posts')}</strong>
-            <p>{t('voice_applies', 'One idea, every platform')}</p>
           </div>
           <button
             type="button"

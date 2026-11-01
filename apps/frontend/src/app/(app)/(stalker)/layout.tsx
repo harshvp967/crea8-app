@@ -5,7 +5,7 @@ import { StalkerShell } from '@gitroom/frontend/components/stalker/stalker.shell
 import { StalkerProjectProvider } from '@gitroom/frontend/components/stalker/stalker.project';
 
 export const metadata: Metadata = {
-  title: `Crea8one Stalker`,
+  title: 'Stalker',
   description: '',
 };
 

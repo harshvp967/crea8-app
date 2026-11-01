@@ -22,6 +22,7 @@ import {
   WEBHOOK_EVENTS,
   WebhookEventName,
 } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhook.events';
+import { webhookQuota } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 
 const EVENT_COPY: Record<WebhookEventName, { key: string; label: string }> = {
   'post.published': {
@@ -97,7 +98,7 @@ export const Webhooks: FC = () => {
       <div className="settings-head">
         <div>
           <h1>
-            {t('webhooks', 'Webhooks')} ({data?.length || 0}/{user?.tier?.webhooks})
+            {t('webhooks', 'Webhooks')} ({webhookQuota(data?.length || 0, user?.tier?.webhooks)})
           </h1>
         </div>
         <Button onClick={addWebhook()}>

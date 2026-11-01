@@ -4,7 +4,7 @@ import { LayoutComponent } from '@gitroom/frontend/components/new-layout/layout.
 import { LinkShell } from '@gitroom/frontend/components/link-in-bio/link.shell';
 
 export const metadata: Metadata = {
-  title: 'crea8.one Link-in-Bio',
+  title: 'Link-in-Bio',
   description: '',
 };
 
