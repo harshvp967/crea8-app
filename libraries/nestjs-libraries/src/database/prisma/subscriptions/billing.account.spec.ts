@@ -8,11 +8,14 @@ import {
   PLANS,
   TRIAL_MONTHLY_CREDITS,
   cardLimitAllows,
+  noPlanProductOpen,
   planCardLines,
   planCardQuota,
   usagePair,
   webhookQuota,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { linkFeatureOpen } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { BillingBlocked } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   loadBillingAccount,
   subscriptionGrantsAccess,
@@ -542,5 +545,92 @@ describe('shared workspace billing', () => {
     expect(await entitlements.countChannels('org-b')).toBe(5);
     expect(await entitlements.countKeywords('org-a')).toBe(3);
     expect(cardLimitAllows('webhooks', PLANS.STANDARD, 2)).toBe(false);
+  });
+
+  it('opens Link in Bio with no subscription and keeps Schedule and Stalker closed', async () => {
+    expect(noPlanProductOpen('link')).toBe(true);
+    expect(noPlanProductOpen('schedule')).toBe(false);
+    expect(noPlanProductOpen('stalker')).toBe(false);
+    expect(noPlanProductOpen('paid')).toBe(false);
+    expect(linkFeatureOpen(null)).toBe(true);
+    expect(cardLimitAllows('linkThemes', PLANS.FREE, 0)).toBe(true);
+    expect(cardLimitAllows('postsPerMonth', PLANS.FREE, 0)).toBe(false);
+    expect(cardLimitAllows('stalkerKeywords', PLANS.FREE, 0)).toBe(false);
+    expect(cardLimitAllows('analytics', PLANS.FREE, 0)).toBe(false);
+    expect(cardLimitAllows('postingSets', PLANS.FREE, 0)).toBe(false);
+    expect(cardLimitAllows('channels', PLANS.FREE, 0)).toBe(false);
+
+    const none = workspaceDb({
+      orgs: [
+        {
+          id: 'org-none',
+          isTrailing: true,
+          allowTrial: true,
+          paymentId: null,
+          deletedAt: null,
+          subscription: null,
+        },
+      ],
+      members: [
+        {
+          userId: 'harsh',
+          organizationId: 'org-none',
+          role: 'SUPERADMIN',
+          disabled: false,
+          createdAt: new Date('2026-01-01'),
+        },
+      ],
+      channels: [
+        {
+          id: 'ch-1',
+          internalId: 'social-1',
+          organizationId: 'org-none',
+          createdAt: new Date('2026-01-02'),
+          deletedAt: null,
+          disabled: false,
+          refreshNeeded: false,
+        },
+      ],
+    });
+    const entitlements = new EntitlementService(none.api);
+    expect(await entitlements.tier('org-none')).toBe('FREE');
+    expect((await entitlements.account('org-none')).subscription).toBeNull();
+    await expect(entitlements.assertCanPost('org-none', 'ch-1')).rejects.toBeInstanceOf(
+      BillingBlocked
+    );
+    await expect(entitlements.assertCanAddKeyword('org-none')).rejects.toBeInstanceOf(
+      HttpException
+    );
+    await expect(entitlements.assertCanConnect('org-none', 'social-new')).rejects.toBeInstanceOf(
+      HttpException
+    );
+    await expect(entitlements.assertFeature('org-none', 'analytics')).rejects.toBeInstanceOf(
+      HttpException
+    );
+    await expect(entitlements.assertFeature('org-none', 'postingSets')).rejects.toBeInstanceOf(
+      HttpException
+    );
+
+    const trial = owner(sub('org-a', { status: 'trialing', subscriptionTier: 'STANDARD' }), {
+      isTrailing: true,
+      allowTrial: false,
+    });
+    const trialEntitlements = new EntitlementService(trial.api);
+    await expect(trialEntitlements.assertCanAddKeyword('org-a')).resolves.toBeUndefined();
+
+    const credits = new CreditsService(none.api);
+    expect(
+      await credits.applyReportedPackPayment(none.api, {
+        payment_id: 'pay_none',
+        status: 'succeeded',
+        metadata: {
+          organizationId: 'org-none',
+          kind: 'credit_pack',
+          pack: 'PACK_150',
+          credits: 150,
+        },
+      })
+    ).toBe(false);
+    expect((await credits.balance('org-none')).packRemaining).toBe(0);
   });
 });

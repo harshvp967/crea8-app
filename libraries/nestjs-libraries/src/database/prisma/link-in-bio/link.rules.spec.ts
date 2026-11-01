@@ -469,11 +469,13 @@ describe('link-in-bio deeper analytics rules', () => {
 });
 
 describe('link-in-bio v3 design, embeds and visitor rules', () => {
-  it('keeps paid features open while the gating flag is off', () => {
-    expect(linkFeatureOpen(null)).toBe(!LINK_PLAN_GATING_ENABLED);
+  it('keeps Link in Bio open with no subscription and follows the flag for a free row', () => {
+    expect(linkFeatureOpen(null)).toBe(true);
+    expect(linkFeatureOpen({ subscriptionTier: 'STANDARD', deletedAt: new Date() })).toBe(true);
     expect(linkFeatureOpen({ subscriptionTier: 'FREE' })).toBe(!LINK_PLAN_GATING_ENABLED);
     expect(linkFeatureOpen({ subscriptionTier: 'PRO' })).toBe(true);
     expect(isPaidPlan({ subscriptionTier: 'FREE' })).toBe(false);
+    expect(isPaidPlan(null)).toBe(false);
   });
 
   it('keeps every theme free and still marks blur wallpaper and glass buttons', () => {

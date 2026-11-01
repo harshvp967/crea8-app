@@ -10,6 +10,7 @@ import {
   PlanCardKey,
   PlanTier,
   cardLimitAllows,
+  noPlanProductOpen,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import {
@@ -163,7 +164,38 @@ export class EntitlementService {
     };
   }
 
+  private async refuseWithoutPlan(
+    organizationId: string,
+    product: 'schedule' | 'stalker' | 'paid'
+  ) {
+    if (noPlanProductOpen(product) || !isBillingEnforced(organizationId)) {
+      return;
+    }
+    const account = await this.account(organizationId);
+    if (
+      account.subscription ||
+      account.grandfathered ||
+      isGrandfatheredOrg(organizationId)
+    ) {
+      return;
+    }
+    if (product === 'stalker') {
+      throw new HttpException(
+        { message: keywordUpgradeMessage('FREE'), upgrade: true },
+        402
+      );
+    }
+    if (product === 'schedule') {
+      throw new BillingBlocked(postingUpgradeMessage('FREE'));
+    }
+    throw new HttpException(
+      { message: 'Free does not include this. Upgrade your plan.', upgrade: true },
+      402
+    );
+  }
+
   async assertCanConnect(organizationId: string, internalId?: string) {
+    await this.refuseWithoutPlan(organizationId, 'paid');
     const limits = await this.limits(organizationId);
     if (!limits) {
       return;
@@ -187,6 +219,7 @@ export class EntitlementService {
   }
 
   async assertCanPost(organizationId: string, integrationId: string) {
+    await this.refuseWithoutPlan(organizationId, 'schedule');
     const limits = await this.limits(organizationId);
     if (!limits) {
       return;
@@ -217,6 +250,7 @@ export class EntitlementService {
   }
 
   async assertCanAddKeyword(organizationId: string) {
+    await this.refuseWithoutPlan(organizationId, 'stalker');
     const limits = await this.limits(organizationId);
     if (!limits) {
       return;
@@ -252,6 +286,7 @@ export class EntitlementService {
     organizationId: string,
     key: Extract<PlanCardKey, 'postingSets' | 'analytics' | 'aiPost'>
   ) {
+    await this.refuseWithoutPlan(organizationId, 'paid');
     const limits = await this.limits(organizationId);
     if (!limits) {
       return;

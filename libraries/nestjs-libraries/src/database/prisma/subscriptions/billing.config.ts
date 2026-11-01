@@ -315,6 +315,12 @@ export function planCardQuota(plan: PlanConfig, key: PlanCardKey): number | null
   }
 }
 
+// Link in Bio stays open for a workspace that never picked a plan or trial.
+// Schedule, Stalker, and the other paid products stay closed until one exists.
+export function noPlanProductOpen(product: 'link' | 'schedule' | 'stalker' | 'paid') {
+  return product === 'link';
+}
+
 export function cardLimitAllows(key: PlanCardKey, plan: PlanConfig, usage: number) {
   switch (key) {
     case 'channels':
@@ -337,9 +343,10 @@ export function cardLimitAllows(key: PlanCardKey, plan: PlanConfig, usage: numbe
       return plan.mentionRetentionDays > 0;
     case 'aiPost':
       return plan.ai;
+    case 'linkThemes':
+      return noPlanProductOpen('link');
     case 'postingSets':
     case 'analytics':
-    case 'linkThemes':
     case 'badgeRemoved':
       return plan.key !== 'FREE';
   }
