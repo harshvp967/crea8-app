@@ -2,9 +2,11 @@ import { HttpException, Injectable } from '@nestjs/common';
 import DodoPayments from 'dodopayments';
 import { Prisma } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
+import { isGrandfatheredOrg } from '@gitroom/helpers/utils/billing.enabled';
 import { PrismaService } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { loadBillingAccount } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.account';
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
 import {
   PAID_TIERS,
@@ -31,6 +33,7 @@ import {
   isSucceededPackEvent,
   packGrantFromPayment,
   planChangeBilling,
+  subscriptionChargeEndsTrial,
   preservedTrialEnd,
   subscriptionProductId,
   tierFromProductId,
@@ -103,6 +106,7 @@ export class DodoProvider extends PaymentProviderAbstract {
         }
         if (isSucceededPackEvent(type)) {
           await this.applyPackPayment(tx, data);
+          await this.liftTrialOnSubscriptionCharge(tx, data);
         }
       });
     } catch (err) {
@@ -137,8 +141,18 @@ export class DodoProvider extends PaymentProviderAbstract {
       return;
     }
     // A renewal is a successful recurring charge, including the charge that
-    // ends the trial. The trial cap applies only before that charge.
-    const inTrial = type === 'subscription.renewed' ? false : this.inTrial(source);
+    // ends the trial. A paid cycle already on the ledger means that charge
+    // landed, so a later event must not put the 50-credit cap back.
+    const balance = await tx.creditBalance.findUnique({
+      where: { organizationId },
+      select: { cycleKey: true },
+    });
+    const paidCycle =
+      !!balance?.cycleKey &&
+      !String(balance.cycleKey).startsWith('trial:') &&
+      !String(balance.cycleKey).startsWith('gf:');
+    const inTrial =
+      type === 'subscription.renewed' || paidCycle ? false : this.inTrial(source);
     const ended = ['cancelled', 'expired'].includes(status);
     const cancelAt =
       source.cancel_at_next_billing_date && source.next_billing_date
@@ -205,7 +219,12 @@ export class DodoProvider extends PaymentProviderAbstract {
         deletedAt: ended ? new Date() : null,
       },
     });
-    if (!ended && (type === 'subscription.active' || type === 'subscription.renewed')) {
+    if (
+      !ended &&
+      (type === 'subscription.active' ||
+        type === 'subscription.renewed' ||
+        type === 'subscription.plan_changed')
+    ) {
       const cycleKey = source.previous_billing_date || source.created_at || source.subscription_id;
       const grantingTrial = inTrial && type !== 'subscription.renewed';
       await this._credits.grantMonthly(
@@ -239,6 +258,58 @@ export class DodoProvider extends PaymentProviderAbstract {
       source,
       await this.organizationIdFor(tx, source)
     );
+  }
+
+  // The first paid subscription charge replaces the 50-credit trial grant
+  // with the plan allowance. A pack payment and a $0 trial checkout do not.
+  private async liftTrialOnSubscriptionCharge(
+    tx: Tx,
+    data: any,
+    knownOrganizationId?: string | null
+  ) {
+    if (!subscriptionChargeEndsTrial(data)) {
+      return;
+    }
+    const organizationId =
+      knownOrganizationId || (await this.organizationIdFor(tx, data));
+    if (!organizationId) {
+      return;
+    }
+    const existing = await tx.subscription.findUnique({
+      where: { organizationId },
+    });
+    const org = await tx.organization.findUnique({
+      where: { id: organizationId },
+      select: { isTrailing: true },
+    });
+    const trailing = existing?.status === 'trialing' || !!org?.isTrailing;
+    if (!existing || !trailing) {
+      return;
+    }
+    const tier = existing.subscriptionTier;
+    const amount = monthlyCreditAllowance(tier, false);
+    if (!tier || !PLANS[tier as PaidTier] || amount <= 0) {
+      return;
+    }
+    const balance = await tx.creditBalance.findUnique({
+      where: { organizationId },
+      select: { cycleKey: true },
+    });
+    const stored = balance?.cycleKey || '';
+    const cycleKey = stored.startsWith('trial:')
+      ? stored.slice('trial:'.length) || String(existing.identifier || organizationId)
+      : stored || String(existing.identifier || organizationId);
+    await tx.organization.update({
+      where: { id: organizationId },
+      data: { isTrailing: false, allowTrial: false },
+    });
+    await tx.subscription.update({
+      where: { organizationId },
+      data: {
+        status: existing.status === 'trialing' ? 'active' : existing.status,
+      },
+    });
+    await this._credits.grantMonthly(tx, organizationId, cycleKey, amount);
   }
 
   private async organizationIdFor(tx: Tx, source: any) {
@@ -313,22 +384,22 @@ export class DodoProvider extends PaymentProviderAbstract {
     if (!pack) {
       throw new HttpException('Unknown credit pack', 400);
     }
-    const org = await this._organizationService.getOrgById(organizationId);
-    const subscription = await this._prisma.subscription.findFirst({
-      where: { organizationId, deletedAt: null },
-      select: { status: true, deletedAt: true },
-    });
-    const trialError = creditPackCheckoutError(
-      subscription
-        ? {
-            status: subscription.status,
-            isTrailing: org?.isTrailing,
-            deletedAt: subscription.deletedAt,
-          }
-        : null
-    );
-    if (trialError) {
-      throw new HttpException(trialError, 400);
+    const account = await loadBillingAccount(this._prisma, organizationId);
+    if (!account.grandfathered && !isGrandfatheredOrg(organizationId)) {
+      const subscription = account.subscription;
+      const packError = creditPackCheckoutError(
+        subscription
+          ? {
+              status: subscription.status,
+              isTrailing: account.isTrailing,
+              deletedAt: subscription.deletedAt,
+              cancelAt: subscription.cancelAt,
+            }
+          : null
+      );
+      if (packError) {
+        throw new HttpException(packError, 400);
+      }
     }
     return this.checkout(
       organizationId,
@@ -445,6 +516,8 @@ export class DodoProvider extends PaymentProviderAbstract {
         next_billing_date: decision.keepTrialEnd,
       });
     }
+    const org = await this._organizationService.getOrgById(organizationId);
+    const stillTrial = inTrial || !!org?.isTrailing;
     if (current && decision.applyTierNow) {
       await this._prisma.subscription.update({
         where: { organizationId },
@@ -458,6 +531,24 @@ export class DodoProvider extends PaymentProviderAbstract {
           currentPeriodEnd: decision.keepTrialEnd ? new Date(decision.keepTrialEnd) : current.currentPeriodEnd,
         },
       });
+      if (!stillTrial) {
+        const balance = await this._credits.balance(organizationId);
+        const cycleKey =
+          balance.cycleKey && !balance.cycleKey.startsWith('trial:')
+            ? balance.cycleKey
+            : String(
+                current.currentPeriodEnd?.toISOString() ||
+                  new Date().toISOString().slice(0, 10)
+              );
+        await this._prisma.$transaction((tx) =>
+          this._credits.grantMonthly(
+            tx,
+            organizationId,
+            cycleKey,
+            PLANS[body.billing].monthlyCredits
+          )
+        );
+      }
     } else if (current) {
       await this._prisma.subscription.update({
         where: { organizationId },
@@ -631,14 +722,15 @@ export class DodoProvider extends PaymentProviderAbstract {
       if (status !== 'succeeded') {
         continue;
       }
-      await this._prisma.$transaction((tx) =>
-        this._credits.applyCheckoutReturn(
+      await this._prisma.$transaction(async (tx) => {
+        await this._credits.applyCheckoutReturn(
           tx,
           { payment_id: payment.payment_id, status },
           payment,
           organizationId
-        )
-      );
+        );
+        await this.liftTrialOnSubscriptionCharge(tx, payment, organizationId);
+      });
     }
   }
 

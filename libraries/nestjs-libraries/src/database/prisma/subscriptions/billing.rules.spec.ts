@@ -24,6 +24,7 @@ import {
   canAddTeamMember,
   canConnectChannel,
   cancelAccessUntil,
+  creditTracker,
   creditUsage,
   displayedPlanAfterEvent,
   dodoCheckoutPrefill,
@@ -39,6 +40,7 @@ import {
   preservedTrialEnd,
   reduceBillingEvent,
   packGrantFromPayment,
+  subscriptionChargeEndsTrial,
   stalkerReadCost,
   verifyDodoSignature,
   xPostCost,
@@ -255,6 +257,102 @@ describe('trial credit cap', () => {
     expect(PLANS.TEAM.monthlyCredits).toBe(700);
     expect(PLANS.PRO.monthlyCredits).toBe(1100);
     expect(PLANS.ULTIMATE.monthlyCredits).toBe(1800);
+  });
+
+  it('lifts the trial cap on the first charge and raises the allowance on a paid plan change', () => {
+    const trial = reduceBillingEvent(emptyBillingSnapshot(), {
+      id: 'trial',
+      type: 'subscription.active',
+      tier: 'STANDARD',
+      period: 'YEARLY',
+      status: 'active',
+      cycleKey: '2026-10-30',
+      inTrial: true,
+    });
+    expect(trial.status).toBe('trialing');
+    expect(trial.monthly).toBe(50);
+    const changedDuringTrial = reduceBillingEvent(trial, {
+      id: 'trial-plan',
+      type: 'subscription.plan_changed',
+      tier: 'PRO',
+      period: 'YEARLY',
+      status: 'active',
+      cycleKey: '2026-10-30',
+      inTrial: true,
+    });
+    expect(changedDuringTrial.tier).toBe('PRO');
+    expect(changedDuringTrial.monthly).toBe(50);
+    const charged = reduceBillingEvent(changedDuringTrial, {
+      id: 'first-charge',
+      type: 'subscription.renewed',
+      tier: 'PRO',
+      period: 'YEARLY',
+      status: 'active',
+      cycleKey: '2026-10-30',
+      inTrial: true,
+    });
+    expect(charged.status).toBe('active');
+    expect(charged.monthly).toBe(PLANS.PRO.monthlyCredits);
+    expect(charged.cycleKey).toBe('2026-10-30');
+    const upgraded = reduceBillingEvent(charged, {
+      id: 'to-agency',
+      type: 'subscription.plan_changed',
+      tier: 'ULTIMATE',
+      period: 'YEARLY',
+      status: 'active',
+      cycleKey: '2026-10-30',
+      inTrial: false,
+    });
+    expect(upgraded.tier).toBe('ULTIMATE');
+    expect(upgraded.monthly).toBe(PLANS.ULTIMATE.monthlyCredits);
+    const replay = reduceBillingEvent(upgraded, {
+      id: 'to-agency-replay',
+      type: 'subscription.plan_changed',
+      tier: 'ULTIMATE',
+      period: 'YEARLY',
+      status: 'active',
+      cycleKey: '2026-10-30',
+      inTrial: false,
+    });
+    expect(replay.monthly).toBe(PLANS.ULTIMATE.monthlyCredits);
+    const shown = creditTracker(
+      creditUsage({
+        allowance: monthlyCreditAllowance('PRO', true),
+        monthlyRemaining: 50,
+        packRemaining: 300,
+        entries: [],
+      })
+    );
+    expect(shown.allowance).toBe(50);
+    expect(shown.packCredits).toBe(300);
+    expect(shown.left).toBe(50);
+    expect(
+      subscriptionChargeEndsTrial({
+        payment_id: 'pay_year',
+        status: 'succeeded',
+        total_amount: 59000,
+        subscription_id: 'sub_pro',
+        metadata: { kind: 'subscription', billing: 'PRO' },
+      })
+    ).toBe(true);
+    expect(
+      subscriptionChargeEndsTrial({
+        payment_id: 'pay_trial',
+        status: 'succeeded',
+        total_amount: 0,
+        subscription_id: 'sub_pro',
+        metadata: { kind: 'subscription' },
+      })
+    ).toBe(false);
+    expect(
+      subscriptionChargeEndsTrial({
+        payment_id: 'pay_pack',
+        status: 'succeeded',
+        total_amount: 500,
+        subscription_id: 'sub_pro',
+        metadata: { kind: 'credit_pack', pack: 'PACK_150', credits: 150 },
+      })
+    ).toBe(false);
   });
 
   it('computes Left from the effective allowance minus used, with pack credits separate', () => {
