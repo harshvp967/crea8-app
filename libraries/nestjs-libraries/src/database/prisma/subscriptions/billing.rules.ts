@@ -287,11 +287,93 @@ function paidCancelDayStillOpen(
   return utcCalendarDay(now) <= endDay;
 }
 
+export type SubscriptionCharge = {
+  amount: number;
+  status?: string | null;
+  kind?: string | null;
+};
+
+export function subscriptionChargesFromList(rows: unknown): SubscriptionCharge[] {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+  const charges: SubscriptionCharge[] = [];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') {
+      continue;
+    }
+    const record = row as Record<string, unknown>;
+    if (typeof record.amount !== 'number' || !Number.isFinite(record.amount)) {
+      continue;
+    }
+    charges.push({
+      amount: record.amount,
+      status: typeof record.status === 'string' ? record.status : null,
+      kind: typeof record.kind === 'string' ? record.kind : null,
+    });
+  }
+  return charges;
+}
+
+// A succeeded subscription payment. Pack purchases and the $0 trial checkout
+// do not count. Amount is the invoice total in major units, such as 5.9 for $5.90.
+export function isPaidSubscriptionCharge(charge: SubscriptionCharge): boolean {
+  if (charge.kind === 'credit_pack') {
+    return false;
+  }
+  return invoiceIsVisible({
+    amount: charge.amount,
+    status: charge.status,
+  });
+}
+
+export function hasPaidSubscriptionCharge(
+  charges: readonly SubscriptionCharge[] | null | undefined
+): boolean {
+  return !!charges?.some(isPaidSubscriptionCharge);
+}
+
+// A stored isTrailing flag is not enough. A paid charge means the subscription
+// is no longer a trial, including when cancel was scheduled during that window.
+export function subscriptionIsTrial(input: {
+  status?: string | null;
+  isTrailing?: boolean | null;
+  deletedAt?: Date | string | null;
+  charges?: readonly SubscriptionCharge[] | null;
+} | null | undefined): boolean {
+  if (!input) {
+    return false;
+  }
+  if (hasPaidSubscriptionCharge(input.charges)) {
+    return false;
+  }
+  const status = String(input.status || '').trim().toLowerCase();
+  if (status === 'trialing') {
+    return true;
+  }
+  if (input.deletedAt) {
+    return false;
+  }
+  if (input.isTrailing) {
+    return true;
+  }
+  return workspaceOnTrial(input);
+}
+
+type PackCheckoutInput = {
+  status?: string | null;
+  isTrailing?: boolean | null;
+  deletedAt?: Date | string | null;
+  cancelAt?: Date | string | null;
+  charges?: readonly SubscriptionCharge[] | null;
+};
+
 export function creditPackCheckoutInput(account: {
   subscription?: PackSubscriptionRow | null;
   latest?: PackSubscriptionRow | null;
   isTrailing?: boolean | null;
-} | null | undefined) {
+  charges?: readonly SubscriptionCharge[] | null;
+} | null | undefined): PackCheckoutInput | null {
   const subscription = account?.subscription || account?.latest || null;
   if (!subscription) {
     return null;
@@ -301,23 +383,19 @@ export function creditPackCheckoutInput(account: {
     isTrailing: account?.isTrailing,
     deletedAt: subscription.deletedAt,
     cancelAt: subscription.cancelAt,
+    charges: account?.charges,
   };
 }
 
 export function creditPackCheckoutError(
-  input: {
-    status?: string | null;
-    isTrailing?: boolean | null;
-    deletedAt?: Date | string | null;
-    cancelAt?: Date | string | null;
-  } | null | undefined,
+  input: PackCheckoutInput | null | undefined,
   now = new Date()
 ) {
   if (!input) {
     return CREDIT_PACK_PAID_ERROR;
   }
   const status = String(input.status || '').trim().toLowerCase();
-  if (status === 'trialing' || input.isTrailing || workspaceOnTrial(input)) {
+  if (subscriptionIsTrial(input)) {
     return CREDIT_PACK_TRIAL_ERROR;
   }
   if (!status || PACK_CLOSED_STATUS.has(status)) {
@@ -334,6 +412,15 @@ export function creditPackCheckoutError(
   if (
     CANCELLED_PACK_STATUS.has(status) &&
     paidCancelDayStillOpen(input.cancelAt, now)
+  ) {
+    return null;
+  }
+  // The provider can still say trialing after the first paid charge.
+  if (
+    status === 'trialing' &&
+    hasPaidSubscriptionCharge(input.charges) &&
+    (!input.cancelAt || paidCancelDayStillOpen(input.cancelAt, now)) &&
+    !input.deletedAt
   ) {
     return null;
   }
