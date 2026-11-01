@@ -1,6 +1,7 @@
-import { IsDefined, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsArray, IsDefined, IsIn, IsOptional, IsString, IsUrl } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsSafeWebhookUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
+import { WEBHOOK_EVENTS } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhook.events';
 
 export class WebhooksIntegrationDto {
   @IsString()
@@ -27,6 +28,14 @@ export class WebhooksDto {
   @Type(() => WebhooksIntegrationDto)
   @IsDefined()
   integrations: WebhooksIntegrationDto[];
+
+  // Omitted on create: the column default is Schedule post published and post failed.
+  // Omitted on update: the stored selection is left as it is.
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsIn(WEBHOOK_EVENTS, { each: true })
+  events?: string[];
 }
 
 export class OnlyURL {
@@ -61,4 +70,10 @@ export class UpdateDto {
   @Type(() => WebhooksIntegrationDto)
   @IsDefined()
   integrations: WebhooksIntegrationDto[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsIn(WEBHOOK_EVENTS, { each: true })
+  events?: string[];
 }

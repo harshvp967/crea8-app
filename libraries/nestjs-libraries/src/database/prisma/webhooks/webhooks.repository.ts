@@ -1,6 +1,7 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { WebhooksDto } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
+import { webhookEventsWrite } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhook.events';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -38,6 +39,29 @@ export class WebhooksRepository {
     });
   }
 
+  getWebhooksForEvent(orgId: string, event: string) {
+    return this._webhooks.model.webhooks.findMany({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+        events: {
+          has: event,
+        },
+      },
+      include: {
+        integrations: {
+          select: {
+            integration: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   deleteWebhook(orgId: string, id: string) {
     return this._webhooks.model.webhooks.update({
       where: {
@@ -51,6 +75,7 @@ export class WebhooksRepository {
   }
 
   async createWebhook(orgId: string, body: WebhooksDto) {
+    const events = webhookEventsWrite(body.events);
     const { id } = await this._webhooks.model.webhooks.upsert({
       where: {
         id: body.id || uuidv4(),
@@ -60,10 +85,12 @@ export class WebhooksRepository {
         organizationId: orgId,
         url: body.url,
         name: body.name,
+        ...events,
       },
       update: {
         url: body.url,
         name: body.name,
+        ...events,
       },
     });
 

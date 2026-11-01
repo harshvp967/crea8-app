@@ -14,6 +14,8 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { WEBHOOK_EVENT } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhook.events';
 import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/services/cloudflare.custom-hostname.service';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
@@ -124,7 +126,8 @@ export class LinkService {
     private _cloudflare: CloudflareCustomHostnameService,
     private _email: EmailService,
     private _integrations: IntegrationManager,
-    @Optional() private _entitlements?: EntitlementService
+    @Optional() private _entitlements?: EntitlementService,
+    @Optional() private _webhooks?: WebhooksService
   ) {}
 
   private ownerSubscription(record: {
@@ -665,11 +668,12 @@ export class LinkService {
     if (!record || !record.isPublic || record.organization.deletedAt) {
       return { ok: true };
     }
-    if (kind === 'CLICK') {
-      const block = record.blocks.find((item) => item.id === body.blockId && blockState(item) === 'live');
-      if (!block) {
-        return { ok: true };
-      }
+    const clicked =
+      kind === 'CLICK'
+        ? record.blocks.find((item) => item.id === body.blockId && blockState(item) === 'live')
+        : undefined;
+    if (kind === 'CLICK' && !clicked) {
+      return { ok: true };
     }
     const now = new Date();
     const client = clientLabel(userAgent);
@@ -686,6 +690,16 @@ export class LinkService {
       ...utm,
       day: utcDay(now),
     });
+    if (clicked) {
+      void this._webhooks?.emit(record.organizationId, WEBHOOK_EVENT.linkClick, {
+        event: WEBHOOK_EVENT.linkClick,
+        slug: record.slug,
+        pageId: record.id,
+        blockId: clicked.id,
+        title: clicked.title || '',
+        url: clicked.url || '',
+      });
+    }
     return { ok: true };
   }
 
@@ -708,16 +722,28 @@ export class LinkService {
       return { status: 'pending' as const, already: true };
     }
     const token = record.captureDoubleOptIn ? randomBytes(24).toString('hex') : null;
+    const name = record.captureAskName ? (body.name || '').trim().slice(0, 80) : '';
     await this._repository.createLead({
       pageId: record.id,
       blockId: block.id,
       email,
-      name: record.captureAskName ? (body.name || '').trim().slice(0, 80) : '',
+      name,
       country: cleanCountry(countryHeader),
       referrer: sanitizeReferrer(body.referrer || ''),
       sourceBlock: block.title || 'Email capture',
       status: record.captureDoubleOptIn ? 'PENDING' : 'CONFIRMED',
       confirmToken: token,
+    });
+    await this.submission(record.organizationId, {
+      kind: 'subscribe',
+      slug: record.slug,
+      pageId: record.id,
+      blockId: block.id,
+      email,
+      name,
+      message: '',
+      source: block.title || 'Email capture',
+      status: record.captureDoubleOptIn ? 'PENDING' : 'CONFIRMED',
     });
     let emailed = false;
     if (token) {
@@ -800,11 +826,12 @@ export class LinkService {
       const existing = await this._repository.findLead(record.id, email);
       if (!existing) {
         try {
+          const name = (body.name || '').trim().slice(0, 80);
           await this._repository.createLead({
             pageId: record.id,
             blockId: block.id,
             email,
-            name: (body.name || '').trim().slice(0, 80),
+            name,
             country: cleanCountry(countryHeader),
             referrer: sanitizeReferrer(body.referrer || ''),
             sourceBlock: block.title || 'Locked link',
@@ -813,7 +840,18 @@ export class LinkService {
             status: 'CONFIRMED',
             confirmToken: null,
           });
-          await this.fanout(record, { email, name: (body.name || '').trim(), source: block.title || 'Locked link', kind: 'unlock' });
+          await this.submission(record.organizationId, {
+            kind: 'unlock',
+            slug: record.slug,
+            pageId: record.id,
+            blockId: block.id,
+            email,
+            name,
+            message: '',
+            source: block.title || 'Locked link',
+            status: 'CONFIRMED',
+          });
+          await this.fanout(record, { email, name, source: block.title || 'Locked link', kind: 'unlock' });
         } catch (error) {
           if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
             throw error;
@@ -875,8 +913,39 @@ export class LinkService {
       }
       return { ok: true, already: true };
     }
+    await this.submission(record.organizationId, {
+      kind: 'contact',
+      slug: record.slug,
+      pageId: record.id,
+      blockId: block.id,
+      email,
+      name,
+      message,
+      source: block.title || 'Contact form',
+      status: 'CONFIRMED',
+    });
     await this.fanout(record, { email, name, source: block.title || 'Contact form', kind: 'contact' });
     return { ok: true };
+  }
+
+  private submission(
+    organizationId: string,
+    body: {
+      kind: 'contact' | 'subscribe' | 'unlock';
+      slug: string;
+      pageId: string;
+      blockId: string;
+      email: string;
+      name: string;
+      message: string;
+      source: string;
+      status: 'PENDING' | 'CONFIRMED';
+    }
+  ) {
+    return this._webhooks?.emit(organizationId, WEBHOOK_EVENT.linkSubmission, {
+      event: WEBHOOK_EVENT.linkSubmission,
+      ...body,
+    });
   }
 
   private async analyticsReport(

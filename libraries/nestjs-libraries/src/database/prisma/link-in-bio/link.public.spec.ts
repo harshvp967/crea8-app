@@ -213,4 +213,88 @@ describe('Link-in-Bio public page and lead capture', () => {
       })
     );
   });
+
+  it('emits a link click for a live link and a form submission for a new contact', async () => {
+    const webhooks = { emit: jest.fn().mockResolvedValue(undefined) };
+    const repository = {
+      findBySlug: jest.fn().mockResolvedValue({
+        ...page,
+        blocks: [
+          ...page.blocks,
+          {
+            id: 'block-link',
+            type: 'LINK',
+            title: 'Site',
+            url: 'https://crea8.one',
+            enabled: true,
+          },
+        ],
+      }),
+      findLead: jest.fn().mockResolvedValue(null),
+      createLead: jest.fn().mockResolvedValue({ id: 'lead-1' }),
+      updateLead: jest.fn(),
+      insertEvent: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new LinkService(
+      repository as never,
+      {} as never,
+      { sendEmailSync: jest.fn() } as never,
+      {} as never,
+      undefined,
+      webhooks as never
+    );
+
+    await service.track('VIEW', { slug: 'ada' } as never, '', '');
+    expect(webhooks.emit).not.toHaveBeenCalled();
+    expect(repository.insertEvent).toHaveBeenCalledTimes(1);
+
+    repository.insertEvent.mockClear();
+    await service.track('CLICK', { slug: 'ada', blockId: 'missing' } as never, '', '');
+    expect(webhooks.emit).not.toHaveBeenCalled();
+    expect(repository.insertEvent).not.toHaveBeenCalled();
+
+    await service.track('CLICK', { slug: 'ada', blockId: 'block-link' } as never, '', '');
+    expect(webhooks.emit).toHaveBeenCalledWith(
+      'org-1',
+      'link.click',
+      expect.objectContaining({
+        event: 'link.click',
+        slug: 'ada',
+        pageId: 'page-1',
+        blockId: 'block-link',
+        title: 'Site',
+        url: 'https://crea8.one',
+      })
+    );
+
+    webhooks.emit.mockClear();
+    await service.contact(
+      {
+        slug: 'ada',
+        blockId: 'block-form',
+        email: 'ada@example.com',
+        message: 'hi',
+        website: 'https://spam.test',
+      } as never,
+      ''
+    );
+    expect(webhooks.emit).not.toHaveBeenCalled();
+
+    await service.contact(
+      { slug: 'ada', blockId: 'block-form', email: 'Ada@Example.com', message: 'Hello there', name: 'Ada' } as never,
+      'US'
+    );
+    expect(webhooks.emit).toHaveBeenCalledWith(
+      'org-1',
+      'link.submission',
+      expect.objectContaining({
+        event: 'link.submission',
+        kind: 'contact',
+        email: 'ada@example.com',
+        name: 'Ada',
+        message: 'Hello there',
+        status: 'CONFIRMED',
+      })
+    );
+  });
 });
