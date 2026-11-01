@@ -2907,8 +2907,8 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 }
 
 .link-screen .lib-date {
-  width: 148px;
-  padding-inline: 36px 12px;
+  width: 172px;
+  padding-inline: 40px 12px !important;
 }
 
 .link-screen .lib-date-field svg,
@@ -2918,7 +2918,7 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 }
 
 .link-screen .lib-search {
-  padding-inline: 38px 14px;
+  padding-inline: 40px 14px !important;
 }
 
 .link-screen .lib-analytics input[type='date']::-webkit-calendar-picker-indicator {
@@ -3087,6 +3087,19 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 }
 
 @media (max-width: 1199px) {
+  .link-screen .lib-split > div:first-child {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .link-screen .lib-editor-actions {
+    justify-content: flex-start;
+  }
+
+  .link-screen .lib-preview-as-summary {
+    max-width: calc(100% - 152px);
+    white-space: normal;
+  }
+
   .link-screen .lib-preview-fab {
     display: inline-flex;
     align-items: center;

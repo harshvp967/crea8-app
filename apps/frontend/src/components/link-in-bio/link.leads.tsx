@@ -134,7 +134,7 @@ export const LinkLeadsScreen = () => {
             />
           </div>
           <label className="lib-search-field relative block w-full md:w-[240px]">
-            <HugeIcon name="search" size={16} className="pointer-events-none absolute start-[14px] top-[14px]" />
+            <HugeIcon name="search" size={16} className="pointer-events-none absolute start-[14px] top-1/2 -translate-y-1/2" />
             <input
               className="lib-input lib-search"
               placeholder="Search emails"

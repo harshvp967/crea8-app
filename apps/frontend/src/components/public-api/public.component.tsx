@@ -529,7 +529,7 @@ const PublicApiContent = () => {
             <button
               type="button"
               onClick={rotateKey}
-              className="settings-tool settings-danger"
+              className="settings-tool"
             >
               <HugeIcon name="refresh" size={18} />
               {t('rotate_key', 'Rotate Key')}

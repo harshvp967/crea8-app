@@ -1831,6 +1831,10 @@ body.dark:has(.settings-screen) .arc-dialog:has(.settings-form):not(.po-sign-mod
   gap: 10px;
 }
 
+#{$c8-settings-dialog} .settings-form .flex.flex-col + .flex:not(.flex-col):has(> button) {
+  margin-top: 16px;
+}
+
 #{$c8-settings-dialog} .settings-form .flex:not(.flex-col):has(> button[type='submit']) > button[type='submit'] {
   order: 2;
 }
@@ -2465,6 +2469,15 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   width: 100%;
 }
 
+.account-screen .settings-section:has(.account-languages) {
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+  box-shadow: none;
+}
+
 .account-billing,
 .account-bill {
   display: flex;
@@ -2521,6 +2534,21 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0;
+}
+
+.account-screen [data-billing-state='credits_meter'] .account-bill-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.05;
+}
+
+.account-screen [data-billing-state='credits_meter'] .account-bill-price span {
+  margin-left: 0;
+  color: var(--c8-ink);
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .account-bill-tiles,
@@ -2773,6 +2801,13 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   .account-screen .settings-section {
     width: 100%;
     padding: 12px;
+  }
+
+  .account-screen .settings-section:has(.account-languages) {
+    padding: 12px;
+    border: 1px solid var(--c8-line);
+    border-radius: 22px;
+    background: var(--c8-surface);
   }
 }
 
