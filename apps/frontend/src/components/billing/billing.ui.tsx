@@ -461,7 +461,7 @@ const ACTION_ROWS: Record<string, { label: string; icon: HugeIconName; tile: str
   ai_post: { label: 'AI post', icon: 'sparkles', tile: 'is-cyan' },
   x_post: { label: 'X post', icon: 'calendar', tile: 'is-schedule' },
   x_post_with_link: { label: 'X post with link', icon: 'link', tile: 'is-link' },
-  ai_image: { label: 'AI image', icon: 'ai-image', tile: 'is-cyan' },
+  ai_image: { label: 'AI image', icon: 'ai-image', tile: 'is-warn' },
   stalker_search: { label: 'Stalker search', icon: 'eye', tile: 'is-stalker' },
 };
 
