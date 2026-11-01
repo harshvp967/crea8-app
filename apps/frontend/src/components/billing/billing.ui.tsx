@@ -203,27 +203,38 @@ export function CreditPacks({
   error,
   onBuy,
   compact = false,
+  locked = false,
 }: {
   packs: BillingOverview['packs'];
   busy: string | null;
   error: string;
   onBuy: (key: BillingOverview['packs'][number]['key']) => void;
   compact?: boolean;
+  locked?: boolean;
 }) {
+  const label = (pack: BillingOverview['packs'][number]) => {
+    if (locked) {
+      return 'Available after trial';
+    }
+    if (busy === pack.key) {
+      return 'Opening checkout…';
+    }
+    return `${pack.credits} credits · $${pack.usd}`;
+  };
   const buttons = packs.map((pack) =>
     compact ? (
       <button
         key={pack.key}
         type="button"
         className="account-chip"
-        disabled={busy === pack.key}
-        onClick={() => onBuy(pack.key)}
+        disabled={locked || busy === pack.key}
+        onClick={locked ? undefined : () => onBuy(pack.key)}
       >
-        {busy === pack.key ? 'Opening checkout…' : `${pack.credits} credits · $${pack.usd}`}
+        {label(pack)}
       </button>
     ) : (
-      <BillingButton key={pack.key} kind="primary" disabled={busy === pack.key} onClick={() => onBuy(pack.key)}>
-        {busy === pack.key ? 'Opening checkout…' : `${pack.credits} credits · $${pack.usd}`}
+      <BillingButton key={pack.key} kind="primary" disabled={locked || busy === pack.key} onClick={locked ? undefined : () => onBuy(pack.key)}>
+        {label(pack)}
       </BillingButton>
     )
   );
