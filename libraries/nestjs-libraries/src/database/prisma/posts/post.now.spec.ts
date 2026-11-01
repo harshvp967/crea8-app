@@ -110,4 +110,23 @@ describe('post now failure', () => {
     expect(starter).toContain("workflow.start('postWorkflowV114'");
     expect(starter).toContain("body.type === 'now'");
   });
+
+  it('returns post.error on the calendar query the tooltip already reads', () => {
+    const repository = readFileSync(
+      join(root, 'libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts'),
+      'utf8'
+    );
+    const calendarQuery = repository.slice(
+      repository.indexOf('async getPosts('),
+      repository.indexOf('async getPostsList(')
+    );
+    const previous = readFileSync(
+      join(root, 'apps/orchestrator/src/workflows/post-workflows/post.workflow.v1.1.3.ts'),
+      'utf8'
+    );
+
+    expect(calendarQuery).toContain('error: true');
+    expect(previous).toContain('export async function postWorkflowV113');
+    expect(previous).not.toContain('postNowShouldFailNow');
+  });
 });
