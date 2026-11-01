@@ -20,7 +20,6 @@ import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import Link from 'next/link';
-import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { Sets } from '@gitroom/frontend/components/sets/sets';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
@@ -34,9 +33,6 @@ const SettingsPageHead: FC<{
   <header className="settings-head-v2">
     <div className="settings-kicker">
       <span className="settings-sticker">{t('schedule', 'Schedule')}</span>
-      <span className="settings-period">
-        {t('settings_kicker', 'Webhooks & API keys')}
-      </span>
     </div>
     <h1>{t('settings', 'Settings')}</h1>
   </header>
@@ -125,9 +121,6 @@ export const SettingsPopup: FC<{
   const t = useT();
   const list = useMemo(() => {
     const arr = [];
-    if (user?.tier?.webhooks) {
-      arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks') });
-    }
     if (user?.tier?.autoPost) {
       arr.push({ tab: 'autopost', label: t('auto_post', 'Auto Post') });
     }
@@ -196,11 +189,6 @@ export const SettingsPopup: FC<{
               {activeTab === 'brand_voice' && !!user?.aiDrafts && (
                 <div>
                   <BrandVoiceSettings />
-                </div>
-              )}
-              {activeTab === 'webhooks' && !!user?.tier?.webhooks && (
-                <div>
-                  <Webhooks />
                 </div>
               )}
 
