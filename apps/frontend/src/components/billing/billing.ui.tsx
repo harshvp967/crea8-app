@@ -583,17 +583,38 @@ export function AccountCreditsCard({ overview }: { overview: BillingOverview }) 
   const user = useUser();
   const { total, monthlyAllowance, packRemaining } = overview.credits;
   const capacity = monthlyAllowance + packRemaining;
-  const width = capacity > 0 ? Math.min(100, Math.round((total / capacity) * 100)) : 0;
+  const used = Math.max(0, capacity - total);
   const actions = user?.credits?.actions ?? [];
+  const segments = actions.filter((action) => action.credits > 0);
   return (
     <section data-billing-state="credits_meter" className="settings-section account-bill-card">
       <h2 className="account-bill-title">Credits</h2>
       <p className="account-bill-price">
         {total.toLocaleString('en-US')}
-        <span>{packRemaining.toLocaleString('en-US')} pack</span>
+        <span>
+          {used.toLocaleString('en-US')}/{capacity.toLocaleString('en-US')}
+        </span>
+        {packRemaining > 0 ? (
+          <span>includes {packRemaining.toLocaleString('en-US')} credits from pack</span>
+        ) : null}
       </p>
       <div className="account-bill-meter" aria-hidden>
-        <span style={{ width: `${width}%` }} />
+        {capacity > 0
+          ? segments.map((action) => {
+              const row = ACTION_ROWS[action.key] || {
+                label: action.key,
+                icon: 'sparkles' as HugeIconName,
+                tile: 'is-cyan',
+              };
+              return (
+                <span
+                  key={action.key}
+                  className={`c8-side-tile ${row.tile}`}
+                  style={{ width: `${(action.credits / capacity) * 100}%` }}
+                />
+              );
+            })
+          : null}
       </div>
       <div className="account-bill-actions-list">
         {actions.map((action) => {

@@ -2578,18 +2578,29 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 }
 
 .account-bill-meter {
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
   height: 12px;
   overflow: hidden;
-  border: 1px solid var(--c8-ink);
+  border: 0;
   border-radius: 99px;
-  background: var(--c8-soft);
+  background: var(--c8-hard);
 }
 
 .account-bill-meter > span {
   display: block;
+  flex: 0 1 auto;
   height: 100%;
-  border-right: 1px solid var(--c8-ink);
-  background: var(--c8-cyan);
+  min-width: 0;
+  border: 0;
+  border-radius: 99px;
+}
+
+.account-bill-meter > span.c8-side-tile {
+  width: auto;
+  height: 100%;
+  border-radius: 99px;
 }
 
 .account-bill-actions-list {
