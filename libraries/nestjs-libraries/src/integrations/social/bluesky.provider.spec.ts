@@ -50,7 +50,11 @@ jest.mock('@gitroom/helpers/utils/timer', () => ({
 }));
 
 import { BskyAgent } from '@atproto/api';
-import { BadBody } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { postFailureReason } from '@gitroom/nestjs-libraries/database/prisma/posts/post.failure';
 import {
   BlueskyProvider,
   isBlueskyPostMissing,
@@ -180,5 +184,33 @@ describe('Bluesky autoPlugPost', () => {
     await expect(
       provider.autoRepostPost(integration, postUri, { likesAmount: '10' })
     ).rejects.toBe(invalidRequest);
+  });
+
+  it('puts the Bluesky login failure on the error a post now stores', async () => {
+    agentApi.login.mockRejectedValue(
+      Object.assign(new Error('Token has expired'), {
+        status: 401,
+        error: 'ExpiredToken',
+      })
+    );
+
+    const error = await provider
+      .finalizePost(
+        '',
+        {
+          jobId: '',
+          message: 'hello',
+          media: [],
+          attempting: true,
+          confirmed: true,
+        },
+        integration
+      )
+      .catch((err) => err);
+
+    expect(error).toBeInstanceOf(RefreshToken);
+    expect(error.message).toBe('Token has expired');
+    expect(postFailureReason(error)).toBe('Token has expired');
+    expect(JSON.stringify(error)).not.toBe('Token has expired');
   });
 });

@@ -450,7 +450,20 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         status < 500 &&
         status !== 429
       ) {
-        throw new RefreshToken('bluesky', JSON.stringify(err), {} as BodyInit);
+        const reason =
+          (typeof err?.message === 'string' && err.message.trim()) ||
+          (typeof err?.error === 'string' && err.error.trim()) ||
+          'Bluesky rejected the login';
+        throw new RefreshToken(
+          'bluesky',
+          JSON.stringify({
+            message: reason,
+            error: typeof err?.error === 'string' ? err.error : undefined,
+            status,
+          }),
+          {} as BodyInit,
+          reason
+        );
       }
 
       throw err;

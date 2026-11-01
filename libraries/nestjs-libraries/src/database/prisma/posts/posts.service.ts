@@ -13,6 +13,7 @@ import {
   takeCachedValidation,
   validationCacheKey,
 } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
+import { editorLoadedPost } from '@gitroom/nestjs-libraries/database/prisma/posts/post.failure';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -575,22 +576,11 @@ export class PostsService {
     return {
       group: posts?.[0]?.group,
       posts: await Promise.all(
-        (posts || []).map(async ({ integration, ...post }) => ({
-          ...post,
-          ...(integration
-            ? {
-                integration: {
-                  id: integration.id,
-                  name: integration.name,
-                  picture: integration.picture,
-                  providerIdentifier: integration.providerIdentifier,
-                  profile: integration.profile,
-                },
-              }
-            : {}),
+        (posts || []).map(async (row) => ({
+          ...editorLoadedPost(row),
           image: await this.updateMedia(
-            post.id,
-            JSON.parse(post.image || '[]'),
+            row.id,
+            JSON.parse(row.image || '[]'),
             false
           ),
         }))
@@ -786,7 +776,8 @@ export class PostsService {
     taskQueue: string,
     postId: string,
     orgId: string,
-    state: State
+    state: State,
+    postNow = false
   ) {
     try {
       const workflows = this._temporalService.client
@@ -817,7 +808,7 @@ export class PostsService {
     try {
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflowV113', {
+        ?.workflow.start('postWorkflowV114', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
           workflowIdConflictPolicy: 'TERMINATE_EXISTING',
@@ -826,6 +817,7 @@ export class PostsService {
               taskQueue: taskQueue,
               postId: postId,
               organizationId: orgId,
+              postNow,
             },
           ],
           typedSearchAttributes: new TypedSearchAttributes([
@@ -1099,7 +1091,8 @@ export class PostsService {
           post.settings.__type.split('-')[0].toLowerCase(),
           posts[0].id,
           orgId,
-          posts[0].state
+          posts[0].state,
+          body.type === 'now'
         ).catch((err) => {});
       }
 

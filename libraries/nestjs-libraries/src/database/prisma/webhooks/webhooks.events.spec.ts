@@ -303,7 +303,8 @@ describe('workspace webhook events', () => {
     expect(activity).toContain('postWebhookHeaders(payload, webhook.id)');
     expect(activity).toContain("signalWithStart('postWorkflowV113'");
     expect(activity).not.toContain('postWorkflowV112');
-    expect(starter).toContain("workflow.start('postWorkflowV113'");
+    expect(starter).toContain("workflow.start('postWorkflowV114'");
+    expect(starter).not.toContain("workflow.start('postWorkflowV113'");
     expect(starter).not.toContain('postWorkflowV112');
   });
 });
