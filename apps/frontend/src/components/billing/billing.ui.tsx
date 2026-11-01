@@ -82,9 +82,11 @@ export function PlanPicker({
 export function CheckoutStatus({
   state,
   onRetry,
+  compact = false,
 }: {
   state: 'success' | 'failure' | 'pending';
   onRetry?: () => void;
+  compact?: boolean;
 }) {
   const title =
     state === 'success'
@@ -94,7 +96,7 @@ export function CheckoutStatus({
         : 'Waiting for checkout';
   const copy = state === 'failure' ? 'No charge was made.' : '';
   return (
-    <div className={state === 'failure' ? 'flex w-full justify-center' : 'flex min-h-[50vh] w-full items-center justify-center px-[16px] py-[40px]'}>
+    <div className={state === 'failure' || compact ? 'flex w-full justify-center' : 'flex min-h-[50vh] w-full items-center justify-center px-[16px] py-[40px]'}>
       <section
         data-billing-state={state === 'success' ? 'checkout_success' : state === 'failure' ? 'checkout_failure' : 'checkout_pending'}
         className="settings-section account-bill-card flex w-full max-w-[440px] flex-col items-center gap-[12px] text-center"
@@ -581,17 +583,16 @@ export function AccountPlanCard({
 
 export function AccountCreditsCard({ overview }: { overview: BillingOverview }) {
   const user = useUser();
-  const credits = user?.credits;
-  const allowance = credits?.allowance ?? overview.credits.monthlyAllowance;
-  const used = credits?.used ?? 0;
-  const width = allowance > 0 ? Math.min(100, (used / allowance) * 100) : 0;
-  const actions = credits?.actions ?? [];
+  const { total, monthlyRemaining, monthlyAllowance, packRemaining } = overview.credits;
+  const width =
+    monthlyAllowance > 0 ? Math.min(100, Math.round((monthlyRemaining / monthlyAllowance) * 100)) : 0;
+  const actions = user?.credits?.actions ?? [];
   return (
     <section data-billing-state="credits_meter" className="settings-section account-bill-card">
       <h2 className="account-bill-title">Credits</h2>
       <p className="account-bill-price">
-        {used.toLocaleString('en-US')}
-        <span>/ {allowance.toLocaleString('en-US')}</span>
+        {total.toLocaleString('en-US')}
+        <span>{packRemaining.toLocaleString('en-US')} pack</span>
       </p>
       <div className="account-bill-meter" aria-hidden>
         <span style={{ width: `${width}%` }} />

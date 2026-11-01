@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { BillingOverview, BillingPlanCard, checkoutReturnKind } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
@@ -36,6 +36,7 @@ export function BillingScreen({
   const fetch = useFetch();
   const toaster = useToaster();
   const router = useRouter();
+  const { mutate: refreshCache } = useSWRConfig();
   const params = useSearchParams();
   const checkout = params.get('checkout');
   const paymentStatus = params.get('status');
@@ -63,6 +64,19 @@ export function BillingScreen({
       setPeriod(data.subscription.period);
     }
   }, [data?.subscription.period]);
+
+  useEffect(() => {
+    if (returned !== 'pending') {
+      return;
+    }
+    void refreshCache('/user/self');
+  }, [
+    returned,
+    data?.credits.total,
+    data?.credits.monthlyRemaining,
+    data?.credits.packRemaining,
+    refreshCache,
+  ]);
 
   useEffect(() => {
     if (!showPlans) {
@@ -318,7 +332,7 @@ export function BillingScreen({
     </div>
   );
 
-  const accountView = surface === 'account' && !shown.startsWith('checkout_');
+  const accountView = surface === 'account';
   const accountHasPlan = activeEnough.has(status);
 
   return (
@@ -330,9 +344,19 @@ export function BillingScreen({
         {checkoutFailed ? (
           <CheckoutStatus state="failure" onRetry={() => router.replace('/account?section=billing')} />
         ) : null}
-        {shown === 'checkout_pending' ? <CheckoutStatus state="pending" /> : null}
+        {shown === 'checkout_pending' ? (
+          <CheckoutStatus state="pending" compact={surface === 'account'} />
+        ) : null}
         {shown === 'checkout_success' ? (
-          <CheckoutStatus state="success" onRetry={() => router.replace('/account?section=billing')} />
+          <CheckoutStatus
+            state="success"
+            compact={surface === 'account'}
+            onRetry={
+              surface === 'account'
+                ? undefined
+                : () => router.replace('/account?section=billing')
+            }
+          />
         ) : null}
         {accountView ? (
           <>
