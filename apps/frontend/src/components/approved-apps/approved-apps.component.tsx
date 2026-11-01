@@ -10,6 +10,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import {
   OauthClientLogo,
+  OauthClientTile,
   resolveOauthClientBrand,
 } from '@gitroom/frontend/components/oauth/client-brand';
 
@@ -99,19 +100,19 @@ export const ApprovedAppsComponent: FC = () => {
               >
                 <div className="flex items-center gap-[12px]">
                   {app.oauthApp?.picture?.path ? (
-                    <img
-                      src={app.oauthApp.picture.path}
-                      alt={app.oauthApp.name}
-                      className="w-[40px] h-[40px] rounded-full object-cover"
-                    />
+                    <OauthClientTile>
+                      <img
+                        src={app.oauthApp.picture.path}
+                        alt={app.oauthApp.name}
+                        className="h-full w-full object-cover"
+                      />
+                    </OauthClientTile>
                   ) : brand ? (
-                    <div className="w-[40px] h-[40px] rounded-full bg-fifth flex items-center justify-center text-customColor18">
-                      <OauthClientLogo client={brand} size={22} />
-                    </div>
+                    <OauthClientLogo client={brand} tile />
                   ) : (
-                    <div className="w-[40px] h-[40px] rounded-full bg-fifth flex items-center justify-center text-customColor18">
+                    <OauthClientTile>
                       {app.oauthApp?.name?.[0]?.toUpperCase() || '?'}
-                    </div>
+                    </OauthClientTile>
                   )}
                   <div>
                     <div className="text-[14px] font-bold">

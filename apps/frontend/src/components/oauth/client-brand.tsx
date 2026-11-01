@@ -1,12 +1,14 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 
-// Brand marks for OAuth clients. Developers, onboarding, and Approved Apps
-// all render these. Monochrome marks use currentColor. Claude, VS Code, and
-// Gemini keep their colors. Do not copy these SVGs elsewhere.
-const icons: Record<string, FC<{ size: number }>> = {
-  Claude: ({ size }) => (
+// Brand marks for OAuth clients. Developers, onboarding, Approved Apps, and
+// a later consent screen all import this module. Marks use their own colours.
+// Do not copy these SVGs elsewhere.
+type MarkProps = { size: number; color?: string };
+
+const icons: Record<string, FC<MarkProps>> = {
+  Claude: ({ size }: MarkProps) => (
     <svg
       width={size}
       height={size}
@@ -19,24 +21,24 @@ const icons: Record<string, FC<{ size: number }>> = {
       />
     </svg>
   ),
-  ChatGPT: ({ size }) => (
+  ChatGPT: ({ size, color = '#FFFFFF' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="0 0 256 260"
       xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
+      fill={color}
     >
       <path d="M239.184 106.203a64.716 64.716 0 0 0-5.576-53.103C219.452 28.459 191 15.784 163.213 21.74A65.586 65.586 0 0 0 52.096 45.22a64.716 64.716 0 0 0-43.23 31.36c-14.31 24.602-11.061 55.634 8.033 76.74a64.665 64.665 0 0 0 5.525 53.102c14.174 24.65 42.644 37.324 70.446 31.36a64.72 64.72 0 0 0 48.754 21.744c28.481.025 53.714-18.361 62.414-45.481a64.767 64.767 0 0 0 43.229-31.36c14.137-24.558 10.875-55.423-8.083-76.483Zm-97.56 136.338a48.397 48.397 0 0 1-31.105-11.255l1.535-.87 51.67-29.825a8.595 8.595 0 0 0 4.247-7.367v-72.85l21.845 12.636c.218.111.37.32.409.563v60.367c-.056 26.818-21.783 48.545-48.601 48.601Zm-104.466-44.61a48.345 48.345 0 0 1-5.781-32.589l1.534.921 51.722 29.826a8.339 8.339 0 0 0 8.441 0l63.181-36.425v25.221a.87.87 0 0 1-.358.665l-52.335 30.184c-23.257 13.398-52.97 5.431-66.404-17.803ZM23.549 85.38a48.499 48.499 0 0 1 25.58-21.333v61.39a8.288 8.288 0 0 0 4.195 7.316l62.874 36.272-21.845 12.636a.819.819 0 0 1-.767 0L41.353 151.53c-23.211-13.454-31.171-43.144-17.804-66.405v.256Zm179.466 41.695-63.08-36.63L161.73 77.86a.819.819 0 0 1 .768 0l52.233 30.184a48.6 48.6 0 0 1-7.316 87.635v-61.391a8.544 8.544 0 0 0-4.4-7.213Zm21.742-32.69-1.535-.922-51.619-30.081a8.39 8.39 0 0 0-8.492 0L99.98 99.808V74.587a.716.716 0 0 1 .307-.665l52.233-30.133a48.652 48.652 0 0 1 72.236 50.391v.205ZM88.061 139.097l-21.845-12.585a.87.87 0 0 1-.41-.614V65.685a48.652 48.652 0 0 1 79.757-37.346l-1.535.87-51.67 29.825a8.595 8.595 0 0 0-4.246 7.367l-.051 72.697Zm11.868-25.58 28.138-16.217 28.188 16.218v32.434l-28.086 16.218-28.188-16.218-.052-32.434Z" />
     </svg>
   ),
-  'Grok Bot': ({ size }) => (
+  'Grok Bot': ({ size, color = '#000000' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="-15 -15 259 259"
       xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
+      fill={color}
     >
       <mask
         id="mcp-grokbot-eyes"
@@ -58,18 +60,18 @@ const icons: Record<string, FC<{ size: number }>> = {
       </mask>
       <path
         d="M228.541 114.228C228.541 130.133 225.184 145.994 218.738 160.534C212.674 174.217 203.904 186.669 193.065 196.988C155.933 232.34 99.497 238.596 55.5255 212.24C45.097 205.99 35.6851 198.072 27.7451 188.866C19.1926 178.953 12.3686 167.569 7.65781 155.351C2.60712 142.264 0 128.257 0 114.228C0 98.3219 3.35751 82.4611 9.80315 67.9215C15.8672 54.2382 24.6377 41.7862 35.4767 31.4668C72.6081 -3.88483 129.044 -10.1413 173.016 16.2153C183.444 22.4653 192.856 30.3829 200.796 39.5896C209.349 49.5018 216.173 60.8859 220.883 73.1037C225.934 86.1906 228.541 100.198 228.541 114.228Z"
-        fill="currentColor"
+        fill={color}
         mask="url(#mcp-grokbot-eyes)"
       />
     </svg>
   ),
-  Codex: ({ size }) => (
+  Codex: ({ size, color = '#000000' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
+      fill={color}
     >
       <path
         clipRule="evenodd"
@@ -77,18 +79,18 @@ const icons: Record<string, FC<{ size: number }>> = {
       ></path>
     </svg>
   ),
-  Cursor: ({ size }) => (
+  Cursor: ({ size, color = '#000000' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
+      fill={color}
     >
       <path d="M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23" />
     </svg>
   ),
-  'VS Code / Copilot': ({ size }) => (
+  'VS Code / Copilot': ({ size }: MarkProps) => (
     <svg
       width={size}
       height={size}
@@ -199,18 +201,18 @@ const icons: Record<string, FC<{ size: number }>> = {
       </defs>
     </svg>
   ),
-  Windsurf: ({ size }) => (
+  Windsurf: ({ size, color = '#0B0B0C' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="0 0 1024 1024"
       xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
+      fill={color}
     >
       <path d="M897.246 286.869H889.819C850.735 286.808 819.017 318.46 819.017 357.539V515.589C819.017 547.15 792.93 572.716 761.882 572.716C743.436 572.716 725.02 563.433 714.093 547.85L552.673 317.304C539.28 298.16 517.486 286.747 493.895 286.747C457.094 286.747 423.976 318.034 423.976 356.657V515.619C423.976 547.181 398.103 572.746 366.842 572.746C348.335 572.746 329.949 563.463 319.021 547.881L138.395 289.882C134.316 284.038 125.154 286.93 125.154 294.052V431.892C125.154 438.862 127.285 445.619 131.272 451.34L309.037 705.2C319.539 720.204 335.033 731.344 352.9 735.392C397.616 745.557 438.77 711.135 438.77 667.278V508.406C438.77 476.845 464.339 451.279 495.904 451.279H495.995C515.02 451.279 532.857 460.562 543.785 476.145L705.235 706.661C718.659 725.835 739.327 737.218 763.983 737.218C801.606 737.218 833.841 705.9 833.841 667.308V508.376C833.841 476.815 859.41 451.249 890.975 451.249H897.276C901.233 451.249 904.43 448.053 904.43 444.097V294.021C904.43 290.065 901.233 286.869 897.276 286.869H897.246Z" />
     </svg>
   ),
-  'Gemini CLI': ({ size }) => (
+  'Gemini CLI': ({ size }: MarkProps) => (
     <svg
       width={size}
       height={size}
@@ -382,35 +384,35 @@ const icons: Record<string, FC<{ size: number }>> = {
       </defs>
     </svg>
   ),
-  Perplexity: ({ size }) => (
+  Perplexity: ({ size, color = '#20808D' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
+      fill={color}
     >
       <path d="M22.3977 7.0896h-2.3106V.0676l-7.5094 6.3542V.1577h-1.1554v6.1966L4.4904 0v7.0896H1.6023v10.3976h2.8882V24l6.932-6.3591v6.2005h1.1554v-6.0469l6.9318 6.1807v-6.4879h2.8882V7.0896zm-3.4657-4.531v4.531h-5.355l5.355-4.531zm-13.2862.0676 4.8691 4.4634H5.6458V2.6262zM2.7576 16.332V8.245h7.8476l-6.1149 6.1147v1.9723H2.7576zm2.8882 5.0404v-3.8852h.0001v-2.6488l5.7763-5.7764v7.0111l-5.7764 5.2993zm12.7086.0248-5.7766-5.1509V9.0618l5.7766 5.7766v6.5588zm2.8882-5.0652h-1.733v-1.9723L13.3948 8.245h7.8478v8.087z" />
     </svg>
   ),
-  Warp: ({ size }) => (
+  Warp: ({ size, color = '#000000' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
+      fill={color}
     >
       <path d="M12.035 2.723h9.253A2.712 2.712 0 0 1 24 5.435v10.529a2.712 2.712 0 0 1-2.712 2.713H8.047Zm-1.681 2.6L6.766 19.677h5.598l-.399 1.6H2.712A2.712 2.712 0 0 1 0 18.565V8.036a2.712 2.712 0 0 1 2.712-2.712Z" />
     </svg>
   ),
-  Amp: ({ size }) => (
+  Amp: ({ size, color = '#000000' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="0 0 26 26"
       fill="none"
-      stroke="currentColor"
+      stroke={color}
       strokeWidth="2.2"
       strokeLinecap="square"
       strokeLinejoin="miter"
@@ -422,7 +424,7 @@ const icons: Record<string, FC<{ size: number }>> = {
     </svg>
   ),
   // Raster mark, served from /public like the other third-party icons
-  NanoClaw: ({ size }) => (
+  NanoClaw: ({ size }: MarkProps) => (
     <img
       src="/icons/third-party/nanoclaw.png"
       width={size}
@@ -430,13 +432,13 @@ const icons: Record<string, FC<{ size: number }>> = {
       alt="NanoClaw"
     />
   ),
-  Hermes: ({ size }) => (
+  Hermes: ({ size, color = '#1C1C1C' }: MarkProps) => (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
+      stroke={color}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -445,7 +447,7 @@ const icons: Record<string, FC<{ size: number }>> = {
       <path d="M8 7c0-2 8-2 8 0s-8 2-8 4 8 2 8 4-8 2-8 4" />
     </svg>
   ),
-  OpenClaw: ({ size }) => (
+  OpenClaw: ({ size }: MarkProps) => (
     <svg
       width={size}
       height={size}
@@ -496,7 +498,7 @@ const icons: Record<string, FC<{ size: number }>> = {
     </svg>
   ),
   // Not a client: the onboarding "Other agents" tab
-  'Other agents': ({ size }) => (
+  'Other agents': ({ size }: MarkProps) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
       <circle cx="5" cy="5" r="2" />
       <circle cx="12" cy="5" r="2" />
@@ -510,7 +512,7 @@ const icons: Record<string, FC<{ size: number }>> = {
     </svg>
   ),
   // Not a client: the onboarding "API" tab
-  API: ({ size }) => (
+  API: ({ size }: MarkProps) => (
     <svg
       width={size}
       height={size}
@@ -534,7 +536,7 @@ const BRAND_MATCHES: { client: string; test: RegExp }[] = [
   { client: 'Claude Code', test: /\bclaude\s*code\b/ },
   { client: 'Gemini CLI', test: /\bgemini\s*cli\b/ },
   { client: 'VS Code / Copilot', test: /\bvs\s*code\b|\bvisual\s*studio\s*code\b|\bcopilot\b/ },
-  { client: 'ChatGPT', test: /\bchatgpt\b|\bchat\s*gpt\b/ },
+  { client: 'ChatGPT', test: /\bchatgpt\b|\bchat\s*gpt\b|\bopenai\b/ },
   { client: 'Claude', test: /\bclaude\b/ },
   { client: 'Gemini', test: /\bgemini\b/ },
   { client: 'Perplexity', test: /\bperplexity\b/ },
@@ -565,15 +567,65 @@ export function resolveOauthClientBrand(name?: string | null): string | null {
   return null;
 }
 
-export const OauthClientLogo: FC<{ client: string; size?: number }> = ({
+type BrandTone = { tile: string; mark?: string; bare?: string };
+
+// Tile colours stay fixed so dark mode and the c8 accent cannot recolor a mark.
+const TONES: Record<string, BrandTone> = {
+  Claude: { tile: '#F6F1E7' },
+  'Claude Code': { tile: '#F6F1E7' },
+  ChatGPT: { tile: '#000000', mark: '#FFFFFF', bare: '#000000' },
+  'Grok Bot': { tile: '#FFFFFF', mark: '#000000' },
+  Codex: { tile: '#FFFFFF', mark: '#000000' },
+  Cursor: { tile: '#F7F7F4', mark: '#000000' },
+  'VS Code / Copilot': { tile: '#FFFFFF' },
+  Windsurf: { tile: '#FFFFFF', mark: '#0B0B0C' },
+  'Gemini CLI': { tile: '#FFFFFF' },
+  Gemini: { tile: '#FFFFFF' },
+  Perplexity: { tile: '#FFFFFF', mark: '#20808D' },
+  Warp: { tile: '#FFFFFF', mark: '#000000' },
+  Amp: { tile: '#FFFFFF', mark: '#000000' },
+  NanoClaw: { tile: '#FFFFFF' },
+  Hermes: { tile: '#FFFFFF', mark: '#1C1C1C' },
+  OpenClaw: { tile: '#FFFFFF' },
+};
+
+const TILE =
+  'inline-flex h-[40px] w-[40px] max-w-full shrink-0 items-center justify-center overflow-hidden rounded-c8-tile border border-c8-line bg-c8-surface text-[15px] font-[700] text-c8-ink';
+
+export function OauthClientTile({
   client,
-  size = 16,
-}) => {
+  children,
+}: {
+  client?: string | null;
+  children: ReactNode;
+}) {
+  const tone = client ? TONES[client] : undefined;
+  return (
+    <span
+      className={TILE}
+      style={tone ? { backgroundColor: tone.tile } : undefined}
+    >
+      {children}
+    </span>
+  );
+}
+
+export const OauthClientLogo: FC<{
+  client: string;
+  size?: number;
+  tile?: boolean;
+}> = ({ client, size = 16, tile = false }) => {
   const Icon = icons[client];
   if (!Icon) {
     return null;
   }
-  return <Icon size={size} />;
+  const tone = TONES[client];
+  const color = tile ? tone?.mark : tone?.bare ?? tone?.mark;
+  const mark = <Icon size={tile ? 22 : size} color={color} />;
+  if (!tile) {
+    return mark;
+  }
+  return <OauthClientTile client={client}>{mark}</OauthClientTile>;
 };
 
 export const McpClientIcon = OauthClientLogo;
