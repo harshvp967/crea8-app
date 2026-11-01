@@ -504,7 +504,7 @@ describe('credit ledger action charges', () => {
         deletedAt: null,
         cancelAt,
       }, lastDay)
-    ).toBe(CREDIT_PACK_TRIAL_ERROR);
+    ).toBeNull();
     expect(creditPackCheckoutError(null)).toBe(CREDIT_PACK_PAID_ERROR);
     expect(creditPackCheckoutError(undefined)).toBe(CREDIT_PACK_PAID_ERROR);
     expect(
@@ -653,6 +653,70 @@ describe('credit ledger action charges', () => {
     const balance = await credits.balance('org-pro-cancel');
     expect(balance.packRemaining).toBe(150);
     expect(balance.monthlyRemaining).toBe(0);
+  });
+
+  it('grants 150 for a cancel_scheduled Pro pack payment and reconciles it once', async () => {
+    const cancelAt = new Date('2026-11-06T00:00:00.000Z');
+    const payment = {
+      payment_id: 'pay_pack_150',
+      status: 'succeeded',
+      total_amount: 500,
+      metadata: {
+        organizationId: 'org-pro',
+        kind: 'credit_pack',
+        pack: 'PACK_150',
+        credits: 150,
+      },
+    };
+    const db = memoryPrisma();
+    const credits = new CreditsService(db as any);
+    db.setWorkspace('org-pro', {
+      status: 'cancel_scheduled',
+      isTrailing: true,
+      cancelAt,
+    });
+    expect(
+      await db.$transaction((tx: any) => credits.applyReportedPackPayment(tx, payment))
+    ).toBe(true);
+    expect((await credits.balance('org-pro')).packRemaining).toBe(150);
+    const ledger = await db.creditLedger.findUnique({
+      where: { idempotencyKey: 'pack:pay_pack_150' },
+    });
+    expect(ledger?.amount).toBe(150);
+    expect(ledger?.reason).toBe('credit_pack');
+
+    const missed = memoryPrisma();
+    const missedCredits = new CreditsService(missed as any);
+    missed.setWorkspace('org-pro', {
+      status: 'cancel_scheduled',
+      isTrailing: true,
+      cancelAt,
+    });
+    expect(
+      await missed.$transaction((tx: any) =>
+        missedCredits.applyCheckoutReturn(
+          tx,
+          { payment_id: payment.payment_id, status: 'succeeded' },
+          payment,
+          'org-pro'
+        )
+      )
+    ).toBe(true);
+    expect(
+      await missed.$transaction((tx: any) =>
+        missedCredits.applyCheckoutReturn(
+          tx,
+          { payment_id: payment.payment_id, status: 'succeeded' },
+          payment,
+          'org-pro'
+        )
+      )
+    ).toBe(true);
+    expect((await missedCredits.balance('org-pro')).packRemaining).toBe(150);
+    const reconciled = await missed.creditLedger.findUnique({
+      where: { idempotencyKey: 'pack:pay_pack_150' },
+    });
+    expect(reconciled?.amount).toBe(150);
   });
 
   it('grants a pack on the last paid day of a cancellation and still refuses the others', async () => {
