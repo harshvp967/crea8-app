@@ -7,8 +7,10 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { LinkRequestError, linkLocked, linkSend, useLinkLeads, useLinkPage, type LinkLead } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
-import { stkCard, stkCardTight, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { stkCard, stkCardTight, stkGhost, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
 const SOURCE_LOGO: Record<string, string> = {
   instagram: '/icons/platforms/instagram.png',
@@ -35,6 +37,20 @@ const StatusPill = ({ status }: { status: LinkLead['status'] }) => (
   </span>
 );
 
+const LeadDelete = ({
+  email,
+  disabled,
+  onClick,
+}: {
+  email: string;
+  disabled: boolean;
+  onClick: () => void;
+}) => (
+  <button type="button" className={stkGhost} disabled={disabled} aria-label={`Delete ${email}`} onClick={onClick}>
+    Delete
+  </button>
+);
+
 const SourceLabel = ({ source }: { source: string }) => {
   const logo = SOURCE_LOGO[source.trim().toLowerCase()];
   if (!logo) {
@@ -51,12 +67,14 @@ const SourceLabel = ({ source }: { source: string }) => {
 export const LinkLeadsScreen = () => {
   const fetch = useFetch();
   const toast = useToaster();
+  const user = useUser();
   const page = useLinkPage();
   const [status, setStatus] = useState('');
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
   const { data, error, isLoading, mutate } = useLinkLeads(status, query);
+  const canDelete = user?.role === 'SUPERADMIN';
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(input.trim()), 300);
@@ -92,6 +110,25 @@ export const LinkLeadsScreen = () => {
       toast.show('Your CSV will download shortly', 'success');
     } catch (err) {
       toast.show(err instanceof Error ? err.message : 'Could not export leads', 'warning');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeLead = async (lead: LinkLead) => {
+    if (!canDelete || busy) {
+      return;
+    }
+    const confirmed = await deleteDialog('', 'Delete', `Delete “${lead.email}”?`, 'Cancel', 'danger');
+    if (!confirmed) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await linkSend(fetch, `/link-in-bio/leads/${lead.id}`, 'DELETE');
+      await mutate();
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : 'Could not delete this lead', 'warning');
     } finally {
       setBusy(false);
     }
@@ -171,6 +208,7 @@ export const LinkLeadsScreen = () => {
                     <th>Message</th>
                     <th>Status</th>
                     <th>Date</th>
+                    {canDelete ? <th>Delete</th> : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -187,6 +225,11 @@ export const LinkLeadsScreen = () => {
                         <StatusPill status={lead.status} />
                       </td>
                       <td data-label="Date">{dayLabel(lead.createdAt)}</td>
+                      {canDelete ? (
+                        <td data-label="Delete">
+                          <LeadDelete email={lead.email} disabled={busy} onClick={() => removeLead(lead)} />
+                        </td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>
@@ -198,7 +241,14 @@ export const LinkLeadsScreen = () => {
               <article key={lead.id} className={stkCardTight}>
                 <div className="flex items-start justify-between gap-[8px]">
                   <span className="min-w-0 truncate text-[14px] font-[600]">{lead.email}</span>
-                  <StatusPill status={lead.status} />
+                  {canDelete ? (
+                    <div className="flex shrink-0 items-center gap-[8px]">
+                      <StatusPill status={lead.status} />
+                      <LeadDelete email={lead.email} disabled={busy} onClick={() => removeLead(lead)} />
+                    </div>
+                  ) : (
+                    <StatusPill status={lead.status} />
+                  )}
                 </div>
                 <p className="mt-[4px] text-[13px] font-[500] text-textItemBlur">
                   {[lead.name, lead.country, dayLabel(lead.createdAt)].filter(Boolean).join(' · ')}
