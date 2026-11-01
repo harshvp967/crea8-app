@@ -15,6 +15,7 @@ import {
   Organization,
   OrganizationInviteStatus,
   Provider,
+  Role,
   ShortLinkPreference,
   User,
 } from '@prisma/client';
@@ -77,6 +78,25 @@ export class OrganizationService {
   ) {}
   createWorkspace(userId: string, name: string) {
     return this._organizationRepository.createWorkspace(userId, name);
+  }
+
+  async renameWorkspace(orgId: string, userId: string, name: string) {
+    const member = await this._organizationRepository.getOrgMember(
+      orgId,
+      userId
+    );
+    if (member?.role !== Role.SUPERADMIN) {
+      throw new HttpException('Only the workspace owner can rename it', 403);
+    }
+
+    try {
+      return await this._organizationRepository.renameWorkspace(orgId, name);
+    } catch (err) {
+      if ((err as { code?: string })?.code === 'P2025') {
+        throw new HttpException('Workspace not found', 404);
+      }
+      throw err;
+    }
   }
 
   async canRegister(provider: string) {
