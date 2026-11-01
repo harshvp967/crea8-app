@@ -260,7 +260,7 @@ export class LinkService {
   }
 
   async posts(org: PlanOrg) {
-    const record = await this.ensure(org);
+    const record = await this.ensureMeta(org);
     const rows = await this._repository.publishedPosts(org.id);
     return Promise.all(
       rows.map(async (post) => {
@@ -438,7 +438,7 @@ export class LinkService {
   }
 
   async leads(org: PlanOrg, status: string, query: string) {
-    const record = await this.ensure(org);
+    const record = await this.ensureMeta(org);
     const [counts, rows] = await Promise.all([
       this._repository.leadCounts(record.id),
       this._repository.leads(record.id, status, query.trim().toLowerCase(), 500),
@@ -462,7 +462,7 @@ export class LinkService {
   }
 
   async exportLeads(org: PlanOrg, status: string, query: string) {
-    const record = await this.ensure(org);
+    const record = await this.ensureMeta(org);
     const rows = await this._repository.leads(record.id, status, query.trim().toLowerCase(), 10000);
     return leadsToCsv(
       rows.map((lead) => ({
@@ -1129,6 +1129,15 @@ export class LinkService {
     );
   }
 
+  private async ensureMeta(org: PlanOrg, timezone?: string) {
+    const existing = await this._repository.findPageMeta(org.id);
+    if (existing) {
+      return existing;
+    }
+    const created = await this.ensure(org, timezone);
+    return { id: created.id, slug: created.slug, timezone: created.timezone };
+  }
+
   private async ensure(org: PlanOrg, timezone?: string) {
     const existing = await this._repository.findByOrg(org.id);
     if (existing) {
@@ -1397,22 +1406,22 @@ export class LinkService {
   }
 
   private async toEditor(record: LinkPageRecord) {
-    const clicks = await this._repository.clickCounts(record.id);
+    const design = normalizeDesign(record.design);
+    const [clicks, subscription, accounts] = await Promise.all([
+      this._repository.clickCounts(record.blocks.map((block) => block.id)),
+      this.ownerSubscription(record),
+      this.accounts(record.organizationId, design),
+    ]);
     const byBlock = new Map(clicks.filter((row) => row.blockId).map((row) => [row.blockId, row._count._all]));
-    const paid = isPaidPlan(await this.ownerSubscription(record));
-    const open = linkFeatureOpen(await this.ownerSubscription(record));
-    const badgePaid = badgeRemovalOpen(
-      record.organizationId,
-      await this.ownerSubscription(record)
-    );
+    const paid = isPaidPlan(subscription);
+    const open = linkFeatureOpen(subscription);
+    const badgePaid = badgeRemovalOpen(record.organizationId, subscription);
     const domainPaid = customDomainBillingOpen(
       record.organizationId,
-      await this.ownerSubscription(record),
+      subscription,
       record.organization
     );
     const customDomainAddon = hasCustomDomainAddon(record.organization);
-    const design = normalizeDesign(record.design);
-    const accounts = await this.accounts(record.organizationId, design);
     const hostname = record.customDomain || '';
     return {
       id: record.id,

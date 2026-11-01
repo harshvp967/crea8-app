@@ -24,6 +24,7 @@ import {
   publicLinkCacheSeconds,
   publicSocialIconSrc,
 } from '@gitroom/frontend/components/link-in-bio/link.load';
+import { linkStartupKeys } from '@gitroom/frontend/components/link-in-bio/link.startup.keys';
 
 const page = {
   id: 'page-1',
@@ -296,5 +297,141 @@ describe('Link-in-Bio public page and lead capture', () => {
         status: 'CONFIRMED',
       })
     );
+  });
+});
+
+const editorPage = {
+  id: 'page-1',
+  organizationId: 'org-1',
+  slug: 'ada',
+  name: 'Ada',
+  bio: '',
+  avatarPath: '',
+  theme: 'midnight',
+  buttonStyle: 'pill',
+  font: 'Plus Jakarta Sans',
+  backgroundMode: 'colour',
+  backgroundColor: '',
+  backgroundImage: '',
+  seoTitle: '',
+  seoDescription: '',
+  isPublic: true,
+  sensitive: false,
+  hideBadge: false,
+  timezone: 'UTC',
+  customDomain: '',
+  domainStatus: 'NONE',
+  domainError: '',
+  domainCheckedAt: null as null,
+  domainTxtName: '',
+  domainTxtValue: '',
+  captureHeading: '',
+  captureButton: 'Subscribe',
+  captureConsent: '',
+  captureAskName: false,
+  captureDoubleOptIn: true,
+  captureNotify: false,
+  socials: [] as [],
+  design: {},
+  mailchimpKey: '',
+  mailchimpAudience: '',
+  convertkitKey: '',
+  convertkitForm: '',
+  leadWebhookUrl: '',
+  leadWebhookSecret: '',
+  organization: { name: 'Ada', deletedAt: null as null, customDomainAddon: false, subscription: null as null },
+  blocks: [
+    {
+      id: 'block-1',
+      type: 'LINK',
+      position: 0,
+      enabled: true,
+      title: 'Site',
+      url: 'https://crea8.one',
+      priority: false,
+      scheduleOn: false,
+      startsAt: null as null,
+      endsAt: null as null,
+      postId: null as null,
+      thumbnail: '',
+      iconMode: '',
+      spotlight: false,
+      body: '',
+      payload: {},
+      lockType: 'NONE',
+      lockHash: '',
+      post: null as null,
+    },
+  ],
+};
+
+describe('Link-in-Bio page and leads load', () => {
+  it('counts clicks for the blocks on the page instead of every event', async () => {
+    const repository = {
+      findByOrg: jest.fn().mockResolvedValue(editorPage),
+      clickCounts: jest.fn().mockResolvedValue([{ blockId: 'block-1', _count: { _all: 3 } }]),
+      connectedAccounts: jest.fn().mockResolvedValue([]),
+    };
+    const service = new LinkService(
+      repository as never,
+      { configured: () => false, cnameTarget: () => 'cname.crea8.one' } as never,
+      {} as never,
+      { getSocialIntegration: (): undefined => undefined } as never
+    );
+    const editor = await service.page({ id: 'org-1', name: 'Ada' });
+    expect(repository.findByOrg).toHaveBeenCalledTimes(1);
+    expect(repository.clickCounts).toHaveBeenCalledWith(['block-1']);
+    expect(editor.blocks[0].clicks).toBe(3);
+  });
+
+  it('loads leads from the page id without the editor graph', async () => {
+    const repository = {
+      findPageMeta: jest.fn().mockResolvedValue({ id: 'page-1', slug: 'ada', timezone: 'UTC' }),
+      findByOrg: jest.fn(),
+      leadCounts: jest.fn().mockResolvedValue([
+        { status: 'CONFIRMED', _count: { _all: 2 } },
+        { status: 'PENDING', _count: { _all: 1 } },
+      ]),
+      leads: jest.fn().mockResolvedValue([
+        {
+          id: 'lead-1',
+          name: 'Ada',
+          email: 'ada@example.com',
+          country: 'US',
+          sourceBlock: 'Email capture',
+          status: 'CONFIRMED',
+          kind: 'subscribe',
+          message: '',
+          createdAt: new Date('2026-01-02T00:00:00.000Z'),
+        },
+      ]),
+      publishedPosts: jest.fn().mockResolvedValue([]),
+    };
+    const service = new LinkService(repository as never, {} as never, {} as never, {} as never);
+    const result = await service.leads({ id: 'org-1' } as never, '', '');
+    expect(repository.findByOrg).not.toHaveBeenCalled();
+    expect(repository.leads).toHaveBeenCalledWith('page-1', '', '', 500);
+    expect(result.counts).toEqual({ all: 3, confirmed: 2, pending: 1 });
+    expect(result.leads[0].email).toBe('ada@example.com');
+
+    await service.posts({ id: 'org-1' } as never);
+    expect(repository.findByOrg).not.toHaveBeenCalled();
+    expect(repository.publishedPosts).toHaveBeenCalledWith('org-1');
+  });
+
+  it('starts the link and leads reads with the shell, and leaves the calendar alone', () => {
+    expect(linkStartupKeys('/link')).toEqual({
+      page: '/link-in-bio',
+      posts: '/link-in-bio/posts',
+      leads: null,
+    });
+    expect(linkStartupKeys('/link/leads')).toEqual({
+      page: '/link-in-bio',
+      posts: null,
+      leads: '/link-in-bio/leads?status=&q=',
+    });
+    expect(linkStartupKeys('/launches')).toEqual({ page: null, posts: null, leads: null });
+    expect(linkStartupKeys('/link/analytics').posts).toBeNull();
+    expect(linkStartupKeys('/link/analytics').leads).toBeNull();
   });
 });
