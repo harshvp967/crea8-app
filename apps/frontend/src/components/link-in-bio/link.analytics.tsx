@@ -186,7 +186,7 @@ export const LinkAnalyticsScreen = () => {
         </div>
         <div className="hidden flex-wrap items-center gap-[8px] sm:flex">
           <label className="lib-date-field relative">
-            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[12px] top-[14px]" />
+            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[14px] top-1/2 -translate-y-1/2" />
             <input
               className={`${dateClass} ${from ? '' : 'text-transparent'}`}
               type="date"
@@ -194,10 +194,10 @@ export const LinkAnalyticsScreen = () => {
               value={from}
               onChange={(event) => setFrom(event.target.value)}
             />
-            {from ? null : <span className="pointer-events-none absolute start-[36px] top-[12px] text-[14px] font-[500]">From</span>}
+            {from ? null : <span className="pointer-events-none absolute start-[40px] top-1/2 -translate-y-1/2 text-[14px] font-[500]">From</span>}
           </label>
           <label className="lib-date-field relative">
-            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[12px] top-[14px]" />
+            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[14px] top-1/2 -translate-y-1/2" />
             <input
               className={`${dateClass} ${to ? '' : 'text-transparent'}`}
               type="date"
@@ -205,7 +205,7 @@ export const LinkAnalyticsScreen = () => {
               value={to}
               onChange={(event) => setTo(event.target.value)}
             />
-            {to ? null : <span className="pointer-events-none absolute start-[36px] top-[12px] text-[14px] font-[500]">To</span>}
+            {to ? null : <span className="pointer-events-none absolute start-[40px] top-1/2 -translate-y-1/2 text-[14px] font-[500]">To</span>}
           </label>
           <button
             type="button"

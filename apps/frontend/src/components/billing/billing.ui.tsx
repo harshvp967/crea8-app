@@ -581,9 +581,9 @@ export function AccountPlanCard({
 
 export function AccountCreditsCard({ overview }: { overview: BillingOverview }) {
   const user = useUser();
-  const { total, monthlyRemaining, monthlyAllowance, packRemaining } = overview.credits;
-  const width =
-    monthlyAllowance > 0 ? Math.min(100, Math.round((monthlyRemaining / monthlyAllowance) * 100)) : 0;
+  const { total, monthlyAllowance, packRemaining } = overview.credits;
+  const capacity = monthlyAllowance + packRemaining;
+  const width = capacity > 0 ? Math.min(100, Math.round((total / capacity) * 100)) : 0;
   const actions = user?.credits?.actions ?? [];
   return (
     <section data-billing-state="credits_meter" className="settings-section account-bill-card">
