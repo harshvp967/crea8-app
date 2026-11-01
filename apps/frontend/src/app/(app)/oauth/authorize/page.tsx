@@ -2,6 +2,7 @@
 
 import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import {
@@ -9,6 +10,46 @@ import {
   OauthClientTile,
   resolveOauthClientBrand,
 } from '@gitroom/frontend/components/oauth/client-brand';
+
+const SCOPE_LABELS: Record<string, string> = {
+  'mcp:read': 'Read your posts',
+  'mcp:write': 'Create and schedule posts',
+  'channels:read': 'See connected channels',
+  'channel:read': 'See connected channels',
+  'integrations:read': 'See connected channels',
+  openid: 'Confirm who you are',
+  email: 'See your email',
+  profile: 'See your profile',
+  offline_access: 'Stay signed in',
+};
+
+const requestedScopes = (scope: string | null) => {
+  if (!scope) return [];
+  const seen = new Set<string>();
+  const scopes: string[] = [];
+  for (const part of scope.split(/[\s,]+/)) {
+    let token = part.trim();
+    try {
+      token = decodeURIComponent(token).trim();
+    } catch {
+      token = part.trim();
+    }
+    if (!token || seen.has(token)) continue;
+    seen.add(token);
+    scopes.push(token);
+  }
+  return scopes;
+};
+
+const scopeLabel = (scope: string) => {
+  const known = SCOPE_LABELS[scope.toLowerCase()];
+  if (known) return known;
+  const phrase = scope.replace(/[:._-]+/g, ' ').trim().replace(/\s+/g, ' ');
+  if (!phrase) return scope;
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+};
+
+const FIELD_CELLS = 30;
 
 const FIELD_CLIENTS = [
   'Claude',
@@ -48,19 +89,41 @@ const RequestingMark = ({
 
 const ConsentField = () => (
   <div className="oauth-consent-field" aria-hidden>
-    {[0, 1].map((row) => (
-      <div className="oauth-consent-row" key={row}>
-        {[0, 1].map((copy) => (
-          <div className="oauth-consent-half" key={copy}>
-            {FIELD_CLIENTS.map((client) => (
-              <OauthClientLogo key={`${row}-${copy}-${client}`} client={client} tile />
-            ))}
-          </div>
-        ))}
-      </div>
-    ))}
+    {Array.from({ length: FIELD_CELLS }, (_, index) => {
+      const client = FIELD_CLIENTS[index % FIELD_CLIENTS.length];
+      return <OauthClientLogo key={`${client}-${index}`} client={client} tile />;
+    })}
   </div>
 );
+
+const useConnectedWorkspace = () => {
+  const fetch = useFetch();
+  const loadSelf = useCallback(async () => {
+    const response = await fetch('/user/self');
+    if (!response.ok) return null;
+    return response.json();
+  }, [fetch]);
+  const loadOrgs = useCallback(async () => {
+    const response = await fetch('/user/organizations');
+    if (!response.ok) return [];
+    return response.json();
+  }, [fetch]);
+  const { data: self } = useSWR('oauth-consent-self', loadSelf, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    shouldRetryOnError: false,
+  });
+  const { data: orgs } = useSWR('oauth-consent-orgs', loadOrgs, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    shouldRetryOnError: false,
+  });
+  if (!self?.orgId || !Array.isArray(orgs)) return '';
+  const match = orgs.find(
+    (org: { id?: string; name?: string }) => org?.id === self.orgId
+  );
+  return typeof match?.name === 'string' ? match.name.trim() : '';
+};
 
 const ConsentPair = ({
   name,
@@ -104,6 +167,8 @@ export default function OAuthAuthorizePage() {
   const redirectUri = searchParams.get('redirect_uri');
   const codeChallenge = searchParams.get('code_challenge');
   const codeChallengeMethod = searchParams.get('code_challenge_method');
+  const scopes = requestedScopes(searchParams.get('scope'));
+  const workspace = useConnectedWorkspace();
 
   useEffect(() => {
     if (!clientId || !responseType) {
@@ -212,10 +277,23 @@ export default function OAuthAuthorizePage() {
           />
           <h2 className="oauth-consent-name">{appInfo.app.name}</h2>
           <p className="oauth-consent-brand">crea8.one</p>
-          {appInfo.app.description ? (
-            <p className="m-0 max-w-full text-center text-[14px] text-c8-muted">
-              {appInfo.app.description}
+          {typeof appInfo.app.description === 'string' &&
+          appInfo.app.description.trim() ? (
+            <p className="oauth-consent-description">
+              {appInfo.app.description.trim()}
             </p>
+          ) : null}
+          {workspace ? (
+            <p className="oauth-consent-workspace">{workspace}</p>
+          ) : null}
+          {scopes.length ? (
+            <ul className="oauth-consent-scopes">
+              {scopes.map((scope) => (
+                <li className="oauth-consent-scope" key={scope}>
+                  {scopeLabel(scope)}
+                </li>
+              ))}
+            </ul>
           ) : null}
         </div>
         <div className="oauth-consent-actions flex gap-[12px]">
