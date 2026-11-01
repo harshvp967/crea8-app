@@ -5,7 +5,11 @@ import {
   isGrandfatheredOrg,
 } from '@gitroom/helpers/utils/billing.enabled';
 import { PLANS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
-import { monthlyCreditAllowance } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import {
+  monthlyCreditAllowance,
+  subscriptionChargesFromList,
+  subscriptionIsTrial,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { DodoProvider } from '@gitroom/nestjs-libraries/services/payment/providers/dodo.provider';
@@ -51,11 +55,17 @@ export class BillingReadService {
       }
     }
     const shown = active || (!active ? latest : null);
-    const isTrailing = account ? account.isTrailing : org.isTrailing;
+    const storedTrailing = account ? account.isTrailing : org.isTrailing;
+    const onTrial = subscriptionIsTrial({
+      status: shown?.status,
+      isTrailing: storedTrailing,
+      deletedAt: shown?.deletedAt,
+      charges: subscriptionChargesFromList(invoices),
+    });
     const status = billingStatus({
       active: !!active,
       status: shown?.status,
-      isTrailing,
+      isTrailing: onTrial,
       cancelAt: active?.cancelAt,
       pendingTier: active?.pendingTier,
     });
@@ -94,7 +104,7 @@ export class BillingReadService {
         monthlyRemaining: balance.monthlyRemaining,
         monthlyAllowance: monthlyCreditAllowance(
           tier,
-          !grandfathered && !!isTrailing
+          !grandfathered && onTrial
         ),
         packRemaining: balance.packRemaining,
         total: balance.total,

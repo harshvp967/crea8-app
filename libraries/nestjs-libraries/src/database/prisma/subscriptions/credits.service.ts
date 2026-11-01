@@ -20,6 +20,7 @@ import {
   creditPackCheckoutError,
   creditPackCheckoutInput,
   packGrantFromPayment,
+  type SubscriptionCharge,
   planSpend,
   postsCovered,
   stalkerReadCost,
@@ -403,7 +404,8 @@ export class CreditsService {
   async applyReportedPackPayment(
     tx: Tx,
     data: any,
-    organizationId?: string | null
+    organizationId?: string | null,
+    charges?: readonly SubscriptionCharge[] | null
   ) {
     const grant = packGrantFromPayment(data);
     if (!grant || grant.credits <= 0 || !grant.paymentId) {
@@ -413,14 +415,18 @@ export class CreditsService {
     if (!org) {
       return false;
     }
-    if (await this.packCheckoutBlock(tx, org)) {
+    if (await this.packCheckoutBlock(tx, org, charges)) {
       return false;
     }
     await this.grantPack(tx, org, grant.credits, `pack:${grant.paymentId}`);
     return true;
   }
 
-  private async packCheckoutBlock(tx: Tx, organizationId: string) {
+  private async packCheckoutBlock(
+    tx: Tx,
+    organizationId: string,
+    charges?: readonly SubscriptionCharge[] | null
+  ) {
     if (isGrandfatheredOrg(organizationId)) {
       return null;
     }
@@ -429,7 +435,9 @@ export class CreditsService {
       if (account.grandfathered) {
         return null;
       }
-      return creditPackCheckoutError(creditPackCheckoutInput(account));
+      return creditPackCheckoutError(
+        creditPackCheckoutInput({ ...account, charges })
+      );
     }
     const org = await tx.organization.findUnique({
       where: { id: organizationId },
@@ -443,6 +451,7 @@ export class CreditsService {
       creditPackCheckoutInput({
         subscription,
         isTrailing: org?.isTrailing,
+        charges,
       })
     );
   }
@@ -451,7 +460,8 @@ export class CreditsService {
     tx: Tx,
     query: { payment_id?: string | null; status?: string | null },
     payment?: any,
-    organizationId?: string | null
+    organizationId?: string | null,
+    charges?: readonly SubscriptionCharge[] | null
   ) {
     const status = String(query?.status || payment?.status || '')
       .trim()
@@ -464,7 +474,7 @@ export class CreditsService {
       payment_id: payment?.payment_id || query?.payment_id || '',
       status: payment?.status || query?.status || 'succeeded',
     };
-    return this.applyReportedPackPayment(tx, source, organizationId);
+    return this.applyReportedPackPayment(tx, source, organizationId, charges);
   }
 
   async grantPack(tx: Tx, organizationId: string, credits: number, idempotencyKey: string) {

@@ -6,8 +6,11 @@ import {
   CREDIT_PACK_TRIAL_ERROR,
   creditPackCheckoutError,
   creditTracker,
+  creditUsage,
   monthlyCreditAllowance,
+  subscriptionIsTrial,
   xPostSpendParts,
+  type SubscriptionCharge,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
 type Balance = {
@@ -552,6 +555,104 @@ describe('credit ledger action charges', () => {
     expect(
       creditPackCheckoutError({ status: 'active', isTrailing: false, deletedAt: null })
     ).toBeNull();
+  });
+
+  it('treats a cancelled Pro plan with a paid charge as paid, not a trial', async () => {
+    const charges: SubscriptionCharge[] = [
+      { amount: 5.9, status: 'succeeded' },
+      { amount: 5.9, status: 'succeeded' },
+    ];
+    const cancelAt = '2026-11-06T00:00:00.000Z';
+    const now = new Date('2026-11-01T12:00:00.000Z');
+    const paidCancel = {
+      status: 'cancelled',
+      isTrailing: true,
+      deletedAt: null as null,
+      cancelAt,
+      charges,
+    };
+    expect(subscriptionIsTrial(paidCancel)).toBe(false);
+    expect(monthlyCreditAllowance('PRO', subscriptionIsTrial(paidCancel))).toBe(1100);
+    expect(PLANS.PRO.monthlyCredits).toBe(1100);
+    expect(creditPackCheckoutError(paidCancel, now)).toBeNull();
+    expect(
+      creditPackCheckoutError(
+        { status: 'cancelled', isTrailing: true, deletedAt: null, cancelAt },
+        now
+      )
+    ).toBe(CREDIT_PACK_TRIAL_ERROR);
+    expect(
+      subscriptionIsTrial({
+        status: 'trialing',
+        isTrailing: true,
+        deletedAt: null,
+        charges: [{ amount: 5, status: 'succeeded', kind: 'credit_pack' }],
+      })
+    ).toBe(true);
+    expect(
+      creditPackCheckoutError({
+        status: 'expired',
+        isTrailing: true,
+        deletedAt: null,
+        charges,
+      })
+    ).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(
+      creditPackCheckoutError({
+        status: 'past_due',
+        isTrailing: false,
+        deletedAt: null,
+        charges,
+      })
+    ).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(creditPackCheckoutError(null)).toBe(CREDIT_PACK_PAID_ERROR);
+
+    const usage = creditUsage({
+      allowance: monthlyCreditAllowance('PRO', subscriptionIsTrial(paidCancel)),
+      monthlyRemaining: 38,
+      packRemaining: 0,
+      entries: [
+        {
+          amount: -12,
+          type: 'SPEND',
+          reason: 'x_post',
+          idempotencyKey: 'x:paid',
+        },
+      ],
+    });
+    expect(usage.allowance).toBe(1100);
+    expect(usage.used).toBe(12);
+
+    const db = memoryPrisma();
+    const credits = new CreditsService(db as any);
+    db.setWorkspace('org-pro-cancel', {
+      status: 'cancelled',
+      isTrailing: true,
+      cancelAt: new Date(cancelAt),
+    });
+    const payment = {
+      payment_id: 'pay_pack_after_paid',
+      status: 'succeeded',
+      metadata: {
+        organizationId: 'org-pro-cancel',
+        kind: 'credit_pack',
+        pack: 'PACK_150',
+        credits: 150,
+      },
+    };
+    expect(
+      await db.$transaction((tx: any) =>
+        credits.applyReportedPackPayment(tx, payment, 'org-pro-cancel', charges)
+      )
+    ).toBe(true);
+    expect(
+      await db.$transaction((tx: any) =>
+        credits.applyReportedPackPayment(tx, payment, 'org-pro-cancel', charges)
+      )
+    ).toBe(true);
+    const balance = await credits.balance('org-pro-cancel');
+    expect(balance.packRemaining).toBe(150);
+    expect(balance.monthlyRemaining).toBe(0);
   });
 
   it('grants a pack on the last paid day of a cancellation and still refuses the others', async () => {

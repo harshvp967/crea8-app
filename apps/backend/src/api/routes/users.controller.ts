@@ -34,6 +34,8 @@ import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscr
 import {
   creditTracker,
   monthlyCreditAllowance,
+  subscriptionChargesFromList,
+  subscriptionIsTrial,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -148,17 +150,31 @@ export class UsersController {
     if (enforced) {
       tier = await this._entitlements.tier(organization.id);
       totalChannels = pricing[tier as 'FREE'].channel;
-      isTrailing = tier !== 'FREE' && !!account?.isTrailing;
       allowTrial = !!account?.allowTrial;
       isLifetime = !!account?.isLifetime;
-      await this._paymentService.reconcileSucceededPacks(
-        account?.billingOrganizationId || organization.id
-      );
+      const billingOrganizationId = account?.billingOrganizationId || organization.id;
+      await this._paymentService.reconcileSucceededPacks(billingOrganizationId);
+      let charges: ReturnType<typeof subscriptionChargesFromList> = [];
+      try {
+        const provider = await this._paymentService.getProviderForOrganization(
+          billingOrganizationId,
+          'web'
+        );
+        charges = subscriptionChargesFromList(
+          await provider.getCharges(billingOrganizationId)
+        );
+      } catch {
+        charges = [];
+      }
+      const onTrial = subscriptionIsTrial({
+        status: account?.subscription?.status || account?.latest?.status,
+        isTrailing: !!account?.isTrailing,
+        deletedAt: account?.subscription?.deletedAt || account?.latest?.deletedAt,
+        charges,
+      });
+      isTrailing = tier !== 'FREE' && onTrial;
       const balance = await this._credits.balance(organization.id);
-      const allowance = monthlyCreditAllowance(
-        tier,
-        !grandfathered && isTrailing
-      );
+      const allowance = monthlyCreditAllowance(tier, !grandfathered && onTrial);
       const usage = await this._credits.usage(organization.id, allowance);
       const tracked = usage ? creditTracker(usage) : null;
       credits = {

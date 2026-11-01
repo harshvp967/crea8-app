@@ -40,6 +40,8 @@ import {
   verifyDodoSignature,
   creditPackCheckoutError,
   creditPackCheckoutInput,
+  hasPaidSubscriptionCharge,
+  type SubscriptionCharge,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   PaymentPlatform,
@@ -152,8 +154,11 @@ export class DodoProvider extends PaymentProviderAbstract {
       !!balance?.cycleKey &&
       !String(balance.cycleKey).startsWith('trial:') &&
       !String(balance.cycleKey).startsWith('gf:');
-    const inTrial =
+    let inTrial =
       type === 'subscription.renewed' || paidCycle ? false : this.inTrial(source);
+    if (inTrial && (await this.hasPaidCharge(organizationId))) {
+      inTrial = false;
+    }
     const ended = ['cancelled', 'expired'].includes(status);
     const cancelAt =
       source.cancel_at_next_billing_date && source.next_billing_date
@@ -254,10 +259,12 @@ export class DodoProvider extends PaymentProviderAbstract {
         return;
       }
     }
+    const organizationId = await this.organizationIdFor(tx, source);
     await this._credits.applyReportedPackPayment(
       tx,
       source,
-      await this.organizationIdFor(tx, source)
+      organizationId,
+      organizationId ? await this.subscriptionCharges(organizationId) : []
     );
   }
 
@@ -387,7 +394,12 @@ export class DodoProvider extends PaymentProviderAbstract {
     }
     const account = await loadBillingAccount(this._prisma, organizationId);
     if (!account.grandfathered && !isGrandfatheredOrg(organizationId)) {
-      const packError = creditPackCheckoutError(creditPackCheckoutInput(account));
+      const packError = creditPackCheckoutError(
+        creditPackCheckoutInput({
+          ...account,
+          charges: await this.subscriptionCharges(organizationId),
+        })
+      );
       if (packError) {
         throw new HttpException(packError, 400);
       }
@@ -708,6 +720,7 @@ export class DodoProvider extends PaymentProviderAbstract {
 
   private async grantListedPacks(organizationId: string) {
     const payments = await this.customerPayments(organizationId);
+    const charges = this.chargesFromPayments(payments);
     for (const payment of payments) {
       const status = String(payment.status || '').trim().toLowerCase();
       if (status !== 'succeeded') {
@@ -718,11 +731,42 @@ export class DodoProvider extends PaymentProviderAbstract {
           tx,
           { payment_id: payment.payment_id, status },
           payment,
-          organizationId
+          organizationId,
+          charges
         );
         await this.liftTrialOnSubscriptionCharge(tx, payment, organizationId);
       });
     }
+  }
+
+  private chargesFromPayments(
+    payments: readonly {
+      total_amount?: number | null;
+      status?: string | null;
+      metadata?: { kind?: unknown } | null;
+    }[]
+  ): SubscriptionCharge[] {
+    return payments.map((payment) => ({
+      amount: Number(payment.total_amount || 0) / 100,
+      status: payment.status || null,
+      kind: typeof payment.metadata?.kind === 'string' ? payment.metadata.kind : null,
+    }));
+  }
+
+  private async subscriptionCharges(organizationId: string): Promise<SubscriptionCharge[]> {
+    try {
+      const rows = await this.invoices(organizationId);
+      return rows.map((row) => ({
+        amount: row.amount,
+        status: row.status,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  private async hasPaidCharge(organizationId: string) {
+    return hasPaidSubscriptionCharge(await this.subscriptionCharges(organizationId));
   }
 
   private async customerPayments(organizationId: string) {
