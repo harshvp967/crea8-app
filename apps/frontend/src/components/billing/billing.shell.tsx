@@ -1,21 +1,10 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { Bricolage_Grotesque, Inter } from 'next/font/google';
-
-const display = Bricolage_Grotesque({
-  subsets: ['latin'],
-  weight: ['600', '700'],
-});
-
-const text = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-});
 
 export function BillingShell({ children }: { children: ReactNode }) {
   return (
-    <div className={`${text.className} billing-root flex flex-col gap-[16px] text-[14px] leading-[1.5] text-newTextColor`}>
+    <div className="billing-root flex flex-col gap-[16px] text-[14px] leading-[1.5] text-newTextColor">
       {children}
     </div>
   );
@@ -30,7 +19,7 @@ export function BillingHeading({
 }) {
   const Tag = as;
   return (
-    <Tag className={`${display.className} m-0 text-[22px] font-[600] leading-[1.2]`}>
+    <Tag className="billing-display m-0 text-[22px] font-[600] leading-[1.2]">
       {children}
     </Tag>
   );
