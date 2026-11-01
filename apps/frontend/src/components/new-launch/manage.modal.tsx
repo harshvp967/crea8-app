@@ -55,6 +55,26 @@ const finePointer = () =>
   typeof window !== 'undefined' &&
   window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
+const PUBLISH_ERROR_FALLBACK = 'An error occurred while publishing this post';
+
+function storedPublishError(
+  posts: Array<{ state?: string | null; error?: string | null }> | undefined,
+  fallback: string
+) {
+  const lines: string[] = [];
+  for (const post of posts || []) {
+    if (post?.state !== 'ERROR') {
+      continue;
+    }
+    const reason = typeof post.error === 'string' ? post.error.trim() : '';
+    const line = reason || fallback;
+    if (!lines.includes(line)) {
+      lines.push(line);
+    }
+  }
+  return lines.join('\n');
+}
+
 function stableValue(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(stableValue);
@@ -278,6 +298,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   // the channel in view, or the one that was opened
   const channel =
     existingPosts.find((p) => p.integration === current) || existingData;
+  const publishError = storedPublishError(
+    current === 'global'
+      ? existingPosts.flatMap((row) => row.posts || [])
+      : existingPosts.find((row) => row.integration === current)?.posts,
+    t('post_publish_error', PUBLISH_ERROR_FALLBACK)
+  );
 
   useEffect(() => {
     if (hide) {
@@ -1247,6 +1273,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <CloseIcon className="text-[#A3A3A3]" />
           </button>
         </div>
+        {!!publishError && (
+          <p className="c8-post-error" role="alert">
+            {publishError}
+          </p>
+        )}
         <div className="composer-split flex-1 flex min-h-0">
           <div className="composer-editor flex flex-col flex-1 border-e border-newBorder min-w-0">
             <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center gap-[12px] px-[20px] text-[20px] font-[600]">

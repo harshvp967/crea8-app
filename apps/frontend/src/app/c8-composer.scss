@@ -967,6 +967,26 @@
   color: var(--c8-ink);
 }
 
+.c8-composer .c8-post-error {
+  flex: none;
+  align-self: stretch;
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0 20px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--c8-danger);
+  border-radius: 16px;
+  background: var(--c8-surface);
+  color: var(--c8-danger);
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 7.5rem;
+  overflow: auto;
+}
+
 .c8-composer .sortable-container > div {
   width: 96px !important;
   height: 72px !important;
@@ -1526,6 +1546,11 @@
   .c8-composer .composer-tabs button[role='tab'] {
     padding: 0 8px;
     font-size: 12px;
+  }
+
+  .c8-composer .c8-post-error {
+    margin-left: 12px;
+    margin-right: 12px;
   }
 }
 
