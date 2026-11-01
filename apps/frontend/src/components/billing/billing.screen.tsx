@@ -189,7 +189,14 @@ export function BillingScreen({
   }
 
   const status = data.subscription.status;
-  const packsClosed = status === 'cancelled' || status === 'cancel_scheduled';
+  // cancel_scheduled still has access through cancelAt, so the buy label stays.
+  const packsClosed =
+    status === 'none' ||
+    status === 'trialing' ||
+    status === 'trial_ended' ||
+    status === 'past_due' ||
+    status === 'on_hold' ||
+    status === 'cancelled';
   const checkoutFailed = returned === 'failure';
   const screen = (() => {
     if (!checkoutFailed && returned === 'pending' && !activeEnough.has(status)) {
