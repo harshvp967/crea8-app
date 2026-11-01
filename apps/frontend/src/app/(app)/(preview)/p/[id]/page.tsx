@@ -35,6 +35,11 @@ async function loadPublicPost(id: string) {
   }
 }
 
+function storedPublishError(error: unknown, fallback: string) {
+  const reason = typeof error === 'string' ? error.trim() : '';
+  return reason || fallback;
+}
+
 function plainText(value: unknown) {
   return String(value || '')
     .replace(/<[^>]+>/g, ' ')
@@ -156,6 +161,17 @@ export default async function Auth(
                 key={String(p.id)}
                 className="c8-preview-card relative px-4 py-4"
               >
+                {p.state === 'ERROR' && (
+                  <p className="c8-post-error" role="alert">
+                    {storedPublishError(
+                      p.error,
+                      t(
+                        'post_publish_error',
+                        'An error occurred while publishing this post'
+                      )
+                    )}
+                  </p>
+                )}
                 <div className="flex space-x-3">
                   <div>
                     <div className="flex shrink-0 rounded-full h-30 w-30 relative">

@@ -3053,6 +3053,20 @@ body.c8-schedule .c8-slots .c8-slot-save {
   border-color: var(--c8-line);
 }
 
+.c8-preview .c8-post-error {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--c8-danger);
+  border-radius: 16px;
+  background: var(--c8-surface);
+  color: var(--c8-danger);
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Tablet and phone calendar chrome. Display only. */
 
 body.c8-schedule .mantine-Overlay-root,
