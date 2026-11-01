@@ -20,6 +20,7 @@ export interface PricingInnerInterface {
   featured_by_gitroom: boolean;
   ai: boolean;
   import_from_channels: boolean;
+  image_generator: boolean;
   public_api: boolean;
   webhooks: number;
   autoPost: boolean;
@@ -51,6 +52,7 @@ function toPricing(tier: PlanTier): PricingInnerInterface {
     featured_by_gitroom: plan.featuredByGitroom,
     ai: plan.ai,
     import_from_channels: plan.importFromChannels,
+    image_generator: plan.imageGenerator,
     public_api: plan.publicApi,
     webhooks: plan.webhooks,
     autoPost: plan.autoPost,

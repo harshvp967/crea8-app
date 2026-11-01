@@ -52,6 +52,7 @@ export type PlanConfig = {
   communityFeatures: boolean;
   featuredByGitroom: boolean;
   importFromChannels: boolean;
+  imageGenerator: boolean;
   publicApi: boolean;
   autoPost: boolean;
 };
@@ -81,6 +82,9 @@ const paid = (
   communityFeatures: partial.key !== 'STANDARD',
   featuredByGitroom: partial.key !== 'STANDARD',
   importFromChannels: true,
+  // Paid plans, including Creator, include AI images. One image spends
+  // CREDIT_COSTS.aiImage. There is no per-plan image count.
+  imageGenerator: true,
   publicApi: true,
   autoPost: partial.key !== 'STANDARD',
 });
@@ -106,6 +110,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     communityFeatures: false,
     featuredByGitroom: false,
     importFromChannels: false,
+    imageGenerator: false,
     publicApi: false,
     autoPost: false,
   },

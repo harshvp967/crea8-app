@@ -1,5 +1,6 @@
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
-import { CREDIT_COSTS, PLANS, TRIAL_MONTHLY_CREDITS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { CREDIT_COSTS, PAID_TIERS, PLANS, TRIAL_MONTHLY_CREDITS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import {
   BillingBlocked,
   CREDIT_PACK_PAID_ERROR,
@@ -302,6 +303,35 @@ describe('credit ledger action charges', () => {
     );
     return { db, credits };
   }
+
+  it('keeps AI images on for Creator and spends the same credit cost as the other plans', async () => {
+    expect(PLANS.STANDARD.displayName).toBe('Creator');
+    expect(PLANS.STANDARD.imageGenerator).toBe(true);
+    expect(pricing.STANDARD.image_generator).toBe(true);
+    expect(PLANS.FREE.imageGenerator).toBe(false);
+    expect(pricing.FREE.image_generator).toBe(false);
+    expect('imageGenerationCount' in PLANS.STANDARD).toBe(false);
+    expect(CREDIT_COSTS.aiImage).toBe(3);
+
+    const spent: number[] = [];
+    for (const tier of PAID_TIERS) {
+      expect(PLANS[tier].imageGenerator).toBe(true);
+      expect(pricing[tier].image_generator).toBe(true);
+      const org = `org-image-${tier}`;
+      const db = memoryPrisma();
+      const credits = new CreditsService(db as any);
+      await db.$transaction((tx: any) =>
+        credits.grantMonthly(tx, org, '2026-11', PLANS[tier].monthlyCredits)
+      );
+      const image = await credits.spend(org, CREDIT_COSTS.aiImage, 'ai_image', `img:${tier}`);
+      expect(image.spent).toBe(CREDIT_COSTS.aiImage);
+      expect((await credits.balance(org)).monthlyRemaining).toBe(
+        PLANS[tier].monthlyCredits - CREDIT_COSTS.aiImage
+      );
+      spent.push(image.spent);
+    }
+    expect(spent).toEqual([3, 3, 3, 3]);
+  });
 
   it('deducts each billed action on the existing ledger and counts them in the breakdown', async () => {
     const org = 'org-actions';
