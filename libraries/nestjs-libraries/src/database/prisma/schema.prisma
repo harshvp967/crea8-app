@@ -702,6 +702,8 @@ model Webhooks {
   name           String
   organizationId String
   url            String
+  // Existing rows receive Schedule post published and post failed. Additive.
+  events         String[]               @default(["post.published", "post.failed"])
   deletedAt      DateTime?
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt

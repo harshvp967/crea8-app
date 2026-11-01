@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PostActivity } from '@gitroom/orchestrator/activities/post.activity';
+import { WorkspaceWebhookActivity } from '@gitroom/orchestrator/activities/workspace.webhook.activity';
 import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
@@ -16,6 +17,7 @@ import { StalkerScheduleRegister } from '@gitroom/orchestrator/stalker.schedule'
 
 const activities = [
   PostActivity,
+  WorkspaceWebhookActivity,
   AutopostService,
   EmailActivity,
   IntegrationsActivity,

@@ -3,6 +3,7 @@ import {
   HttpException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   isBillingEnforced,
@@ -38,6 +39,8 @@ import {
 import { isProviderAuthFailure } from '@gitroom/nestjs-libraries/stalker/sources/youtube.stalker.source';
 import { formatXFailure } from '@gitroom/nestjs-libraries/stalker/sources/x.stalker.source';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { WEBHOOK_EVENT } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhook.events';
 import {
   BACKFILL_LOOKBACK_MS,
   cleanHandle,
@@ -680,7 +683,8 @@ export class StalkerService {
     private _refreshIntegrationService: RefreshIntegrationService,
     private _temporalService: TemporalService,
     private _entitlements: EntitlementService,
-    private _credits: CreditsService
+    private _credits: CreditsService,
+    @Optional() private _webhooks?: WebhooksService
   ) {}
 
   private async keywordLimit(organizationId: string, projectId?: string) {
@@ -3623,12 +3627,9 @@ export class StalkerService {
       drafts,
       keywordIds
     );
-    await this.emitCreated(
-      organizationId,
-      project,
-      drafts.map((draft) => draft.externalId),
-      started
-    );
+    const externalIds = drafts.map((draft) => draft.externalId);
+    await this.emitCreated(organizationId, project, externalIds, started);
+    await this.emitWorkspaceMatches(organizationId, project.id, externalIds, started);
     return {
       stored,
       duplicates: Math.max(0, drafts.length - stored),
@@ -3674,6 +3675,41 @@ export class StalkerService {
       }
     } catch (err) {
       console.error('Stalker webhook failed', err);
+    }
+  }
+
+  // Workspace webhooks that selected "new match found". The project URL above
+  // still posts mention.created on its own and is not replaced by this.
+  private async emitWorkspaceMatches(
+    organizationId: string,
+    projectId: string,
+    externalIds: string[],
+    started: Date
+  ) {
+    if (!this._webhooks || !externalIds.length) {
+      return;
+    }
+    try {
+      const mentions = await this._repository.mentionsCreatedSince(
+        organizationId,
+        projectId,
+        externalIds,
+        started
+      );
+      if (!mentions.length) {
+        return;
+      }
+      await this._webhooks.emitAll(
+        organizationId,
+        WEBHOOK_EVENT.stalkerMatch,
+        mentions.map((mention) => ({
+          event: WEBHOOK_EVENT.stalkerMatch,
+          projectId,
+          mention,
+        }))
+      );
+    } catch (err) {
+      console.error('Stalker workspace webhook failed', err);
     }
   }
 
