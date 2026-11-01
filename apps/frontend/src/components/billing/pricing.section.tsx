@@ -10,8 +10,26 @@ import {
   planFeatureLines,
   type BillingPeriod,
   type PaidTier,
+  type PlanConfig,
   type PlanTier,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+
+// planFeatureLines does not include this row. Show it only when the plan
+// flag is on. A missing flag stays off. There is no per-plan image count.
+function showsAiImages(plan: PlanConfig) {
+  return (plan as { imageGenerator?: boolean }).imageGenerator === true;
+}
+
+function cardLines(plan: PlanConfig) {
+  const lines = planFeatureLines(plan);
+  if (!showsAiImages(plan)) {
+    return lines;
+  }
+  const next = [...lines];
+  const afterAiPost = next.indexOf('AI post');
+  next.splice(afterAiPost === -1 ? next.length : afterAiPost + 1, 0, 'AI images');
+  return next;
+}
 
 export function PricingSection({
   period,
@@ -82,7 +100,7 @@ export function PricingSection({
                       : `Choose ${plan.displayName}`}
               </button>
               <ul className="m-0 flex list-none flex-col gap-[8px] p-0">
-                {planFeatureLines(plan).map((line) => (
+                {cardLines(plan).map((line) => (
                   <li key={line} className="flex items-start gap-[8px] text-[14px]">
                     <HugeIcon name="check" size={16} className="shrink-0" />
                     <span>{line}</span>
