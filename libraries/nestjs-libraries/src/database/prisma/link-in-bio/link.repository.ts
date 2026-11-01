@@ -11,7 +11,15 @@ const pageInclude = {
     orderBy: { position: 'asc' as const },
     include: {
       post: {
-        include: {
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          publishDate: true,
+          releaseURL: true,
+          image: true,
+          state: true,
+          deletedAt: true,
           integration: {
             select: { providerIdentifier: true },
           },
@@ -52,6 +60,15 @@ export class LinkRepository {
     return this._page.model.linkPage.findUnique({
       where: { organizationId },
       include: pageInclude,
+    });
+  }
+
+  // Leads and the post picker only need the page identity. The editor include
+  // loads every block and featured post, so those screens must not use it.
+  findPageMeta(organizationId: string) {
+    return this._page.model.linkPage.findUnique({
+      where: { organizationId },
+      select: { id: true, slug: true, timezone: true },
     });
   }
 
@@ -208,10 +225,13 @@ export class LinkRepository {
     });
   }
 
-  clickCounts(pageId: string) {
+  async clickCounts(blockIds: string[]) {
+    if (!blockIds.length) {
+      return [];
+    }
     return this._event.model.linkEvent.groupBy({
       by: ['blockId'],
-      where: { pageId, type: 'CLICK', blockId: { not: null } },
+      where: { type: 'CLICK', blockId: { in: blockIds } },
       _count: { _all: true },
     });
   }
@@ -292,6 +312,18 @@ export class LinkRepository {
       },
       orderBy: { createdAt: 'desc' },
       take,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        country: true,
+        referrer: true,
+        sourceBlock: true,
+        message: true,
+        kind: true,
+        status: true,
+        createdAt: true,
+      },
     });
   }
 

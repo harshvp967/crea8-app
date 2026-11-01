@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { linkStartup } from '@gitroom/frontend/components/link-in-bio/link.startup';
 import {
   LinkDesign,
   VisitorContext,
@@ -177,25 +178,33 @@ export class LinkRequestError extends Error {
 
 export const useLinkPage = () => {
   const fetch = useFetch();
-  return useSWR<LinkEditor>('/link-in-bio', async (path: string) => {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const response = await fetch(`${path}?timezone=${encodeURIComponent(timezone)}`);
-    if (!response.ok) {
-      throw new Error('Could not load your page');
-    }
-    return response.json();
-  });
+  return useSWR<LinkEditor>(
+    '/link-in-bio',
+    async (path: string) => {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const response = await fetch(`${path}?timezone=${encodeURIComponent(timezone)}`);
+      if (!response.ok) {
+        throw new Error('Could not load your page');
+      }
+      return response.json();
+    },
+    linkStartup
+  );
 };
 
 export const useLinkPosts = () => {
   const fetch = useFetch();
-  return useSWR<LinkPostCard[]>('/link-in-bio/posts', async (path: string) => {
-    const response = await fetch(path);
-    if (!response.ok) {
-      throw new Error('Could not load posts');
-    }
-    return response.json();
-  });
+  return useSWR<LinkPostCard[]>(
+    '/link-in-bio/posts',
+    async (path: string) => {
+      const response = await fetch(path);
+      if (!response.ok) {
+        throw new Error('Could not load posts');
+      }
+      return response.json();
+    },
+    linkStartup
+  );
 };
 
 export type LinkAnalytics = {
@@ -256,13 +265,17 @@ export const useLinkAnalytics = (range: string, from = '', to = '') => {
 export const useLinkLeads = (status: string, query: string) => {
   const fetch = useFetch();
   const key = `/link-in-bio/leads?status=${encodeURIComponent(status)}&q=${encodeURIComponent(query)}`;
-  return useSWR<LinkLeads>(key, async (path: string) => {
-    const response = await fetch(path);
-    if (!response.ok) {
-      throw new Error('Could not load leads');
-    }
-    return response.json();
-  });
+  return useSWR<LinkLeads>(
+    key,
+    async (path: string) => {
+      const response = await fetch(path);
+      if (!response.ok) {
+        throw new Error('Could not load leads');
+      }
+      return response.json();
+    },
+    linkStartup
+  );
 };
 
 export function revalidatePublicLink() {

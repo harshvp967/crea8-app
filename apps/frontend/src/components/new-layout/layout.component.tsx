@@ -54,6 +54,7 @@ import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overf
 import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar';
 import { C8Sidebar } from '@gitroom/frontend/components/layout/c8.sidebar';
 import { AccountMenu, useAccountMenu } from '@gitroom/frontend/components/layout/account.menu';
+import { useLinkStartup } from '@gitroom/frontend/components/link-in-bio/link.startup';
 
 const HeaderAvatar = ({
   name,
@@ -194,6 +195,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     async () => (await fetch('/third-party/list')).json(),
     startupQuery
   );
+  useLinkStartup(pathname || '');
 
   useEffect(() => {
     setSentryUser(
