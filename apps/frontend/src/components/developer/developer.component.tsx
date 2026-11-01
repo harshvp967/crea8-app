@@ -211,7 +211,7 @@ export const DeveloperComponent: FC = () => {
         <div className="text-[14px] text-textColor leading-[1.7]">
           {t(
             'oauth_app_note_line1',
-            'Create an OAuth App to let other Crea8one users authorize your product to post on their behalf.'
+            'Create an OAuth App to let other crea8.one users authorize your product to post on their behalf.'
           )}
           <br />
           {t(
@@ -228,7 +228,7 @@ export const DeveloperComponent: FC = () => {
               <div className="text-[13px] text-customColor18 mt-[2px]">
                 {t(
                   'create_an_oauth_application',
-                  'Create an OAuth application to allow third-party integrations with Crea8one on behalf of your users.'
+                  'Create an OAuth application to allow third-party integrations with crea8.one on behalf of your users.'
                 )}
               </div>
             </div>
@@ -254,7 +254,7 @@ export const DeveloperComponent: FC = () => {
         <div className="text-[14px] text-textColor leading-[1.7]">
           {t(
             'oauth_app_note_line1',
-            'Create an OAuth App to let other Crea8one users authorize your product to post on their behalf.'
+            'Create an OAuth App to let other crea8.one users authorize your product to post on their behalf.'
           )}
           <br />
           {t(
@@ -363,7 +363,7 @@ export const DeveloperComponent: FC = () => {
       <div className="text-[14px] text-textColor leading-[1.7]">
         {t(
           'oauth_app_note_line1',
-          'Create an OAuth App to let other Crea8one users authorize your product to post on their behalf.'
+          'Create an OAuth App to let other crea8.one users authorize your product to post on their behalf.'
         )}
         <br />
         {t(

@@ -28,11 +28,23 @@ import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete
 import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { ChangeLanguageComponent } from '@gitroom/frontend/components/layout/language.component';
+import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
+import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 import dynamic from 'next/dynamic';
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
   { ssr: false }
+);
+
+const MetricComponent = dynamic(
+  () => import('@gitroom/frontend/components/settings/metric.component'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="my-[16px] h-[140px] animate-pulse rounded-[16px] border border-fifth bg-sixth" />
+    ),
+  }
 );
 
 export const accountSections = [
@@ -41,6 +53,9 @@ export const accountSections = [
   { id: 'billing', label: 'Billing' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'appearance', label: 'Appearance' },
+  { id: 'date', label: 'Date Metrics' },
+  { id: 'developers', label: 'Developers' },
+  { id: 'approved_apps', label: 'Approved Apps' },
   { id: 'security', label: 'Security' },
   { id: 'delete', label: 'Delete account' },
 ] as const;
@@ -357,6 +372,14 @@ const AccountAppearance = () => {
   );
 };
 
+const AccountDate = () => (
+  <div className="settings-section">
+    <div className="settings-group">
+      <MetricComponent />
+    </div>
+  </div>
+);
+
 const AccountSecurity = () => {
   const t = useT();
   const fetch = useFetch();
@@ -427,11 +450,16 @@ export const AccountSettings = ({
   onSection?: (section: AccountSectionId) => void;
 }) => {
   const t = useT();
+  const user = useUser();
+  const { isGeneral } = useVariables();
+  const showDevelopers = !!user?.tier?.public_api && !!isGeneral;
   const router = useRouter();
   const params = useSearchParams();
   const querySection = accountSectionFrom(params.get('section'));
   const [localSection, setLocalSection] = useState<AccountSectionId>('profile');
   const active = section || localSection;
+  const shown: AccountSectionId =
+    active === 'developers' && !showDevelopers ? 'profile' : active;
 
   useEffect(() => {
     if (!section) setLocalSection(querySection);
@@ -453,9 +481,16 @@ export const AccountSettings = ({
     billing: t('billing', 'Billing'),
     notifications: t('notifications', 'Notifications'),
     appearance: t('appearance', 'Appearance'),
+    date: 'Date Metrics',
+    developers: t('developers', 'Developers'),
+    approved_apps: t('approved_apps', 'Approved Apps'),
     security: t('security', 'Security'),
     delete: t('delete_account', 'Delete account'),
   };
+
+  const sections = accountSections.filter(
+    (item) => item.id !== 'developers' || showDevelopers
+  );
 
   return (
     <div className="settings-screen account-screen">
@@ -467,21 +502,24 @@ export const AccountSettings = ({
           variant="pill"
           className="settings-settabs"
           aria-label={t('account', 'Account')}
-          value={active}
+          value={shown}
           onValueChange={choose}
-          options={accountSections.map((item) => ({
+          options={sections.map((item) => ({
             value: item.id,
             label: labels[item.id],
           }))}
         />
         <div className="settings-detail">
-          {active === 'profile' && <AccountProfile />}
-          {active === 'workspace' && <AccountWorkspace />}
-          {active === 'billing' && <AccountBilling />}
-          {active === 'notifications' && <AccountNotifications />}
-          {active === 'appearance' && <AccountAppearance />}
-          {active === 'security' && <AccountSecurity />}
-          {active === 'delete' && <AccountDelete />}
+          {shown === 'profile' && <AccountProfile />}
+          {shown === 'workspace' && <AccountWorkspace />}
+          {shown === 'billing' && <AccountBilling />}
+          {shown === 'notifications' && <AccountNotifications />}
+          {shown === 'appearance' && <AccountAppearance />}
+          {shown === 'date' && <AccountDate />}
+          {shown === 'developers' && showDevelopers && <PublicComponent />}
+          {shown === 'approved_apps' && <ApprovedAppsComponent />}
+          {shown === 'security' && <AccountSecurity />}
+          {shown === 'delete' && <AccountDelete />}
         </div>
       </div>
     </div>

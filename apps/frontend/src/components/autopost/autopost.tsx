@@ -18,6 +18,7 @@ import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Slider } from '@gitroom/react/form/slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import ShortlinkPreferenceComponent from '@gitroom/frontend/components/settings/shortlink-preference.component';
 export const Autopost: FC = () => {
   const fetch = useFetch();
   const t = useT();
@@ -84,6 +85,9 @@ export const Autopost: FC = () => {
         <Button onClick={addWebhook()}>
           + {t('add_an_autopost', 'Add an autopost')}
         </Button>
+      </div>
+      <div className="settings-group">
+        <ShortlinkPreferenceComponent />
       </div>
       {!!data?.length && (
         <div className="settings-list">

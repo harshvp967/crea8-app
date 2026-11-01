@@ -8,6 +8,10 @@ import { Button } from '@gitroom/react/form/button';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import {
+  OauthClientLogo,
+  resolveOauthClientBrand,
+} from '@gitroom/frontend/components/oauth/client-brand';
 
 const useApprovedApps = () => {
   const fetch = useFetch();
@@ -68,7 +72,7 @@ export const ApprovedAppsComponent: FC = () => {
           <p>
             {t(
               'apps_you_have_authorized',
-              'Applications you have authorized to access your Crea8one account.'
+              'Applications you have authorized to access your crea8.one account.'
             )}
           </p>
         </div>
@@ -84,7 +88,11 @@ export const ApprovedAppsComponent: FC = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-[16px]">
-            {apps.map((app: any) => (
+            {apps.map((app: any) => {
+              const brand = app.oauthApp?.picture?.path
+                ? null
+                : resolveOauthClientBrand(app.oauthApp?.name);
+              return (
               <div
                 key={app.id}
                 className="settings-app flex items-center justify-between p-[12px] border border-fifth rounded-[4px]"
@@ -96,6 +104,10 @@ export const ApprovedAppsComponent: FC = () => {
                       alt={app.oauthApp.name}
                       className="w-[40px] h-[40px] rounded-full object-cover"
                     />
+                  ) : brand ? (
+                    <div className="w-[40px] h-[40px] rounded-full bg-fifth flex items-center justify-center text-customColor18">
+                      <OauthClientLogo client={brand} size={22} />
+                    </div>
                   ) : (
                     <div className="w-[40px] h-[40px] rounded-full bg-fifth flex items-center justify-center text-customColor18">
                       {app.oauthApp?.name?.[0]?.toUpperCase() || '?'}
@@ -120,7 +132,8 @@ export const ApprovedAppsComponent: FC = () => {
                   {t('revoke', 'Revoke')}
                 </Button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

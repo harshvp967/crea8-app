@@ -27,7 +27,7 @@ export const remoteMcpClients = {
 // the agent installs the CLI itself and asks you for the API key
 export const chatOnlyMcpClients = {
   'Grok Bot':
-    'Ask me for my Crea8one API key and send requests to the Crea8one API with it as the Authorization header.',
+    'Ask me for my crea8.one API key and send requests to the crea8.one API with it as the Authorization header.',
 } as const;
 
 export const mcpClients = [
@@ -163,7 +163,7 @@ export const getMcpConfig = (
       case 'NanoClaw':
         return {
           config: `ncl groups config add-mcp-server --id <group-id> --name crea8one --url ${oauthUrl}`,
-          hint: 'Run this in your terminal, replace <group-id> with the agent group that should get Crea8one.',
+          hint: 'Run this in your terminal, replace <group-id> with the agent group that should get crea8.one.',
         };
     }
   }
@@ -262,7 +262,7 @@ export const getMcpConfig = (
       // No headers flag, the key travels inside the URL like remote clients
       return {
         config: `ncl groups config add-mcp-server --id <group-id> --name crea8one --url ${mcpBase}/mcp/${apiKey}`,
-        hint: 'Run this in your terminal, replace <group-id> with the agent group that should get Crea8one.',
+        hint: 'Run this in your terminal, replace <group-id> with the agent group that should get crea8.one.',
       };
   }
 };
@@ -331,7 +331,7 @@ const McpSection = ({
           <div className="text-[13px] text-customColor18 mt-[2px]">
             {t(
               'connect_your_mcp_client_to_postiz_to_schedule_your_posts_faster',
-              'Connect the Crea8one MCP server to your client (Http streaming) to schedule your posts faster.'
+              'Connect the crea8.one MCP server to your client (Http streaming) to schedule your posts faster.'
             )}
           </div>
         </div>
@@ -356,7 +356,7 @@ const McpSection = ({
                   onClick={() => setAuth(m)}
                 >
                   {m === 'oauth'
-                    ? t('sign_in_no_api_key', 'Sign in with Crea8one (no API key)')
+                    ? t('sign_in_no_api_key', 'Sign in with crea8.one (no API key)')
                     : t('api_key', 'API Key')}
                 </button>
               ))}
@@ -399,7 +399,7 @@ const McpSection = ({
               !chatOnly &&
               ` ${t(
                 'oauth_sign_in_hint',
-                'Your agent will open a browser window to sign in to Crea8one.'
+                'Your agent will open a browser window to sign in to crea8.one.'
               )}`}
           </div>
           <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
@@ -474,7 +474,7 @@ const PublicApiContent = () => {
         <br />
         {t(
           'api_auth_note_line2',
-          'If you are building a product that schedules posts on behalf of other Crea8one users,'
+          'If you are building a product that schedules posts on behalf of other crea8.one users,'
         )}
         <br />
         {t(
@@ -613,7 +613,7 @@ export const PublicComponent = () => {
           <p>
             {t(
               'use_postiz_api_to_integrate_with_your_tools',
-              'Use the Crea8one API to integrate with your tools.'
+              'Use the crea8.one API to integrate with your tools.'
             )}
           </p>
         </div>

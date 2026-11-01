@@ -19,25 +19,18 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
-import { useSearchParams } from 'next/navigation';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
-import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 import Link from 'next/link';
 import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { Sets } from '@gitroom/frontend/components/sets/sets';
 import { SignaturesComponent } from '@gitroom/frontend/components/settings/signatures.component';
 import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { BrandVoiceSettings } from '@gitroom/frontend/components/settings/brand.voice';
-import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 const SettingsPageHead: FC<{
   t: ReturnType<typeof useT>;
-  showLogout: boolean;
-}> = ({ t, showLogout }) => (
+}> = ({ t }) => (
   <header className="settings-head-v2">
     <div className="settings-kicker">
       <span className="settings-sticker">{t('schedule', 'Schedule')}</span>
@@ -46,11 +39,6 @@ const SettingsPageHead: FC<{
       </span>
     </div>
     <h1>{t('settings', 'Settings')}</h1>
-    {showLogout && (
-      <div className="settings-nav-foot">
-        <LogoutComponent />
-      </div>
-    )}
   </header>
 );
 
@@ -89,7 +77,6 @@ export const SettingsPageSkeleton = () => {
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
-  const { isGeneral } = useVariables();
   const { getRef } = props;
   const fetch = useFetch();
   const toast = useToaster();
@@ -106,8 +93,6 @@ export const SettingsPopup: FC<{
   const close = useCallback(() => {
     return modal.closeAll();
   }, []);
-  const url = useSearchParams();
-  const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
   const loadProfile = useCallback(async () => {
     const personal = await (await fetch('/user/personal')).json();
     form.setValue('fullname', personal.name || '');
@@ -135,12 +120,11 @@ export const SettingsPopup: FC<{
     close();
   }, []);
 
-  const [tab, setTab] = useState('global_settings');
+  const [tab, setTab] = useState('');
 
   const t = useT();
   const list = useMemo(() => {
     const arr = [];
-    arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings') });
     if (user?.tier?.webhooks) {
       arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks') });
     }
@@ -156,13 +140,12 @@ export const SettingsPopup: FC<{
     if (user?.aiDrafts) {
       arr.push({ tab: 'brand_voice', label: t('brand_voice', 'Brand voice') });
     }
-    if (user?.tier?.public_api && isGeneral && showLogout) {
-      arr.push({ tab: 'api', label: t('developers', 'Developers') });
-    }
-    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps') });
 
     return arr;
-  }, [user, isGeneral, showLogout, t]);
+  }, [user, t]);
+  const activeTab = list.some((item) => item.tab === tab)
+    ? tab
+    : list[0]?.tab || '';
 
   useEffect(() => {
     loadProfile();
@@ -173,8 +156,8 @@ export const SettingsPopup: FC<{
       key={tabKey}
       type="button"
       role="tab"
-      aria-selected={tabKey === tab}
-      className={clsx('settings-tab', tabKey === tab && 'is-on')}
+      aria-selected={tabKey === activeTab}
+      className={clsx('settings-tab', tabKey === activeTab && 'is-on')}
       onClick={() => setTab(tabKey)}
     >
       {label}
@@ -190,70 +173,52 @@ export const SettingsPopup: FC<{
         </div>
       </aside>
       <div className="settings-main">
-        <SettingsPageHead t={t} showLogout={showLogout} />
-        <SegmentedControl
-          variant="pill"
-          className="settings-settabs"
-          aria-label={t('settings', 'Settings')}
-          value={tab}
-          onValueChange={setTab}
-          options={list.map(({ tab: tabKey, label }) => ({
-            value: tabKey,
-            label,
-          }))}
-        />
+        <SettingsPageHead t={t} />
+        {list.length > 0 && (
+          <SegmentedControl
+            variant="pill"
+            className="settings-settabs"
+            aria-label={t('settings', 'Settings')}
+            value={activeTab}
+            onValueChange={setTab}
+            options={list.map(({ tab: tabKey, label }) => ({
+              value: tabKey,
+              label,
+            }))}
+          />
+        )}
         <FormProvider {...form}>
           <form className="settings-form-page" onSubmit={form.handleSubmit(submit)}>
             {!!getRef && (
               <button type="submit" className="hidden" ref={getRef}></button>
             )}
             <div className="settings-detail">
-              {tab === 'global_settings' && (
-                <div>
-                  <GlobalSettings />
-                </div>
-              )}
-              {tab === 'brand_voice' && !!user?.aiDrafts && (
+              {activeTab === 'brand_voice' && !!user?.aiDrafts && (
                 <div>
                   <BrandVoiceSettings />
                 </div>
               )}
-              {tab === 'webhooks' && !!user?.tier?.webhooks && (
+              {activeTab === 'webhooks' && !!user?.tier?.webhooks && (
                 <div>
                   <Webhooks />
                 </div>
               )}
 
-              {tab === 'autopost' && !!user?.tier?.autoPost && (
+              {activeTab === 'autopost' && !!user?.tier?.autoPost && (
                 <div>
                   <Autopost />
                 </div>
               )}
 
-              {tab === 'sets' && user?.tier.current !== 'FREE' && (
+              {activeTab === 'sets' && user?.tier.current !== 'FREE' && (
                 <div>
                   <Sets />
                 </div>
               )}
 
-              {tab === 'signatures' && user?.tier.current !== 'FREE' && (
+              {activeTab === 'signatures' && user?.tier.current !== 'FREE' && (
                 <div>
                   <SignaturesComponent />
-                </div>
-              )}
-
-              {tab === 'api' &&
-                !!user?.tier?.public_api &&
-                isGeneral &&
-                showLogout && (
-                  <div>
-                    <PublicComponent />
-                  </div>
-                )}
-
-              {tab === 'approved_apps' && (
-                <div>
-                  <ApprovedAppsComponent />
                 </div>
               )}
             </div>
