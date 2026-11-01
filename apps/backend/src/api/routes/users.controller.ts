@@ -4,6 +4,7 @@ import {
   Get,
   HttpException,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -41,6 +42,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { CreateWorkspaceDto } from '@gitroom/nestjs-libraries/dtos/users/create.workspace.dto';
+import { RenameWorkspaceDto } from '@gitroom/nestjs-libraries/dtos/users/rename.workspace.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { RealIP } from 'nestjs-real-ip';
@@ -417,6 +419,20 @@ export class UsersController {
     }
 
     return created;
+  }
+
+  @Put('/workspace')
+  async renameWorkspace(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() organization: Organization,
+    @Body() body: RenameWorkspaceDto
+  ) {
+    const name = body.name.trim();
+    if (!name) {
+      throw new HttpException('Enter a workspace name', 400);
+    }
+
+    return this._orgService.renameWorkspace(organization.id, user.id, name);
   }
 
   @Post('/change-org')
