@@ -1028,6 +1028,12 @@ $c8-body: var(--font-body), Inter, sans-serif;
   white-space: nowrap;
 }
 
+.settings-screen .settings-copy .webhook-events {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+}
+
 .settings-screen .settings-active > .settings-muted {
   display: none;
 }

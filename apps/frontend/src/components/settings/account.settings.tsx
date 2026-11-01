@@ -26,6 +26,7 @@ import { OrganizationSelector } from '@gitroom/frontend/components/layout/organi
 import EmailNotificationsComponent from '@gitroom/frontend/components/settings/email-notifications.component';
 import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
 import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
+import { Webhooks } from '@gitroom/frontend/components/webhooks/webhooks';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import { ChangeLanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
@@ -50,6 +51,7 @@ const MetricComponent = dynamic(
 export const accountSections = [
   { id: 'profile', label: 'Profile' },
   { id: 'workspace', label: 'Workspace' },
+  { id: 'webhooks', label: 'Webhooks' },
   { id: 'billing', label: 'Billing' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'appearance', label: 'Appearance' },
@@ -453,13 +455,17 @@ export const AccountSettings = ({
   const user = useUser();
   const { isGeneral } = useVariables();
   const showDevelopers = !!user?.tier?.public_api && !!isGeneral;
+  const canWebhooks = !!user?.tier?.webhooks;
   const router = useRouter();
   const params = useSearchParams();
   const querySection = accountSectionFrom(params.get('section'));
   const [localSection, setLocalSection] = useState<AccountSectionId>('profile');
   const active = section || localSection;
   const shown: AccountSectionId =
-    active === 'developers' && !showDevelopers ? 'profile' : active;
+    (active === 'developers' && !showDevelopers) ||
+    (active === 'webhooks' && !canWebhooks)
+      ? 'profile'
+      : active;
 
   useEffect(() => {
     if (!section) setLocalSection(querySection);
@@ -478,6 +484,7 @@ export const AccountSettings = ({
   const labels: Record<AccountSectionId, string> = {
     profile: t('profile', 'Profile'),
     workspace: t('workspace', 'Workspace'),
+    webhooks: t('webhooks', 'Webhooks'),
     billing: t('billing', 'Billing'),
     notifications: t('notifications', 'Notifications'),
     appearance: t('appearance', 'Appearance'),
@@ -488,9 +495,11 @@ export const AccountSettings = ({
     delete: t('delete_account', 'Delete account'),
   };
 
-  const sections = accountSections.filter(
-    (item) => item.id !== 'developers' || showDevelopers
-  );
+  const sections = accountSections.filter((item) => {
+    if (item.id === 'developers') return showDevelopers;
+    if (item.id === 'webhooks') return canWebhooks;
+    return true;
+  });
 
   return (
     <div className="settings-screen account-screen">
@@ -512,6 +521,7 @@ export const AccountSettings = ({
         <div className="settings-detail">
           {shown === 'profile' && <AccountProfile />}
           {shown === 'workspace' && <AccountWorkspace />}
+          {shown === 'webhooks' && canWebhooks && <Webhooks />}
           {shown === 'billing' && <AccountBilling />}
           {shown === 'notifications' && <AccountNotifications />}
           {shown === 'appearance' && <AccountAppearance />}

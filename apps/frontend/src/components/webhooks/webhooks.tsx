@@ -1,22 +1,55 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Input } from '@gitroom/react/form/input';
+import { Checkbox } from '@gitroom/react/form/checkbox';
 import { FormProvider, useForm } from 'react-hook-form';
 import { array, object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Select } from '@gitroom/react/form/select';
 import { PickPlatforms } from '@gitroom/frontend/components/launches/helpers/pick.platform.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import clsx from 'clsx';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import {
+  SCHEDULE_WEBHOOK_EVENTS,
+  WEBHOOK_EVENTS,
+  WebhookEventName,
+} from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhook.events';
+
+const EVENT_COPY: Record<WebhookEventName, { key: string; label: string }> = {
+  'post.published': {
+    key: 'webhook_event_post_published',
+    label: 'Schedule post published',
+  },
+  'post.failed': {
+    key: 'webhook_event_post_failed',
+    label: 'Schedule post failed',
+  },
+  'stalker.match': {
+    key: 'webhook_event_stalker_match',
+    label: 'Stalker new match',
+  },
+  'link.click': {
+    key: 'webhook_event_link_click',
+    label: 'Link in Bio link click',
+  },
+  'link.submission': {
+    key: 'webhook_event_link_submission',
+    label: 'Link in Bio form submission',
+  },
+};
+
+const knownEvents = (events: readonly string[] | null | undefined) => {
+  if (events == null) return [...SCHEDULE_WEBHOOK_EVENTS];
+  return WEBHOOK_EVENTS.filter((event) => events.includes(event));
+};
 
 export const Webhooks: FC = () => {
   const fetch = useFetch();
@@ -66,12 +99,6 @@ export const Webhooks: FC = () => {
           <h1>
             {t('webhooks', 'Webhooks')} ({data?.length || 0}/{user?.tier?.webhooks})
           </h1>
-          <p>
-            {t(
-              'webhooks_are_a_way_to_get_notified_when_something_happens_in_postiz_via_an_http_request',
-              'Webhooks are a way to get notified when something happens in Crea8one via an HTTP request.'
-            )}
-          </p>
         </div>
         <Button onClick={addWebhook()}>
           + {t('add_a_webhook', 'Add a webhook')}
@@ -84,32 +111,40 @@ export const Webhooks: FC = () => {
             <span>{t('url', 'URL')}</span>
             <span />
           </div>
-          {data.map((p: any) => (
-            <article key={p.id} className="settings-item cols-hook">
-              <span className="settings-tile" aria-hidden="true">
-                <HugeIcon name="send" size={18} />
-              </span>
-              <div className="settings-copy">
-                <b>{p.name}</b>
-                <span className="settings-muted" data-label={t('url', 'URL')}>
-                  {p.url}
-                  {p.signingSecret ? (
-                    <span className="block">
-                      {t('signing_secret', 'Signing secret')}: {p.signingSecret}
-                    </span>
-                  ) : null}
+          {data.map((p: any) => {
+            const summary = knownEvents(p.events)
+              .map((event) => t(EVENT_COPY[event].key, EVENT_COPY[event].label))
+              .join(' · ');
+            return (
+              <article key={p.id} className="settings-item cols-hook">
+                <span className="settings-tile" aria-hidden="true">
+                  <HugeIcon name="send" size={18} />
                 </span>
-              </div>
-              <div className="settings-item-actions">
-                <Button secondary className="settings-mini" onClick={addWebhook(p)}>
-                  {t('edit', 'Edit')}
-                </Button>
-                <Button secondary className="settings-mini settings-danger" onClick={deleteHook(p)}>
-                  {t('delete', 'Delete')}
-                </Button>
-              </div>
-            </article>
-          ))}
+                <div className="settings-copy">
+                  <b>{p.name}</b>
+                  <span className="settings-muted" data-label={t('url', 'URL')}>
+                    {p.url}
+                    {summary ? (
+                      <span className="block webhook-events">{summary}</span>
+                    ) : null}
+                    {p.signingSecret ? (
+                      <span className="block">
+                        {t('signing_secret', 'Signing secret')}: {p.signingSecret}
+                      </span>
+                    ) : null}
+                  </span>
+                </div>
+                <div className="settings-item-actions">
+                  <Button secondary className="settings-mini" onClick={addWebhook(p)}>
+                    {t('edit', 'Edit')}
+                  </Button>
+                  <Button secondary className="settings-mini settings-danger" onClick={deleteHook(p)}>
+                    {t('delete', 'Delete')}
+                  </Button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>
@@ -143,6 +178,22 @@ export const AddOrEditWebhook: FC<{
   );
   const modal = useModals();
   const toast = useToaster();
+  const [events, setEvents] = useState<WebhookEventName[]>(() =>
+    knownEvents(data?.events)
+  );
+  const toggleEvent = useCallback(
+    (event: { target: { name?: string; value: boolean } }) => {
+      const name = event.target.name;
+      if (!name || !WEBHOOK_EVENTS.includes(name as WebhookEventName)) return;
+      setEvents((current) => {
+        const next = new Set(current);
+        if (event.target.value) next.add(name as WebhookEventName);
+        else next.delete(name as WebhookEventName);
+        return WEBHOOK_EVENTS.filter((item) => next.has(item));
+      });
+    },
+    []
+  );
   const form = useForm({
     resolver: yupResolver(details),
     values: {
@@ -177,16 +228,22 @@ export const AddOrEditWebhook: FC<{
   });
   const callBack = useCallback(
     async (values: any) => {
+      const body: Record<string, unknown> = {
+        ...(data?.id
+          ? {
+              id: data.id,
+            }
+          : {}),
+        ...values,
+      };
+      // An empty selection is omitted. Create then keeps the Schedule default
+      // and update keeps the stored events.
+      if (events.length) {
+        body.events = events;
+      }
       await fetch('/webhooks', {
         method: data?.id ? 'PUT' : 'POST',
-        body: JSON.stringify({
-          ...(data?.id
-            ? {
-                id: data.id,
-              }
-            : {}),
-          ...values,
-        }),
+        body: JSON.stringify(body),
       });
       toast.show(
         data?.id
@@ -197,7 +254,7 @@ export const AddOrEditWebhook: FC<{
       modal.closeAll();
       reload();
     },
-    [data, integrations]
+    [data, integrations, events]
   );
   const sendTest = useCallback(async () => {
     const url = form.getValues('url');
@@ -283,6 +340,25 @@ export const AddOrEditWebhook: FC<{
                 isMain={true}
               />
             )}
+            <div className="flex flex-col gap-[6px] min-w-0">
+              <div className="text-[14px]">{t('webhook_events', 'Events')}</div>
+              <div
+                className="flex flex-col gap-[10px] min-w-0"
+                role="group"
+                aria-label={t('webhook_events', 'Events')}
+              >
+                {WEBHOOK_EVENTS.map((event) => (
+                  <Checkbox
+                    key={event}
+                    name={event}
+                    disableForm
+                    checked={events.includes(event)}
+                    label={t(EVENT_COPY[event].key, EVENT_COPY[event].label)}
+                    onChange={toggleEvent}
+                  />
+                ))}
+              </div>
+            </div>
             <div className="flex gap-[10px]">
               <Button
                 type="submit"
