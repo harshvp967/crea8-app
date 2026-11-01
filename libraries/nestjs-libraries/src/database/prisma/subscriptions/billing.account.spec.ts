@@ -399,6 +399,87 @@ describe('shared workspace billing', () => {
     expect((await trialCredits.balance('org-b')).packRemaining).toBe(0);
   });
 
+  it('grants a pack through the last paid day after cancel and refuses when access has ended', async () => {
+    const now = new Date();
+    const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const yesterday = new Date(lastDay.getTime() - 24 * 60 * 60 * 1000);
+    const paymentFor = (organizationId: string, paymentId: string) => ({
+      payment_id: paymentId,
+      status: 'succeeded',
+      metadata: {
+        organizationId,
+        kind: 'credit_pack',
+        pack: 'PACK_150',
+        credits: 150,
+      },
+    });
+
+    const cancelled = owner(
+      sub('org-a', {
+        status: 'cancelled',
+        deletedAt: lastDay,
+        cancelAt: lastDay,
+        currentPeriodEnd: lastDay,
+      }),
+      { isTrailing: false, allowTrial: false }
+    );
+    const hidden = await loadBillingAccount(cancelled.api, 'org-a');
+    expect(hidden.subscription).toBeNull();
+    expect(hidden.latest?.cancelAt).toEqual(lastDay);
+    const cancelledCredits = new CreditsService(cancelled.api);
+    const cancelledPayment = paymentFor('org-a', 'pay_cancel_last_day');
+    expect(await cancelledCredits.applyReportedPackPayment(cancelled.api, cancelledPayment)).toBe(true);
+    expect(await cancelledCredits.applyReportedPackPayment(cancelled.api, cancelledPayment)).toBe(true);
+    expect((await cancelledCredits.balance('org-a')).packRemaining).toBe(150);
+
+    const scheduled = owner(
+      sub('org-a', { status: 'cancel_scheduled', deletedAt: null, cancelAt: lastDay }),
+      { isTrailing: false, allowTrial: false }
+    );
+    const scheduledCredits = new CreditsService(scheduled.api);
+    expect(
+      await scheduledCredits.applyReportedPackPayment(
+        scheduled.api,
+        paymentFor('org-b', 'pay_scheduled_last_day')
+      )
+    ).toBe(true);
+    expect((await scheduledCredits.balance('org-a')).packRemaining).toBe(150);
+
+    const ended = owner(
+      sub('org-a', { status: 'cancel_scheduled', deletedAt: null, cancelAt: yesterday }),
+      { isTrailing: false, allowTrial: false }
+    );
+    const endedCredits = new CreditsService(ended.api);
+    expect(
+      await endedCredits.applyReportedPackPayment(ended.api, paymentFor('org-a', 'pay_cancel_over'))
+    ).toBe(false);
+    expect((await endedCredits.balance('org-a')).packRemaining).toBe(0);
+
+    const pastDue = owner(
+      sub('org-a', {
+        status: 'past_due',
+        deletedAt: null,
+        cancelAt: new Date('2026-12-01T00:00:00.000Z'),
+      }),
+      { isTrailing: false, allowTrial: false }
+    );
+    const pastDueCredits = new CreditsService(pastDue.api);
+    expect(
+      await pastDueCredits.applyReportedPackPayment(pastDue.api, paymentFor('org-a', 'pay_past_due'))
+    ).toBe(false);
+    expect((await pastDueCredits.balance('org-a')).packRemaining).toBe(0);
+
+    const onHold = owner(
+      sub('org-a', { status: 'on_hold', deletedAt: null, cancelAt: null }),
+      { isTrailing: false, allowTrial: false }
+    );
+    const onHoldCredits = new CreditsService(onHold.api);
+    expect(
+      await onHoldCredits.applyReportedPackPayment(onHold.api, paymentFor('org-a', 'pay_on_hold'))
+    ).toBe(false);
+    expect((await onHoldCredits.balance('org-a')).packRemaining).toBe(0);
+  });
+
   it('spends the shared credit pool from either workspace', async () => {
     const { api } = owner(sub('org-a', { status: 'active', subscriptionTier: 'STANDARD' }));
     const credits = new CreditsService(api);

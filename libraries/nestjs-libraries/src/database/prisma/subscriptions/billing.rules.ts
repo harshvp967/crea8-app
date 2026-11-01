@@ -242,28 +242,102 @@ export const CREDIT_PACK_TRIAL_ERROR =
 export const CREDIT_PACK_PAID_ERROR =
   "Credit packs aren't available without a paid plan.";
 
-export function creditPackCheckoutError(input: {
+const PACK_CLOSED_STATUS = new Set([
+  'past_due',
+  'on_hold',
+  'expired',
+  'trial_ended',
+  'failed',
+  'pending',
+]);
+
+const CANCELLED_PACK_STATUS = new Set([
+  'cancel_scheduled',
+  'cancelled',
+  'canceled',
+]);
+
+type PackSubscriptionRow = {
   status?: string | null;
-  isTrailing?: boolean | null;
   deletedAt?: Date | string | null;
   cancelAt?: Date | string | null;
+};
+
+function utcCalendarDay(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+// cancelAt's UTC date is the last day of paid access, matching the date shown
+// on the billing screen. That whole day can still buy a pack.
+function paidCancelDayStillOpen(
+  cancelAt: Date | string | null | undefined,
+  now: Date
+) {
+  if (!cancelAt) {
+    return false;
+  }
+  const endDay = utcCalendarDay(cancelAt);
+  if (!endDay) {
+    return false;
+  }
+  return utcCalendarDay(now) <= endDay;
+}
+
+export function creditPackCheckoutInput(account: {
+  subscription?: PackSubscriptionRow | null;
+  latest?: PackSubscriptionRow | null;
+  isTrailing?: boolean | null;
 } | null | undefined) {
-  if (!input || input.deletedAt) {
-    return CREDIT_PACK_PAID_ERROR;
+  const subscription = account?.subscription || account?.latest || null;
+  if (!subscription) {
+    return null;
   }
-  if (workspaceOnTrial(input)) {
-    return CREDIT_PACK_TRIAL_ERROR;
-  }
-  // Cancelled access that runs until period end still has a future cancelAt
-  // or a cancel_scheduled status. That is not an active paid subscription.
-  if (input.cancelAt) {
+  return {
+    status: subscription.status,
+    isTrailing: account?.isTrailing,
+    deletedAt: subscription.deletedAt,
+    cancelAt: subscription.cancelAt,
+  };
+}
+
+export function creditPackCheckoutError(
+  input: {
+    status?: string | null;
+    isTrailing?: boolean | null;
+    deletedAt?: Date | string | null;
+    cancelAt?: Date | string | null;
+  } | null | undefined,
+  now = new Date()
+) {
+  if (!input) {
     return CREDIT_PACK_PAID_ERROR;
   }
   const status = String(input.status || '').trim().toLowerCase();
-  if (status !== 'active') {
+  if (status === 'trialing' || input.isTrailing || workspaceOnTrial(input)) {
+    return CREDIT_PACK_TRIAL_ERROR;
+  }
+  if (!status || PACK_CLOSED_STATUS.has(status)) {
     return CREDIT_PACK_PAID_ERROR;
   }
-  return null;
+  // An active paid plan with no cancel date keeps the existing checkout.
+  // A cancelAt on an active row is the same window: access runs until that day.
+  if (status === 'active' && !input.deletedAt) {
+    if (!input.cancelAt || paidCancelDayStillOpen(input.cancelAt, now)) {
+      return null;
+    }
+    return CREDIT_PACK_PAID_ERROR;
+  }
+  if (
+    CANCELLED_PACK_STATUS.has(status) &&
+    paidCancelDayStillOpen(input.cancelAt, now)
+  ) {
+    return null;
+  }
+  return CREDIT_PACK_PAID_ERROR;
 }
 
 export function packGrantFromPayment(data: any): PackGrant | null {

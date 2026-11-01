@@ -189,10 +189,13 @@ function memoryPrisma() {
       findFirst: async ({
         where,
       }: {
-        where: { organizationId: string; deletedAt: null };
+        where: { organizationId: string; deletedAt?: null };
       }) => {
         const row = subscriptions.get(where.organizationId);
-        if (!row || row.deletedAt) {
+        if (!row) {
+          return null;
+        }
+        if (where.deletedAt === null && row.deletedAt) {
           return null;
         }
         return row;
@@ -200,7 +203,12 @@ function memoryPrisma() {
     },
     setWorkspace(
       organizationId: string,
-      input: { status?: string | null; isTrailing?: boolean; cancelAt?: Date | null }
+      input: {
+        status?: string | null;
+        isTrailing?: boolean;
+        cancelAt?: Date | null;
+        deletedAt?: Date | null;
+      }
     ) {
       organizations.set(organizationId, {
         id: organizationId,
@@ -213,7 +221,7 @@ function memoryPrisma() {
       subscriptions.set(organizationId, {
         organizationId,
         status: input.status,
-        deletedAt: null,
+        deletedAt: input.deletedAt || null,
         cancelAt: input.cancelAt || null,
       });
     },
@@ -471,15 +479,51 @@ describe('credit ledger action charges', () => {
     expect(balance.monthlyRemaining).toBe(0);
   });
 
-  it('rejects credit pack checkout unless the subscription is active and paid', () => {
+  it('allows a cancelled paid plan through the last calendar day and refuses the rest', () => {
+    const lastDay = new Date('2026-11-06T18:00:00.000Z');
+    const nextDay = new Date('2026-11-07T00:00:00.000Z');
+    const cancelAt = '2026-11-06T00:00:00.000Z';
+    const open = {
+      isTrailing: false as const,
+      deletedAt: null as null,
+      cancelAt,
+    };
     expect(
       creditPackCheckoutError({ status: 'trialing', isTrailing: true, deletedAt: null })
     ).toBe(CREDIT_PACK_TRIAL_ERROR);
     expect(
       creditPackCheckoutError({ status: 'active', isTrailing: true, deletedAt: null })
     ).toBe(CREDIT_PACK_TRIAL_ERROR);
+    expect(
+      creditPackCheckoutError({
+        status: 'cancel_scheduled',
+        isTrailing: true,
+        deletedAt: null,
+        cancelAt,
+      }, lastDay)
+    ).toBe(CREDIT_PACK_TRIAL_ERROR);
     expect(creditPackCheckoutError(null)).toBe(CREDIT_PACK_PAID_ERROR);
     expect(creditPackCheckoutError(undefined)).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(
+      creditPackCheckoutError({ status: 'cancel_scheduled', ...open }, lastDay)
+    ).toBeNull();
+    expect(
+      creditPackCheckoutError({ status: 'active', ...open }, lastDay)
+    ).toBeNull();
+    expect(
+      creditPackCheckoutError(
+        {
+          status: 'cancelled',
+          isTrailing: false,
+          deletedAt: '2026-11-06T00:00:01.000Z',
+          cancelAt,
+        },
+        lastDay
+      )
+    ).toBeNull();
+    expect(
+      creditPackCheckoutError({ status: 'cancel_scheduled', ...open }, nextDay)
+    ).toBe(CREDIT_PACK_PAID_ERROR);
     expect(
       creditPackCheckoutError({ status: 'cancelled', isTrailing: false, deletedAt: null })
     ).toBe(CREDIT_PACK_PAID_ERROR);
@@ -488,19 +532,19 @@ describe('credit ledger action charges', () => {
     ).toBe(CREDIT_PACK_PAID_ERROR);
     expect(
       creditPackCheckoutError({
-        status: 'cancel_scheduled',
+        status: 'past_due',
         isTrailing: false,
         deletedAt: null,
-        cancelAt: '2026-11-06T00:00:00.000Z',
-      })
+        cancelAt: '2026-12-01T00:00:00.000Z',
+      }, lastDay)
     ).toBe(CREDIT_PACK_PAID_ERROR);
     expect(
       creditPackCheckoutError({
-        status: 'active',
+        status: 'on_hold',
         isTrailing: false,
         deletedAt: null,
-        cancelAt: '2026-11-06T00:00:00.000Z',
-      })
+        cancelAt: '2026-12-01T00:00:00.000Z',
+      }, lastDay)
     ).toBe(CREDIT_PACK_PAID_ERROR);
     expect(
       creditPackCheckoutError({ status: 'trial_ended', isTrailing: false, deletedAt: null })
@@ -510,14 +554,10 @@ describe('credit ledger action charges', () => {
     ).toBeNull();
   });
 
-  it('does not grant a pack to a cancelled, expired, or missing subscription', async () => {
-    const cancelled = memoryPrisma();
-    const cancelledCredits = new CreditsService(cancelled as any);
-    cancelled.setWorkspace('org-cancel', {
-      status: 'cancel_scheduled',
-      isTrailing: false,
-      cancelAt: new Date('2026-11-06T00:00:00.000Z'),
-    });
+  it('grants a pack on the last paid day of a cancellation and still refuses the others', async () => {
+    const now = new Date();
+    const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const yesterday = new Date(lastDay.getTime() - 24 * 60 * 60 * 1000);
     const payment = {
       status: 'succeeded',
       metadata: {
@@ -526,22 +566,74 @@ describe('credit ledger action charges', () => {
         credits: 150,
       },
     };
-    await paymentSucceeded(cancelled, cancelledCredits, 'msg_cancel', {
-      ...payment,
-      payment_id: 'pay_cancel',
-      metadata: { ...payment.metadata, organizationId: 'org-cancel' },
-    });
-    expect((await cancelledCredits.balance('org-cancel')).packRemaining).toBe(0);
+    const grant = async (
+      organizationId: string,
+      workspace: {
+        status?: string | null;
+        isTrailing?: boolean;
+        cancelAt?: Date | null;
+        deletedAt?: Date | null;
+      }
+    ) => {
+      const db = memoryPrisma();
+      const credits = new CreditsService(db as any);
+      db.setWorkspace(organizationId, workspace);
+      await paymentSucceeded(db, credits, `msg_${organizationId}`, {
+        ...payment,
+        payment_id: `pay_${organizationId}`,
+        metadata: { ...payment.metadata, organizationId },
+      });
+      await paymentSucceeded(db, credits, `msg_${organizationId}_replay`, {
+        ...payment,
+        payment_id: `pay_${organizationId}`,
+        metadata: { ...payment.metadata, organizationId },
+      });
+      return credits.balance(organizationId);
+    };
 
-    const expired = memoryPrisma();
-    const expiredCredits = new CreditsService(expired as any);
-    expired.setWorkspace('org-expired', { status: 'expired', isTrailing: false });
-    await paymentSucceeded(expired, expiredCredits, 'msg_expired', {
-      ...payment,
-      payment_id: 'pay_expired',
-      metadata: { ...payment.metadata, organizationId: 'org-expired' },
+    const open = await grant('org-cancel', {
+      status: 'cancel_scheduled',
+      isTrailing: false,
+      cancelAt: lastDay,
     });
-    expect((await expiredCredits.balance('org-expired')).packRemaining).toBe(0);
+    expect(open.packRemaining).toBe(150);
+    expect(open.monthlyRemaining).toBe(0);
+
+    const endedRow = await grant('org-ended', {
+      status: 'cancelled',
+      isTrailing: false,
+      deletedAt: lastDay,
+      cancelAt: lastDay,
+    });
+    expect(endedRow.packRemaining).toBe(150);
+
+    expect(
+      (await grant('org-yesterday', {
+        status: 'cancel_scheduled',
+        isTrailing: false,
+        cancelAt: yesterday,
+      })).packRemaining
+    ).toBe(0);
+    expect(
+      (await grant('org-expired', { status: 'expired', isTrailing: false })).packRemaining
+    ).toBe(0);
+    expect(
+      (await grant('org-past-due', {
+        status: 'past_due',
+        isTrailing: false,
+        cancelAt: new Date('2026-12-01T00:00:00.000Z'),
+      })).packRemaining
+    ).toBe(0);
+    expect(
+      (await grant('org-hold', {
+        status: 'on_hold',
+        isTrailing: false,
+        cancelAt: new Date('2026-12-01T00:00:00.000Z'),
+      })).packRemaining
+    ).toBe(0);
+    expect(
+      (await grant('org-trial', { status: 'trialing', isTrailing: true, cancelAt: lastDay })).packRemaining
+    ).toBe(0);
 
     const none = memoryPrisma();
     const noneCredits = new CreditsService(none as any);
