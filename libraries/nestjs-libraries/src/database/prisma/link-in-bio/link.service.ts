@@ -9,7 +9,7 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { isBillingEnforced } from '@gitroom/helpers/utils/billing.enabled';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
@@ -476,6 +476,18 @@ export class LinkService {
         message: lead.message || '',
       }))
     );
+  }
+
+  async deleteLead(organizationId: string, userId: string, id: string) {
+    const member = await this._repository.memberRole(organizationId, userId);
+    if (!member || member.disabled || member.role !== Role.SUPERADMIN) {
+      throw new HttpException('Only the workspace owner can delete a lead', 403);
+    }
+    const removed = await this._repository.deleteLead(organizationId, id);
+    if (!removed.count) {
+      throw new NotFoundException('Lead not found');
+    }
+    return { id };
   }
 
   async integrations(org: PlanOrg, body: UpdateLinkIntegrationsDto) {

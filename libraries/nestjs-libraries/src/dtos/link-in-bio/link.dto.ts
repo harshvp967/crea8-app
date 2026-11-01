@@ -7,6 +7,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -643,6 +644,11 @@ export class PublicLinkContactDto extends PublicLinkTrackDto {
   @IsString()
   @MaxLength(200)
   website?: string;
+}
+
+export class DeleteLinkLeadDto {
+  @IsUUID('4')
+  id: string;
 }
 
 export class PublicLinkSubscribeDto extends PublicLinkTrackDto {
