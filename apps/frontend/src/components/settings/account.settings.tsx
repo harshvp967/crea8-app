@@ -22,7 +22,10 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
-import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
+import {
+  OrganizationSelector,
+  useWorkspaceSwitch,
+} from '@gitroom/frontend/components/layout/organization.selector';
 import EmailNotificationsComponent from '@gitroom/frontend/components/settings/email-notifications.component';
 import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
 import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
@@ -250,11 +253,103 @@ const AccountProfile = () => {
   );
 };
 
+async function readMessage(response: Response) {
+  const text = await response.text();
+  try {
+    const body = JSON.parse(text);
+    if (typeof body?.message === 'string') {
+      return body.message;
+    }
+    if (Array.isArray(body?.message)) {
+      return body.message.join(', ');
+    }
+  } catch {
+    return text;
+  }
+  return text || 'Something went wrong';
+}
+
+const WorkspaceRename = ({ currentName }: { currentName: string }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const toast = useToaster();
+  const user = useUser();
+  const { mutate } = useSWRConfig();
+  const [name, setName] = useState(currentName);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName((value) => (value ? value : currentName));
+  }, [currentName]);
+
+  const save = useCallback(
+    async (event: React.FormEvent) => {
+      event.preventDefault();
+      if (saving) return;
+      const trimmed = name.trim();
+      if (!trimmed) {
+        toast.show(t('enter_workspace_name', 'Enter a workspace name'), 'error');
+        return;
+      }
+      if (trimmed === currentName) return;
+
+      setSaving(true);
+      try {
+        const response = await fetch('/user/workspace', {
+          method: 'PUT',
+          body: JSON.stringify({ name: trimmed }),
+        });
+        if (!response.ok) {
+          toast.show(await readMessage(response), 'error');
+          return;
+        }
+        const saved = await response.json();
+        const nextName = typeof saved?.name === 'string' ? saved.name : trimmed;
+        setName(nextName);
+        await mutate(
+          'organizations',
+          (rows: Array<{ id: string; name: string }> | undefined) =>
+            Array.isArray(rows)
+              ? rows.map((org) =>
+                  org.id === user?.orgId ? { ...org, name: nextName } : org
+                )
+              : rows,
+          { revalidate: false }
+        );
+        toast.show(t('workspace_renamed', 'Workspace renamed'), 'success');
+      } catch {
+        toast.show(t('could_not_rename_workspace', 'Could not rename workspace'), 'error');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [currentName, fetch, mutate, name, saving, t, toast, user?.orgId]
+  );
+
+  return (
+    <form className="account-org-wrap" onSubmit={save}>
+      <label className="account-email">
+        <span>{t('name', 'Name')}</span>
+        <input
+          value={name}
+          maxLength={128}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </label>
+      <Button type="submit" loading={saving} className="bg-btnPrimary account-save">
+        {t('save', 'Save')}
+      </Button>
+    </form>
+  );
+};
+
 const AccountWorkspace = () => {
   const t = useT();
   const user = useUser();
   const { isGeneral } = useVariables();
+  const { current } = useWorkspaceSwitch();
   const showTeam = !!user?.tier?.team_members && isGeneral;
+  const canRename = user?.role === 'SUPERADMIN';
 
   return (
     <div className="account-stack">
@@ -263,6 +358,7 @@ const AccountWorkspace = () => {
           <h1>{t('workspace', 'Workspace')}</h1>
         </div>
         <OrganizationSelector asOpenSelect />
+        {canRename ? <WorkspaceRename currentName={current?.name || ''} /> : null}
       </div>
       {showTeam ? <TeamsComponent /> : null}
     </div>
