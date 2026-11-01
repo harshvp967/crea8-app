@@ -1068,6 +1068,16 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   flex: none;
 }
 
+.c8-side-lock {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  flex: none;
+  margin-left: auto;
+  color: var(--c8-muted);
+}
+
 .c8-side-spacer {
   flex: 1;
   min-height: 16px;
@@ -1219,6 +1229,7 @@ body.light .c8-shell .c8-side-foot .notify-panel {
   .c8-side-logo-word,
   .c8-side-kicker,
   .c8-side-text,
+  .c8-side-lock,
   .c8-side-user-copy,
   .c8-side-link .c8-side-dot,
   .c8-side-logo .c8-side-dot {

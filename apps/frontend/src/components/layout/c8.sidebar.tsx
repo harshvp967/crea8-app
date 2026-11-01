@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -18,6 +18,7 @@ import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post'
 import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
 import { useWorkspaceSwitch } from '@gitroom/frontend/components/layout/organization.selector';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 const initialsOf = (name: string) =>
   name
@@ -49,11 +50,15 @@ export const C8Sidebar = ({
   };
 }) => {
   const pathname = usePathname() || '';
+  const router = useRouter();
   const anchorRef = useRef<HTMLButtonElement>(null);
+  const user = useUser();
   const { current } = useWorkspaceSwitch();
   const workspaceLine = current?.name ? `Workspace - ${current.name}` : '';
   const openComposer = useOpenComposer();
-  const { stalkerEnabled } = useVariables();
+  const { stalkerEnabled, isGeneral, billingEnabled } = useVariables();
+  const planLocked =
+    user?.tier?.current === 'FREE' && !!isGeneral && !!(billingEnabled || user?.billingEnabled);
   const { firstMenu, secondMenu } = useMenuItem();
   const primary = useVisibleMenuItems(firstMenu);
   const settings = useVisibleMenuItems(
@@ -135,20 +140,52 @@ export const C8Sidebar = ({
       </Link>
       <p className="c8-side-kicker">Apps</p>
       <nav className="c8-side-apps" aria-label="Apps">
-        {apps.map((app) => (
-          <Link
-            key={app.id}
-            href={app.href}
-            className={clsx('c8-side-app', app.id === activeApp && 'is-active')}
-            aria-current={app.id === activeApp ? 'page' : undefined}
-            title={app.label}
-          >
-            <span className={clsx('c8-side-tile', app.tile)}>
-              <HugeIcon name={app.icon} size={16} />
-            </span>
-            <span className="c8-side-text">{app.label}</span>
-          </Link>
-        ))}
+        {apps.map((app) => {
+          const locked = planLocked && (app.id === 'schedule' || app.id === 'stalker');
+          const className = clsx('c8-side-app', app.id === activeApp && 'is-active');
+          const inner = (
+            <>
+              <span className={clsx('c8-side-tile', app.tile)}>
+                <HugeIcon name={app.icon} size={16} />
+              </span>
+              <span className="c8-side-text">{app.label}</span>
+              {locked ? (
+                <span className="c8-side-lock" aria-hidden>
+                  <HugeIcon name="lock" size={14} />
+                </span>
+              ) : null}
+            </>
+          );
+          if (locked) {
+            return (
+              <button
+                key={app.id}
+                type="button"
+                className={className}
+                aria-current={app.id === activeApp ? 'page' : undefined}
+                title={app.label}
+                onClick={() => {
+                  if (pathname !== '/launches') {
+                    router.push('/launches');
+                  }
+                }}
+              >
+                {inner}
+              </button>
+            );
+          }
+          return (
+            <Link
+              key={app.id}
+              href={app.href}
+              className={className}
+              aria-current={app.id === activeApp ? 'page' : undefined}
+              title={app.label}
+            >
+              {inner}
+            </Link>
+          );
+        })}
       </nav>
       <div className="c8-side-rule" />
       <p className="c8-side-kicker">{sectionLabel}</p>
