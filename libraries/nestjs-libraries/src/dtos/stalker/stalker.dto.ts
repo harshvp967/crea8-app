@@ -325,8 +325,10 @@ export class StalkerViewFiltersDto {
   @MaxLength(20)
   sentiment?: string;
 
+  // The alert form posts "" for an unset status or offTopic. @IsOptional skips
+  // null and undefined only, so a blank must be allowed or create returns 400.
   @IsOptional()
-  @IsIn(['NEW', 'REPLIED', 'IGNORED', 'DONE', 'FOLLOW_UP'])
+  @IsIn(['NEW', 'REPLIED', 'IGNORED', 'DONE', 'FOLLOW_UP', ''])
   status?: string;
 
   @IsOptional()
@@ -339,7 +341,7 @@ export class StalkerViewFiltersDto {
   match?: string;
 
   @IsOptional()
-  @IsIn(['include'])
+  @IsIn(['include', ''])
   offTopic?: string;
 
   @IsOptional()
