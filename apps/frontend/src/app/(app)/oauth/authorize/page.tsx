@@ -1,10 +1,94 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import {
+  OauthClientLogo,
+  OauthClientTile,
+  resolveOauthClientBrand,
+} from '@gitroom/frontend/components/oauth/client-brand';
+
+const FIELD_CLIENTS = [
+  'Claude',
+  'ChatGPT',
+  'Gemini',
+  'Perplexity',
+  'Cursor',
+  'Codex',
+  'VS Code / Copilot',
+  'Windsurf',
+  'Warp',
+  'Grok Bot',
+  'OpenClaw',
+  'Amp',
+] as const;
+
+const RequestingMark = ({
+  name,
+  picture,
+}: {
+  name?: string;
+  picture?: string;
+}) => {
+  if (picture) {
+    return (
+      <OauthClientTile>
+        <img src={picture} alt={name || ''} className="h-full w-full object-cover" />
+      </OauthClientTile>
+    );
+  }
+  const brand = resolveOauthClientBrand(name);
+  if (brand) {
+    return <OauthClientLogo client={brand} tile />;
+  }
+  return <OauthClientTile>{name?.[0]?.toUpperCase() || '?'}</OauthClientTile>;
+};
+
+const ConsentField = () => (
+  <div className="oauth-consent-field" aria-hidden>
+    {[0, 1].map((row) => (
+      <div className="oauth-consent-row" key={row}>
+        {[0, 1].map((copy) => (
+          <div className="oauth-consent-half" key={copy}>
+            {FIELD_CLIENTS.map((client) => (
+              <OauthClientLogo key={`${row}-${copy}-${client}`} client={client} tile />
+            ))}
+          </div>
+        ))}
+      </div>
+    ))}
+  </div>
+);
+
+const ConsentPair = ({
+  name,
+  picture,
+}: {
+  name?: string;
+  picture?: string;
+}) => (
+  <div className="oauth-consent-pair">
+    <RequestingMark name={name} picture={picture} />
+    <span className="oauth-consent-line" aria-hidden />
+    <OauthClientTile>
+      <img
+        src="/crea8one-icon-cyan.svg"
+        alt="crea8.one"
+        className="h-[22px] w-[22px]"
+      />
+    </OauthClientTile>
+  </div>
+);
+
+const ConsentShell = ({ children }: { children: ReactNode }) => (
+  <div className="oauth-consent">
+    <ConsentField />
+    <div className="oauth-consent-glow" aria-hidden />
+    <div className="oauth-consent-main">{children}</div>
+  </div>
+);
 
 export default function OAuthAuthorizePage() {
   const searchParams = useSearchParams();
@@ -93,52 +177,24 @@ export default function OAuthAuthorizePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
+      <ConsentShell>
+        <div className="flex flex-col items-center gap-[24px]">
+          <ConsentPair />
+          <div className="w-[48px] h-[48px] border-[3px] border-c8-cyan border-t-transparent rounded-full animate-spin" />
         </div>
-        <div className="relative z-10 text-center">
-          <div className="flex justify-center mb-[24px]">
-            <Logo />
-          </div>
-          <div className="text-[16px] text-gray-400">
-            Please wait...
-          </div>
-          <div className="mt-[32px] flex justify-center">
-            <div className="w-[48px] h-[48px] border-[3px] border-[#00D9FF] border-t-transparent rounded-full animate-spin" />
-          </div>
-        </div>
-      </div>
+      </ConsentShell>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
+      <ConsentShell>
+        <div className="oauth-consent-card bg-c8-surface border border-c8-line rounded-[26px] p-[32px] flex flex-col items-center gap-[16px] text-center">
+          <HugeIcon name="close" size={24} className="w-[40px] h-[40px] text-c8-danger" />
+          <div className="oauth-consent-name">Authorization Error</div>
+          <div className="text-[16px] text-c8-muted max-w-[400px]">{error}</div>
         </div>
-        <div className="relative z-10 text-center">
-          <div className="flex justify-center mb-[24px]">
-            <Logo />
-          </div>
-          <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-red-500/20 flex items-center justify-center">
-            <HugeIcon
-              name="close"
-              size={24}
-              className="w-[40px] h-[40px] text-red-500"
-            />
-          </div>
-          <div className="text-[28px] font-semibold mb-[12px]">
-            Authorization Error
-          </div>
-          <div className="text-[16px] text-gray-400 max-w-[400px]">
-            {error}
-          </div>
-        </div>
-      </div>
+      </ConsentShell>
     );
   }
 
@@ -147,70 +203,38 @@ export default function OAuthAuthorizePage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#00D9FF] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#00D9FF] rounded-full blur-[120px]" />
-      </div>
-
-      <div className="relative z-10 w-full max-w-[500px] mx-auto px-[20px]">
-        <div className="flex justify-center mb-[32px]">
-          <Logo />
+    <ConsentShell>
+      <div className="oauth-consent-card bg-c8-surface border border-c8-line rounded-[26px] p-[32px] flex flex-col gap-[24px]">
+        <div className="flex flex-col items-center gap-[16px]">
+          <ConsentPair
+            name={appInfo.app.name}
+            picture={appInfo.app.picture?.path}
+          />
+          <h2 className="oauth-consent-name">{appInfo.app.name}</h2>
+          <p className="oauth-consent-brand">crea8.one</p>
+          {appInfo.app.description ? (
+            <p className="m-0 max-w-full text-center text-[14px] text-c8-muted">
+              {appInfo.app.description}
+            </p>
+          ) : null}
         </div>
-
-        <div className="bg-newBgColorInner border border-newBorder rounded-[26px] p-[32px] flex flex-col gap-[24px]">
-          <div className="flex flex-col items-center gap-[16px]">
-            {appInfo.app.picture?.path ? (
-              <img
-                src={appInfo.app.picture.path}
-                alt={appInfo.app.name}
-                className="w-[64px] h-[64px] rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-[64px] h-[64px] rounded-full bg-[#2A2929] flex items-center justify-center text-[24px] text-gray-400">
-                {appInfo.app.name?.[0]?.toUpperCase() || '?'}
-              </div>
-            )}
-            <h2 className="text-[24px] font-semibold text-center">
-              {appInfo.app.name}
-            </h2>
-            {appInfo.app.description && (
-              <div className="text-gray-400 text-center text-[14px]">
-                {appInfo.app.description}
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-[#2A2929] pt-[16px]">
-            <div className="text-[14px] text-gray-400 mb-[12px]">
-              This application is requesting access to your Crea8one account. It
-              will be able to:
-            </div>
-            <ul className="text-[14px] list-disc list-inside space-y-[4px]">
-              <li>Access your integrations and channels</li>
-              <li>Create and schedule posts on your behalf</li>
-              <li>Read your post analytics</li>
-            </ul>
-          </div>
-
-          <div className="flex gap-[12px]">
-            <button
-              onClick={() => handleAction('approve')}
-              disabled={submitting}
-              className="flex-1 bg-btnPrimary hover:brightness-95 disabled:opacity-50 text-[#0A0A0A] rounded-[18px] h-[44px] px-[16px] text-[14px] font-[600]"
-            >
-              Authorize
-            </button>
-            <button
-              onClick={() => handleAction('deny')}
-              disabled={submitting}
-              className="flex-1 bg-newBgColorInner border border-newBorder hover:brightness-95 disabled:opacity-50 text-newTextColor rounded-[18px] h-[44px] px-[16px] text-[14px] font-[600]"
-            >
-              Deny
-            </button>
-          </div>
+        <div className="oauth-consent-actions flex gap-[12px]">
+          <button
+            onClick={() => handleAction('approve')}
+            disabled={submitting}
+            className="flex-1 bg-btnPrimary hover:brightness-95 disabled:opacity-50 text-[#0A0A0A] rounded-[18px] h-[44px] px-[16px] text-[14px] font-[600]"
+          >
+            Authorize
+          </button>
+          <button
+            onClick={() => handleAction('deny')}
+            disabled={submitting}
+            className="flex-1 bg-newBgColorInner border border-newBorder hover:brightness-95 disabled:opacity-50 text-newTextColor rounded-[18px] h-[44px] px-[16px] text-[14px] font-[600]"
+          >
+            Deny
+          </button>
         </div>
       </div>
-    </div>
+    </ConsentShell>
   );
 }
