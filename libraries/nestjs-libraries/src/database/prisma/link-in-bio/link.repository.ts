@@ -341,6 +341,19 @@ export class LinkRepository {
     return this._lead.model.linkLead.update({ where: { id }, data });
   }
 
+  memberRole(organizationId: string, userId: string) {
+    return this._userOrg.model.userOrganization.findUnique({
+      where: { userId_organizationId: { userId, organizationId } },
+      select: { role: true, disabled: true },
+    });
+  }
+
+  deleteLead(organizationId: string, id: string) {
+    return this._lead.model.linkLead.deleteMany({
+      where: { id, page: { organizationId } },
+    });
+  }
+
   confirmLead(token: string) {
     return this._lead.model.linkLead.updateMany({
       where: { confirmToken: token, status: 'PENDING' },

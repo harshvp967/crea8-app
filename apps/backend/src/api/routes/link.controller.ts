@@ -12,10 +12,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { Organization } from '@prisma/client';
+import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
+import { Organization, User } from '@prisma/client';
 import { LinkService } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.service';
 import {
   ConnectLinkDomainDto,
+  DeleteLinkLeadDto,
   ReorderLinkBlocksDto,
   SaveLinkBlockDto,
   UpdateLinkIntegrationsDto,
@@ -129,6 +131,15 @@ export class LinkController {
     @Query('q') query = ''
   ) {
     return this._linkService.leads(org, status, query);
+  }
+
+  @Delete('/leads/:id')
+  deleteLead(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization,
+    @Param() params: DeleteLinkLeadDto
+  ) {
+    return this._linkService.deleteLead(org.id, user.id, params.id);
   }
 
   @Post('/domain')
