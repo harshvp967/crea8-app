@@ -39,6 +39,7 @@ import {
   tierFromProductId,
   verifyDodoSignature,
   creditPackCheckoutError,
+  creditPackCheckoutInput,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   PaymentPlatform,
@@ -386,17 +387,7 @@ export class DodoProvider extends PaymentProviderAbstract {
     }
     const account = await loadBillingAccount(this._prisma, organizationId);
     if (!account.grandfathered && !isGrandfatheredOrg(organizationId)) {
-      const subscription = account.subscription;
-      const packError = creditPackCheckoutError(
-        subscription
-          ? {
-              status: subscription.status,
-              isTrailing: account.isTrailing,
-              deletedAt: subscription.deletedAt,
-              cancelAt: subscription.cancelAt,
-            }
-          : null
-      );
+      const packError = creditPackCheckoutError(creditPackCheckoutInput(account));
       if (packError) {
         throw new HttpException(packError, 400);
       }

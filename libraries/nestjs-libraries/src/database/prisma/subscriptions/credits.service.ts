@@ -18,6 +18,7 @@ import {
   creditUsage,
   ledgerRowsForHistory,
   creditPackCheckoutError,
+  creditPackCheckoutInput,
   packGrantFromPayment,
   planSpend,
   postsCovered,
@@ -428,35 +429,21 @@ export class CreditsService {
       if (account.grandfathered) {
         return null;
       }
-      const subscription = account.subscription;
-      return creditPackCheckoutError(
-        subscription
-          ? {
-              status: subscription.status,
-              isTrailing: account.isTrailing,
-              deletedAt: subscription.deletedAt,
-              cancelAt: subscription.cancelAt,
-            }
-          : null
-      );
+      return creditPackCheckoutError(creditPackCheckoutInput(account));
     }
     const org = await tx.organization.findUnique({
       where: { id: organizationId },
       select: { isTrailing: true },
     });
     const subscription = await tx.subscription.findFirst({
-      where: { organizationId, deletedAt: null },
+      where: { organizationId },
       select: { status: true, deletedAt: true, cancelAt: true },
     });
     return creditPackCheckoutError(
-      subscription
-        ? {
-            status: subscription.status,
-            isTrailing: org?.isTrailing,
-            deletedAt: subscription.deletedAt,
-            cancelAt: subscription.cancelAt,
-          }
-        : null
+      creditPackCheckoutInput({
+        subscription,
+        isTrailing: org?.isTrailing,
+      })
     );
   }
 
