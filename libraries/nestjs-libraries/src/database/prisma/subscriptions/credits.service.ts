@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import {
@@ -28,8 +28,18 @@ import {
 
 type Tx = Prisma.TransactionClient;
 
+function reportedPaymentId(data: any) {
+  if (!data || typeof data !== 'object') {
+    return '';
+  }
+  const metadata = data.metadata && typeof data.metadata === 'object' ? data.metadata : {};
+  return String(data.payment_id || metadata.payment_id || metadata.paymentId || '');
+}
+
 @Injectable()
 export class CreditsService {
+  private readonly _logger = new Logger(CreditsService.name);
+
   constructor(private _prisma: PrismaService) {}
 
   private async poolId(organizationId: string, db: any = this._prisma) {
@@ -407,53 +417,75 @@ export class CreditsService {
     organizationId?: string | null,
     charges?: readonly SubscriptionCharge[] | null
   ) {
+    const paymentId = reportedPaymentId(data);
     const grant = packGrantFromPayment(data);
     if (!grant || grant.credits <= 0 || !grant.paymentId) {
+      this.skipPack(paymentId, organizationId, 'payment is not a credit pack');
       return false;
     }
     const org = grant.organizationId || organizationId || '';
     if (!org) {
+      this.skipPack(grant.paymentId, organizationId, 'missing organization id');
       return false;
     }
-    if (await this.packCheckoutBlock(tx, org, charges)) {
+    const block = await this.packCheckoutBlock(tx, org, charges, grant.paymentId);
+    if (block) {
+      this.skipPack(grant.paymentId, org, block);
       return false;
     }
     await this.grantPack(tx, org, grant.credits, `pack:${grant.paymentId}`);
     return true;
   }
 
+  private skipPack(
+    paymentId: string,
+    organizationId: string | null | undefined,
+    reason: string
+  ) {
+    this._logger.warn(
+      `Pack grant skipped (${reason}). payment=${paymentId || 'unknown'} org=${organizationId || 'unknown'}`
+    );
+  }
+
   private async packCheckoutBlock(
     tx: Tx,
     organizationId: string,
-    charges?: readonly SubscriptionCharge[] | null
+    charges: readonly SubscriptionCharge[] | null | undefined,
+    paymentId: string
   ) {
     if (isGrandfatheredOrg(organizationId)) {
       return null;
     }
+    let block: string | null;
     if (typeof (tx as any)?.userOrganization?.findFirst === 'function') {
       const account = await loadBillingAccount(tx, organizationId);
       if (account.grandfathered) {
         return null;
       }
-      return creditPackCheckoutError(
+      block = creditPackCheckoutError(
         creditPackCheckoutInput({ ...account, charges })
       );
+    } else {
+      const org = await tx.organization.findUnique({
+        where: { id: organizationId },
+        select: { isTrailing: true },
+      });
+      const subscription = await tx.subscription.findFirst({
+        where: { organizationId },
+        select: { status: true, deletedAt: true, cancelAt: true },
+      });
+      block = creditPackCheckoutError(
+        creditPackCheckoutInput({
+          subscription,
+          isTrailing: org?.isTrailing,
+          charges,
+        })
+      );
     }
-    const org = await tx.organization.findUnique({
-      where: { id: organizationId },
-      select: { isTrailing: true },
-    });
-    const subscription = await tx.subscription.findFirst({
-      where: { organizationId },
-      select: { status: true, deletedAt: true, cancelAt: true },
-    });
-    return creditPackCheckoutError(
-      creditPackCheckoutInput({
-        subscription,
-        isTrailing: org?.isTrailing,
-        charges,
-      })
-    );
+    if (block) {
+      this.skipPack(paymentId, organizationId, block);
+    }
+    return block;
   }
 
   async applyCheckoutReturn(

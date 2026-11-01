@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import DodoPayments from 'dodopayments';
 import { Prisma } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
@@ -55,6 +55,7 @@ type Tx = Prisma.TransactionClient;
 @PaymentProvider({ provider: DODO_PROVIDER })
 export class DodoProvider extends PaymentProviderAbstract {
   platform: PaymentPlatform = 'web';
+  private readonly _logger = new Logger(DodoProvider.name);
 
   constructor(
     private _prisma: PrismaService,
@@ -244,6 +245,7 @@ export class DodoProvider extends PaymentProviderAbstract {
 
   private async applyPackPayment(tx: Tx, data: any) {
     let source = data;
+    const paymentId = String(data?.payment_id || '');
     if (
       !packGrantFromPayment(source) &&
       !data?.subscription_id &&
@@ -256,15 +258,33 @@ export class DodoProvider extends PaymentProviderAbstract {
           source = remote;
         }
       } catch {
+        this.skipPack(paymentId, '', 'could not load the Dodo payment');
         return;
       }
     }
     const organizationId = await this.organizationIdFor(tx, source);
-    await this._credits.applyReportedPackPayment(
+    const granted = await this._credits.applyReportedPackPayment(
       tx,
       source,
       organizationId,
       organizationId ? await this.subscriptionCharges(organizationId) : []
+    );
+    if (!granted) {
+      this.skipPack(
+        String(source?.payment_id || paymentId),
+        organizationId,
+        'grant was not applied'
+      );
+    }
+  }
+
+  private skipPack(
+    paymentId: string,
+    organizationId: string | null | undefined,
+    reason: string
+  ) {
+    this._logger.warn(
+      `Pack grant skipped (${reason}). payment=${paymentId || 'unknown'} org=${organizationId || 'unknown'}`
     );
   }
 
@@ -723,7 +743,16 @@ export class DodoProvider extends PaymentProviderAbstract {
     const charges = this.chargesFromPayments(payments);
     for (const payment of payments) {
       const status = String(payment.status || '').trim().toLowerCase();
-      if (status !== 'succeeded') {
+      if (status !== 'succeeded' && status !== 'paid') {
+        const metadata =
+          payment.metadata && typeof payment.metadata === 'object' ? payment.metadata : {};
+        if (metadata.kind === 'credit_pack' || metadata.pack) {
+          this.skipPack(
+            String(payment.payment_id || ''),
+            organizationId,
+            `payment status ${status || 'missing'}`
+          );
+        }
         continue;
       }
       await this._prisma.$transaction(async (tx) => {

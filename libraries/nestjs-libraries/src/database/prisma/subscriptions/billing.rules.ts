@@ -395,7 +395,11 @@ export function creditPackCheckoutError(
     return CREDIT_PACK_PAID_ERROR;
   }
   const status = String(input.status || '').trim().toLowerCase();
-  if (subscriptionIsTrial(input)) {
+  // cancel_scheduled with cancelAt still ahead is paid access. A stale
+  // isTrailing flag must not turn that pack payment into a silent trial skip.
+  const cancelWindow =
+    status === 'cancel_scheduled' && paidCancelDayStillOpen(input.cancelAt, now);
+  if (subscriptionIsTrial(input) && !cancelWindow) {
     return CREDIT_PACK_TRIAL_ERROR;
   }
   if (!status || PACK_CLOSED_STATUS.has(status)) {
