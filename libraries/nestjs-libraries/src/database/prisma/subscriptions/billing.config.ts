@@ -222,6 +222,16 @@ export type PlanCardLine = {
 
 const cardCount = (value: number) => value.toLocaleString('en-US');
 
+/** Used/limit pair, always with a thousands separator: 0/10,000. */
+export function usagePair(used: number, limit: number) {
+  return `${cardCount(used)}/${cardCount(limit)}`;
+}
+
+export function webhookQuota(used: number, limit: unknown) {
+  const cap = typeof limit === 'number' ? limit : Number(limit);
+  return usagePair(used, Number.isFinite(cap) ? cap : 0);
+}
+
 export function planCardLines(plan: PlanConfig): PlanCardLine[] {
   const lines: PlanCardLine[] = [
     { key: 'channels', text: `${cardCount(plan.channels)} channels` },

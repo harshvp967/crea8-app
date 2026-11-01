@@ -104,7 +104,7 @@ export function SegmentedControl({
     event.preventDefault();
     const option = options[next];
     select(option.value);
-    if (option.href) router.push(option.href);
+    if (option.href && !onValueChange) router.push(option.href);
     refs.current[next]?.focus();
   };
 
@@ -191,7 +191,19 @@ export function SegmentedControl({
             <Link
               key={option.value}
               href={option.href}
-              onClick={() => select(option.value)}
+              onClick={(event) => {
+                if (
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey ||
+                  event.button !== 0
+                ) {
+                  return;
+                }
+                if (onValueChange) event.preventDefault();
+                select(option.value);
+              }}
               {...shared}
             >
               {inner}

@@ -3,7 +3,7 @@ import { AdminStatsComponent } from '@gitroom/frontend/components/admin/admin-st
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: `Crea8one Admin Stats`,
+  title: 'Admin stats',
   description: '',
 };
 

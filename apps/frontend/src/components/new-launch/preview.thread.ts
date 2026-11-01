@@ -35,6 +35,13 @@ export function threadItemHasBody(item: ThreadItem | null | undefined) {
   return media.length > 0;
 }
 
+/** True when any thread item has text or media. An empty composer does not. */
+export function composerHasContent(
+  groups: Array<Array<ThreadItem | null | undefined> | null | undefined> | null | undefined
+) {
+  return (groups || []).some((group) => (group || []).some((item) => threadItemHasBody(item)));
+}
+
 /**
  * Preview drops trailing blanks the same way save does, including a blank
  * the user added and left empty. An image-only item stays. The first item stays.

@@ -9,6 +9,7 @@ import {
   sheetShouldClose,
 } from '@gitroom/frontend/components/launches/helpers/sheet.swipe';
 import {
+  composerHasContent,
   persistedThreadValues,
   previewThreadValues,
 } from '@gitroom/frontend/components/new-launch/preview.thread';
@@ -131,6 +132,18 @@ describe('composer preview thread', () => {
         text('<p></p>', true),
       ])
     ).toHaveLength(1);
+  });
+});
+
+describe('composer close', () => {
+  it('treats a blank document as empty and keeps text or media', () => {
+    expect(composerHasContent([[{ content: '<p></p>', media: [] }]])).toBe(false);
+    expect(composerHasContent([[{ content: '<p><br></p>' }]])).toBe(false);
+    expect(composerHasContent([[{ content: '' }], []])).toBe(false);
+    expect(composerHasContent([[{ content: '<p>Nimbus note</p>' }]])).toBe(true);
+    expect(
+      composerHasContent([[{ content: '', media: [{ id: 'm', path: '/a.png' }] }]])
+    ).toBe(true);
   });
 });
 

@@ -78,7 +78,7 @@ export const Autopost: FC = () => {
           <p>
             {t(
               'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
-              'Autopost can automatically posts your RSS new items to social media'
+              'Autopost can automatically post your new RSS items to social media'
             )}
           </p>
         </div>

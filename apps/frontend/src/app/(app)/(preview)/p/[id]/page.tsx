@@ -72,7 +72,7 @@ export async function generateMetadata(props: {
     plainText(post[0].content) || `A post shared from ${SITE_NAME}`;
   const image = shareImage(post[0]);
   return {
-    title,
+    title: { absolute: title },
     description,
     robots: { index: true, follow: true },
     openGraph: {

@@ -64,6 +64,7 @@ export const LinkLeadsScreen = () => {
   }, [input]);
 
   const capture = page.data?.blocks.find((block) => block.type === 'EMAIL_CAPTURE');
+  const captureOn = !!capture?.enabled;
   const counts = data?.counts;
   const filters: Array<{ id: string; label: string }> = [
     { id: '', label: countLabel('All', counts?.all) },
@@ -216,12 +217,16 @@ export const LinkLeadsScreen = () => {
             <HugeIcon name="mail" size={18} />
           </span>
           <h2 className="text-[16px] font-[600] tracking-[-0.02em]">No leads yet</h2>
-          <p className="max-w-[360px] text-[14px] font-[500] text-textItemBlur">
-            Turn on Email capture to collect subscribers from your page.
-          </p>
-          <Link href="/link" className={`${linkPrimary} mt-[8px]`}>
-            Email capture
-          </Link>
+          {page.data && !captureOn ? (
+            <>
+              <p className="max-w-[360px] text-[14px] font-[500] text-textItemBlur">
+                Turn on Email capture to collect subscribers from your page.
+              </p>
+              <Link href="/link" className={`${linkPrimary} mt-[8px]`}>
+                Email capture
+              </Link>
+            </>
+          ) : null}
         </section>
       )}
 

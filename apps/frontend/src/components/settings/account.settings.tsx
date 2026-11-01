@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { FormProvider, useForm } from 'react-hook-form';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -31,7 +31,17 @@ import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.comp
 import { ChangeLanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { PublicComponent } from '@gitroom/frontend/components/public-api/public.component';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
+import {
+  accountSectionFrom,
+  accountSectionHref,
+  accountSectionQuery,
+  accountSections,
+  type AccountSectionId,
+} from '@gitroom/frontend/components/settings/account.section';
 import dynamic from 'next/dynamic';
+
+export { accountSectionFrom, accountSections };
+export type { AccountSectionId };
 
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
@@ -47,27 +57,6 @@ const MetricComponent = dynamic(
     ),
   }
 );
-
-export const accountSections = [
-  { id: 'profile', label: 'Profile' },
-  { id: 'workspace', label: 'Workspace' },
-  { id: 'webhooks', label: 'Webhooks' },
-  { id: 'billing', label: 'Billing' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'date', label: 'Date Metrics' },
-  { id: 'developers', label: 'Developers' },
-  { id: 'approved_apps', label: 'Approved Apps' },
-  { id: 'security', label: 'Security' },
-  { id: 'delete', label: 'Delete account' },
-] as const;
-
-export type AccountSectionId = (typeof accountSections)[number]['id'];
-
-export const accountSectionFrom = (value: string | null | undefined): AccountSectionId =>
-  accountSections.some((item) => item.id === value)
-    ? (value as AccountSectionId)
-    : 'profile';
 
 const initialsOf = (name: string) =>
   name
@@ -456,10 +445,10 @@ export const AccountSettings = ({
   const { isGeneral } = useVariables();
   const showDevelopers = !!user?.tier?.public_api && !!isGeneral;
   const canWebhooks = !!user?.tier?.webhooks;
-  const router = useRouter();
   const params = useSearchParams();
   const querySection = accountSectionFrom(params.get('section'));
-  const [localSection, setLocalSection] = useState<AccountSectionId>('profile');
+  const [localSection, setLocalSection] = useState<AccountSectionId>(querySection);
+  const wrote = useRef<string | null>(null);
   const active = section || localSection;
   const shown: AccountSectionId =
     (active === 'developers' && !showDevelopers) ||
@@ -468,17 +457,31 @@ export const AccountSettings = ({
       : active;
 
   useEffect(() => {
-    if (!section) setLocalSection(querySection);
-  }, [querySection, section]);
+    if (section) return;
+    const live =
+      typeof window === 'undefined'
+        ? params.get('section')
+        : new URLSearchParams(window.location.search).get('section');
+    if (wrote.current != null && live === wrote.current) return;
+    wrote.current = null;
+    setLocalSection(accountSectionFrom(live));
+  }, [params, section]);
 
   const choose = useCallback(
     (next: string) => {
       const id = accountSectionFrom(next);
+      const query = accountSectionQuery(id);
+      wrote.current = query;
       if (onSection) onSection(id);
       else setLocalSection(id);
-      router.replace(`/account?section=${id}`, { scroll: false });
+      if (typeof window === 'undefined') return;
+      const href = accountSectionHref(id);
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== href) {
+        window.history.replaceState(window.history.state, '', href);
+      }
     },
-    [onSection, router]
+    [onSection]
   );
 
   const labels: Record<AccountSectionId, string> = {
@@ -488,7 +491,7 @@ export const AccountSettings = ({
     billing: t('billing', 'Billing'),
     notifications: t('notifications', 'Notifications'),
     appearance: t('appearance', 'Appearance'),
-    date: 'Date Metrics',
+    date_metrics: 'Date format',
     developers: t('developers', 'Developers'),
     approved_apps: t('approved_apps', 'Approved Apps'),
     security: t('security', 'Security'),
@@ -516,6 +519,7 @@ export const AccountSettings = ({
           options={sections.map((item) => ({
             value: item.id,
             label: labels[item.id],
+            href: accountSectionHref(item.id),
           }))}
         />
         <div className="settings-detail">
@@ -525,7 +529,7 @@ export const AccountSettings = ({
           {shown === 'billing' && <AccountBilling />}
           {shown === 'notifications' && <AccountNotifications />}
           {shown === 'appearance' && <AccountAppearance />}
-          {shown === 'date' && <AccountDate />}
+          {shown === 'date_metrics' && <AccountDate />}
           {shown === 'developers' && showDevelopers && <PublicComponent />}
           {shown === 'approved_apps' && <ApprovedAppsComponent />}
           {shown === 'security' && <AccountSecurity />}

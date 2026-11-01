@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import '../../../c8-oauth.scss';
 
 export const metadata: Metadata = {
-  title: 'Authorize Application',
+  title: 'Authorize',
 };
 
 export default async function OAuthLayout({

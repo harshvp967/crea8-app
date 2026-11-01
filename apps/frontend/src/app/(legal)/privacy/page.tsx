@@ -9,7 +9,7 @@ import {
 } from '@gitroom/frontend/components/legal/legal-shell';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Crea8one',
+  title: 'Privacy Policy',
   description:
     'Privacy Policy for Crea8one, a social media scheduling and insights tool.',
 };

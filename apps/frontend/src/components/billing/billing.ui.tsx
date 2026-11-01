@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { BillingButton, BillingHeading } from '@gitroom/frontend/components/billing/billing.shell';
 import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
-import { CHECKOUT_GST_NOTE } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { CHECKOUT_GST_NOTE, usagePair } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -443,8 +443,6 @@ const USAGE_ROWS: {
   { key: 'posts', label: 'Posts', icon: 'calendar', tile: 'is-schedule' },
 ];
 
-const usageCount = (value: number) => value.toLocaleString('en-US');
-
 function usageLine(
   key: keyof BillingOverview['usage'],
   used: number,
@@ -454,7 +452,7 @@ function usageLine(
     return { text: 'Unlimited', hit: false };
   }
   return {
-    text: `${usageCount(used)}/${usageCount(limit)}`,
+    text: usagePair(used, limit),
     hit: used >= limit,
   };
 }

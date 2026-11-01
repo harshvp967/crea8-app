@@ -10,6 +10,8 @@ import {
   cardLimitAllows,
   planCardLines,
   planCardQuota,
+  usagePair,
+  webhookQuota,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
   loadBillingAccount,
@@ -304,6 +306,10 @@ describe('shared workspace billing', () => {
     expect(planCardLines(PLANS.TEAM).map((line) => line.text)).toContain('700 credits a month');
     expect(planCardLines(PLANS.PRO).map((line) => line.text)).toContain('1,100 credits a month');
     expect(planCardLines(PLANS.ULTIMATE).map((line) => line.text)).toContain('1,800 credits a month');
+    expect(planCardLines(PLANS.ULTIMATE).map((line) => line.text)).toContain('10,000 webhooks');
+    expect(usagePair(0, 10000)).toBe('0/10,000');
+    expect(webhookQuota(0, 10000)).toBe('0/10,000');
+    expect(webhookQuota(1250, '10000')).toBe('1,250/10,000');
     expect(planCardLines(PLANS.ULTIMATE).map((line) => line.text)).toContain('Unlimited Stalker checks a day');
     expect(planCardLines(PLANS.ULTIMATE).map((line) => line.text)).toContain('Stalker scan every 1 hour');
     expect(cardLimitAllows('channels', PLANS.STANDARD, 4)).toBe(true);

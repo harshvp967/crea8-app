@@ -5,8 +5,8 @@ import React, { useState } from 'react';
 import { isUSCitizen, publishClockPreference } from '@gitroom/frontend/components/launches/helpers/isuscitizen.utils';
 import timezones from 'timezones-list';
 const dateMetrics = [
-  { label: 'AM:PM', value: 'US' },
-  { label: '24 hours', value: 'GLOBAL' },
+  { label: '12-hour', value: 'US' },
+  { label: '24-hour', value: 'GLOBAL' },
 ];
 
 import dayjs from 'dayjs';
@@ -34,7 +34,7 @@ const MetricComponent = () => {
   return (
     <div className="settings-row">
       <div className="settings-row-copy">
-        <div className="settings-row-title">Date Metrics</div>
+        <div className="settings-row-title">Date format</div>
       </div>
       <div className="settings-control">
       <Select name="metric" disableForm={true} hideErrors={true} label="" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
