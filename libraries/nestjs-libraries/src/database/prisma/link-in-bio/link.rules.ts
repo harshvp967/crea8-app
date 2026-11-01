@@ -1,4 +1,5 @@
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import { noPlanProductOpen } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
   isBillingEnforced,
   isGrandfatheredOrg,
@@ -288,6 +289,12 @@ export function hasCustomDomainAddon(org?: { customDomainAddon?: boolean | null 
 }
 
 export function linkFeatureOpen(subscription?: LinkPlan) {
+  // No subscription row, or one that no longer grants access: the editor,
+  // themes, analytics, and leads stay open. Badge removal and a custom
+  // domain keep their own checks.
+  if (!subscription || subscription.deletedAt) {
+    return noPlanProductOpen('link');
+  }
   return !LINK_PLAN_GATING_ENABLED || isPaidPlan(subscription);
 }
 
