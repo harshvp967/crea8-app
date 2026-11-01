@@ -1,10 +1,12 @@
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
-import { CREDIT_COSTS, TRIAL_MONTHLY_CREDITS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { CREDIT_COSTS, PLANS, TRIAL_MONTHLY_CREDITS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
   BillingBlocked,
+  CREDIT_PACK_PAID_ERROR,
   CREDIT_PACK_TRIAL_ERROR,
   creditPackCheckoutError,
   creditTracker,
+  monthlyCreditAllowance,
   xPostSpendParts,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
@@ -80,7 +82,12 @@ function memoryPrisma() {
   const organizations = new Map<string, { id: string; isTrailing: boolean }>();
   const subscriptions = new Map<
     string,
-    { organizationId: string; status: string; deletedAt: Date | null }
+    {
+      organizationId: string;
+      status: string;
+      deletedAt: Date | null;
+      cancelAt: Date | null;
+    }
   >();
   let seq = 0;
   const api: any = {
@@ -193,7 +200,7 @@ function memoryPrisma() {
     },
     setWorkspace(
       organizationId: string,
-      input: { status?: string | null; isTrailing?: boolean }
+      input: { status?: string | null; isTrailing?: boolean; cancelAt?: Date | null }
     ) {
       organizations.set(organizationId, {
         id: organizationId,
@@ -207,6 +214,7 @@ function memoryPrisma() {
         organizationId,
         status: input.status,
         deletedAt: null,
+        cancelAt: input.cancelAt || null,
       });
     },
     processedWebhookEvent: {
@@ -413,6 +421,7 @@ describe('credit ledger action charges', () => {
   it('grants a 150 credit pack from the payment webhook once', async () => {
     const db = memoryPrisma();
     const credits = new CreditsService(db as any);
+    db.setWorkspace('org-pack', { status: 'active', isTrailing: false });
     const paid = {
       payment_id: 'pay_150',
       status: 'succeeded',
@@ -448,6 +457,7 @@ describe('credit ledger action charges', () => {
   it('grants the pack when the webhook only carries the pack key', async () => {
     const db = memoryPrisma();
     const credits = new CreditsService(db as any);
+    db.setWorkspace('org-key', { status: 'active', isTrailing: false });
     await paymentSucceeded(db, credits, 'msg_key_only', {
       payment_id: 'pay_key',
       status: 'succeeded',
@@ -461,20 +471,137 @@ describe('credit ledger action charges', () => {
     expect(balance.monthlyRemaining).toBe(0);
   });
 
-  it('rejects credit pack checkout while the workspace is on a trial', () => {
+  it('rejects credit pack checkout unless the subscription is active and paid', () => {
     expect(
       creditPackCheckoutError({ status: 'trialing', isTrailing: true, deletedAt: null })
     ).toBe(CREDIT_PACK_TRIAL_ERROR);
     expect(
       creditPackCheckoutError({ status: 'active', isTrailing: true, deletedAt: null })
     ).toBe(CREDIT_PACK_TRIAL_ERROR);
+    expect(creditPackCheckoutError(null)).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(creditPackCheckoutError(undefined)).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(
+      creditPackCheckoutError({ status: 'cancelled', isTrailing: false, deletedAt: null })
+    ).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(
+      creditPackCheckoutError({ status: 'expired', isTrailing: false, deletedAt: null })
+    ).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(
+      creditPackCheckoutError({
+        status: 'cancel_scheduled',
+        isTrailing: false,
+        deletedAt: null,
+        cancelAt: '2026-11-06T00:00:00.000Z',
+      })
+    ).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(
+      creditPackCheckoutError({
+        status: 'active',
+        isTrailing: false,
+        deletedAt: null,
+        cancelAt: '2026-11-06T00:00:00.000Z',
+      })
+    ).toBe(CREDIT_PACK_PAID_ERROR);
+    expect(
+      creditPackCheckoutError({ status: 'trial_ended', isTrailing: false, deletedAt: null })
+    ).toBe(CREDIT_PACK_PAID_ERROR);
     expect(
       creditPackCheckoutError({ status: 'active', isTrailing: false, deletedAt: null })
     ).toBeNull();
-    expect(creditPackCheckoutError(null)).toBeNull();
-    expect(
-      creditPackCheckoutError({ status: 'trial_ended', isTrailing: false, deletedAt: null })
-    ).toBeNull();
+  });
+
+  it('does not grant a pack to a cancelled, expired, or missing subscription', async () => {
+    const cancelled = memoryPrisma();
+    const cancelledCredits = new CreditsService(cancelled as any);
+    cancelled.setWorkspace('org-cancel', {
+      status: 'cancel_scheduled',
+      isTrailing: false,
+      cancelAt: new Date('2026-11-06T00:00:00.000Z'),
+    });
+    const payment = {
+      status: 'succeeded',
+      metadata: {
+        kind: 'credit_pack',
+        pack: 'PACK_150',
+        credits: 150,
+      },
+    };
+    await paymentSucceeded(cancelled, cancelledCredits, 'msg_cancel', {
+      ...payment,
+      payment_id: 'pay_cancel',
+      metadata: { ...payment.metadata, organizationId: 'org-cancel' },
+    });
+    expect((await cancelledCredits.balance('org-cancel')).packRemaining).toBe(0);
+
+    const expired = memoryPrisma();
+    const expiredCredits = new CreditsService(expired as any);
+    expired.setWorkspace('org-expired', { status: 'expired', isTrailing: false });
+    await paymentSucceeded(expired, expiredCredits, 'msg_expired', {
+      ...payment,
+      payment_id: 'pay_expired',
+      metadata: { ...payment.metadata, organizationId: 'org-expired' },
+    });
+    expect((await expiredCredits.balance('org-expired')).packRemaining).toBe(0);
+
+    const none = memoryPrisma();
+    const noneCredits = new CreditsService(none as any);
+    await paymentSucceeded(none, noneCredits, 'msg_none', {
+      ...payment,
+      payment_id: 'pay_none',
+      metadata: { ...payment.metadata, organizationId: 'org-none' },
+    });
+    expect((await noneCredits.balance('org-none')).packRemaining).toBe(0);
+  });
+
+  it('keeps the trial cap until the first paid grant, then follows a plan change', async () => {
+    const db = memoryPrisma();
+    const credits = new CreditsService(db as any);
+    const org = 'org-pro';
+    await db.$transaction((tx: any) =>
+      credits.grantMonthly(tx, org, 'trial:2026-10-30', TRIAL_MONTHLY_CREDITS)
+    );
+    await db.$transaction((tx: any) => credits.grantPack(tx, org, 300, 'pack:qa'));
+    await db.$transaction((tx: any) =>
+      credits.grantMonthly(tx, org, 'trial:2026-10-30', PLANS.PRO.monthlyCredits)
+    );
+    const duringTrial = creditTracker(
+      (await credits.usage(org, monthlyCreditAllowance('PRO', true)))!
+    );
+    expect(duringTrial.allowance).toBe(50);
+    expect(duringTrial.packCredits).toBe(300);
+    expect(duringTrial.allowance).not.toBe(350);
+    expect((await credits.balance(org)).monthlyRemaining).toBe(50);
+
+    await db.$transaction((tx: any) =>
+      credits.grantMonthly(tx, org, '2026-11-06', PLANS.STANDARD.monthlyCredits)
+    );
+    await db.$transaction((tx: any) =>
+      credits.grantMonthly(tx, org, '2026-11-06', PLANS.STANDARD.monthlyCredits)
+    );
+    expect((await credits.balance(org)).monthlyRemaining).toBe(PLANS.STANDARD.monthlyCredits);
+
+    await db.$transaction((tx: any) =>
+      credits.grantMonthly(tx, org, '2026-11-06', PLANS.PRO.monthlyCredits)
+    );
+    await db.$transaction((tx: any) =>
+      credits.grantMonthly(tx, org, '2026-11-06', PLANS.PRO.monthlyCredits)
+    );
+    const balance = await credits.balance(org);
+    expect(balance.monthlyRemaining).toBe(PLANS.PRO.monthlyCredits);
+    expect(balance.packRemaining).toBe(300);
+    const paid = creditTracker(
+      (await credits.usage(org, monthlyCreditAllowance('PRO', false)))!
+    );
+    expect(paid.allowance).toBe(1100);
+    expect(paid.packCredits).toBe(300);
+
+    await db.$transaction((tx: any) =>
+      credits.grantMonthly(tx, org, '2026-11-06', PLANS.TEAM.monthlyCredits)
+    );
+    expect((await credits.balance(org)).monthlyRemaining).toBe(1100);
+    expect(PLANS.STANDARD.monthlyCredits).toBe(300);
+    expect(PLANS.TEAM.monthlyCredits).toBe(700);
+    expect(PLANS.ULTIMATE.monthlyCredits).toBe(1800);
   });
 
   it('grants a paid subscriber the 150 pack once from the payment webhook', async () => {
@@ -517,7 +644,7 @@ describe('credit ledger action charges', () => {
     expect(usage?.packCredits).toBe(150);
     expect(usage?.allowance).toBe(300);
     const tracker = creditTracker(usage!);
-    expect(tracker.allowance).toBe(450);
+    expect(tracker.allowance).toBe(300);
     expect(tracker.packCredits).toBe(150);
 
     const trial = memoryPrisma();

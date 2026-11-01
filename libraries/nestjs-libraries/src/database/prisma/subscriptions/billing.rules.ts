@@ -239,15 +239,31 @@ export function workspaceOnTrial(input: {
 export const CREDIT_PACK_TRIAL_ERROR =
   "Credit packs aren't available during a trial.";
 
+export const CREDIT_PACK_PAID_ERROR =
+  "Credit packs aren't available without a paid plan.";
+
 export function creditPackCheckoutError(input: {
   status?: string | null;
   isTrailing?: boolean | null;
   deletedAt?: Date | string | null;
+  cancelAt?: Date | string | null;
 } | null | undefined) {
-  if (!workspaceOnTrial(input)) {
-    return null;
+  if (!input || input.deletedAt) {
+    return CREDIT_PACK_PAID_ERROR;
   }
-  return CREDIT_PACK_TRIAL_ERROR;
+  if (workspaceOnTrial(input)) {
+    return CREDIT_PACK_TRIAL_ERROR;
+  }
+  // Cancelled access that runs until period end still has a future cancelAt
+  // or a cancel_scheduled status. That is not an active paid subscription.
+  if (input.cancelAt) {
+    return CREDIT_PACK_PAID_ERROR;
+  }
+  const status = String(input.status || '').trim().toLowerCase();
+  if (status !== 'active') {
+    return CREDIT_PACK_PAID_ERROR;
+  }
+  return null;
 }
 
 export function packGrantFromPayment(data: any): PackGrant | null {
@@ -316,6 +332,29 @@ export function packGrantFromPayment(data: any): PackGrant | null {
     credits,
     paymentId,
   };
+}
+
+// A subscription's first successful charge, not a pack and not the $0 trial
+// checkout. subscription.renewed is the other signal that the trial is over.
+export function subscriptionChargeEndsTrial(data: any) {
+  const source = paymentBody(data);
+  if (!source || typeof source !== 'object') {
+    return false;
+  }
+  if (packGrantFromPayment(source)) {
+    return false;
+  }
+  const status = String(source.status || '').trim().toLowerCase();
+  if (status && status !== 'succeeded' && status !== 'paid') {
+    return false;
+  }
+  const amount = Number(source.total_amount ?? source.amount ?? NaN);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return false;
+  }
+  const subscriptionId = String(source.subscription_id || '');
+  const kind = String(metadataRecord(source.metadata || source.custom_metadata).kind || '');
+  return !!subscriptionId || kind === 'subscription';
 }
 
 export function stalkerReadCost(postCount: number) {
@@ -443,10 +482,12 @@ export function creditTracker<T extends {
   packCredits: number;
 }>(usage: T): T {
   const pack = Number.isFinite(usage.packCredits) ? Math.max(0, usage.packCredits) : 0;
+  // Pack credits stay in their own field. Adding them here made a 50-credit
+  // trial with a 300-credit pack read as allowance 350.
   return {
     ...usage,
-    allowance: usage.allowance + pack,
-    left: usage.left + pack,
+    allowance: usage.allowance,
+    left: usage.left,
     packCredits: pack,
   };
 }
@@ -605,11 +646,15 @@ export function reduceBillingEvent(
   const allowance = monthlyCreditAllowance(paidTier, trialing);
   let monthly = state.monthly;
   const granting =
-    event.type === 'subscription.active' || event.type === 'subscription.renewed';
+    event.type === 'subscription.active' ||
+    event.type === 'subscription.renewed' ||
+    event.type === 'subscription.plan_changed';
   if (
     granting &&
-    ((cycleKey && cycleKey !== state.cycleKey) ||
-      (event.type === 'subscription.active' && state.cycleKey === null))
+    cycleKey &&
+    (cycleKey !== state.cycleKey ||
+      (event.type === 'subscription.active' && state.cycleKey === null) ||
+      (!trialing && allowance > state.monthly))
   ) {
     monthly = allowance;
   }

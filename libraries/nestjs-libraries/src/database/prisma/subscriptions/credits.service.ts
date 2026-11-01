@@ -17,9 +17,9 @@ import {
   creditUpgradeMessage,
   creditUsage,
   ledgerRowsForHistory,
+  creditPackCheckoutError,
   packGrantFromPayment,
   planSpend,
-  workspaceOnTrial,
   postsCovered,
   stalkerReadCost,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
@@ -412,25 +412,33 @@ export class CreditsService {
     if (!org) {
       return false;
     }
-    if (await this.workspaceIsOnTrial(tx, org)) {
+    if (await this.packCheckoutBlock(tx, org)) {
       return false;
     }
     await this.grantPack(tx, org, grant.credits, `pack:${grant.paymentId}`);
     return true;
   }
 
-  private async workspaceIsOnTrial(tx: Tx, organizationId: string) {
+  private async packCheckoutBlock(tx: Tx, organizationId: string) {
+    if (isGrandfatheredOrg(organizationId)) {
+      return null;
+    }
     if (typeof (tx as any)?.userOrganization?.findFirst === 'function') {
       const account = await loadBillingAccount(tx, organizationId);
-      const subscription = account.subscription || account.latest;
-      if (!subscription) {
-        return false;
+      if (account.grandfathered) {
+        return null;
       }
-      return workspaceOnTrial({
-        status: subscription.status,
-        isTrailing: account.isTrailing,
-        deletedAt: subscription.deletedAt,
-      });
+      const subscription = account.subscription;
+      return creditPackCheckoutError(
+        subscription
+          ? {
+              status: subscription.status,
+              isTrailing: account.isTrailing,
+              deletedAt: subscription.deletedAt,
+              cancelAt: subscription.cancelAt,
+            }
+          : null
+      );
     }
     const org = await tx.organization.findUnique({
       where: { id: organizationId },
@@ -438,16 +446,18 @@ export class CreditsService {
     });
     const subscription = await tx.subscription.findFirst({
       where: { organizationId, deletedAt: null },
-      select: { status: true, deletedAt: true },
+      select: { status: true, deletedAt: true, cancelAt: true },
     });
-    if (!subscription) {
-      return false;
-    }
-    return workspaceOnTrial({
-      status: subscription.status,
-      isTrailing: org?.isTrailing,
-      deletedAt: subscription.deletedAt,
-    });
+    return creditPackCheckoutError(
+      subscription
+        ? {
+            status: subscription.status,
+            isTrailing: org?.isTrailing,
+            deletedAt: subscription.deletedAt,
+            cancelAt: subscription.cancelAt,
+          }
+        : null
+    );
   }
 
   async applyCheckoutReturn(
@@ -559,7 +569,37 @@ export class CreditsService {
       update: {},
     });
     if (existing) {
-      return row;
+      // The trial key stays at 50 until a paid cycle key is granted. A later
+      // grant on the same paid key raises the allowance when the plan changes
+      // and does not shrink it when a downgrade is still pending.
+      if (cycleKey.startsWith('trial:')) {
+        return row;
+      }
+      const grants = await tx.creditLedger.findMany({
+        where: { organizationId, cycleKey, reason: 'cycle_grant' },
+      });
+      const granted = grants
+        .filter((entry) => entry.type === 'GRANT' && entry.amount > 0)
+        .reduce((sum, entry) => sum + entry.amount, 0);
+      if (granted >= amount) {
+        return row;
+      }
+      const extra = amount - granted;
+      await tx.creditLedger.create({
+        data: {
+          organizationId,
+          amount: extra,
+          bucket: 'MONTHLY',
+          type: 'GRANT',
+          reason: 'cycle_grant',
+          cycleKey,
+          idempotencyKey: `monthly:${organizationId}:${cycleKey}:${amount}`,
+        },
+      });
+      return tx.creditBalance.update({
+        where: { organizationId },
+        data: { monthlyRemaining: { increment: extra } },
+      });
     }
     if (row.cycleKey && row.cycleKey !== cycleKey && row.monthlyRemaining > 0) {
       await tx.creditLedger.create({

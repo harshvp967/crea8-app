@@ -94,7 +94,7 @@ export class BillingReadService {
         monthlyRemaining: balance.monthlyRemaining,
         monthlyAllowance: monthlyCreditAllowance(
           tier,
-          !grandfathered && shownStatus === 'trialing'
+          !grandfathered && !!isTrailing
         ),
         packRemaining: balance.packRemaining,
         total: balance.total,
