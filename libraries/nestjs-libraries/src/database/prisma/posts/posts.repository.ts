@@ -17,6 +17,10 @@ import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 import { canonicalizeImageList } from '@gitroom/nestjs-libraries/upload/media.access';
+import {
+  postErrorWrite,
+  publishedPostWrite,
+} from '@gitroom/nestjs-libraries/database/prisma/posts/post.failure';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -344,6 +348,7 @@ export class PostsRepository {
         releaseURL: true,
         releaseId: true,
         state: true,
+        error: true,
         intervalInDays: true,
         group: true,
         creationMethod: true,
@@ -540,11 +545,7 @@ export class PostsRepository {
       where: {
         id,
       },
-      data: {
-        state: 'PUBLISHED',
-        releaseURL,
-        releaseId: postId,
-      },
+      data: publishedPostWrite(postId, releaseURL),
     });
   }
 
@@ -562,16 +563,12 @@ export class PostsRepository {
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
+    const recorded = postErrorWrite(state, err);
     const update = await this._post.model.post.update({
       where: {
         id,
       },
-      data: {
-        state,
-        ...(err
-          ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
-          : {}),
-      },
+      data: recorded,
       include: {
         integration: {
           select: {
@@ -581,11 +578,11 @@ export class PostsRepository {
       },
     });
 
-    if (state === 'ERROR' && err && body) {
+    if (state === 'ERROR' && recorded.error && body) {
       try {
         await this._errors.model.errors.create({
           data: {
-            message: typeof err === 'string' ? err : JSON.stringify(err),
+            message: recorded.error,
             organizationId: update.organizationId,
             platform: update.integration.providerIdentifier,
             postId: update.id,

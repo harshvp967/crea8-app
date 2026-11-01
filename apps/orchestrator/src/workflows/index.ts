@@ -11,6 +11,7 @@ export * from './post-workflows/post.workflow.v1.1.0';
 export * from './post-workflows/post.workflow.v1.1.1';
 export * from './post-workflows/post.workflow.v1.1.2';
 export * from './post-workflows/post.workflow.v1.1.3';
+export * from './post-workflows/post.workflow.v1.1.4';
 export * from './autopost.workflow';
 export * from './digest.email.workflow';
 export * from './digest.email.workflow.v2';
