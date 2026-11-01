@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { BillingOverview, BillingPlanCard, checkoutReturnKind } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
+import { PaidTier, TRIAL_DAYS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { BillingOverview, BillingPlanCard, checkoutReturnKind, planCards } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { BillingShell } from '@gitroom/frontend/components/billing/billing.shell';
 import {
   AccountCreditsCard,
@@ -26,6 +29,45 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
 const activeEnough = new Set(['active', 'trialing', 'past_due', 'on_hold', 'cancel_scheduled']);
 
+function ContinueToLink() {
+  return (
+    <Link href="/link" className="lib-metric-label underline">
+      Continue to Link in Bio
+    </Link>
+  );
+}
+
+function SignInPaywall({
+  period,
+  busy,
+  allowTrial,
+  trialDays,
+  onPeriod,
+  onChoose,
+}: {
+  period: 'MONTHLY' | 'YEARLY';
+  busy: boolean;
+  allowTrial: boolean;
+  trialDays: number;
+  onPeriod: (period: 'MONTHLY' | 'YEARLY') => void;
+  onChoose: (tier: PaidTier) => void;
+}) {
+  return (
+    <Paywall>
+      <PricingSection
+        period={period}
+        busy={busy}
+        allowTrial={allowTrial}
+        trialDays={trialDays}
+        onPeriod={onPeriod}
+        onChoose={onChoose}
+      />
+      <ContinueToLink />
+      <FAQComponent accordion />
+    </Paywall>
+  );
+}
+
 export function BillingScreen({
   mode,
   surface = 'page',
@@ -37,6 +79,7 @@ export function BillingScreen({
   const toaster = useToaster();
   const router = useRouter();
   const { mutate: refreshCache } = useSWRConfig();
+  const user = useUser();
   const params = useSearchParams();
   const checkout = params.get('checkout');
   const paymentStatus = params.get('status');
@@ -183,6 +226,27 @@ export function BillingScreen({
     }
   };
 
+  const chooseTier = (tier: PaidTier, plans: BillingPlanCard[]) => {
+    const plan = plans.find((item) => item.tier === tier);
+    if (plan) {
+      void choose(plan);
+    }
+  };
+
+  if (mode === 'paywall' && !error && (isLoading || !data)) {
+    return (
+      <BillingShell>
+        <SignInPaywall
+          period={period}
+          busy={busy}
+          allowTrial={!!user?.allowTrial}
+          trialDays={TRIAL_DAYS}
+          onPeriod={setPeriod}
+          onChoose={(tier) => chooseTier(tier, planCards())}
+        />
+      </BillingShell>
+    );
+  }
   if (isLoading) {
     return <BillingShell><p data-billing-state="loading">Loading billing…</p></BillingShell>;
   }
@@ -386,22 +450,14 @@ export function BillingScreen({
         ) : (
           <>
             {shown === 'paywall' ? (
-              <Paywall>
-                <PricingSection
-                  period={period}
-                  busy={busy}
-                  allowTrial={data.allowTrial && status !== 'trial_ended'}
-                  trialDays={data.trialDays}
-                  onPeriod={setPeriod}
-                  onChoose={(tier) => {
-                    const plan = data.plans.find((item) => item.tier === tier);
-                    if (plan) {
-                      void choose(plan);
-                    }
-                  }}
-                />
-                <FAQComponent accordion />
-              </Paywall>
+              <SignInPaywall
+                period={period}
+                busy={busy}
+                allowTrial={data.allowTrial && status !== 'trial_ended'}
+                trialDays={data.trialDays}
+                onPeriod={setPeriod}
+                onChoose={(tier) => chooseTier(tier, data.plans)}
+              />
             ) : null}
             {shown === 'trial_ended' || shown === 'cancelled' ? (
               <>

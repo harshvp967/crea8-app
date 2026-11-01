@@ -223,6 +223,20 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     return <AppShellSkeleton />;
   }
 
+  const needsPlan =
+    user.tier === 'FREE' && isGeneral && (billingEnabled || user.billingEnabled);
+  const linkRoute = pathname === '/link' || !!pathname?.startsWith('/link/');
+  const accountRoute = pathname === '/account' || !!pathname?.startsWith('/account/');
+  const settingsRoute = !!pathname?.startsWith('/settings');
+  const keptOpen =
+    linkRoute ||
+    accountRoute ||
+    settingsRoute ||
+    pathname === '/join' ||
+    pathname === '/err' ||
+    !!pathname?.startsWith('/admin');
+  const showPlanPicker = needsPlan && !keptOpen;
+
   return (
     <ContextWrapper user={user}>
       <CopilotKit
@@ -252,21 +266,17 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
               )}
             >
               <div>{user?.admin ? <Impersonate /> : <div />}</div>
-              {user.tier === 'FREE' && isGeneral && (billingEnabled || user.billingEnabled) ? (
-                <FirstBillingComponent />
-              ) : (
-                <>
-                  <AnnouncementBanner />
-                  <Support />
-                  <ModeComponent applyOnly />
-                  <div className="c8-frame">
-                    <C8Sidebar
-                      name={user?.name || ''}
-                      email={user?.email || ''}
-                      picture={user?.picture?.path || ''}
-                      menu={accountMenu}
-                    />
-                  <div className="c8-main">
+              <AnnouncementBanner />
+              <Support />
+              <ModeComponent applyOnly />
+              <div className="c8-frame">
+                <C8Sidebar
+                  name={user?.name || ''}
+                  email={user?.email || ''}
+                  picture={user?.picture?.path || ''}
+                  menu={accountMenu}
+                />
+                <div className="c8-main">
                   <header
                     className="app-header flex items-center min-h-[64px] h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder gap-[8px] ps-[18px] pe-[12px] shrink-0"
                   >
@@ -316,14 +326,18 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   </header>
                   <div className="app-stage flex-1 overflow-hidden flex flex-col min-h-0 blurMe">
                     <div className="app-main flex flex-1 gap-[12px] min-h-0 overflow-hidden">
-                      {children}
+                      {showPlanPicker ? (
+                        <div className="flex min-h-0 min-w-0 flex-1 overflow-auto">
+                          <FirstBillingComponent />
+                        </div>
+                      ) : (
+                        children
+                      )}
                     </div>
                   </div>
-                  </div>
-                  </div>
-                  <MobileTabBar />
-                </>
-              )}
+                </div>
+              </div>
+              <MobileTabBar />
             </div>
           </CheckPayment>
         </MantineWrapper>
