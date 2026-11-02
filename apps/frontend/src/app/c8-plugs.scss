@@ -840,8 +840,8 @@ body:has(.plugs-screen) .arc-dialog-wrap {
   padding: 0 22px;
   border: 1.5px solid var(--c8-hard);
   border-radius: 999px;
-  background: var(--c8-cyan);
-  color: var(--c8-on-cyan);
+  background: var(--c8-cyan) !important;
+  color: var(--c8-on-cyan) !important;
   box-shadow: 0 3px 0 var(--c8-hard);
   font-family: $c8-body;
   font-size: 15px;
@@ -854,6 +854,10 @@ body:has(.plugs-screen) .arc-dialog-wrap {
     background-color var(--c8-dur-hover) var(--c8-ease-out),
     box-shadow var(--c8-dur-hover) var(--c8-ease-out),
     transform var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+.arc-dialog:has(.plugs-form) button[type='submit'] > div {
+  color: var(--c8-on-cyan) !important;
 }
 
 @media (hover: hover) {

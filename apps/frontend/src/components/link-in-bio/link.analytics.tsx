@@ -119,7 +119,7 @@ export const LinkAnalyticsScreen = () => {
   };
 
   return (
-    <div className="lib-analytics flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
+    <div className="lib-analytics flex min-w-0 flex-col gap-[16px] pb-[24px]">
       <div className="lib-head flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
           <div className="lib-kicker">
@@ -279,7 +279,7 @@ export const LinkAnalyticsScreen = () => {
 
           {data.views === 0 && data.clicks === 0 ? null : (
           <>
-          <div className="grid min-w-0 grid-cols-1 gap-[12px] md:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-1 gap-[12px] min-[1024px]:grid-cols-3">
             <section className={stkCard}>
               <h2 className="mb-[8px] text-[16px] font-[600] tracking-[-0.02em]">Top links</h2>
               {data.topLinks.length ? (

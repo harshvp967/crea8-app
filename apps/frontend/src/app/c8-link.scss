@@ -317,10 +317,10 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .link-screen .lib-preview-fab {
-  position: fixed;
-  z-index: 45;
-  right: 16px;
-  bottom: calc(88px + env(safe-area-inset-bottom));
+  position: static;
+  z-index: auto;
+  right: auto;
+  bottom: auto;
   display: none;
 }
 
@@ -2806,6 +2806,7 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .link-screen .lib-table {
@@ -2827,7 +2828,8 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
   border-top: 1px solid var(--c8-line);
   color: var(--c8-ink);
   vertical-align: middle;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .link-screen .lib-table td:first-child {
@@ -2907,8 +2909,18 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
 }
 
 .link-screen .lib-date {
-  width: 172px;
+  width: 196px;
+  min-width: 196px;
   padding-inline: 40px 12px !important;
+}
+
+.link-screen .lib-date.text-transparent::-webkit-datetime-edit,
+.link-screen .lib-date.text-transparent::-webkit-datetime-edit-fields-wrapper,
+.link-screen .lib-date.text-transparent::-webkit-datetime-edit-text,
+.link-screen .lib-date.text-transparent::-webkit-datetime-edit-month-field,
+.link-screen .lib-date.text-transparent::-webkit-datetime-edit-day-field,
+.link-screen .lib-date.text-transparent::-webkit-datetime-edit-year-field {
+  color: transparent;
 }
 
 .link-screen .lib-date-field svg,
@@ -3101,6 +3113,9 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
   }
 
   .link-screen .lib-preview-fab {
+    position: static;
+    right: auto;
+    bottom: auto;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -3182,13 +3197,19 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
   }
 
   .link-screen .lib-leads-table {
-    table-layout: fixed;
+    table-layout: auto;
+    min-width: 720px;
   }
 
   .link-screen .lib-leads-table th,
   .link-screen .lib-leads-table td {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .link-screen .lib-analytics .lib-table td,
+  .link-screen .lib-analytics .lib-table th {
+    white-space: nowrap;
   }
 }
 
@@ -3266,6 +3287,9 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
   }
 
   .link-screen .lib-preview-fab {
+    position: static;
+    right: auto;
+    bottom: auto;
     display: inline-flex;
     align-items: center;
     gap: 8px;

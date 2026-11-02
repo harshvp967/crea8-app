@@ -94,9 +94,7 @@ export const AgentChat: FC = () => {
 
 I schedule posts and generate pictures and videos.
 
-History and Channels are at the top right. On a phone in portrait, they sit on the row under the title.
-
-For MCP, open Settings, then Developers. It is on Access. Copy the client config.`
+For MCP, open Account, then Developers.`
               ),
             }}
             UserMessage={Message}

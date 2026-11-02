@@ -70,7 +70,7 @@ export const MobileTabBar = () => {
     {
       name: 'Channels',
       path: '#',
-      icon: <HugeIcon name="plug" size={18} />,
+      icon: <HugeIcon name="users" size={18} />,
       onClick: openChannels,
     },
     ...[...primary.slice(3), ...extra].map(asItem),

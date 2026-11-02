@@ -16,6 +16,42 @@ body {
   color: var(--new-btn-text);
 }
 
+.c8-not-found {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f7f6f2;
+  color: #121016;
+  font-family: Inter, sans-serif;
+  text-align: center;
+}
+
+.c8-not-found p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.c8-not-found h1 {
+  margin: 8px 0 16px;
+  color: #121016;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.c8-not-found a {
+  color: #121016;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 body * {
   outline: none;
 }

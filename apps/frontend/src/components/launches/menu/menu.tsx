@@ -230,11 +230,15 @@ export const Menu: FC<{
     onChange(false);
   }, [t]);
   const deleteChannel = useCallback(async () => {
+    const channel = [...(allIntegrations || []), ...(integrations || [])].find(
+      (item) => item.id === id
+    );
+    const channelName = String(channel?.name || '').trim();
     if (
       !(await deleteDialog(
         t('cant_be_undone', "This can't be undone."),
         t('delete', 'Delete'),
-        t('delete_this_channel', 'Delete this channel?'),
+        channelName ? `Delete “${channelName}”?` : t('delete_this_channel', 'Delete this channel?'),
         t('cancel', 'Cancel'),
         'danger'
       ))
@@ -273,7 +277,7 @@ export const Menu: FC<{
     toast.show(t('channel_deleted', 'Channel Deleted'), 'success');
     setShow(false);
     onChange(true);
-  }, [t, extensionId, id]);
+  }, [allIntegrations, extensionId, id, integrations, t]);
 
   const enableChannel = useCallback(async () => {
     await fetch('/integrations/enable', {

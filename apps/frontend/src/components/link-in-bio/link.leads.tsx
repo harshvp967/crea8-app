@@ -136,7 +136,7 @@ export const LinkLeadsScreen = () => {
   };
 
   return (
-    <div className="lib-leads flex min-w-0 flex-col gap-[16px] overflow-y-auto pb-[24px]">
+    <div className="lib-leads flex min-w-0 flex-col gap-[16px] pb-[24px]">
       <div className="lib-head flex flex-col gap-[12px] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
           <div className="lib-kicker">
@@ -145,9 +145,6 @@ export const LinkLeadsScreen = () => {
               {counts
                 ? `${counts.all.toLocaleString('en-US')} ${counts.all === 1 ? 'subscriber' : 'subscribers'}`
                 : 'Subscribers'}
-            </span>
-            <span className={`${stkSub} lib-period`}>
-              Your leads stay yours: unlimited contacts and CSV export, free.
             </span>
           </div>
           <h1 className={stkTitle}>Leads</h1>
@@ -197,7 +194,7 @@ export const LinkLeadsScreen = () => {
         <LeadsTableSkeleton />
       ) : data.leads.length ? (
         <>
-          <section className={`${stkCard} lib-leads-table-wrap overflow-hidden`}>
+          <section className={`${stkCard} lib-leads-table-wrap min-w-0`}>
             <div className="lib-table-wrap">
               <table className="lib-table lib-leads-table">
                 <thead>

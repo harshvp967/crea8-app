@@ -215,11 +215,15 @@ const usePostActions = (onMutate?: () => void) => {
 
   const deletePost = useCallback(
     (post: any) => async () => {
+      const plain = stripHtmlValidation('none', post.content || '', false, true, false)
+        .replace(/\s+/g, ' ')
+        .trim();
+      const short = plain.length > 48 ? `${plain.slice(0, 48).trim()}…` : plain;
       if (
         !(await deleteDialog(
           t('cant_be_undone', "This can't be undone."),
           t('delete', 'Delete'),
-          t('delete_this_post', 'Delete this post?'),
+          short ? `Delete “${short}”?` : t('delete_this_post', 'Delete this post?'),
           t('cancel', 'Cancel'),
           'danger'
         ))
@@ -796,8 +800,8 @@ export const ListView = () => {
 
   if (listPosts.length === 0) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center">
-        <div className="text-textColor text-[16px]">{emptyMessage}</div>
+      <div className="cal-list-empty">
+        <p>{emptyMessage}</p>
       </div>
     );
   }
