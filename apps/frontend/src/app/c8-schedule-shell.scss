@@ -110,7 +110,12 @@
   }
 }
 
-/* Same centered column as Analytics. Calendar is not a .c8-sched-frame. */
+/* Same centered column as Analytics. Calendar uses the header and stays full width. */
+
+body.c8-schedule .c8-cal-head.c8-sched-head {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
 @media (min-width: 1200px) and (min-height: 501px) {
   .c8-sched-frame {
     width: 100%;

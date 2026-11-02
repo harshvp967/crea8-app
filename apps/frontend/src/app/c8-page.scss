@@ -26,7 +26,6 @@
     padding: 32px 32px 40px !important;
   }
 
-  body.c8-schedule .c8-cal-head,
   .stalker-screen .stk-head,
   .link-screen .lib-head,
   .analytics-screen .analytics-head,
@@ -35,7 +34,6 @@
     align-items: flex-end;
   }
 
-  body.c8-schedule .c8-cal-title,
   .stalker-screen .stk-title,
   .link-screen .stk-title,
   .analytics-screen .analytics-head h1,
@@ -49,7 +47,6 @@
 }
 
 @media (min-width: 1200px) and (min-height: 501px) {
-  body.c8-schedule .calendar-panel,
   .stalker-screen .stk-page-frame,
   .link-screen > .lib-split,
   .link-screen > .lib-settings,
