@@ -39,6 +39,8 @@ import {
   normalizeDesign,
   normalizeEvents,
   pageUrl,
+  playbackVideoUrl,
+  topLinkRows,
   paidFeatureProblem,
   parseCalendly,
   parseEmbed,
@@ -616,5 +618,33 @@ describe('link-in-bio v3 design, embeds and visitor rules', () => {
     expect(dobProblem('1990-01-01', 18, new Date('2026-10-12T00:00:00.000Z'))).toBeNull();
     expect(lockProblem({ lockType: 'CODE', password: 'open' })).toBeNull();
     expect(lockProblem({ lockType: 'SENSITIVE' })).toBeNull();
+  });
+});
+
+describe('link background sample and top links', () => {
+  const sample = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+
+  it('drops the Big Buck Bunny sample and leaves a saved video URL alone', () => {
+    expect(playbackVideoUrl(sample)).toBe('');
+    expect(playbackVideoUrl(sample.replace('http://', 'https://'))).toBe('');
+    expect(playbackVideoUrl('https://cdn.crea8.one/mine.mp4')).toBe('https://cdn.crea8.one/mine.mp4');
+    expect(playbackVideoUrl('http://cdn.crea8.one/mine.mp4')).toBe('http://cdn.crea8.one/mine.mp4');
+  });
+
+  it('omits a deleted block and does not rename a saved title', () => {
+    const rows = topLinkRows(
+      [
+        { id: 'live', title: '' },
+        { id: 'named', title: 'Deleted link' },
+      ],
+      [
+        { blockId: 'gone', clicks: 4 },
+        { blockId: 'live', clicks: 2 },
+        { blockId: 'named', clicks: 1 },
+      ]
+    );
+    expect(rows.map((row) => row.id)).toEqual(['live', 'named']);
+    expect(rows[0].title).toBe('Link');
+    expect(rows[1].title).toBe('Deleted link');
   });
 });

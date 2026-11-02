@@ -1313,6 +1313,45 @@ export function normalizeFaq(payload: unknown): FaqItem[] {
   return out;
 }
 
+const SAMPLE_BACKGROUND_VIDEO =
+  'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+
+// The Big Buck Bunny sample is not a saved video. Playing it (http or the
+// browser-upgraded https copy) fails and logs a mixed-content error.
+// Any other URL, including one the user saved, is left unchanged.
+export function playbackVideoUrl(raw: string) {
+  const value = (raw || '').trim();
+  const sample = SAMPLE_BACKGROUND_VIDEO.replace(/\/+$/, '');
+  const httpsSample = sample.replace(/^http:\/\//, 'https://');
+  if (value === sample || value === httpsSample) {
+    return '';
+  }
+  return value;
+}
+
+export function topLinkRows(
+  blocks: Array<{ id: string; title?: string | null }>,
+  clicks: Array<{ blockId?: string | null; clicks: number }>
+) {
+  const live = new Map(blocks.map((block) => [block.id, block]));
+  return clicks.flatMap((row) => {
+    if (!row.blockId) {
+      return [];
+    }
+    const block = live.get(row.blockId);
+    if (!block) {
+      return [];
+    }
+    return [
+      {
+        id: block.id,
+        title: (block.title || '').trim() || 'Link',
+        clicks: row.clicks,
+      },
+    ];
+  });
+}
+
 export function imagePathProblem(raw: string) {
   const path = (raw || '').trim();
   if (!path) {

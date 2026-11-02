@@ -82,7 +82,7 @@ export class BrandVoiceService {
     this.assertEnabled(org.id);
     const samples = cleanSamples(body.samples);
     if (samples.length < 3 || samples.length > 5) {
-      return this.empty({ error: 'Paste 3 to 5 posts.' });
+      return this.empty({ error: 'Add at least 3 of 5 posts.' });
     }
 
     if (await this._credits.aiPostBlocked(org.id)) {

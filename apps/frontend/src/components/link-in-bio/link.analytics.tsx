@@ -211,13 +211,13 @@ export const LinkAnalyticsScreen = () => {
           <button
             type="button"
             className={linkSecondary}
+            disabled={!from || !to}
             onClick={() => {
               if (linkLocked(page.data)) {
                 toast.show('A custom date range is on a paid plan', 'warning');
                 return;
               }
               if (!from || !to) {
-                toast.show('Choose a start and end date', 'warning');
                 return;
               }
               setApplied({ from, to });

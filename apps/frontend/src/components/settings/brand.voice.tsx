@@ -5,6 +5,11 @@ import useSWR from 'swr';
 import dayjs from 'dayjs';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import {
+  voiceCounterLabel,
+  voiceHelpCopy,
+  voicePostsReady,
+} from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice';
 
 type BrandVoiceResponse = {
   enabled: boolean;
@@ -67,8 +72,8 @@ export const BrandVoiceSettings = () => {
 
   const learn = useCallback(async () => {
     const samples = addPost(draft);
-    if (samples.length < 3) {
-      setError(t('brand_voice_count', 'Paste 3 to 5 posts.'));
+    if (!voicePostsReady(samples.length)) {
+      setError(t('brand_voice_count', 'Add at least 3 of 5 posts.'));
       return;
     }
     setSaving(true);
@@ -122,14 +127,11 @@ export const BrandVoiceSettings = () => {
         <div className="c8-voice-card-head">
           <h2>{t('your_posts', 'Your posts')}</h2>
           <span className="c8-voice-pill">
-            {t('posts_added', '{{count}} of 5 added', { count: Math.min(added, 5) })}
+            {t('posts_added', voiceCounterLabel(added))}
           </span>
         </div>
         <p className="c8-voice-help">
-          {t(
-            'brand_voice_help',
-            'Paste 3 to 5 posts you wrote yourself. We only read them to learn how you write, and never publish them.'
-          )}
+          {t('brand_voice_help', voiceHelpCopy())}
         </p>
         <ul className="c8-voice-posts">
           {posts.map((post, index) => (
@@ -173,7 +175,12 @@ export const BrandVoiceSettings = () => {
               'Takes about 10 seconds. Learning again replaces your current voice.'
             )}
           </p>
-          <button type="button" className="c8-voice-learn" disabled={saving} onClick={learn}>
+          <button
+            type="button"
+            className="c8-voice-learn"
+            disabled={saving || !voicePostsReady(added)}
+            onClick={learn}
+          >
             {saving ? t('learning', 'Learning…') : t('learn_my_voice', 'Learn my voice')}
           </button>
         </div>
@@ -194,7 +201,7 @@ export const BrandVoiceSettings = () => {
               )
             : t(
                 'voice_empty',
-                'Your voice profile shows up here after you learn from 3 to 5 posts.'
+                'Your voice profile shows up here after you learn from your posts.'
               )}
         </p>
         {!!voice.traits.length && (
@@ -222,6 +229,7 @@ export const BrandVoiceSettings = () => {
             role="switch"
             aria-checked={voice.enabled}
             className={voice.enabled ? 'is-on' : ''}
+            disabled={!voice.traits.length}
             onClick={toggle}
           />
         </div>

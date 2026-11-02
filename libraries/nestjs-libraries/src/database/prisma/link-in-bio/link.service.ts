@@ -69,6 +69,7 @@ import {
   youtubeChannelTarget,
   youtubeWatchEmbed,
   normalizeDesign,
+  topLinkRows,
   normalizeDetails,
   normalizeDiscount,
   normalizeEvents,
@@ -1001,13 +1002,15 @@ export class LinkService {
         window.to,
         series.map((row) => ({ day: row.day, type: row.type, count: row._count._all }))
       ),
-      links: linkClicks
-        .filter((row) => row.blockId)
-        .map((row) => ({
-          id: row.blockId || '',
-          title: record.blocks.find((block) => block.id === row.blockId)?.title || 'Deleted link',
-          clicks: row._count._all,
-        })),
+      links: topLinkRows(
+        record.blocks,
+        linkClicks
+          .filter((row) => row.blockId)
+          .map((row) => ({
+            blockId: row.blockId,
+            clicks: row._count._all,
+          }))
+      ),
       countries: countries
         .filter((row) => row.country)
         .map((row) => ({ code: row.country, views: row._count._all })),

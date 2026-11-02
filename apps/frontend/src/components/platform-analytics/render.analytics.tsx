@@ -11,6 +11,8 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
+import { throughToday } from '@gitroom/nestjs-libraries/integrations/social/insight.day';
+import { displayNow } from '@gitroom/frontend/components/layout/set.timezone';
 
 class AnalyticsLoadError extends Error {
   readonly reconnect: boolean;
@@ -41,8 +43,12 @@ function formatOverviewDate(date: string) {
   return parsed.isValid() ? parsed.format('MMM D') : date;
 }
 
-function buildOverview(items: AnalyticsDataItem[]) {
-  const withPoints = items.filter((item) => item.data?.length);
+function buildOverview(items: AnalyticsDataItem[], today: string) {
+  const clipped = items.map((item) => ({
+    ...item,
+    data: throughToday(item.data, today),
+  }));
+  const withPoints = clipped.filter((item) => item.data?.length);
   const lined = withPoints.filter(
     (item) => item.data.length >= 2 && !item.average
   );
@@ -306,27 +312,29 @@ export const RenderAnalytics: FC<{
 
   const [mode] = useCookie('mode', 'dark');
 
+  const chartDay = displayNow().format('YYYY-MM-DD');
   const totals = useMemo(() => {
     return data?.map((p: AnalyticsDataItem) => {
+      const points = throughToday(p?.data, chartDay);
       const value =
-        (p?.data.reduce(
+        (points.reduce(
           (acc: number, curr: { total: number }) =>
             acc + (Number(curr.total) || 0),
           0
-        ) || 0) / (p.average ? p.data.length : 1);
+        ) || 0) / (p.average ? points.length || 1 : 1);
       if (p.average) {
         return value.toFixed(2) + '%';
       }
       return new Intl.NumberFormat().format(Math.round(value));
     });
-  }, [data]);
+  }, [data, chartDay]);
 
   const overview = useMemo(() => {
     if (!Array.isArray(data) || data.length === 0) {
       return null;
     }
-    return buildOverview(data);
-  }, [data]);
+    return buildOverview(data, chartDay);
+  }, [data, chartDay]);
 
   if (refreshNeeded || isReconnectError(error)) {
     return (

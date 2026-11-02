@@ -3,7 +3,7 @@
 import { CSSProperties, FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { PublicLink } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
-import { eventLabel, fontStack, imagePathProblem, normalizeDesign, parseEmbed, parseRichText } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { eventLabel, fontStack, imagePathProblem, normalizeDesign, parseEmbed, parseRichText, playbackVideoUrl } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { publicSocialIconSrc } from '@gitroom/frontend/components/link-in-bio/link.load';
 
 export const linkInitials = (value: string) => {
@@ -72,9 +72,10 @@ export const LinkPublicView = ({
   }, [data.avatarPath]);
 
   const design = normalizeDesign(data.design);
+  const videoUrl = playbackVideoUrl(design.mediaUrl);
   const wallpaperMedia =
-    (design.wallpaper === 'video' || design.wallpaper === 'motion') && design.mediaUrl && !imagePathProblem(design.mediaUrl)
-      ? design.mediaUrl
+    (design.wallpaper === 'video' || design.wallpaper === 'motion') && videoUrl && !imagePathProblem(videoUrl)
+      ? videoUrl
       : '';
   const legacyImage = !design.wallpaperChosen && data.backgroundMode === 'image' && data.backgroundImage;
   const radius = design.radius < 0 ? undefined : design.radius >= 28 ? '999px' : `${design.radius}px`;

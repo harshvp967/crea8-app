@@ -11,6 +11,7 @@ import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.comp
 import { WorkspaceSwitchList } from '@gitroom/frontend/components/layout/organization.selector';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import dynamic from 'next/dynamic';
+import { creditCapacity } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 
 const sheetQuery = '(max-width: 639px), (max-height: 500px)';
 const expandedSidebarWidth = 160;
@@ -351,7 +352,12 @@ export const AccountMenu = ({
   if (!show || typeof document === 'undefined') return null;
 
   const credits = user?.billingEnabled ? user.credits : null;
-  const meter = credits ? `${credits.used}/${credits.allowance}` : null;
+  const meter = credits
+    ? `${credits.used.toLocaleString('en-US')}/${creditCapacity(
+        credits.allowance,
+        credits.packCredits
+      ).toLocaleString('en-US')}`
+    : null;
   const plan = credits
     ? user?.tier?.display_name || planLabel(user?.tier?.current)
     : planLabel(user?.tier?.current);

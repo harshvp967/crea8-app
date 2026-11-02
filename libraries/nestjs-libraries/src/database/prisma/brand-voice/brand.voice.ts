@@ -54,3 +54,20 @@ export function activeVoice(
 export function cleanSamples(samples: string[]): string[] {
   return (samples || []).map((sample) => sample.trim()).filter(Boolean);
 }
+
+export const BRAND_VOICE_REQUIRED = 3;
+export const BRAND_VOICE_LIMIT = 5;
+
+export function voicePostsReady(count: number) {
+  return count >= BRAND_VOICE_REQUIRED && count <= BRAND_VOICE_LIMIT;
+}
+
+export function voiceCounterLabel(count: number) {
+  const shown = Math.max(0, Math.min(Math.trunc(count) || 0, BRAND_VOICE_LIMIT));
+  return `${shown} of ${BRAND_VOICE_LIMIT} added`;
+}
+
+// The counter is "0 of 5". The help must use that same 5, not "Paste 3 to 5".
+export function voiceHelpCopy() {
+  return 'Paste posts you wrote yourself, up to 5. We only read them to learn how you write, and never publish them.';
+}

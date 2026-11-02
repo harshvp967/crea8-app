@@ -1,4 +1,10 @@
-import { activeVoice, cleanSamples } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice';
+import {
+  activeVoice,
+  cleanSamples,
+  voiceCounterLabel,
+  voiceHelpCopy,
+  voicePostsReady,
+} from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice';
 import { ForbiddenException } from '@nestjs/common';
 import { BrandVoiceService } from '@gitroom/nestjs-libraries/database/prisma/brand-voice/brand.voice.service';
 
@@ -43,6 +49,16 @@ describe('brand voice', () => {
         }),
       })
     ).toContain('Friendly');
+  });
+
+  it('keeps Learn my voice off until 3 of 5 posts, and the help matches the counter', () => {
+    expect(voicePostsReady(0)).toBe(false);
+    expect(voicePostsReady(2)).toBe(false);
+    expect(voicePostsReady(3)).toBe(true);
+    expect(voicePostsReady(5)).toBe(true);
+    expect(voiceCounterLabel(0)).toBe('0 of 5 added');
+    expect(voiceHelpCopy()).not.toContain('Paste 3 to 5');
+    expect(voiceHelpCopy()).toContain('5');
   });
 
   it('keeps three to five non-empty samples', () => {

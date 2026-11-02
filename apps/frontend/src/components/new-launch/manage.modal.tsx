@@ -19,6 +19,7 @@ import { ShowAllProviders } from '@gitroom/frontend/components/new-launch/provid
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
+import { postComposerChrome, setComposerChrome } from '@gitroom/frontend/components/sets/set.form';
 import { useShallow } from 'zustand/react/shallow';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 import { TagsComponent } from '@gitroom/frontend/components/launches/tags.component';
@@ -239,6 +240,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
 
   const { addEditSets, mutate, customClose, dummy, saveToDraft } = props;
+  const composerChrome = addEditSets
+    ? setComposerChrome(!!props.set)
+    : postComposerChrome();
+  const showDate = composerChrome.showDate;
+  const showRepeat = composerChrome.showRepeat && !dummy;
+  const heading = addEditSets
+    ? composerChrome.title
+    : existingData?.integration
+      ? t('edit_post_title', 'Edit post')
+      : t('create_post_title', composerChrome.title);
   const baselineRef = useRef<string | null>(null);
   const runSaveRef = useRef<() => Promise<void>>(async () => undefined);
 
@@ -1282,9 +1293,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         <div className="arc-grab composer-grab" aria-hidden />
         <div className="composer-tabs" role="tablist">
           <span className="composer-tabs-title">
-            {existingData?.integration
-              ? t('edit_post_title', 'Edit post')
-              : t('create_post_title', 'Create Post')}
+            {heading}
           </span>
           <SegmentedControl
             variant="pill"
@@ -1311,9 +1320,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         <div className="composer-split flex-1 flex min-h-0">
           <div className="composer-editor flex flex-col flex-1 border-e border-newBorder min-w-0">
             <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center gap-[12px] px-[20px] text-[20px] font-[600]">
-              {existingData?.integration
-                ? t('edit_post_title', 'Edit post')
-                : t('create_post_title', 'Create Post')}
+              {heading}
               <CreationMethodBadge
                 creationMethod={existingData?.posts?.[0]?.creationMethod}
                 size="sm"
@@ -1452,7 +1459,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               />
             )}
 
-            {!dummy && (
+            {showRepeat && (
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
             )}
           </div>
@@ -1468,7 +1475,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 <span>{t('delete_post', 'Delete post')}</span>
               </button>
             )}
-            <DatePicker onChange={setPickerDate} date={pickerDate} />
+            {showDate && (
+              <DatePicker onChange={setPickerDate} date={pickerDate} />
+            )}
             {!addEditSets && !saveToDraft && (
               <button
                 disabled={

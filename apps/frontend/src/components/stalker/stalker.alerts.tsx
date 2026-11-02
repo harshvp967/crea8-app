@@ -25,6 +25,7 @@ import {
   SAMPLE_KEYWORDS,
   SAMPLE_RULES,
 } from '@gitroom/frontend/components/stalker/stalker.sample';
+import { newAlertDraft } from '@gitroom/frontend/components/stalker/alert.form';
 import {
   stkCard,
   stkClose,
@@ -117,7 +118,7 @@ export const StalkerAlerts = () => {
   const [creating, setCreating] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [removeId, setRemoveId] = useState<string | null>(null);
-  const [name, setName] = useState('Negative X posts with traction');
+  const [name, setName] = useState(newAlertDraft().name);
   const [filters, setFilters] = useState<MentionFilters>(emptyFilters());
   const [saving, setSaving] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
@@ -323,7 +324,7 @@ export const StalkerAlerts = () => {
 
   const openNew = () => {
     setDraftId(null);
-    setName('Negative X posts with traction');
+    setName(newAlertDraft().name);
     setFilters(emptyFilters());
     setCreating(true);
   };
@@ -670,7 +671,7 @@ export const StalkerAlerts = () => {
                 onClick={createRule}
               >
                 {saving ? null : <PlusIcon />}
-                {saving ? 'Saving…' : draftId ? 'Save alert' : 'New alert'}
+                {saving ? 'Saving…' : draftId ? 'Save alert' : newAlertDraft().saveLabel}
               </button>
             </div>
           </div>
