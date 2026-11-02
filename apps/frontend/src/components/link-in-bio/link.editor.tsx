@@ -900,6 +900,12 @@ export const LinkEditorScreen = () => {
             <h1 className={stkTitle}>Editor</h1>
           </div>
           <div className="lib-head-actions">
+            {preview ? null : (
+              <button type="button" className={`${linkPrimary} lib-preview-fab`} onClick={() => setPreview(true)}>
+                <HugeIcon name="eye" size={18} />
+                Preview
+              </button>
+            )}
             <div className="lib-add-slot lib-add-slot-head relative">
               <button
                 type="button"
@@ -1273,12 +1279,6 @@ export const LinkEditorScreen = () => {
               </div>
             </article>
           ))
-        )}
-        {preview ? null : (
-          <button type="button" className={`${linkPrimary} lib-preview-fab`} onClick={() => setPreview(true)}>
-            <HugeIcon name="eye" size={18} />
-            Preview
-          </button>
         )}
       </div>
 

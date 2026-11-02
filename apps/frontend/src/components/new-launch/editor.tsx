@@ -390,11 +390,15 @@ export const EditorWrapper: FC<{
 
   const deletePost = useCallback(
     (index: number) => async () => {
+      const source = internal ? internal.integrationValue : global;
+      const raw = source?.[index]?.content;
+      const plain = typeof raw === 'string' ? raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+      const short = plain.length > 48 ? `${plain.slice(0, 48).trim()}…` : plain;
       if (
         !(await deleteDialog(
           t('cant_be_undone', "This can't be undone."),
           t('delete', 'Delete'),
-          t('delete_this_post', 'Delete this post?'),
+          short ? `Delete “${short}”?` : t('delete_this_post', 'Delete this post?'),
           t('cancel', 'Cancel'),
           'danger'
         ))

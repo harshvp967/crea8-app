@@ -188,7 +188,6 @@ export const StalkerSettings = () => {
       <section className={`${stkCard} stk-set-card`}>
         <label className="stk-set-label">
           Name
-          <span>The display name for this project.</span>
           <input
             className={field}
             value={draft.name}
@@ -197,7 +196,6 @@ export const StalkerSettings = () => {
         </label>
         <label className="stk-set-label">
           Description
-          <span>A short summary of what you&apos;re monitoring.</span>
           <input
             className={field}
             value={draft.description}
@@ -206,7 +204,6 @@ export const StalkerSettings = () => {
         </label>
         <div className="stk-set-label">
           <p>Colour</p>
-          <span>A visual cue for this project in the bar.</span>
           <div className="stk-set-swatches">
             {swatches.map((swatch) => (
               <button
@@ -332,8 +329,6 @@ export const StalkerSettings = () => {
             <p className="stk-set-share">
               <a href={sharePath}>{sharePath}</a>
             </p>
-          ) : draft.publicDashboard ? (
-            <p className="stk-set-note">The public link appears after you save.</p>
           ) : null}
         </div>
         <button
@@ -392,7 +387,7 @@ export const StalkerSettings = () => {
               </span>
               <div className="min-w-0">
                 <h2 id="stk-del-title" className="text-[18px] font-[600]">
-                  Delete project?
+                  {project.name ? `Delete “${project.name}”?` : 'Delete project?'}
                 </h2>
                 <p className="mt-[4px] text-[14px] leading-[1.45] text-textItemBlur">
                   “{project.name}” with all keywords, alerts and mentions will be removed.
@@ -401,10 +396,10 @@ export const StalkerSettings = () => {
             </div>
             <div className={`${stkDialogFoot} stk-del-foot`}>
               <button type="button" className={stkSecondary} onClick={() => setConfirmDelete(false)}>
-                No, cancel
+                Cancel
               </button>
               <button type="button" className={stkDanger} onClick={remove}>
-                Yes, delete it
+                Delete
               </button>
             </div>
           </div>

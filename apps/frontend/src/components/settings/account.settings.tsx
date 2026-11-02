@@ -516,7 +516,7 @@ const AccountSecurity = () => {
         </div>
         <div className="settings-row">
           <div className="settings-row-title">{t('log_out', 'Log out')}</div>
-          <div className="settings-nav-foot">
+          <div className="c8-account-logout-btn">
             <LogoutComponent label={t('log_out', 'Log out')} />
           </div>
         </div>

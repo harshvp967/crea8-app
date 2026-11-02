@@ -1348,10 +1348,10 @@ body:has(.integrations-screen) .sheet-backdrop:not(.more-backdrop),
 body:has(.settings-screen) .sheet-backdrop:not(.more-backdrop),
 body:has(.stalker-screen) .sheet-backdrop:not(.more-backdrop),
 body:has(.link-screen) .sheet-backdrop:not(.more-backdrop) {
-  background: var(--c8-hard) !important;
+  background: var(--c8-scrim) !important;
   background-image: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
 }
 
 body:has(.agent-workspace) .sheet-backdrop.more-backdrop,
@@ -1709,7 +1709,7 @@ body:has(.link-screen) .mobile-sheet {
   body:has(.settings-screen) .sheet-backdrop:not(.more-backdrop),
   body:has(.stalker-screen) .sheet-backdrop:not(.more-backdrop),
   body:has(.link-screen) .sheet-backdrop:not(.more-backdrop) {
-    background: var(--c8-hard) !important;
+    background: var(--c8-scrim) !important;
   }
 
   body:has(.agent-workspace) .sheet-backdrop.more-backdrop,

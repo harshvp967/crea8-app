@@ -438,11 +438,12 @@ export const MediaBox: FC<{
   const deleteImage = useCallback(
     (media: Media) => async (e: any) => {
       e.stopPropagation();
+      const fileName = (media.originalName || media.name || '').trim();
       if (
         !(await deleteDialog(
           t('cant_be_undone', "This can't be undone."),
           t('delete', 'Delete'),
-          t('delete_this_image', 'Delete this image?'),
+          fileName ? `Delete “${fileName}”?` : t('delete_this_image', 'Delete this image?'),
           t('cancel', 'Cancel')
         ))
       ) {

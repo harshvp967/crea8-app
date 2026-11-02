@@ -896,9 +896,29 @@ body.c8-schedule .phone-day-strip button.arc-selected {
     display: none !important;
   }
 
+  /* display:contents on these boxes sticks after a resize back to desktop. */
   .c8-frame,
   .c8-main {
-    display: contents;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 640px) and (min-height: 501px) {
+  .c8-frame {
+    display: flex !important;
+    flex-direction: row !important;
+  }
+
+  .c8-main {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .c8-sidebar {
+    display: flex !important;
   }
 }
 
@@ -3089,13 +3109,19 @@ body.c8-schedule .arc-dialog-wrap {
 }
 
 body.c8-schedule .channels-scrim,
-body.c8-schedule .sheet-backdrop:not(.more-backdrop),
 body.c8-schedule .bg-c8-scrim,
 body.c8-schedule .bg-c8-scrim-sheet {
   background: var(--c8-hard) !important;
   background-image: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+body.c8-schedule .sheet-backdrop:not(.more-backdrop) {
+  background: var(--c8-scrim) !important;
+  background-image: none !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
 }
 
 body.c8-schedule .sheet-backdrop.more-backdrop {
@@ -3495,7 +3521,7 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
   body.c8-schedule .sheet-backdrop {
     display: block !important;
     z-index: 72;
-    background: var(--c8-hard) !important;
+    background: var(--c8-scrim) !important;
   }
 
   body.c8-schedule .sheet-backdrop.more-backdrop {
@@ -7000,4 +7026,121 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[role='radio'][aria-checked='true
     margin-inline: 0 !important;
     padding: 10px 8px !important;
   }
+}
+
+body.c8-schedule .cal-list-empty {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 32px 16px;
+  color: var(--c8-ink);
+  text-align: center;
+}
+
+body.c8-schedule .cal-list-empty p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 1024: dock the channels column beside the list. An 88px rail clips "Channels". */
+@media (min-width: 1024px) and (max-width: 1199px) and (min-height: 501px) {
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: flex !important;
+    width: 240px !important;
+    height: 100% !important;
+    max-height: 100%;
+    margin: 0 !important;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) > div {
+    align-items: stretch !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) h2 {
+    width: auto !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    text-align: start !important;
+    white-space: nowrap !important;
+    font-size: 18px !important;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) .channel-meta {
+    display: block !important;
+  }
+
+  body.c8-schedule .channel-rail:not(.is-open):not(.sidebar) .channel-row {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    margin-inline: 0 !important;
+    overflow: visible !important;
+  }
+}
+
+/* Resize-up: a stale tablet rule must not keep the icon sidebar or the floating rail. */
+html[data-c8-bp='desktop'] .c8-sidebar {
+  --c8-side-w: 256px !important;
+  width: 256px !important;
+  align-items: stretch !important;
+  padding: 24px 20px 20px !important;
+}
+
+html[data-c8-bp='desktop'] .c8-side-logo-word,
+html[data-c8-bp='desktop'] .c8-side-kicker,
+html[data-c8-bp='desktop'] .c8-side-text,
+html[data-c8-bp='desktop'] .c8-side-lock,
+html[data-c8-bp='desktop'] .c8-side-user-copy,
+html[data-c8-bp='desktop'] .c8-side-link .c8-side-dot,
+html[data-c8-bp='desktop'] .c8-side-logo .c8-side-dot {
+  display: unset !important;
+}
+
+html[data-c8-bp='desktop'] .c8-side-mark {
+  display: none !important;
+}
+
+html[data-c8-bp='desktop'] .c8-side-logo,
+html[data-c8-bp='desktop'] .c8-side-apps,
+html[data-c8-bp='desktop'] .c8-side-nav,
+html[data-c8-bp='desktop'] .c8-side-foot {
+  width: 100% !important;
+  align-items: stretch !important;
+}
+
+html[data-c8-bp='desktop'] .c8-side-apps,
+html[data-c8-bp='desktop'] .c8-side-nav {
+  flex-direction: column !important;
+}
+
+html[data-c8-bp='desktop'] .c8-side-foot {
+  flex-direction: row !important;
+}
+
+html[data-c8-bp='desktop'] .c8-side-app,
+html[data-c8-bp='desktop'] .c8-side-link {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 40px !important;
+  justify-content: flex-start !important;
+  padding: 6px 8px !important;
+}
+
+html[data-c8-bp='desktop'] body.c8-schedule .channel-rail:not(.is-open) {
+  position: relative !important;
+  inset: auto !important;
+  z-index: auto !important;
+  display: flex !important;
+  width: 236px !important;
+}
+
+html[data-c8-bp='desktop'] body.c8-schedule .channel-rail.sidebar:not(.is-open) {
+  width: 72px !important;
 }

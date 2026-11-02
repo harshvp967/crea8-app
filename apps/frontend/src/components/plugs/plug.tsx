@@ -137,7 +137,7 @@ export const PlugPop: FC<{
     <FormProvider {...form}>
       <form className="plugs-form" onSubmit={form.handleSubmit(submit)}>
         <div className="relative mx-auto">
-          <div className="plugs-modal-copy">{plug.description}</div>
+          <div className="plugs-modal-copy">{plug.description.split('so you followers').join('so your followers')}</div>
           <div>
             {plug.fields.map((field) => (
               <div key={field.name}>
@@ -230,7 +230,7 @@ export const PlugItem: FC<{
           </div>
         )}
       </div>
-      <p>{plug.description}</p>
+      <p>{plug.description.split('so you followers').join('so your followers')}</p>
       {plug.fields
         .filter((field) => field.type !== 'richtext')
         .map((field) => (

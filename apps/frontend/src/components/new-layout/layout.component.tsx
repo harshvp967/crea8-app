@@ -1,7 +1,7 @@
 'use client';
 
 import { csrfHeaders } from '@gitroom/helpers/utils/custom.fetch.func';
-import React, { ReactNode, useCallback, useEffect, useRef } from 'react';
+import React, { ReactNode, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
@@ -93,6 +93,28 @@ const HeaderAvatar = ({
   );
 };
 
+const useShellBreakpoint = () => {
+  useLayoutEffect(() => {
+    const desktop = window.matchMedia('(min-width: 1200px) and (min-height: 501px)');
+    const phone = window.matchMedia('(max-width: 639px), (max-height: 500px)');
+    const apply = () => {
+      const next = phone.matches ? 'phone' : desktop.matches ? 'desktop' : 'tablet';
+      if (document.documentElement.dataset.c8Bp !== next) {
+        document.documentElement.dataset.c8Bp = next;
+      }
+    };
+    apply();
+    desktop.addEventListener('change', apply);
+    phone.addEventListener('change', apply);
+    window.addEventListener('resize', apply);
+    return () => {
+      desktop.removeEventListener('change', apply);
+      phone.removeEventListener('change', apply);
+      window.removeEventListener('resize', apply);
+    };
+  }, []);
+};
+
 const startupQuery = {
   revalidateOnFocus: false,
   revalidateOnReconnect: false,
@@ -114,6 +136,7 @@ const jakartaSans = Plus_Jakarta_Sans({
 // Painted on the server, before /user/self returns. The signed-in shell used
 // to be `return null`, so the first HTML was only the dark body background.
 export const AppShellSkeleton = () => {
+  useShellBreakpoint();
   const accountMenu = useAccountMenu();
   return (
     <div
@@ -154,6 +177,7 @@ export const AppShellSkeleton = () => {
 };
 
 export const LayoutComponent = ({ children }: { children: ReactNode }) => {
+  useShellBreakpoint();
   const fetch = useFetch();
 
   const { backendUrl, billingEnabled, isGeneral } = useVariables();

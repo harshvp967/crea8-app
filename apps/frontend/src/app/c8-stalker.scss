@@ -2572,7 +2572,8 @@ body:has(.stalker-screen) .stk-dialog-foot {
   }
 
   .stalker-screen .stk-set-label input {
-    max-width: 360px;
+    width: 100%;
+    max-width: none;
   }
 }
 

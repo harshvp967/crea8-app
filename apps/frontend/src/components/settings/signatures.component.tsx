@@ -41,12 +41,14 @@ export const SignaturesComponent: FC<{
   );
 
   const deleteSignature = useCallback(
-    (row: { id: string }) => async () => {
+    (row: { id: string; content?: string }) => async () => {
+      const text = String(row.content || '').replace(/\s+/g, ' ').trim();
+      const short = text.length > 48 ? `${text.slice(0, 48).trim()}…` : text;
       if (
         !(await deleteDialog(
           t('cant_be_undone', "This can't be undone."),
           t('delete', 'Delete'),
-          t('delete_this_signature', 'Delete this signature?'),
+          short ? `Delete “${short}”?` : t('delete_this_signature', 'Delete this signature?'),
           t('cancel', 'Cancel')
         ))
       ) {
@@ -81,12 +83,6 @@ export const SignaturesComponent: FC<{
       <div className="settings-head">
         <div>
           <h2>{t('signatures', 'Signatures')}</h2>
-          <p>
-            {t(
-              'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',
-              'You can add signatures to your account to be used in your posts.'
-            )}
-          </p>
         </div>
         <Button onClick={addSignature()}>
           <span className="sig-plus" aria-hidden="true">+</span>

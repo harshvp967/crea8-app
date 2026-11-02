@@ -2170,11 +2170,26 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   overflow-y: hidden !important;
   overscroll-behavior-x: contain;
   border-radius: 999px !important;
-  scrollbar-width: none;
+  padding-inline-end: 8px;
+  scrollbar-width: thin;
 }
 
 .account-screen.settings-screen .settings-settabs.c8-seg::-webkit-scrollbar {
-  display: none;
+  display: block;
+  height: 4px;
+}
+
+.account-screen .c8-account-logout-btn .text-red-400 {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--c8-danger);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c8-danger);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .account-screen.settings-screen .settings-settabs.c8-seg > [role='radio'] {
