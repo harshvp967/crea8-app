@@ -509,4 +509,200 @@
     overflow-wrap: break-word;
     word-break: normal;
   }
+
+  body.c8-schedule .c8-week > .relative {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  body.c8-schedule .month-cell .cal-post {
+    min-height: 28px;
+  }
+
+  body.c8-schedule .month-cell .cal-show-more-short,
+  body.c8-schedule .month-cell .cal-post-body {
+    font-size: 12px;
+  }
+
+  .settings-screen .settings-item.cols-sig {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .settings-screen .cols-sig .settings-copy,
+  .settings-screen .cols-sig .settings-ellipsis {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .settings-screen .cols-sig .settings-mini,
+  .settings-screen .cols-sig .settings-danger {
+    min-height: 44px;
+  }
+
+  .stalker-screen .stk-analytics .stk-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-inline-end: 28px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  body:has(.link-screen) .lib-dialog .stk-dialog-body {
+    overflow-x: hidden;
+    padding-inline-end: 16px;
+  }
+
+  body:has(.link-screen) .lib-dialog input,
+  body:has(.link-screen) .lib-dialog textarea,
+  body:has(.link-screen) .lib-dialog select {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* Tablet 640–1199: keep the active account tab on screen, and give Schedule room. */
+@media (max-width: 1199px) {
+  .account-screen .settings-settabs.c8-seg {
+    padding-inline-end: 28px;
+    scroll-padding-inline-end: 28px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+
+  .account-screen .settings-settabs.c8-seg > [role='radio'],
+  .settings-screen .settings-settabs .settings-tab,
+  .settings-screen .settings-settabs.c8-seg > [role='radio'] {
+    min-height: 44px;
+  }
+
+  .c8-side-app,
+  .c8-side-link,
+  .c8-shell .c8-side-foot .arc-icon-btn,
+  body.c8-schedule .c8-side-foot > .relative {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .link-screen .lib-preview-as-summary {
+    max-width: 100% !important;
+    height: 44px;
+    min-height: 44px;
+    overflow: hidden;
+    white-space: nowrap !important;
+  }
+
+  .link-screen .lib-preview-tools button {
+    min-height: 44px !important;
+    padding: 8px 12px !important;
+  }
+
+  .link-screen .lib-editor-page {
+    padding-bottom: 96px;
+  }
+
+  .stalker-screen .stk-heat > span:nth-child(n + 2):nth-child(-n + 13) {
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  .stalker-screen .stk-heat > span:nth-child(n + 2):nth-child(-n + 13):not(:nth-child(2)):not(:nth-child(5)):not(:nth-child(8)):not(:nth-child(11)) {
+    visibility: hidden;
+  }
+
+  .settings-screen .settings-main,
+  .settings-screen .settings-section,
+  .account-screen .settings-detail {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .channel-rail.sidebar:not(.is-open) {
+    display: none !important;
+    width: 0 !important;
+  }
+
+  body.c8-schedule .channel-rail.sidebar.is-open {
+    width: min(240px, 40vw) !important;
+  }
+
+  body.c8-schedule .channel-rail .channel-row > .cursor-pointer {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  body.c8-schedule .app-main {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      'head'
+      'actions'
+      'filters'
+      'well' !important;
+  }
+
+  body.c8-schedule .filters-bar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px !important;
+  }
+
+  body.c8-schedule .filters-bar .date-range {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: nowrap !important;
+  }
+
+  body.c8-schedule .filters-bar .cal-mode {
+    flex: 1 1 auto;
+    margin-inline: 0 !important;
+    order: 2;
+  }
+
+  body.c8-schedule .week-grid {
+    grid-template-columns: 48px repeat(7, minmax(64px, 1fr));
+  }
+
+  body.c8-schedule .week-cell .line-clamp-2,
+  body.c8-schedule .week-cell .cal-chip-when,
+  body.c8-schedule .month-cell .cal-post-body {
+    font-size: 12px !important;
+  }
+
+  .link-screen .lib-leads-table-wrap {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .link-screen .lib-leads-cards {
+    display: none;
+  }
+
+  .link-screen .lib-leads-table {
+    table-layout: auto;
+    min-width: 680px;
+  }
+
+  .link-screen .lib-leads-table th,
+  .link-screen .lib-leads-table td {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: nowrap;
+  }
+
+  .c8-composer .composer-frame {
+    min-height: calc(100dvh - 120px);
+    align-items: stretch;
+  }
+
+  .account-screen .settings-group .settings-row > button,
+  .account-screen .settings-group .settings-nav-foot {
+    width: 100%;
+    justify-content: center;
+  }
 }
