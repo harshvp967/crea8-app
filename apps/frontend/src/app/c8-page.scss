@@ -185,8 +185,7 @@
     background: transparent !important;
   }
 
-  body:has(.link-screen) .lib-modal.lib-anchored .lib-dialog,
-  body:has(.link-screen) .lib-modal.lib-anchored:has(.lib-block-sheet) .lib-dialog {
+  body:has(.link-screen) .lib-modal.lib-anchored .lib-dialog {
     position: fixed !important;
     top: var(--lib-pop-top) !important;
     right: var(--lib-pop-right) !important;
@@ -196,6 +195,20 @@
     max-width: min(280px, calc(100vw - 24px)) !important;
     max-height: min(70dvh, calc(100dvh - var(--lib-pop-top) - 16px)) !important;
     margin: 0 !important;
+  }
+
+  /* Block action menu sizes to its labels, then shifts back inside the viewport. */
+  body:has(.link-screen) .lib-modal.lib-anchored:has(.lib-block-sheet) .lib-dialog {
+    right: max(12px, var(--lib-pop-right)) !important;
+    width: max-content !important;
+    max-width: calc(100dvw - 24px) !important;
+    overflow-x: clip !important;
+    overflow-y: auto !important;
+    transform: translateX(max(0px, calc(max(12px, var(--lib-pop-right)) + 100% + 12px - 100dvw)));
+  }
+
+  body:has(.link-screen) .lib-modal.lib-anchored:has(.lib-block-sheet) .lib-dialog .stk-dialog-body {
+    overflow-x: clip !important;
   }
 
   body:has(.link-screen) .lib-modal.lib-anchored[data-flip='true'] .lib-dialog {

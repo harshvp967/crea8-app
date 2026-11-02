@@ -65,7 +65,7 @@ export const stkClose =
   'ms-auto flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[12px] border border-newBorder bg-newBoxHover text-[16px] leading-none text-textItemBlur hover:text-newTextColor stk-close';
 
 export const stkMenu =
-  'z-30 rounded-[22px] border border-newBorder bg-[var(--arc-raised)] p-[5px] shadow-[var(--arc-shadow-floating)] stk-menu';
+  'z-30 w-max max-w-[calc(100dvw-24px)] [overflow-x:clip] rounded-[22px] border border-newBorder bg-[var(--arc-raised)] p-[5px] shadow-[var(--arc-shadow-floating)] stk-menu';
 
 export const stkMenuItem =
   'flex min-h-[38px] w-full items-center gap-[10px] rounded-[16px] px-[11px] py-[6px] text-start text-[14px] font-[500] text-newTextColor hover:bg-newBoxHover stk-menu-item';
@@ -93,7 +93,7 @@ export const stkRow =
   'flex items-center gap-[12px] rounded-[14px] border border-newTableBorder bg-[var(--arc-raised)] px-[12px] py-[10px] text-[14px] stk-row';
 
 export const stkPopover =
-  'stk-pop absolute start-0 z-20 mt-[8px] rounded-[24px] border border-newBorder bg-[var(--arc-raised)] p-[14px] shadow-[var(--arc-shadow-floating)] stk-popover';
+  'stk-pop absolute start-0 z-20 mt-[8px] w-max max-w-[calc(100dvw-24px)] [overflow-x:clip] rounded-[24px] border border-newBorder bg-[var(--arc-raised)] p-[14px] shadow-[var(--arc-shadow-floating)] stk-popover';
 
 export const stkBar =
   'stk-wave sticky bottom-[12px] z-10 flex flex-wrap items-center justify-between gap-[8px] rounded-[20px] border px-[16px] py-[12px] shadow-[var(--arc-shadow-resting)] stk-bar';

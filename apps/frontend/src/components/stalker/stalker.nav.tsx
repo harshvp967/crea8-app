@@ -202,7 +202,7 @@ export const StalkerTopNav = ({
           <HugeIcon name="chevron-down" size={16} className="text-textItemBlur" />
         </button>
         {open ? (
-          <div className={`${stkMenu} stk-proj-menu absolute start-0 top-[calc(100%+8px)] overflow-hidden`} role="listbox">
+          <div className={`${stkMenu} stk-proj-menu absolute start-0 top-[calc(100%+8px)]`} role="listbox">
             <StalkerProjectMenu onPick={() => setOpen(false)} />
           </div>
         ) : null}
@@ -277,7 +277,7 @@ export const StalkerTopNav = ({
             {moreOpen ? (
               <div
                 role="menu"
-                className={`${stkMenu} absolute end-0 top-[calc(100%+8px)] w-[200px]`}
+                className={`${stkMenu} absolute end-0 top-[calc(100%+8px)] min-w-[200px]`}
               >
                 {links.map((link, index) => {
                   if (visible.includes(index)) {

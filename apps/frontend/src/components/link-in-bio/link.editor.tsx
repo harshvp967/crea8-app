@@ -1218,12 +1218,12 @@ export const LinkEditorScreen = () => {
                 {menu === block.id ? (
                   <LinkModal anchor={sheetAnchor} title={blockName(block)} onClose={() => { setMenu(''); setConfirmId(''); setSheetAnchor(null); }}>
                   <div className="lib-block-sheet">
-                    <div className="lib-block-move">
-                      <button type="button" className={linkSecondary} disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
+                    <div className="lib-block-move flex w-full min-w-0">
+                      <button type="button" className={`${linkSecondary} !min-w-0 !flex-1 !basis-0 whitespace-nowrap !px-[12px] disabled:!opacity-100`} disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
                         <HugeIcon name="chevron-up" size={16} />
                         Move up
                       </button>
-                      <button type="button" className={linkSecondary} disabled={busy || index === data.blocks.length - 1} onClick={() => move(block.id, 1)}>
+                      <button type="button" className={`${linkSecondary} !min-w-0 !flex-1 !basis-0 whitespace-nowrap !px-[12px] disabled:!opacity-100`} disabled={busy || index === data.blocks.length - 1} onClick={() => move(block.id, 1)}>
                         <HugeIcon name="chevron-down" size={16} />
                         Move down
                       </button>

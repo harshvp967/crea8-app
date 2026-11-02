@@ -750,6 +750,13 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .stalker-screen .stk-popover,
+.stalker-screen .stk-menu {
+  width: max-content;
+  max-width: calc(100dvw - 24px);
+  overflow-x: clip;
+}
+
+.stalker-screen .stk-popover,
 .stalker-screen .stk-date-pop,
 .stalker-screen .stk-save-pop {
   padding: 14px !important;
@@ -759,7 +766,10 @@ $c8-body: var(--font-body), Inter, sans-serif;
   right: 0;
   left: auto;
   display: flex;
-  width: 320px;
+  width: max-content;
+  min-width: min(320px, calc(100dvw - 24px));
+  max-width: calc(100dvw - 24px);
+  overflow-x: clip;
   flex-direction: column;
   gap: 10px;
 }
@@ -893,7 +903,7 @@ $c8-body: var(--font-body), Inter, sans-serif;
   color: var(--c8-ink) !important;
   flex-wrap: nowrap;
   min-width: 0;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .stalker-screen .stk-menu-hint {
@@ -966,7 +976,9 @@ $c8-body: var(--font-body), Inter, sans-serif;
 }
 
 .stalker-screen .stk-check-pop {
-  width: min(280px, calc(100vw - 32px));
+  width: max-content;
+  max-width: calc(100dvw - 24px);
+  overflow-x: clip;
   padding: 14px 16px !important;
   text-align: start;
 }
@@ -1004,7 +1016,10 @@ $c8-body: var(--font-body), Inter, sans-serif;
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  width: 220px;
+  width: max-content;
+  min-width: min(220px, calc(100dvw - 24px));
+  max-width: calc(100dvw - 24px);
+  overflow-x: clip;
 }
 
 .stalker-screen .stk-proj-label {
@@ -1346,7 +1361,10 @@ body:has(.stalker-screen) .stk-dialog-foot {
   z-index: 40;
   top: calc(100% + 6px);
   right: 0;
-  width: 248px;
+  width: max-content;
+  min-width: min(248px, calc(100dvw - 24px));
+  max-width: calc(100dvw - 24px);
+  overflow-x: clip;
   text-align: start;
 }
 
@@ -1930,7 +1948,8 @@ body:has(.stalker-screen) .stk-dialog-foot {
     left: 0;
     width: auto;
     max-height: 80vh;
-    overflow: auto;
+    overflow-x: clip;
+    overflow-y: auto;
     margin: 0;
     border-width: 1.5px 0 0 !important;
     border-radius: 28px 28px 0 0 !important;
@@ -2274,7 +2293,10 @@ body:has(.stalker-screen) .stk-dialog-foot {
   z-index: 40;
   top: calc(100% + 6px);
   right: 0;
-  width: 248px;
+  width: max-content;
+  min-width: min(248px, calc(100dvw - 24px));
+  max-width: calc(100dvw - 24px);
+  overflow-x: clip;
   text-align: start;
 }
 
@@ -2617,7 +2639,8 @@ body:has(.stalker-screen) .stk-dialog-foot {
     left: 0;
     width: auto;
     max-height: 80vh;
-    overflow: auto;
+    overflow-x: clip;
+    overflow-y: auto;
     margin: 0;
     border-width: 1.5px 0 0 !important;
     border-radius: 28px 28px 0 0 !important;
@@ -2740,7 +2763,9 @@ body:has(.stalker-screen) .stk-dialog-foot {
     right: auto !important;
     bottom: auto !important;
     left: 0 !important;
-    width: min(320px, calc(100vw - 64px)) !important;
+    width: max-content !important;
+    max-width: calc(100dvw - 24px) !important;
+    overflow-x: clip !important;
     max-height: none;
   }
 
@@ -2862,7 +2887,8 @@ body:has(.stalker-screen) .stk-dialog-foot {
     width: auto !important;
     max-height: 80vh;
     margin: 0 !important;
-    overflow: auto;
+    overflow-x: clip;
+    overflow-y: auto;
     border-width: 1.5px 0 0 !important;
     border-radius: 28px 28px 0 0 !important;
     box-shadow: none !important;
@@ -2983,10 +3009,11 @@ body:has(.stalker-screen) .stk-dialog-foot {
     right: auto !important;
     bottom: auto !important;
     left: 0 !important;
-    width: min(280px, 100%) !important;
-    max-width: 100%;
+    width: max-content !important;
+    max-width: calc(100dvw - 24px);
     max-height: min(420px, calc(100dvh - 180px));
-    overflow: auto;
+    overflow-x: clip;
+    overflow-y: auto;
   }
 
   .stalker-screen .stk-filters .stk-date-pop {
@@ -3002,15 +3029,20 @@ body:has(.stalker-screen) .stk-dialog-foot {
   left: var(--stk-pop-left) !important;
   right: auto !important;
   bottom: auto !important;
-  width: var(--stk-pop-width) !important;
-  max-width: none !important;
+  width: max-content !important;
+  max-width: min(var(--stk-pop-width), calc(100dvw - 16px)) !important;
   max-height: var(--stk-pop-max) !important;
   margin: 0 !important;
   transform: none !important;
   z-index: 90 !important;
-  overflow: auto !important;
+  overflow-x: clip !important;
+  overflow-y: auto !important;
   border-width: 1.5px !important;
   border-radius: 20px !important;
   box-shadow: 0 6px 0 var(--c8-hard) !important;
   padding: 14px !important;
+}
+
+.stalker-screen .stk-filter-pop.stk-date-pop {
+  width: min(var(--stk-pop-width), calc(100dvw - 16px)) !important;
 }

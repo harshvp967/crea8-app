@@ -163,7 +163,7 @@ export const LinkTopNav = () => {
             <HugeIcon name="chevron-down" size={16} />
           </button>
           {moreOpen ? (
-            <div role="menu" className={`${stkMenu} absolute end-0 top-[calc(100%+8px)] w-[200px]`}>
+            <div role="menu" className={`${stkMenu} absolute end-0 top-[calc(100%+8px)] min-w-[200px]`}>
               {links.map((link, index) => {
                 if (visible.includes(index)) {
                   return null;
