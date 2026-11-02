@@ -566,7 +566,7 @@
   "select_channels": "Выберите каналы",
   "start_a_new_chat": "Начать новый чат",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "Здравствуйте, я агент crea8.one.\n\nЯ планирую посты и создаю изображения и видео.\n\nHistory и Каналы — справа вверху. На телефоне в портретной ориентации они на строке под заголовком.\n\nДля MCP: откройте Настройки, затем Developers. Это на вкладке Access. Скопируйте конфигурацию клиента.",
+  "agent_welcome_message": "Здравствуйте, я агент crea8.one.\n\nЯ планирую посты и создаю изображения и видео.",
   "last_github_trending": "Последние тренды на Github",
   "next_predicted_github_trending": "Следующий прогнозируемый тренд на GitHub",
   "repository": "Репозиторий",

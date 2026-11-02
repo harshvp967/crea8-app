@@ -29,6 +29,7 @@ import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SchedulePageHead } from '@gitroom/frontend/components/layout/schedule.shell';
 import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
 import { ReactSortable } from 'react-sortablejs';
 import { MediaComponentInner } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
@@ -513,21 +514,16 @@ export const MediaBox: FC<{
         />
         {standalone ? (
           <>
-            <div className="media-head">
-              <div className="media-head-text">
-                <div className="media-kicker">
-                  <span className="media-sticker">{t('schedule', 'Schedule')}</span>
-                  <span className="media-period">
-                    {t('your_uploads', 'Your uploads')}
-                  </span>
+            <SchedulePageHead
+              title={t('media', 'Media')}
+              context={t('your_uploads', 'Your uploads')}
+              actions={
+                <div className="media-head-actions">
+                  {btn}
+                  <ThirdPartyMediaLibrary onImported={() => mutate()} />
                 </div>
-                <h1>{t('media', 'Media')}</h1>
-              </div>
-              <div className="media-head-actions">
-                {btn}
-                <ThirdPartyMediaLibrary onImported={() => mutate()} />
-              </div>
-            </div>
+              }
+            />
             <div className="media-toolbar">
               <label className="media-search">
                 <HugeIcon name="search" size={16} />

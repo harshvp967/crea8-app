@@ -8,7 +8,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
-import { WorkspaceSwitchList } from '@gitroom/frontend/components/layout/organization.selector';
+import { useWorkspaceSwitch, WorkspaceSwitchList } from '@gitroom/frontend/components/layout/organization.selector';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import dynamic from 'next/dynamic';
 import { creditCapacity } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
@@ -234,6 +234,16 @@ export const AccountMenu = ({
   surface: 'sidebar' | 'header';
 }) => {
   const user = useUser();
+  const { current } = useWorkspaceSwitch();
+  const workspaceLine = current?.name ? `Workspace - ${current.name}` : '';
+  const accountName = user?.name || user?.email || '';
+  const accountInitials =
+    accountName
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('') || '•';
   const fetch = useFetch();
   const loadBilling = useCallback(async (path: string) => {
     const response = await fetch(path);
@@ -453,6 +463,21 @@ export const AccountMenu = ({
           <HugeIcon name="logout" size={16} className="c8-account-ico" />
           <LogoutComponent label="Log out" />
         </div>
+        {sheet ? (
+          <div className="c8-side-foot">
+            <div className="c8-side-user">
+              <span className="c8-side-avatar">
+                {user?.picture?.path ? <img src={user.picture.path} alt="" /> : accountInitials}
+              </span>
+              <span className="c8-side-user-copy">
+                <span className="c8-side-user-name">{accountName}</span>
+                <span className="c8-side-user-handle" title={workspaceLine || undefined}>
+                  {workspaceLine}
+                </span>
+              </span>
+            </div>
+          </div>
+        ) : null}
       </div>
       {planOpen ? (
         <AccountFlyout rowRef={planRowRef} label={`${planText} plan`} className="is-plan">

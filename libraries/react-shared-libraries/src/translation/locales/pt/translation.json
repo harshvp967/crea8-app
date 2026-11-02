@@ -566,7 +566,7 @@
   "select_channels": "Selecionar canais",
   "start_a_new_chat": "Iniciar um novo chat",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "Olá, sou o seu agente crea8.one.\n\nAgendo publicações e gero imagens e vídeos.\n\nHistory e Canais ficam no canto superior direito. Num telemóvel na vertical, ficam na linha por baixo do título.\n\nPara MCP: abra Configurações, depois Developers. Está em Access. Copie a configuração do cliente.",
+  "agent_welcome_message": "Olá, sou o seu agente crea8.one.\n\nAgendo publicações e gero imagens e vídeos.",
   "last_github_trending": "Últimas tendências do Github",
   "next_predicted_github_trending": "Próxima tendência prevista do GitHub",
   "repository": "Repositório",

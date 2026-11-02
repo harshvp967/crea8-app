@@ -2172,7 +2172,7 @@ body:has(.link-screen) .notify-panel > div:last-child > div[class*='arc-selected
     gap: var(--agent-gap);
   }
 
-  .agent-workspace > .agent-titlebar {
+  .agent-workspace > .c8-sched-head {
     grid-row: 1;
     grid-column: 1;
   }
@@ -2216,7 +2216,7 @@ body:has(.link-screen) .notify-panel > div:last-child > div[class*='arc-selected
 
 /* 1 + 2. Channels popover (portaled to body): anchored to the actions row,
    8px below it, right-aligned, and sized to its rows up to the viewport. */
-.agent-workspace .agent-page-actions {
+.agent-workspace .c8-sched-actions {
   anchor-name: --agent-actions;
 }
 

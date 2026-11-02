@@ -92,9 +92,7 @@ export const AgentChat: FC = () => {
                 'agent_welcome_message',
                 `Hello, I'm your crea8.one agent.
 
-I schedule posts and generate pictures and videos.
-
-For MCP, open Account, then Developers.`
+I schedule posts and generate pictures and videos.`
               ),
             }}
             UserMessage={Message}

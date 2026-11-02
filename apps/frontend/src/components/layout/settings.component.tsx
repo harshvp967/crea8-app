@@ -27,29 +27,22 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { BrandVoiceSettings } from '@gitroom/frontend/components/settings/brand.voice';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
-
-const SettingsPageHead: FC<{
-  t: ReturnType<typeof useT>;
-}> = ({ t }) => (
-  <header className="settings-head-v2">
-    <div className="settings-kicker">
-      <span className="settings-sticker">{t('schedule', 'Schedule')}</span>
-    </div>
-    <h1>{t('settings', 'Settings')}</h1>
-  </header>
-);
+import { SchedulePageHead } from '@gitroom/frontend/components/layout/schedule.shell';
 
 export const SettingsPageSkeleton = () => {
   return (
-    <div className="settings-screen">
+    <div className="settings-screen c8-sched-shell c8-sched-frame">
       <div className="settings-main">
-        <header className="settings-head-v2">
-          <div className="settings-kicker">
-            <Skeleton className="h-[24px] w-[88px] rounded-full" />
+        <header className="c8-sched-head">
+          <div className="c8-sched-copy">
+            <div className="c8-sched-kicker">
+              <Skeleton className="h-[22px] w-[88px] rounded-full" />
+            </div>
+            <h1 className="c8-sched-title">
+              <Skeleton className="h-[28px] w-[148px] max-w-full rounded-full" />
+            </h1>
+            <div className="c8-sched-sub" />
           </div>
-          <h1>
-            <Skeleton className="h-[28px] w-[148px] max-w-full rounded-full" />
-          </h1>
         </header>
         <div className="settings-settabs">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -157,7 +150,7 @@ export const SettingsPopup: FC<{
   );
 
   return (
-    <div className="settings-screen">
+    <div className="settings-screen c8-sched-shell c8-sched-frame">
       <aside className="settings-nav">
         <h2>{t('settings', 'Settings')}</h2>
         <div className="settings-tabs">
@@ -165,7 +158,7 @@ export const SettingsPopup: FC<{
         </div>
       </aside>
       <div className="settings-main">
-        <SettingsPageHead t={t} />
+        <SchedulePageHead title={t('settings', 'Settings')} />
         {list.length > 0 && (
           <SegmentedControl
             variant="pill"

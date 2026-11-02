@@ -9,6 +9,7 @@ import {
 import { useCallback } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { SchedulePageHead } from '@gitroom/frontend/components/layout/schedule.shell';
 
 export const ThirdPartyComponent = () => {
   const t = useT();
@@ -29,17 +30,12 @@ export const ThirdPartyComponent = () => {
   });
 
   return (
-    <div className="integrations-screen">
+    <div className="integrations-screen c8-sched-shell c8-sched-frame">
       <div className={clsx('integrations-main', isLoading && !data && 'integrations-state')}>
-        <div className="integrations-head">
-          <div className="integrations-kicker">
-            <span className="integrations-sticker">{t('schedule', 'Schedule')}</span>
-            <span className="integrations-period">
-              {t('connected_tools', 'Connected tools')}
-            </span>
-          </div>
-          <h1>{t('integrations', 'Integrations')}</h1>
-        </div>
+        <SchedulePageHead
+          title={t('integrations', 'Integrations')}
+          context={t('connected_tools', 'Connected tools')}
+        />
         {isLoading && !data ? (
           <IntegrationsSkeleton />
         ) : (

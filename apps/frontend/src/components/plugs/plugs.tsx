@@ -15,20 +15,16 @@ import { Plug } from '@gitroom/frontend/components/plugs/plug';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
+import { SchedulePageHead } from '@gitroom/frontend/components/layout/schedule.shell';
 
-const PlugsPageHead: FC<{ children?: ReactNode }> = ({ children }) => {
+const PlugsPageHead: FC<{ subtitle?: ReactNode }> = ({ subtitle }) => {
   const t = useT();
   return (
-    <header className="plugs-head">
-      <div className="plugs-kicker">
-        <span className="plugs-sticker">{t('schedule', 'Schedule')}</span>
-        <span className="plugs-period">
-          {t('auto_actions_per_channel', 'Auto-actions per channel')}
-        </span>
-      </div>
-      <h1>{t('plugs', 'Plugs')}</h1>
-      {children}
-    </header>
+    <SchedulePageHead
+      title={t('plugs', 'Plugs')}
+      context={t('auto_actions_per_channel', 'Auto-actions per channel')}
+      subtitle={subtitle}
+    />
   );
 };
 
@@ -182,7 +178,7 @@ export const Plugs = () => {
 
   if (isLoading || plugLoading) {
     return (
-      <div className="plugs-screen">
+      <div className="plugs-screen c8-sched-shell c8-sched-frame">
         <div className="plugs-main">
           <PlugsPageHead />
           <PlugsSkeleton />
@@ -193,7 +189,7 @@ export const Plugs = () => {
 
   if (!sortedIntegrations.length && !isLoading) {
     return (
-      <div className="plugs-screen">
+      <div className="plugs-screen c8-sched-shell c8-sched-frame">
         <div className="plugs-main">
           <PlugsPageHead />
           <div className="plugs-state-card is-empty">
@@ -233,22 +229,24 @@ export const Plugs = () => {
     .join(' ');
 
   return (
-    <div className="plugs-screen">
+    <div className="plugs-screen c8-sched-shell c8-sched-frame">
       <div className="analytics-channels plugs-channels">
         <h2>{t('channels', 'Channels')}</h2>
         <div className="analytics-channel-list">{channelButtons()}</div>
       </div>
       <div className="plugs-main">
-        <PlugsPageHead>
-          <button
-            type="button"
-            className="plugs-sub"
-            onClick={() => setSheet((open) => !open)}
-          >
-            {currentIntegration.name} on {platformLabel}
-          </button>
-          {sheet && <div className="plugs-sheet">{channelButtons()}</div>}
-        </PlugsPageHead>
+        <PlugsPageHead
+          subtitle={
+            <button
+              type="button"
+              className="plugs-sub"
+              onClick={() => setSheet((open) => !open)}
+            >
+              {currentIntegration.name} on {platformLabel}
+            </button>
+          }
+        />
+        {sheet ? <div className="plugs-sheet">{channelButtons()}</div> : null}
         <div className="plugs-toolbar">
           <div className="plugs-strip">
             {sortedIntegrations.map((integration, index) => (

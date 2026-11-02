@@ -566,7 +566,7 @@
   "select_channels": "选择频道",
   "start_a_new_chat": "开始新聊天",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "你好，我是 crea8.one 的助手。\n\n我可以排期帖子，并生成图片和视频。\n\nHistory 和频道在右上角。竖屏手机上，它们在标题下方的一行。\n\nMCP：打开设置，然后是 Developers。在 Access 里。复制客户端配置。",
+  "agent_welcome_message": "你好，我是 crea8.one 的助手。\n\n我可以排期帖子，并生成图片和视频。",
   "last_github_trending": "最新 Github 趋势",
   "next_predicted_github_trending": "下一个预测的 Github 趋势",
   "repository": "仓库",

@@ -24,6 +24,7 @@ import { Integration } from '@prisma/client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SchedulePageHead } from '@gitroom/frontend/components/layout/schedule.shell';
 import { toggleChannelSelection } from '@gitroom/frontend/components/agents/agent.channels';
 import { NoChannels } from '@gitroom/frontend/components/launches/add.provider.component';
 import { ChannelListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
@@ -244,7 +245,7 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
 
   return (
     <PropertiesContext.Provider value={{ properties }}>
-      <div className="agent-workspace">
+      <div className="agent-workspace c8-sched-shell c8-sched-frame">
         <AgentTitle
           onChannels={() => {
             setThreadsOpen(false);
@@ -302,35 +303,30 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
   const count = integrations?.length || 0;
 
   return (
-    <div className="agent-titlebar">
-      <div className="agent-page-head">
-        <div className="agent-page-kicker">
-          <span className="agent-page-sticker">
-            {t('schedule', 'Schedule')}
-          </span>
-        </div>
-        <h1 className="agent-page-title">{t('agent', 'Agent')}</h1>
-        {current ? <p className="agent-thread-name">{title}</p> : null}
-      </div>
-      <div className="agent-page-actions">
-        <button
-          type="button"
-          className="agent-history"
-          aria-label={t('conversations', 'Conversations')}
-          onClick={onHistory}
-        >
-          <span>{t('history', 'History')}</span>
-        </button>
-        <button type="button" className="agent-channels-pill" onClick={onChannels}>
-          <HugeIcon name="users" size={16} />
-          <span>
-            {channelsLoading
-              ? t('loading', 'Loading')
-              : `${t('channels', 'Channels')} · ${count}`}
-          </span>
-        </button>
-      </div>
-    </div>
+    <SchedulePageHead
+      title={t('agent', 'Agent')}
+      subtitle={current ? title : undefined}
+      actions={
+        <>
+          <button
+            type="button"
+            className="agent-history"
+            aria-label={t('conversations', 'Conversations')}
+            onClick={onHistory}
+          >
+            <span>{t('history', 'History')}</span>
+          </button>
+          <button type="button" className="agent-channels-pill" onClick={onChannels}>
+            <HugeIcon name="users" size={16} />
+            <span>
+              {channelsLoading
+                ? t('loading', 'Loading')
+                : `${t('channels', 'Channels')} · ${count}`}
+            </span>
+          </button>
+        </>
+      }
+    />
   );
 };
 

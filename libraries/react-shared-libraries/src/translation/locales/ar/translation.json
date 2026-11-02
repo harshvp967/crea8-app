@@ -566,7 +566,7 @@
   "select_channels": "اختر القنوات",
   "start_a_new_chat": "ابدأ محادثة جديدة",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "مرحباً، أنا وكيل crea8.one.\n\nأجدول المنشورات وأولّد الصور والفيديو.\n\nHistory والقنوات في أعلى اليسار. على الهاتف بالوضع العمودي تكون في الصف تحت العنوان.\n\nلـ MCP: افتح الإعدادات، ثم Developers. الإعداد في Access. انسخ إعداد العميل.",
+  "agent_welcome_message": "مرحباً، أنا وكيل crea8.one.\n\nأجدول المنشورات وأولّد الصور والفيديو.",
   "last_github_trending": "آخر الترندات على Github",
   "next_predicted_github_trending": "الترند المتوقع القادم على Github",
   "repository": "المستودع",
