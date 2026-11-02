@@ -1066,10 +1066,11 @@ body:has(.link-screen) .lib-dialog .lib-toggle {
   z-index: 30;
   top: calc(100% + 8px);
   right: 0;
-  width: min(280px, calc(100vw - 32px));
+  width: max-content;
   min-width: 0;
+  max-width: calc(100dvw - 24px);
   max-height: min(70dvh, 420px);
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 8px;
@@ -1660,8 +1661,9 @@ body:has(.link-screen) .lib-block-sheet {
 }
 
 body:has(.link-screen) .lib-block-move {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  width: 100%;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -1741,10 +1743,14 @@ body:has(.link-screen) .lib-block-list > button.is-priority svg {
 
 body:has(.link-screen) .lib-block-move button {
   display: inline-flex !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 100%;
+  width: auto !important;
+  padding-inline: 12px !important;
+  white-space: nowrap;
 }
 
 body:has(.link-screen) .lib-block-move {
@@ -1758,8 +1764,10 @@ body:has(.link-screen) .lib-block-move button:disabled {
   transform: none !important;
 }
 
-body:has(.link-screen) .lib-block-move button:disabled {
-  opacity: 0.38;
+body:has(.link-screen) .lib-block-move button:disabled,
+body:has(.link-screen) .lib-block-move button:disabled svg {
+  opacity: 1 !important;
+  color: var(--c8-muted) !important;
   cursor: default;
   box-shadow: none !important;
 }

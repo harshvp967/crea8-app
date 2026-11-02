@@ -499,7 +499,7 @@ export const StalkerKeywords = () => {
 
   const SourceEditors = ({ keyword }: { keyword: Keyword }) =>
     rowMenu === `src-${keyword.id}` ? (
-      <div className={`${stkMenu} stk-kw-sources-menu mt-[6px] w-[240px]`}>
+      <div className={`${stkMenu} stk-kw-sources-menu mt-[6px] min-w-[240px]`}>
         {SOURCES.map((source) => {
           const locked = !!note(source.id) && !keyword[source.key];
           return (

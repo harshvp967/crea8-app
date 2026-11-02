@@ -461,7 +461,7 @@ export const Menu: FC<{
           onTouchStart={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           style={{ left: show.x, top: show.y }}
-          className="channel-menu-pop fixed p-[8px] bg-newBgColorInner shadow-menu flex flex-col gap-[2px] z-[100] rounded-[22px] border border-newBorder text-nowrap"
+          className="channel-menu-pop fixed p-[8px] bg-newBgColorInner shadow-menu flex flex-col gap-[2px] z-[100] rounded-[22px] border border-newBorder w-max max-w-[calc(100dvw-16px)] [overflow-x:clip]"
         >
           {canDisable && !findIntegration?.refreshNeeded && (
             <div

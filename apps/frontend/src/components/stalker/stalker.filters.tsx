@@ -786,11 +786,13 @@ const placeFilterPop = (anchor: HTMLElement, menu: HTMLElement, wide: boolean): 
   const sidebarRight = sidebarBox && sidebarBox.width > 0 && sidebarBox.bottom > 0 ? sidebarBox.right : 0;
   const boundLeft = Math.max(margin, sidebarRight);
   const boundRight = window.innerWidth - margin;
-  const width = Math.max(160, Math.min(wide ? 560 : 280, boundRight - boundLeft));
+  const available = Math.max(160, boundRight - boundLeft);
+  const width = wide ? Math.min(560, available) : available;
+  const visual = Math.min(width, menu.getBoundingClientRect().width || width);
   let left = rect.left;
-  if (left + width > boundRight) left = rect.right - width;
+  if (left + visual > boundRight) left = rect.right - visual;
   if (left < boundLeft) left = boundLeft;
-  if (left + width > boundRight) left = Math.max(boundLeft, boundRight - width);
+  if (left + visual > boundRight) left = Math.max(boundLeft, boundRight - visual);
 
   const spaceBelow = window.innerHeight - margin - rect.bottom - gap;
   const spaceAbove = rect.top - margin - gap;
