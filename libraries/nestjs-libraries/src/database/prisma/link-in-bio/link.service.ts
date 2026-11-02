@@ -98,6 +98,7 @@ import {
   utcDay,
   webhookProblem,
   scheduleInstant,
+  qrApi,
 } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import {
   PublicLinkContactDto,
@@ -634,14 +635,20 @@ export class LinkService {
   }
 
   async qr(org: PlanOrg, format: 'png' | 'svg') {
-    const QRCode = await import('qrcode');
+    const QRCode = qrApi(await import('qrcode'));
     const record = await this.ensure(org);
     const url = pageUrl(record.slug, record.customDomain || '', record.domainStatus);
     if (format === 'svg') {
+      if (typeof QRCode.toString !== 'function') {
+        throw new BadRequestException('Could not build the QR code');
+      }
       const svg = await QRCode.toString(url, { type: 'svg', margin: 1, width: 512 });
       return Buffer.from(svg);
     }
-    return QRCode.toBuffer(url, { type: 'png', margin: 1, width: 512 });
+    if (typeof QRCode.toBuffer !== 'function') {
+      throw new BadRequestException('Could not build the QR code');
+    }
+    return Buffer.from(await QRCode.toBuffer(url, { type: 'png', margin: 1, width: 512 }));
   }
 
   async publicSlugs() {

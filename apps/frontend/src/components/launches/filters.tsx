@@ -37,8 +37,8 @@ function getDateRange(
       };
     case 'list':
       return {
-        startDate: date.format('YYYY-MM-DD'),
-        endDate: date.format('YYYY-MM-DD'),
+        startDate: date.startOf('month').format('YYYY-MM-DD'),
+        endDate: date.endOf('month').format('YYYY-MM-DD'),
       };
   }
 }

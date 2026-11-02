@@ -5,6 +5,7 @@ import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prism
 import { TemporalService } from 'nestjs-temporal-core';
 import { TypedSearchAttributes } from '@temporalio/common';
 import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { friendlyNotification } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.text';
 
 export type NotificationType = 'success' | 'fail' | 'info';
 
@@ -24,18 +25,32 @@ export class NotificationService {
     );
   }
 
-  getNotificationsPaginated(organizationId: string, page: number) {
-    return this._notificationRepository.getNotificationsPaginated(
+  async getNotificationsPaginated(organizationId: string, page: number) {
+    const result = await this._notificationRepository.getNotificationsPaginated(
       organizationId,
       page
     );
+    return {
+      ...result,
+      notifications: result.notifications.map((row) => ({
+        ...row,
+        content: friendlyNotification(row.content),
+      })),
+    };
   }
 
-  getNotifications(organizationId: string, userId: string) {
-    return this._notificationRepository.getNotifications(
+  async getNotifications(organizationId: string, userId: string) {
+    const result = await this._notificationRepository.getNotifications(
       organizationId,
       userId
     );
+    return {
+      ...result,
+      notifications: result.notifications.map((row) => ({
+        ...row,
+        content: friendlyNotification(row.content),
+      })),
+    };
   }
 
   async inAppNotification(
@@ -46,7 +61,8 @@ export class NotificationService {
     digest = false,
     type: NotificationType = 'success'
   ) {
-    await this._notificationRepository.createNotification(orgId, message);
+    const clean = friendlyNotification(message);
+    await this._notificationRepository.createNotification(orgId, clean);
     if (!sendEmail) {
       return;
     }
@@ -62,7 +78,7 @@ export class NotificationService {
               [
                 {
                   title: subject,
-                  message,
+                  message: clean,
                   type,
                 },
               ],
@@ -82,7 +98,7 @@ export class NotificationService {
       return;
     }
 
-    await this.sendEmailsToOrg(orgId, subject, message, type);
+    await this.sendEmailsToOrg(orgId, subject, clean, type);
   }
 
   async sendEmailsToOrg(

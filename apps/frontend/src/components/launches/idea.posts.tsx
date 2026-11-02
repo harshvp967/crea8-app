@@ -14,6 +14,7 @@ import { plainToPostHtml } from '@gitroom/nestjs-libraries/database/prisma/posts
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import {
+  channelCountLabel,
   composerChannels,
   integrationsForCustomer,
 } from '@gitroom/frontend/components/launches/customer.filter';
@@ -547,6 +548,7 @@ const IdeaPostsPanel = ({
   const [tray, setTray] = useState<DraftMedia[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [catalog, setCatalog] = useState<Integrations[]>([]);
+  const [channelsLoaded, setChannelsLoaded] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState<Record<string, boolean>>({});
   const fileRef = useRef<HTMLInputElement>(null);
   const catalogRef = useRef<Integrations[]>([]);
@@ -598,14 +600,20 @@ const IdeaPostsPanel = ({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const response = await fetch('/integrations/list');
-      const list = await response.json().catch(() => []);
-      if (cancelled) {
-        return;
+      try {
+        const response = await fetch('/integrations/list');
+        const list = await response.json().catch(() => []);
+        if (cancelled) {
+          return;
+        }
+        const rows = (Array.isArray(list) ? list : list?.integrations || []) as Integrations[];
+        catalogRef.current = rows;
+        setCatalog(rows);
+      } finally {
+        if (!cancelled) {
+          setChannelsLoaded(true);
+        }
       }
-      const rows = (Array.isArray(list) ? list : list?.integrations || []) as Integrations[];
-      catalogRef.current = rows;
-      setCatalog(rows);
     })();
     return () => {
       cancelled = true;
@@ -1322,17 +1330,19 @@ const IdeaPostsPanel = ({
           </div>
         </div>
         <div className="c8-idea-generate">
-          <p>
-            {voice
-              ? t(
-                  'uses_brand_voice',
-                  'Uses your brand voice · {{count}} channels connected',
-                  { count: connectedCount }
-                )
+          {channelCountLabel(channelsLoaded, connectedCount) !== null ? (
+            <p>
+              {voice
+                ? t(
+                    'uses_brand_voice',
+                    'Uses your brand voice · {{count}} channels connected',
+                    { count: connectedCount }
+                  )
                 : t('channels_connected', '{{count}} channels connected', {
-                  count: connectedCount,
-                })}
-          </p>
+                    count: connectedCount,
+                  })}
+            </p>
+          ) : null}
           <Button
             className="c8-idea-go"
             disabled={loading || (!idea.trim() && !tray.length)}

@@ -2063,3 +2063,69 @@ export function dobProblem(raw: string, minAge: number, now = new Date()) {
 export function knownRange(range: string) {
   return (LINK_RANGES as readonly string[]).includes(range) ? range : '28d';
 }
+
+// A header is a section title. It has no address, so the block menu must not offer Copy link.
+export function blockOffersCopyLink(type: string) {
+  return type !== 'HEADING';
+}
+
+// One undo signal. The editor toast carries it. A banner would shift the list.
+export function blockRemovalFeedback() {
+  return { banner: false, signal: 'undo' as const };
+}
+
+type QrModule = {
+  toDataURL?: (text: string, options?: Record<string, unknown>) => Promise<string>;
+  toString?: (text: string, options?: Record<string, unknown>) => Promise<string>;
+  toBuffer?: (text: string, options?: Record<string, unknown>) => Promise<Uint8Array>;
+  default?: QrModule;
+};
+
+// `import('qrcode')` is a CommonJS namespace. The encoder sits on the module
+// or on `.default`, depending on the loader. Either one has to be used.
+export function qrApi(mod: object | null | undefined): QrModule {
+  const loaded = (mod || {}) as QrModule;
+  // Object.prototype.toString is on every value. Only an own encoder counts.
+  const own = (key: string) => Object.prototype.hasOwnProperty.call(loaded, key);
+  if (own('toDataURL') || own('toBuffer') || own('toString')) {
+    return loaded;
+  }
+  return loaded.default || loaded;
+}
+
+export function qrImageSrc(value: string) {
+  return typeof value === 'string' && value.startsWith('data:image/') ? value : '';
+}
+
+export function svgQrSrc(svg: string) {
+  const text = String(svg || '').trim();
+  if (!text.includes('<svg')) {
+    return '';
+  }
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(text)}`;
+}
+
+export async function linkQrDataUrl(url: string) {
+  const loaded = (await import('qrcode')) as QrModule;
+  const api = qrApi(loaded);
+  if (typeof api.toDataURL === 'function') {
+    const data = await api.toDataURL(url, {
+      margin: 1,
+      width: 512,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+    const src = qrImageSrc(data);
+    if (src) {
+      return src;
+    }
+  }
+  if (typeof api.toString === 'function') {
+    const svg = await api.toString(url, { type: 'svg', margin: 1, width: 512 });
+    const src = svgQrSrc(svg);
+    if (src) {
+      return src;
+    }
+  }
+  return '';
+}

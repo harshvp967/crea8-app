@@ -1,5 +1,6 @@
 import { postsListQuery } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import {
+  listFromInstant,
   listPostsSearch,
   startOfTodayUtc,
 } from '@gitroom/frontend/components/launches/list.query';
@@ -203,6 +204,36 @@ describe('list Scheduled, Published, and Drafts tabs', () => {
     expect(lastYear.where).not.toHaveProperty('publishDate');
 
     expect(search('draft').has('from')).toBe(false);
+  });
+
+  it('includes this month when the list range is a single day', () => {
+    const today = new Date('2026-11-02T18:00:00.000Z');
+    const from = listFromInstant({
+      zone: 'America/New_York',
+      startDate: '2026-11-02',
+      endDate: '2026-11-02',
+      now: today,
+    });
+    expect(from).toBe('2026-11-01T04:00:00.000Z');
+    expect(from).not.toBe(startOfTodayUtc('America/New_York', today));
+
+    const params = new URLSearchParams(
+      listPostsSearch({
+        page: 0,
+        state: 'all',
+        timezone: 'America/New_York',
+        startDate: '2026-11-02',
+        endDate: '2026-11-02',
+        now: today,
+      })
+    );
+    expect(params.get('from')).toBe(from);
+    expect(params.get('to')).toBeNull();
+
+    const novemberFirst = new Date('2026-11-01T16:00:00.000Z');
+    const { where } = postsListQuery('org-1', { state: 'all', from }, today);
+    expect(publishDateIncluded(where, novemberFirst)).toBe(true);
+    expect(publishDateIncluded(where, today)).toBe(true);
   });
 
   it('keeps the All cache key free of the day bound', () => {

@@ -1,4 +1,4 @@
-import React, { FC, Fragment, useCallback } from 'react';
+import React, { FC, Fragment, useCallback, useState } from 'react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
@@ -22,6 +22,8 @@ export const SignaturesComponent: FC<{
   const fetch = useFetch();
   const modal = useModals();
   const toaster = useToaster();
+  const t = useT();
+  const [deletingId, setDeletingId] = useState('');
   const load = useCallback(async () => {
     return (await fetch('/signatures')).json();
   }, []);
@@ -39,26 +41,40 @@ export const SignaturesComponent: FC<{
   );
 
   const deleteSignature = useCallback(
-    (data: any) => async () => {
+    (row: { id: string }) => async () => {
       if (
-        await deleteDialog(
+        !(await deleteDialog(
           t('cant_be_undone', "This can't be undone."),
           t('delete', 'Delete'),
           t('delete_this_signature', 'Delete this signature?'),
           t('cancel', 'Cancel')
-        )
+        ))
       ) {
-        await fetch(`/signatures/${data.id}`, {
-          method: 'DELETE',
-        });
-        mutate();
-        toaster.show('Signature deleted successfully', 'success');
+        return;
       }
+      setDeletingId(row.id);
+      await mutate(
+        (current: Array<{ id: string }> | undefined) =>
+          Array.isArray(current) ? current.filter((item) => item.id !== row.id) : current,
+        { revalidate: false }
+      );
+      const response = await fetch(`/signatures/${row.id}`, {
+        method: 'DELETE',
+      });
+      setDeletingId('');
+      if (!response.ok) {
+        await mutate();
+        toaster.show('Could not delete that signature', 'warning');
+        return;
+      }
+      const next = await response.json().catch(() => null);
+      if (Array.isArray(next)) {
+        await mutate(next, { revalidate: false });
+      }
+      toaster.show('Signature deleted successfully', 'success');
     },
-    []
+    [fetch, mutate, t, toaster]
   );
-
-  const t = useT();
 
   return (
     <div className="settings-section">
@@ -103,8 +119,13 @@ export const SignaturesComponent: FC<{
                 <Button secondary className="settings-mini" onClick={addSignature(p)}>
                   {t('edit', 'Edit')}
                 </Button>
-                <Button secondary className="settings-mini settings-danger" onClick={deleteSignature(p)}>
-                  {t('delete', 'Delete')}
+                <Button
+                  secondary
+                  className="settings-mini settings-danger"
+                  disabled={deletingId === p.id}
+                  onClick={deleteSignature(p)}
+                >
+                  {deletingId === p.id ? t('deleting', 'Deleting…') : t('delete', 'Delete')}
                 </Button>
               </div>
             </article>

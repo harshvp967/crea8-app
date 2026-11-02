@@ -48,7 +48,7 @@ import { Button } from '@gitroom/react/form/button';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
 import { clearComposerLayoutRemount } from '@gitroom/frontend/components/new-launch/composer.draft';
-import { composerHasContent, persistedThreadValues } from '@gitroom/frontend/components/new-launch/preview.thread';
+import { composerHasContent, persistedThreadValues, threadItemHasBody } from '@gitroom/frontend/components/new-launch/preview.thread';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 const finePointer = () =>
@@ -963,6 +963,34 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         })),
       }));
 
+      const draftOnly =
+        type === 'draft' &&
+        posts.every(
+          (post: { integration: { id: string } }) => saveTypeOf(post.integration.id) === 'draft'
+        );
+
+      if (draftOnly) {
+        const emptyPost = allValues.find((post: { id: string; values?: Array<{ content?: string; media?: unknown; image?: unknown }> }) =>
+          (post.values || []).some(
+            (value) => !threadItemHasBody({ content: value.content, media: value.media || value.image })
+          )
+        );
+        if (emptyPost) {
+          const integration = integrationById(emptyPost.id)?.integration;
+          const provider = capitalize(String(integration?.identifier || '').split('-')[0] || '');
+          toaster.show(
+            `${provider ? `${provider} (${integration?.name || ''}): ` : ''}${t(
+              'post_needs_content_or_image',
+              'Your post should have at least one character or one image.'
+            )}`,
+            'error'
+          );
+          setLoading(false);
+          setBusy(null);
+          return;
+        }
+      }
+
       const shortlinkPreference = shortlinkPreferenceData?.shortlink || 'ASK';
       const shortlinkMessages = allValues
         .filter((p: any) => {
@@ -981,13 +1009,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       // Validation downloads media for a few channels. The shortlink check is
       // a separate request. They do not depend on each other.
       const [checkAllValid, shortLinkUrl] = await Promise.all([
-        dummy
+        dummy || draftOnly
           ? Promise.resolve([])
           : fetch('/posts/valid', {
               method: 'POST',
               body: JSON.stringify({ type, posts }),
             }).then((response) => response.json()),
-        askShortlink
+        askShortlink && !draftOnly
           ? fetch('/posts/should-shortlink', {
               method: 'POST',
               body: JSON.stringify({ messages: shortlinkMessages }),
@@ -1190,6 +1218,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           toaster.show(
             type === 'now'
               ? t('post_is_being_published', 'Publishing your post now')
+              : type === 'draft'
+              ? t('draft_saved', 'Draft saved')
               : !existingData.integration
               ? t('added_successfully', 'Added successfully')
               : t('updated_successfully', 'Updated successfully')
@@ -1448,15 +1478,14 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 className="c8-draft relative cursor-pointer disabled:cursor-not-allowed px-[20px] h-[44px] bg-btnSimple border border-newBorder justify-center items-center flex rounded-[18px] text-[15px] font-[500]"
                 aria-busy={loading && busy === 'draft'}
               >
-                {loading && busy === 'draft' && (
-                  <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
-                    <div className="po-spin" role="status" />
-                  </div>
+                {loading && busy === 'draft' ? (
+                  <span>{t('saving', 'Saving…')}</span>
+                ) : (
+                  <>
+                    <span className="c8-draft-long">{t('save_as_draft', 'Save as draft')}</span>
+                    <span className="c8-draft-short">{t('draft', 'Draft')}</span>
+                  </>
                 )}
-                <div className={clsx(loading && busy === 'draft' && 'invisible')}>
-                  <span className="c8-draft-long">{t('save_as_draft', 'Save as draft')}</span>
-                  <span className="c8-draft-short">{t('draft', 'Draft')}</span>
-                </div>
               </button>
             )}
             {saveToDraft && (

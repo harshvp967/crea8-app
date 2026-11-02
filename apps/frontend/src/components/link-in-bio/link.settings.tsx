@@ -13,7 +13,7 @@ import {
 } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
-import { imagePathProblem } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { imagePathProblem, linkQrDataUrl, qrImageSrc } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { FieldCardSkeleton, LinkToggleRows } from '@gitroom/frontend/components/ui/skeleton';
 
@@ -106,30 +106,26 @@ export const LinkSettingsScreen = () => {
   }, [slug, data, fetch]);
 
   useEffect(() => {
-    if (!data) {
+    const target = data?.publicUrl;
+    if (!target) {
       return;
     }
-    let url = '';
     let cancel = false;
-    (async () => {
-      const response = await fetch('/link-in-bio/qr.png', { headers: { Accept: 'image/png' } });
-      if (!response.ok || cancel) {
-        return;
-      }
-      url = URL.createObjectURL(await response.blob());
-      if (cancel) {
-        URL.revokeObjectURL(url);
-        return;
-      }
-      setQr(url);
-    })();
+    linkQrDataUrl(target)
+      .then((url) => {
+        if (!cancel) {
+          setQr(qrImageSrc(url));
+        }
+      })
+      .catch(() => {
+        if (!cancel) {
+          setQr('');
+        }
+      });
     return () => {
       cancel = true;
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
     };
-  }, [data, fetch]);
+  }, [data?.publicUrl]);
 
   if (isLoading || !data || !ready) {
     return (

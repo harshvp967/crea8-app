@@ -25,6 +25,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { percentageChangeFromSeries } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
+import { insightDay } from '@gitroom/nestjs-libraries/integrations/social/insight.day';
 
 export const META_GRAPH_API_VERSION = 'v25.0';
 
@@ -1100,7 +1101,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       data?.map((d: any) => {
         const points = d?.values?.map((v: any) => ({
           total: sumValue(v.value),
-          date: dayjs(v.end_time).format('YYYY-MM-DD'),
+          date: insightDay(v.end_time),
         }));
         return {
           label:
