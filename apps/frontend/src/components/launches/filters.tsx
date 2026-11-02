@@ -11,6 +11,7 @@ import i18next from 'i18next';
 import { displayDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import { SchedulePageHead } from '@gitroom/frontend/components/layout/schedule.shell';
 
 // Helper function to get start and end dates based on display type
 function getDateRange(
@@ -376,17 +377,11 @@ export const Filters = () => {
 
   return (
     <>
-    <div className="c8-cal-head">
-      <div className="c8-cal-kicker">
-        <span className="c8-cal-sticker">{t('schedule', 'Schedule')}</span>
-        {!isListView && (
-          <span className="c8-cal-when">{getDisplayText()}</span>
-        )}
-      </div>
-      <h1 className="c8-cal-title">
-        {isListView ? t('calendar', 'Calendar') : t('calendar', 'Calendar')}
-      </h1>
-    </div>
+    <SchedulePageHead
+      className="c8-cal-head"
+      title={t('calendar', 'Calendar')}
+      context={isListView ? undefined : getDisplayText()}
+    />
     <div
       className={clsx(
         'filters-bar text-textColor flex flex-wrap items-center gap-[10px] select-none w-full min-w-0',
