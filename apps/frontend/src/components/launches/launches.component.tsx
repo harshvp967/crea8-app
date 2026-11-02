@@ -14,7 +14,7 @@ import {
 import { integrationsForCustomer } from '@gitroom/frontend/components/launches/customer.filter';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
+import { SchedulePageSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import clsx from 'clsx';
 import { useUser } from '../layout/user.context';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
@@ -597,11 +597,7 @@ export const LaunchesComponent = () => {
     }
   }, []);
   if (isLoading || reload) {
-    return (
-      <div className="bg-newBgColorInner p-[20px] flex flex-1 flex-col gap-[15px] transition-all items-center justify-center">
-        <ScheduleLoading />
-      </div>
-    );
+    return <SchedulePageSkeleton />;
   }
 
   // @ts-ignore

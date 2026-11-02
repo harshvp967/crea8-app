@@ -5,6 +5,7 @@ import { useCustomProviderFunction } from '@gitroom/frontend/components/launches
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export const SkoolGroupSelect: FC<{
   name: string;
   onChange: (event: {
@@ -17,7 +18,7 @@ export const SkoolGroupSelect: FC<{
   const { onChange, name } = props;
   const t = useT();
   const customFunc = useCustomProviderFunction();
-  const [groups, setGroups] = useState([]);
+  const [groups, setGroups] = useState<any[] | undefined>(undefined);
   const { getValues } = useSettings();
   const [currentGroup, setCurrentGroup] = useState<string | undefined>();
   const onChangeInner = (event: {
@@ -30,12 +31,15 @@ export const SkoolGroupSelect: FC<{
     onChange(event);
   };
   useEffect(() => {
-    customFunc.get('groups').then((data) => setGroups(data));
+    customFunc.get('groups').then((data) => setGroups(Array.isArray(data) ? data : [])).catch(() => setGroups([]));
     const settings = getValues()[props.name];
     if (settings) {
       setCurrentGroup(settings);
     }
   }, []);
+  if (!groups) {
+    return <SelectSkeleton />;
+  }
   if (!groups.length) {
     return null;
   }

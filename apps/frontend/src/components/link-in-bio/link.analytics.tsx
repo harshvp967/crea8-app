@@ -9,6 +9,7 @@ import { LinkRequestError, linkLocked, useLinkAnalytics, useLinkPage } from '@gi
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import { ChartCardSkeleton, MetricCardsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 
 const ranges: Array<{ id: string; label: string }> = [
@@ -235,9 +236,10 @@ export const LinkAnalyticsScreen = () => {
           <p className="text-[14px] font-[500]">Could not load analytics.</p>
         </section>
       ) : isLoading || !data ? (
-        <section className={`${stkCard} lib-loading flex items-center gap-[12px]`}>
-          <p className="text-[14px] font-[500] text-textItemBlur">Loading analytics…</p>
-        </section>
+        <>
+          <MetricCardsSkeleton />
+          <ChartCardSkeleton />
+        </>
       ) : (
         <>
           <div className="lib-metrics grid grid-cols-2 gap-[12px] min-[1200px]:grid-cols-4">

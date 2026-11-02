@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { SummaryCardsSkeleton, TableRowsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 interface PerSocial {
   provider: string;
@@ -225,7 +225,10 @@ export const AdminStatsComponent: FC = () => {
       </div>
 
       {isLoading ? (
-        <LoadingComponent />
+        <div className="flex flex-col gap-[16px]">
+          <SummaryCardsSkeleton />
+          <TableRowsSkeleton rows={6} cols={3} />
+        </div>
       ) : error || !data ? (
         <div className="text-red-400">Failed to load stats.</div>
       ) : (

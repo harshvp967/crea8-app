@@ -9,6 +9,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import { LeadsTableSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { stkCard, stkCardTight, stkGhost, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 
@@ -191,9 +192,7 @@ export const LinkLeadsScreen = () => {
           <p className="text-[14px] font-[500]">Could not load leads.</p>
         </section>
       ) : isLoading || !data ? (
-        <section className={`${stkCard} lib-loading flex items-center gap-[12px]`}>
-          <p className="text-[14px] font-[500] text-textItemBlur">Loading leads…</p>
-        </section>
+        <LeadsTableSkeleton />
       ) : data.leads.length ? (
         <>
           <section className={`${stkCard} lib-leads-table-wrap overflow-hidden`}>

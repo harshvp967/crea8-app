@@ -5,7 +5,7 @@ import { FC, useCallback } from 'react';
 import { StarsTableComponent } from '@gitroom/frontend/components/analytics/stars.table.component';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { ChartCardSkeleton, MetricCardsSkeleton, TableRowsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export const AnalyticsComponent: FC = () => {
   const fetch = useFetch();
   const load = useCallback(async (path: string) => {
@@ -20,7 +20,13 @@ export const AnalyticsComponent: FC = () => {
     load
   );
   if (isLoadingAnalytics || isLoadingTrending) {
-    return <LoadingComponent />;
+    return (
+      <div className="flex flex-1 flex-col gap-[24px]">
+        <MetricCardsSkeleton />
+        <ChartCardSkeleton />
+        <TableRowsSkeleton rows={6} cols={6} />
+      </div>
+    );
   }
   return (
     <div className="flex gap-[24px] flex-1">

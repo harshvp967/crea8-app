@@ -4,7 +4,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
 import { Select } from '@gitroom/react/form/select';
-import { ScheduleLoading } from '@gitroom/frontend/components/layout/loading';
+import { ChartCardSkeleton, MetricCardsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
 
 interface AnalyticsData {
@@ -79,8 +79,9 @@ export const StatisticsModal: FC<{
   return (
     <div className="relative min-h-[200px]">
       {isLoading ? (
-        <div className="flex items-center justify-center py-[40px]">
-          <ScheduleLoading />
+        <div className="flex flex-col gap-[16px] py-[8px]">
+          <MetricCardsSkeleton />
+          <ChartCardSkeleton />
         </div>
       ) : isMissing ? (
         <MissingReleaseModal

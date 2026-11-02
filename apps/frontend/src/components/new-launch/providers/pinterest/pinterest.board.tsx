@@ -5,6 +5,7 @@ import { useCustomProviderFunction } from '@gitroom/frontend/components/launches
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export const PinterestBoard: FC<{
   name: string;
   onChange: (event: {
@@ -31,14 +32,14 @@ export const PinterestBoard: FC<{
     onChange(event);
   };
   useEffect(() => {
-    customFunc.get('boards').then((data) => setOrgs(data));
+    customFunc.get('boards').then((data) => setOrgs(Array.isArray(data) ? data : [])).catch(() => setOrgs([]));
     const settings = getValues()[props.name];
     if (settings) {
       setCurrentMedia(settings);
     }
   }, []);
   if (!orgs) {
-    return null;
+    return <SelectSkeleton />;
   }
   if (!orgs.length) {
     return 'No boards found, you have to create a board first';

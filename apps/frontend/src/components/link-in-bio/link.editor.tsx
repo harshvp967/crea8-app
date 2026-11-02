@@ -17,6 +17,7 @@ import {
 import { HugeIcon, type HugeIconName } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkAnchor, LinkField, LinkMenuRow, LinkModal, LinkSegments, LinkToggle, linkChoice, linkDanger, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio/link.shell';
+import { LinkBlockSkeleton, LinkPreviewSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { blockDeleteRequest, blockRestoreRequest, embedProblem, musicProblem, parseEmbed, pastedBlockType, shareMenu, utcToZonedInput, youtubeChannelTarget } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
@@ -339,7 +340,7 @@ export const LinkEditorScreen = () => {
       <LinkSplit
         preview={
           <LinkPreview onCopy={() => undefined}>
-            <div className="h-full w-full bg-newBgColorInner" />
+            {error ? <div className="h-full w-full bg-newBgColorInner" /> : <LinkPreviewSkeleton />}
           </LinkPreview>
         }
       >
@@ -350,16 +351,16 @@ export const LinkEditorScreen = () => {
             </div>
             <h1 className={stkTitle}>Editor</h1>
           </div>
-          <div className={`${stkCard} ${error ? 'stk-state' : 'lib-loading'} flex items-center gap-[12px]`}>
-            {error ? (
+          {error ? (
+            <div className={`${stkCard} stk-state flex items-center gap-[12px]`}>
               <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
                 <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" />
               </span>
-            ) : null}
-            <p className="text-[14px] font-[500] text-textItemBlur">
-              {error ? 'Could not load your page.' : 'Loading your page…'}
-            </p>
-          </div>
+              <p className="text-[14px] font-[500] text-textItemBlur">Could not load your page.</p>
+            </div>
+          ) : (
+            <LinkBlockSkeleton />
+          )}
         </div>
       </LinkSplit>
     );

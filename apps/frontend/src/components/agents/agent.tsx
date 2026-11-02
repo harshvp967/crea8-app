@@ -26,6 +26,7 @@ import { useParams } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { toggleChannelSelection } from '@gitroom/frontend/components/agents/agent.channels';
 import { NoChannels } from '@gitroom/frontend/components/launches/add.provider.component';
+import { ChannelListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
@@ -122,11 +123,7 @@ export const AgentList: FC<{
           </h2>
         </div>
         <div className={clsx('flex flex-col gap-[8px]')}>
-          {isLoading ? (
-            <div className="px-[8px] py-[8px] text-[14px] font-[500] text-textItemBlur">
-              {t('loading', 'Loading')}
-            </div>
-          ) : null}
+          {isLoading ? <ChannelListSkeleton /> : null}
           {!isLoading && sortedIntegrations.length === 0 ? (
             <NoChannels />
           ) : null}

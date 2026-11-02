@@ -3,6 +3,7 @@
 import React, { FC, useCallback, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
+import { ChannelListSkeleton, SettingsListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -61,7 +62,7 @@ export const Webhooks: FC = () => {
   const list = useCallback(async () => {
     return (await fetch('/webhooks')).json();
   }, []);
-  const { data, mutate } = useSWR('webhooks', list);
+  const { data, isLoading, mutate } = useSWR('webhooks', list);
   const addWebhook = useCallback(
     (data?: any) => () => {
       modal.openModal({
@@ -98,13 +99,17 @@ export const Webhooks: FC = () => {
       <div className="settings-head">
         <div>
           <h1>
-            {t('webhooks', 'Webhooks')} ({webhookQuota(data?.length || 0, user?.tier?.webhooks)})
+            {t('webhooks', 'Webhooks')}
+            {isLoading && !data
+              ? ''
+              : ` (${webhookQuota(data?.length || 0, user?.tier?.webhooks)})`}
           </h1>
         </div>
         <Button onClick={addWebhook()}>
           + {t('add_a_webhook', 'Add a webhook')}
         </Button>
       </div>
+      {isLoading && !data ? <SettingsListSkeleton /> : null}
       {!!data?.length && (
         <div className="settings-list">
           <div className="settings-cols cols-hook">
@@ -331,6 +336,9 @@ export const AddOrEditWebhook: FC<{
                 </option>
               ))}
             </Select>
+            {allIntegrations.value === 'specific' && isLoading && !dataList ? (
+              <ChannelListSkeleton />
+            ) : null}
             {allIntegrations.value === 'specific' && dataList && !isLoading && (
               <PickPlatforms
                 integrations={dataList.integrations}

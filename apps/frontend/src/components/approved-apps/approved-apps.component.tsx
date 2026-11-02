@@ -13,6 +13,7 @@ import {
   OauthClientTile,
   resolveOauthClientBrand,
 } from '@gitroom/frontend/components/oauth/client-brand';
+import { SettingsListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const useApprovedApps = () => {
   const fetch = useFetch();
@@ -62,7 +63,11 @@ export const ApprovedAppsComponent: FC = () => {
   );
 
   if (apps === undefined) {
-    return null;
+    return (
+      <div className="settings-section">
+        <SettingsListSkeleton />
+      </div>
+    );
   }
 
   return (

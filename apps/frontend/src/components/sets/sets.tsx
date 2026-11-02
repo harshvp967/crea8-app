@@ -4,6 +4,7 @@ import 'reflect-metadata';
 import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
+import { SettingsListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
 import { Input } from '@gitroom/react/form/input';
@@ -81,7 +82,7 @@ export const Sets: FC = () => {
     return (await fetch('/sets')).json();
   }, []);
 
-  const { data, mutate } = useSWR('sets', list, {
+  const { data, isLoading: setsLoading, mutate } = useSWR('sets', list, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -176,11 +177,12 @@ export const Sets: FC = () => {
     <div className="settings-section">
       <div className="settings-head">
         <div>
-          <h1>Sets ({data?.length || 0})</h1>
+          <h1>Sets{setsLoading && !data ? '' : ` (${data?.length || 0})`}</h1>
           <p>Manage your content sets for easy reuse across posts.</p>
         </div>
         <Button onClick={addSet()}>+ Add a set</Button>
       </div>
+      {setsLoading && !data ? <SettingsListSkeleton /> : null}
       {!!data?.length && (
         <div className="settings-list">
           <div className="settings-cols cols-set">

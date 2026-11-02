@@ -10,6 +10,7 @@ import {
   OauthClientTile,
   resolveOauthClientBrand,
 } from '@gitroom/frontend/components/oauth/client-brand';
+import { OAuthConsentSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const SCOPE_LABELS: Record<string, string> = {
   'mcp:read': 'Read your posts',
@@ -243,10 +244,7 @@ export default function OAuthAuthorizePage() {
   if (loading) {
     return (
       <ConsentShell>
-        <div className="flex flex-col items-center gap-[24px]">
-          <ConsentPair />
-          <div className="w-[48px] h-[48px] border-[3px] border-c8-cyan border-t-transparent rounded-full animate-spin" />
-        </div>
+        <OAuthConsentSkeleton />
       </ConsentShell>
     );
   }

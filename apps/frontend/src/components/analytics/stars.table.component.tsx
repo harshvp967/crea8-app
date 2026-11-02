@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import ReactLoading from '@gitroom/frontend/components/layout/loading';
+import { Skeleton, TableRowsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
@@ -152,13 +152,13 @@ export const StarsTableComponent = () => {
           <HugeIcon name="chevron-right" size={20} />
         </div>
         <div>
-          {loading && (
-            <ReactLoading type="spin" color="#fff" width={20} height={20} />
-          )}
+          {loading && <Skeleton className="h-[20px] w-[20px] rounded-full" />}
         </div>
       </div>
       <div className="flex-1 bg-secondary">
-        {stars?.stars?.length ? (
+        {loading && !stars?.stars?.length ? (
+          <TableRowsSkeleton rows={6} cols={7} />
+        ) : stars?.stars?.length ? (
           <table className={`table1`}>
             <thead>
               <tr>

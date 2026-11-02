@@ -26,6 +26,7 @@ import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { BrandVoiceSettings } from '@gitroom/frontend/components/settings/brand.voice';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const SettingsPageHead: FC<{
   t: ReturnType<typeof useT>;
@@ -38,31 +39,27 @@ const SettingsPageHead: FC<{
   </header>
 );
 
-const SkeletonBar = ({ className }: { className: string }) => (
-  <div className={`animate-pulse rounded-[12px] bg-newBoxHover ${className}`} />
-);
-
 export const SettingsPageSkeleton = () => {
   return (
-    <div className="flex flex-1 min-h-0 w-full">
-      <div className="bg-newBgColorInner p-[20px] flex flex-col gap-[15px] w-[260px]">
+    <div className="flex min-h-0 w-full flex-1 flex-col md:flex-row">
+      <div className="flex w-full flex-row gap-[8px] overflow-x-auto bg-newBgColorInner p-[12px] md:w-[260px] md:flex-col md:gap-[15px] md:p-[20px]">
         {Array.from({ length: 6 }).map((_, index) => (
-          <SkeletonBar key={index} className="h-[36px] w-full" />
+          <Skeleton key={index} className="h-[36px] w-[120px] shrink-0 rounded-[12px] md:w-full" />
         ))}
-        <div className="mt-auto">
-          <SkeletonBar className="h-[40px] w-[120px]" />
+        <div className="mt-auto hidden md:block">
+          <Skeleton className="h-[40px] w-[120px] rounded-[12px]" />
         </div>
       </div>
-      <div className="bg-newBgColorInner flex-1 flex flex-col p-[20px] gap-[16px]">
-        <SkeletonBar className="h-[28px] w-[180px]" />
+      <div className="flex flex-1 flex-col gap-[16px] bg-newBgColorInner p-[16px] md:p-[20px]">
+        <Skeleton className="h-[28px] w-[180px] max-w-full rounded-full" />
         {Array.from({ length: 3 }).map((_, index) => (
           <div
             key={index}
-            className="rounded-[16px] border border-newBorder p-[24px] flex flex-col gap-[16px]"
+            className="flex flex-col gap-[16px] rounded-[16px] border border-newBorder p-[16px] md:p-[24px]"
           >
-            <SkeletonBar className="h-[18px] w-[160px]" />
-            <SkeletonBar className="h-[44px] w-full" />
-            <SkeletonBar className="h-[44px] w-[70%]" />
+            <Skeleton className="h-[18px] w-[160px] max-w-full rounded-full" />
+            <Skeleton className="h-[44px] w-full rounded-[12px]" />
+            <Skeleton className="h-[44px] w-[70%] rounded-[12px]" />
           </div>
         ))}
       </div>

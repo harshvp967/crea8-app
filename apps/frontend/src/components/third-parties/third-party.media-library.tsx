@@ -10,6 +10,7 @@ import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { Pagination } from '@gitroom/frontend/components/media/media.component';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const ThirdPartyMediaLibraryBrowser: FC<{
   integration: any;
@@ -92,12 +93,9 @@ const ThirdPartyMediaLibraryBrowser: FC<{
       <div className="flex-1 relative">
         <div className="absolute left-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner">
           {isLoading && (
-            <div className="grid grid-cols-4 gap-[8px]">
+            <div className="grid grid-cols-4 gap-[8px]" aria-hidden>
               {[...new Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-square bg-newSep rounded-[6px] animate-pulse"
-                />
+                <Skeleton className="aspect-square rounded-[6px]" key={i} />
               ))}
             </div>
           )}
@@ -252,7 +250,10 @@ export const ThirdPartyMediaLibrary: FC<{
     }
   );
 
-  if (isLoading || !data?.length) {
+  if (isLoading || !data) {
+    return <Skeleton className="h-[44px] w-[140px] rounded-[18px]" />;
+  }
+  if (!data.length) {
     return null;
   }
 

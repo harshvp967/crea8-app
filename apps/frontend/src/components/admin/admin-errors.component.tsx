@@ -8,7 +8,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Button } from '@gitroom/react/form/button';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { TableRowsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 
 interface ErrorRow {
@@ -309,7 +309,7 @@ export const AdminErrorsComponent: FC = () => {
       </div>
 
       {isLoading ? (
-        <LoadingComponent />
+        <TableRowsSkeleton rows={8} cols={5} />
       ) : error ? (
         <div className="text-red-400">Failed to load errors.</div>
       ) : !data || data.items.length === 0 ? (

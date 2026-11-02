@@ -252,14 +252,11 @@ export function BillingScreen({
     );
   }
   if (isLoading) {
-    if (surface === 'account') {
-      return (
-        <BillingShell>
-          <AccountBillingPlaceholder />
-        </BillingShell>
-      );
-    }
-    return <BillingShell><p data-billing-state="loading">Loading billing…</p></BillingShell>;
+    return (
+      <BillingShell>
+        <AccountBillingPlaceholder />
+      </BillingShell>
+    );
   }
   if (error || !data) {
     return (

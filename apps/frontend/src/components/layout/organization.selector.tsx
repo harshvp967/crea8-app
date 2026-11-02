@@ -8,6 +8,7 @@ import useSWR from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 
@@ -134,10 +135,13 @@ export const OrganizationSelector: FC<{
       <div className="account-org-wrap">
       <label className="account-org">
         <span>{t('organization', 'Organization')}</span>
+        {isLoading && !data ? (
+          <Skeleton className="account-org-select h-[44px] w-full rounded-[12px]" />
+        ) : (
         <select
           className="account-org-select"
           aria-label={t('organization', 'Organization')}
-          disabled={isLoading || options.length === 0}
+          disabled={options.length === 0}
           value={current?.id || ''}
           onChange={(event) => {
             const next = options.find(
@@ -146,8 +150,7 @@ export const OrganizationSelector: FC<{
             if (next && next.id !== user?.orgId) changeOrg(next)();
           }}
         >
-          {isLoading ? <option value="">Loading…</option> : null}
-          {!isLoading && options.length === 0 ? (
+          {options.length === 0 ? (
             <option value="">{t('no_organization', 'No organization')}</option>
           ) : null}
           {options.map(
@@ -166,6 +169,7 @@ export const OrganizationSelector: FC<{
             }
           )}
         </select>
+        )}
       </label>
       <button
         type="button"
@@ -178,7 +182,7 @@ export const OrganizationSelector: FC<{
     );
   }
   if (isLoading || !data) {
-    return null;
+    return <Skeleton className="h-[18px] w-[140px] rounded-full" />;
   }
   return (
     <>
@@ -350,7 +354,8 @@ export const WorkspaceSwitchList = ({
 }) => {
   const { isLoading, orgs, current, orgId, changeOrg, openNewWorkspace } =
     useWorkspaceSwitch();
-  if (isLoading || orgs.length === 0) return null;
+  if (isLoading) return <Skeleton className="h-[16px] w-[180px] max-w-full rounded-full" />;
+  if (orgs.length === 0) return null;
   const line = current?.name ? `Workspace - ${current.name}` : '';
   return (
     <div className="c8-account-workspaces" role="group" aria-label="Workspaces">

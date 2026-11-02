@@ -5,6 +5,7 @@ import { useCustomProviderFunction } from '@gitroom/frontend/components/launches
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export const MediumPublications: FC<{
   name: string;
   onChange: (event: {
@@ -18,7 +19,7 @@ export const MediumPublications: FC<{
   const t = useT();
 
   const customFunc = useCustomProviderFunction();
-  const [publications, setOrgs] = useState([]);
+  const [publications, setOrgs] = useState<any[] | undefined>(undefined);
   const { getValues } = useSettings();
   const [currentMedia, setCurrentMedia] = useState<string | undefined>();
   const onChangeInner = (event: {
@@ -31,12 +32,15 @@ export const MediumPublications: FC<{
     onChange(event);
   };
   useEffect(() => {
-    customFunc.get('publications').then((data) => setOrgs(data));
+    customFunc.get('publications').then((data) => setOrgs(Array.isArray(data) ? data : [])).catch(() => setOrgs([]));
     const settings = getValues()[props.name];
     if (settings) {
       setCurrentMedia(settings);
     }
   }, []);
+  if (!publications) {
+    return <SelectSkeleton />;
+  }
   if (!publications.length) {
     return null;
   }

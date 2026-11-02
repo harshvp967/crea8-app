@@ -8,6 +8,7 @@ import useSWR from 'swr';
 import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { CommentsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export const RenderComponents: FC<{
   postId: string;
 }> = (props) => {
@@ -45,7 +46,7 @@ export const RenderComponents: FC<{
   const t = useT();
 
   if (isLoading) {
-    return <></>;
+    return <CommentsSkeleton />;
   }
   return (
     <>

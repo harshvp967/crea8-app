@@ -8,6 +8,7 @@ import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.
 import { stkMenu, stkMenuItem } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { chooseVisibleTabs, pill } from '@gitroom/frontend/components/layout/nav.pill';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 type StalkerLink = {
   label: string;
@@ -194,7 +195,7 @@ export const StalkerTopNav = ({
             style={{ backgroundColor: project?.color || '#71717a' }}
           />
           {loading && !project ? (
-            <span className="inline-block h-[14px] w-[88px] animate-pulse rounded-full bg-newBoxHover" />
+            <Skeleton className="h-[14px] w-[88px] rounded-full" />
           ) : (
             <span className="truncate">{project?.name || 'New project'}</span>
           )}

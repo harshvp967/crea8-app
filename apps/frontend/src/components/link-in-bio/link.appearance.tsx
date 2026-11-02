@@ -24,6 +24,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkModal, LinkToggle, linkDanger, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import { LinkPreview, LinkSplit, LinkViewTabs } from '@gitroom/frontend/components/link-in-bio/link.shell';
+import { AppearanceSectionsSkeleton, LinkPreviewSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { LinkPublicView, SocialMark, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
 import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
@@ -171,24 +172,32 @@ export const LinkAppearanceScreen = () => {
 
   if (isLoading || !data || !draft) {
     return (
-      <div className="lib-appearance flex min-w-0 flex-col gap-[12px] pb-[24px]">
-        <div className="min-w-0">
-          <div className="lib-kicker">
-            <span className="lib-sticker">Link-in-Bio</span>
+      <LinkSplit
+        preview={
+          <LinkPreview onCopy={() => undefined}>
+            {error ? <div className="h-full w-full bg-newBgColorInner" /> : <LinkPreviewSkeleton />}
+          </LinkPreview>
+        }
+      >
+        <div className="lib-appearance flex min-w-0 flex-col gap-[12px] pb-[24px]">
+          <div className="min-w-0">
+            <div className="lib-kicker">
+              <span className="lib-sticker">Link-in-Bio</span>
+            </div>
+            <h1 className={stkTitle}>Appearance</h1>
           </div>
-          <h1 className={stkTitle}>Appearance</h1>
-        </div>
-        <div className={`${stkCard} ${error ? 'stk-state' : 'lib-loading'} flex items-center gap-[12px]`}>
           {error ? (
-            <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
-              <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" />
-            </span>
-          ) : null}
-          <p className="text-[14px] font-[500] text-textItemBlur">
-            {error ? 'Could not load your page.' : 'Loading your page…'}
-          </p>
+            <div className={`${stkCard} stk-state flex items-center gap-[12px]`}>
+              <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
+                <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" />
+              </span>
+              <p className="text-[14px] font-[500] text-textItemBlur">Could not load your page.</p>
+            </div>
+          ) : (
+            <AppearanceSectionsSkeleton />
+          )}
         </div>
-      </div>
+      </LinkSplit>
     );
   }
 

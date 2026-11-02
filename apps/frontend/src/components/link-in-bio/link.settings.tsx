@@ -15,6 +15,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { LinkField, LinkModal, LinkToggle, linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { imagePathProblem } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { stkCard, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { FieldCardSkeleton, LinkToggleRows } from '@gitroom/frontend/components/ui/skeleton';
 
 const fieldClass =
   'lib-input h-[44px] min-h-[44px] w-full rounded-[18px] border border-newBorder bg-newBgColorInner px-[14px] text-[14px] font-[500] shadow-[var(--arc-shadow-resting)] outline-none';
@@ -139,16 +140,22 @@ export const LinkSettingsScreen = () => {
           </div>
           <h1 className={stkTitle}>Settings</h1>
         </div>
-        <div className={`${stkCard} ${error ? 'stk-state' : 'lib-loading'} flex items-center gap-[12px]`}>
-          {error ? (
+        {error ? (
+          <div className={`${stkCard} stk-state flex items-center gap-[12px]`}>
             <span className={`${stkIconTile} stk-state-mark`} aria-hidden>
               <HugeIcon name="alert" size={20} className="shrink-0 text-textItemBlur" />
             </span>
-          ) : null}
-          <p className="text-[14px] font-[500] text-textItemBlur">
-            {error ? 'Could not load your page.' : 'Loading your page…'}
-          </p>
-        </div>
+            <p className="text-[14px] font-[500] text-textItemBlur">Could not load your page.</p>
+          </div>
+        ) : (
+          <>
+            <FieldCardSkeleton />
+            <section className={`${stkCard} flex flex-col gap-[12px]`}>
+              <LinkToggleRows />
+            </section>
+            <FieldCardSkeleton rows={1} />
+          </>
+        )}
       </div>
     );
   }

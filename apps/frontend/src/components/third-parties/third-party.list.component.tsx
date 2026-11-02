@@ -13,14 +13,15 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import clsx from 'clsx';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 export const IntegrationsSkeleton = () => (
   <div className="integrations-skeleton" role="status">
     <span className="sr-only">Loading</span>
     <div className="integrations-skel-card">
-      <span className="integrations-skel-row" />
-      <span className="integrations-skel-row" />
-      <span className="integrations-skel-row" />
+      <Skeleton className="integrations-skel-row" />
+      <Skeleton className="integrations-skel-row" />
+      <Skeleton className="integrations-skel-row" />
     </div>
   </div>
 );

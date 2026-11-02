@@ -54,7 +54,7 @@ import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-cont
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useShallow } from 'zustand/react/shallow';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useDebounce } from 'use-debounce';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
@@ -694,21 +694,21 @@ export const MediaBox: FC<{
               <div className="media-grid" aria-hidden>
                 {[...new Array(12)].map((_, i) => (
                   <div className="media-tile" key={i}>
-                    <div className="media-thumb media-skel" />
+                    <div className="media-thumb media-skel c8-skeleton" />
                     <div className="media-caption">
-                      <div className="media-skel-line" />
+                      <div className="media-skel-line c8-skeleton" />
                     </div>
                   </div>
                 ))}
               </div>
             )}
             {isLoading && !standalone && (
-              <div className="po-media-grid">
+              <div className="po-media-grid" aria-hidden>
                 {[...new Array(6)].map((_, i) => (
                   <div className="po-media-card" key={i}>
-                    <div className="po-media-thumb bg-newSep animate-pulse" />
+                    <Skeleton className="po-media-thumb" />
                     <div className="po-file-name">
-                      <span className="inline-block h-[10px] w-[70%] rounded bg-newSep" />
+                      <Skeleton className="h-[10px] w-[70%] rounded-full" />
                     </div>
                   </div>
                 ))}
