@@ -155,7 +155,7 @@ export const Filters = () => {
       return;
     }
 
-    const range = getDateRange('list');
+    const range = getDateRange('list', calendar.startDate);
     calendar.setFilters({
       startDate: range.startDate,
       endDate: range.endDate,

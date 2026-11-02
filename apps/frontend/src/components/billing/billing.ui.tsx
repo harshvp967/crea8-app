@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { BillingButton, BillingHeading } from '@gitroom/frontend/components/billing/billing.shell';
 import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
-import { usagePair, type PlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { creditCapacity, usagePair, type PlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -601,7 +601,7 @@ export function AccountPlanCard({
 export function AccountCreditsCard({ overview }: { overview: BillingOverview }) {
   const user = useUser();
   const { total, monthlyAllowance, packRemaining } = overview.credits;
-  const capacity = monthlyAllowance + packRemaining;
+  const capacity = creditCapacity(monthlyAllowance, packRemaining);
   const used = Math.max(0, capacity - total);
   const actions = user?.credits?.actions ?? [];
   const segments = actions.filter((action) => action.credits > 0);

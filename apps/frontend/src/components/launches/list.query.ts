@@ -12,28 +12,27 @@ export function startOfTodayUtc(zone: string, now: Date = new Date()): string {
   return dayjs(now).tz(zone).startOf('day').utc().toISOString();
 }
 
-// A list range of one day (startDate=endDate) hides every post on the other
-// days of that month. The list starts at the beginning of the month instead.
+// A week or single-day range hides posts from earlier in that month. Month
+// view still shows them. The list starts at the beginning of the month that
+// contains the range, so Week, Month, and List agree on those posts.
 export function listFromInstant(input: {
   zone: string;
   startDate?: string;
   endDate?: string;
   now?: Date;
 }): string {
-  if (input.startDate && input.endDate && input.startDate === input.endDate) {
+  if (input.startDate && input.endDate) {
     return dayjs
       .tz(input.startDate, input.zone)
       .startOf('month')
       .utc()
       .toISOString();
   }
-  if (input.startDate && input.endDate) {
-    return dayjs.tz(input.startDate, input.zone).startOf('day').utc().toISOString();
-  }
   return startOfTodayUtc(input.zone, input.now ?? new Date());
 }
 
-// /posts/list query. All adds `from` (start of today, no end).
+// /posts/list query. All adds `from` and no end. A calendar range starts at
+// the beginning of that month; with no range, `from` is the start of today.
 // Scheduled, published, and drafts do not send a date. Drafts are every
 // draft; the list request is the same at every screen width.
 export function listPostsSearch(input: {

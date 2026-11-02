@@ -206,6 +206,23 @@ describe('list Scheduled, Published, and Drafts tabs', () => {
     expect(search('draft').has('from')).toBe(false);
   });
 
+  it('includes this month when the list range is the current week', () => {
+    const today = new Date('2026-11-02T18:00:00.000Z');
+    const from = listFromInstant({
+      zone: 'America/New_York',
+      startDate: '2026-11-02',
+      endDate: '2026-11-08',
+      now: today,
+    });
+    expect(from).toBe('2026-11-01T04:00:00.000Z');
+
+    const novemberFirst = new Date('2026-11-01T16:00:00.000Z');
+    const novemberSecond = new Date('2026-11-02T18:00:00.000Z');
+    const { where } = postsListQuery('org-1', { state: 'all', from }, today);
+    expect(publishDateIncluded(where, novemberFirst)).toBe(true);
+    expect(publishDateIncluded(where, novemberSecond)).toBe(true);
+  });
+
   it('includes this month when the list range is a single day', () => {
     const today = new Date('2026-11-02T18:00:00.000Z');
     const from = listFromInstant({

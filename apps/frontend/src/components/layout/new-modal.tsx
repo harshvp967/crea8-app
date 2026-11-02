@@ -12,12 +12,14 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { useHotkeys } from 'react-hotkeys-hook';
 import clsx from 'clsx';
 import { EventEmitter } from 'events';
 import { useGrabToClose } from '@gitroom/frontend/components/launches/helpers/grab.to.close';
+import { confirmPhraseMatches } from '@gitroom/frontend/components/settings/delete.confirm';
 
 interface OpenModalInterface {
   title?: any;
@@ -336,6 +338,7 @@ export const DecisionModal: FC<{
   resolution: (value: boolean) => void;
   title?: string;
   tone?: 'danger' | 'primary' | 'destructive';
+  confirmPhrase?: string;
 }> = ({
   description,
   cancelLabel,
@@ -344,17 +347,36 @@ export const DecisionModal: FC<{
   onlyApprove,
   title,
   tone,
+  confirmPhrase,
 }) => {
   const { closeCurrent } = useModals();
+  const [typed, setTyped] = useState('');
   const copy = typeof description === 'string' ? description.trim() : description;
   const hasCopy = typeof copy === 'string' ? copy.length > 0 : !!copy;
+  const phrase = (confirmPhrase || '').trim();
+  const confirmed = confirmPhraseMatches(typed, phrase);
+  const phraseField = phrase ? (
+    <label className="po-sure-copy">
+      Type {phrase} to continue
+      <input
+        className="mt-[8px] block h-[40px] w-full rounded-[10px] border border-newBorder bg-newBgColorInner px-[12px] text-[14px] text-textColor"
+        value={typed}
+        autoComplete="off"
+        onChange={(event) => setTyped(event.target.value)}
+      />
+    </label>
+  ) : null;
   const approve = (
     <Button
       className={clsx(
         'po-sure-yes',
         (tone === 'danger' || tone === 'destructive') && 'is-danger'
       )}
+      disabled={!confirmed}
       onClick={() => {
+        if (!confirmPhraseMatches(typed, phrase)) {
+          return;
+        }
         resolution(true);
         closeCurrent();
       }}
@@ -384,6 +406,7 @@ export const DecisionModal: FC<{
           <div className="min-w-0">
             <div className="po-sure-title">{title}</div>
             {hasCopy ? <div className="po-sure-copy">{copy}</div> : null}
+            {phraseField}
           </div>
         </div>
         <div className="po-sure-actions">
@@ -396,6 +419,7 @@ export const DecisionModal: FC<{
   return (
     <div className="flex flex-col">
       {hasCopy ? <div className="max-w-[600px]">{copy}</div> : null}
+      {phraseField}
       <div className="flex gap-[12px] mt-[16px]">
         {approve}
         {cancel}
@@ -412,6 +436,7 @@ export const areYouSure = ({
   approveLabel = 'Close',
   cancelLabel = 'Cancel',
   tone = undefined as 'danger' | 'primary' | 'destructive' | undefined,
+  confirmPhrase = '',
 } = {}): Promise<boolean> => {
   return new Promise<boolean>((newRes) => {
     decisionModalEmitter.emit('open', {
@@ -420,6 +445,7 @@ export const areYouSure = ({
       approveLabel,
       cancelLabel,
       tone,
+      confirmPhrase,
       newRes,
     });
   });
@@ -443,6 +469,7 @@ export const useDecisionModal = () => {
       approveLabel = 'Close',
       cancelLabel = 'Cancel',
       tone = undefined as 'danger' | 'primary' | 'destructive' | undefined,
+      confirmPhrase = '',
       newRes = undefined as any,
     } = {}) => {
       return new Promise<boolean>((res) => {
@@ -463,6 +490,7 @@ export const useDecisionModal = () => {
               description={description}
               approveLabel={approveLabel}
               cancelLabel={cancelLabel}
+              confirmPhrase={confirmPhrase}
             />
           ),
         });

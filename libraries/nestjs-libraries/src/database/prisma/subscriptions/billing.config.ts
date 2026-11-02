@@ -22,6 +22,14 @@ export const CREDIT_COSTS = {
 // show a card line until this is a positive number.
 export const AI_VIDEO_CREDIT_COST: number | null = null;
 
+// Plan allowance plus pack credits. The account menu and the billing card
+// both use this as the credit denominator.
+export function creditCapacity(allowance: number, packCredits: number) {
+  const plan = Number.isFinite(allowance) ? Math.max(0, allowance) : 0;
+  const pack = Number.isFinite(packCredits) ? Math.max(0, packCredits) : 0;
+  return plan + pack;
+}
+
 export const CREDIT_PACKS = [
   { key: 'PACK_150' as const, credits: 150, usd: 5, name: '150 credits' },
   { key: 'PACK_500' as const, credits: 500, usd: 15, name: '500 credits' },

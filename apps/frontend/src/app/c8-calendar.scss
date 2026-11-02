@@ -3983,6 +3983,14 @@ body.c8-schedule .cal-post-sheet-title {
     max-width: none;
     margin-inline: 0;
   }
+
+  /* List areas are three rows. The four-row template put the well on an
+     auto track and gave the spare 1fr to an empty row, so the absolute
+     scroller had no height and the rows disappeared at 768 and 1024. */
+  body.c8-schedule[data-c8-view='list'] .app-main {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto minmax(0, 1fr) !important;
+  }
 }
 
 @media (max-width: 639px), (max-height: 500px) {

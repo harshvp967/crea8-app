@@ -132,6 +132,7 @@ function getDateRange(display: string, referenceDate?: string) {
         endDate: date.endOf('isoWeek').format('YYYY-MM-DD'),
       };
     case 'month':
+    case 'list':
       return {
         startDate: date.startOf('month').format('YYYY-MM-DD'),
         endDate: date.endOf('month').format('YYYY-MM-DD'),
@@ -184,8 +185,11 @@ export const CalendarWeekProvider: FC<{
     if (searchParams.get('startDate') && searchParams.get('endDate')) {
       return;
     }
-    const range = getDateRange(filters.display);
+    // Read the display after the phone layout effect. Using the first
+    // render's display wrote a month or week range onto Day and opened
+    // yesterday, and treated List as an ISO week so the 1st was missing.
     setFilters((current) => {
+      const range = getDateRange(current.display);
       if (
         current.startDate === range.startDate &&
         current.endDate === range.endDate
