@@ -1,0 +1,264 @@
+/* Shared page shell. Schedule, Stalker, Link in Bio, Analytics, Account,
+   and Settings use one content width, padding, title size, and header
+   height. Cards, dialogs, popovers, and toasts share one radius, border,
+   and shadow. Accent colour stays --c8-cyan. Phone rules (max-width 639)
+   are left to the screen stylesheets. */
+
+:root {
+  --c8-page-max: 1104px;
+  --c8-page-title: 28px;
+  --c8-page-head: 64px;
+  --c8-radius: 16px;
+  --c8-shadow: 0 8px 24px rgb(18 16 22 / 0.12);
+}
+
+.dark {
+  --c8-shadow: 0 8px 24px rgb(0 0 0 / 0.36);
+}
+
+/* ---------- Page frame ---------- */
+@media (min-width: 640px) and (min-height: 501px) {
+  .c8-shell .app-main:has(.calendar-panel),
+  .c8-shell .app-main:has(.stalker-screen),
+  .c8-shell .app-main:has(.link-screen),
+  .c8-shell .app-main:has(.analytics-screen),
+  .c8-shell .app-main:has(.settings-screen) {
+    padding: 32px 32px 40px !important;
+  }
+
+  body.c8-schedule .c8-cal-head,
+  .stalker-screen .stk-head,
+  .link-screen .lib-head,
+  .analytics-screen .analytics-head,
+  .settings-screen .settings-head-v2 {
+    min-height: var(--c8-page-head);
+    align-items: flex-end;
+  }
+
+  body.c8-schedule .c8-cal-title,
+  .stalker-screen .stk-title,
+  .link-screen .stk-title,
+  .analytics-screen .analytics-head h1,
+  .settings-screen .settings-head-v2 > h1,
+  .account-screen.settings-screen .settings-head-v2 > h1 {
+    font-size: var(--c8-page-title) !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.02em;
+  }
+}
+
+@media (min-width: 1200px) and (min-height: 501px) {
+  body.c8-schedule .calendar-panel,
+  .stalker-screen .stk-page-frame,
+  .link-screen > .lib-split,
+  .link-screen > .lib-settings,
+  .link-screen > .lib-analytics,
+  .link-screen > .lib-leads,
+  .analytics-screen .analytics-main,
+  .settings-screen .settings-main {
+    width: 100%;
+    max-width: var(--c8-page-max);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .link-screen .lib-editor-page,
+  .link-screen .lib-appearance {
+    max-width: none;
+  }
+}
+
+/* Section titles sit under the page h1. */
+.settings-screen .settings-head h2 {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-size: 22px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Developers heading uses the same card as the other account sections. */
+.settings-screen .settings-section:has(.settings-seg) {
+  padding: 20px;
+  border: 1px solid var(--c8-line);
+  border-radius: var(--c8-radius);
+  background: var(--c8-surface);
+  box-shadow: var(--c8-shadow);
+}
+
+/* ---------- One surface ---------- */
+@media (min-width: 640px) {
+  .settings-screen .settings-section,
+  .stalker-screen .stk-card,
+  .link-screen .stk-card,
+  .analytics-screen .analytics-stat,
+  .analytics-screen .analytics-state-card,
+  body:has(.link-screen) .lib-dialog,
+  .stalker-screen .stk-dialog,
+  .settings-screen .arc-dialog,
+  body.c8-schedule .arc-dialog,
+  .app-toast,
+  .stalker-screen .stk-confirm,
+  .stalker-screen .stk-menu,
+  .stalker-screen .stk-popover,
+  body.c8-schedule .customer-menu,
+  body.c8-schedule .channel-menu {
+    border-radius: var(--c8-radius) !important;
+    border: 1px solid var(--c8-line) !important;
+    box-shadow: var(--c8-shadow) !important;
+  }
+}
+
+.app-toast {
+  border-radius: var(--c8-radius);
+  border: 1px solid var(--c8-line);
+  box-shadow: var(--c8-shadow);
+}
+
+/* ---------- List lines up with its filters ---------- */
+@media (min-width: 640px) and (min-height: 501px) {
+  body.c8-schedule[data-c8-view='list'] .app-main,
+  body.c8-schedule[data-c8-view='list'] .calendar-panel {
+    grid-template-areas:
+      'head head actions'
+      'rail filters filters'
+      'rail well well' !important;
+  }
+
+  body.c8-schedule .cal-nav,
+  body.c8-schedule[data-c8-view='month'] .cal-nav,
+  body.c8-schedule[data-c8-view='day'] .cal-nav,
+  body.c8-schedule[data-c8-view='week'] .cal-nav {
+    min-height: 40px;
+  }
+
+  body.c8-schedule .week-head.is-today .week-dow,
+  body.c8-schedule .week-head.is-today .week-num,
+  body.c8-schedule .month-cell .text-c8-schedule {
+    color: var(--c8-cyan);
+  }
+}
+
+/* ---------- Stalker alert row and delete popover ---------- */
+@media (min-width: 768px) {
+  .stalker-screen .stk-al-board {
+    overflow: visible;
+  }
+
+  .stalker-screen .stk-al-cols,
+  .stalker-screen .stk-al-card {
+    grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.8fr) minmax(132px, auto);
+  }
+
+  .stalker-screen .stk-al-actions {
+    position: relative;
+    z-index: 2;
+  }
+
+  .stalker-screen .stk-al-actions .stk-confirm {
+    top: auto;
+    bottom: calc(100% + 8px);
+    inset-inline-end: 0;
+    inset-inline-start: auto;
+  }
+}
+
+/* ---------- Menus hang off their trigger ---------- */
+@media (min-width: 640px) {
+  body:has(.link-screen) .lib-modal.lib-anchored,
+  body:has(.link-screen) .lib-modal.lib-anchored:has(.lib-block-sheet) {
+    align-items: flex-start !important;
+    justify-content: flex-end !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  body:has(.link-screen) .lib-modal.lib-anchored .lib-dialog,
+  body:has(.link-screen) .lib-modal.lib-anchored:has(.lib-block-sheet) .lib-dialog {
+    position: fixed !important;
+    top: var(--lib-pop-top) !important;
+    right: var(--lib-pop-right) !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: min(280px, calc(100vw - 24px)) !important;
+    max-width: min(280px, calc(100vw - 24px)) !important;
+    max-height: min(70dvh, calc(100dvh - var(--lib-pop-top) - 16px)) !important;
+    margin: 0 !important;
+  }
+
+  body:has(.link-screen) .lib-modal.lib-anchored[data-flip='true'] .lib-dialog {
+    top: auto !important;
+    bottom: var(--lib-pop-bottom) !important;
+    max-height: min(70dvh, calc(100dvh - var(--lib-pop-bottom) - 16px)) !important;
+  }
+}
+
+/* ---------- Fields ---------- */
+.link-screen .lib-date,
+.link-screen .lib-field select,
+.link-screen .lib-field input:not([type='checkbox']):not([type='radio']),
+.link-screen .lib-analytics select,
+.settings-screen .settings-control select,
+.settings-screen select,
+.stalker-screen select,
+.account-screen select {
+  height: 40px;
+  min-height: 40px;
+  border: 1px solid var(--c8-line);
+  border-radius: var(--c8-radius);
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dark .link-screen input[type='date'],
+.dark .link-screen input[type='datetime-local'],
+.dark .settings-screen select,
+.dark .stalker-screen select {
+  color-scheme: dark;
+}
+
+/* ---------- Composer settings toggle ---------- */
+.c8-composer .po-settings-toggle,
+.c8-composer .po-settings-toggle svg {
+  color: var(--c8-ink) !important;
+}
+
+/* ---------- Security actions share one button ---------- */
+.account-screen .settings-group .settings-row > button,
+.account-screen .settings-group .settings-nav-foot {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--c8-line);
+  border-radius: var(--c8-radius);
+  background: var(--c8-surface);
+  box-shadow: var(--c8-shadow);
+  color: var(--c8-ink);
+}
+
+/* ---------- Loading shapes ---------- */
+.analytics-skel-channel {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 999px;
+}
+
+.settings-screen.c8-page-load {
+  width: 100%;
+  max-width: var(--c8-page-max);
+  margin-right: auto;
+  margin-left: auto;
+  padding: 32px 16px 40px;
+}
+
+.account-screen .account-languages .grid {
+  gap: 8px;
+}

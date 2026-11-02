@@ -436,14 +436,23 @@ export function ThemeCardSkeleton() {
 export function StalkerAnalyticsSkeleton() {
   return (
     <div className="stk-an-loading flex flex-col gap-[16px]" aria-busy="true" aria-hidden="true">
-      <Skeleton className="h-[280px] w-full rounded-c8-row" />
+      <div className="flex flex-wrap gap-[8px]">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Skeleton className="h-[36px] w-[96px] rounded-full" key={index} />
+        ))}
+      </div>
+      <Skeleton className="h-[280px] w-full rounded-[16px]" />
       <div className="stk-an-grid">
-        <Skeleton className="h-[180px] w-full rounded-c8-row" />
-        <Skeleton className="h-[180px] w-full rounded-c8-row" />
-        <Skeleton className="h-[180px] w-full rounded-c8-row" />
+        <Skeleton className="h-[180px] w-full rounded-[16px]" />
+        <Skeleton className="h-[180px] w-full rounded-[16px]" />
+        <Skeleton className="h-[180px] w-full rounded-[16px]" />
       </div>
     </div>
   );
+}
+
+export function DaySlotSkeleton() {
+  return <Skeleton className="mx-[8px] mt-[8px] h-[8px] w-[70%] rounded-full" />;
 }
 
 export function NotificationListSkeleton() {

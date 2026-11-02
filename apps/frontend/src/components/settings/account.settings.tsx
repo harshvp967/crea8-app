@@ -194,7 +194,7 @@ const AccountProfile = () => {
         })}
       >
         <div className="settings-head">
-          <h1>{t('profile', 'Profile')}</h1>
+          <h2>{t('profile', 'Profile')}</h2>
         </div>
         <div className="account-photo">
           <span className="account-photo-face" aria-hidden>
@@ -354,7 +354,7 @@ const AccountWorkspace = () => {
     <div className="account-stack">
       <div className="settings-section">
         <div className="settings-head">
-          <h1>{t('workspace', 'Workspace')}</h1>
+          <h2>{t('workspace', 'Workspace')}</h2>
         </div>
         <OrganizationSelector asOpenSelect />
         {canRename ? <WorkspaceRename currentName={current?.name || ''} /> : null}
@@ -426,7 +426,7 @@ const AccountNotifications = () => {
   return (
     <div className="settings-section">
       <div className="settings-head">
-        <h1>{t('notifications', 'Notifications')}</h1>
+        <h2>{t('notifications', 'Notifications')}</h2>
       </div>
       <div className="settings-group">
         <EmailNotificationsComponent />
@@ -440,7 +440,7 @@ const AccountAppearance = () => {
   return (
     <div className="settings-section">
       <div className="settings-head">
-        <h1>{t('appearance', 'Appearance')}</h1>
+        <h2>{t('appearance', 'Appearance')}</h2>
       </div>
       <div className="settings-group">
         <div className="settings-row">
@@ -460,6 +460,9 @@ const AccountAppearance = () => {
 
 const AccountDate = () => (
   <div className="settings-section">
+    <div className="settings-head">
+      <h2>Date format</h2>
+    </div>
     <div className="settings-group">
       <MetricComponent />
     </div>
@@ -494,7 +497,7 @@ const AccountSecurity = () => {
   return (
     <div className="settings-section">
       <div className="settings-head">
-        <h1>{t('security', 'Security')}</h1>
+        <h2>{t('security', 'Security')}</h2>
       </div>
       <div className="settings-group">
         <div className="settings-row">

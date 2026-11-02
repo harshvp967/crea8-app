@@ -6,10 +6,10 @@ const hoursAgo = (hours: number) =>
 export const SAMPLE_PROJECTS: StalkerProjectRecord[] = [
   {
     id: 'sample-project',
-    name: 'Crea8one test',
+    name: 'crea8.one',
     description: 'test',
     color: '#71717a',
-    brandName: 'Crea8one test',
+    brandName: 'crea8.one',
     alertEmail: 'harshvwebsitedeveloper@gmail.com',
     digestEnabled: true,
     digestHour: 8,
@@ -42,7 +42,7 @@ export const SAMPLE_PROJECTS: StalkerProjectRecord[] = [
   },
   {
     id: 'sample-other',
-    name: 'Crea8one test',
+    name: 'crea8.one',
     description: 'test',
     color: '#477eeb',
   },
@@ -113,7 +113,7 @@ export const SAMPLE_KEYWORDS = [
   },
   {
     id: 'kw-brand',
-    phrase: 'crea8one',
+    phrase: 'crea8.one',
     listenYoutube: true,
     listenReddit: false,
     listenX: false,

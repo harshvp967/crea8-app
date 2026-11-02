@@ -80,7 +80,7 @@ export const SignaturesComponent: FC<{
     <div className="settings-section">
       <div className="settings-head">
         <div>
-          <h1>{t('signatures', 'Signatures')}</h1>
+          <h2>{t('signatures', 'Signatures')}</h2>
           <p>
             {t(
               'you_can_add_signatures_to_your_account_to_be_used_in_your_posts',

@@ -1397,7 +1397,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <div>
                       <ChevronDownIcon
                         rotated={showSettings}
-                        className="text-textItemBlur"
+                        className="text-c8-ink"
                       />
                     </div>
                   </button>

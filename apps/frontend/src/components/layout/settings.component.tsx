@@ -41,27 +41,29 @@ const SettingsPageHead: FC<{
 
 export const SettingsPageSkeleton = () => {
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col md:flex-row">
-      <div className="flex w-full flex-row gap-[8px] overflow-x-auto bg-newBgColorInner p-[12px] md:w-[260px] md:flex-col md:gap-[15px] md:p-[20px]">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <Skeleton key={index} className="h-[36px] w-[120px] shrink-0 rounded-[12px] md:w-full" />
-        ))}
-        <div className="mt-auto hidden md:block">
-          <Skeleton className="h-[40px] w-[120px] rounded-[12px]" />
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-[16px] bg-newBgColorInner p-[16px] md:p-[20px]">
-        <Skeleton className="h-[28px] w-[180px] max-w-full rounded-full" />
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className="flex flex-col gap-[16px] rounded-[16px] border border-newBorder p-[16px] md:p-[24px]"
-          >
-            <Skeleton className="h-[18px] w-[160px] max-w-full rounded-full" />
-            <Skeleton className="h-[44px] w-full rounded-[12px]" />
-            <Skeleton className="h-[44px] w-[70%] rounded-[12px]" />
+    <div className="settings-screen">
+      <div className="settings-main">
+        <header className="settings-head-v2">
+          <div className="settings-kicker">
+            <Skeleton className="h-[24px] w-[88px] rounded-full" />
           </div>
-        ))}
+          <h1>
+            <Skeleton className="h-[28px] w-[148px] max-w-full rounded-full" />
+          </h1>
+        </header>
+        <div className="settings-settabs">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-[32px] w-[96px] shrink-0 rounded-full" />
+          ))}
+        </div>
+        <div className="settings-section">
+          <div className="settings-head">
+            <Skeleton className="h-[22px] w-[140px] rounded-full" />
+            <Skeleton className="ms-auto h-[40px] w-[148px] rounded-full" />
+          </div>
+          <Skeleton className="h-[40px] w-full rounded-[16px]" />
+          <Skeleton className="h-[40px] w-full rounded-[16px]" />
+        </div>
       </div>
     </div>
   );

@@ -75,7 +75,7 @@ export const Autopost: FC = () => {
     <div className="settings-section">
       <div className="settings-head">
         <div>
-          <h1>{t('autopost', 'Autopost')}</h1>
+          <h2>{t('autopost', 'Autopost')}</h2>
           <p>
             {t(
               'autopost_can_automatically_posts_your_rss_new_items_to_social_media',

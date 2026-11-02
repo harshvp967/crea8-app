@@ -24,6 +24,7 @@ import {
   ChartTooltip,
   chartTheme,
   createFormatter,
+  integerTicks,
   linePath,
   niceTicks,
   resolveSeries,
@@ -142,11 +143,10 @@ export function ChartLine({
   const values = visible.flatMap((s) => data.map((d) => toNumber(d[s.key])));
   const dataMin = values.length ? Math.min(...values) : 0;
   const dataMax = values.length ? Math.max(...values) : 1;
-  const ticks = niceTicks(
-    yMin ?? Math.min(0, dataMin),
-    yMax ?? Math.max(0, dataMax),
-    yTicks
-  );
+  const axisMin = yMin ?? Math.min(0, dataMin);
+  const axisMax = yMax ?? Math.max(0, dataMax);
+  const ticks =
+    n <= 1 ? integerTicks(axisMin, axisMax) : niceTicks(axisMin, axisMax, yTicks);
   const lo = yMin ?? ticks[0];
   const hi = Math.max(yMax ?? ticks[ticks.length - 1], lo + 1e-9);
   const tickValues = ticks.filter((t) => t >= lo - 1e-9 && t <= hi + 1e-9);

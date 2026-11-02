@@ -98,18 +98,26 @@ export const Webhooks: FC = () => {
     <div className="settings-section">
       <div className="settings-head">
         <div>
-          <h1>
+          <h2>
             {t('webhooks', 'Webhooks')}
             {isLoading && !data
               ? ''
               : ` (${webhookQuota(data?.length || 0, user?.tier?.webhooks)})`}
-          </h1>
+          </h2>
         </div>
         <Button onClick={addWebhook()}>
           + {t('add_a_webhook', 'Add a webhook')}
         </Button>
       </div>
       {isLoading && !data ? <SettingsListSkeleton /> : null}
+      {!isLoading && data && !data.length ? (
+        <div className="settings-empty">
+          <span className="settings-empty-mark" aria-hidden="true">
+            <HugeIcon name="send" size={22} />
+          </span>
+          <h2>{t('no_webhooks_yet', 'No webhooks yet')}</h2>
+        </div>
+      ) : null}
       {!!data?.length && (
         <div className="settings-list">
           <div className="settings-cols cols-hook">

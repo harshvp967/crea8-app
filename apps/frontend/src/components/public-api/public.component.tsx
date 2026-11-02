@@ -606,10 +606,10 @@ export const PublicComponent = () => {
     <div className="settings-section">
       <div className="settings-head">
         <div>
-          <h1>
+          <h2>
             {t('developers', 'Developers')}
             {currentOrg?.name ? ` - ${currentOrg.name}` : ''}
-          </h1>
+          </h2>
           <p>
             {t(
               'use_postiz_api_to_integrate_with_your_tools',

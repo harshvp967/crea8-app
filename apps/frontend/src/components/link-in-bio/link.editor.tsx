@@ -844,10 +844,11 @@ export const LinkEditorScreen = () => {
               </>
   );
 
-  const toggleAdd = (anchor: 'head' | 'row') => {
-    setSheetAnchor(null);
-    setAddOpen((open) => (addAnchor === anchor ? !open : true));
+  const toggleAdd = (anchor: 'head' | 'row', node?: HTMLElement) => {
+    const next = addAnchor === anchor ? !addOpen : true;
+    setAddOpen(next);
     setAddAnchor(anchor);
+    setSheetAnchor(next && node ? menuAnchor(node) : null);
   };
 
   const pageHost = `${data.publicOrigin.replace(/^https?:\/\//, '')}/${data.slug}`;
@@ -904,7 +905,7 @@ export const LinkEditorScreen = () => {
                 type="button"
                 className={`${linkPrimary} lib-head-add`}
                 aria-expanded={addOpen && addAnchor === 'head'}
-                onClick={() => toggleAdd('head')}
+                onClick={(event) => toggleAdd('head', event.currentTarget)}
               >
                 <HugeIcon name="plus" size={16} />
                 Add block
@@ -1013,7 +1014,7 @@ export const LinkEditorScreen = () => {
               </Link>
             ))}
             {fewLinks ? (
-              <button type="button" className="lib-nudge-chip" onClick={() => toggleAdd('head')}>
+              <button type="button" className="lib-nudge-chip" onClick={(event) => toggleAdd('head', event.currentTarget)}>
                 Add a link
               </button>
             ) : null}
@@ -1259,7 +1260,6 @@ export const LinkEditorScreen = () => {
                         danger
                         onClick={() => {
                           setMenu('');
-                          setSheetAnchor(null);
                           setConfirmId(block.id);
                         }}
                       >
@@ -1341,14 +1341,13 @@ export const LinkEditorScreen = () => {
       ) : null}
 
       {addOpen ? (
-        <LinkModal title="Add block" onClose={() => setAddOpen(false)}>
+        <LinkModal title="Add block" anchor={sheetAnchor} onClose={() => { setAddOpen(false); setSheetAnchor(null); }}>
           {addMenu}
         </LinkModal>
       ) : null}
 
       {confirmId ? (
-        <LinkModal title="Remove this block?" onClose={() => setConfirmId('')}>
-          <p className="text-[14px] text-textItemBlur">This removes it from your page.</p>
+        <LinkModal title="Remove this block?" anchor={sheetAnchor} onClose={() => { setConfirmId(''); setSheetAnchor(null); }}>
           <div className="lib-confirm-actions">
             <button type="button" className={linkSecondary} onClick={() => setConfirmId('')}>
               Cancel

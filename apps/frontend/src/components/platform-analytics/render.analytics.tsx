@@ -130,9 +130,13 @@ export const AnalyticsSkeleton: FC<{ toolbar?: boolean }> = ({ toolbar }) => (
   <div className="analytics-skeleton" role="status">
     <span className="sr-only">Loading</span>
     {toolbar && (
-      <div className="analytics-skel-toolbar">
-        <Skeleton className="analytics-skel-bar is-tool-a" />
-        <Skeleton className="analytics-skel-bar is-tool-b" />
+      <div className="analytics-toolbar">
+        <div className="analytics-strip">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton className="analytics-skel-channel" key={index} />
+          ))}
+        </div>
+        <Skeleton className="h-[36px] w-[168px] max-w-full rounded-full" />
       </div>
     )}
     {[0, 1, 2].map((i) => (

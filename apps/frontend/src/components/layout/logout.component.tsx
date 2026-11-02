@@ -48,7 +48,7 @@ export const LogoutComponent: FC<{ isIcon?: boolean; label?: string }> = ({
             data-tooltip-id="tooltip"
             data-tooltip-content={`
             ${t('logout_from', 'Logout from')}${' '}
-            Crea8one
+            crea8.one
             `}
           />
         ) : (
@@ -56,7 +56,7 @@ export const LogoutComponent: FC<{ isIcon?: boolean; label?: string }> = ({
             {label || (
               <>
                 {t('logout_from', 'Logout from')}
-                {' Crea8one'}
+                {' crea8.one'}
               </>
             )}
           </span>
