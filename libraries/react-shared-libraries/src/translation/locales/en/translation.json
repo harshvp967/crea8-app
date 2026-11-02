@@ -569,7 +569,7 @@
   "select_channels": "Select Channels",
   "start_a_new_chat": "Start a new chat",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "Hello, I'm your crea8.one agent.\n\nI schedule posts and generate pictures and videos.\n\nHistory and Channels are at the top right. On a phone in portrait, they sit on the row under the title.\n\nFor MCP, open Settings, then Developers. It is on Access. Copy the client config.",
+  "agent_welcome_message": "Hello, I'm your crea8.one agent.\n\nI schedule posts and generate pictures and videos.",
   "last_github_trending": "Last Github Trending",
   "next_predicted_github_trending": "Next Predicted GitHub Trending",
   "repository": "Repository",

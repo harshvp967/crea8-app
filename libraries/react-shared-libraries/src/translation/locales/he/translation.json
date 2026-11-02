@@ -566,7 +566,7 @@
   "select_channels": "בחר ערוצים",
   "start_a_new_chat": "התחל שיחה חדשה",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "שלום, אני הסוכן של crea8.one.\n\nאני מתזמן פוסטים ויוצר תמונות וסרטונים.\n\nHistory וערוצים בפינה השמאלית העליונה. בטלפון לאורך הם בשורה שמתחת לכותרת.\n\nל-MCP: פתחו הגדרות, אחר כך Developers. זה ב-Access. העתיקו את הגדרת הלקוח.",
+  "agent_welcome_message": "שלום, אני הסוכן של crea8.one.\n\nאני מתזמן פוסטים ויוצר תמונות וסרטונים.",
   "last_github_trending": "הטרנדים האחרונים ב-GitHub",
   "next_predicted_github_trending": "הטרנד הבא הצפוי ב-GitHub",
   "repository": "מאגר",

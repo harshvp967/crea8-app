@@ -1107,6 +1107,8 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 .c8-side-user {
@@ -1114,7 +1116,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   align-items: center;
   gap: 10px;
   min-width: 0;
-  flex: 1;
+  flex: 1 1 auto;
   padding: 4px;
   border: 0;
   border-radius: 16px;
@@ -1162,13 +1164,19 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 }
 
 .c8-side-user-copy {
-  display: flex;
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: center;
   min-width: 0;
-  flex-direction: column;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .c8-side-user-name,
 .c8-side-user-handle {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1299,6 +1307,7 @@ body.light .c8-shell .c8-side-foot .notify-panel {
 
   .c8-side-user {
     flex: none;
+    overflow: visible;
   }
 }
 

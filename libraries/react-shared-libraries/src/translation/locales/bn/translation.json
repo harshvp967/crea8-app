@@ -566,7 +566,7 @@
   "select_channels": "চ্যানেল নির্বাচন করুন",
   "start_a_new_chat": "নতুন চ্যাট শুরু করুন",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "হ্যালো, আমি crea8.one এজেন্ট.\n\nআমি পোস্ট শিডিউল করি এবং ছবি ও ভিডিও তৈরি করি.\n\nHistory ও চ্যানেল ডানদিকে উপরে। ফোন সোজা করে ধরলে সেগুলো শিরোনামের নিচের সারিতে।\n\nMCP: সেটিংস খুলুন, তারপর Developers। Access-এ আছে। ক্লায়েন্ট কনফিগ কপি করুন.",
+  "agent_welcome_message": "হ্যালো, আমি crea8.one এজেন্ট.\n\nআমি পোস্ট শিডিউল করি এবং ছবি ও ভিডিও তৈরি করি.",
   "last_github_trending": "সর্বশেষ গিটহাব ট্রেন্ডিং",
   "next_predicted_github_trending": "পরবর্তী অনুমানকৃত গিটহাব ট্রেন্ডিং",
   "repository": "রিপোজিটরি",

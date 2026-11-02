@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
 import { capitalize, orderBy } from 'lodash';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
@@ -17,27 +17,21 @@ import { useRouter } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import { SchedulePageHead } from '@gitroom/frontend/components/layout/schedule.shell';
 
-const AnalyticsPageHead: FC<{ period?: number; sub?: string }> = ({
-  period,
-  sub,
-}) => {
+const AnalyticsPageHead: FC<{
+  period?: number;
+  sub?: string;
+  actions?: ReactNode;
+}> = ({ period, sub, actions }) => {
   const t = useT();
   return (
-    <header className="analytics-head">
-      <div className="analytics-head-text">
-        <div className="analytics-kicker">
-          <span className="analytics-sticker">{t('schedule', 'Schedule')}</span>
-          {period ? (
-            <span className="analytics-period">
-              {t('last_n_days', `Last ${period} days`)}
-            </span>
-          ) : null}
-        </div>
-        <h1>{t('analytics', 'Analytics')}</h1>
-        {sub ? <p className="analytics-sub">{sub}</p> : null}
-      </div>
-    </header>
+    <SchedulePageHead
+      title={t('analytics', 'Analytics')}
+      context={period ? t('last_n_days', `Last ${period} days`) : undefined}
+      subtitle={sub}
+      actions={actions}
+    />
   );
 };
 
@@ -218,7 +212,7 @@ export const PlatformAnalytics = () => {
 
   if (error) {
     return (
-      <div className="analytics-screen">
+      <div className="analytics-screen c8-sched-shell c8-sched-frame">
         <div className="analytics-main">
           <AnalyticsPageHead period={keys} />
           <div className="analytics-note analytics-state-card is-error" role="alert">
@@ -241,7 +235,7 @@ export const PlatformAnalytics = () => {
 
   if (isLoading || !data) {
     return (
-      <div className="analytics-screen">
+      <div className="analytics-screen c8-sched-shell c8-sched-frame">
         <div className="analytics-main">
           <AnalyticsPageHead period={keys} />
           <AnalyticsSkeleton toolbar />
@@ -252,7 +246,7 @@ export const PlatformAnalytics = () => {
 
   if (!sortedIntegrations.length) {
     return (
-      <div className="analytics-screen">
+      <div className="analytics-screen c8-sched-shell c8-sched-frame">
         <div className="analytics-main">
           <AnalyticsPageHead period={keys} />
           <div className="analytics-state-card is-empty">
@@ -297,7 +291,7 @@ export const PlatformAnalytics = () => {
     .join(' ');
 
   return (
-    <div className="analytics-screen">
+    <div className="analytics-screen c8-sched-shell c8-sched-frame">
       <div className="analytics-channels">
         <h2>{t('channels')}</h2>
         <div className="analytics-channel-list">
@@ -322,6 +316,21 @@ export const PlatformAnalytics = () => {
         <AnalyticsPageHead
           period={keys}
           sub={`${currentIntegration.name} · ${platformLabel}`}
+          actions={
+            !!options.length ? (
+              <SegmentedControl
+                variant="pill"
+                className="analytics-range"
+                aria-label={t('analytics_range', 'Date range')}
+                value={String(keys)}
+                onValueChange={(value) => setKey(Number(value))}
+                options={options.map((option) => ({
+                  value: String(option.key),
+                  label: option.value,
+                }))}
+              />
+            ) : null
+          }
         />
         <div className="analytics-toolbar">
           <div className="analytics-strip">
@@ -341,19 +350,6 @@ export const PlatformAnalytics = () => {
               </button>
             ))}
           </div>
-          {!!options.length && (
-            <SegmentedControl
-              variant="pill"
-              className="analytics-range"
-              aria-label={t('analytics_range', 'Date range')}
-              value={String(keys)}
-              onValueChange={(value) => setKey(Number(value))}
-              options={options.map((option) => ({
-                value: String(option.key),
-                label: option.value,
-              }))}
-            />
-          )}
         </div>
         {!!keys && !!currentIntegration && !refresh && (
           <RenderAnalytics integration={currentIntegration} date={keys} />

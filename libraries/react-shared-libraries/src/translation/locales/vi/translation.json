@@ -566,7 +566,7 @@
   "select_channels": "Chọn kênh",
   "start_a_new_chat": "Bắt đầu cuộc trò chuyện mới",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "Xin chào, tôi là agent crea8.one của bạn.\n\nTôi lên lịch bài đăng và tạo ảnh, video.\n\nHistory và Kênh nằm ở góc trên bên phải. Trên điện thoại để dọc, chúng nằm ở hàng dưới tiêu đề.\n\nMCP: mở Cài đặt, rồi Developers. Nó ở Access. Sao chép cấu hình client.",
+  "agent_welcome_message": "Xin chào, tôi là agent crea8.one của bạn.\n\nTôi lên lịch bài đăng và tạo ảnh, video.",
   "last_github_trending": "Xu hướng Github gần đây",
   "next_predicted_github_trending": "Dự đoán xu hướng Github tiếp theo",
   "repository": "Kho lưu trữ",

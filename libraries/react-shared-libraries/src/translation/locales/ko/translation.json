@@ -566,7 +566,7 @@
   "select_channels": "채널 선택",
   "start_a_new_chat": "새 채팅 시작",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "안녕하세요. crea8.one 에이전트입니다.\n\n게시물을 예약하고 사진과 영상을 만듭니다.\n\nHistory와 채널은 오른쪽 위에 있습니다. 세로 화면의 휴대폰에서는 제목 아래 줄에 있습니다.\n\nMCP는 설정, 그다음 Developers입니다. Access에 있습니다. 클라이언트 설정을 복사하세요.",
+  "agent_welcome_message": "안녕하세요. crea8.one 에이전트입니다.\n\n게시물을 예약하고 사진과 영상을 만듭니다.",
   "last_github_trending": "최근 깃허브 트렌딩",
   "next_predicted_github_trending": "다음 예측 깃허브 트렌딩",
   "repository": "저장소",

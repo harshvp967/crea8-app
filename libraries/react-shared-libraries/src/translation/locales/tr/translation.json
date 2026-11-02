@@ -566,7 +566,7 @@
   "select_channels": "Kanalları Seç",
   "start_a_new_chat": "Yeni bir sohbet başlat",
   "your_assistant": "crea8.one agent",
-  "agent_welcome_message": "Merhaba, ben crea8.one ajanınızım.\n\nGönderi planlarım, görsel ve video üretirim.\n\nHistory ve Kanallar sağ üstte. Dikey tutulan telefonda başlığın altındaki satırdalar.\n\nMCP için Ayarlar'ı, ardından Developers'ı açın. Access sekmesindedir. İstemci yapılandırmasını kopyalayın.",
+  "agent_welcome_message": "Merhaba, ben crea8.one ajanınızım.\n\nGönderi planlarım, görsel ve video üretirim.",
   "last_github_trending": "Son Github Trendleri",
   "next_predicted_github_trending": "Sonraki Tahmini Github Trendleri",
   "repository": "Depo",

@@ -1,0 +1,243 @@
+/* Shared Schedule page shell. Analytics is the reference: one centered
+   column, one top padding, and one header (badge, context, title, subtitle,
+   actions on the right). Calendar and Composer are not in this column. Colours are --c8-*
+   tokens already used by the Analytics header. */
+
+.c8-sched-shell {
+  width: 100%;
+  min-width: 0;
+}
+
+.c8-sched-frame {
+  width: 100%;
+  min-width: 0;
+}
+
+.c8-sched-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  min-height: var(--c8-page-head);
+}
+
+.c8-sched-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.c8-sched-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 22px;
+}
+
+.c8-sched-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c8-app-schedule);
+  color: #121016;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+  transform: rotate(-2deg);
+}
+
+.c8-sched-context {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--c8-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c8-sched-title {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-size: 28px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.c8-sched-sub {
+  display: block;
+  max-width: 100%;
+  min-height: 1.45em;
+  margin: 0;
+  overflow: hidden;
+  color: var(--c8-muted);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c8-sched-sub:empty {
+  min-height: 1.45em;
+}
+
+.c8-sched-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Same top padding as Analytics (c8-page, 640 and up). Phone and short
+   landscape keep the padding already set on each screen. */
+@media (min-width: 640px) and (min-height: 501px) {
+  .c8-shell .app-main:has(.c8-sched-shell) {
+    padding: 32px 32px 40px !important;
+  }
+}
+
+/* Same centered column as Analytics. Calendar is not a .c8-sched-frame. */
+@media (min-width: 1200px) and (min-height: 501px) {
+  .c8-sched-frame {
+    width: 100%;
+    max-width: var(--c8-page-max);
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 639px) {
+  .c8-sched-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .c8-sched-title {
+    font-size: 32px;
+  }
+
+  .c8-sched-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-height: 500px) {
+  .c8-sched-head {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .c8-sched-title {
+    font-size: 26px;
+  }
+
+  .c8-sched-actions {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+}
+
+/* Sidebar footer. Name and workspace each take a line and ellipsize.
+   The bell keeps a fixed slot and cannot cover the text. Collapsed rail
+   (under 1200) still hides the copy. */
+@media (min-width: 1200px) {
+  .c8-side-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .c8-side-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 46px);
+  }
+
+  .c8-side-user-copy {
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .c8-side-user-name,
+  .c8-side-user-handle {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .c8-side-foot > .relative {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 38px;
+    width: 38px;
+    min-width: 38px;
+    max-width: 38px;
+  }
+}
+
+.c8-account-pop.is-sheet .c8-side-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 8px;
+}
+
+.c8-account-pop.is-sheet .c8-side-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  cursor: default;
+}
+
+.c8-account-pop.is-sheet .c8-side-user-copy {
+  display: grid;
+  grid-template-rows: auto auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.c8-account-pop.is-sheet .c8-side-user-name,
+.c8-account-pop.is-sheet .c8-side-user-handle {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
