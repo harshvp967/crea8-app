@@ -10,6 +10,11 @@ import copy from 'copy-to-clipboard';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { DeveloperCardSkeleton } from '@gitroom/frontend/components/ui/skeleton';
+import {
+  clientIdCopy,
+  oauthCreateResult,
+  oauthRedirectError,
+} from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.app.form';
 
 const useOAuthApp = () => {
   const fetch = useFetch();
@@ -67,6 +72,7 @@ export const DeveloperComponent: FC = () => {
   const [redirectUrl, setRedirectUrl] = useState('');
   const [pictureId, setPictureId] = useState<string | undefined>(undefined);
   const [picturePath, setPicturePath] = useState<string | undefined>(undefined);
+  const [redirectError, setRedirectError] = useState('');
 
   const startEditing = useCallback(() => {
     if (!app) return;
@@ -75,6 +81,7 @@ export const DeveloperComponent: FC = () => {
     setRedirectUrl(app.redirectUrl || '');
     setPictureId(app.pictureId || undefined);
     setPicturePath(app.picture?.path || undefined);
+    setRedirectError('');
     setEditing(true);
   }, [app]);
 
@@ -104,40 +111,55 @@ export const DeveloperComponent: FC = () => {
   }, [modals, t, changeMedia]);
 
   const createApp = useCallback(async () => {
-    if (!name || !redirectUrl) {
+    const urlError = oauthRedirectError(redirectUrl);
+    if (!name.trim()) {
       toaster.show('Name and Redirect URL are required', 'warning');
+    }
+    if (!name.trim() || urlError) {
+      setRedirectError(urlError);
       return;
     }
+    setRedirectError('');
     try {
-      const result = await (
-        await fetch('/user/oauth-app', {
-          method: 'POST',
-          body: JSON.stringify({
-            name,
-            description,
-            redirectUrl,
-            pictureId,
-          }),
-        })
-      ).json();
-
-      if (result.clientSecret) {
-        setPlaintextSecret(result.clientSecret);
-        toaster.show(
-          'App created! Copy your client secret now - it will only be shown once.',
-          'success'
-        );
+      const response = await fetch('/user/oauth-app', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          description,
+          redirectUrl,
+          pictureId,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      const outcome = oauthCreateResult({
+        ok: response.ok && !!result.clientSecret,
+        message: result.message,
+      });
+      if (outcome.open) {
+        setRedirectError(outcome.error);
+        return;
       }
+      setPlaintextSecret(result.clientSecret);
+      toaster.show(
+        'App created! Copy your client secret now - it will only be shown once.',
+        'success'
+      );
       setCreating(false);
       mutate();
     } catch {
-      toaster.show('Failed to create app', 'warning');
+      setRedirectError('Could not create that app.');
     }
-  }, [name, description, redirectUrl, pictureId]);
+  }, [fetch, mutate, name, description, pictureId, redirectUrl, toaster]);
 
   const updateApp = useCallback(async () => {
+    const urlError = oauthRedirectError(redirectUrl);
+    if (urlError) {
+      setRedirectError(urlError);
+      return;
+    }
+    setRedirectError('');
     try {
-      await fetch('/user/oauth-app', {
+      const response = await fetch('/user/oauth-app', {
         method: 'PUT',
         body: JSON.stringify({
           name,
@@ -146,13 +168,22 @@ export const DeveloperComponent: FC = () => {
           pictureId,
         }),
       });
+      const result = await response.json().catch(() => ({}));
+      const outcome = oauthCreateResult({
+        ok: response.ok,
+        message: result.message,
+      });
+      if (outcome.open) {
+        setRedirectError(outcome.error);
+        return;
+      }
       toaster.show('App updated', 'success');
       setEditing(false);
       mutate();
     } catch {
-      toaster.show('Failed to update app', 'warning');
+      setRedirectError('Could not update that app.');
     }
-  }, [name, description, redirectUrl, pictureId]);
+  }, [fetch, mutate, name, description, pictureId, redirectUrl, toaster]);
 
   const rotateSecret = useCallback(async () => {
     const approved = await decision.open({
@@ -237,7 +268,10 @@ export const DeveloperComponent: FC = () => {
           <div className="p-[20px]">
             <button
               type="button"
-              onClick={() => setCreating(true)}
+              onClick={() => {
+                setRedirectError('');
+                setCreating(true);
+              }}
               className="cursor-pointer px-[20px] h-[44px] bg-btnPrimary hover:brightness-95 text-[#0A0A0A] rounded-[18px] text-[15px] font-[600]"
             >
               {t('create_oauth_app', 'Create OAuth App')}
@@ -332,9 +366,18 @@ export const DeveloperComponent: FC = () => {
               <input
                 className="bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] text-textColor outline-none"
                 value={redirectUrl}
-                onChange={(e) => setRedirectUrl(e.target.value)}
+                aria-invalid={redirectError ? true : undefined}
+                onChange={(e) => {
+                  setRedirectUrl(e.target.value);
+                  if (redirectError) setRedirectError('');
+                }}
                 placeholder="https://yourapp.com/callback"
               />
+              {redirectError ? (
+                <p role="alert" className="text-[13px] text-[#F04438]">
+                  {redirectError}
+                </p>
+              ) : null}
             </div>
             <div className="flex gap-[8px]">
               <button
@@ -446,9 +489,18 @@ export const DeveloperComponent: FC = () => {
               <input
                 className="bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] text-textColor outline-none"
                 value={redirectUrl}
-                onChange={(e) => setRedirectUrl(e.target.value)}
+                aria-invalid={redirectError ? true : undefined}
+                onChange={(e) => {
+                  setRedirectUrl(e.target.value);
+                  if (redirectError) setRedirectError('');
+                }}
                 placeholder="https://yourapp.com/callback"
               />
+              {redirectError ? (
+                <p role="alert" className="text-[13px] text-[#F04438]">
+                  {redirectError}
+                </p>
+              ) : null}
             </div>
             <div className="flex gap-[8px]">
               <button
@@ -546,7 +598,10 @@ export const DeveloperComponent: FC = () => {
             </div>
           </div>
           <div className="flex gap-[8px]">
-            <CopyButton text={app.clientId} label={t('copy_id', 'Copy ID')} />
+            <CopyButton
+              text={clientIdCopy(app.clientId).value}
+              label={t('copy_client_id', clientIdCopy(app.clientId).label)}
+            />
             {plaintextSecret && (
               <CopyButton
                 text={plaintextSecret}
