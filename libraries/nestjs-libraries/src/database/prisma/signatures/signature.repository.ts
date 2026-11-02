@@ -46,10 +46,24 @@ export class SignatureRepository {
     return { id: updatedId };
   }
 
-  deleteSignature(orgId: string, id: string) {
-    return this._signatures.model.signatures.update({
-      where: { id, organizationId: orgId },
+  async deleteSignature(orgId: string, id: string) {
+    const existing = await this._signatures.model.signatures.findFirst({
+      where: { id, organizationId: orgId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) {
+      return null;
+    }
+    // `id` is the only unique field. organizationId in `update.where` is rejected
+    // by Prisma, the row stays, and the list still returns it.
+    await this._signatures.model.signatures.update({
+      where: signatureWriteWhere(existing.id),
       data: { deletedAt: new Date() },
     });
+    return this.getSignaturesByOrgId(orgId);
   }
+}
+
+export function signatureWriteWhere(id: string) {
+  return { id };
 }

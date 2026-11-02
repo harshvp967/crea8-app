@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import { useClickAway } from '@uidotdev/usehooks';
 import { NotificationListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { friendlyNotification } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.text';
 function replaceLinks(text: string) {
   const urlRegex =
     /(\bhttps?:\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gi;
@@ -89,7 +90,10 @@ export const NotificationOpenComponent = () => {
               index: number
             ) => (
               <ShowNotification
-                notification={notification}
+                notification={{
+                  ...notification,
+                  content: friendlyNotification(notification.content),
+                }}
                 lastReadNotification={data.lastReadNotifications}
                 key={`notifications_${index}`}
               />

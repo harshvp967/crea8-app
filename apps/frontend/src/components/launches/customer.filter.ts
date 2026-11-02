@@ -33,6 +33,15 @@ export function integrationsForCustomer<T extends CustomerChannel>(
   return integrations.filter((item) => item.customer?.id === selected);
 }
 
+// Null until the channel list has loaded, so the AI panel never paints "0 channels"
+// from the empty array it starts with.
+export function channelCountLabel(loaded: boolean, count: number) {
+  if (!loaded) {
+    return null;
+  }
+  return count;
+}
+
 // The day-view slot replaces the calendar's channel list with the channels
 // that already have a post or a time in that row. The composer must ignore
 // that list: every channel stays available, and a selected customer only

@@ -78,7 +78,11 @@ type Rule = {
   name: string;
   enabled?: boolean;
   filters?: Record<string, string>;
+  pending?: boolean;
 };
+
+const ruleList = (current: Rule[] | undefined, fallback: Rule[]) =>
+  Array.isArray(current) ? current : fallback;
 
 const ruleMeta = (filters?: Record<string, string>) => {
   if (!filters) return '';
@@ -223,20 +227,47 @@ export const StalkerAlerts = () => {
       toaster.show(draftId ? 'Alert updated' : `Alert created. ${clean} is on.`);
       return;
     }
+    const previous = rules;
+    const optimisticId = draftId || `pending-${Date.now().toString(36)}`;
+    const optimistic = { id: optimisticId, ...body, pending: true };
     setSaving(true);
+    await rulesQuery.mutate(
+      (current: Rule[] | undefined) => {
+        const list = ruleList(current, previous);
+        return draftId
+          ? list.map((rule) => (rule.id === draftId ? { ...rule, ...optimistic } : rule))
+          : [...list, optimistic];
+      },
+      { revalidate: false }
+    );
+    setCreating(false);
     const response = await fetch(draftId ? `/stalker/rules/${draftId}` : '/stalker/rules', {
       method: 'POST',
       body: JSON.stringify(draftId ? body : { projectId, ...body }),
     });
     setSaving(false);
     if (!response.ok) {
+      await rulesQuery.mutate(previous, { revalidate: false });
+      setCreating(true);
       toaster.show(draftId ? 'Could not update that alert' : 'Could not create that alert', 'warning');
       return;
     }
-    setCreating(false);
+    const created = await response.json().catch(() => null);
+    await rulesQuery.mutate(
+      (current: Rule[] | undefined) =>
+        ruleList(current, previous).map((rule) =>
+          rule.id === optimisticId
+            ? {
+                ...rule,
+                id: typeof created?.id === 'string' ? created.id : rule.id,
+                pending: false,
+              }
+            : rule
+        ),
+      { revalidate: false }
+    );
     setDraftId(null);
     setFilters(emptyFilters());
-    rulesQuery.mutate();
     toaster.show(draftId ? 'Alert updated' : `Alert created. ${clean} is on.`);
   };
 
@@ -246,15 +277,30 @@ export const StalkerAlerts = () => {
       setLocalRules((current) => current.map((item) => (item.id === rule.id ? { ...item, enabled } : item)));
       return;
     }
+    const previous = rules;
+    await rulesQuery.mutate(
+      (current: Rule[] | undefined) =>
+        ruleList(current, previous).map((item) =>
+          item.id === rule.id ? { ...item, enabled, pending: true } : item
+        ),
+      { revalidate: false }
+    );
     const response = await fetch(`/stalker/rules/${rule.id}`, {
       method: 'POST',
       body: JSON.stringify({ enabled }),
     });
     if (!response.ok) {
+      await rulesQuery.mutate(previous, { revalidate: false });
       toaster.show('Could not update that alert', 'warning');
       return;
     }
-    rulesQuery.mutate();
+    await rulesQuery.mutate(
+      (current: Rule[] | undefined) =>
+        ruleList(current, previous).map((item) =>
+          item.id === rule.id ? { ...item, enabled, pending: false } : item
+        ),
+      { revalidate: false }
+    );
   };
 
   const removeRule = async (id: string) => {
@@ -263,12 +309,16 @@ export const StalkerAlerts = () => {
       setLocalRules((current) => current.filter((rule) => rule.id !== id));
       return;
     }
+    const previous = rules;
+    await rulesQuery.mutate(
+      (current: Rule[] | undefined) => ruleList(current, previous).filter((rule) => rule.id !== id),
+      { revalidate: false }
+    );
     const response = await fetch(`/stalker/rules/${id}`, { method: 'DELETE' });
     if (!response.ok) {
+      await rulesQuery.mutate(previous, { revalidate: false });
       toaster.show('Could not delete that alert', 'warning');
-      return;
     }
-    rulesQuery.mutate();
   };
 
   const openNew = () => {
@@ -422,18 +472,23 @@ export const StalkerAlerts = () => {
                   {rules.map((rule) => {
                     const meta = ruleMeta(rule.filters);
                     return (
-                      <li key={rule.id} className="stk-al-card">
+                      <li key={rule.id} className="stk-al-card" aria-busy={rule.pending ? true : undefined}>
                         <p className="stk-al-name">{rule.name}</p>
                         <p className="stk-al-kw">
                           <span className="stk-al-kw-label">Keywords · </span>
                           {keywordLine(rule)}
                         </p>
-                        {meta ? <p className="stk-al-meta">{meta}</p> : null}
+                        {rule.pending ? (
+                          <p className="stk-al-meta">Saving…</p>
+                        ) : meta ? (
+                          <p className="stk-al-meta">{meta}</p>
+                        ) : null}
                         <div className="stk-al-actions relative flex items-center justify-end gap-[6px]">
                           <button
                             type="button"
                             className="stk-al-icon"
                             aria-label={`Edit ${rule.name}`}
+                            disabled={rule.pending}
                             onClick={() => openEdit(rule)}
                           >
                             <HugeIcon name="pencil" size={16} />
@@ -444,6 +499,7 @@ export const StalkerAlerts = () => {
                             aria-checked={rule.enabled !== false}
                             aria-label={`${rule.enabled === false ? 'Turn on' : 'Turn off'} ${rule.name}`}
                             className="stk-switch"
+                            disabled={rule.pending}
                             onClick={() => toggleRule(rule)}
                           >
                             <span />
@@ -452,6 +508,7 @@ export const StalkerAlerts = () => {
                             type="button"
                             aria-label={`Delete ${rule.name}`}
                             className="stk-al-icon stk-al-delete"
+                            disabled={rule.pending}
                             onClick={() => setRemoveId(removeId === rule.id ? null : rule.id)}
                           >
                             <HugeIcon name="trash" size={16} />
@@ -461,8 +518,8 @@ export const StalkerAlerts = () => {
                               <button type="button" onClick={() => setRemoveId(null)}>
                                 Cancel
                               </button>
-                              <button type="button" className="is-remove" onClick={() => removeRule(rule.id)}>
-                                Remove
+                              <button type="button" className="is-remove" disabled={rule.pending} onClick={() => removeRule(rule.id)}>
+                                {rule.pending ? 'Removing…' : 'Remove'}
                               </button>
                             </div>
                           ) : null}
@@ -615,8 +672,8 @@ export const StalkerAlerts = () => {
                 disabled={saving || name.trim().length < 2}
                 onClick={createRule}
               >
-                <PlusIcon />
-                {draftId ? 'Save alert' : 'New alert'}
+                {saving ? null : <PlusIcon />}
+                {saving ? 'Saving…' : draftId ? 'Save alert' : 'New alert'}
               </button>
             </div>
           </div>

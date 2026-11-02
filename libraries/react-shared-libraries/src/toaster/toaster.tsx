@@ -5,17 +5,22 @@ import EventEmitter from 'events';
 import clsx from 'clsx';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 const toaster = new EventEmitter();
+
+export type ToastAction = { label: string; run: () => void };
+
 export const Toaster = () => {
   const [showToaster, setShowToaster] = useState(false);
   const [toasterText, setToasterText] = useState('');
   const [toasterType, setToasterType] = useState<'success' | 'warning' | 'error' | ''>(
     ''
   );
+  const [action, setAction] = useState<ToastAction | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     const onShow = (params: {
       text: string;
       type?: 'success' | 'warning' | 'error';
+      action?: ToastAction;
     }) => {
       const { text, type } = params;
       // Each toast owns the hide timer, so an older toast's timer can't
@@ -23,9 +28,11 @@ export const Toaster = () => {
       clearTimeout(hideTimer.current);
       setToasterText(text);
       setToasterType(type || 'success');
+      setAction(params.action || null);
       setShowToaster(true);
       hideTimer.current = setTimeout(() => {
         setShowToaster(false);
+        setAction(null);
       }, 4200);
     };
     toaster.on('show', onShow);
@@ -62,7 +69,34 @@ export const Toaster = () => {
           <HugeIcon name="check" size={16} />
         )}
       </div>
-      <div className="app-toast-text flex-1 text-[14px] text-textColor">{toasterText}</div>
+      <div className="app-toast-text flex-1 text-[14px] text-textColor">
+        {toasterText}
+        {action ? (
+          <>
+            {' '}
+            <button
+              type="button"
+              style={{
+                border: 0,
+                background: 'transparent',
+                color: 'inherit',
+                font: 'inherit',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+              }}
+              onClick={() => {
+                const run = action.run;
+                setShowToaster(false);
+                setAction(null);
+                run();
+              }}
+            >
+              {action.label}
+            </button>
+          </>
+        ) : null}
+      </div>
       <button type="button" className="app-toast-close" aria-label="Close" onClick={() => setShowToaster(false)}>
         <HugeIcon name="close" size={14} />
       </button>
@@ -71,11 +105,15 @@ export const Toaster = () => {
 };
 export const useToaster = () => {
   return {
-    show: useCallback((text: string, type?: 'success' | 'warning' | 'error') => {
-      toaster.emit('show', {
-        text,
-        type,
-      });
-    }, []),
+    show: useCallback(
+      (text: string, type?: 'success' | 'warning' | 'error', action?: ToastAction) => {
+        toaster.emit('show', {
+          text,
+          type,
+          action,
+        });
+      },
+      []
+    ),
   };
 };

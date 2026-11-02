@@ -20,7 +20,7 @@ import { LinkPreview, LinkSplit } from '@gitroom/frontend/components/link-in-bio
 import { LinkBlockSkeleton, LinkPreviewSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { stkCard, stkEmpty, stkIconTile, stkSub, stkTitle } from '@gitroom/frontend/components/stalker/stalker.chrome';
 import { LinkPublicView, linkInitials } from '@gitroom/frontend/components/link-in-bio/link.public-view';
-import { blockDeleteRequest, blockRestoreRequest, embedProblem, musicProblem, parseEmbed, pastedBlockType, shareMenu, utcToZonedInput, youtubeChannelTarget } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { blockDeleteRequest, blockOffersCopyLink, blockRemovalFeedback, blockRestoreRequest, embedProblem, linkQrDataUrl, musicProblem, parseEmbed, pastedBlockType, qrImageSrc, shareMenu, utcToZonedInput, youtubeChannelTarget } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 
 type EmbedOnly = 'instagram' | 'tiktok' | 'x' | 'threads';
 
@@ -161,6 +161,40 @@ const rowMeta = (block: LinkBlock) => {
   return `${note} · ${clicks}`;
 };
 
+const optimisticBlock = (id: string, body: Record<string, unknown>, position: number): LinkBlock => ({
+  id,
+  type: (typeof body.type === 'string' ? body.type : 'LINK') as LinkBlock['type'],
+  position,
+  enabled: true,
+  title: String(body.title || ''),
+  url: String(body.url || ''),
+  priority: body.priority === true,
+  scheduleOn: body.scheduleOn === true,
+  startsAt: null,
+  endsAt: null,
+  postId: body.postId ? String(body.postId) : null,
+  state: 'live',
+  clicks: 0,
+  thumbnail: String(body.thumbnail || ''),
+  iconMode: String(body.iconMode || ''),
+  spotlight: body.spotlight === true,
+  body: String(body.body || ''),
+  lock: { type: 'NONE', hasPassword: false },
+  faq: Array.isArray(body.faq) ? (body.faq as LinkBlock['faq']) : [],
+  images: Array.isArray(body.images) ? (body.images as LinkBlock['images']) : [],
+  form: null,
+  details: null,
+  discount:
+    body.discount && typeof body.discount === 'object' ? (body.discount as LinkBlock['discount']) : null,
+  events: Array.isArray(body.events) ? (body.events as LinkBlock['events']) : [],
+  layout: (body.layout as LinkBlock['layout']) || 'classic',
+  animation: String(body.animation || 'none'),
+  priorityMode: (body.priorityMode as LinkBlock['priorityMode']) || 'none',
+  rules: Array.isArray(body.rules) ? (body.rules as LinkBlock['rules']) : [],
+  minAge: Number(body.minAge) || 18,
+  post: null,
+});
+
 const menuAnchor = (node: HTMLElement): LinkAnchor => {
   const rect = node.getBoundingClientRect();
   const gap = 8;
@@ -186,7 +220,6 @@ export const LinkEditorScreen = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [addAnchor, setAddAnchor] = useState<'head' | 'row'>('row');
   const [preview, setPreview] = useState(false);
-  const [undoId, setUndoId] = useState('');
   const pressTimer = useRef(0);
   const [pressId, setPressId] = useState('');
   const [pressOver, setPressOver] = useState('');
@@ -244,11 +277,25 @@ export const LinkEditorScreen = () => {
   };
 
   const save = async (path: string, method: string, body?: unknown, note?: string, close = true) => {
+    const snapshot = data;
+    const adding =
+      method === 'POST' && path === '/link-in-bio/blocks' && !!snapshot && !!body && typeof body === 'object';
+    if (adding && snapshot) {
+      const block = optimisticBlock(`pending-${Date.now().toString(36)}`, body as Record<string, unknown>, snapshot.blocks.length);
+      await mutate({ ...snapshot, blocks: [...snapshot.blocks, block] }, { revalidate: false });
+      if (close) {
+        setModal(null);
+        setMenu('');
+        setAddOpen(false);
+        setSheetAnchor(null);
+        setConfirmId('');
+      }
+    }
     setBusy(true);
     try {
       const next = await linkSend(fetch, path, method, body);
       await mutate(next, { revalidate: false });
-      if (close) {
+      if (!adding && close) {
         setModal(null);
         setMenu('');
         setAddOpen(false);
@@ -261,8 +308,75 @@ export const LinkEditorScreen = () => {
       revalidatePublicLink();
       return true;
     } catch (err) {
+      if (adding && snapshot) {
+        await mutate(snapshot, { revalidate: false });
+      }
       toast.show(err instanceof Error ? err.message : 'Something went wrong', 'warning');
       return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeBlock = async (id: string) => {
+    if (!data) {
+      return;
+    }
+    const snapshot = data;
+    const feedback = blockRemovalFeedback();
+    setConfirmId('');
+    setMenu('');
+    setSheetAnchor(null);
+    await mutate(
+      { ...snapshot, blocks: snapshot.blocks.filter((block) => block.id !== id) },
+      { revalidate: false }
+    );
+    let undone = false;
+    let settled = false;
+    let restoreStarted = false;
+    const restoreOnce = async () => {
+      if (restoreStarted) {
+        return;
+      }
+      restoreStarted = true;
+      try {
+        const restore = blockRestoreRequest(id);
+        const restored = await linkSend(fetch, restore.path, restore.method);
+        await mutate(restored, { revalidate: false });
+        revalidatePublicLink();
+      } catch (err) {
+        toast.show(err instanceof Error ? err.message : 'Could not restore that block', 'warning');
+      }
+    };
+    const undo = async () => {
+      if (undone) {
+        return;
+      }
+      undone = true;
+      await mutate(snapshot, { revalidate: false });
+      if (settled) {
+        await restoreOnce();
+      }
+    };
+    if (feedback.signal === 'undo' && !feedback.banner) {
+      toast.show('Block removed', 'success', { label: 'Undo', run: () => void undo() });
+    }
+    setBusy(true);
+    try {
+      const request = blockDeleteRequest(id);
+      const next = await linkSend(fetch, request.path, request.method);
+      settled = true;
+      if (undone) {
+        await restoreOnce();
+      } else {
+        await mutate(next, { revalidate: false });
+        revalidatePublicLink();
+      }
+    } catch (err) {
+      if (!undone) {
+        await mutate(snapshot, { revalidate: false });
+        toast.show(err instanceof Error ? err.message : 'Could not remove that block', 'warning');
+      }
     } finally {
       setBusy(false);
     }
@@ -315,25 +429,25 @@ export const LinkEditorScreen = () => {
     };
     window.addEventListener('keydown', onKey);
     let alive = true;
-    let objectUrl = '';
-    (async () => {
-      const response = await fetch('/link-in-bio/qr.png', { headers: { Accept: 'image/png' } });
-      if (!response.ok || !alive) {
-        return;
-      }
-      objectUrl = URL.createObjectURL(await response.blob());
-      if (alive) {
-        setShareQr(objectUrl);
-      }
-    })();
+    const target = data?.publicUrl;
+    if (target) {
+      linkQrDataUrl(target)
+        .then((url) => {
+          if (alive) {
+            setShareQr(qrImageSrc(url));
+          }
+        })
+        .catch(() => {
+          if (alive) {
+            setShareQr('');
+          }
+        });
+    }
     return () => {
       alive = false;
       window.removeEventListener('keydown', onKey);
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
     };
-  }, [shareOpen, fetch]);
+  }, [shareOpen, data?.publicUrl]);
 
   if (isLoading || !data) {
     return (
@@ -367,7 +481,7 @@ export const LinkEditorScreen = () => {
   }
 
   const reorder = (fromId: string, toId: string) => {
-    if (!fromId || fromId === toId) {
+    if (!fromId || fromId === toId || fromId.startsWith('pending-') || toId.startsWith('pending-')) {
       return;
     }
     const ids = data.blocks.map((block) => block.id);
@@ -381,6 +495,9 @@ export const LinkEditorScreen = () => {
   };
 
   const move = (id: string, delta: number) => {
+    if (id.startsWith('pending-')) {
+      return;
+    }
     const ids = data.blocks.map((block) => block.id);
     const from = ids.indexOf(id);
     const to = from + delta;
@@ -903,27 +1020,6 @@ export const LinkEditorScreen = () => {
           </div>
         ) : null}
 
-        {undoId ? (
-          <div className="lib-undo" role="status">
-            <span>Block removed</span>
-            <button
-              type="button"
-              className={linkSecondary}
-              disabled={busy}
-              onClick={async () => {
-                const id = undoId;
-                const restore = blockRestoreRequest(id);
-                const ok = await save(restore.path, restore.method, undefined, 'Restored');
-                if (ok) {
-                  setUndoId('');
-                }
-              }}
-            >
-              Undo
-            </button>
-          </div>
-        ) : null}
-
         <div className="lib-editor-actions">
           <details className="lib-preview-as">
             <summary className="lib-preview-as-summary">
@@ -1032,7 +1128,7 @@ export const LinkEditorScreen = () => {
               }}
             >
               <div className="lib-editor-move">
-                <button type="button" aria-label="Move up" disabled={busy || index === 0} onClick={() => move(block.id, -1)}>
+                <button type="button" aria-label="Move up" disabled={busy || index === 0 || block.id.startsWith('pending-')} onClick={() => move(block.id, -1)}>
                   <HugeIcon name="chevron-up" size={14} />
                 </button>
                 <span
@@ -1051,7 +1147,7 @@ export const LinkEditorScreen = () => {
                 <button
                   type="button"
                   aria-label="Move down"
-                  disabled={busy || index === data.blocks.length - 1}
+                  disabled={busy || index === data.blocks.length - 1 || block.id.startsWith('pending-')}
                   onClick={() => move(block.id, 1)}
                 >
                   <HugeIcon name="chevron-down" size={14} />
@@ -1070,14 +1166,18 @@ export const LinkEditorScreen = () => {
                 <div className="lib-editor-meta">
                   <span
                     className={`lib-pill${
-                      block.state === 'scheduled'
+                      block.id.startsWith('pending-')
+                        ? ''
+                        : block.state === 'scheduled'
                         ? ' lib-pill-scheduled'
                         : !block.enabled || block.state === 'hidden' || block.state === 'ended'
                           ? ''
                           : ' lib-pill-live'
                     }`}
                   >
-                    {block.state === 'scheduled'
+                    {block.id.startsWith('pending-')
+                      ? 'Adding…'
+                      : block.state === 'scheduled'
                       ? 'Scheduled'
                       : block.state === 'ended'
                         ? 'Ended'
@@ -1087,7 +1187,7 @@ export const LinkEditorScreen = () => {
                   </span>
                   <p className="lib-editor-note">{rowMeta(block)}</p>
                 </div>
-                {block.type === 'FEATURED_POST' && !block.post ? (
+                {block.type === 'FEATURED_POST' && !block.post && !block.id.startsWith('pending-') ? (
                   <p className="lib-editor-warn">This post is no longer available. Choose another published post.</p>
                 ) : null}
               </div>
@@ -1096,11 +1196,16 @@ export const LinkEditorScreen = () => {
                   <LinkToggle
                     checked={block.enabled}
                     label={block.enabled ? 'Hide block' : 'Show block'}
-                    onChange={(enabled) => save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled })}
+                    onChange={(enabled) => {
+                      if (block.id.startsWith('pending-')) {
+                        return;
+                      }
+                      save(`/link-in-bio/blocks/${block.id}`, 'PUT', { enabled });
+                    }}
                   />
                 </span>
               <div className="lib-editor-menu relative shrink-0">
-                <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" onClick={(event) => { if (menu === block.id) { setMenu(''); setSheetAnchor(null); } else { setSheetAnchor(menuAnchor(event.currentTarget)); setMenu(block.id); } setConfirmId(''); }}>
+                <button type="button" className="lib-editor-more grid h-[32px] w-[32px] place-items-center rounded-[12px] text-textItemBlur hover:bg-newBoxHover hover:text-newTextColor" aria-label="Block actions" aria-busy={block.id.startsWith('pending-') ? true : undefined} disabled={block.id.startsWith('pending-')} onClick={(event) => { if (menu === block.id) { setMenu(''); setSheetAnchor(null); } else { setSheetAnchor(menuAnchor(event.currentTarget)); setMenu(block.id); } setConfirmId(''); }}>
                   <HugeIcon name="more" size={18} />
                 </button>
                 {menu === block.id ? (
@@ -1120,16 +1225,18 @@ export const LinkEditorScreen = () => {
                       <LinkMenuRow icon="settings" onClick={() => editBlock(block)}>
                         Edit
                       </LinkMenuRow>
-                      <LinkMenuRow
-                        icon={copied === block.id ? 'check' : 'copy'}
-                        onClick={() => {
-                          if (!block.url) return;
-                          copy(block.url);
-                          setCopied(block.id);
-                        }}
-                      >
-                        {copied === block.id ? 'Link copied' : 'Copy link'}
-                      </LinkMenuRow>
+                      {blockOffersCopyLink(block.type) ? (
+                        <LinkMenuRow
+                          icon={copied === block.id ? 'check' : 'copy'}
+                          onClick={() => {
+                            if (!block.url) return;
+                            copy(block.url);
+                            setCopied(block.id);
+                          }}
+                        >
+                          {copied === block.id ? 'Link copied' : 'Copy link'}
+                        </LinkMenuRow>
+                      ) : null}
                       <LinkMenuRow
                         className={block.priority ? 'is-priority' : ''}
                         icon="star"
@@ -1250,14 +1357,7 @@ export const LinkEditorScreen = () => {
               type="button"
               className={linkDanger}
               disabled={busy}
-              onClick={async () => {
-                const id = confirmId;
-                const request = blockDeleteRequest(id);
-                const ok = await save(request.path, request.method, undefined, 'Removed');
-                if (ok) {
-                  setUndoId(id);
-                }
-              }}
+              onClick={() => removeBlock(confirmId)}
             >
               Remove
             </button>

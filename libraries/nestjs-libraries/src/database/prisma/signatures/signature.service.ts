@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SignatureRepository } from '@gitroom/nestjs-libraries/database/prisma/signatures/signature.repository';
 import { SignatureDto } from '@gitroom/nestjs-libraries/dtos/signature/signature.dto';
 
@@ -22,7 +22,11 @@ export class SignatureService {
     );
   }
 
-  deleteSignature(orgId: string, id: string) {
-    return this._signatureRepository.deleteSignature(orgId, id);
+  async deleteSignature(orgId: string, id: string) {
+    const list = await this._signatureRepository.deleteSignature(orgId, id);
+    if (!list) {
+      throw new NotFoundException('Signature not found');
+    }
+    return list;
   }
 }
