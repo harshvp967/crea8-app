@@ -142,7 +142,9 @@ export const LinkLeadsScreen = () => {
           <div className="lib-kicker">
             <span className="lib-sticker">Link-in-Bio</span>
             <span className="lib-pill lib-pill-live">
-              {counts ? `${counts.all.toLocaleString('en-US')} subscribers` : 'Subscribers'}
+              {counts
+                ? `${counts.all.toLocaleString('en-US')} ${counts.all === 1 ? 'subscriber' : 'subscribers'}`
+                : 'Subscribers'}
             </span>
             <span className={`${stkSub} lib-period`}>
               Your leads stay yours: unlimited contacts and CSV export, free.
