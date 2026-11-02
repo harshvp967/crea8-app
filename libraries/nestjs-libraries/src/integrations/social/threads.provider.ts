@@ -20,6 +20,7 @@ import { Integration } from '@prisma/client';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { percentageChangeFromSeries } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
+import { insightDay } from '@gitroom/nestjs-libraries/integrations/social/insight.day';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
@@ -761,7 +762,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
           ? [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }]
           : d.values.map((v: any) => ({
               total: v.value,
-              date: dayjs(v.end_time).format('YYYY-MM-DD'),
+              date: insightDay(v.end_time),
             }));
         return {
           label: capitalize(d.name),

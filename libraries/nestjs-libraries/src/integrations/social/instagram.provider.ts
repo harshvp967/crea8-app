@@ -23,6 +23,7 @@ import { META_GRAPH_API_VERSION } from '@gitroom/nestjs-libraries/integrations/s
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { percentageChangeFromSeries } from '@gitroom/nestjs-libraries/integrations/social/metric-change';
+import { insightDay } from '@gitroom/nestjs-libraries/integrations/social/insight.day';
 
 // Published media is a signed https URL. Its query string contains `&`.
 // Graph parses an unencoded image_url as several fields, drops the signature,
@@ -1288,7 +1289,7 @@ export class InstagramProvider
       ...(data?.map((d: any) => {
         const points = d.values.map((v: any) => ({
           total: v.value,
-          date: dayjs(v.end_time).format('YYYY-MM-DD'),
+          date: insightDay(v.end_time),
         }));
         return {
           label: this.setTitle(d.name),

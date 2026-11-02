@@ -225,13 +225,17 @@ export const CalendarWeekProvider: FC<{
   // List view data fetcher. The cache key omits `from` so a refresh
   // recomputes the start of today instead of reusing a stale midnight.
   const listParams = useMemo(() => {
-    return listPostsSearch({
-      page: listPage,
-      customer: filters?.customer,
-      state: listState,
-      includeFrom: false,
-    });
-  }, [listPage, filters.customer, listState]);
+    return [
+      listPostsSearch({
+        page: listPage,
+        customer: filters?.customer,
+        state: listState,
+        includeFrom: false,
+      }),
+      filters.startDate,
+      filters.endDate,
+    ].join('|');
+  }, [listPage, filters.customer, filters.startDate, filters.endDate, listState]);
 
   const loadListData = useCallback(async () => {
     const response = await fetch(
@@ -240,10 +244,12 @@ export const CalendarWeekProvider: FC<{
         customer: filters?.customer,
         state: listState,
         timezone: getTimezone(),
+        startDate: filters.startDate,
+        endDate: filters.endDate,
       })}`
     );
     return expandPostsList(await response.json());
-  }, [listPage, filters.customer, listState]);
+  }, [listPage, filters.customer, filters.startDate, filters.endDate, listState]);
 
   // SWR for calendar view
   const {
