@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { Slider } from '@gitroom/react/form/slider';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { ToggleRowsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 interface EmailNotifications {
   sendSuccessEmails: boolean;
@@ -97,11 +98,7 @@ const EmailNotificationsComponent = () => {
   );
 
   if (isLoading) {
-    return (
-      <div className="settings-row">
-        <div className="h-[18px] w-[180px] animate-pulse rounded-[8px] bg-newBoxHover" />
-      </div>
-    );
+    return <ToggleRowsSkeleton rows={3} />;
   }
 
   return (

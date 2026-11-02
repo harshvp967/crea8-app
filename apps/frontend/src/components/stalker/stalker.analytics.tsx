@@ -10,6 +10,7 @@ import {
 } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { StalkerProjectMenu } from '@gitroom/frontend/components/stalker/stalker.nav';
+import { StalkerAnalyticsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import {
   emptyFilters,
   filtersToSearch,
@@ -479,14 +480,7 @@ export const StalkerAnalytics = () => {
       />
       {!data ? (
         analytics.isLoading || analytics.isValidating || analytics.data === undefined ? (
-          <div className="stk-an-loading flex flex-col gap-[16px]" aria-busy="true">
-            <div className="stk-skel h-[280px] animate-pulse" />
-            <div className="stk-an-grid">
-              <div className="stk-skel h-[180px] animate-pulse" />
-              <div className="stk-skel h-[180px] animate-pulse" />
-              <div className="stk-skel h-[180px] animate-pulse" />
-            </div>
-          </div>
+          <StalkerAnalyticsSkeleton />
         ) : (
           <section className={`${stkCard} stk-an-error`}>
             <div className={`${stkEmpty} stk-state`}>

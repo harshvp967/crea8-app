@@ -27,6 +27,7 @@ import {
   parseAdditionalSettings,
 } from '@gitroom/frontend/components/new-launch/existing.post';
 import { previewThreadValues, threadItemHasBody } from '@gitroom/frontend/components/new-launch/preview.thread';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 class Empty {
   @IsOptional()
   empty: string;
@@ -348,6 +349,7 @@ export const withProvider = function <T extends object>(params: {
                     </div>
                   )}
                   <SettingsComponent />
+                  {isLoading && !dummy ? <SelectSkeleton /> : null}
                   {!!data?.internalPlugs?.length && !dummy && (
                     <InternalChannels plugs={data?.internalPlugs} />
                   )}

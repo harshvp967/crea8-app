@@ -10,6 +10,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { CustomVariables } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 class AnalyticsLoadError extends Error {
   readonly reconnect: boolean;
@@ -130,20 +131,20 @@ export const AnalyticsSkeleton: FC<{ toolbar?: boolean }> = ({ toolbar }) => (
     <span className="sr-only">Loading</span>
     {toolbar && (
       <div className="analytics-skel-toolbar">
-        <span className="analytics-skel-bar is-tool-a" />
-        <span className="analytics-skel-bar is-tool-b" />
+        <Skeleton className="analytics-skel-bar is-tool-a" />
+        <Skeleton className="analytics-skel-bar is-tool-b" />
       </div>
     )}
     {[0, 1, 2].map((i) => (
       <div key={i} className="analytics-skel-card">
         <div className="analytics-skel-row">
-          <span className="analytics-skel-dot" />
+          <Skeleton className="analytics-skel-dot" />
           <div className="analytics-skel-lines">
-            <span className="analytics-skel-bar is-a" />
-            <span className="analytics-skel-bar is-b" />
+            <Skeleton className="analytics-skel-bar is-a" />
+            <Skeleton className="analytics-skel-bar is-b" />
           </div>
         </div>
-        <span className={`analytics-skel-bar is-full is-${i}`} />
+        <Skeleton className={`analytics-skel-bar is-full is-${i}`} />
       </div>
     ))}
   </div>

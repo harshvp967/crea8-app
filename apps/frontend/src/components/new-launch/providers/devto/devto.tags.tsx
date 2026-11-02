@@ -4,6 +4,7 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import { ReactTags } from 'react-tag-autocomplete';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export const DevtoTags: FC<{
   name: string;
   label: string;
@@ -17,7 +18,7 @@ export const DevtoTags: FC<{
   const { onChange, name, label } = props;
   const form = useSettings();
   const customFunc = useCustomProviderFunction();
-  const [tags, setTags] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[] | undefined>(undefined);
   const { getValues } = useSettings();
   const [tagValue, setTagValue] = useState<any[]>([]);
   const onDelete = useCallback(
@@ -40,12 +41,15 @@ export const DevtoTags: FC<{
     [tagValue, name, form]
   );
   useEffect(() => {
-    customFunc.get('tags').then((data) => setTags(data));
+    customFunc.get('tags').then((data) => setTags(Array.isArray(data) ? data : [])).catch(() => setTags([]));
     const settings = getValues()[props.name];
     if (settings) {
       setTagValue(settings);
     }
   }, []);
+  if (!tags) {
+    return <SelectSkeleton />;
+  }
   if (!tags.length) {
     return null;
   }

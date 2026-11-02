@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { Button } from '@gitroom/react/form/button';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
@@ -63,8 +63,10 @@ export const MissingReleaseModal: FC<{
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-[40px]">
-        <LoadingComponent />
+      <div className="grid grid-cols-3 gap-[10px] sm:grid-cols-4 lg:grid-cols-5" aria-hidden>
+        {[...new Array(8)].map((_, index) => (
+          <Skeleton className="aspect-square rounded-[8px]" key={index} />
+        ))}
       </div>
     );
   }

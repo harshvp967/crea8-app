@@ -9,6 +9,7 @@ import { MediaBox } from '@gitroom/frontend/components/media/media.component';
 import copy from 'copy-to-clipboard';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { DeveloperCardSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const useOAuthApp = () => {
   const fetch = useFetch();
@@ -201,7 +202,7 @@ export const DeveloperComponent: FC = () => {
   }, [decision]);
 
   if (app === undefined) {
-    return null;
+    return <DeveloperCardSkeleton />;
   }
 
   // No app yet — show create prompt

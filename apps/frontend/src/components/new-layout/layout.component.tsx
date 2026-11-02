@@ -55,6 +55,7 @@ import { MobileTabBar } from '@gitroom/frontend/components/layout/mobile.tabbar'
 import { C8Sidebar } from '@gitroom/frontend/components/layout/c8.sidebar';
 import { AccountMenu, useAccountMenu } from '@gitroom/frontend/components/layout/account.menu';
 import { useLinkStartup } from '@gitroom/frontend/components/link-in-bio/link.startup';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const HeaderAvatar = ({
   name,
@@ -129,16 +130,20 @@ export const AppShellSkeleton = () => {
         <C8Sidebar name="" email="" picture="" menu={accountMenu} />
         <div className="c8-main">
           <header className="app-header flex items-center min-h-[64px] h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder gap-[8px] ps-[18px] pe-[12px] shrink-0">
-            <span className="h-[18px] w-[120px] animate-pulse rounded-full bg-newBoxHover" />
+            <Skeleton className="h-[18px] w-[120px] rounded-full" />
             <div className="ms-auto flex shrink-0 items-center gap-[8px]" aria-hidden>
-              <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
-              <span className="h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover" />
-              <span className="hidden h-[28px] w-[28px] animate-pulse rounded-full bg-newBoxHover md:block" />
+              <Skeleton className="h-[28px] w-[28px] rounded-full" />
+              <Skeleton className="h-[28px] w-[28px] rounded-full" />
+              <Skeleton className="hidden h-[28px] w-[28px] rounded-full md:block" />
             </div>
           </header>
           <div className="app-stage flex-1 overflow-hidden flex flex-col min-h-0">
             <div className="app-main flex flex-1 gap-[12px] min-h-0 overflow-hidden p-[4px]">
-              <div className="min-h-[240px] flex-1 animate-pulse rounded-[26px] border border-newBorder bg-newBgColorInner" />
+              <div className="flex min-h-[240px] flex-1 flex-col gap-[12px] rounded-[26px] border border-newBorder bg-newBgColorInner p-[20px]">
+                <Skeleton className="h-[20px] w-[180px] max-w-full rounded-full" />
+                <Skeleton className="h-[120px] w-full rounded-[16px]" />
+                <Skeleton className="h-[120px] w-full rounded-[16px]" />
+              </div>
             </div>
           </div>
         </div>

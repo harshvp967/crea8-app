@@ -8,6 +8,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { AccountBillingSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 export function BillingBanner({
   state,
@@ -668,23 +669,7 @@ function KeepSubscriptionLabel({ busy }: { busy: boolean }) {
 }
 
 export function AccountBillingPlaceholder() {
-  return (
-    <div
-      className="account-bill flex flex-col gap-[16px]"
-      data-billing-state="loading"
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-    >
-      <span className="sr-only">Loading billing…</span>
-      <div className="account-bill-grid" aria-hidden="true">
-        <section className="settings-section account-bill-card account-bill-hold animate-pulse" />
-        <section className="settings-section account-bill-card account-bill-hold animate-pulse" />
-      </div>
-      <section className="settings-section account-bill-card account-bill-hold is-packs animate-pulse" aria-hidden="true" />
-      <section className="settings-section account-bill-card account-bill-hold is-invoices animate-pulse" aria-hidden="true" />
-    </div>
-  );
+  return <AccountBillingSkeleton />;
 }
 
 export function Paywall({

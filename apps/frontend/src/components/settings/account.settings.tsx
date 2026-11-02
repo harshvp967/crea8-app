@@ -21,6 +21,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { showMediaBox } from '@gitroom/frontend/components/media/media.component';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import { ToggleRowsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { TeamsComponent } from '@gitroom/frontend/components/settings/teams.component';
 import {
   OrganizationSelector,
@@ -55,9 +56,7 @@ const MetricComponent = dynamic(
   () => import('@gitroom/frontend/components/settings/metric.component'),
   {
     ssr: false,
-    loading: () => (
-      <div className="my-[16px] h-[140px] animate-pulse rounded-[16px] border border-fifth bg-sixth" />
-    ),
+    loading: () => <ToggleRowsSkeleton rows={1} />,
   }
 );
 

@@ -4,6 +4,7 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { ReactTags } from 'react-tag-autocomplete';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 export const HashnodeTags: FC<{
   name: string;
@@ -17,7 +18,7 @@ export const HashnodeTags: FC<{
 }> = (props) => {
   const { onChange, name, label } = props;
   const customFunc = useCustomProviderFunction();
-  const [tags, setTags] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[] | undefined>(undefined);
   const { getValues, formState: form } = useSettings();
   const [tagValue, setTagValue] = useState<any[]>([]);
   const onDelete = useCallback(
@@ -50,7 +51,7 @@ export const HashnodeTags: FC<{
     [tagValue]
   );
   useEffect(() => {
-    customFunc.get('tags').then((data) => setTags(data));
+    customFunc.get('tags').then((data) => setTags(Array.isArray(data) ? data : [])).catch(() => setTags([]));
     const settings = getValues()[props.name] || [];
     if (settings) {
       setTagValue(settings);
@@ -60,6 +61,9 @@ export const HashnodeTags: FC<{
     if (!form || !form.errors[props?.name!]) return;
     return form?.errors?.[props?.name!]?.message! as string;
   }, [form?.errors?.[props?.name!]?.message]);
+  if (!tags) {
+    return <SelectSkeleton />;
+  }
   if (!tags.length) {
     return null;
   }

@@ -6,7 +6,7 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import dayjs from 'dayjs';
 import { useParams } from 'next/navigation';
-import { ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
+import { ComposerFrame, ComposerModal } from '@gitroom/frontend/components/new-launch/composer.modal';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 export const StandaloneModal: FC = () => {
   const fetch = useFetch();
@@ -40,7 +40,7 @@ export const StandaloneModal: FC = () => {
     fallbackData: [],
   });
   if (isLoading || isLoading2) {
-    return null;
+    return <ComposerFrame />;
   }
   return (
     <ComposerModal

@@ -5,6 +5,7 @@ import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export const WordpressPostType: FC<{
   name: string;
   onChange: (event: {
@@ -17,7 +18,7 @@ export const WordpressPostType: FC<{
   const { onChange, name } = props;
   const t = useT();
   const customFunc = useCustomProviderFunction();
-  const [orgs, setOrgs] = useState([]);
+  const [orgs, setOrgs] = useState<any[] | undefined>(undefined);
   const { getValues } = useSettings();
   const [currentMedia, setCurrentMedia] = useState<string | undefined>();
   const onChangeInner = (event: {
@@ -30,12 +31,15 @@ export const WordpressPostType: FC<{
     onChange(event);
   };
   useEffect(() => {
-    customFunc.get('postTypes').then((data) => setOrgs(data));
+    customFunc.get('postTypes').then((data) => setOrgs(Array.isArray(data) ? data : [])).catch(() => setOrgs([]));
     const settings = getValues()[props.name];
     if (settings) {
       setCurrentMedia(settings);
     }
   }, []);
+  if (!orgs) {
+    return <SelectSkeleton />;
+  }
   if (!orgs.length) {
     return null;
   }

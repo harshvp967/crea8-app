@@ -14,6 +14,7 @@ import { PlugsContext } from '@gitroom/frontend/components/plugs/plugs.context';
 import { Plug } from '@gitroom/frontend/components/plugs/plug';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const PlugsPageHead: FC<{ children?: ReactNode }> = ({ children }) => {
   const t = useT();
@@ -35,18 +36,18 @@ const PlugsSkeleton = () => (
   <div className="plugs-skeleton" role="status">
     <span className="sr-only">Loading</span>
     <div className="plugs-skel-toolbar">
-      <span className="plugs-skel-bar is-tool" />
+      <Skeleton className="plugs-skel-bar is-tool" />
     </div>
     {[0, 1, 2].map((i) => (
       <div key={i} className="plugs-skel-card">
         <div className="plugs-skel-row">
-          <span className="plugs-skel-dot" />
+          <Skeleton className="plugs-skel-dot" />
           <div className="plugs-skel-lines">
-            <span className="plugs-skel-bar is-a" />
-            <span className="plugs-skel-bar is-b" />
+            <Skeleton className="plugs-skel-bar is-a" />
+            <Skeleton className="plugs-skel-bar is-b" />
           </div>
         </div>
-        <span className={`plugs-skel-bar is-full is-${i}`} />
+        <Skeleton className={`plugs-skel-bar is-full is-${i}`} />
       </div>
     ))}
   </div>

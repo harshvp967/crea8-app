@@ -69,6 +69,10 @@ import {
 } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import {
+  CalendarListSkeleton,
+  CalendarPostSkeleton,
+} from '@gitroom/frontend/components/ui/skeleton';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -786,11 +790,7 @@ export const ListView = () => {
   }, [listPosts]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col flex-1 items-center justify-center">
-        <div className="text-textColor">{t('loading', 'Loading...')}</div>
-      </div>
-    );
+    return <CalendarListSkeleton />;
   }
 
   if (listPosts.length === 0) {
@@ -1141,7 +1141,6 @@ export const CalendarColumn: FC<{
         display === 'month' && showAll && 'is-expanded',
         display === 'week' || display === 'month' ? 'cal-col-week' : 'rounded-[12px]',
         isBeforeNow && 'is-past repeated-strip',
-        loading && 'animate-pulse',
         display !== 'week' &&
           display !== 'month' &&
           (isBeforeNow
@@ -1177,8 +1176,9 @@ export const CalendarColumn: FC<{
           )}
         >
           {loading && (
-            <div className="h-full w-full p-[5px] animate-pulse absolute left-0 top-0 z-[50]">
-              <div className="h-full w-full bg-newSettings rounded-[10px]" />
+            <div className="absolute left-0 top-0 z-[50] flex h-full w-full flex-col gap-[6px] p-[5px]">
+              <CalendarPostSkeleton />
+              {display !== 'month' ? <CalendarPostSkeleton /> : null}
             </div>
           )}
           {list.map((post) => (

@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { Select } from '@gitroom/react/form/select';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 type ShortLinkPreference = 'ASK' | 'YES' | 'NO';
 
@@ -66,7 +67,12 @@ const ShortlinkPreferenceComponent = () => {
   if (isLoading) {
     return (
       <div className="settings-row">
-        <div className="h-[18px] w-[160px] animate-pulse rounded-[8px] bg-newBoxHover" />
+        <div className="settings-row-copy">
+          <Skeleton className="h-[14px] w-[180px] max-w-full rounded-full" />
+        </div>
+        <div className="settings-control">
+          <Skeleton className="h-[44px] w-full max-w-[240px] rounded-[12px]" />
+        </div>
       </div>
     );
   }

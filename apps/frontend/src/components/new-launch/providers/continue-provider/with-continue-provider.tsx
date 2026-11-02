@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
+import { ContinueGridSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const SWR_OPTIONS = {
   refreshWhenHidden: false,
@@ -105,7 +106,11 @@ export function withContinueProvider<TItem, TSelection>(
       );
     }, [resolvedData, existingId]);
 
-    if (!isLoading && !resolvedData?.length) {
+    if (isLoading) {
+      return <ContinueGridSkeleton />;
+    }
+
+    if (!resolvedData?.length) {
       return (
         <div className="text-center flex flex-col justify-center items-center text-[18px] leading-[26px] h-[300px]">
           {emptyStateMessages.map((msg, index) => (

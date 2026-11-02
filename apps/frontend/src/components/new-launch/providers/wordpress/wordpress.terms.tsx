@@ -4,6 +4,7 @@ import { FC, useEffect, useState } from 'react';
 import { MultiSelect } from '@gitroom/react/form/multi.select';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 // Fetches WordPress terms (categories or tags) for the connected site and wires
 // the reusable MultiSelect primitive into the post settings form. Both fields
@@ -24,11 +25,13 @@ export const WordpressTerms: FC<{
   const customFunc = useCustomProviderFunction();
   const form = useSettings();
   const { getValues } = form;
-  const [terms, setTerms] = useState<Array<{ id: number; name: string }>>([]);
+  const [terms, setTerms] = useState<
+    { id: number; name: string }[] | undefined
+  >(undefined);
   const [selected, setSelected] = useState<Array<string | number>>([]);
 
   useEffect(() => {
-    customFunc.get(func).then((data) => setTerms(data || []));
+    customFunc.get(func).then((data) => setTerms(Array.isArray(data) ? data : [])).catch(() => setTerms([]));
     const settings = getValues()[name];
     if (Array.isArray(settings)) {
       setSelected(settings.map((value: any) => Number(value)));
@@ -42,6 +45,9 @@ export const WordpressTerms: FC<{
     onChange?.({ target: { name, value: numbers } });
   };
 
+  if (!terms) {
+    return <SelectSkeleton />;
+  }
   if (!terms.length) {
     return null;
   }

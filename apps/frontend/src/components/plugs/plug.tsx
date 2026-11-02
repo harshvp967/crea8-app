@@ -27,6 +27,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { PlugGridSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export function convertBackRegex(s: string) {
   const matches = s.match(/\/(.*)\/([a-z]*)/);
   const pattern = matches?.[1] || '';
@@ -287,7 +288,7 @@ export const Plug = () => {
   );
   const t = useT();
   if (isLoading) {
-    return null;
+    return <PlugGridSkeleton />;
   }
   if (!plug?.plugs?.length || !plug.plugs.some((item) => item.title)) {
     return (

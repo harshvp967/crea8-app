@@ -7,6 +7,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
 import { StalkerWizard } from '@gitroom/frontend/components/stalker/stalker.wizard';
 import { stkEmpty, stkIconTile, stkPrimary } from '@gitroom/frontend/components/stalker/stalker.chrome';
+import { StalkerPageSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 const Welcome = ({ onCreate }: { onCreate: () => void }) => (
   <div className="stk-state-wrap flex flex-1 items-center justify-center px-[24px] py-[64px]">
@@ -25,14 +26,7 @@ const Welcome = ({ onCreate }: { onCreate: () => void }) => (
   </div>
 );
 
-const PageSkeleton = () => (
-  <div className="flex flex-col gap-[12px] p-[24px]" aria-hidden>
-    <div className="stk-skel h-[22px] w-[180px] animate-pulse" />
-    <div className="stk-skel h-[14px] w-[260px] animate-pulse" />
-    <div className="stk-skel mt-[8px] h-[120px] animate-pulse" />
-    <div className="stk-skel h-[120px] animate-pulse" />
-  </div>
-);
+const PageSkeleton = () => <StalkerPageSkeleton />;
 
 const StalkerBody = ({ children }: { children: ReactNode }) => {
   const { projects, projectId, loading, showWizard, setShowWizard, sample } =

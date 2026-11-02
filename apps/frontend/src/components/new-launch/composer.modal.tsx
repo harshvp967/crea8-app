@@ -7,22 +7,14 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { NoChannels } from '@gitroom/frontend/components/launches/add.provider.component';
 import type { AddEditModalProps } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { ComposerFrameSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 dayjs.extend(utc);
 
 const loadComposer = () =>
   import('@gitroom/frontend/components/new-launch/add.edit.modal');
 
-export const ComposerFrame = () => (
-  <div
-    className="composer c8-composer w-full h-full flex-1 p-[40px] flex"
-    role="status"
-    aria-live="polite"
-  >
-    <span className="sr-only">Loading</span>
-    <div className="composer-frame flex flex-1 bg-newBgColorInner rounded-[20px] min-h-[480px] animate-pulse" />
-  </div>
-);
+export const ComposerFrame = () => <ComposerFrameSkeleton />;
 
 type ComposerModalProps = Omit<AddEditModalProps, 'date'> & {
   date?: dayjs.Dayjs;

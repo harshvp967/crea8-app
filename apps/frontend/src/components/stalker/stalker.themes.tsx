@@ -6,6 +6,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useStalkerThemes } from '@gitroom/frontend/components/stalker/stalker.hooks';
 import { useStalkerComposer } from '@gitroom/frontend/components/stalker/use.stalker.composer';
 import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.project';
+import { ThemeCardSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 export const StalkerThemes = () => {
   const t = useT();
@@ -33,9 +34,7 @@ export const StalkerThemes = () => {
           Recurring signals from the last 14 days, after mentions are classified.
         </p>
       </div>
-      {isLoading ? (
-        <p className="text-[14px] text-textItemBlur">Loading themes…</p>
-      ) : null}
+      {isLoading ? <ThemeCardSkeleton /> : null}
       {!isLoading && !themes.length ? (
         <p className="text-[14px] text-textItemBlur">
           Themes show up once there are classified mentions and OPENAI_API_KEY is set.

@@ -9,6 +9,7 @@ import { ColorPicker } from '@gitroom/react/form/color.picker';
 import { Button } from '@gitroom/react/form/button';
 import { uniqBy } from 'lodash';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { TagsSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useClickOutside } from '@mantine/hooks';
 import clsx from 'clsx';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -41,7 +42,7 @@ export const TagsComponent: FC<{
   const { data, isLoading, mutate } = useSWR('load-tags', loadTags);
 
   if (isLoading) {
-    return null;
+    return <TagsSkeleton />;
   }
 
   return <TagsComponentInner {...props} allTags={data} mutate={mutate} />;
@@ -464,7 +465,7 @@ export const TagsComponentA: FC<{
   const t = useT();
 
   if (isLoading) {
-    return null;
+    return <TagsSkeleton />;
   }
   return (
     <>

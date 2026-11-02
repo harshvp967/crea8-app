@@ -6,6 +6,7 @@ import { useFormContext } from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
 import { useVideo } from '@gitroom/frontend/components/videos/video.context.wrapper';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 export interface Voices {
   voices: Voice[];
@@ -98,12 +99,17 @@ const VoiceSelector: FC = () => {
     [setValue]
   );
 
-  if (isLoading || !data?.voices?.length) {
+  if (isLoading || !data) {
     return (
-      <div className="flex items-center justify-center py-4">
-        <div className="text-sm text-gray-500">Loading voices...</div>
+      <div className="flex flex-col gap-[8px]" aria-hidden="true">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton className="h-[44px] w-full rounded-[12px]" key={index} />
+        ))}
       </div>
     );
+  }
+  if (!data.voices?.length) {
+    return null;
   }
 
   return (

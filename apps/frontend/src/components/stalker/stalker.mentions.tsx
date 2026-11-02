@@ -15,6 +15,7 @@ import { useStalkerProject } from '@gitroom/frontend/components/stalker/stalker.
 import { platformLogo, SourceIcon } from '@gitroom/frontend/components/stalker/stalker.icons';
 import { StalkerProjectMenu } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { StalkerCheckNow } from '@gitroom/frontend/components/stalker/stalker.check';
 import { cleanMention, sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import {
@@ -585,11 +586,11 @@ export const StalkerMentions = () => {
           {[0, 1, 2].map((row) => (
             <div key={row} className={`${stkCardTight} flex flex-col gap-[12px]`}>
               <div className="flex items-center gap-[12px]">
-                <span className="stk-skel h-[28px] w-[28px] animate-pulse" />
-                <span className="stk-skel h-[14px] w-[160px] animate-pulse" />
+                <Skeleton className="h-[28px] w-[28px] rounded-full" />
+                <Skeleton className="h-[14px] w-[160px] max-w-[60%] rounded-full" />
               </div>
-              <span className="stk-skel h-[14px] w-full animate-pulse" />
-              <span className="stk-skel h-[14px] w-[70%] animate-pulse" />
+              <Skeleton className="h-[14px] w-full rounded-full" />
+              <Skeleton className="h-[14px] w-[70%] rounded-full" />
             </div>
           ))}
         </div>

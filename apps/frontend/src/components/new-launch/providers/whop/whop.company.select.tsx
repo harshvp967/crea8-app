@@ -5,6 +5,7 @@ import { useCustomProviderFunction } from '@gitroom/frontend/components/launches
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 export const WhopCompanySelect: FC<{
   name: string;
@@ -18,7 +19,7 @@ export const WhopCompanySelect: FC<{
   const { onChange, name } = props;
   const t = useT();
   const customFunc = useCustomProviderFunction();
-  const [companies, setCompanies] = useState([]);
+  const [companies, setCompanies] = useState<any[] | undefined>(undefined);
   const { getValues } = useSettings();
   const [currentCompany, setCurrentCompany] = useState<string | undefined>();
   const onChangeInner = (event: {
@@ -31,12 +32,15 @@ export const WhopCompanySelect: FC<{
     onChange(event);
   };
   useEffect(() => {
-    customFunc.get('companies').then((data) => setCompanies(data));
+    customFunc.get('companies').then((data) => setCompanies(Array.isArray(data) ? data : [])).catch(() => setCompanies([]));
     const settings = getValues()[props.name];
     if (settings) {
       setCurrentCompany(settings);
     }
   }, []);
+  if (!companies) {
+    return <SelectSkeleton />;
+  }
   if (!companies.length) {
     return null;
   }

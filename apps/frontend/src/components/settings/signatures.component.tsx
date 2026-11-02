@@ -2,6 +2,7 @@ import React, { FC, Fragment, useCallback } from 'react';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
+import { SettingsListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { Button } from '@gitroom/react/form/button';
 import clsx from 'clsx';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -24,7 +25,7 @@ export const SignaturesComponent: FC<{
   const load = useCallback(async () => {
     return (await fetch('/signatures')).json();
   }, []);
-  const { data, mutate } = useSWR('signatures', load);
+  const { data, isLoading, mutate } = useSWR('signatures', load);
   const addSignature = useCallback(
     (data?: any) => () => {
       modal.openModal({
@@ -76,6 +77,7 @@ export const SignaturesComponent: FC<{
           {t('add_a_signature', 'Add a signature')}
         </Button>
       </div>
+      {isLoading && !data ? <SettingsListSkeleton /> : null}
       {!!data?.length && (
         <div className="settings-list">
           <div className="settings-cols cols-sig">

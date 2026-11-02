@@ -7,7 +7,7 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useClickAway } from '@uidotdev/usehooks';
-import ReactLoading from '@gitroom/frontend/components/layout/loading';
+import { NotificationListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 function replaceLinks(text: string) {
   const urlRegex =
@@ -73,11 +73,7 @@ export const NotificationOpenComponent = () => {
       </div>
 
       <div className="flex flex-col max-h-[400px] overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        {isLoading && (
-          <div className="flex-1 flex justify-center pt-12">
-            <ReactLoading type="spin" color="#fff" width={36} height={36} />
-          </div>
-        )}
+        {isLoading && <NotificationListSkeleton />}
         {!isLoading && !data.notifications.length && (
           <div className="text-center p-[16px] text-textColor flex-1 flex justify-center items-center mt-[20px]">
             {t('no_notifications', 'No notifications')}

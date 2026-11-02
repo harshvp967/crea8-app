@@ -5,6 +5,7 @@ import { useCustomProviderFunction } from '@gitroom/frontend/components/launches
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
 export const WhopExperienceSelect: FC<{
   name: string;
@@ -19,7 +20,7 @@ export const WhopExperienceSelect: FC<{
   const { onChange, name, companyId } = props;
   const t = useT();
   const customFunc = useCustomProviderFunction();
-  const [experiences, setExperiences] = useState([]);
+  const [experiences, setExperiences] = useState<any[] | undefined>(undefined);
   const { getValues } = useSettings();
   const [currentExperience, setCurrentExperience] = useState<
     string | undefined
@@ -39,9 +40,11 @@ export const WhopExperienceSelect: FC<{
       setCurrentExperience(undefined);
       return;
     }
+    setExperiences(undefined);
     customFunc
       .get('experiences', { id: companyId })
-      .then((data) => setExperiences(data));
+      .then((data) => setExperiences(Array.isArray(data) ? data : []))
+      .catch(() => setExperiences([]));
   }, [companyId]);
   useEffect(() => {
     const settings = getValues()[name];
@@ -49,8 +52,11 @@ export const WhopExperienceSelect: FC<{
       setCurrentExperience(settings);
     }
   }, []);
-  if (!companyId || !experiences.length) {
+  if (!companyId || (experiences && !experiences.length)) {
     return null;
+  }
+  if (!experiences) {
+    return <SelectSkeleton />;
   }
   return (
     <Select

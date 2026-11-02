@@ -845,3 +845,24 @@ html[dir='rtl'] [dir='ltr'] {
     display: inline-flex;
   }
 }
+
+.c8-skeleton {
+  background: var(--c8-soft);
+  animation: c8-skeleton-pulse 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+
+@keyframes c8-skeleton-pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c8-skeleton {
+    animation: none;
+  }
+}

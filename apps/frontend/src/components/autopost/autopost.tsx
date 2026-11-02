@@ -18,6 +18,7 @@ import { CopilotTextarea } from '@copilotkit/react-textarea';
 import { Slider } from '@gitroom/react/form/slider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { ChannelListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 import ShortlinkPreferenceComponent from '@gitroom/frontend/components/settings/shortlink-preference.component';
 export const Autopost: FC = () => {
   const fetch = useFetch();
@@ -401,6 +402,9 @@ export const AddOrEditWebhook: FC<{
                 </option>
               ))}
             </Select>
+            {allIntegrations.value === 'specific' && isLoading && !dataList ? (
+              <ChannelListSkeleton />
+            ) : null}
             {allIntegrations.value === 'specific' && dataList && !isLoading && (
               <PickPlatforms
                 integrations={dataList.integrations}

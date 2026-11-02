@@ -13,6 +13,7 @@ import React, {
   useState,
 } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { Skeleton } from '@gitroom/frontend/components/ui/skeleton';
 import useSWR from 'swr';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import './providers/heygen.provider';
@@ -176,7 +177,10 @@ export const ThirdPartyMedia: FC<{
     refreshWhenOffline: false,
   });
 
-  if (isLoading || !data.length) {
+  if (isLoading || !data) {
+    return <Skeleton className="h-[44px] w-[160px] rounded-full" />;
+  }
+  if (!data.length) {
     return null;
   }
 

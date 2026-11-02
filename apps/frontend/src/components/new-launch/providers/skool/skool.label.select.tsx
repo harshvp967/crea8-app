@@ -5,6 +5,7 @@ import { useCustomProviderFunction } from '@gitroom/frontend/components/launches
 import { Select } from '@gitroom/react/form/select';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { SelectSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 export const SkoolLabelSelect: FC<{
   name: string;
   groupId: string | undefined;
@@ -18,7 +19,7 @@ export const SkoolLabelSelect: FC<{
   const { onChange, name, groupId } = props;
   const t = useT();
   const customFunc = useCustomProviderFunction();
-  const [labels, setLabels] = useState([]);
+  const [labels, setLabels] = useState<any[] | undefined>(undefined);
   const { getValues } = useSettings();
   const [currentLabel, setCurrentLabel] = useState<string | undefined>();
   const onChangeInner = (event: {
@@ -36,7 +37,11 @@ export const SkoolLabelSelect: FC<{
       setCurrentLabel(undefined);
       return;
     }
-    customFunc.get('label', { id: groupId }).then((data) => setLabels(data));
+    setLabels(undefined);
+    customFunc
+      .get('label', { id: groupId })
+      .then((data) => setLabels(Array.isArray(data) ? data : []))
+      .catch(() => setLabels([]));
   }, [groupId]);
   useEffect(() => {
     const settings = getValues()[name];
@@ -44,8 +49,11 @@ export const SkoolLabelSelect: FC<{
       setCurrentLabel(settings);
     }
   }, []);
-  if (!groupId || !labels.length) {
+  if (!groupId || (labels && !labels.length)) {
     return null;
+  }
+  if (!labels) {
+    return <SelectSkeleton />;
   }
   return (
     <Select
