@@ -284,15 +284,13 @@ export default function OAuthAuthorizePage() {
           {workspace ? (
             <p className="oauth-consent-workspace">{workspace}</p>
           ) : null}
-          {scopes.length ? (
-            <ul className="oauth-consent-scopes">
-              {scopes.map((scope) => (
-                <li className="oauth-consent-scope" key={scope}>
-                  {scopeLabel(scope)}
-                </li>
-              ))}
-            </ul>
-          ) : null}
+          <ul className="oauth-consent-scopes">
+            {(scopes.length ? scopes : ['profile']).map((scope) => (
+              <li className="oauth-consent-scope" key={scope}>
+                {scopeLabel(scope)}
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="oauth-consent-actions flex gap-[12px]">
           <button

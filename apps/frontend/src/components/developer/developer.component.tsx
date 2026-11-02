@@ -597,7 +597,7 @@ export const DeveloperComponent: FC = () => {
               )}
             </div>
           </div>
-          <div className="flex gap-[8px]">
+          <div className="oauth-cred-actions flex flex-wrap gap-[8px]">
             <CopyButton
               text={clientIdCopy(app.clientId).value}
               label={t('copy_client_id', clientIdCopy(app.clientId).label)}

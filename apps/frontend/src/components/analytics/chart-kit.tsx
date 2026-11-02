@@ -185,6 +185,18 @@ export function createFormatter(
     format === 'percent' ? `${intl.format(value)}%` : intl.format(value);
 }
 
+/** Whole-number ticks. A single point should not read 0.5 or 1.5. */
+export function integerTicks(min: number, max: number) {
+  const lo = Math.floor(Math.min(min, max));
+  const hi = Math.max(Math.ceil(Math.max(min, max)), lo + 1);
+  const span = hi - lo;
+  const step = span > 6 ? Math.ceil(span / 4) : 1;
+  const ticks: number[] = [];
+  for (let value = lo; value <= hi + 1e-9; value += step) ticks.push(value);
+  if (ticks[ticks.length - 1] < hi) ticks.push(hi);
+  return ticks;
+}
+
 /** Human-friendly axis ticks covering [min, max]. */
 export function niceTicks(min: number, max: number, count = 4) {
   if (min === max) max = min + 1;

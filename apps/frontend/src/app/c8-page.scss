@@ -1,0 +1,708 @@
+/* Shared page shell. Schedule, Stalker, Link in Bio, Analytics, Account,
+   and Settings use one content width, padding, title size, and header
+   height. Cards, dialogs, popovers, and toasts share one radius, border,
+   and shadow. Accent colour stays --c8-cyan. Phone rules (max-width 639)
+   are left to the screen stylesheets. */
+
+:root {
+  --c8-page-max: 1104px;
+  --c8-page-title: 28px;
+  --c8-page-head: 64px;
+  --c8-radius: 16px;
+  --c8-shadow: 0 8px 24px rgb(18 16 22 / 0.12);
+}
+
+.dark {
+  --c8-shadow: 0 8px 24px rgb(0 0 0 / 0.36);
+}
+
+/* ---------- Page frame ---------- */
+@media (min-width: 640px) and (min-height: 501px) {
+  .c8-shell .app-main:has(.calendar-panel),
+  .c8-shell .app-main:has(.stalker-screen),
+  .c8-shell .app-main:has(.link-screen),
+  .c8-shell .app-main:has(.analytics-screen),
+  .c8-shell .app-main:has(.settings-screen) {
+    padding: 32px 32px 40px !important;
+  }
+
+  body.c8-schedule .c8-cal-head,
+  .stalker-screen .stk-head,
+  .link-screen .lib-head,
+  .analytics-screen .analytics-head,
+  .settings-screen .settings-head-v2 {
+    min-height: var(--c8-page-head);
+    align-items: flex-end;
+  }
+
+  body.c8-schedule .c8-cal-title,
+  .stalker-screen .stk-title,
+  .link-screen .stk-title,
+  .analytics-screen .analytics-head h1,
+  .settings-screen .settings-head-v2 > h1,
+  .account-screen.settings-screen .settings-head-v2 > h1 {
+    font-size: var(--c8-page-title) !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.02em;
+  }
+}
+
+@media (min-width: 1200px) and (min-height: 501px) {
+  body.c8-schedule .calendar-panel,
+  .stalker-screen .stk-page-frame,
+  .link-screen > .lib-split,
+  .link-screen > .lib-settings,
+  .link-screen > .lib-analytics,
+  .link-screen > .lib-leads,
+  .analytics-screen .analytics-main,
+  .settings-screen .settings-main {
+    width: 100%;
+    max-width: var(--c8-page-max);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .link-screen .lib-editor-page,
+  .link-screen .lib-appearance {
+    max-width: none;
+  }
+}
+
+/* Section titles sit under the page h1. */
+.settings-screen .settings-head h2 {
+  margin: 0;
+  color: var(--c8-ink);
+  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
+  font-size: 22px;
+  font-variation-settings: 'opsz' 14, 'wdth' 100;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Developers heading uses the same card as the other account sections. */
+.settings-screen .settings-section:has(.settings-seg) {
+  padding: 20px;
+  border: 1px solid var(--c8-line);
+  border-radius: var(--c8-radius);
+  background: var(--c8-surface);
+  box-shadow: var(--c8-shadow);
+}
+
+/* ---------- One surface ---------- */
+@media (min-width: 640px) {
+  .settings-screen .settings-section,
+  .stalker-screen .stk-card,
+  .link-screen .stk-card,
+  .analytics-screen .analytics-stat,
+  .analytics-screen .analytics-state-card,
+  body:has(.link-screen) .lib-dialog,
+  .stalker-screen .stk-dialog,
+  .settings-screen .arc-dialog,
+  body.c8-schedule .arc-dialog,
+  .app-toast,
+  .stalker-screen .stk-confirm,
+  .stalker-screen .stk-menu,
+  .stalker-screen .stk-popover,
+  body.c8-schedule .customer-menu,
+  body.c8-schedule .channel-menu {
+    border-radius: var(--c8-radius) !important;
+    border: 1px solid var(--c8-line) !important;
+    box-shadow: var(--c8-shadow) !important;
+  }
+}
+
+.app-toast {
+  border-radius: var(--c8-radius);
+  border: 1px solid var(--c8-line);
+  box-shadow: var(--c8-shadow);
+}
+
+/* ---------- List lines up with its filters ---------- */
+@media (min-width: 640px) and (min-height: 501px) {
+  body.c8-schedule[data-c8-view='list'] .app-main,
+  body.c8-schedule[data-c8-view='list'] .calendar-panel {
+    grid-template-areas:
+      'head head actions'
+      'rail filters filters'
+      'rail well well' !important;
+  }
+
+  body.c8-schedule .cal-nav,
+  body.c8-schedule[data-c8-view='month'] .cal-nav,
+  body.c8-schedule[data-c8-view='day'] .cal-nav,
+  body.c8-schedule[data-c8-view='week'] .cal-nav {
+    min-height: 40px;
+  }
+
+  body.c8-schedule .week-head.is-today .week-dow,
+  body.c8-schedule .week-head.is-today .week-num,
+  body.c8-schedule .month-cell .text-c8-schedule {
+    color: var(--c8-cyan);
+  }
+}
+
+/* ---------- Stalker alert row and delete popover ---------- */
+@media (min-width: 768px) {
+  .stalker-screen .stk-al-board {
+    overflow: visible;
+  }
+
+  .stalker-screen .stk-al-cols,
+  .stalker-screen .stk-al-card {
+    grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.8fr) minmax(132px, auto);
+  }
+
+  .stalker-screen .stk-al-actions {
+    position: relative;
+    z-index: 2;
+  }
+
+  .stalker-screen .stk-al-actions .stk-confirm {
+    top: auto;
+    bottom: calc(100% + 8px);
+    inset-inline-end: 0;
+    inset-inline-start: auto;
+  }
+}
+
+/* ---------- Menus hang off their trigger ---------- */
+@media (min-width: 640px) {
+  body:has(.link-screen) .lib-modal.lib-anchored,
+  body:has(.link-screen) .lib-modal.lib-anchored:has(.lib-block-sheet) {
+    align-items: flex-start !important;
+    justify-content: flex-end !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  body:has(.link-screen) .lib-modal.lib-anchored .lib-dialog,
+  body:has(.link-screen) .lib-modal.lib-anchored:has(.lib-block-sheet) .lib-dialog {
+    position: fixed !important;
+    top: var(--lib-pop-top) !important;
+    right: var(--lib-pop-right) !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: min(280px, calc(100vw - 24px)) !important;
+    max-width: min(280px, calc(100vw - 24px)) !important;
+    max-height: min(70dvh, calc(100dvh - var(--lib-pop-top) - 16px)) !important;
+    margin: 0 !important;
+  }
+
+  body:has(.link-screen) .lib-modal.lib-anchored[data-flip='true'] .lib-dialog {
+    top: auto !important;
+    bottom: var(--lib-pop-bottom) !important;
+    max-height: min(70dvh, calc(100dvh - var(--lib-pop-bottom) - 16px)) !important;
+  }
+}
+
+/* ---------- Fields ---------- */
+.link-screen .lib-date,
+.link-screen .lib-field select,
+.link-screen .lib-field input:not([type='checkbox']):not([type='radio']),
+.link-screen .lib-analytics select,
+.settings-screen .settings-control select,
+.settings-screen select,
+.stalker-screen select,
+.account-screen select {
+  height: 40px;
+  min-height: 40px;
+  border: 1px solid var(--c8-line);
+  border-radius: var(--c8-radius);
+  background: var(--c8-bg);
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dark .link-screen input[type='date'],
+.dark .link-screen input[type='datetime-local'],
+.dark .settings-screen select,
+.dark .stalker-screen select {
+  color-scheme: dark;
+}
+
+/* ---------- Composer settings toggle ---------- */
+.c8-composer .po-settings-toggle,
+.c8-composer .po-settings-toggle svg {
+  color: var(--c8-ink) !important;
+}
+
+/* ---------- Security actions share one button ---------- */
+.account-screen .settings-group .settings-row > button,
+.account-screen .settings-group .settings-nav-foot {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--c8-line);
+  border-radius: var(--c8-radius);
+  background: var(--c8-surface);
+  box-shadow: var(--c8-shadow);
+  color: var(--c8-ink);
+}
+
+/* ---------- Loading shapes ---------- */
+.analytics-skel-channel {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 999px;
+}
+
+.settings-screen.c8-page-load {
+  width: 100%;
+  max-width: var(--c8-page-max);
+  margin-right: auto;
+  margin-left: auto;
+  padding: 32px 16px 40px;
+}
+
+.account-screen .account-languages .grid {
+  gap: 8px;
+}
+
+/* ---------- 390px ---------- */
+@media (max-width: 639px) {
+  .oauth-consent {
+    align-items: flex-start;
+    overflow: auto;
+    background: var(--c8-bg);
+    color: var(--c8-ink);
+  }
+
+  .oauth-consent-actions {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .oauth-consent-actions > button {
+    flex: none;
+    width: 100%;
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 0 16px;
+  }
+
+  .oauth-consent-scopes {
+    display: flex;
+    width: 100%;
+  }
+
+  .oauth-cred-actions > button,
+  .oauth-cred-actions > a {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    height: auto;
+  }
+
+  .settings-screen .settings-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .settings-screen .settings-head > div {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .settings-screen .settings-head h2 {
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .settings-screen .settings-head > button {
+    max-width: 100%;
+  }
+
+  .settings-screen .settings-head:has(.settings-seg) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account-screen .settings-settabs.c8-seg {
+    min-height: 44px;
+    padding-inline-end: 28px;
+    scroll-padding-inline-end: 28px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+
+  .account-screen .settings-settabs.c8-seg > [role='radio'] {
+    min-height: 44px;
+  }
+
+  .account-screen .settings-group > .settings-row:last-child {
+    padding-bottom: 16px;
+  }
+
+  .account-screen .settings-app .settings-danger {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 8px 12px !important;
+  }
+
+  .account-bill-lines li {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .account-bill-lines .settings-pill,
+  .account-bill-lines strong {
+    flex: none;
+  }
+
+  .account-bill-lines .settings-pill {
+    margin-inline-end: 8px;
+  }
+
+  .account-screen [data-billing-state='billing_settings'] {
+    gap: 16px !important;
+  }
+
+  .c8-account-pop.is-sheet .c8-account-item,
+  .c8-account-pop.is-sheet .c8-account-plan {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  body:has(.account-screen) .app-toast,
+  body:has(.stalker-screen) .app-toast {
+    top: auto !important;
+    bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .stalker-screen .stk-al-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .stalker-screen .stk-al-actions .stk-switch::before {
+    content: '';
+    position: absolute;
+    inset: -8px -4px;
+  }
+
+  .stalker-screen .stk-al-actions .stk-switch {
+    position: relative;
+  }
+
+  .stalker-screen .stk-al-actions .stk-confirm {
+    position: fixed;
+    z-index: 90;
+    inset-inline: 16px;
+    top: auto;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    width: auto;
+  }
+
+  .stalker-screen .stk-al-actions .stk-confirm button {
+    min-height: 44px;
+    flex: 1 1 0;
+  }
+
+  .stalker-screen .stk-al-foot .stk-al-new svg {
+    display: none;
+  }
+
+  .stalker-screen .stk-popover {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c8-line) transparent;
+  }
+
+  .stalker-screen .stk-popover::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .stalker-screen .stk-popover::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: var(--c8-line);
+  }
+
+  .stalker-screen .stk-set-swatches {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .stalker-screen .stk-set-swatch {
+    width: 44px;
+    height: 44px;
+    padding: 13px;
+    box-sizing: border-box;
+    background-clip: content-box;
+  }
+
+  .stalker-screen .stk-set-menu button {
+    min-height: 44px;
+  }
+
+  .link-screen .lib-editor-page .lib-head,
+  .link-screen .lib-head {
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+  }
+
+  .link-screen .lib-head-actions,
+  .link-screen .lib-editor-page .lib-head-actions {
+    flex: 1 1 100%;
+    margin-inline: 0;
+    justify-content: flex-start;
+  }
+
+  .link-screen .lib-editor-page {
+    padding-bottom: 96px;
+  }
+
+  .link-screen .lib-preview-fab {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .link-screen .lib-preview-as {
+    width: 100%;
+  }
+
+  .link-screen .lib-preview-as-summary {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .account-screen .settings-row [role='radio'],
+  .account-screen .account-languages button:focus-visible {
+    min-height: 44px;
+    outline-color: var(--c8-cyan);
+  }
+
+  .link-screen .lib-editor-more {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .link-screen .lib-input-ok {
+    padding-inline-end: 112px !important;
+  }
+
+  .link-screen .lib-slug-ok {
+    top: 50%;
+    bottom: auto;
+    height: 28px;
+    transform: translateY(-50%);
+  }
+
+  .link-screen .lib-leads .stk-btn-ghost {
+    min-height: 44px;
+    min-width: 44px;
+    padding-inline: 12px;
+  }
+
+  .settings-screen pre.settings-url,
+  .settings-screen code.settings-url {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  body.c8-schedule .c8-week > .relative {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  body.c8-schedule .month-cell .cal-post {
+    min-height: 28px;
+  }
+
+  body.c8-schedule .month-cell .cal-show-more-short,
+  body.c8-schedule .month-cell .cal-post-body {
+    font-size: 12px;
+  }
+
+  .settings-screen .settings-item.cols-sig {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .settings-screen .cols-sig .settings-copy,
+  .settings-screen .cols-sig .settings-ellipsis {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .settings-screen .cols-sig .settings-mini,
+  .settings-screen .cols-sig .settings-danger {
+    min-height: 44px;
+  }
+
+  .stalker-screen .stk-analytics .stk-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-inline-end: 28px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  body:has(.link-screen) .lib-dialog .stk-dialog-body {
+    overflow-x: hidden;
+    padding-inline-end: 16px;
+  }
+
+  body:has(.link-screen) .lib-dialog input,
+  body:has(.link-screen) .lib-dialog textarea,
+  body:has(.link-screen) .lib-dialog select {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* Tablet 640–1199: keep the active account tab on screen, and give Schedule room. */
+@media (max-width: 1199px) {
+  .account-screen .settings-settabs.c8-seg {
+    padding-inline-end: 28px;
+    scroll-padding-inline-end: 28px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+
+  .account-screen .settings-settabs.c8-seg > [role='radio'],
+  .settings-screen .settings-settabs .settings-tab,
+  .settings-screen .settings-settabs.c8-seg > [role='radio'] {
+    min-height: 44px;
+  }
+
+  .c8-side-app,
+  .c8-side-link,
+  .c8-shell .c8-side-foot .arc-icon-btn,
+  body.c8-schedule .c8-side-foot > .relative {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .link-screen .lib-preview-as-summary {
+    max-width: 100% !important;
+    height: 44px;
+    min-height: 44px;
+    overflow: hidden;
+    white-space: nowrap !important;
+  }
+
+  .link-screen .lib-preview-tools button {
+    min-height: 44px !important;
+    padding: 8px 12px !important;
+  }
+
+  .link-screen .lib-editor-page {
+    padding-bottom: 96px;
+  }
+
+  .stalker-screen .stk-heat > span:nth-child(n + 2):nth-child(-n + 13) {
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  .stalker-screen .stk-heat > span:nth-child(n + 2):nth-child(-n + 13):not(:nth-child(2)):not(:nth-child(5)):not(:nth-child(8)):not(:nth-child(11)) {
+    visibility: hidden;
+  }
+
+  .settings-screen .settings-main,
+  .settings-screen .settings-section,
+  .account-screen .settings-detail {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  body.c8-schedule .channel-rail.sidebar:not(.is-open) {
+    display: none !important;
+    width: 0 !important;
+  }
+
+  body.c8-schedule .channel-rail.sidebar.is-open {
+    width: min(240px, 40vw) !important;
+  }
+
+  body.c8-schedule .channel-rail .channel-row > .cursor-pointer {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  body.c8-schedule .app-main {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      'head'
+      'actions'
+      'filters'
+      'well' !important;
+  }
+
+  body.c8-schedule .filters-bar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px !important;
+  }
+
+  body.c8-schedule .filters-bar .date-range {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: nowrap !important;
+  }
+
+  body.c8-schedule .filters-bar .cal-mode {
+    flex: 1 1 auto;
+    margin-inline: 0 !important;
+    order: 2;
+  }
+
+  body.c8-schedule .week-grid {
+    grid-template-columns: 48px repeat(7, minmax(64px, 1fr));
+  }
+
+  body.c8-schedule .week-cell .line-clamp-2,
+  body.c8-schedule .week-cell .cal-chip-when,
+  body.c8-schedule .month-cell .cal-post-body {
+    font-size: 12px !important;
+  }
+
+  .link-screen .lib-leads-table-wrap {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .link-screen .lib-leads-cards {
+    display: none;
+  }
+
+  .link-screen .lib-leads-table {
+    table-layout: auto;
+    min-width: 680px;
+  }
+
+  .link-screen .lib-leads-table th,
+  .link-screen .lib-leads-table td {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: nowrap;
+  }
+
+  .c8-composer .composer-frame {
+    min-height: calc(100dvh - 120px);
+    align-items: stretch;
+  }
+
+  .account-screen .settings-group .settings-row > button,
+  .account-screen .settings-group .settings-nav-foot {
+    width: 100%;
+    justify-content: center;
+  }
+}

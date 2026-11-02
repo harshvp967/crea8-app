@@ -402,7 +402,7 @@ const McpSection = ({
                 'Your agent will open a browser window to sign in to crea8.one.'
               )}`}
           </div>
-          <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all overflow-x-auto leading-[1.6]">
+          <pre className="bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-words overflow-x-auto leading-[1.6]">
             {maskedConfig}
           </pre>
           <div className="flex gap-[8px]">
@@ -541,8 +541,8 @@ const PublicApiContent = () => {
       <div className="settings-card">
         <div className="p-[20px] flex flex-col gap-[12px]">
           <div className="text-[15px] font-[600]">MCP</div>
-          <code className="settings-url text-[14px] break-all">{`${mcpBase}/mcp`}</code>
-          <pre className="settings-url bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-all leading-[1.6]">{`Bearer
+          <code className="settings-url text-[14px] break-words">{`${mcpBase}/mcp`}</code>
+          <pre className="settings-url bg-newBgColorInner border border-newBorder rounded-[8px] p-[16px] text-[13px] whitespace-pre-wrap break-words leading-[1.6]">{`Bearer
 ${mcpBase}/mcp
 Authorization: Bearer <API key>
 
@@ -606,10 +606,10 @@ export const PublicComponent = () => {
     <div className="settings-section">
       <div className="settings-head">
         <div>
-          <h1>
+          <h2>
             {t('developers', 'Developers')}
             {currentOrg?.name ? ` - ${currentOrg.name}` : ''}
-          </h1>
+          </h2>
           <p>
             {t(
               'use_postiz_api_to_integrate_with_your_tools',

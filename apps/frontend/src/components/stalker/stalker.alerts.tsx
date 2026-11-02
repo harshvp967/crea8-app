@@ -633,9 +633,6 @@ export const StalkerAlerts = () => {
             <div className={stkDialogHead}>
               <div className="min-w-0 flex-1">
                 <h2 className="text-[18px] font-[600]">{draftId ? 'Edit alert' : 'New alert'}</h2>
-                <p className="mt-[4px] text-[14px] text-textItemBlur">
-                  Email you the moment a mention matches these filters.
-                </p>
               </div>
               <button type="button" aria-label="Close" className={stkClose} onClick={() => setCreating(false)}>
                 ×
@@ -664,7 +661,7 @@ export const StalkerAlerts = () => {
             </div>
             <div className={`${stkDialogFoot} stk-al-foot`}>
               <button type="button" className={stkSecondary} onClick={() => setCreating(false)}>
-                Close
+                Cancel
               </button>
               <button
                 type="button"

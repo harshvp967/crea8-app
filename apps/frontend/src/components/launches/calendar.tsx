@@ -72,6 +72,7 @@ import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import {
   CalendarListSkeleton,
   CalendarPostSkeleton,
+  DaySlotSkeleton,
 } from '@gitroom/frontend/components/ui/skeleton';
 
 // Extend dayjs with necessary plugins
@@ -1175,12 +1176,14 @@ export const CalendarColumn: FC<{
             isBeforeNow && postList.length === 0 && 'col-calendar'
           )}
         >
-          {loading && (
+          {loading && display === 'day' ? (
+            <DaySlotSkeleton />
+          ) : loading ? (
             <div className="absolute left-0 top-0 z-[50] flex h-full w-full flex-col gap-[6px] p-[5px]">
               <CalendarPostSkeleton />
               {display !== 'month' ? <CalendarPostSkeleton /> : null}
             </div>
-          )}
+          ) : null}
           {list.map((post) => (
             <div
               key={post.id}

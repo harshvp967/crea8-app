@@ -217,11 +217,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     }
     if (pathname?.startsWith('/settings') || pathname?.startsWith('/account')) {
       return (
-        <div className="flex flex-col min-h-screen text-newTextColor p-[16px] gap-[12px]">
-          <div className="min-h-[64px] bg-newBgColorInner rounded-[24px] border border-newBorder" />
-          <div className="flex-1 bg-newBgLineColor rounded-[20px] overflow-hidden flex min-h-0 border border-newBorder">
-            <SettingsPageSkeleton />
-          </div>
+        <div className="settings-screen c8-page-load">
+          <SettingsPageSkeleton />
         </div>
       );
     }

@@ -278,7 +278,7 @@ export const TeamsComponent = () => {
     <div className="settings-section">
       <div className="settings-head">
         <div>
-          <h1>{t('team_members', 'Team Members')}</h1>
+          <h2>{t('team_members', 'Team Members')}</h2>
         </div>
         <Button onClick={addMember}>
           + {t('add_another_member', 'Add another member')}

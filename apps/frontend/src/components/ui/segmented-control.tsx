@@ -4,6 +4,7 @@
 // (https://trytweenly.vercel.app/r/segmented-control.json).
 // The active pill is a soft cyan wash with a 1px hairline. No outer glow.
 import {
+  useEffect,
   useId,
   useRef,
   useState,
@@ -109,6 +110,16 @@ export function SegmentedControl({
   };
 
   const activeIndex = options.findIndex((option) => option.value === selected);
+
+  useEffect(() => {
+    const node = refs.current[activeIndex];
+    const scroller = node?.closest('.settings-settabs, .c8-seg');
+    if (!node || !(scroller instanceof HTMLElement)) return;
+    const box = node.getBoundingClientRect();
+    const view = scroller.getBoundingClientRect();
+    if (box.left < view.left) scroller.scrollLeft -= view.left - box.left;
+    else if (box.right > view.right) scroller.scrollLeft += box.right - view.right;
+  }, [activeIndex, options.length]);
   const pill = variant === 'pill';
   const thumb = pill
     ? {

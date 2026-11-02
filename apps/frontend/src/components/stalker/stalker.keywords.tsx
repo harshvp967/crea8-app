@@ -625,13 +625,6 @@ export const StalkerKeywords = () => {
               <HugeIcon name="list" size={24} />
             </span>
             <h3 className="text-[16px] font-[600]">No keywords yet.</h3>
-            <p className="max-w-[360px] text-[14px] text-textItemBlur">
-              Add a keyword and Stalker will watch for mentions.
-            </p>
-            <button type="button" className={stkPrimary} onClick={() => openAdd()}>
-              <PlusIcon />
-              Add keyword
-            </button>
           </div>
         </section>
       ) : (

@@ -177,7 +177,7 @@ export const Sets: FC = () => {
     <div className="settings-section">
       <div className="settings-head">
         <div>
-          <h1>Sets{setsLoading && !data ? '' : ` (${data?.length || 0})`}</h1>
+          <h2>Sets{setsLoading && !data ? '' : ` (${data?.length || 0})`}</h2>
           <p>Manage your content sets for easy reuse across posts.</p>
         </div>
         <Button onClick={addSet()}>+ Add a set</Button>
