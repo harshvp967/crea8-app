@@ -1014,6 +1014,7 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   text-align: start;
   text-decoration: none;
   cursor: pointer;
+  transition: background-color var(--c8-dur-hover) var(--c8-ease-out);
 }
 
 .c8-side-app {
@@ -1074,6 +1075,26 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   background: var(--c8-ink);
   color: var(--c8-on-ink);
   font-weight: 700;
+}
+
+/* Same radius and padding as the resting item. Quieter than the active fill.
+   Touch devices do not keep a sticky hover. */
+@media (hover: hover) {
+  .c8-side-app:not(.is-active):hover,
+  .c8-side-link:not(.is-active):hover {
+    background: var(--c8-soft);
+  }
+}
+
+.c8-side-app:focus-visible,
+.c8-side-link:focus-visible {
+  outline: 2px solid var(--c8-cyan);
+  outline-offset: 2px;
+}
+
+.c8-side-app:not(.is-active):focus-visible,
+.c8-side-link:not(.is-active):focus-visible {
+  background: var(--c8-soft);
 }
 
 .c8-side-link .c8-side-dot {
