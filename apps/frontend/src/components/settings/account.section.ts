@@ -1,23 +1,29 @@
 export const accountSections = [
-  { id: 'profile', label: 'Profile' },
+  { id: 'account', label: 'Account' },
   { id: 'workspace', label: 'Workspace' },
-  { id: 'webhooks', label: 'Webhooks' },
   { id: 'billing', label: 'Billing' },
   { id: 'notifications', label: 'Notifications' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'date_metrics', label: 'Date format' },
   { id: 'developers', label: 'Developers' },
-  { id: 'approved_apps', label: 'Approved Apps' },
-  { id: 'security', label: 'Security' },
-  { id: 'delete', label: 'Delete account' },
 ] as const;
 
 export type AccountSectionId = (typeof accountSections)[number]['id'];
 
-// Older links used `date`. The query key that stays in the address bar is date_metrics.
-const sectionAliases: Record<string, AccountSectionId> = {
-  date: 'date_metrics',
+// Tabs that used to have their own page. The address bar is rewritten to the merged tab.
+const legacySections: Record<string, AccountSectionId> = {
+  profile: 'account',
+  security: 'account',
+  delete: 'account',
+  appearance: 'workspace',
+  date: 'workspace',
+  date_metrics: 'workspace',
+  webhooks: 'developers',
+  approved_apps: 'developers',
 };
+
+export const isLegacyAccountSection = (
+  value: string | null | undefined
+): boolean =>
+  !!value && Object.prototype.hasOwnProperty.call(legacySections, value);
 
 export const accountSectionFrom = (
   value: string | null | undefined
@@ -25,10 +31,10 @@ export const accountSectionFrom = (
   if (value && accountSections.some((item) => item.id === value)) {
     return value as AccountSectionId;
   }
-  if (value && sectionAliases[value]) {
-    return sectionAliases[value];
+  if (value && legacySections[value]) {
+    return legacySections[value];
   }
-  return 'profile';
+  return 'account';
 };
 
 export const accountSectionQuery = (id: AccountSectionId) => id;

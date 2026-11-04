@@ -40,6 +40,7 @@ import {
   accountSectionHref,
   accountSectionQuery,
   accountSections,
+  isLegacyAccountSection,
   type AccountSectionId,
 } from '@gitroom/frontend/components/settings/account.section';
 import dynamic from 'next/dynamic';
@@ -526,7 +527,7 @@ const AccountSecurity = () => {
 };
 
 const AccountDelete = () => (
-  <div className="settings-section">
+  <div className="settings-section settings-danger-section">
     <DeleteAccountComponent />
   </div>
 );
@@ -547,12 +548,7 @@ export const AccountSettings = ({
   const querySection = accountSectionFrom(params.get('section'));
   const [localSection, setLocalSection] = useState<AccountSectionId>(querySection);
   const wrote = useRef<string | null>(null);
-  const active = section || localSection;
-  const shown: AccountSectionId =
-    (active === 'developers' && !showDevelopers) ||
-    (active === 'webhooks' && !canWebhooks)
-      ? 'profile'
-      : active;
+  const shown: AccountSectionId = section || localSection;
 
   useEffect(() => {
     if (section) return;
@@ -562,7 +558,16 @@ export const AccountSettings = ({
         : new URLSearchParams(window.location.search).get('section');
     if (wrote.current != null && live === wrote.current) return;
     wrote.current = null;
-    setLocalSection(accountSectionFrom(live));
+    const id = accountSectionFrom(live);
+    setLocalSection(id);
+    if (typeof window === 'undefined' || !isLegacyAccountSection(live)) return;
+    const next = new URLSearchParams(window.location.search);
+    next.set('section', accountSectionQuery(id));
+    const href = `${window.location.pathname}?${next.toString()}`;
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (current !== href) {
+      window.history.replaceState(window.history.state, '', href);
+    }
   }, [params, section]);
 
   const choose = useCallback(
@@ -583,24 +588,12 @@ export const AccountSettings = ({
   );
 
   const labels: Record<AccountSectionId, string> = {
-    profile: t('profile', 'Profile'),
+    account: t('account', 'Account'),
     workspace: t('workspace', 'Workspace'),
-    webhooks: t('webhooks', 'Webhooks'),
     billing: t('billing', 'Billing'),
     notifications: t('notifications', 'Notifications'),
-    appearance: t('appearance', 'Appearance'),
-    date_metrics: 'Date format',
     developers: t('developers', 'Developers'),
-    approved_apps: t('approved_apps', 'Approved Apps'),
-    security: t('security', 'Security'),
-    delete: t('delete_account', 'Delete account'),
   };
-
-  const sections = accountSections.filter((item) => {
-    if (item.id === 'developers') return showDevelopers;
-    if (item.id === 'webhooks') return canWebhooks;
-    return true;
-  });
 
   return (
     <div className="settings-screen account-screen">
@@ -614,24 +607,36 @@ export const AccountSettings = ({
           aria-label={t('account', 'Account')}
           value={shown}
           onValueChange={choose}
-          options={sections.map((item) => ({
+          options={accountSections.map((item) => ({
             value: item.id,
             label: labels[item.id],
             href: accountSectionHref(item.id),
           }))}
         />
         <div className="settings-detail">
-          {shown === 'profile' && <AccountProfile />}
-          {shown === 'workspace' && <AccountWorkspace />}
-          {shown === 'webhooks' && canWebhooks && <Webhooks />}
+          {shown === 'account' && (
+            <div className="account-stack">
+              <AccountProfile />
+              <AccountSecurity />
+              <AccountDelete />
+            </div>
+          )}
+          {shown === 'workspace' && (
+            <div className="account-stack">
+              <AccountWorkspace />
+              <AccountAppearance />
+              <AccountDate />
+            </div>
+          )}
           {shown === 'billing' && <AccountBilling />}
           {shown === 'notifications' && <AccountNotifications />}
-          {shown === 'appearance' && <AccountAppearance />}
-          {shown === 'date_metrics' && <AccountDate />}
-          {shown === 'developers' && showDevelopers && <PublicComponent />}
-          {shown === 'approved_apps' && <ApprovedAppsComponent />}
-          {shown === 'security' && <AccountSecurity />}
-          {shown === 'delete' && <AccountDelete />}
+          {shown === 'developers' && (
+            <div className="account-stack">
+              {showDevelopers ? <PublicComponent /> : null}
+              {canWebhooks ? <Webhooks /> : null}
+              <ApprovedAppsComponent />
+            </div>
+          )}
         </div>
       </div>
     </div>
