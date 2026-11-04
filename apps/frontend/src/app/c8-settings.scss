@@ -2163,6 +2163,7 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   flex-flow: row nowrap !important;
   gap: 2px !important;
   width: max-content !important;
+  min-width: 0 !important;
   max-width: 100% !important;
   align-self: flex-start;
   height: auto !important;
@@ -2172,6 +2173,10 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   border-radius: 999px !important;
   padding-inline-end: 8px;
   scrollbar-width: thin;
+}
+
+.account-screen .settings-section.settings-danger-section {
+  border-color: var(--c8-danger);
 }
 
 .account-screen.settings-screen .settings-settabs.c8-seg::-webkit-scrollbar {
@@ -3283,4 +3288,42 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   background: var(--c8-cyan);
   color: #121016;
   font-weight: 700;
+}
+
+/* Phone: five account tabs wrap inside the viewport. The segmented track
+   becomes the same chips as the other phone settings tabs. */
+@media (max-width: 639px) {
+  .account-screen.settings-screen .settings-settabs.c8-seg {
+    flex-flow: row wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  .account-screen.settings-screen .settings-settabs.c8-seg > [role='radio'] {
+    max-width: 100%;
+    padding: 9px 16px !important;
+    border: 1px solid var(--c8-line) !important;
+    background: var(--c8-surface) !important;
+    color: var(--c8-ink) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+  }
+
+  .account-screen.settings-screen .settings-settabs.c8-seg > [role='radio'][aria-checked='true'] {
+    border-color: var(--c8-ink) !important;
+    background: var(--c8-ink) !important;
+    color: var(--c8-surface) !important;
+    font-weight: 500 !important;
+  }
+
+  .account-screen.settings-screen .settings-settabs.c8-seg > [role='radio'] > .c8-seg-thumb {
+    display: none !important;
+  }
 }
