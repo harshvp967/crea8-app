@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import useCookie from 'react-use-cookie';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { formatRate } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkRequestError, linkLocked, useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
+import { ChartLine } from '@gitroom/frontend/components/analytics/chart-line';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { linkPrimary, linkSecondary } from '@gitroom/frontend/components/link-in-bio/link.chrome';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
@@ -18,8 +20,6 @@ const ranges: Array<{ id: string; label: string }> = [
   { id: '90d', label: '90 days' },
   { id: '365d', label: '365 days' },
 ];
-
-const dateClass = 'lib-input lib-date';
 
 const SOURCE_LOGO: Record<string, string> = {
   instagram: '/icons/platforms/instagram.png',
@@ -58,34 +58,77 @@ const dayLabel = (iso: string) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 };
 
-const Chart = ({ series }: { series: Array<{ day: string; views: number }> }) => {
-  const width = 640;
-  const height = 160;
-  const max = Math.max(1, ...series.map((point) => point.views));
-  const step = series.length > 1 ? width / (series.length - 1) : width;
-  const coords = series.map((point, index) => {
-    const x = series.length > 1 ? index * step : width / 2;
-    const y = height - (point.views / max) * (height - 12) - 6;
-    return `${x},${y}`;
-  });
-  const ticks =
-    series.length > 2
-      ? [series[0], series[Math.floor((series.length - 1) / 2)], series[series.length - 1]]
-      : series;
+const pickedLabel = (iso: string, empty: string) => {
+  if (!iso) {
+    return empty;
+  }
+  const date = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return empty;
+  }
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const RangeField = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) => (
+  <label className={value ? 'lib-range-field' : 'lib-range-field is-empty'}>
+    <HugeIcon name="calendar" size={16} />
+    <span>{pickedLabel(value, label)}</span>
+    <input type="date" aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} />
+  </label>
+);
+
+const ViewsChart = ({ series }: { series: Array<{ day: string; views: number; clicks: number }> }) => {
+  const [mode] = useCookie('mode', 'dark');
+  const light = mode === 'light';
+  const rows = useMemo(() => {
+    const points = series.map((point) => ({
+      date: dayLabel(point.day),
+      views: Number(point.views) || 0,
+      clicks: Number(point.clicks) || 0,
+    }));
+    if (points.length === 1) {
+      return [points[0], { ...points[0] }];
+    }
+    return points;
+  }, [series]);
+  if (!rows.length) {
+    return null;
+  }
   return (
-    <div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-[180px] w-full" role="img" aria-label="Daily views">
-        <polygon className="lib-chart-fill" points={`0,${height} ${coords.join(' ')} ${width},${height}`} />
-        <polyline className="lib-chart-line" points={coords.join(' ')} fill="none" />
-      </svg>
-      {ticks.length ? (
-        <div className="lib-chart-axis mt-[6px] flex justify-between text-[12px] font-[500]">
-          {ticks.map((point) => (
-            <span key={point.day}>{dayLabel(point.day)}</span>
-          ))}
-        </div>
-      ) : null}
-    </div>
+    <ChartLine
+      bare
+      className="lib-chart"
+      surface={light ? 'light' : 'dark'}
+      accent="#00D9FF"
+      title="Views and clicks"
+      data={rows}
+      index="date"
+      series={[
+        { key: 'views', label: 'Views', color: '#00D9FF', texture: 'solid' },
+        { key: 'clicks', label: 'Clicks', color: light ? '#B4B4BC' : '#8B8B93', texture: 'solid' },
+      ]}
+      curve="smooth"
+      fill="gradient"
+      height={220}
+      strokeWidth={2}
+      showLegend
+      showPoints="none"
+      showTooltip
+      showGrid
+      showXAxis
+      showYAxis
+      total="none"
+      animate
+      valueFormat="compact"
+    />
   );
 };
 
@@ -170,8 +213,8 @@ export const LinkAnalyticsScreen = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-[8px]">
-        <div className="max-w-full overflow-x-auto">
+      <div className="lib-range">
+        <div className="lib-range-presets">
           <SegmentedControl
             aria-label="Range"
             variant="pill"
@@ -185,29 +228,9 @@ export const LinkAnalyticsScreen = () => {
             options={ranges.map((item) => ({ value: item.id, label: item.label }))}
           />
         </div>
-        <div className="hidden flex-wrap items-center gap-[8px] sm:flex">
-          <label className="lib-date-field relative">
-            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[14px] top-1/2 -translate-y-1/2" />
-            <input
-              className={`${dateClass} ${from ? '' : 'text-transparent'}`}
-              type="date"
-              aria-label="From"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-            />
-            {from ? null : <span className="pointer-events-none absolute start-[40px] top-1/2 -translate-y-1/2 text-[14px] font-[500]">From</span>}
-          </label>
-          <label className="lib-date-field relative">
-            <HugeIcon name="calendar" size={16} className="pointer-events-none absolute start-[14px] top-1/2 -translate-y-1/2" />
-            <input
-              className={`${dateClass} ${to ? '' : 'text-transparent'}`}
-              type="date"
-              aria-label="To"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-            />
-            {to ? null : <span className="pointer-events-none absolute start-[40px] top-1/2 -translate-y-1/2 text-[14px] font-[500]">To</span>}
-          </label>
+        <div className="lib-range-custom">
+          <RangeField label="From" value={from} onChange={setFrom} />
+          <RangeField label="To" value={to} onChange={setTo} />
           <button
             type="button"
             className={linkSecondary}
@@ -255,7 +278,7 @@ export const LinkAnalyticsScreen = () => {
             />
           </div>
 
-          <section className={stkCard}>
+          <section className={`${stkCard} lib-chart-card`}>
             <div className="mb-[8px] flex items-center justify-between gap-[12px]">
               <h2 className="text-[16px] font-[600] tracking-[-0.02em]">Views and clicks</h2>
               <span className="text-[13px] font-[500] text-textItemBlur">Daily</span>
@@ -273,7 +296,7 @@ export const LinkAnalyticsScreen = () => {
                 </button>
               </div>
             ) : (
-              <Chart series={data.series} />
+              <ViewsChart series={data.series} />
             )}
           </section>
 
