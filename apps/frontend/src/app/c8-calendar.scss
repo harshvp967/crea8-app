@@ -7239,38 +7239,74 @@ html[data-c8-bp='desktop'] body.c8-schedule .channel-rail.sidebar:not(.is-open) 
   width: 72px !important;
 }
 
-/* Desktop month: a readable chip, a reserved Show more, and no spill into the next week. */
+/* Desktop month: a readable chip, a reserved Show more, and no spill into the next week.
+   1280 fits date + three chips + one nowrap "+ Show more (N)" line. The empty
+   add target does not spend that line. */
 @media (min-width: 1200px) and (min-height: 501px) {
   body.c8-schedule .month-grid {
     align-content: start !important;
-    grid-auto-rows: minmax(136px, max-content) !important;
+    grid-auto-rows: minmax(176px, max-content) !important;
   }
 
   body.c8-schedule .month-cell {
     align-self: stretch !important;
     height: auto !important;
-    min-height: 136px !important;
+    min-height: 176px !important;
     overflow: hidden !important;
   }
 
-  body.c8-schedule .month-cell:has(.cal-post.is-open) {
+  body.c8-schedule .month-cell:has(.cal-post.is-open),
+  body.c8-schedule .month-cell:has(.cal-col.is-expanded) {
+    min-height: min-content !important;
     overflow: visible !important;
   }
 
   body.c8-schedule .month-cell > .cal-col {
-    min-height: 0 !important;
+    min-height: min-content !important;
     height: auto !important;
     overflow: hidden;
+  }
+
+  body.c8-schedule .month-cell:has(.cal-col.is-expanded) > .cal-col {
+    overflow: visible;
+  }
+
+  body.c8-schedule .month-cell > .cal-col > div:first-child {
+    flex: 0 0 auto;
+  }
+
+  body.c8-schedule .month-cell > .cal-col > .flex.flex-col > .flex.flex-col {
+    flex: 0 0 auto;
+    min-height: min-content;
+    overflow: visible;
+  }
+
+  body.c8-schedule .month-cell .cal-post {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 28px;
+  }
+
+  body.c8-schedule .month-cell .text-textColor,
+  body.c8-schedule .month-cell .text-textColor > .relative {
+    flex: 0 0 auto;
+    padding: 0 !important;
   }
 
   body.c8-schedule .month-cell .cal-post-body,
   body.c8-schedule .month-cell .cal-post:not(.is-draft) .cal-post-body,
   body.c8-schedule .month-cell .cal-post.is-draft .cal-post-body {
     box-sizing: border-box;
-    height: 24px !important;
-    min-height: 24px !important;
-    max-height: 24px !important;
-    padding: 3px 6px !important;
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    width: 100%;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    padding: 0 8px !important;
+    gap: 6px !important;
     line-height: 16px !important;
     font-size: 12px !important;
     overflow: hidden !important;
@@ -7280,21 +7316,44 @@ html[data-c8-bp='desktop'] body.c8-schedule .channel-rail.sidebar:not(.is-open) 
     display: none !important;
   }
 
+  body.c8-schedule .month-cell .cal-post-icon,
+  body.c8-schedule .month-cell .cal-post-more {
+    flex: 0 0 auto;
+  }
+
+  body.c8-schedule .month-cell .cal-post-body > .min-w-0,
   body.c8-schedule .month-cell .line-clamp-2 {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
     font-size: 12px !important;
     line-height: 16px !important;
     max-height: 16px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
   }
 
   body.c8-schedule .month-cell .cal-show-more {
     display: block;
     flex: 0 0 auto;
-    min-height: 28px;
-    padding: 4px 2px 2px;
+    box-sizing: border-box;
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    padding: 2px 0 0;
     overflow: visible;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
+    letter-spacing: 0;
     line-height: 18px;
-    white-space: normal;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+
+  body.c8-schedule .month-cell .min-h-\[40px\] {
+    min-height: 0 !important;
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
+import { FormProvider, Resolver, SubmitHandler, useForm } from 'react-hook-form';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import Link from 'next/link';
 import { Button } from '@gitroom/react/form/button';
@@ -121,8 +121,30 @@ export function RegisterAfter({
     return !!token && !!provider;
   }, [token, provider]);
   const resolver = useMemo(() => {
-    return classValidatorResolver(CreateOrgUserDto);
-  }, []);
+    const copy: Record<string, string> = {
+      'email must be an email': t('enter_valid_email', 'Enter a valid email'),
+      'password must be longer than or equal to 3 characters': t(
+        'password_min_3',
+        'Password must be at least 3 characters'
+      ),
+      'company must be longer than or equal to 3 characters': t(
+        'company_min_3',
+        'Company name must be at least 3 characters'
+      ),
+    };
+    const base = classValidatorResolver(CreateOrgUserDto) as Resolver<Inputs>;
+    const mapped: Resolver<Inputs> = async (values, context, options) => {
+      const result = await base(values, context, options);
+      (['email', 'password', 'company'] as const).forEach((name) => {
+        const field = result.errors[name];
+        if (field && typeof field.message === 'string' && copy[field.message]) {
+          field.message = copy[field.message];
+        }
+      });
+      return result;
+    };
+    return mapped;
+  }, [t]);
   const form = useForm<Inputs>({
     resolver,
     defaultValues: {

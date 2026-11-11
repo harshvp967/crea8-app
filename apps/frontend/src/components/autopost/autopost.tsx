@@ -76,12 +76,6 @@ export const Autopost: FC = () => {
       <div className="settings-head">
         <div>
           <h2>{t('autopost', 'Autopost')}</h2>
-          <p>
-            {t(
-              'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
-              'Autopost can automatically post your new RSS items to social media'
-            )}
-          </p>
         </div>
         <Button onClick={addWebhook()}>
           + {t('add_an_autopost', 'Add an autopost')}
