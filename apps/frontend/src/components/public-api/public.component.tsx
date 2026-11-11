@@ -465,35 +465,16 @@ const PublicApiContent = () => {
         {t(
           'api_auth_note_line1',
           'Use your API Key to automate your own account.'
-        )}
-        <br />
+        )}{' '}
         {t(
-          'api_auth_note_line2',
-          'If you are building a product that schedules posts on behalf of other crea8.one users,'
-        )}
-        <br />
-        {t(
-          'api_auth_note_line3',
-          'create an OAuth App under the "Apps" tab. Your users will authorize your app via OAuth2,'
-        )}
-        <br />
-        {t(
-          'api_auth_note_line4',
-          'and you will receive a pos_ prefixed token that works with the API and MCP — just like an API Key.'
+          'api_auth_note_oauth',
+          'For other crea8.one users, create an OAuth app under Apps. You get a pos_ token for the API and MCP.'
         )}
       </div>
       <div className="settings-card">
         <div className="bg-newBgColorInner px-[20px] py-[14px] border-b border-newBorder flex items-start justify-between gap-[12px]">
-          <div>
-            <div className="text-[15px] font-[600]">
-              {t('api_key', 'API Key')}
-            </div>
-            <div className="text-[13px] text-customColor18 mt-[2px]">
-              {t(
-                'api_auth_note_line1',
-                'Use your API Key to automate your own account.'
-              )}
-            </div>
+          <div className="text-[15px] font-[600]">
+            {t('api_key', 'API Key')}
           </div>
         </div>
         <div className="p-[20px] flex flex-col gap-[16px]">

@@ -3756,14 +3756,22 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
   }
 
   .link-screen .lib-settings .lib-head {
+    position: static !important;
     display: flex !important;
+    flex: 0 0 auto !important;
     flex-direction: column !important;
     flex-wrap: nowrap !important;
     align-items: stretch !important;
     height: auto !important;
-    min-height: 0 !important;
+    min-height: min-content !important;
     max-height: none !important;
     overflow: visible !important;
+  }
+
+  .link-screen .lib-settings > .lib-head + .lib-settings-layout {
+    position: static;
+    flex: 0 1 auto;
+    margin-top: 0;
   }
 
   .link-screen .lib-settings .lib-head > .min-w-0,
@@ -3789,13 +3797,22 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
   }
 
   .link-screen .lib-analytics .lib-head {
+    position: static !important;
     display: flex !important;
+    flex: 0 0 auto !important;
     flex-direction: column !important;
     flex-wrap: nowrap !important;
     align-items: stretch !important;
     height: auto !important;
-    min-height: 0 !important;
+    min-height: min-content !important;
+    max-height: none !important;
     overflow: visible !important;
+  }
+
+  .link-screen .lib-analytics > .lib-head + .lib-range {
+    position: static;
+    flex: 0 1 auto;
+    margin-top: 0;
   }
 
   .link-screen .lib-analytics .lib-head > .min-w-0,

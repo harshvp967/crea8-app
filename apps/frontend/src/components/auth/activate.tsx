@@ -67,14 +67,18 @@ export function Activate() {
   };
 
   const emailError = form.formState.errors.email?.message as string | undefined;
+  const loginLink = (
+    <p className="mt-[12px] text-[14px]">
+      <Link href="/auth/login" className="cursor-pointer text-[color:var(--arc-accent-text)]">
+        {t('log_in', 'Log in')}
+      </Link>
+    </p>
+  );
   return (
     <div className="auth-form flex flex-1 flex-col">
       <h1 className="text-[26px] font-[600] tracking-[-0.02em] text-start">
         {t('activate_your_account', 'Activate your account')}
       </h1>
-      <div className="auth-kicker text-[14px] mt-[20px] mb-[12px]">
-        {t('didnt_receive_email', "Didn't receive the email?")}
-      </div>
       {emailError ? (
         <div className="auth-alert" role="alert">
           {emailError}
@@ -90,25 +94,31 @@ export function Activate() {
               {t('resend_available_in', 'You can resend in')} {cooldown}s
             </p>
           ) : (
-            <Button
-              onClick={resetToForm}
-              secondary
-              className="auth-submit flex-1 !rounded-[18px] !h-[50px]"
-            >
-              {t('send_again', 'Send Again')}
-            </Button>
+            <div className="w-full flex">
+              <Button
+                onClick={resetToForm}
+                className="auth-submit flex-1 !rounded-[18px] !h-[50px]"
+              >
+                {t('send_again', 'Send Again')}
+              </Button>
+            </div>
           )}
+          <div className="text-center">{loginLink}</div>
         </div>
       ) : status === 'already_activated' ? (
         <div className="flex flex-col gap-[12px]">
           <div className="text-[14px] text-textColor">
             {t('account_already_activated', 'Great news! Your account is already activated.')}
           </div>
-          <Link href="/auth/login">
-            <Button className="auth-submit flex-1 !rounded-[18px] !h-[50px] w-full">
-              {t('log_in', 'Log in')}
-            </Button>
-          </Link>
+          <div className="text-center mt-[8px]">
+            <div className="w-full flex">
+              <Link href="/auth/login" className="flex flex-1">
+                <Button className="auth-submit flex-1 !rounded-[18px] !h-[50px]">
+                  {t('log_in', 'Log in')}
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       ) : (
         <FormProvider {...form}>
@@ -122,27 +132,24 @@ export function Activate() {
               className="cc-input"
               removeError={!!emailError}
             />
-            <Button
-              type="submit"
-              secondary
-              className="auth-submit flex-1 !rounded-[18px] !h-[50px]"
-              loading={loading}
-              disabled={cooldown > 0}
-            >
-              {cooldown > 0
-                ? `${t('resend_available_in', 'You can resend in')} ${cooldown}s`
-                : t('resend_activation_email', 'Resend Activation Email')}
-            </Button>
+            <div className="text-center mt-[8px]">
+              <div className="w-full flex">
+                <Button
+                  type="submit"
+                  className="auth-submit flex-1 !rounded-[18px] !h-[50px]"
+                  loading={loading}
+                  disabled={cooldown > 0}
+                >
+                  {cooldown > 0
+                    ? `${t('resend_available_in', 'You can resend in')} ${cooldown}s`
+                    : t('resend_activation_email', 'Resend Activation Email')}
+                </Button>
+              </div>
+              {loginLink}
+            </div>
           </form>
         </FormProvider>
       )}
-      {status !== 'already_activated' ? (
-        <p className="mt-[12px] text-[14px]">
-          <Link href="/auth/login" className="cursor-pointer text-[color:var(--arc-accent-text)]">
-            {t('log_in', 'Log in')}
-          </Link>
-        </p>
-      ) : null}
     </div>
   );
 }
