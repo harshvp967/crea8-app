@@ -970,12 +970,16 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 
 .c8-side-kicker {
   margin: 0;
+  overflow: hidden;
   color: var(--c8-muted);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.88px;
   line-height: 13px;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
+  hyphens: none;
 }
 
 .c8-side-apps,
@@ -1093,6 +1097,14 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   height: 20px;
   place-items: center;
   flex: none;
+}
+
+.c8-side-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  hyphens: none;
 }
 
 .c8-side-lock {
