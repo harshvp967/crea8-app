@@ -617,14 +617,53 @@
     min-height: 44px;
   }
 
-  .c8-side-app,
-  .c8-side-link,
+  /* 44px is the collapsed rail and the footer icon buttons.
+     Expanded rows stay full width, so a label cannot hyphen-break inside a tile. */
+  .c8-sidebar:not(.is-expanded) .c8-side-app,
+  .c8-sidebar:not(.is-expanded) .c8-side-link,
   .c8-shell .c8-side-foot .arc-icon-btn,
   body.c8-schedule .c8-side-foot > .relative {
     width: 44px;
     min-width: 44px;
     height: 44px;
     min-height: 44px;
+  }
+
+  .c8-sidebar.is-expanded .c8-side-app,
+  .c8-sidebar.is-expanded .c8-side-link {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    justify-content: flex-start;
+  }
+
+  .c8-sidebar.is-expanded .c8-side-app {
+    min-height: 42px;
+    padding: 6px 8px;
+  }
+
+  .c8-sidebar.is-expanded .c8-side-app.is-active {
+    min-height: 45px;
+  }
+
+  .c8-sidebar.is-expanded .c8-side-link {
+    min-height: 40px;
+    padding: 10px 12px;
+  }
+
+  .c8-sidebar.is-expanded .c8-side-text,
+  .c8-sidebar.is-expanded .c8-side-kicker {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    hyphens: none;
+  }
+
+  .c8-sidebar.is-expanded .c8-side-link .c8-side-dot {
+    display: block;
+    margin-left: auto;
   }
 
   .link-screen .lib-preview-as-summary {
