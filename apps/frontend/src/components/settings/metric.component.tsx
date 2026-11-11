@@ -34,10 +34,10 @@ const MetricComponent = () => {
   return (
     <div className="settings-row">
       <div className="settings-row-copy">
-        <div className="settings-row-title">Date format</div>
+        <div className="settings-row-title">Time format</div>
       </div>
       <div className="settings-control">
-      <Select name="metric" disableForm={true} hideErrors={true} label="" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
+      <Select name="metric" disableForm={true} hideErrors={true} label="" aria-label="Time format" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
         {dateMetrics.map((metric) => (
           <option
             key={metric.value}

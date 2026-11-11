@@ -113,6 +113,7 @@ const EmailNotificationsComponent = () => {
           value={localSettings.sendSuccessEmails ? 'on' : 'off'}
           onChange={handleSuccessEmailsChange}
           fill={true}
+          label={t('success_emails', 'Success emails')}
         />
       </div>
       <div className="settings-row">
@@ -125,6 +126,7 @@ const EmailNotificationsComponent = () => {
           value={localSettings.sendFailureEmails ? 'on' : 'off'}
           onChange={handleFailureEmailsChange}
           fill={true}
+          label={t('failure_emails', 'Failure emails')}
         />
       </div>
       <div className="settings-row">
@@ -137,6 +139,7 @@ const EmailNotificationsComponent = () => {
           value={localSettings.sendStreakEmails ? 'on' : 'off'}
           onChange={handleStreakEmailsChange}
           fill={true}
+          label={t('streak_emails', 'Streak reminder emails')}
         />
       </div>
     </>

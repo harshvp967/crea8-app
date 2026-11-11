@@ -73,6 +73,7 @@ export const Input: FC<
             'h-full bg-transparent outline-none flex-1 text-[14px] text-textColor',
             icon ? 'pl-[8px] pe-[16px]' : 'px-[16px]'
           )}
+          aria-label={label || undefined}
           {...(disableForm ? {} : form.register(props.name))}
           {...rest}
         />

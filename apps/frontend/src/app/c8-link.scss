@@ -3747,3 +3747,91 @@ body:has(.link-screen) .lib-modal:has(.lib-block-sheet) .lib-dialog {
     overflow: auto;
   }
 }
+
+/* Settings save stays on its own row below 1024. Analytics export does the same on a phone. */
+@media (max-width: 900px) {
+  .link-screen .lib-settings {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .link-screen .lib-settings .lib-head {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .link-screen .lib-settings .lib-head > .min-w-0,
+  .link-screen .lib-settings .lib-period {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .link-screen .lib-settings .lib-head-actions {
+    position: static !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: 100%;
+    margin: 0 !important;
+    justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .link-screen .lib-analytics {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .link-screen .lib-analytics .lib-head {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .link-screen .lib-analytics .lib-head > .min-w-0,
+  .link-screen .lib-analytics .lib-period {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .link-screen .lib-analytics .lib-head-actions {
+    position: static !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: 100%;
+    margin: 0 !important;
+    justify-content: flex-start !important;
+  }
+
+  .link-screen .lib-analytics .lib-head-actions .stk-btn {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1199px) {
+  .link-screen .lib-leads {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .link-screen .lib-leads-table-wrap,
+  .link-screen .lib-leads-table-wrap .lib-table-wrap {
+    flex: 0 0 auto;
+    min-height: 160px;
+  }
+
+  .link-screen .lib-leads-table-wrap .lib-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}

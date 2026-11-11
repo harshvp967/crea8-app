@@ -55,6 +55,7 @@ export const Select: FC<
       </div>
       <select
         ref={ref}
+        aria-label={label || undefined}
         {...(disableForm ? {} : form.register(props.name, extraForm))}
         className={clsx(
           'h-[44px] bg-newBgColorInner px-[16px] outline-none border-newBorder border rounded-[18px] text-[14px] text-textColor focus:border-[color:var(--arc-focus)]',

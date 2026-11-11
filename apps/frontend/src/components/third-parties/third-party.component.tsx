@@ -34,7 +34,7 @@ export const ThirdPartyComponent = () => {
       <div className={clsx('integrations-main', isLoading && !data && 'integrations-state')}>
         <SchedulePageHead
           title={t('integrations', 'Integrations')}
-          context={t('connected_tools', 'Connected tools')}
+          subtitle={t('connected_tools', 'Connected tools')}
         />
         {isLoading && !data ? (
           <IntegrationsSkeleton />

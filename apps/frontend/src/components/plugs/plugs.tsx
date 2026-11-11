@@ -22,7 +22,6 @@ const PlugsPageHead: FC<{ subtitle?: ReactNode }> = ({ subtitle }) => {
   return (
     <SchedulePageHead
       title={t('plugs', 'Plugs')}
-      context={t('auto_actions_per_channel', 'Auto-actions per channel')}
       subtitle={subtitle}
     />
   );

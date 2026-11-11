@@ -5,17 +5,22 @@ import clsx from 'clsx';
 export const Slider: FC<{
   value: 'on' | 'off';
   fill?: boolean;
+  label?: string;
   onChange: (value: 'on' | 'off') => void;
 }> = (props) => {
-  const { value, onChange, fill } = props;
+  const { value, onChange, fill, label } = props;
   const change = useCallback(() => {
     onChange(value === 'on' ? 'off' : 'on');
-  }, [value]);
+  }, [value, onChange]);
   return (
-    <div
+    <button
+      type="button"
+      role="switch"
+      aria-checked={value === 'on'}
+      aria-label={label}
       className={clsx(
-        'w-[57px] h-[34px] p-[4px] border-fifth border rounded-[100px]',
-        value === 'on' && fill && 'bg-customColor4'
+        'w-[57px] h-[34px] p-[4px] border-fifth border rounded-[100px] appearance-none cursor-pointer',
+        value === 'on' && fill ? 'bg-customColor4' : 'bg-transparent'
       )}
       onClick={change}
     >
@@ -27,6 +32,6 @@ export const Slider: FC<{
           )}
         />
       </div>
-    </div>
+    </button>
   );
 };

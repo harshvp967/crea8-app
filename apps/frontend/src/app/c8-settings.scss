@@ -1584,11 +1584,11 @@ $c8-body: var(--font-body), Inter, sans-serif;
   }
 }
 
-/* Very wide: centre the page column. 1104px is the desktop content width. */
-@media (min-width: 1600px) and (min-height: 501px) {
-  .settings-screen .settings-main {
+/* Same centered column as Schedule. 1104px is the desktop content width. */
+@media (min-width: 1200px) and (min-height: 501px) {
+  .account-screen .settings-main {
     width: 100%;
-    max-width: 1104px;
+    max-width: var(--c8-page-max);
     margin-right: auto;
     margin-left: auto;
   }
@@ -2203,8 +2203,8 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 
 .account-screen .settings-detail {
   width: 100%;
-  max-width: 740px;
-  align-self: flex-start;
+  max-width: none;
+  align-self: stretch;
 }
 
 .account-screen .settings-head {
@@ -3325,5 +3325,9 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
 
   .account-screen.settings-screen .settings-settabs.c8-seg > [role='radio'] > .c8-seg-thumb {
     display: none !important;
+  }
+
+  .settings-screen .settings-settabs.c8-seg > [role='radio'] {
+    min-height: 44px !important;
   }
 }

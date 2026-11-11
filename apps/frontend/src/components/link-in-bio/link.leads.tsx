@@ -326,6 +326,10 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
   if (!data) {
     return null;
   }
+  const leadsConnected =
+    data.integrations.mailchimp.connected ||
+    data.integrations.convertkit.connected ||
+    !!data.integrations.webhook.url;
   const save = async (body: Record<string, unknown>) => {
     if (linkLocked(data) && !body.clearMailchimp && !body.clearConvertkit && !body.clearWebhook) {
       toast.show('Lead integrations are on a paid plan', 'warning');
@@ -350,11 +354,9 @@ const Integrations = ({ busy, setBusy }: { busy: boolean; setBusy: (value: boole
     <section className={`${stkCard} lib-integrations`}>
       <h2 className="text-[16px] font-[600] tracking-[-0.02em]">Integrations{data.paid ? '' : ' (Pro)'}</h2>
       <p className="mb-[16px] mt-[4px] text-[13px] font-[500] text-textItemBlur">
-        {linkLocked(data)
-          ? 'Mailchimp, ConvertKit and webhooks are on a paid plan.'
-          : data.paid
-          ? 'New leads are sent to Mailchimp, ConvertKit and your webhook. Keys stay on the server.'
-          : 'Mailchimp, ConvertKit and webhooks are on a paid plan. They stay open while plan gating is off. Keys stay on the server.'}{' '}
+        {leadsConnected
+          ? 'New leads are sent to Mailchimp, ConvertKit and your webhook.'
+          : 'Connect Mailchimp, ConvertKit or a webhook to send leads.'}{' '}
         {linkLocked(data) ? (
           <Link href="/account?section=billing">
             Upgrade

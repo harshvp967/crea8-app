@@ -24,6 +24,12 @@ import {
 } from '@gitroom/frontend/components/stalker/stalker.sample';
 import { sourceLabel } from '@gitroom/frontend/components/stalker/stalker.labels';
 import { stalkerSourceEnabled } from '@gitroom/helpers/utils/stalker.sources';
+
+const heatHour = (slot: number) => {
+  const hour = slot * 2;
+  const hour12 = hour % 12 || 12;
+  return `${hour12}${hour < 12 ? 'a' : 'p'}`;
+};
 import { decodeHtmlEntities } from '@gitroom/helpers/utils/stalker.text';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 import {
@@ -584,11 +590,14 @@ export const StalkerAnalytics = () => {
               )}
             </Card>
             <Card title="When people mention you">
+              {!peak ? (
+                <p className="text-[14px] text-textItemBlur">No mentions in this view.</p>
+              ) : (
               <div className="stk-heat text-[13px] text-textItemBlur">
                 <span />
                 {Array.from({ length: 12 }, (_, hour) => (
                   <span key={hour} className="text-center">
-                    {hour === 0 ? '12a' : hour * 2}
+                    {heatHour(hour)}
                   </span>
                 ))}
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
@@ -598,7 +607,7 @@ export const StalkerAnalytics = () => {
                       <span
                         key={`${day}-${hour}`}
                         className="stk-heat-cell"
-                        title={value ? `${day} ${hour * 2}:00 · ${value}` : undefined}
+                        title={value ? `${day} ${heatHour(hour)} · ${value}` : undefined}
                         style={{
                           background:
                             value && peak
@@ -610,6 +619,7 @@ export const StalkerAnalytics = () => {
                   </div>
                 ))}
               </div>
+              )}
             </Card>
             <Card title="Top supporters">
               <People rows={supporters} authors={authors} />

@@ -46,6 +46,7 @@ export const TextArea: FC<{
       <textarea className="hidden" {...all}></textarea>
       <CopilotTextarea
         disableBranding={true}
+        aria-label={props.placeHolder}
         placeholder={props.placeHolder}
         value={value}
         className={clsx(

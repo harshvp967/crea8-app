@@ -223,6 +223,8 @@ export const LinkAnalyticsScreen = () => {
             value={applied.from ? '' : range}
             onValueChange={(id) => {
               setRange(id);
+              setFrom('');
+              setTo('');
               setApplied({ from: '', to: '' });
             }}
             options={ranges.map((item) => ({ value: item.id, label: item.label }))}
