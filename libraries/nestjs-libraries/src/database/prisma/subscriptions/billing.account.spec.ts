@@ -291,7 +291,7 @@ describe('shared workspace billing', () => {
       '5 channels',
       '1 team member',
       'Unlimited workspaces',
-      '300 credits a month',
+      '300 credits refill monthly',
       '3 Stalker keywords',
       'Stalker scan every 12 hours',
       '3 Stalker checks a day',
@@ -306,9 +306,9 @@ describe('shared workspace billing', () => {
     ]);
     expect(planCardLines(PLANS.TEAM).map((line) => line.text)).toContain('10 channels');
     expect(planCardLines(PLANS.TEAM).map((line) => line.text)).toContain('Unlimited team members');
-    expect(planCardLines(PLANS.TEAM).map((line) => line.text)).toContain('700 credits a month');
-    expect(planCardLines(PLANS.PRO).map((line) => line.text)).toContain('1,100 credits a month');
-    expect(planCardLines(PLANS.ULTIMATE).map((line) => line.text)).toContain('1,800 credits a month');
+    expect(planCardLines(PLANS.TEAM).map((line) => line.text)).toContain('700 credits refill monthly');
+    expect(planCardLines(PLANS.PRO).map((line) => line.text)).toContain('1,100 credits refill monthly');
+    expect(planCardLines(PLANS.ULTIMATE).map((line) => line.text)).toContain('1,800 credits refill monthly');
     expect(planCardLines(PLANS.ULTIMATE).map((line) => line.text)).toContain('10,000 webhooks');
     expect(usagePair(0, 10000)).toBe('0/10,000');
     expect(webhookQuota(0, 10000)).toBe('0/10,000');

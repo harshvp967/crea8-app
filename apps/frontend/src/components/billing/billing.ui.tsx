@@ -70,7 +70,7 @@ export function PlanPicker({
               <ul className="m-0 pl-[18px] text-textItemBlur">
                 <li>{plan.channels} channels</li>
                 <li>{plan.teamMemberLimit == null ? 'Unlimited team members' : `${plan.teamMemberLimit} team member`}</li>
-                <li>{plan.monthlyCredits} credits each cycle</li>
+                <li>{plan.monthlyCredits} credits refill monthly</li>
                 <li>{plan.stalkerKeywords} Stalker keywords</li>
               </ul>
               <BillingButton
@@ -232,28 +232,34 @@ export function CreditPacks({
   locked?: boolean;
 }) {
   const label = (pack: BillingOverview['packs'][number]) => {
-    if (locked) {
-      return 'Available after trial';
-    }
     if (busy === pack.key) {
       return 'Opening checkout…';
     }
     return `${pack.credits} credits · $${pack.usd}`;
   };
+  const packLabel = (pack: BillingOverview['packs'][number]) =>
+    locked ? (
+      <>
+        <span className="billing-pack-size">{pack.credits} credits</span>
+        <span>Available after trial</span>
+      </>
+    ) : (
+      label(pack)
+    );
   const buttons = packs.map((pack) =>
     compact ? (
       <button
         key={pack.key}
         type="button"
-        className="account-chip"
+        className="account-chip billing-pack"
         disabled={locked || busy === pack.key}
         onClick={locked ? undefined : () => onBuy(pack.key)}
       >
-        {label(pack)}
+        {packLabel(pack)}
       </button>
     ) : (
-      <BillingButton key={pack.key} kind="primary" disabled={locked || busy === pack.key} onClick={locked ? undefined : () => onBuy(pack.key)}>
-        {label(pack)}
+      <BillingButton key={pack.key} className="billing-pack" kind="primary" disabled={locked || busy === pack.key} onClick={locked ? undefined : () => onBuy(pack.key)}>
+        {packLabel(pack)}
       </BillingButton>
     )
   );
@@ -299,7 +305,7 @@ export function InvoiceList({
                 <span className="settings-pill">{invoiceStatus(invoice.status)}</span>
                 <strong>{invoiceAmount(invoice.amount, invoice.currency)}</strong>
                 {invoice.url ? (
-                  <a className="settings-pill" href={invoice.url} target="_blank" rel="noreferrer">
+                  <a className="settings-pill billing-invoice" href={invoice.url} target="_blank" rel="noreferrer">
                     PDF
                   </a>
                 ) : null}
@@ -324,7 +330,7 @@ export function InvoiceList({
               <span className="settings-pill">{invoiceStatus(invoice.status)}</span>
               <strong>{invoiceAmount(invoice.amount, invoice.currency)}</strong>
               {invoice.url ? (
-                <a className="settings-pill" href={invoice.url} target="_blank" rel="noreferrer">View</a>
+                <a className="settings-pill billing-invoice" href={invoice.url} target="_blank" rel="noreferrer">View</a>
               ) : null}
             </li>
           ))}
@@ -371,7 +377,7 @@ export function BillingSettings({
         ) : null}
       </div>
       {!overview.grandfathered && sub.status !== 'cancelled' && sub.status !== 'cancel_scheduled' && sub.status !== 'none' && sub.status !== 'trial_ended' ? (
-        <BillingButton kind="danger" disabled={busy} onClick={() => onCancel('')}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
+        <BillingButton className="billing-cancel" kind="danger" disabled={busy} onClick={() => onCancel('')}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
       ) : null}
     </section>
   );
@@ -503,6 +509,59 @@ export function CancelStrip({
   );
 }
 
+export function formatBillingDay(value: unknown) {
+  if (typeof value !== 'string') return '';
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return '';
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+const planStatusLabel = (status: string) => {
+  switch (status) {
+    case 'active':
+      return 'Active';
+    case 'trialing':
+      return 'Trial';
+    case 'trial_ended':
+      return 'Trial ended';
+    case 'past_due':
+      return 'Past due';
+    case 'on_hold':
+      return 'On hold';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'cancel_scheduled':
+      return 'Cancellation scheduled';
+    default:
+      return '';
+  }
+};
+
+function planTiming(sub: BillingOverview['subscription']) {
+  const record = sub as BillingOverview['subscription'] & {
+    renewsAt?: string | null;
+    expiresAt?: string | null;
+    renewal?: string | null;
+  };
+  const status = typeof record.status === 'string' ? record.status : '';
+  const expires = status === 'cancel_scheduled' || status === 'cancelled' || status === 'trial_ended';
+  const raw = expires
+    ? record.expiresAt || record.cancelAt || record.currentPeriodEnd
+    : record.renewsAt || record.renewal || record.currentPeriodEnd;
+  const day = formatBillingDay(raw);
+  return {
+    status: planStatusLabel(status),
+    when: day ? (expires ? `Expires ${day}` : `Renews ${day}`) : '',
+  };
+}
+
 export function AccountPlanCard({
   overview,
   busy,
@@ -534,6 +593,7 @@ export function AccountPlanCard({
     sub.status !== 'cancel_scheduled' &&
     sub.status !== 'none' &&
     sub.status !== 'trial_ended';
+  const timing = planTiming(sub);
 
   return (
     <section data-billing-state="billing_settings" className="settings-section account-bill-card">
@@ -545,6 +605,12 @@ export function AccountPlanCard({
         <p className="account-bill-price">
           ${price}
           <span>{yearly ? '/yr' : '/mo'}</span>
+        </p>
+      ) : null}
+      {timing.status || timing.when ? (
+        <p className="account-bill-meta">
+          {timing.status ? <span className="settings-pill">{timing.status}</span> : null}
+          {timing.when ? <span>{timing.when}</span> : null}
         </p>
       ) : null}
       <div className="account-bill-tiles" aria-hidden>
@@ -592,7 +658,7 @@ export function AccountPlanCard({
         ) : null}
       </div>
       {canCancel ? (
-        <BillingButton kind="danger" disabled={busy} onClick={() => onCancel('')}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
+        <BillingButton className="billing-cancel" kind="danger" disabled={busy} onClick={() => onCancel('')}>{busy ? 'Loading…' : 'Cancel subscription'}</BillingButton>
       ) : null}
     </section>
   );

@@ -31,14 +31,16 @@ export function BillingButton({
   disabled,
   onClick,
   type = 'button',
+  className = '',
 }: {
   kind?: 'primary' | 'secondary' | 'danger';
   children: ReactNode;
   disabled?: boolean;
   onClick?: () => void;
   type?: 'button' | 'submit';
+  className?: string;
 }) {
-  const shared = 'rounded-[8px] border px-[14px] py-[8px] text-[14px] font-[600] disabled:opacity-50';
+  const shared = `rounded-[8px] border px-[14px] py-[8px] text-[14px] font-[600] disabled:opacity-50 ${className}`.trim();
   if (kind === 'primary') {
     return (
       <button

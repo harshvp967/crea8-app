@@ -22,6 +22,7 @@ import {
   Paywall,
   PlanPicker,
   StatusBanners,
+  formatBillingDay,
 } from '@gitroom/frontend/components/billing/billing.ui';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { PricingSection } from '@gitroom/frontend/components/billing/pricing.section';
@@ -143,15 +144,36 @@ export function BillingScreen({
         });
         const body = await preview.json();
         const when = body?.trialEndsAt ? String(body.trialEndsAt).slice(0, 10) : '';
+        const scheduled = Boolean(body?.scheduled) && !body?.trial;
+        const renewalDay = scheduled
+          ? formatBillingDay(
+              body?.renewsAt ||
+                body?.renewal ||
+                body?.nextRenewal ||
+                body?.trialEndsAt ||
+                data?.subscription?.currentPeriodEnd
+            )
+          : '';
+        const currentName = data?.subscription.displayName || 'The current plan';
         const detail = body?.trial
           ? `${plan.displayName} applies to the first charge${when ? ` on ${when}` : ''}. Nothing is charged today, and the trial end stays the same.`
-          : body?.scheduled
-            ? `${plan.displayName} is scheduled for the next renewal. ${data?.subscription.displayName || 'The current plan'} stays until then.`
+          : scheduled
+            ? renewalDay
+              ? `${plan.displayName} will start on the next renewal, ${renewalDay}. ${currentName} stays until then.`
+              : `${plan.displayName} will start on the next renewal. ${currentName} stays until then.`
             : body?.price
               ? `${plan.displayName} ${period.toLowerCase()} is about $${body.price} ${body.currency || 'USD'} today.`
               : `Switch to ${plan.displayName} (${period.toLowerCase()}).`;
         setBusy(false);
-        if (await deleteDialog(detail, 'Continue', 'Confirm plan change', 'Close', 'primary')) {
+        if (
+          await deleteDialog(
+            detail,
+            scheduled ? 'Schedule downgrade' : 'Continue',
+            scheduled ? 'Schedule downgrade' : 'Confirm plan change',
+            'Close',
+            'primary'
+          )
+        ) {
           await subscribe(plan);
         }
       } catch {
@@ -454,7 +476,12 @@ export function BillingScreen({
             ) : null}
             <InvoiceList rows invoices={data.invoices} />
             {!accountHasPlan || showPlans ? (
-              <div ref={plansRef} className="billing-plans w-full">{accountPicker}</div>
+              <div ref={plansRef} className="billing-plans flex w-full flex-col gap-[28px]">
+                {accountPicker}
+                <div className="account-bill-faq">
+                  <FAQComponent accordion />
+                </div>
+              </div>
             ) : null}
           </>
         ) : (

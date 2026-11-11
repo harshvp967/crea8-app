@@ -7,11 +7,12 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
 import { TRIAL_CHECKOUT_FAQ } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
-const useFaqList = () => {
+const useFaqList = (forceTrial = false) => {
   const user = useUser();
   const t = useT();
+  const showTrial = forceTrial || !!user?.allowTrial;
   return [
-    ...(user?.allowTrial
+    ...(showTrial
       ? [
           {
             title: t(
@@ -144,9 +145,8 @@ export const FAQSection: FC<{
     </div>
   );
 };
-export const FAQComponent: FC<{ accordion?: boolean }> = ({ accordion }) => {
-  const t = useT();
-  const list = useFaqList();
+export const FAQComponent: FC<{ accordion?: boolean; trial?: boolean }> = ({ accordion, trial = false }) => {
+  const list = useFaqList(trial);
   if (accordion) {
     return (
       <div className="lib-acc w-full">

@@ -1460,7 +1460,8 @@ body:has(.link-screen) .mobile-sheet {
   body:has(.settings-screen) .dash-mswitch-btn,
   body:has(.stalker-screen) .dash-mswitch-btn,
   body:has(.link-screen) .dash-mswitch-btn {
-    height: 37px;
+    height: 44px;
+    min-height: 44px;
     padding: 0 12px 0 6px;
     border: 1.5px solid var(--c8-hard);
     border-radius: 999px;

@@ -2581,6 +2581,49 @@ body.dark.c8-schedule .cal-mode.c8-seg > button[aria-checked='true'] {
   line-height: 1;
 }
 
+.account-bill-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: var(--c8-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.billing-pack {
+  gap: 8px;
+}
+
+.billing-pack-size {
+  font-weight: 700;
+}
+
+@media (max-width: 1199px), (max-height: 500px) {
+  .billing-cancel,
+  .billing-pack {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .account-bill-packs .billing-pack {
+    height: auto;
+  }
+
+  a.billing-invoice {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 .account-bill-price span {
   margin-left: 4px;
   color: var(--c8-muted);
