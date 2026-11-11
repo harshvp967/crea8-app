@@ -45,6 +45,7 @@ function SignInPaywall({
   allowTrial,
   trialDays,
   currentTier,
+  currentPeriod,
   onPeriod,
   onChoose,
 }: {
@@ -53,6 +54,7 @@ function SignInPaywall({
   allowTrial: boolean;
   trialDays: number;
   currentTier?: PlanTier | null;
+  currentPeriod?: 'MONTHLY' | 'YEARLY' | null;
   onPeriod: (period: 'MONTHLY' | 'YEARLY') => void;
   onChoose: (tier: PaidTier) => void;
 }) {
@@ -64,6 +66,7 @@ function SignInPaywall({
         allowTrial={allowTrial}
         trialDays={trialDays}
         currentTier={currentTier}
+        currentPeriod={currentPeriod}
         onPeriod={onPeriod}
         onChoose={onChoose}
       />
@@ -196,6 +199,13 @@ export function BillingScreen({
       const body = await response.json();
       if (body.blocked) {
         toaster.show('Another account with this email already has a subscription.', 'warning');
+        return;
+      }
+      if (!response.ok) {
+        toaster.show(
+          typeof body.message === 'string' ? body.message : 'Could not start checkout.',
+          'warning'
+        );
         return;
       }
       if (body.url) {
@@ -332,6 +342,7 @@ export function BillingScreen({
       allowTrial={data.allowTrial && status !== 'trial_ended'}
       busy={busy}
       currentTier={data.subscription.tier}
+      currentPeriod={data.subscription.period}
       onPeriod={setPeriod}
       onSelect={choose}
     />
@@ -344,6 +355,7 @@ export function BillingScreen({
       allowTrial={data.allowTrial && status !== 'trial_ended'}
       trialDays={data.trialDays}
       currentTier={data.subscription.tier}
+      currentPeriod={data.subscription.period}
       onPeriod={setPeriod}
       onChoose={(tier) => {
         const plan = data.plans.find((item) => item.tier === tier);
@@ -493,6 +505,7 @@ export function BillingScreen({
                 allowTrial={data.allowTrial && status !== 'trial_ended'}
                 trialDays={data.trialDays}
                 currentTier={data.subscription.tier}
+                currentPeriod={data.subscription.period}
                 onPeriod={setPeriod}
                 onChoose={(tier) => chooseTier(tier, data.plans)}
               />

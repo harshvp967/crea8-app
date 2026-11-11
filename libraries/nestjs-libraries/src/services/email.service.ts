@@ -6,6 +6,16 @@ import { NodeMailerProvider } from '@gitroom/nestjs-libraries/emails/node.mailer
 import { TemporalService } from 'nestjs-temporal-core';
 import { timer } from '@gitroom/helpers/utils/timer';
 
+export const ACTIVATION_EMAIL_SUBJECT = 'Activate your account';
+export const BRAND_FROM_NAME = 'crea8.one';
+
+export function emailFromName(subject: string, configured?: string | null) {
+  if (subject === ACTIVATION_EMAIL_SUBJECT) {
+    return BRAND_FROM_NAME;
+  }
+  return configured || '';
+}
+
 @Injectable()
 export class EmailService {
   emailService: EmailInterface;
@@ -131,7 +141,7 @@ export class EmailService {
           to,
           subject,
           modifiedHtml,
-          process.env.EMAIL_FROM_NAME,
+          emailFromName(subject, process.env.EMAIL_FROM_NAME),
           process.env.EMAIL_FROM_ADDRESS,
           replyTo
         );

@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { BillingButton, BillingHeading } from '@gitroom/frontend/components/billing/billing.shell';
-import { BillingOverview, BillingPlanCard } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
+import { BillingOverview, BillingPlanCard, isExactCurrentPlan } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 import { creditCapacity, usagePair, type PlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
@@ -34,6 +34,7 @@ export function PlanPicker({
   allowTrial,
   busy,
   currentTier,
+  currentPeriod,
   onPeriod,
   onSelect,
 }: {
@@ -43,6 +44,7 @@ export function PlanPicker({
   allowTrial: boolean;
   busy: boolean;
   currentTier?: PlanTier | null;
+  currentPeriod?: 'MONTHLY' | 'YEARLY' | null;
   onPeriod: (period: 'MONTHLY' | 'YEARLY') => void;
   onSelect: (plan: BillingPlanCard) => void;
 }) {
@@ -59,7 +61,12 @@ export function PlanPicker({
       </div>
       <div className="grid gap-[12px] md:grid-cols-2">
         {plans.map((plan) => {
-          const isCurrent = currentTier === plan.tier;
+          const isCurrent = isExactCurrentPlan({
+            currentTier,
+            currentPeriod,
+            tier: plan.tier,
+            period,
+          });
           return (
             <article key={plan.tier} className="rounded-[8px] border border-newBorder p-[14px] flex flex-col gap-[8px]">
               <BillingHeading as="h2">{plan.displayName}</BillingHeading>

@@ -13,7 +13,9 @@ import {
 import {
   billingStatus,
   checkoutReturnKind,
+  isExactCurrentPlan,
   paywallAllowsTrial,
+  subscriptionTimeline,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 import {
   AI_POST_CALL_REASON,
@@ -33,8 +35,11 @@ import {
   invoiceIsVisible,
   ledgerRowsForHistory,
   monthlyCreditAllowance,
+  ACTIVE_SUBSCRIPTION_ERROR,
+  adoptIncomingSubscription,
   planChangeBilling,
   planSpend,
+  subscriptionSwitch,
   postableChannelIds,
   postsCovered,
   preservedTrialEnd,
@@ -863,6 +868,157 @@ describe('dodo checkout prefill', () => {
     });
     expect(dropped.phoneNumber).toBeUndefined();
     expect(dropped.country).toBe('IN');
+  });
+});
+
+describe('one subscription per account', () => {
+  const active = {
+    grantsAccess: true,
+    identifier: 'sub_monthly',
+    canReplace: true,
+    currentTier: 'ULTIMATE',
+    currentPeriod: 'MONTHLY' as const,
+  };
+
+  it('replaces the subscription when the interval changes', () => {
+    expect(
+      subscriptionSwitch({
+        ...active,
+        requestedTier: 'ULTIMATE',
+        requestedPeriod: 'YEARLY',
+      })
+    ).toEqual({ action: 'replace', identifier: 'sub_monthly' });
+    expect(
+      planChangeBilling({
+        inTrial: false,
+        upgrade: true,
+        trialEndsAt: null,
+        fromPeriod: 'MONTHLY',
+        toPeriod: 'YEARLY',
+      }).prorationBillingMode
+    ).toBe('prorated_immediately');
+    expect(
+      planChangeBilling({
+        inTrial: false,
+        upgrade: false,
+        trialEndsAt: null,
+        fromPeriod: 'YEARLY',
+        toPeriod: 'MONTHLY',
+      })
+    ).toMatchObject({
+      prorationBillingMode: 'full_immediately',
+      effectiveAt: 'next_billing_date',
+      chargeNow: false,
+      applyTierNow: false,
+    });
+  });
+
+  it('refuses checkout while a subscription is active', () => {
+    expect(ACTIVE_SUBSCRIPTION_ERROR).toBe('This account already has a subscription.');
+    expect(
+      subscriptionSwitch({
+        grantsAccess: true,
+        identifier: null,
+        canReplace: false,
+        currentTier: 'ULTIMATE',
+        currentPeriod: 'MONTHLY',
+        requestedTier: 'ULTIMATE',
+        requestedPeriod: 'YEARLY',
+      }).action
+    ).toBe('refuse');
+    expect(
+      subscriptionSwitch({
+        grantsAccess: false,
+        identifier: null,
+        canReplace: false,
+        currentTier: 'FREE',
+        currentPeriod: null,
+        requestedTier: 'ULTIMATE',
+        requestedPeriod: 'MONTHLY',
+      }).action
+    ).toBe('checkout');
+    expect(
+      subscriptionSwitch({
+        ...active,
+        requestedTier: 'ULTIMATE',
+        requestedPeriod: 'MONTHLY',
+      }).action
+    ).toBe('current');
+  });
+
+  it('does not let a second subscription id replace the stored one', () => {
+    expect(
+      adoptIncomingSubscription({
+        storedId: 'sub_monthly',
+        incomingId: 'sub_yearly',
+        storedGrantsAccess: true,
+      })
+    ).toBe(false);
+    expect(
+      adoptIncomingSubscription({
+        storedId: 'sub_monthly',
+        incomingId: 'sub_monthly',
+        storedGrantsAccess: true,
+      })
+    ).toBe(true);
+    expect(
+      adoptIncomingSubscription({
+        storedId: 'sub_monthly',
+        incomingId: 'sub_yearly',
+        storedGrantsAccess: false,
+      })
+    ).toBe(true);
+  });
+
+  it('marks only the same plan and interval as the current plan', () => {
+    expect(
+      isExactCurrentPlan({
+        currentTier: 'ULTIMATE',
+        currentPeriod: 'MONTHLY',
+        tier: 'ULTIMATE',
+        period: 'YEARLY',
+      })
+    ).toBe(false);
+    expect(
+      isExactCurrentPlan({
+        currentTier: 'ULTIMATE',
+        currentPeriod: 'MONTHLY',
+        tier: 'ULTIMATE',
+        period: 'MONTHLY',
+      })
+    ).toBe(true);
+    expect(
+      isExactCurrentPlan({
+        currentTier: 'ULTIMATE',
+        currentPeriod: 'YEARLY',
+        tier: 'PRO',
+        period: 'YEARLY',
+      })
+    ).toBe(false);
+  });
+
+  it('exposes the next renewal or the expiry date for the billing payload', () => {
+    expect(
+      subscriptionTimeline({
+        status: 'active',
+        cancelAt: null,
+        currentPeriodEnd: '2026-12-07T00:00:00.000Z',
+      })
+    ).toEqual({ renewsAt: '2026-12-07T00:00:00.000Z', expiresAt: null });
+    expect(
+      subscriptionTimeline({
+        status: 'trialing',
+        cancelAt: null,
+        currentPeriodEnd: '2026-11-18T00:00:00.000Z',
+      })
+    ).toEqual({ renewsAt: '2026-11-18T00:00:00.000Z', expiresAt: null });
+    expect(
+      subscriptionTimeline({
+        status: 'cancel_scheduled',
+        cancelAt: '2026-12-07T00:00:00.000Z',
+        currentPeriodEnd: '2026-12-07T00:00:00.000Z',
+      })
+    ).toEqual({ renewsAt: null, expiresAt: '2026-12-07T00:00:00.000Z' });
   });
 });
 
