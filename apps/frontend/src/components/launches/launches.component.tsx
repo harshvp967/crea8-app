@@ -11,7 +11,7 @@ import {
   CalendarWeekProvider,
   useCalendar,
 } from '@gitroom/frontend/components/launches/calendar.context';
-import { integrationsForCustomer } from '@gitroom/frontend/components/launches/customer.filter';
+import { integrationsForCustomer, listedChannelTotal } from '@gitroom/frontend/components/launches/customer.filter';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { SchedulePageSkeleton } from '@gitroom/frontend/components/ui/skeleton';
@@ -447,7 +447,7 @@ export const LaunchesComponent = () => {
     return () => window.removeEventListener('c8-open-channels', open);
   }, []);
   const [mode] = useCookie('mode', 'dark');
-  const { isLoading, data: integrations, mutate } = useIntegrationList();
+  const { isLoading, data: integrations, mutate, channelTotal } = useIntegrationList();
 
   const totalNonDisabledChannels = useMemo(() => {
     return (
@@ -740,7 +740,7 @@ export const LaunchesComponent = () => {
                   </span>
                   <span className="channels-trigger-count">
                     {' '}
-                    · {channels.length}
+                    · {listedChannelTotal(integrations, channelTotal)}
                   </span>
                 </button>
               </div>

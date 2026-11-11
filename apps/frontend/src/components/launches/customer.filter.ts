@@ -33,6 +33,22 @@ export function integrationsForCustomer<T extends CustomerChannel>(
   return integrations.filter((item) => item.customer?.id === selected);
 }
 
+// Billing, Agent, and Calendar show this number. `total` is the account-wide
+// count from /integrations/list. Until it arrives, ignore disabled and
+// deleted rows so the label does not count channels the limit excludes.
+export function listedChannelTotal(
+  rows: Array<{ disabled?: boolean; deletedAt?: string | Date | null }> | null | undefined,
+  total?: number | null
+) {
+  if (typeof total === 'number') {
+    return total;
+  }
+  if (!rows) {
+    return 0;
+  }
+  return rows.filter((row) => !row.disabled && !row.deletedAt).length;
+}
+
 // Null until the channel list has loaded, so the AI panel never paints "0 channels"
 // from the empty array it starts with.
 export function channelCountLabel(loaded: boolean, count: number) {

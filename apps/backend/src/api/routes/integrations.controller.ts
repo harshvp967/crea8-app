@@ -104,11 +104,14 @@ export class IntegrationsController {
 
   @Get('/list')
   async getIntegrationList(@GetOrgFromRequest() org: Organization) {
+    const [rows, total] = await Promise.all([
+      this._integrationService.getIntegrationsList(org.id),
+      this._integrationService.countChannels(org.id),
+    ]);
     return {
+      total,
       integrations: await Promise.all(
-        (
-          await this._integrationService.getIntegrationsList(org.id)
-        ).map(async (p) => {
+        rows.map(async (p) => {
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier
           );

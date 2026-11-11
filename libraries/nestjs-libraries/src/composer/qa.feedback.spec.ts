@@ -1,4 +1,5 @@
-import { channelCountLabel } from '@gitroom/frontend/components/launches/customer.filter';
+import { channelCountLabel, listedChannelTotal } from '@gitroom/frontend/components/launches/customer.filter';
+import { API_KEY_MASK, configWithoutSecret, visibleSecret } from '@gitroom/frontend/components/public-api/api.key.display';
 import { friendlyNotification } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.text';
 import {
   blockOffersCopyLink,
@@ -21,6 +22,32 @@ describe('AI panel channel count', () => {
     expect(channelCountLabel(false, 4)).toBeNull();
     expect(channelCountLabel(true, 0)).toBe(0);
     expect(channelCountLabel(true, 4)).toBe(4);
+  });
+
+  it('uses the account total and otherwise skips disabled and deleted channels', () => {
+    expect(listedChannelTotal([{ disabled: false }, { disabled: true }, { deletedAt: '2026-01-01' }], null)).toBe(1);
+    expect(listedChannelTotal([{ disabled: true }], 18)).toBe(18);
+    expect(listedChannelTotal(null, null)).toBe(0);
+  });
+});
+
+describe('API key reveal', () => {
+  const key = 'pos_live_secret_value';
+
+  it('keeps the full key out of the concealed value', () => {
+    const hidden = visibleSecret(key, false);
+    expect(hidden).toBe(API_KEY_MASK);
+    expect(hidden.includes(key)).toBe(false);
+    expect(hidden.includes(key.slice(-5))).toBe(false);
+    expect(visibleSecret(key, true)).toBe(key);
+  });
+
+  it('strips the key from a client config until reveal', () => {
+    const config = `Authorization: Bearer ${key}\nurl = "https://mcp.crea8.one/mcp/${key}"`;
+    const hidden = configWithoutSecret(config, key, false);
+    expect(hidden.includes(key)).toBe(false);
+    expect(hidden).toContain(API_KEY_MASK);
+    expect(configWithoutSecret(config, key, true)).toBe(config);
   });
 });
 

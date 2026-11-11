@@ -39,6 +39,7 @@ import {
   contactDecision,
   countryName,
   customWindow,
+  clickBreakdown,
   designProKind,
   detailsProblem,
   dobProblem,
@@ -989,7 +990,6 @@ export class LinkService {
         paid ? this._repository.grouped(record.id, 'browser', window.from, window.to) : Promise.resolve([]),
         paid ? this._repository.utmBreakdown(record.id, window.from, window.to) : Promise.resolve([]),
       ]);
-    const clicksById = new Map(linkClicks.filter((row) => row.blockId).map((row) => [row.blockId || '', row._count._all]));
     const summary = buildAnalytics({
       views,
       clicks,
@@ -1016,14 +1016,17 @@ export class LinkService {
         .map((row) => ({ code: row.country, views: row._count._all })),
       sources: sources.map((row) => ({ source: row.source, views: row._count._all })),
     });
-    const links = record.blocks
-      .filter((block) => block.type === 'LINK')
-      .map((block) => ({
-        id: block.id,
-        title: block.title || 'Link',
-        clicks: clicksById.get(block.id) || 0,
-        ctr: views ? ((clicksById.get(block.id) || 0) / views) * 100 : 0,
-      }));
+    const links = clickBreakdown(
+      record.blocks,
+      linkClicks.map((row) => ({
+        blockId: row.blockId,
+        clicks: row._count._all,
+      })),
+      clicks
+    ).map((row) => ({
+      ...row,
+      ctr: views ? (row.clicks / views) * 100 : 0,
+    }));
     const utmRows = utm
       .map((row) => ({
         label: [row.utmSource, row.utmMedium, row.utmCampaign].filter(Boolean).join(' / '),

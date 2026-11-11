@@ -511,6 +511,35 @@ describe('shared workspace billing', () => {
       disabled: false,
       refreshNeeded: false,
     }));
+    channels.push(
+      {
+        id: 'disabled',
+        internalId: 'social-off',
+        organizationId: 'org-b',
+        createdAt: new Date('2026-04-01'),
+        deletedAt: null,
+        disabled: true,
+        refreshNeeded: false,
+      },
+      {
+        id: 'deleted',
+        internalId: 'social-gone',
+        organizationId: 'org-a',
+        createdAt: new Date('2026-04-02'),
+        deletedAt: new Date('2026-05-01'),
+        disabled: false,
+        refreshNeeded: false,
+      },
+      {
+        id: 'reconnect',
+        internalId: 'social-refresh',
+        organizationId: 'org-b',
+        createdAt: new Date('2026-04-03'),
+        deletedAt: null,
+        disabled: false,
+        refreshNeeded: true,
+      }
+    );
     const built = workspaceDb({
       orgs: [
         {
