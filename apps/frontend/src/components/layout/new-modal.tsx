@@ -205,6 +205,11 @@ export const Component: FC<{
           >
             <div
               ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              {...(modal.title
+                ? { 'aria-labelledby': `modal-title-${modal.id}` }
+                : { 'aria-label': 'Dialog' })}
               className={clsx(
                 !modal.removeLayout && 'gap-[40px] p-[32px]',
                 'arc-dialog bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[34px] border border-newBorder relative',
@@ -223,7 +228,7 @@ export const Component: FC<{
             >
               <div className="arc-grab" aria-hidden />
               <div className="arc-dialog-head flex items-center">
-                <div className="text-[18px] font-[600] flex-1">
+                <div id={`modal-title-${modal.id}`} className="text-[18px] font-[600] flex-1">
                   {modal.title}
                 </div>
                 {typeof modal.withCloseButton === 'undefined' ||
@@ -232,6 +237,7 @@ export const Component: FC<{
                     <button
                       className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
                       type="button"
+                      aria-label="Close"
                       onClick={closeModalFunction}
                     >
                       <HugeIcon name="close" size={16} />

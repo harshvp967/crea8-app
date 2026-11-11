@@ -419,7 +419,7 @@ export const MediaBox: FC<{
       const src = mediaDirectory.set(media.path);
       const kind = libraryKind(media.path, media.originalName || '');
       modals.openModal({
-        title: '',
+        title: (media.originalName || media.name || t('preview', 'Preview')).trim() || t('preview', 'Preview'),
         top: 10,
         classNames: { modal: 'media-preview-modal' },
         children: (
@@ -433,7 +433,7 @@ export const MediaBox: FC<{
         ),
       });
     },
-    [mediaDirectory, modals]
+    [mediaDirectory, modals, t]
   );
 
   const deleteImage = useCallback(
@@ -516,7 +516,7 @@ export const MediaBox: FC<{
           <>
             <SchedulePageHead
               title={t('media', 'Media')}
-              context={t('your_uploads', 'Your uploads')}
+              subtitle={t('your_uploads', 'Your uploads')}
               actions={
                 <div className="media-head-actions">
                   {btn}

@@ -158,7 +158,10 @@ export const SettingsPopup: FC<{
         </div>
       </aside>
       <div className="settings-main">
-        <SchedulePageHead title={t('settings', 'Settings')} />
+        <SchedulePageHead
+          title={t('settings', 'Settings')}
+          subtitle={list.find((item) => item.tab === activeTab)?.label}
+        />
         {list.length > 0 && (
           <SegmentedControl
             variant="pill"

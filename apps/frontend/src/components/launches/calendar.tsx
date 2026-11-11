@@ -1216,7 +1216,7 @@ export const CalendarColumn: FC<{
           {!showAll && postList.length > visibleCount && (
             <div
               className={clsx(
-                'text-center hover:underline text-textColor',
+                'cal-show-more text-center hover:underline text-textColor',
                 display === 'month' && phoneMonth
                   ? 'cal-phone-more py-0 text-[11px] leading-none font-[700]'
                   : 'py-[5px]'

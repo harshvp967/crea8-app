@@ -305,7 +305,7 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
   return (
     <SchedulePageHead
       title={t('agent', 'Agent')}
-      subtitle={current ? title : undefined}
+      subtitle={title}
       actions={
         <>
           <button

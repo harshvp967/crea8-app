@@ -48,8 +48,17 @@ export const Checkbox = forwardRef<
     <div className="flex gap-[10px]">
       <div
         ref={ref}
+        role="checkbox"
+        aria-checked={!!val}
+        aria-label={label || undefined}
+        tabIndex={0}
         {...disableForm ? {} : form.register(props.name!)}
         onClick={changeStatus}
+        onKeyDown={(event) => {
+          if (event.key !== ' ' && event.key !== 'Enter') return;
+          event.preventDefault();
+          changeStatus();
+        }}
         className={clsx(
           'cursor-pointer rounded-[4px] select-none w-[24px] h-[24px] justify-center items-center flex text-white',
           variant === 'default' || !variant

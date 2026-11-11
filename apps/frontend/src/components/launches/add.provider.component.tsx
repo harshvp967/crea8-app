@@ -952,7 +952,8 @@ export const AddProviderComponent: FC<{
               );
             })
             .map((item) => (
-              <div
+              <button
+                type="button"
                 key={item.identifier}
                 onClick={getSocialLink(
                   props.invite,
@@ -970,7 +971,7 @@ export const AddProviderComponent: FC<{
                     }
                   : {})}
                 className={clsx(
-                  'cc-tile relative flex w-full min-w-0 cursor-pointer items-center border border-newBorder bg-newBgColorInner text-textColor transition-colors hover:border-[color:var(--arc-selected-border)] hover:bg-[var(--arc-selected)]',
+                  'cc-tile relative flex w-full min-w-0 cursor-pointer appearance-none font-inherit items-center border border-newBorder bg-newBgColorInner text-textColor transition-colors hover:border-[color:var(--arc-selected-border)] hover:bg-[var(--arc-selected)]',
                   isMobile
                     ? 'min-h-[56px] flex-row justify-start gap-[12px] rounded-[18px] px-[14px] py-[10px] text-start text-[14px] font-[500]'
                     : 'min-h-[104px] flex-col justify-center gap-[8px] rounded-[20px] px-[8px] pb-[12px] text-center text-[13px] font-[500] leading-[1.2] min-[768px]:text-[14px]',
@@ -1019,7 +1020,7 @@ export const AddProviderComponent: FC<{
                     {t('coming_soon', 'Coming soon')}
                   </span>
                 )}
-              </div>
+              </button>
             ))}
         </div>
       </div>

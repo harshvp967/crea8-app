@@ -462,7 +462,7 @@ const AccountAppearance = () => {
 const AccountDate = () => (
   <div className="settings-section">
     <div className="settings-head">
-      <h2>Date format</h2>
+      <h2>Time format</h2>
     </div>
     <div className="settings-group">
       <MetricComponent />

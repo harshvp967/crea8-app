@@ -380,7 +380,6 @@ export const Filters = () => {
     <SchedulePageHead
       className="c8-cal-head"
       title={t('calendar', 'Calendar')}
-      context={isListView ? undefined : getDisplayText()}
     />
     <div
       className={clsx(
@@ -394,6 +393,7 @@ export const Filters = () => {
             type="button"
             className={clsx('c8-phone-step', listAtStart && 'opacity-50 cursor-not-allowed')}
             aria-label="Previous"
+            disabled={listAtStart}
             onClick={stepPrevious}
           >
             <HugeIcon name="chevron-left" size={16} />
@@ -408,6 +408,7 @@ export const Filters = () => {
             type="button"
             className={clsx('c8-phone-step', listAtEnd && 'opacity-50 cursor-not-allowed')}
             aria-label="Next"
+            disabled={listAtEnd}
             onClick={stepNext}
           >
             <HugeIcon name="chevron-right" size={16} />
@@ -416,17 +417,18 @@ export const Filters = () => {
       )}
       <div className="date-range flex flex-1 min-w-0 flex-row items-center gap-[10px]">
           <div className="cal-nav border h-[44px] border-newBorder bg-transparent gap-[1px] flex items-center rounded-[18px] overflow-hidden">
-            <div
+            <button
+              type="button"
               onClick={stepPrevious}
-              role="button"
               aria-label="Previous"
+              disabled={listAtStart}
               className={clsx(
-                'cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors',
+                'cal-nav-arrow cursor-pointer appearance-none font-inherit text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors',
                 listAtStart && 'opacity-50 cursor-not-allowed'
               )}
             >
               <HugeIcon name="chevron-left" size={12} />
-            </div>
+            </button>
             <div className="cal-range-label min-w-[200px] text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="cal-range-desktop py-[3px] px-[12px] rounded-[5px] transition-all text-[14px] font-[500] whitespace-nowrap">
                 {isListView ? pageLabel : getDisplayText()}
@@ -445,17 +447,18 @@ export const Filters = () => {
                     })()}
               </div>
             </div>
-            <div
+            <button
+              type="button"
               onClick={stepNext}
-              role="button"
               aria-label="Next"
+              disabled={listAtEnd}
               className={clsx(
-                'cal-nav-arrow cursor-pointer text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors',
+                'cal-nav-arrow cursor-pointer appearance-none font-inherit text-textItemBlur rtl:rotate-180 px-[12px] bg-newBgColorInner h-full flex items-center justify-center hover:text-[color:var(--arc-accent-text)] hover:bg-[var(--arc-selected)] transition-colors',
                 listAtEnd && 'opacity-50 cursor-not-allowed'
               )}
             >
               <HugeIcon name="chevron-right" size={12} />
-            </div>
+            </button>
           </div>
           <div className="cal-today flex-1 text-[14px] font-[500]">
             <div className="text-center flex h-[40px]">
