@@ -3479,15 +3479,6 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
     font-family: var(--font-body), Inter, sans-serif;
   }
 
-  body.c8-schedule .dash-mswitch-btn::before {
-    content: '';
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    background: var(--c8-app-schedule);
-    flex: none;
-  }
-
   body.c8-schedule .dash-mswitch-menu {
     border: 1.5px solid var(--c8-hard);
     border-radius: 16px;

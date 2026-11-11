@@ -12,29 +12,49 @@ import {
   StalkerIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 
 // Add a future dashboard by appending an item and a flag check.
 // Schedule and Link-in-Bio are always on. Stalker is on only when STALKER_ENABLED=true.
+// `icon` and `tile` match the sidebar app rail (calendar / eye / link).
 export const DASHBOARDS = [
   {
     id: 'schedule',
     label: 'Schedule',
     href: '/launches',
     Icon: CalendarIcon,
+    icon: 'calendar' as HugeIconName,
+    tile: 'is-schedule',
   },
   {
     id: 'link',
     label: 'Link-in-Bio',
     href: '/link',
     Icon: LinkIcon,
+    icon: 'link' as HugeIconName,
+    tile: 'is-link',
   },
   {
     id: 'stalker',
     label: 'Stalker',
     href: '/stalker/mentions',
     Icon: StalkerIcon,
+    icon: 'eye' as HugeIconName,
+    tile: 'is-stalker',
   },
 ] as const;
+
+const ProductMark = ({
+  icon,
+  tile,
+}: {
+  icon: HugeIconName;
+  tile: string;
+}) => (
+  <span className={clsx('dash-mswitch-mark', tile)} aria-hidden>
+    <HugeIcon name={icon} size={16} />
+  </span>
+);
 
 export const DashboardSwitcher = () => {
   const pathname = usePathname() || '';
@@ -77,6 +97,7 @@ export const DashboardSwitcher = () => {
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
+          <ProductMark icon={current.icon} tile={current.tile} />
           {current.label}
           <HugeIcon name="chevron-down" size={16} />
         </button>
@@ -90,6 +111,7 @@ export const DashboardSwitcher = () => {
                 className={item.id === active ? 'arc-selected' : undefined}
                 onClick={() => setOpen(false)}
               >
+                <ProductMark icon={item.icon} tile={item.tile} />
                 {item.label}
               </Link>
             ))}
