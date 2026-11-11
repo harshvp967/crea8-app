@@ -940,37 +940,23 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 .c8-side-logo {
   display: flex;
   align-items: center;
-  gap: 2px;
-  min-height: 29px;
-  padding: 0 0 18px 6px;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 0 16px;
+  margin-inline-start: 6px;
+  padding: 0;
   color: var(--c8-ink);
   text-decoration: none;
-}
-
-.c8-side-logo-word {
-  font-family: var(--font-heading), 'Bricolage Grotesque', sans-serif;
-  font-variation-settings: 'opsz' 14, 'wdth' 100;
-  font-weight: 800;
-  font-size: 28px;
-  letter-spacing: -0.56px;
-  line-height: 1.05;
+  flex: none;
 }
 
 .c8-side-mark {
-  display: none;
-  width: 28px;
-  height: 28px;
-}
-
-@media (max-height: 500px) {
-  .c8-side-logo-word,
-  .c8-side-logo .c8-side-dot {
-    display: none;
-  }
-
-  .c8-side-mark {
-    display: block;
-  }
+  display: block;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex: none;
 }
 
 .c8-side-dot {
@@ -1171,9 +1157,11 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   place-items: center;
   flex: none;
   overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid var(--c8-line);
   border-radius: 999px;
-  background: var(--c8-app-schedule);
-  color: #121016;
+  background: var(--c8-soft);
+  color: var(--c8-ink);
   font-size: 13px;
   font-weight: 700;
 }
@@ -1267,44 +1255,80 @@ body.light .c8-shell .c8-side-foot .notify-panel {
   height: 18px;
 }
 
-@media (max-width: 1199px) {
-  .c8-sidebar {
-    --c8-side-w: 84px;
-    width: var(--c8-side-w);
-    align-items: center;
-    padding: 24px 12px 16px;
-  }
+.c8-side-collapse {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--c8-line);
+  border-radius: 12px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  cursor: pointer;
+}
 
-  .c8-side-logo-word,
+.c8-side-collapse:hover,
+.c8-side-collapse:focus-visible {
+  background: var(--c8-soft);
+}
+
+.c8-side-collapse:focus-visible {
+  outline: 2px solid var(--c8-cyan);
+  outline-offset: 2px;
+}
+
+.c8-side-tip {
+  position: fixed;
+  z-index: 80;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--c8-ink);
+  color: var(--c8-on-ink);
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Icon rail. Tablet starts here until the user expands. A stored collapse uses the same rail at every width. */
+@mixin c8-sidebar-collapsed {
+  --c8-side-w: 84px;
+  width: var(--c8-side-w);
+  align-items: center;
+  padding: 24px 12px 16px;
+
   .c8-side-kicker,
   .c8-side-text,
   .c8-side-lock,
   .c8-side-user-copy,
-  .c8-side-link .c8-side-dot,
-  .c8-side-logo .c8-side-dot {
+  .c8-side-link .c8-side-dot {
     display: none;
   }
 
   .c8-side-mark {
     display: block;
+    width: 36px;
+    height: 36px;
   }
 
   .c8-side-logo {
+    width: 36px;
+    height: 36px;
+    margin: 0 0 16px;
     padding: 0;
-    min-height: 0;
+    justify-content: center;
   }
 
-  .c8-side-logo,
   .c8-side-apps,
   .c8-side-nav,
   .c8-side-foot {
     width: 100%;
     align-items: center;
-  }
-
-  .c8-side-apps,
-  .c8-side-nav,
-  .c8-side-foot {
     flex-direction: column;
   }
 
@@ -1328,8 +1352,22 @@ body.light .c8-shell .c8-side-foot .notify-panel {
 
   .c8-side-user {
     flex: none;
+    width: 44px;
+    height: 44px;
+    justify-content: center;
+    padding: 0;
     overflow: visible;
   }
+}
+
+@media (max-width: 1199px) {
+  .c8-sidebar:not(.is-expanded) {
+    @include c8-sidebar-collapsed;
+  }
+}
+
+.c8-sidebar.is-collapsed {
+  @include c8-sidebar-collapsed;
 }
 
 @media (min-width: 640px) and (min-height: 501px) {
@@ -7126,46 +7164,56 @@ body.c8-schedule .cal-list-empty p {
 }
 
 /* Resize-up: a stale tablet rule must not keep the icon sidebar or the floating rail. */
-html[data-c8-bp='desktop'] .c8-sidebar {
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) {
   --c8-side-w: 256px !important;
   width: 256px !important;
   align-items: stretch !important;
   padding: 24px 20px 20px !important;
 }
 
-html[data-c8-bp='desktop'] .c8-side-logo-word,
-html[data-c8-bp='desktop'] .c8-side-kicker,
-html[data-c8-bp='desktop'] .c8-side-text,
-html[data-c8-bp='desktop'] .c8-side-lock,
-html[data-c8-bp='desktop'] .c8-side-user-copy,
-html[data-c8-bp='desktop'] .c8-side-link .c8-side-dot,
-html[data-c8-bp='desktop'] .c8-side-logo .c8-side-dot {
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-kicker,
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-text,
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-lock,
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-user-copy,
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-link .c8-side-dot {
   display: unset !important;
 }
 
-html[data-c8-bp='desktop'] .c8-side-mark {
-  display: none !important;
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-mark {
+  display: block !important;
+  width: 36px !important;
+  height: 36px !important;
+  object-fit: contain !important;
 }
 
-html[data-c8-bp='desktop'] .c8-side-logo,
-html[data-c8-bp='desktop'] .c8-side-apps,
-html[data-c8-bp='desktop'] .c8-side-nav,
-html[data-c8-bp='desktop'] .c8-side-foot {
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-logo {
+  width: 36px !important;
+  height: 36px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 0 16px !important;
+  margin-inline-start: 6px !important;
+  padding: 0 !important;
+}
+
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-apps,
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-nav,
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-foot {
   width: 100% !important;
   align-items: stretch !important;
 }
 
-html[data-c8-bp='desktop'] .c8-side-apps,
-html[data-c8-bp='desktop'] .c8-side-nav {
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-apps,
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-nav {
   flex-direction: column !important;
 }
 
-html[data-c8-bp='desktop'] .c8-side-foot {
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-foot {
   flex-direction: row !important;
 }
 
-html[data-c8-bp='desktop'] .c8-side-app,
-html[data-c8-bp='desktop'] .c8-side-link {
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-app,
+html[data-c8-bp='desktop'] .c8-sidebar:not(.is-collapsed) .c8-side-link {
   width: 100% !important;
   height: auto !important;
   min-height: 40px !important;

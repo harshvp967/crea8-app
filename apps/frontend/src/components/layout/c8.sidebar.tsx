@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
@@ -15,10 +16,35 @@ import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.na
 import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
-import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.component';
 import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
 import { useWorkspaceSwitch } from '@gitroom/frontend/components/layout/organization.selector';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+
+const SIDEBAR_KEY = 'c8.sidebar.collapsed';
+
+type SidebarMode = 'collapsed' | 'expanded' | 'auto';
+
+type SideTip = {
+  text: string;
+  top: number;
+  left: number;
+  rtl: boolean;
+};
+
+const storedSidebarMode = (): SidebarMode => {
+  try {
+    const stored = window.localStorage.getItem(SIDEBAR_KEY);
+    if (stored === '1') {
+      return 'collapsed';
+    }
+    if (stored === '0') {
+      return 'expanded';
+    }
+  } catch {
+    return 'auto';
+  }
+  return 'auto';
+};
 
 const initialsOf = (name: string) =>
   name
@@ -52,6 +78,53 @@ export const C8Sidebar = ({
   const pathname = usePathname() || '';
   const router = useRouter();
   const anchorRef = useRef<HTMLButtonElement>(null);
+  const [mode, setMode] = useState<SidebarMode>('auto');
+  const [narrow, setNarrow] = useState(false);
+  const [tip, setTip] = useState<SideTip | null>(null);
+  useLayoutEffect(() => {
+    const query = window.matchMedia('(max-width: 1199px)');
+    const apply = () => setNarrow(query.matches);
+    apply();
+    setMode(storedSidebarMode());
+    query.addEventListener('change', apply);
+    return () => query.removeEventListener('change', apply);
+  }, []);
+  const collapsed = mode === 'collapsed' || (mode === 'auto' && narrow);
+  const hideTip = () => setTip(null);
+  const showTip = (event: { currentTarget: HTMLElement }) => {
+    const text = event.currentTarget.getAttribute('data-tip');
+    if (!text) {
+      return;
+    }
+    const box = event.currentTarget.getBoundingClientRect();
+    const rtl = document.documentElement.dir === 'rtl';
+    setTip({
+      text,
+      top: box.top + box.height / 2,
+      left: rtl ? box.left - 10 : box.right + 10,
+      rtl,
+    });
+  };
+  const tipProps = (text: string) =>
+    collapsed
+      ? {
+          'data-tip': text,
+          onMouseEnter: showTip,
+          onMouseLeave: hideTip,
+          onFocus: showTip,
+          onBlur: hideTip,
+        }
+      : {};
+  const toggleSidebar = () => {
+    hideTip();
+    const next = !collapsed;
+    setMode(next ? 'collapsed' : 'expanded');
+    try {
+      window.localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0');
+    } catch {
+      // Storage can be blocked. The toggle still applies for this view.
+    }
+  };
   const user = useUser();
   const { current } = useWorkspaceSwitch();
   const workspaceLine = current?.name ? `Workspace - ${current.name}` : '';
@@ -131,15 +204,33 @@ export const C8Sidebar = ({
       : rows;
 
   return (
-    <aside className="c8-sidebar" aria-label={sectionLabel}>
-      <Link href="/launches" className="c8-side-logo" title="crea8.one">
-        <img className="c8-side-mark" src="/crea8one-icon-cyan.svg" alt="" />
-        <span className="c8-side-logo-word">
-          <Crea8oneWordmark className="h-[40px] w-auto max-w-full" />
-        </span>
+    <aside
+      className={clsx(
+        'c8-sidebar',
+        mode === 'collapsed' && 'is-collapsed',
+        mode === 'expanded' && 'is-expanded'
+      )}
+      aria-label={sectionLabel}
+      onScroll={hideTip}
+    >
+      <Link
+        href="/launches"
+        className="c8-side-logo"
+        aria-label="crea8.one"
+        data-tip="crea8.one"
+        onMouseEnter={showTip}
+        onMouseLeave={hideTip}
+        onFocus={showTip}
+        onBlur={hideTip}
+      >
+        <img
+          className="c8-side-mark"
+          src="/crea8one-icon-cyan.svg"
+          alt=""
+        />
       </Link>
       <p className="c8-side-kicker">Apps</p>
-      <nav className="c8-side-apps" aria-label="Apps">
+      <nav id="c8-side-apps" className="c8-side-apps" aria-label="Apps">
         {apps.map((app) => {
           const locked = planLocked && (app.id === 'schedule' || app.id === 'stalker');
           const className = clsx('c8-side-app', app.id === activeApp && 'is-active');
@@ -163,7 +254,8 @@ export const C8Sidebar = ({
                 type="button"
                 className={className}
                 aria-current={app.id === activeApp ? 'page' : undefined}
-                title={app.label}
+                aria-label={app.label}
+                {...tipProps(app.label)}
                 onClick={() => {
                   if (pathname !== '/launches') {
                     router.push('/launches');
@@ -180,7 +272,8 @@ export const C8Sidebar = ({
               href={app.href}
               className={className}
               aria-current={app.id === activeApp ? 'page' : undefined}
-              title={app.label}
+              aria-label={app.label}
+              {...tipProps(app.label)}
             >
               {inner}
             </Link>
@@ -189,7 +282,7 @@ export const C8Sidebar = ({
       </nav>
       <div className="c8-side-rule" />
       <p className="c8-side-kicker">{sectionLabel}</p>
-      <nav className="c8-side-nav" aria-label={sectionLabel}>
+      <nav id="c8-side-section" className="c8-side-nav" aria-label={sectionLabel}>
         {sectionRows.map((item) => {
           const active =
             !item.onClick &&
@@ -213,7 +306,8 @@ export const C8Sidebar = ({
                 key={item.name}
                 type="button"
                 className={className}
-                title={item.name}
+                aria-label={item.name}
+                {...tipProps(item.name)}
                 onClick={item.onClick}
               >
                 {inner}
@@ -225,8 +319,9 @@ export const C8Sidebar = ({
               key={item.path + item.name}
               href={item.path}
               className={className}
-              title={item.name}
+              aria-label={item.name}
               aria-current={active ? 'page' : undefined}
+              {...tipProps(item.name)}
             >
               {inner}
             </Link>
@@ -239,12 +334,12 @@ export const C8Sidebar = ({
           ref={anchorRef}
           type="button"
           className="c8-side-user"
-          title={name || email || undefined}
           aria-haspopup="menu"
           aria-expanded={menu.open}
           aria-label={
             name || email ? `${name || email}, account menu` : 'Account menu'
           }
+          {...tipProps(name || email || 'Account')}
           onClick={menu.toggle}
         >
           <span className="c8-side-avatar">
@@ -270,7 +365,38 @@ export const C8Sidebar = ({
           surface="sidebar"
         />
         <NotificationComponent />
+        <button
+          type="button"
+          className="c8-side-collapse"
+          aria-expanded={!collapsed}
+          aria-controls="c8-side-apps c8-side-section"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          data-tip={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onMouseEnter={showTip}
+          onMouseLeave={hideTip}
+          onFocus={showTip}
+          onBlur={hideTip}
+          onClick={toggleSidebar}
+        >
+          <HugeIcon name={collapsed ? 'chevron-right' : 'chevron-left'} size={16} />
+        </button>
       </div>
+      {tip
+        ? createPortal(
+            <span
+              className="c8-side-tip"
+              role="tooltip"
+              style={{
+                top: tip.top,
+                left: tip.left,
+                transform: tip.rtl ? 'translate(-100%, -50%)' : 'translateY(-50%)',
+              }}
+            >
+              {tip.text}
+            </span>,
+            document.body
+          )
+        : null}
     </aside>
   );
 };

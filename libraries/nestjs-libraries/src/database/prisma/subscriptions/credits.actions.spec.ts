@@ -655,10 +655,13 @@ describe('credit ledger action charges', () => {
 
     const db = memoryPrisma();
     const credits = new CreditsService(db as any);
+    const clock = new Date();
     db.setWorkspace('org-pro-cancel', {
       status: 'cancelled',
       isTrailing: true,
-      cancelAt: new Date(cancelAt),
+      cancelAt: new Date(
+        Date.UTC(clock.getUTCFullYear(), clock.getUTCMonth(), clock.getUTCDate())
+      ),
     });
     const payment = {
       payment_id: 'pay_pack_after_paid',
@@ -686,7 +689,10 @@ describe('credit ledger action charges', () => {
   });
 
   it('grants 150 for a cancel_scheduled Pro pack payment and reconciles it once', async () => {
-    const cancelAt = new Date('2026-11-06T00:00:00.000Z');
+    const clock = new Date();
+    const cancelAt = new Date(
+      Date.UTC(clock.getUTCFullYear(), clock.getUTCMonth(), clock.getUTCDate())
+    );
     const payment = {
       payment_id: 'pay_pack_150',
       status: 'succeeded',
