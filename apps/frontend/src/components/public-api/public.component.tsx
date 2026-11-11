@@ -14,6 +14,7 @@ import { McpClientIcon } from '@gitroom/frontend/components/public-api/mcp.clien
 import clsx from 'clsx';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
 import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
+import { configWithoutSecret, visibleSecret } from '@gitroom/frontend/components/public-api/api.key.display';
 
 // Remote clients can't set headers, they get a URL to paste (hint = where)
 export const remoteMcpClients = {
@@ -313,13 +314,7 @@ const McpSection = ({
 
   const chatOnly = isChatOnlyMcpClient(activeClient);
 
-  const maskedConfig =
-    revealed || auth === 'oauth' || chatOnly
-      ? config
-      : config.replace(
-          new RegExp(user.publicApi.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
-          '*'.repeat(user.publicApi.length)
-        );
+  const maskedConfig = configWithoutSecret(config, user.publicApi, revealed);
 
   return (
     <div className="settings-card">
@@ -504,16 +499,7 @@ const PublicApiContent = () => {
         <div className="p-[20px] flex flex-col gap-[16px]">
           <div className="settings-url bg-newBgColorInner border border-newBorder rounded-[8px] px-[16px] h-[44px] flex items-center overflow-hidden">
             <code className="text-[14px] flex-1 truncate">
-              {reveal ? (
-                user.publicApi
-              ) : (
-                <span className="flex items-center">
-                  <span className="blur-sm select-none">
-                    {user.publicApi.slice(0, -5)}
-                  </span>
-                  <span>{user.publicApi.slice(-5)}</span>
-                </span>
-              )}
+              {visibleSecret(user.publicApi, reveal)}
             </code>
           </div>
           <div className="flex gap-[8px]">

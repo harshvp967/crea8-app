@@ -5,7 +5,7 @@ import Link from 'next/link';
 import useCookie from 'react-use-cookie';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { formatRate } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { customRangeOrderProblem, formatRate } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import { LinkRequestError, linkLocked, useLinkAnalytics, useLinkPage } from '@gitroom/frontend/components/link-in-bio/link.api';
 import { ChartLine } from '@gitroom/frontend/components/analytics/chart-line';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
@@ -149,6 +149,7 @@ export const LinkAnalyticsScreen = () => {
   const [to, setTo] = useState('');
   const [applied, setApplied] = useState({ from: '', to: '' });
   const [busy, setBusy] = useState(false);
+  const rangeProblem = customRangeOrderProblem(from, to);
   const { data, error, isLoading } = useLinkAnalytics(applied.from ? 'custom' : range, applied.from, applied.to);
   const host = page.data ? `${page.data.publicOrigin.replace(/^https?:\/\//, '')}/${page.data.slug}` : '';
   const period = applied.from ? 'Custom range' : `Last ${ranges.find((item) => item.id === range)?.label || '28 days'}`;
@@ -236,13 +237,13 @@ export const LinkAnalyticsScreen = () => {
           <button
             type="button"
             className={linkSecondary}
-            disabled={!from || !to}
+            disabled={!from || !to || !!rangeProblem}
             onClick={() => {
-              if (linkLocked(page.data)) {
-                toast.show('A custom date range is on a paid plan', 'warning');
+              if (rangeProblem || !from || !to) {
                 return;
               }
-              if (!from || !to) {
+              if (linkLocked(page.data)) {
+                toast.show('A custom date range is on a paid plan', 'warning');
                 return;
               }
               setApplied({ from, to });
@@ -250,6 +251,11 @@ export const LinkAnalyticsScreen = () => {
           >
             Apply
           </button>
+          {rangeProblem ? (
+            <p className="lib-field-error w-full" role="alert">
+              {rangeProblem}
+            </p>
+          ) : null}
         </div>
       </div>
 

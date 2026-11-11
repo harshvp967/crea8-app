@@ -278,7 +278,7 @@ export class LinkRepository {
   clicksByBlock(pageId: string, from: Date, to: Date) {
     return this._event.model.linkEvent.groupBy({
       by: ['blockId'],
-      where: { pageId, type: 'CLICK', createdAt: { gte: from, lt: to }, blockId: { not: null } },
+      where: { pageId, type: 'CLICK', createdAt: { gte: from, lt: to } },
       _count: { _all: true },
     });
   }

@@ -198,6 +198,12 @@ export class IntegrationService {
     return this._integrationRepository.getIntegrationsList(org);
   }
 
+  // Same set Billing uses for the channel limit: every workspace on the
+  // account, excluding deleted, disabled, and channels waiting on a reconnect.
+  countChannels(org: string) {
+    return this._entitlements.countChannels(org);
+  }
+
   getChannelHealth(org: string, includeDeleted = false) {
     return this._integrationRepository.getChannelHealth(org, includeDeleted);
   }

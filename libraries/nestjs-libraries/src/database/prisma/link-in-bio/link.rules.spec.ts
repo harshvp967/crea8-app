@@ -40,6 +40,8 @@ import {
   normalizeEvents,
   pageUrl,
   playbackVideoUrl,
+  clickBreakdown,
+  customRangeOrderProblem,
   topLinkRows,
   paidFeatureProblem,
   parseCalendly,
@@ -646,5 +648,36 @@ describe('link background sample and top links', () => {
     expect(rows.map((row) => row.id)).toEqual(['live', 'named']);
     expect(rows[0].title).toBe('Link');
     expect(rows[1].title).toBe('Deleted link');
+  });
+
+  it('rejects a custom range whose From is after To', () => {
+    expect(customRangeOrderProblem('2026-11-11', '2026-11-01')).toBe('From is after To');
+    expect(customRangeOrderProblem('2026-11-01', '2026-11-11')).toBe('');
+    expect(customRangeOrderProblem('2026-11-11', '2026-11-11')).toBe('');
+    expect(customRangeOrderProblem('', '2026-11-01')).toBe('');
+    expect(customWindow('2026-11-11', '2026-11-01')).toBeNull();
+  });
+
+  it('makes link click rows add up to the total', () => {
+    const rows = clickBreakdown(
+      [
+        { id: 'ig', type: 'LINK', title: 'Instagram' },
+        { id: 'yt', type: 'LINK', title: 'YouTube' },
+        { id: 'post', type: 'FEATURED_POST', title: 'Latest post' },
+      ],
+      [
+        { blockId: 'ig', clicks: 3 },
+        { blockId: 'gone', clicks: 2 },
+        { blockId: null, clicks: 1 },
+      ],
+      6
+    );
+    expect(rows.map((row) => [row.title, row.clicks])).toEqual([
+      ['Instagram', 3],
+      ['YouTube', 0],
+      ['Deleted link', 2],
+      ['Other', 1],
+    ]);
+    expect(rows.reduce((sum, row) => sum + row.clicks, 0)).toBe(6);
   });
 });

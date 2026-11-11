@@ -1352,6 +1352,58 @@ export function topLinkRows(
   });
 }
 
+// Every click in `total` is a row. Current link blocks stay, including zeros.
+// Clicks on a block that no longer exists are one Deleted link row. Clicks
+// with no block, and any remainder, are one Other row (social icons and
+// anything else the total counts that is not a block).
+export function clickBreakdown(
+  blocks: Array<{ id: string; type?: string | null; title?: string | null }>,
+  clicks: Array<{ blockId?: string | null; clicks: number }>,
+  total: number
+) {
+  const live = new Map(blocks.map((block) => [block.id, block]));
+  const byId = new Map<string, number>();
+  let deleted = 0;
+  let other = 0;
+  for (const row of clicks) {
+    const count = Math.max(0, Number(row.clicks) || 0);
+    if (!count) {
+      continue;
+    }
+    if (!row.blockId) {
+      other += count;
+      continue;
+    }
+    if (!live.has(row.blockId)) {
+      deleted += count;
+      continue;
+    }
+    byId.set(row.blockId, (byId.get(row.blockId) || 0) + count);
+  }
+  const rows: Array<{ id: string; title: string; clicks: number }> = [];
+  for (const block of blocks) {
+    const count = byId.get(block.id) || 0;
+    if (block.type !== 'LINK' && count === 0) {
+      continue;
+    }
+    rows.push({
+      id: block.id,
+      title: (block.title || '').trim() || 'Link',
+      clicks: count,
+    });
+  }
+  if (deleted > 0) {
+    rows.push({ id: 'deleted', title: 'Deleted link', clicks: deleted });
+  }
+  const shown = rows.reduce((sum, row) => sum + row.clicks, 0);
+  const gap = total - shown - other;
+  const otherClicks = other + (gap > 0 ? gap : 0);
+  if (otherClicks > 0) {
+    rows.push({ id: 'other', title: 'Other', clicks: otherClicks });
+  }
+  return rows;
+}
+
 export function imagePathProblem(raw: string) {
   const path = (raw || '').trim();
   if (!path) {
@@ -1590,6 +1642,18 @@ export function customWindow(from: string, to: string) {
     return null;
   }
   return { from: start, to: end, previousFrom: new Date(start.getTime() - span), days: Math.max(1, Math.ceil(span / 86400000)) };
+}
+
+// Empty when the pair can be sent. A reversed pair is rejected here so the
+// screen never asks for a range the API turns into a failed analytics load.
+export function customRangeOrderProblem(from: string, to: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from || '') || !/^\d{4}-\d{2}-\d{2}$/.test(to || '')) {
+    return '';
+  }
+  if (from > to) {
+    return 'From is after To';
+  }
+  return '';
 }
 
 export function shareRows(rows: Array<{ label: string; views: number }>, limit = 8) {

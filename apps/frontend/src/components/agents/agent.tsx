@@ -26,6 +26,7 @@ import { useParams } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SchedulePageHead } from '@gitroom/frontend/components/layout/schedule.shell';
 import { toggleChannelSelection } from '@gitroom/frontend/components/agents/agent.channels';
+import { listedChannelTotal } from '@gitroom/frontend/components/launches/customer.filter';
 import { NoChannels } from '@gitroom/frontend/components/launches/add.provider.component';
 import { ChannelListSkeleton } from '@gitroom/frontend/components/ui/skeleton';
 
@@ -68,11 +69,14 @@ export const MediaPortal: FC<{
 
 const useIntegrations = () => {
   const fetch = useFetch();
+  const [channelTotal, setChannelTotal] = useState<number | null>(null);
   const load = useCallback(async () => {
-    return (await (await fetch('/integrations/list')).json()).integrations;
+    const json = await (await fetch('/integrations/list')).json();
+    setChannelTotal(typeof json.total === 'number' ? json.total : null);
+    return json.integrations;
   }, []);
 
-  return useSWR('integrations', load, {
+  const list = useSWR('integrations', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -80,6 +84,8 @@ const useIntegrations = () => {
     refreshWhenHidden: false,
     refreshWhenOffline: false,
   });
+
+  return { ...list, channelTotal };
 };
 
 const useThreads = () => {
@@ -294,13 +300,13 @@ const AgentTitle: FC<{ onChannels: () => void; onHistory: () => void }> = ({
   const t = useT();
   const { id } = useParams<{ id?: string }>();
   const { data: threads } = useThreads();
-  const { data: integrations, isLoading: channelsLoading } = useIntegrations();
+  const { data: integrations, isLoading: channelsLoading, channelTotal } = useIntegrations();
   const current = threads?.threads?.find(
     (thread: { id: string }) => thread.id === id
   );
   const title =
     current?.title || t('your_assistant', 'crea8.one agent');
-  const count = integrations?.length || 0;
+  const count = listedChannelTotal(integrations, channelTotal);
 
   return (
     <SchedulePageHead
