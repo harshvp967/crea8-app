@@ -993,14 +993,56 @@ body :focus-visible {
   min-width: 180px;
 }
 
+.dash-mswitch-mark {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  flex: none;
+  border-radius: 8px;
+  color: #121016;
+}
+
+.dash-mswitch-mark.is-schedule {
+  background: var(--c8-app-schedule);
+}
+
+.dash-mswitch-mark.is-stalker {
+  background: var(--c8-app-stalker);
+}
+
+.dash-mswitch-mark.is-link {
+  background: var(--c8-app-lib);
+}
+
 .dash-mswitch-menu a {
   min-height: 44px;
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 0 12px;
   border-radius: 16px;
   font-size: 14px;
   font-weight: 500;
+  transition: background-color var(--c8-dur-hover) var(--c8-ease-out);
+}
+
+/* Same 16px radius as the selected row. A lighter wash of the inactive
+   tint, so it stays off the phone row's solid --c8-soft fill. Touch
+   devices do not keep a sticky hover. */
+@media (hover: hover) {
+  .dash-mswitch-menu a:not(.arc-selected):hover {
+    background-color: color-mix(in srgb, var(--c8-soft) 45%, transparent);
+  }
+}
+
+.dash-mswitch-menu a:focus-visible {
+  outline: 2px solid var(--c8-cyan);
+  outline-offset: 2px;
+}
+
+.dash-mswitch-menu a:not(.arc-selected):focus-visible {
+  background-color: color-mix(in srgb, var(--c8-soft) 45%, transparent);
 }
 
 .header-avatar {

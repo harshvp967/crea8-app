@@ -1472,24 +1472,6 @@ body:has(.link-screen) .mobile-sheet {
 }
 
 @media (max-width: 639px), (max-height: 500px) {
-  body:has(.agent-workspace) .dash-mswitch-btn::before,
-  body:has(.analytics-screen) .dash-mswitch-btn::before,
-  body:has(.media-library) .dash-mswitch-btn::before,
-  body:has(.plugs-screen) .dash-mswitch-btn::before,
-  body:has(.integrations-screen) .dash-mswitch-btn::before,
-  body:has(.settings-screen) .dash-mswitch-btn::before,
-  body:has(.stalker-screen) .dash-mswitch-btn::before,
-  body:has(.link-screen) .dash-mswitch-btn::before {
-    content: '';
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    background: var(--c8-app-schedule);
-    flex: none;
-  }
-}
-
-@media (max-width: 639px), (max-height: 500px) {
   body:has(.agent-workspace) .dash-mswitch-menu,
   body:has(.analytics-screen) .dash-mswitch-menu,
   body:has(.media-library) .dash-mswitch-menu,
