@@ -975,7 +975,8 @@ body :focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 38px;
+  height: 44px;
+  min-height: 44px;
   padding: 0 10px 0 12px;
   border: 1px solid var(--new-border);
   border-radius: 14px;
@@ -1468,6 +1469,10 @@ body :focus-visible {
 
   .header-avatar {
     display: inline-flex;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .header-account .org-menu {

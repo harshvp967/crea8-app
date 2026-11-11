@@ -256,7 +256,7 @@ export function planCardLines(plan: PlanConfig): PlanCardLine[] {
           : `${cardCount(plan.teamMemberLimit)} team ${plan.teamMemberLimit === 1 ? 'member' : 'members'}`,
     },
     { key: 'workspaces', text: 'Unlimited workspaces' },
-    { key: 'monthlyCredits', text: `${cardCount(plan.monthlyCredits)} credits a month` },
+    { key: 'monthlyCredits', text: `${cardCount(plan.monthlyCredits)} credits refill monthly` },
     { key: 'stalkerKeywords', text: `${cardCount(plan.stalkerKeywords)} Stalker keywords` },
     {
       key: 'stalkerScanHours',

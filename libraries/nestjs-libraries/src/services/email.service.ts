@@ -114,7 +114,7 @@ export class EmailService {
                         font-weight: 600;
                         color: #1f2937;
                         margin: 0;
-                    ">${process.env.EMAIL_FROM_NAME}</h2>
+                    ">crea8.one</h2>
                     <div style="font-size: 12px">
                       You can change your notification preferences in your <a href="${process.env.FRONTEND_URL}/account?section=notifications">account settings.</a>
                      </div>

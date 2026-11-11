@@ -819,8 +819,10 @@ body.c8-schedule .phone-day-strip button.arc-selected {
 
   .c8-shell .header-avatar {
     display: inline-flex !important;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     border: 1px solid var(--c8-line);
     border-radius: 999px;
     background: var(--c8-surface);
@@ -3469,7 +3471,8 @@ body.c8-schedule .arc-dialog.po-sure-modal .mantine-Modal-close {
   }
 
   body.c8-schedule .dash-mswitch-btn {
-    height: 37px;
+    height: 44px;
+    min-height: 44px;
     padding: 0 12px 0 6px;
     border: 1.5px solid var(--c8-hard);
     border-radius: 999px;

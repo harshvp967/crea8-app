@@ -17,6 +17,11 @@ import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newslett
 import { assertOAuthRedirect } from '@gitroom/helpers/auth/oauth.link';
 import { signupsClosed } from '@gitroom/nestjs-libraries/database/prisma/organizations/signups.closed';
 
+function activationEmail(jwt: string) {
+  const href = `${process.env.FRONTEND_URL}/auth/activate/${jwt}`;
+  return `<a href="${href}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:#00d9ff;color:#121016;font-family:Inter,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1;text-decoration:none;">crea8.one</a>`;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -68,7 +73,7 @@ export class AuthService {
           await this._emailService.sendEmail(
             body.email,
             'Activate your account',
-            `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`,
+            activationEmail(obj.jwt),
             'top'
           );
           return obj;
@@ -362,7 +367,7 @@ export class AuthService {
     await this._emailService.sendEmail(
       user.email,
       'Activate your account',
-      `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`,
+      activationEmail(jwt),
       'top'
     );
 

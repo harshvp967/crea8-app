@@ -40,22 +40,18 @@ export const AfterActivate = () => {
       }
     }
   }, []);
-  return (
-    <>
-      {showLoader ? (
-        <LoadingComponent />
-      ) : (
-        <div className="auth-status is-bad">
-          This user is already activated,
-          <br />
-          <Link href="/auth/login">
-            {t(
-              'click_here_to_go_back_to_login',
-              'Click here to go back to login'
-            )}
-          </Link>
-        </div>
-      )}
-    </>
+  return showLoader ? (
+    <LoadingComponent />
+  ) : (
+    <div className="auth-form flex flex-1 flex-col">
+      <h1 className="text-[26px] font-[600] tracking-[-0.02em] text-start">
+        {t('user_already_activated', 'Already activated')}
+      </h1>
+      <p className="mt-[12px] text-[14px]">
+        <Link href="/auth/login" className="cursor-pointer text-[color:var(--arc-accent-text)]">
+          {t('log_in', 'Log in')}
+        </Link>
+      </p>
+    </div>
   );
 };
