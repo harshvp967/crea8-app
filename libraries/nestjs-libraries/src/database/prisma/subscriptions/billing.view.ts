@@ -66,6 +66,8 @@ export type BillingOverview = {
     status: BillingSubscriptionStatus;
     cancelAt: string | null;
     currentPeriodEnd: string | null;
+    renewsAt: string | null;
+    expiresAt: string | null;
     pendingTier: PaidTier | null;
     pendingDisplayName: string | null;
     pendingPeriod: 'MONTHLY' | 'YEARLY' | null;
@@ -147,6 +149,42 @@ export function billingStatus(input: {
     return 'trialing';
   }
   return 'active';
+}
+
+export function isExactCurrentPlan(input: {
+  currentTier?: string | null;
+  currentPeriod?: 'MONTHLY' | 'YEARLY' | null;
+  tier: string;
+  period: 'MONTHLY' | 'YEARLY';
+}) {
+  if (!input.currentTier || input.currentTier === 'FREE') {
+    return false;
+  }
+  return input.currentTier === input.tier && input.currentPeriod === input.period;
+}
+
+export function subscriptionTimeline(input: {
+  status: BillingSubscriptionStatus;
+  cancelAt: string | null;
+  currentPeriodEnd: string | null;
+}): { renewsAt: string | null; expiresAt: string | null } {
+  const end = input.cancelAt || input.currentPeriodEnd;
+  if (
+    input.status === 'cancel_scheduled' ||
+    input.status === 'cancelled' ||
+    input.status === 'trial_ended'
+  ) {
+    return { renewsAt: null, expiresAt: end };
+  }
+  if (
+    input.status === 'active' ||
+    input.status === 'trialing' ||
+    input.status === 'past_due' ||
+    input.status === 'on_hold'
+  ) {
+    return { renewsAt: input.currentPeriodEnd, expiresAt: null };
+  }
+  return { renewsAt: null, expiresAt: null };
 }
 
 export function checkoutReturnKind(input: {

@@ -66,14 +66,15 @@ export class AuthService {
             ip,
             userAgent
           );
+          const createdUser = create.users[0].user;
           const obj = {
             addedOrg: false,
-            jwt: await this.jwt(create.users[0].user),
+            jwt: await this.jwt(createdUser),
           };
           await this._emailService.sendEmail(
             body.email,
             'Activate your account',
-            activationEmail(obj.jwt),
+            activationEmail(this.activationJwt(createdUser.id)),
             'top'
           );
           return obj;
@@ -331,24 +332,24 @@ export class AuthService {
   }
 
   async activate(code: string, tracking: string) {
-    const user = AuthChecker.verifyJWT(code) as {
-      id: string;
-      activated: boolean;
-      email: string;
+    const claims = AuthChecker.verifyJWT(code) as {
+      id?: string;
+      expires?: string;
     };
-    if (user.id && !user.activated) {
-      const getUserAgain = await this._userService.getUserByEmail(user.email);
-      if (getUserAgain.activated) {
-        return false;
-      }
-      await this._userService.activateUser(user.id);
-      user.activated = true;
-      this._track('register', user.email, tracking).catch((err) => {});
-      await NewsletterService.register(user.email);
-      return this.jwt(user as any);
+    if (!claims?.id) {
+      return false;
     }
-
-    return false;
+    if (claims.expires && dayjs(claims.expires).isBefore(dayjs())) {
+      return false;
+    }
+    const user = await this._userService.getUserById(claims.id);
+    if (!user || user.activated) {
+      return false;
+    }
+    await this._userService.activateUser(user.id);
+    this._track('register', user.email, tracking).catch((err) => {});
+    await NewsletterService.register(user.email);
+    return this.jwt(user);
   }
 
   async resendActivationEmail(email: string) {
@@ -362,12 +363,10 @@ export class AuthService {
       throw new Error('Account is already activated');
     }
 
-    const jwt = await this.jwt(user);
-
     await this._emailService.sendEmail(
       user.email,
       'Activate your account',
-      activationEmail(jwt),
+      activationEmail(this.activationJwt(user.id)),
       'top'
     );
 
@@ -441,6 +440,13 @@ export class AuthService {
       return false;
     }
     return this.inviteFromCookie(orgCookie);
+  }
+
+  private activationJwt(userId: string) {
+    return AuthChecker.signJWT({
+      id: userId,
+      expires: dayjs().add(7, 'day').format('YYYY-MM-DD HH:mm:ss'),
+    });
   }
 
   private async jwt(user: User) {

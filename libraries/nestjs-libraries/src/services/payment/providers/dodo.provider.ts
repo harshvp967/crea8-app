@@ -6,7 +6,10 @@ import { isGrandfatheredOrg } from '@gitroom/helpers/utils/billing.enabled';
 import { PrismaService } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
-import { loadBillingAccount } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.account';
+import {
+  loadBillingAccount,
+  subscriptionGrantsAccess,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.account';
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
 import {
   PAID_TIERS,
@@ -18,6 +21,8 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import {
+  ACTIVE_SUBSCRIPTION_ERROR,
+  adoptIncomingSubscription,
   cancelAccessUntil,
   displayedPlanAfterEvent,
   dodoCheckoutPrefill,
@@ -35,6 +40,7 @@ import {
   planChangeBilling,
   subscriptionChargeEndsTrial,
   preservedTrialEnd,
+  subscriptionSwitch,
   subscriptionProductId,
   tierFromProductId,
   verifyDodoSignature,
@@ -140,6 +146,18 @@ export class DodoProvider extends PaymentProviderAbstract {
     const existing = await tx.subscription.findUnique({
       where: { organizationId },
     });
+    const incomingId = String(source.subscription_id || '');
+    // A second subscription id must not replace the one already on this
+    // account. The other Dodo subscription is left as it is.
+    if (
+      !adoptIncomingSubscription({
+        storedId: existing?.identifier,
+        incomingId,
+        storedGrantsAccess: subscriptionGrantsAccess(existing),
+      })
+    ) {
+      return;
+    }
     const hadLive = !!existing && !existing.deletedAt && existing.status !== 'failed' && existing.status !== 'pending';
     if (ignoreRemoteSubscription({ status, hadLiveSubscription: hadLive })) {
       return;
@@ -383,13 +401,40 @@ export class DodoProvider extends PaymentProviderAbstract {
     body: BillingSubscribeDto,
     allowTrial: boolean
   ) {
-    const current = await this._prisma.subscription.findFirst({
-      where: { organizationId, deletedAt: null, provider: DODO_PROVIDER },
+    const account = await loadBillingAccount(this._prisma, organizationId);
+    const current = account.subscription;
+    const decision = subscriptionSwitch({
+      grantsAccess: !!current,
+      identifier: current?.identifier,
+      canReplace: !!current?.identifier && current.provider === DODO_PROVIDER,
+      currentTier: current?.subscriptionTier,
+      currentPeriod:
+        current?.period === 'YEARLY' || current?.period === 'MONTHLY'
+          ? current.period
+          : null,
+      requestedTier: body.billing,
+      requestedPeriod: body.period,
     });
-    if (current?.identifier) {
-      return this.changePlan(organizationId, current.identifier, body);
+    if (decision.action === 'current') {
+      return { changed: false, current: true };
     }
-    return this.checkout(organizationId, userId, body, allowTrial, 'subscription');
+    if (decision.action === 'replace') {
+      return this.changePlan(
+        account.billingOrganizationId,
+        decision.identifier,
+        body
+      );
+    }
+    if (decision.action === 'refuse') {
+      throw new HttpException(ACTIVE_SUBSCRIPTION_ERROR, 400);
+    }
+    return this.checkout(
+      account.billingOrganizationId,
+      userId,
+      body,
+      allowTrial,
+      'subscription'
+    );
   }
 
   async embedded(
@@ -450,6 +495,12 @@ export class DodoProvider extends PaymentProviderAbstract {
     kind: 'subscription' | 'credit_pack',
     packKey?: string
   ) {
+    if (kind === 'subscription') {
+      const account = await loadBillingAccount(this._prisma, organizationId);
+      if (account.subscription) {
+        throw new HttpException(ACTIVE_SUBSCRIPTION_ERROR, 400);
+      }
+    }
     const pack = packKey ? packByKey(packKey) : null;
     const productId = pack
       ? dodoProductId(pack.key)
@@ -526,7 +577,16 @@ export class DodoProvider extends PaymentProviderAbstract {
     );
     const inTrial = current?.status === 'trialing';
     const trialEndsAt = current?.currentPeriodEnd?.toISOString() || null;
-    const decision = planChangeBilling({ inTrial, upgrade, trialEndsAt });
+    const decision = planChangeBilling({
+      inTrial,
+      upgrade,
+      trialEndsAt,
+      fromPeriod:
+        current?.period === 'YEARLY' || current?.period === 'MONTHLY'
+          ? current.period
+          : null,
+      toPeriod: body.period,
+    });
     await this.client().subscriptions.changePlan(subscriptionId, {
       product_id: productId,
       quantity: 1,

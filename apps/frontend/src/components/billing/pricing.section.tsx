@@ -13,6 +13,7 @@ import {
   type PlanConfig,
   type PlanTier,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { isExactCurrentPlan } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 
 // planFeatureLines does not include this row. Show it only when the plan
 // flag is on. A missing flag stays off. There is no per-plan image count.
@@ -37,6 +38,7 @@ export function PricingSection({
   allowTrial,
   trialDays,
   currentTier,
+  currentPeriod,
   onPeriod,
   onChoose,
 }: {
@@ -45,6 +47,7 @@ export function PricingSection({
   allowTrial: boolean;
   trialDays: number;
   currentTier?: PlanTier | null;
+  currentPeriod?: BillingPeriod | null;
   onPeriod: (period: BillingPeriod) => void;
   onChoose: (tier: PaidTier) => void;
 }) {
@@ -70,7 +73,12 @@ export function PricingSection({
           const plan = PLANS[tier];
           const price = period === 'YEARLY' ? plan.yearPriceUsd : plan.monthPriceUsd;
           const recommended = tier === 'PRO';
-          const isCurrent = currentTier === tier;
+          const isCurrent = isExactCurrentPlan({
+            currentTier,
+            currentPeriod,
+            tier,
+            period,
+          });
           return (
             <article key={tier} data-plan={tier} className={clsx(stkCard, 'flex h-full flex-col gap-[14px]')}>
               <div className="flex min-h-[26px] flex-wrap items-center justify-between gap-[8px]">

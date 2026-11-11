@@ -997,17 +997,83 @@ export function invoiceIsVisible(input: { amount: number; status?: string | null
   return true;
 }
 
+export const ACTIVE_SUBSCRIPTION_ERROR =
+  'This account already has a subscription.';
+
+export type SubscriptionSwitch =
+  | { action: 'checkout' }
+  | { action: 'replace'; identifier: string }
+  | { action: 'current' }
+  | { action: 'refuse' };
+
+// One account keeps one subscription. A different interval is a change of
+// that subscription. Checkout is only for an account with nothing active.
+export function subscriptionSwitch(input: {
+  grantsAccess: boolean;
+  identifier?: string | null;
+  canReplace: boolean;
+  currentTier?: string | null;
+  currentPeriod?: 'MONTHLY' | 'YEARLY' | null;
+  requestedTier: string;
+  requestedPeriod: 'MONTHLY' | 'YEARLY';
+}): SubscriptionSwitch {
+  if (!input.grantsAccess) {
+    return { action: 'checkout' };
+  }
+  const same =
+    input.currentTier === input.requestedTier &&
+    (input.currentPeriod || 'MONTHLY') === input.requestedPeriod;
+  if (input.canReplace && input.identifier) {
+    if (same) {
+      return { action: 'current' };
+    }
+    return { action: 'replace', identifier: input.identifier };
+  }
+  return { action: 'refuse' };
+}
+
+// A webhook for a different subscription id must not take over the row
+// while the stored subscription still grants access. Same id, or a
+// replacement after the stored one has ended, still applies.
+export function adoptIncomingSubscription(input: {
+  storedId?: string | null;
+  incomingId?: string | null;
+  storedGrantsAccess: boolean;
+}) {
+  if (!input.incomingId || !input.storedId || input.storedId === input.incomingId) {
+    return true;
+  }
+  return !input.storedGrantsAccess;
+}
+
 export function planChangeBilling(input: {
   inTrial: boolean;
   upgrade: boolean;
   trialEndsAt: string | null;
+  fromPeriod?: 'MONTHLY' | 'YEARLY' | null;
+  toPeriod?: 'MONTHLY' | 'YEARLY' | null;
 }): {
-  prorationBillingMode: 'do_not_bill' | 'prorated_immediately';
+  prorationBillingMode: 'do_not_bill' | 'prorated_immediately' | 'full_immediately';
   effectiveAt: 'immediately' | 'next_billing_date';
   chargeNow: boolean;
   keepTrialEnd: string | null;
   applyTierNow: boolean;
 } {
+  // Yearly to monthly is a shorter interval. Dodo rejects several immediate
+  // proration modes for that change. Schedule it on the same subscription.
+  if (
+    !input.inTrial &&
+    input.fromPeriod === 'YEARLY' &&
+    input.toPeriod === 'MONTHLY'
+  ) {
+    return {
+      prorationBillingMode: 'full_immediately',
+      effectiveAt: 'next_billing_date',
+      chargeNow: false,
+      keepTrialEnd: null,
+      applyTierNow: false,
+    };
+  }
   if (input.inTrial) {
     return {
       prorationBillingMode: 'do_not_bill' as const,

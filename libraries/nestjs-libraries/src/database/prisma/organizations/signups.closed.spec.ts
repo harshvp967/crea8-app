@@ -129,6 +129,10 @@ describe('closed sign-ups', () => {
             id: 'new-user',
             email: 'new.person@example.com',
             activated: false,
+            ip: '203.0.113.8',
+            agent: 'Mozilla/5.0',
+            isSuperAdmin: false,
+            password: 'hashed-password',
           },
         },
       ],
@@ -156,9 +160,21 @@ describe('closed sign-ups', () => {
     expect(sendEmail).toHaveBeenCalledWith(
       'new.person@example.com',
       'Activate your account',
-      expect.stringContaining(`/auth/activate/${created.jwt}`),
+      expect.stringContaining('/auth/activate/'),
       'top'
     );
+    const html = String(sendEmail.mock.calls[0][2]);
+    const token = html.match(/\/auth\/activate\/([^"<]+)/)?.[1] || '';
+    expect(token).not.toBe(created.jwt);
+    const activation = Password.verifyJWT(token) as Record<string, unknown>;
+    expect(activation.id).toBe('new-user');
+    expect(activation.expires).toEqual(expect.any(String));
+    expect(activation.ip).toBeUndefined();
+    expect(activation.agent).toBeUndefined();
+    expect(activation.email).toBeUndefined();
+    expect(activation.password).toBeUndefined();
+    expect(activation.activated).toBeUndefined();
+    expect(activation.isSuperAdmin).toBeUndefined();
   });
 
   it('rejects a new email when registration is disabled', async () => {
@@ -621,5 +637,69 @@ describe('closed sign-ups', () => {
       cookie
     );
     expect(opened).toEqual({ token: 'provider-token' });
+  });
+
+  it('activates from a link that carries only the user id and expiry', async () => {
+    const { service: org } = organization();
+    const users = {
+      getUserById: jest.fn().mockResolvedValue({
+        id: 'new-user',
+        email: 'new.person@example.com',
+        activated: false,
+      }),
+      activateUser: jest.fn().mockResolvedValue({}),
+    };
+    const token = Password.signJWT({
+      id: 'new-user',
+      expires: '2099-01-01 00:00:00',
+    });
+    const session = await auth(org, users).activate(token, '');
+    expect(users.getUserById).toHaveBeenCalledWith('new-user');
+    expect(users.activateUser).toHaveBeenCalledWith('new-user');
+    expect(session).toEqual(expect.any(String));
+    expect(NewsletterService.register).toHaveBeenCalledWith('new.person@example.com');
+  });
+
+  it('rejects an expired activation link and does not activate', async () => {
+    const { service: org } = organization();
+    const users = {
+      getUserById: jest.fn(),
+      activateUser: jest.fn(),
+    };
+    const token = Password.signJWT({
+      id: 'new-user',
+      expires: '2000-01-01 00:00:00',
+    });
+    await expect(auth(org, users).activate(token, '')).resolves.toBe(false);
+    expect(users.getUserById).not.toHaveBeenCalled();
+    expect(users.activateUser).not.toHaveBeenCalled();
+  });
+
+  it('resends an activation link that does not embed the user record', async () => {
+    const { service: org } = organization();
+    const sendEmail = jest.fn();
+    const users = {
+      getUserByEmail: jest.fn().mockResolvedValue({
+        id: 'new-user',
+        email: 'new.person@example.com',
+        activated: false,
+        ip: '203.0.113.8',
+        agent: 'Mozilla/5.0',
+        password: 'hashed-password',
+      }),
+    };
+    await expect(
+      auth(org, users, undefined, { sendEmail }).resendActivationEmail(
+        'new.person@example.com'
+      )
+    ).resolves.toBe(true);
+    const token =
+      String(sendEmail.mock.calls[0][2]).match(/\/auth\/activate\/([^"<]+)/)?.[1] || '';
+    const activation = Password.verifyJWT(token) as Record<string, unknown>;
+    expect(activation.id).toBe('new-user');
+    expect(activation.expires).toEqual(expect.any(String));
+    expect(activation.ip).toBeUndefined();
+    expect(activation.agent).toBeUndefined();
+    expect(activation.password).toBeUndefined();
   });
 });

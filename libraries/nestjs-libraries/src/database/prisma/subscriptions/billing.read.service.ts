@@ -19,6 +19,7 @@ import {
   billingSupport,
   paywallAllowsTrial,
   planCards,
+  subscriptionTimeline,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.view';
 
 @Injectable()
@@ -71,6 +72,15 @@ export class BillingReadService {
     });
     const plan = PLANS[tier];
     const shownStatus = grandfathered && !active ? 'active' : status;
+    const cancelAt = active?.cancelAt ? active.cancelAt.toISOString() : null;
+    const currentPeriodEnd = active?.currentPeriodEnd
+      ? active.currentPeriodEnd.toISOString()
+      : null;
+    const timeline = subscriptionTimeline({
+      status: shownStatus,
+      cancelAt,
+      currentPeriodEnd,
+    });
     return {
       billingEnabled: enforced,
       grandfathered,
@@ -87,10 +97,10 @@ export class BillingReadService {
         displayName: plan.displayName,
         period: (active?.period as 'MONTHLY' | 'YEARLY' | null) || null,
         status: shownStatus,
-        cancelAt: active?.cancelAt ? active.cancelAt.toISOString() : null,
-        currentPeriodEnd: active?.currentPeriodEnd
-          ? active.currentPeriodEnd.toISOString()
-          : null,
+        cancelAt,
+        currentPeriodEnd,
+        renewsAt: timeline.renewsAt,
+        expiresAt: timeline.expiresAt,
         pendingTier: (active?.pendingTier as BillingOverview['subscription']['pendingTier']) || null,
         pendingDisplayName: active?.pendingTier
           ? PLANS[active.pendingTier as 'STANDARD'].displayName
