@@ -1027,11 +1027,12 @@ body :focus-visible {
   transition: background-color var(--c8-dur-hover) var(--c8-ease-out);
 }
 
-/* Same 16px radius as the selected row. Inactive tint, quieter than an
-   active fill. Touch devices do not keep a sticky hover. */
+/* Same 16px radius as the selected row. A lighter wash of the inactive
+   tint, so it stays off the phone row's solid --c8-soft fill. Touch
+   devices do not keep a sticky hover. */
 @media (hover: hover) {
   .dash-mswitch-menu a:not(.arc-selected):hover {
-    background: var(--c8-soft);
+    background-color: color-mix(in srgb, var(--c8-soft) 45%, transparent);
   }
 }
 
@@ -1041,7 +1042,7 @@ body :focus-visible {
 }
 
 .dash-mswitch-menu a:not(.arc-selected):focus-visible {
-  background: var(--c8-soft);
+  background-color: color-mix(in srgb, var(--c8-soft) 45%, transparent);
 }
 
 .header-avatar {
