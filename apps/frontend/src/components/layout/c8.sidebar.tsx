@@ -228,8 +228,19 @@ export const C8Sidebar = ({
           src="/crea8one-icon-cyan.svg"
           alt=""
         />
+        <span className="c8-side-word">
+          <img
+            className="c8-side-word-img c8-side-word-light"
+            src="/crea8one-logo-horizontal-color.svg"
+            alt=""
+          />
+          <img
+            className="c8-side-word-img c8-side-word-dark"
+            src="/crea8one-logo-horizontal-color-on-dark.svg"
+            alt=""
+          />
+        </span>
       </Link>
-      <p className="c8-side-kicker">Apps</p>
       <nav id="c8-side-apps" className="c8-side-apps" aria-label="Apps">
         {apps.map((app) => {
           const locked = planLocked && (app.id === 'schedule' || app.id === 'stalker');
@@ -281,7 +292,6 @@ export const C8Sidebar = ({
         })}
       </nav>
       <div className="c8-side-rule" />
-      <p className="c8-side-kicker">{sectionLabel}</p>
       <nav id="c8-side-section" className="c8-side-nav" aria-label={sectionLabel}>
         {sectionRows.map((item) => {
           const active =
