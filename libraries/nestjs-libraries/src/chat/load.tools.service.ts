@@ -76,7 +76,11 @@ export class LoadToolsService {
         - List integrations (channels)
         - List groups (customers) and filter the channels by a group
         - List Stalker projects, read mentions, and manage keywords and alerts when those tools are available
-        - Read and edit the Link-in-Bio page, its blocks, analytics, and leads
+        - Read and edit the Link-in-Bio page (linkPageTool), including avatar, font, background, design colours, Open Graph image, the sensitive-content flag, and the badge. A pro theme or badge removal on a free page is refused. Title and description still update
+        - Connect, check, or remove a Link-in-Bio custom domain (linkDomainTool). The status and DNS records match the settings screen. A page without the add-on is refused
+        - Read Link-in-Bio analytics, or export the CSV the screen downloads (linkAnalyticsTool). A free page is refused the export
+        - Read Link-in-Bio leads, or delete one lead (linkLeadsTool). Only the workspace owner can delete a lead, and the page itself is not deleted
+        - Edit Link-in-Bio blocks (linkBlocksTool)
 
       - We schedule posts to different integration like facebook, instagram, etc. but to the user we don't say integrations we say channels as integration is the technical name
       - When scheduling a post, you must follow the social media rules and best practices.

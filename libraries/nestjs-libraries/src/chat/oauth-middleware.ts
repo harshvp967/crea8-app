@@ -38,7 +38,14 @@ export async function resolveMcpOrganization(
   lookup: {
     getOrgByOAuthToken: (
       token: string
-    ) => Promise<{ organization: { id: string } } | null | undefined>;
+    ) => Promise<
+      | {
+          organization: { id: string };
+          user?: { id?: string | null } | null;
+        }
+      | null
+      | undefined
+    >;
     getOrgByApiKey: (token: string) => Promise<{ id: string } | null | undefined>;
   }
 ) {
@@ -47,7 +54,15 @@ export async function resolveMcpOrganization(
   }
   if (token.startsWith('pos_')) {
     const authorization = await lookup.getOrgByOAuthToken(token);
-    return authorization?.organization || null;
+    const organization = authorization?.organization;
+    if (!organization) {
+      return null;
+    }
+    const userId = authorization?.user?.id;
+    if (!userId) {
+      return organization;
+    }
+    return { ...organization, userId };
   }
   return (await lookup.getOrgByApiKey(token)) || null;
 }

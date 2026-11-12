@@ -81,4 +81,18 @@ describe('MCP auth', () => {
     await expect(resolveMcpOrganization('api-key', lookup)).resolves.toEqual({ id: 'org-key' });
     expect(lookup.getOrgByApiKey).not.toHaveBeenCalledWith('pos_live');
   });
+
+  it('keeps the OAuth user id and drops the email', async () => {
+    const lookup = {
+      getOrgByOAuthToken: jest.fn(async () => ({
+        organization: { id: 'org-oauth' },
+        user: { id: 'user-1', email: 'owner@example.com' },
+      })),
+      getOrgByApiKey: jest.fn(async () => null),
+    };
+    await expect(resolveMcpOrganization('pos_user', lookup)).resolves.toEqual({
+      id: 'org-oauth',
+      userId: 'user-1',
+    });
+  });
 });
