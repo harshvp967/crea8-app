@@ -118,13 +118,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Redeploy postiz-backend and postiz-orchestrator
+      - name: Redeploy crea8-backend and crea8-orchestrator
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "::error::Missing GitHub Actions secret RAILWAY_TOKEN. In the Railway project, create a project token for the production environment that contains postiz-backend and postiz-orchestrator, then add it as the repository secret RAILWAY_TOKEN."
+            echo "::error::Missing GitHub Actions secret RAILWAY_TOKEN. In the Railway project, create a project token for the production environment that contains crea8-backend and crea8-orchestrator, then add it as the repository secret RAILWAY_TOKEN."
             exit 1
           fi
-          npx -y @railway/cli@latest redeploy --service postiz-backend --from-source --yes
-          npx -y @railway/cli@latest redeploy --service postiz-orchestrator --from-source --yes
+          npx -y @railway/cli@latest redeploy --service 242f99d6-a455-43bb-8c8b-65d277f81d88 --from-source --yes
+          npx -y @railway/cli@latest redeploy --service df23a199-34e1-4992-a064-9111b9ccd6a8 --from-source --yes
