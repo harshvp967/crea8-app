@@ -21,6 +21,12 @@ import { SetsTool } from '@gitroom/nestjs-libraries/chat/tools/sets.tool';
 import { SignaturesTool } from '@gitroom/nestjs-libraries/chat/tools/signatures.tool';
 import { AutopostTool } from '@gitroom/nestjs-libraries/chat/tools/autopost.tool';
 import { ShortlinkPreferenceTool } from '@gitroom/nestjs-libraries/chat/tools/shortlink.preference.tool';
+import { TeamMembersTool } from '@gitroom/nestjs-libraries/chat/tools/team.members.tool';
+import { WorkspaceProfileTool } from '@gitroom/nestjs-libraries/chat/tools/workspace.profile.tool';
+import { EmailNotificationsTool } from '@gitroom/nestjs-libraries/chat/tools/email.notifications.tool';
+import { WebhooksTool } from '@gitroom/nestjs-libraries/chat/tools/webhooks.tool';
+import { ApprovedAppsTool } from '@gitroom/nestjs-libraries/chat/tools/approved.apps.tool';
+import { DeveloperTool } from '@gitroom/nestjs-libraries/chat/tools/developer.tool';
 import { UploadWidgetTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.tool';
 import { UploadWidgetTicketTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.ticket.tool';
 import { UploadWidgetStatusTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.status.tool';
@@ -50,6 +56,12 @@ export const toolList = [
   SignaturesTool,
   AutopostTool,
   ShortlinkPreferenceTool,
+  TeamMembersTool,
+  WorkspaceProfileTool,
+  EmailNotificationsTool,
+  WebhooksTool,
+  ApprovedAppsTool,
+  DeveloperTool,
   GenerateVideoOptionsTool,
   VideoFunctionTool,
   GenerateVideoTool,
