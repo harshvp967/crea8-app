@@ -8,6 +8,24 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { extractBearerToken } from '@gitroom/nestjs-libraries/chat/oauth-types';
 import { createHash } from 'crypto';
 import { OAuthApp } from '@prisma/client';
+import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+
+// Refresh tokens are not a column. They live in Redis, hashed, so this does
+// not change the Prisma schema. 90 days, then the client signs in again.
+const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 90;
+
+type RefreshRecord = {
+  authorizationId: string;
+  clientId: string;
+  userId: string;
+  organizationId: string;
+};
+
+const refreshTokenKey = (token: string) =>
+  `oauth:rt:${createHash('sha256').update(token).digest('hex')}`;
+
+const refreshCurrentKey = (authorizationId: string) =>
+  `oauth:rt:current:${authorizationId}`;
 
 const openAiOAuthClientId = () =>
   process.env.OPENAI_OAUTH_CLIENT_ID?.trim();
@@ -84,8 +102,12 @@ export class OAuthService {
     if (!app) {
       throw new HttpException('No OAuth app found', HttpStatus.NOT_FOUND);
     }
+    const authorizations = await this._oauthRepository.authorizationIdsForApp(app.id);
     await this._oauthRepository.revokeAllForApp(app.id);
     await this._oauthRepository.deleteApp(orgId);
+    for (const authorization of authorizations) {
+      await this.revokeRefreshToken(authorization.id);
+    }
     return { success: true };
   }
 
@@ -206,7 +228,7 @@ export class OAuthService {
       client_name: app.name,
       redirect_uris: redirectUris,
       token_endpoint_auth_method: tokenEndpointAuthMethod,
-      grant_types: ['authorization_code'],
+      grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
       scope: 'mcp:read mcp:write',
     };
@@ -314,7 +336,7 @@ export class OAuthService {
     const encryptedCode = AuthService.fixedEncryption(code);
     const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    await this._oauthRepository.createAuthorization({
+    const authorization = await this._oauthRepository.createAuthorization({
       oauthAppId,
       userId,
       organizationId,
@@ -324,8 +346,75 @@ export class OAuthService {
       codeChallengeMethod: pkce?.codeChallengeMethod,
       redirectUri: pkce?.redirectUri,
     });
+    await this.revokeRefreshToken(authorization.id);
 
     return code;
+  }
+
+  private assertClientAuthenticated(
+    app: Pick<OAuthApp, 'dynamic' | 'tokenEndpointAuthMethod' | 'clientSecret'>,
+    clientSecret?: string
+  ) {
+    const isPublicClient = app.dynamic && app.tokenEndpointAuthMethod === 'none';
+    if (isPublicClient) {
+      return;
+    }
+    if (
+      !clientSecret ||
+      !app.clientSecret ||
+      app.clientSecret !== AuthService.fixedEncryption(clientSecret)
+    ) {
+      throw new HttpException(
+        { error: 'invalid_client' },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+  }
+
+  private async readRefreshToken(token: string): Promise<RefreshRecord | null> {
+    const key = refreshTokenKey(token);
+    const raw = await ioRedis.get(key);
+    if (!raw) {
+      return null;
+    }
+    let record: RefreshRecord;
+    try {
+      record = JSON.parse(raw) as RefreshRecord;
+    } catch {
+      return null;
+    }
+    if (!record?.authorizationId || !record.clientId || !record.userId || !record.organizationId) {
+      return null;
+    }
+    const current = await ioRedis.get(refreshCurrentKey(record.authorizationId));
+    if (current !== key) {
+      return null;
+    }
+    return record;
+  }
+
+  private async issueRefreshToken(record: RefreshRecord) {
+    const token = 'por_' + makeSecureId(40);
+    const key = refreshTokenKey(token);
+    const currentKey = refreshCurrentKey(record.authorizationId);
+    const previousKey = await ioRedis.get(currentKey);
+    await ioRedis.set(key, JSON.stringify(record));
+    await ioRedis.expire(key, REFRESH_TTL_SECONDS);
+    await ioRedis.set(currentKey, key);
+    await ioRedis.expire(currentKey, REFRESH_TTL_SECONDS);
+    if (previousKey && previousKey !== key) {
+      await ioRedis.del(previousKey);
+    }
+    return token;
+  }
+
+  private async revokeRefreshToken(authorizationId: string) {
+    const currentKey = refreshCurrentKey(authorizationId);
+    const previousKey = await ioRedis.get(currentKey);
+    if (previousKey) {
+      await ioRedis.del(previousKey);
+    }
+    await ioRedis.del(currentKey);
   }
 
   async exchangeCodeForToken(
@@ -344,19 +433,15 @@ export class OAuthService {
     }
 
     // Public clients (dynamic registration with token_endpoint_auth_method=none)
-    // authenticate with PKCE instead of a client secret
-    const isPublicClient = app.dynamic && app.tokenEndpointAuthMethod === 'none';
-    if (!isPublicClient) {
-      if (
-        !clientSecret ||
-        !app.clientSecret ||
-        app.clientSecret !== AuthService.fixedEncryption(clientSecret)
-      ) {
-        throw new HttpException(
-          { error: 'invalid_client' },
-          HttpStatus.UNAUTHORIZED
-        );
-      }
+    // authenticate with PKCE instead of a client secret. Confidential clients
+    // still present client_secret the same way as before.
+    this.assertClientAuthenticated(app, clientSecret);
+
+    if (!code) {
+      throw new HttpException(
+        { error: 'invalid_grant' },
+        HttpStatus.BAD_REQUEST
+      );
     }
 
     const encryptedCode = AuthService.fixedEncryption(code);
@@ -400,13 +485,28 @@ export class OAuthService {
 
     const token = 'pos_' + makeSecureId(40);
     const encryptedToken = AuthService.fixedEncryption(token);
+    // Read PKCE before the code row is cleared. The repository nulls the challenge.
+    const usedPkce = Boolean(auth.codeChallenge);
+    const authorizationId = auth.id;
+    const userId = auth.userId;
     const {
       organizationId,
       organization: { paymentId },
     } = await this._oauthRepository.exchangeCodeForToken(
-      auth.id,
+      authorizationId,
       encryptedToken
     );
+
+    // Refresh tokens are only for authorization_code grants that used PKCE.
+    // A grant without PKCE keeps the previous access-token response.
+    const refreshToken = usedPkce
+      ? await this.issueRefreshToken({
+          authorizationId,
+          clientId: app.clientId,
+          userId,
+          organizationId,
+        })
+      : undefined;
 
     return {
       id: organizationId,
@@ -414,6 +514,73 @@ export class OAuthService {
       access_token: token,
       token_type: 'bearer',
       scope: this.grantedScope(app),
+      ...(refreshToken ? { refresh_token: refreshToken } : {}),
+    };
+  }
+
+  async refreshAccessToken(
+    refreshToken: string | undefined,
+    clientId: string,
+    clientSecret?: string
+  ) {
+    if (!refreshToken) {
+      throw new HttpException(
+        { error: 'invalid_request', error_description: 'refresh_token is required' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const app = await this._oauthRepository.getAppByClientId(clientId);
+    if (!app) {
+      throw new HttpException(
+        { error: 'invalid_client' },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+    this.assertClientAuthenticated(app, clientSecret);
+
+    const record = await this.readRefreshToken(refreshToken);
+    if (!record || record.clientId !== app.clientId) {
+      throw new HttpException(
+        { error: 'invalid_grant' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const auth = await this._oauthRepository.findActiveById(record.authorizationId);
+    if (
+      !auth ||
+      auth.oauthAppId !== app.id ||
+      auth.userId !== record.userId ||
+      auth.organizationId !== record.organizationId
+    ) {
+      await this.revokeRefreshToken(record.authorizationId);
+      throw new HttpException(
+        { error: 'invalid_grant' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const token = 'pos_' + makeSecureId(40);
+    const encryptedToken = AuthService.fixedEncryption(token);
+    const updated = await this._oauthRepository.replaceAccessToken(
+      auth.id,
+      encryptedToken
+    );
+    const nextRefresh = await this.issueRefreshToken({
+      authorizationId: auth.id,
+      clientId: app.clientId,
+      userId: auth.userId,
+      organizationId: auth.organizationId,
+    });
+
+    return {
+      id: updated.organizationId,
+      cus: updated.organization.paymentId,
+      access_token: token,
+      token_type: 'bearer' as const,
+      scope: this.grantedScope(app),
+      refresh_token: nextRefresh,
     };
   }
 
@@ -474,6 +641,7 @@ export class OAuthService {
 
   async revokeApp(userId: string, authId: string) {
     await this._oauthRepository.revokeAuthorization(userId, authId);
+    await this.revokeRefreshToken(authId);
     return { success: true };
   }
 }

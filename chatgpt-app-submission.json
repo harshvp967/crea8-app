@@ -2,9 +2,9 @@
   "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
   "schema_version": 1,
   "app_info": {
-    "display_name": "Postiz",
-    "subtitle": "Schedule Social Media Posts",
-    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts.",
+    "display_name": "crea8.one",
+    "subtitle": "Posts, Link-in-Bio, Stalker",
+    "description": "crea8.one connects ChatGPT to the social accounts already linked in a crea8.one organization. ChatGPT can list channels, schedule or publish posts, edit a post with update_post, delete a post with delete_post only when confirm is true and the user has confirmed, generate drafts with generatePostsTool, upload or generate media, clip a long video, read and edit the Link-in-Bio page, read Stalker mentions, manage Stalker keywords and alerts, and read account and billing. The user signs in with OAuth. ChatGPT does not receive the social network passwords.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
@@ -15,9 +15,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only retrieves connected social channels for the organization and optional group filter.",
-        "open_world_justification": "Does not write to public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+        "read_only_justification": "Lists connected channels for this organization. Optional group id filter. It does not change a channel.",
+        "open_world_justification": "Reads crea8.one only. It does not call a social network.",
+        "destructive_justification": "Does not delete, overwrite, disconnect, or publish."
       }
     },
     "groupList": {
@@ -27,9 +27,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only retrieves the organization's customer groups.",
-        "open_world_justification": "Does not write to public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+        "read_only_justification": "Lists customer groups for this organization.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete or change a group."
       }
     },
     "integrationSchema": {
@@ -39,9 +39,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only returns platform rules, limits, settings schemas, and helper metadata.",
-        "open_world_justification": "Does not write to public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+        "read_only_justification": "Returns posting rules, length limits, settings schema, and helper names for one platform.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete, overwrite, or publish."
       }
     },
     "triggerTool": {
@@ -51,21 +51,21 @@
         "destructiveHint": true
       },
       "justifications": {
-        "read_only_justification": "Can refresh stored integration tokens and mark channels as needing reconnect while retrieving provider details.",
-        "open_world_justification": "Calls connected provider APIs and can update integration auth state for the user's channel.",
-        "destructive_justification": "Can overwrite stored integration tokens or mark a channel as needing reconnect if refresh fails."
+        "read_only_justification": "Calls a platform helper from integrationSchema. It can refresh a stored channel token.",
+        "open_world_justification": "Calls the connected social network and can update the stored token for that channel.",
+        "destructive_justification": "A failed refresh can mark the channel as needing reconnect, which overwrites the stored auth state."
       }
     },
-    "integrationSchedulePostTool": {
+    "schedulePostTool": {
       "annotations": {
         "readOnlyHint": false,
         "openWorldHint": true,
         "destructiveHint": true
       },
       "justifications": {
-        "read_only_justification": "Creates draft, scheduled, or immediate social posts and starts publishing workflows.",
-        "open_world_justification": "Can publish or schedule content to external social media channels.",
-        "destructive_justification": "Can send public social posts immediately or later through connected platforms."
+        "read_only_justification": "Creates a draft, a scheduled post, or an immediate post.",
+        "open_world_justification": "Can publish or schedule content on an external social channel.",
+        "destructive_justification": "Can send a public post now or later. It does not delete an existing post."
       }
     },
     "postsListTool": {
@@ -75,9 +75,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only retrieves posts scheduled, drafted, published, or errored in a requested date window.",
-        "open_world_justification": "Does not write to public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+        "read_only_justification": "Lists posts between two UTC dates, including content, state, channel, and settings.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete, edit, or publish."
       }
     },
     "postSettingsTool": {
@@ -87,9 +87,189 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Merges new provider settings into an existing draft or scheduled post.",
-        "open_world_justification": "Only updates settings stored on an unpublished Postiz post and does not reach any external or publicly visible system.",
-        "destructive_justification": "Does not delete posts, change content, change publish dates, revoke access, or publish content immediately."
+        "read_only_justification": "Merges provider settings into a scheduled post or draft that is not published yet. Content and date stay.",
+        "open_world_justification": "Writes only the settings stored on that crea8.one post.",
+        "destructive_justification": "Does not delete the post, change its text, change its date, or publish it."
+      }
+    },
+    "postDateTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Moves a post's publish time the same way as the calendar date change. It does not republish.",
+        "open_world_justification": "Writes only the publish time stored on that crea8.one post.",
+        "destructive_justification": "Does not delete the post or publish it again."
+      }
+    },
+    "update_post": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Edits an existing post the same way as the Schedule composer: text, media, time, and channels. type defaults to update, which saves without publishing again. type schedule or now can publish, and an already-published post then needs republish true. The client must confirm with the user before saving.",
+        "open_world_justification": "Saving with type schedule or now can publish to an external social channel. type update stays inside crea8.one.",
+        "destructive_justification": "Does not delete the post. Publishing again is refused unless republish is true."
+      }
+    },
+    "delete_post": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Deletes a post group the same way as the Schedule calendar. The call is refused unless confirm is true. The client must confirm with the user before calling. allChannels true also deletes the other channels created with it.",
+        "open_world_justification": "Deletes rows stored in crea8.one. It does not call a social network to remove an already published post.",
+        "destructive_justification": "Removes the post and its comments. This cannot be undone from the tool."
+      }
+    },
+    "integrationChannelTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Enables, disables, deletes, renames, or sets time slots on a channel that is already connected. There is no connect action.",
+        "open_world_justification": "Changes the channel record in crea8.one. It does not connect a new social account.",
+        "destructive_justification": "Delete removes the channel. If posts are still attached, the delete is refused until those posts are removed."
+      }
+    },
+    "setsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists, creates, updates, or deletes content sets. A free workspace is refused.",
+        "open_world_justification": "Writes only crea8.one set records.",
+        "destructive_justification": "Delete removes a set."
+      }
+    },
+    "signaturesTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists, creates, updates, deletes, or reads the default signature. A free workspace is refused.",
+        "open_world_justification": "Writes only crea8.one signature records.",
+        "destructive_justification": "Delete removes a signature."
+      }
+    },
+    "autopostTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists, creates, updates, deletes, turns on or off, or loads an autopost feed. A plan without autopost is refused.",
+        "open_world_justification": "send loads a feed URL. Create and update store that URL.",
+        "destructive_justification": "Delete removes a feed. Turning a feed off stops future posts from it."
+      }
+    },
+    "shortlinkPreferenceTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads or sets the workspace shortlink preference to ask, always, or never.",
+        "open_world_justification": "Writes only that preference in crea8.one. It does not shorten a link by itself.",
+        "destructive_justification": "Does not delete posts or change a per-post shortLink flag."
+      }
+    },
+    "teamMembersTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists members and invites, or invites, resends, creates an invite link, cancels an invite, changes a role, or removes a member. A plan without team members is refused. Only an admin or the owner can do this.",
+        "open_world_justification": "Invite can send an email through crea8.one. It does not change a social network.",
+        "destructive_justification": "Remove drops a member from the workspace. Cancel revokes an invite."
+      }
+    },
+    "workspaceProfileTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads or updates the signed-in profile name, bio, and picture, or renames the workspace. Only the owner can rename. It does not change a password, log out, or delete an account.",
+        "open_world_justification": "Writes only the profile and workspace name in crea8.one.",
+        "destructive_justification": "Does not delete the account or the workspace."
+      }
+    },
+    "emailNotificationsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads or updates the three email notification toggles.",
+        "open_world_justification": "Writes only those toggles in crea8.one.",
+        "destructive_justification": "Does not delete mail or the account."
+      }
+    },
+    "webhooksTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists, creates, updates, deletes, or sends a test webhook. Creating one past the plan limit is refused. The signing secret is not returned.",
+        "open_world_justification": "Test sends a sample POST to the webhook URL.",
+        "destructive_justification": "Delete removes the webhook."
+      }
+    },
+    "approvedAppsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists OAuth apps this user approved, or revokes one. It does not create a client or return a secret.",
+        "open_world_justification": "Writes only the approval row in crea8.one.",
+        "destructive_justification": "Revoke invalidates that app's access for this user."
+      }
+    },
+    "developerTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads whether the plan includes the public API, whether an API key is stored, and the OAuth app's public fields. It does not return or rotate a key or secret.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete or rotate credentials."
+      }
+    },
+    "billingTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads plan, status, renewal, credits, and usage, the same values as the billing screen. portal, checkout, and pack return a URL only when that call returns one. A workspace that already has a subscription is not changed. A workspace with no subscription cannot buy a credit pack. It does not cancel, refund, resume, or apply a coupon.",
+        "open_world_justification": "portal, checkout, and pack can return a Dodo URL. overview stays inside crea8.one.",
+        "destructive_justification": "Does not cancel, refund, or change an existing subscription."
       }
     },
     "generateVideoOptions": {
@@ -99,9 +279,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only lists available video generation types, required parameters, and helper functions.",
-        "open_world_justification": "Does not write to public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+        "read_only_justification": "Lists video generators and their inputs.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not start a job or spend a credit."
       }
     },
     "videoFunctionTool": {
@@ -111,9 +291,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only retrieves helper data needed for video generation, such as available voice IDs.",
-        "open_world_justification": "Does not create public content or change third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+        "read_only_justification": "Returns helper values for video generation, such as a voice id.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not start a job or spend a credit."
       }
     },
     "generateVideoTool": {
@@ -123,9 +303,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Starts a background video generation job that consumes the user's video generation credit, uploads the result, and saves it to the media library.",
-        "open_world_justification": "Calls external generation and storage services to create media for the user's workspace.",
-        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+        "read_only_justification": "Starts a video generation job, spends the video credit, and saves the file to the media library.",
+        "open_world_justification": "Calls the generation provider and stores the file.",
+        "destructive_justification": "Does not delete existing media or publish a post."
       }
     },
     "videoStatusTool": {
@@ -135,69 +315,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only reads the status of a video generation job the user started and returns the hosted video URL once it is done.",
-        "open_world_justification": "Does not write to public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
-      }
-    },
-    "generateImageTool": {
-      "annotations": {
-        "readOnlyHint": false,
-        "openWorldHint": true,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Generates an image, consumes the user's image generation credit, uploads the result, and saves it to the media library.",
-        "open_world_justification": "Calls external generation and storage services to create media for the user's workspace.",
-        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
-      }
-    },
-    "uploadFromUrlTool": {
-      "annotations": {
-        "readOnlyHint": false,
-        "openWorldHint": true,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Fetches a public media URL, uploads the file, and saves it to the media library.",
-        "open_world_justification": "Reads from a public URL and stores the resulting media through external storage.",
-        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
-      }
-    },
-    "uploadWidgetTool": {
-      "annotations": {
-        "readOnlyHint": false,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Opens an upload session and shows a widget the user uploads media to their own media library with.",
-        "open_world_justification": "Only creates an upload session inside the user's Postiz workspace; nothing is published or sent to a third party.",
-        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
-      }
-    },
-    "uploadWidgetTicketTool": {
-      "annotations": {
-        "readOnlyHint": false,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Creates a short-lived upload ticket for the upload widget; it is only callable by the widget, not by the model.",
-        "open_world_justification": "The ticket only allows uploads into the user's own Postiz media library; no public or third-party state changes.",
-        "destructive_justification": "Does not delete or overwrite anything, revoke access, or publish content."
-      }
-    },
-    "uploadWidgetStatusTool": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Only reads the media uploaded in an upload widget session.",
-        "open_world_justification": "Reads internal Postiz data for the user's workspace only.",
-        "destructive_justification": "Read-only; it cannot change or delete anything."
+        "read_only_justification": "Reads the status of a video job and the hosted URL when it is done.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete the job or the file."
       }
     },
     "clippingTool": {
@@ -207,9 +327,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Starts a background clipping job that downloads a public YouTube video, renders short vertical clips with captions, consumes the user's clipping minutes, and saves every clip to the media library; when channels are passed it also creates draft posts.",
-        "open_world_justification": "Reads a public YouTube URL and calls external rendering and storage services to create media for the user's workspace.",
-        "destructive_justification": "Does not delete or overwrite existing media or posts, revoke access, or publish content; any posts it creates are drafts only."
+        "read_only_justification": "Turns a public YouTube video into captioned vertical clips, spends clipping minutes, saves the clips, and can create draft posts. Nothing is published.",
+        "open_world_justification": "Reads a public YouTube URL and calls the clipping providers.",
+        "destructive_justification": "Does not delete existing media. Posts it creates are drafts."
       }
     },
     "clippingStatusTool": {
@@ -219,9 +339,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only reads the status of a clipping job the user started and returns the hosted clip URLs once it is done.",
-        "open_world_justification": "Does not write to public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+        "read_only_justification": "Reads a clipping job and the clip URLs when it is done.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete the job or the clips."
       }
     },
     "clippingWidgetTicketTool": {
@@ -231,77 +351,269 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Creates a short-lived ticket for the clipping widget to read the progress of a clipping job; it is only callable by the widget, not by the model.",
-        "open_world_justification": "The ticket only allows reading the user's own clipping job inside Postiz; no public or third-party state changes.",
-        "destructive_justification": "Does not delete or overwrite anything, revoke access, or publish content."
+        "read_only_justification": "Creates a short-lived ticket so the clipping widget can read that job. The model does not use the ticket to change data.",
+        "open_world_justification": "The ticket only reads that user's clipping job.",
+        "destructive_justification": "Does not delete or publish."
+      }
+    },
+    "generateImageTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Generates an image, spends the image credit, and saves it to the media library.",
+        "open_world_justification": "Calls the image provider and stores the file.",
+        "destructive_justification": "Does not delete existing media or publish a post."
+      }
+    },
+    "generatePostsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Turns one idea into a draft for every connected channel, the same generation as Schedule. format defaults to short. voice defaults to personal. It uses the same credit and plan check as the Schedule panel and does not add a charge. It does not schedule, publish, attach media, or generate an image.",
+        "open_world_justification": "Calls the model to write the drafts. The drafts are returned to the client and are not saved as posts.",
+        "destructive_justification": "Does not delete, schedule, or publish."
+      }
+    },
+    "uploadFromUrlTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Saves a public image or video URL into the media library.",
+        "open_world_justification": "Fetches that URL and stores the file.",
+        "destructive_justification": "Does not delete existing media or publish a post."
+      }
+    },
+    "uploadWidgetTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Opens the upload widget so the user can pick a file for the media library.",
+        "open_world_justification": "The upload stays in this user's crea8.one media library.",
+        "destructive_justification": "Does not delete existing media or publish a post."
+      }
+    },
+    "uploadWidgetTicketTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a short-lived upload ticket for that widget.",
+        "open_world_justification": "The ticket only allows an upload into this user's media library.",
+        "destructive_justification": "Does not delete or publish."
+      }
+    },
+    "uploadWidgetStatusTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists files the widget uploaded.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete or publish."
+      }
+    },
+    "stalkerProjectsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists, creates, updates, deletes, or scans a Stalker project. Present only when STALKER_ENABLED=true. A workspace with no active plan, or one past a Stalker limit, is refused. Scan uses the same read credits as Check now.",
+        "open_world_justification": "Scan reads the configured sources for that project.",
+        "destructive_justification": "Delete removes the project. The client must confirm with the user before create, update, delete, or scan."
+      }
+    },
+    "stalkerMentionsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Reads mentions or sets status, relevant or ignored, deletes a mention, or saves a view. It does not reply. Present only when STALKER_ENABLED=true.",
+        "open_world_justification": "Reads and writes mention rows in crea8.one. It does not post a reply.",
+        "destructive_justification": "Delete removes a mention. The client must confirm with the user before a change."
+      }
+    },
+    "stalkerKeywordsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists, creates, updates, or deletes Stalker keywords and keyword groups. Present only when STALKER_ENABLED=true.",
+        "open_world_justification": "Writes only those keyword rows.",
+        "destructive_justification": "Delete removes a keyword or group."
+      }
+    },
+    "stalkerAlertsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Lists alerts and rules, creates, updates, or deletes a rule, and marks an alert read. Present only when STALKER_ENABLED=true.",
+        "open_world_justification": "Writes only alert rows in crea8.one.",
+        "destructive_justification": "Delete removes a rule."
+      }
+    },
+    "stalkerAnalyticsTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads Stalker analytics for a project. It does not read provider insights. Present only when STALKER_ENABLED=true.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete mentions, keywords, or projects."
+      }
+    },
+    "linkPageTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads the Link-in-Bio page or updates the fields you pass, including name, bio, slug, visibility, avatar, font, background, colours, Open Graph image, the sensitive-content flag, and the badge. A pro theme or badge removal on a free page is refused.",
+        "open_world_justification": "Writes only that page in crea8.one.",
+        "destructive_justification": "Does not delete the page."
+      }
+    },
+    "linkBlocksTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Creates, updates, deletes, or reorders Link-in-Bio blocks.",
+        "open_world_justification": "Writes only those blocks.",
+        "destructive_justification": "Delete removes a block. The client must confirm with the user before a change."
+      }
+    },
+    "linkAnalyticsTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads Link-in-Bio view and click analytics, or returns the CSV the screen downloads. A free page is refused the export.",
+        "open_world_justification": "Reads crea8.one only.",
+        "destructive_justification": "Does not delete analytics or the page."
+      }
+    },
+    "linkLeadsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Reads Link-in-Bio leads, or deletes one lead. Only the workspace owner can delete a lead. The page is not deleted.",
+        "open_world_justification": "Writes only that lead row.",
+        "destructive_justification": "Delete removes one lead. The client must confirm with the user first."
+      }
+    },
+    "linkDomainTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Connects, checks, or removes the Link-in-Bio custom domain and returns the same status and DNS records as the settings screen. A page without the add-on is refused.",
+        "open_world_justification": "Connect and check talk to the domain setup used by the settings screen.",
+        "destructive_justification": "Remove disconnects the domain. The client must confirm with the user before connect or remove."
       }
     }
   },
   "test_cases": [
     {
-      "description": "List the user's connected Postiz channels.",
-      "user_prompt": "Which social channels do I have connected in Postiz? Show the platform and channel name for each one.",
+      "description": "List connected channels.",
+      "user_prompt": "Which social channels do I have connected in crea8.one? Show the platform and channel name for each one.",
       "file_attachment_urls": null,
       "tools_triggered": "integrationList",
-      "expected_output": "Calls integrationList and lists every connected channel with its platform (for example LinkedIn, X) and channel name, so the user can pick where to post. No post is created.",
+      "expected_output": "Calls integrationList and lists every connected channel with its platform and channel name. No post is created.",
       "expected_output_url": null
     },
     {
-      "description": "Upload two remote images and create a LinkedIn draft (nothing is published).",
-      "user_prompt": "Create a LinkedIn draft in Postiz for next Monday at 10:00 UTC with the text \"Testing the Postiz ChatGPT app\" and attach these two images: https://platform.postiz.com/auth/bg-login.png and https://platform.postiz.com/auth/login-box.png. Keep it as a draft, do not schedule or publish it.",
+      "description": "Turn one idea into drafts and do not schedule them.",
+      "user_prompt": "Turn this idea into a short company draft for every connected channel in crea8.one: the update is live. Do not schedule or publish it.",
       "file_attachment_urls": null,
-      "tools_triggered": "integrationList, uploadFromUrlTool, integrationSchedulePostTool",
-      "expected_output": "Finds the LinkedIn channel, calls uploadFromUrlTool once per image (each returns a hosted media path), then calls integrationSchedulePostTool with type \"draft\" and both hosted attachments. Returns the new post id and confirms it was saved as a draft. Nothing is published to LinkedIn. Running the case again creates another draft and succeeds the same way.",
+      "tools_triggered": "generatePostsTool",
+      "expected_output": "Calls generatePostsTool with format short and voice company. Returns one draft per connected channel. Nothing is scheduled, published, or saved as a post. If the plan or credit check refuses, that error is shown and no post is created.",
       "expected_output_url": null
     },
     {
-      "description": "Explain platform rules and available settings for a channel.",
-      "user_prompt": "What are the posting rules and the available settings for my LinkedIn channel in Postiz?",
+      "description": "Edit an existing post after the user confirms.",
+      "user_prompt": "Find my crea8.one draft that says the update is live and change the text to the update ships Friday. Keep it a draft. Do not publish it.",
       "file_attachment_urls": null,
-      "tools_triggered": "integrationList, integrationSchema",
-      "expected_output": "Resolves the LinkedIn channel id, calls integrationSchema and summarises the platform rules (character limit, attachment rules such as carousels needing at least two images) and the settings keys (post_as_images_carousel, carousel_name). Read-only, no post is created or changed.",
+      "tools_triggered": "postsListTool, update_post",
+      "expected_output": "Calls postsListTool, shows the matching post, and waits for the user to confirm. Then calls update_post with type update. The text changes. The post is not published again.",
       "expected_output_url": null
     },
     {
-      "description": "Find an existing draft and update only its provider settings.",
-      "user_prompt": "Find my Postiz LinkedIn draft with the text \"Testing the Postiz ChatGPT app\" and turn it into an image carousel named \"Product launch\". Don't change the text or the date.",
+      "description": "Delete a post only after the user confirms.",
+      "user_prompt": "Delete that crea8.one draft. Yes, delete it.",
       "file_attachment_urls": null,
-      "tools_triggered": "postsListTool, integrationSchema, postSettingsTool",
-      "expected_output": "Calls postsListTool for the coming weeks, picks the matching LinkedIn draft (created by the previous test case), then calls postSettingsTool with post_as_images_carousel = true and carousel_name = \"Product launch\". Returns the post id and confirms the settings were updated while the content and date stayed the same. If no matching draft exists, it says so and does not create one.",
+      "tools_triggered": "delete_post",
+      "expected_output": "The client confirms with the user first. Then it calls delete_post with confirm true. The post group is removed. A call without confirm true is refused and the post stays.",
       "expected_output_url": null
     },
     {
-      "description": "Generate an image and save it to the media library.",
-      "user_prompt": "Generate an image of a sunrise over mountains for a product launch post and save it to my Postiz media library. Don't create a post.",
+      "description": "Read billing without changing the plan.",
+      "user_prompt": "What plan is my crea8.one workspace on, and how many credits are left? Do not change the plan or buy anything.",
       "file_attachment_urls": null,
-      "tools_triggered": "generateImageTool",
-      "expected_output": "Calls generateImageTool with the prompt and returns the hosted image URL saved in the media library. If the account has no AI image credits, the tool returns a clear error message that is relayed to the user. No post is created.",
+      "tools_triggered": "billingTool",
+      "expected_output": "Calls billingTool with action overview and returns the plan, status, renewal, credits, and usage. No checkout URL is opened and the subscription is not changed.",
       "expected_output_url": null
     }
   ],
   "negative_test_cases": [
     {
-      "description": "Do not trigger for unrelated calendar management.",
+      "description": "Do not delete a post the user has not confirmed.",
+      "user_prompt": "Delete my crea8.one draft that says the update is live. Wait, do not delete it.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "delete_post is not called. If it were called without confirm true, crea8.one would refuse and the post would stay. The draft remains.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not use crea8.one for a calendar meeting.",
       "user_prompt": "Move my team meeting from tomorrow to Friday afternoon.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "No Postiz tool is called. ChatGPT answers directly, because calendar events are not social media posts.",
+      "expected_output": "No crea8.one tool is called. A meeting is not a social post.",
       "expected_output_url": null
     },
     {
-      "description": "Do not trigger when the user only wants copy written, not posted.",
-      "user_prompt": "Write me three short tweet ideas about productivity. Just write them here, don't post or schedule anything.",
+      "description": "Do not schedule when the user only wants copy in the chat.",
+      "user_prompt": "Write three short posts about the update. Leave them in the chat. Do not save, schedule, or publish them in crea8.one.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "No Postiz tool is called. ChatGPT writes the three ideas in the conversation, because the user explicitly asked not to post or schedule.",
-      "expected_output_url": null
-    },
-    {
-      "description": "Do not trigger for email.",
-      "user_prompt": "Send an email to my team letting them know the campaign launch moved to next week.",
-      "file_attachment_urls": null,
-      "tools_triggered": null,
-      "expected_output": "No Postiz tool is called. ChatGPT answers directly (or uses an email app if one is available), because email is not a social media channel Postiz publishes to.",
+      "expected_output": "No crea8.one tool is called. The three posts stay in the chat.",
       "expected_output_url": null
     }
   ]

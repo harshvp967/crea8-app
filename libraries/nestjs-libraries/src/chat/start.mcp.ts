@@ -10,7 +10,13 @@ import { createOAuthMiddleware, resolveMcpOrganization } from './oauth-middlewar
 import { UPLOAD_WIDGET_URI, uploadWidgetHtml } from '@gitroom/nestjs-libraries/chat/ui/upload.widget';
 import { CLIPPING_WIDGET_URI, clippingWidgetHtml } from '@gitroom/nestjs-libraries/chat/ui/clipping.widget';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
-import { mcpCorsPath, mcpPublicOrigin } from '@gitroom/nestjs-libraries/chat/mcp.public.origin';
+import {
+  mcpAuthorizationServerMetadata,
+  mcpAuthorizationServers,
+  mcpCorsPath,
+  mcpOauthAuthorizationServer,
+  mcpPublicOrigin,
+} from '@gitroom/nestjs-libraries/chat/mcp.public.origin';
 import {
   clientIp,
   consumeFixedWindow,
@@ -207,41 +213,20 @@ export const startMcp = async (app: INestApplication) => {
   // the pre-defined client credentials instead of DCR (a fresh path, because
   // OpenAI kept serving its cached copy of the old /mcp-oauth metadata).
   // /mcp-oauth-dynamic keeps DCR for Claude, Cursor and every other
-  // self-registering client
-  // Path-based issuers. The origin is the host that received the request
-  // (mcp.crea8.one or the API host), not a single env URL baked in at boot.
-  const authorizationServers: Record<string, { path: string; registration: boolean }> = {
-    '/mcp-oauth-chatgpt': {
-      path: '/mcp-oauth-chatgpt',
-      registration: false,
-    },
-    '/mcp-oauth-dynamic': {
-      path: '/mcp-oauth-dynamic',
-      registration: true,
-    },
-  };
+  // self-registering client. /mcp-oauth-claude uses that same dynamic issuer.
+  // The origin is the host that received the request (mcp.crea8.one or the
+  // API host), not a single env URL baked in at boot.
+  const authorizationServers = mcpAuthorizationServers;
 
   const authorizationServerMetadata = (
     origin: string,
     server: { path: string; registration: boolean }
-  ) => ({
-    // RFC 8414: metadata served at /.well-known/oauth-authorization-server/<path>
-    // belongs to the path-based issuer <origin>/<path>
-    issuer: new URL(server.path, origin).toString(),
-    authorization_endpoint: `${process.env.FRONTEND_URL}/oauth/authorize`,
-    token_endpoint: `${origin}/oauth/token`,
-    ...(server.registration && {
-      registration_endpoint: `${origin}/oauth/register`,
-    }),
-    ...(enableOidcEmailClaims && {
-      userinfo_endpoint: `${origin}/oauth/userinfo`,
-    }),
-    response_types_supported: ['code'],
-    grant_types_supported: ['authorization_code'],
-    token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post', 'none'],
-    code_challenge_methods_supported: ['S256'],
-    scopes_supported: oauthScopes,
-  });
+  ) =>
+    mcpAuthorizationServerMetadata(origin, server, {
+      frontendUrl: process.env.FRONTEND_URL,
+      scopes: oauthScopes,
+      userinfo: enableOidcEmailClaims,
+    });
 
   // Every OAuth-protected MCP path is its own RFC 9728 protected resource
   // (the token endpoint ignores the RFC 8707 resource param, so the issuers
@@ -265,14 +250,26 @@ export const startMcp = async (app: INestApplication) => {
 
   const oauthResources: Record<string, { authorizationServer: string; mcpServer: MCPServer }> = {
     // ChatGPT app submission (pre-defined client credentials, no DCR)
-    '/mcp-oauth-chatgpt': { authorizationServer: '/mcp-oauth-chatgpt', mcpServer: oauthServer },
+    '/mcp-oauth-chatgpt': {
+      authorizationServer: mcpOauthAuthorizationServer['/mcp-oauth-chatgpt'],
+      mcpServer: oauthServer,
+    },
     // Former ChatGPT path, kept for connectors that were created against it
-    '/mcp-oauth': { authorizationServer: '/mcp-oauth-dynamic', mcpServer: oauthServer },
+    '/mcp-oauth': {
+      authorizationServer: mcpOauthAuthorizationServer['/mcp-oauth'],
+      mcpServer: oauthServer,
+    },
     // Claude connector directory submission
-    '/mcp-oauth-claude': { authorizationServer: '/mcp-oauth-dynamic', mcpServer: claudeOauthServer },
+    '/mcp-oauth-claude': {
+      authorizationServer: mcpOauthAuthorizationServer['/mcp-oauth-claude'],
+      mcpServer: claudeOauthServer,
+    },
     // Clients that register themselves through DCR (/oauth/register) - not
     // directory-reviewed, so they get the full toolset (media generation included)
-    '/mcp-oauth-dynamic': { authorizationServer: '/mcp-oauth-dynamic', mcpServer: oauthServer },
+    '/mcp-oauth-dynamic': {
+      authorizationServer: mcpOauthAuthorizationServer['/mcp-oauth-dynamic'],
+      mcpServer: oauthServer,
+    },
   };
 
   if (process.env.OPENAI_APP_CHALLANGE) {

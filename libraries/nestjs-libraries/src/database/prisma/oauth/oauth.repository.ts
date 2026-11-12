@@ -204,6 +204,45 @@ export class OAuthRepository {
     });
   }
 
+  findActiveById(id: string) {
+    return this._oauthAuth.model.oAuthAuthorization.findFirst({
+      where: {
+        id,
+        revokedAt: null,
+      },
+      select: {
+        id: true,
+        oauthAppId: true,
+        userId: true,
+        organizationId: true,
+      },
+    });
+  }
+
+  replaceAccessToken(id: string, encryptedToken: string) {
+    return this._oauthAuth.model.oAuthAuthorization.update({
+      where: { id },
+      select: {
+        organizationId: true,
+        organization: {
+          select: {
+            paymentId: true,
+          },
+        },
+      },
+      data: {
+        accessToken: encryptedToken,
+      },
+    });
+  }
+
+  authorizationIdsForApp(oauthAppId: string) {
+    return this._oauthAuth.model.oAuthAuthorization.findMany({
+      where: { oauthAppId },
+      select: { id: true },
+    });
+  }
+
   exchangeCodeForToken(id: string, encryptedToken: string) {
     return this._oauthAuth.model.oAuthAuthorization.update({
       where: { id },

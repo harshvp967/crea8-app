@@ -59,13 +59,6 @@ export class OAuthController {
     @Body() body: TokenExchangeDto,
     @Headers('authorization') authorization?: string
   ) {
-    if (body.grant_type !== 'authorization_code') {
-      throw new HttpException(
-        { error: 'unsupported_grant_type' },
-        HttpStatus.BAD_REQUEST
-      );
-    }
-
     // client_secret_basic puts the credentials in the Authorization header,
     // client_secret_post and public clients put them in the body
     const basic = extractBasicCredentials(authorization);
@@ -76,11 +69,27 @@ export class OAuthController {
         HttpStatus.UNAUTHORIZED
       );
     }
+    const clientSecret = basic?.clientSecret || body.client_secret;
+
+    if (body.grant_type === 'refresh_token') {
+      return this._oauthService.refreshAccessToken(
+        body.refresh_token,
+        clientId,
+        clientSecret
+      );
+    }
+
+    if (body.grant_type !== 'authorization_code') {
+      throw new HttpException(
+        { error: 'unsupported_grant_type' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
     return this._oauthService.exchangeCodeForToken(
-      body.code,
+      body.code || '',
       clientId,
-      basic?.clientSecret || body.client_secret,
+      clientSecret,
       body.code_verifier,
       body.redirect_uri
     );
