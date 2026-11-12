@@ -723,6 +723,24 @@ export function postingUpgradeMessage(tier: PlanTier) {
   return `This channel is over your ${plan.displayName} limit of ${plan.channels}. Upgrade to post from it. Nothing was removed.`;
 }
 
+export function postsUpgradeMessage(tier: PlanTier) {
+  const plan = PLANS[tier];
+  const posts =
+    plan.postsPerMonth > 10000
+      ? 'unlimited posts'
+      : `${plan.postsPerMonth.toLocaleString('en-US')} posts`;
+  return `${plan.displayName} includes ${posts} a month. Upgrade your plan to add more.`;
+}
+
+export function webhookUpgradeMessage(tier: PlanTier) {
+  const plan = PLANS[tier];
+  return `${plan.displayName} includes ${plan.webhooks.toLocaleString('en-US')} webhooks. Upgrade your plan to add more.`;
+}
+
+export function autopostUpgradeMessage(tier: PlanTier) {
+  return `${PLANS[tier].displayName} does not include Auto Post. Upgrade your plan.`;
+}
+
 export function creditUpgradeMessage() {
   return 'You are out of credits. Upgrade your plan or buy a credit pack.';
 }

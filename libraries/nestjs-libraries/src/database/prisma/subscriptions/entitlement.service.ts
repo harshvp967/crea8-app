@@ -21,11 +21,14 @@ import {
   BillingBlocked,
   accessTier,
   canAddTeamMember,
+  autopostUpgradeMessage,
   channelUpgradeMessage,
   keywordUpgradeMessage,
   manualCheckMessage,
   postingUpgradeMessage,
+  postsUpgradeMessage,
   postableChannelIds,
+  webhookUpgradeMessage,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
 @Injectable()
@@ -216,6 +219,57 @@ export class EntitlementService {
         402
       );
     }
+  }
+
+  async postsThisPeriodOpen(organizationId: string, fallback = new Date()) {
+    const limits = await this.limits(organizationId);
+    if (!limits) {
+      return true;
+    }
+    const used = await this.countPostsThisPeriod(organizationId, fallback);
+    return cardLimitAllows('postsPerMonth', limits.plan, used);
+  }
+
+  async webhookLimitOpen(organizationId: string) {
+    const limits = await this.limits(organizationId);
+    if (!limits) {
+      return true;
+    }
+    const used = await this.countWebhooks(organizationId);
+    return cardLimitAllows('webhooks', limits.plan, used);
+  }
+
+  async assertPostsThisPeriod(organizationId: string, fallback = new Date()) {
+    const limits = await this.limits(organizationId);
+    if (!limits || (await this.postsThisPeriodOpen(organizationId, fallback))) {
+      return;
+    }
+    throw new HttpException(
+      { message: postsUpgradeMessage(limits.tier), upgrade: true },
+      402
+    );
+  }
+
+  async assertCanAddWebhook(organizationId: string) {
+    const limits = await this.limits(organizationId);
+    if (!limits || (await this.webhookLimitOpen(organizationId))) {
+      return;
+    }
+    throw new HttpException(
+      { message: webhookUpgradeMessage(limits.tier), upgrade: true },
+      402
+    );
+  }
+
+  async assertCanAutopost(organizationId: string) {
+    const limits = await this.limits(organizationId);
+    if (!limits || limits.plan.autoPost) {
+      return;
+    }
+    throw new HttpException(
+      { message: autopostUpgradeMessage(limits.tier), upgrade: true },
+      402
+    );
   }
 
   async assertCanPost(organizationId: string, integrationId: string) {

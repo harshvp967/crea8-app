@@ -17,8 +17,11 @@ import {
 import { linkFeatureOpen } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
 import {
   BillingBlocked,
+  autopostUpgradeMessage,
   keywordUpgradeMessage,
   manualCheckMessage,
+  postsUpgradeMessage,
+  webhookUpgradeMessage,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   loadBillingAccount,
@@ -96,11 +99,13 @@ function workspaceDb(input: {
   members: Member[];
   channels?: Channel[];
   keywords?: { organizationId: string }[];
+  webhooks?: { organizationId: string; deletedAt: Date | null }[];
 }) {
   const orgs = new Map(input.orgs.map((org) => [org.id, org]));
   const members = input.members;
   const channels = input.channels || [];
   const keywords = input.keywords || [];
+  const webhooks = input.webhooks || [];
   const balances = new Map<string, { organizationId: string; monthlyRemaining: number; packRemaining: number; cycleKey: string | null }>();
   const ledger: { organizationId: string; amount: number; bucket: string; type: string; reason: string; cycleKey: string | null; idempotencyKey: string }[] = [];
 
@@ -156,7 +161,16 @@ function workspaceDb(input: {
       count: async ({ where }: { where: { organizationId: { in: string[] } } }) =>
         keywords.filter((row) => where.organizationId.in.includes(row.organizationId)).length,
     },
-    webhooks: { count: async () => 0 },
+    webhooks: {
+      count: async ({ where }: { where?: { organizationId?: { in?: string[] }; deletedAt?: null } } = {}) =>
+        webhooks.filter((row) => {
+          if (where?.organizationId?.in && !where.organizationId.in.includes(row.organizationId)) {
+            return false;
+          }
+          if (where?.deletedAt === null && row.deletedAt) return false;
+          return true;
+        }).length,
+    },
     stalkerScanRun: { count: async () => 0 },
     post: { count: async () => 0 },
     creditBalance: {
@@ -771,5 +785,164 @@ describe('shared workspace billing', () => {
       workspace('org-free', sub('org-free', { status: 'active', subscriptionTier: 'FREE' })).api
     );
     await expect(free.assertCanManualCheck('org-free')).rejects.toThrow(manualCheckMessage(0));
+  });
+
+  it('uses the same plan, trial, expired, cancelled, and empty-subscription outcome for posts, autopost, and webhooks', async () => {
+    const messageOf = async (run: () => Promise<unknown>) => {
+      try {
+        await run();
+      } catch (err) {
+        expect(err).toBeInstanceOf(HttpException);
+        return (err as HttpException).getResponse() as { message: string };
+      }
+      throw new Error('expected a plan refusal');
+    };
+
+    const none = new EntitlementService(
+      workspaceDb({
+        orgs: [
+          {
+            id: 'org-none',
+            isTrailing: false,
+            allowTrial: true,
+            paymentId: null,
+            deletedAt: null,
+            subscription: null,
+          },
+        ],
+        members: [
+          {
+            userId: 'harsh',
+            organizationId: 'org-none',
+            role: 'SUPERADMIN',
+            disabled: false,
+            createdAt: new Date('2026-01-01'),
+          },
+        ],
+      }).api
+    );
+    expect((await messageOf(() => none.assertPostsThisPeriod('org-none'))).message).toBe(
+      postsUpgradeMessage('FREE')
+    );
+    expect((await messageOf(() => none.assertCanAutopost('org-none'))).message).toBe(
+      autopostUpgradeMessage('FREE')
+    );
+    expect((await messageOf(() => none.assertCanAddWebhook('org-none'))).message).toBe(
+      webhookUpgradeMessage('FREE')
+    );
+
+    const expired = new EntitlementService(
+      owner(sub('org-a', { status: 'expired', subscriptionTier: 'TEAM' })).api
+    );
+    expect((await messageOf(() => expired.assertCanAutopost('org-a'))).message).toBe(
+      autopostUpgradeMessage('FREE')
+    );
+    expect((await messageOf(() => expired.assertPostsThisPeriod('org-a'))).message).toBe(
+      postsUpgradeMessage('FREE')
+    );
+
+    const cancelled = new EntitlementService(
+      owner(
+        sub('org-a', {
+          status: 'cancelled',
+          subscriptionTier: 'PRO',
+          deletedAt: new Date('2026-01-01'),
+          cancelAt: new Date('2026-02-01'),
+        })
+      ).api
+    );
+    expect((await messageOf(() => cancelled.assertCanAutopost('org-a'))).message).toBe(
+      autopostUpgradeMessage('FREE')
+    );
+
+    const trialCreator = new EntitlementService(
+      owner(sub('org-a', { status: 'trialing', subscriptionTier: 'STANDARD' }), {
+        isTrailing: true,
+      }).api
+    );
+    expect((await messageOf(() => trialCreator.assertCanAutopost('org-a'))).message).toBe(
+      autopostUpgradeMessage('STANDARD')
+    );
+    await expect(trialCreator.assertPostsThisPeriod('org-a')).resolves.toBeUndefined();
+
+    const trialTeam = new EntitlementService(
+      owner(sub('org-a', { status: 'trialing', subscriptionTier: 'TEAM' }), {
+        isTrailing: true,
+      }).api
+    );
+    await expect(trialTeam.assertCanAutopost('org-a')).resolves.toBeUndefined();
+    await expect(trialTeam.assertPostsThisPeriod('org-a')).resolves.toBeUndefined();
+
+    const stillPaid = new EntitlementService(
+      owner(
+        sub('org-a', {
+          status: 'cancel_scheduled',
+          subscriptionTier: 'TEAM',
+          deletedAt: new Date('2026-11-01'),
+          cancelAt: new Date('2026-12-31'),
+        })
+      ).api
+    );
+    await expect(stillPaid.assertCanAutopost('org-a')).resolves.toBeUndefined();
+
+    const capped = workspaceDb({
+      orgs: [
+        {
+          id: 'org-a',
+          isTrailing: false,
+          allowTrial: false,
+          paymentId: 'cus_a',
+          deletedAt: null,
+          subscription: sub('org-a', { subscriptionTier: 'STANDARD' }),
+        },
+      ],
+      members: [
+        {
+          userId: 'harsh',
+          organizationId: 'org-a',
+          role: 'SUPERADMIN',
+          disabled: false,
+          createdAt: new Date('2026-01-01'),
+        },
+      ],
+      webhooks: [
+        { organizationId: 'org-a', deletedAt: null },
+        { organizationId: 'org-a', deletedAt: null },
+      ],
+    });
+    const creator = new EntitlementService(capped.api);
+    expect((await messageOf(() => creator.assertCanAddWebhook('org-a'))).message).toBe(
+      webhookUpgradeMessage('STANDARD')
+    );
+
+    const team = new EntitlementService(
+      workspaceDb({
+        orgs: [
+          {
+            id: 'org-a',
+            isTrailing: false,
+            allowTrial: false,
+            paymentId: 'cus_a',
+            deletedAt: null,
+            subscription: sub('org-a', { subscriptionTier: 'TEAM' }),
+          },
+        ],
+        members: [
+          {
+            userId: 'harsh',
+            organizationId: 'org-a',
+            role: 'SUPERADMIN',
+            disabled: false,
+            createdAt: new Date('2026-01-01'),
+          },
+        ],
+        webhooks: [
+          { organizationId: 'org-a', deletedAt: null },
+          { organizationId: 'org-a', deletedAt: null },
+        ],
+      }).api
+    );
+    await expect(team.assertCanAddWebhook('org-a')).resolves.toBeUndefined();
+    await expect(team.assertCanAutopost('org-a')).resolves.toBeUndefined();
   });
 });

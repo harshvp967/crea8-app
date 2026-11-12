@@ -107,10 +107,10 @@ export class PermissionsService {
       }
 
       if (section === Sections.WEBHOOKS) {
-        const totalWebhooks = enforced
-          ? await this._entitlements.countWebhooks(orgId)
-          : await this._webhooksService.getTotal(orgId);
-        if (totalWebhooks < options.webhooks) {
+        const allowed = enforced
+          ? await this._entitlements.webhookLimitOpen(orgId)
+          : (await this._webhooksService.getTotal(orgId)) < options.webhooks;
+        if (allowed) {
           can(AuthorizationActions.Create, section);
           continue;
         }
@@ -118,18 +118,23 @@ export class PermissionsService {
 
       // check for posts per month
       if (section === Sections.POSTS_PER_MONTH) {
-        const createdAt = enforced
-          ? (await this._entitlements.activeSubscription(orgId))?.createdAt ||
-            created_at
-          : (await this._subscriptionService.getSubscription(orgId))?.createdAt ||
-            created_at;
+        if (enforced) {
+          if (await this._entitlements.postsThisPeriodOpen(orgId, created_at)) {
+            can(action, section);
+          }
+          continue;
+        }
+        const createdAt =
+          (await this._subscriptionService.getSubscription(orgId))?.createdAt ||
+          created_at;
         const totalMonthPast = Math.abs(
           dayjs(createdAt).diff(dayjs(), 'month')
         );
         const checkFrom = dayjs(createdAt).add(totalMonthPast, 'month');
-        const count = enforced
-          ? await this._entitlements.countPostsSince(orgId, checkFrom.toDate())
-          : await this._postsService.countPostsFromDay(orgId, checkFrom.toDate());
+        const count = await this._postsService.countPostsFromDay(
+          orgId,
+          checkFrom.toDate()
+        );
 
         if (count < options.posts_per_month) {
           can(action, section);

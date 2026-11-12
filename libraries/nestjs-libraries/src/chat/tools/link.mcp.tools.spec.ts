@@ -187,6 +187,21 @@ describe('link MCP tools', () => {
       );
       expect(result.output.error).toBe(badgeRefused);
     });
+
+    it('blocks a pro theme on a free page and allows it on a paid page', async () => {
+      link.update.mockRejectedValueOnce(paymentRequired(themeRefused!));
+
+      const blocked = await run(tool, { action: 'update', theme: 'aurora' });
+
+      expect(blocked.output.error).toBe('That theme is on a paid plan');
+      expect(link.update).toHaveBeenCalledTimes(1);
+
+      link.update.mockResolvedValueOnce({ id: 'page-1', theme: 'aurora' });
+      const allowed = await run(tool, { action: 'update', theme: 'aurora' });
+
+      expect(link.update).toHaveBeenCalledTimes(2);
+      expect(allowed.output.theme).toBe('aurora');
+    });
   });
 
   describe('custom domain', () => {
@@ -259,6 +274,20 @@ describe('link MCP tools', () => {
       expect(result.output.error).toBe(domainRefused);
       expect(result.output.page).toBeUndefined();
     });
+
+    it('blocks a page without the add-on and allows a page that has it', async () => {
+      link.connectDomain.mockRejectedValueOnce(paymentRequired(domainRefused));
+
+      const blocked = await run(tool, { action: 'connect', domain: 'links.example.com' });
+
+      expect(blocked.output.error).toBe(domainRefused);
+
+      link.connectDomain.mockResolvedValueOnce(connected);
+      const allowed = await run(tool, { action: 'connect', domain: 'links.example.com' });
+
+      expect(allowed.output.page.domainStatus).toBe('WAITING');
+      expect(allowed.output.page.domainRecords).toEqual(records);
+    });
   });
 
   describe('analytics export', () => {
@@ -302,6 +331,20 @@ describe('link MCP tools', () => {
       expect(link.exportAnalytics).toHaveBeenCalledWith({ id: 'org-1' }, '30d', '', '');
       expect(result.output.error).toBe('Deeper analytics are on a paid plan');
       expect(result.output.csv).toBeUndefined();
+    });
+
+    it('blocks the CSV on a free page and allows it on a paid page', async () => {
+      link.exportAnalytics.mockRejectedValueOnce(paymentRequired(analyticsRefused!));
+
+      const blocked = await run(tool, { format: 'csv', range: '30d' });
+
+      expect(blocked.output.error).toBe('Deeper analytics are on a paid plan');
+      expect(blocked.output.csv).toBeUndefined();
+
+      link.exportAnalytics.mockResolvedValueOnce(csv);
+      const allowed = await run(tool, { format: 'csv', range: '30d' });
+
+      expect(allowed.output).toEqual({ csv, filename: 'crea8-analytics.csv' });
     });
 
     it('still reads analytics when no CSV is requested', async () => {

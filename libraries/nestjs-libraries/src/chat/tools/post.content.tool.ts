@@ -6,6 +6,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import {
   organizationFromTool,
   toolFailure,
@@ -26,7 +27,10 @@ const parseJson = <T>(value: string | null | undefined, fallback: T): T => {
 
 @Injectable()
 export class PostContentTool implements AgentToolInterface {
-  constructor(private _postsService: PostsService) {}
+  constructor(
+    private _postsService: PostsService,
+    private _entitlements: EntitlementService
+  ) {}
   name = 'postContentTool';
 
   run() {
@@ -66,6 +70,7 @@ export class PostContentTool implements AgentToolInterface {
       execute: async (inputData, context) => {
         try {
           const org = organizationFromTool(inputData, context);
+          await this._entitlements.assertPostsThisPeriod(org.id);
           const ordered = await this._postsService.getPostsRecursively(
             inputData.id,
             true,

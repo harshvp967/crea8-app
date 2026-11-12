@@ -4,10 +4,11 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { checkAuth, toolFailure } from '@gitroom/nestjs-libraries/chat/auth.context';
 import { AllProvidersSettings } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/all.providers.settings';
 import { Integration } from '@prisma/client';
-import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 import {
   ValidUrlExtension,
   ValidUrlPath,
@@ -31,7 +32,8 @@ const attachmentUrl = z
 export class IntegrationSchedulePostTool implements AgentToolInterface {
   constructor(
     private _postsService: PostsService,
-    private _integrationService: IntegrationService
+    private _integrationService: IntegrationService,
+    private _entitlements: EntitlementService
   ) {}
   name = 'integrationSchedulePostTool';
 
@@ -136,6 +138,15 @@ If validation fails, the result contains output.errors describing what to fix; t
         const organizationId = JSON.parse(
           (context?.requestContext as any)?.get('organization') as string
         ).id;
+        try {
+          await this._entitlements.assertPostsThisPeriod(organizationId);
+        } catch (err) {
+          const failure = toolFailure(err);
+          if (failure) {
+            return { output: { errors: failure.output.error } };
+          }
+          throw err;
+        }
         const finalOutput = [];
 
         const integrations = {} as Record<string, Integration>;
