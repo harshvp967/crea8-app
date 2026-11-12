@@ -205,6 +205,8 @@ export interface SocialProvider
   // Defaults for a plain text post, and a one-line style note for drafts.
   plainPostSettings?(): Record<string, string | boolean>;
   draftStyle?(): string;
+  // True when another post in the same draft is a thread, not a comment.
+  supportsThread?(): boolean;
   checkValidity(
     posts: Array<{ path: string; thumbnail?: string }[]>,
     settings: any,

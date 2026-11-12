@@ -42,6 +42,10 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     return 500;
   }
 
+  override supportsThread() {
+    return true;
+  }
+
   override handleErrors(
     body: string,
     status: number

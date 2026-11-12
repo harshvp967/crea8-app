@@ -78,7 +78,7 @@ export class LoadToolsService {
         - Read billing (billingTool): plan, status, renewal, credits, and usage, the same values as the billing screen. Return the customer portal URL, or a Dodo checkout URL for a plan or a credit pack only when that call returns a url. A workspace that already has a subscription is not changed. A workspace with no subscription cannot buy a credit pack. Do not cancel, refund, resume, or apply a coupon, and do not return an API key or secret
         - Generate pictures for posts
         - Generate videos for posts
-        - Generate text for posts
+        - Turn one idea into a draft for every connected channel (generatePostsTool), the same generation as Schedule "One idea, every platform". Pass format when the user names it: short, long, thread_short, or thread_long. Short is the default. Pass voice when the user names it: personal or company. Personal is the default. Personal uses "I am happy to announce". Company uses "We are happy to announce". A channel that supports threads gets several posts for a thread format. Any other channel gets one post inside its character limit. This uses the same credit and plan check as the Schedule panel and does not add a charge. It does not schedule, publish, attach media, or generate an image
         - Show global analytics about socials
         - List integrations (channels)
         - List groups (customers) and filter the channels by a group
