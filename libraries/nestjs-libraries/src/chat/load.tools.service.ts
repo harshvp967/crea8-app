@@ -75,6 +75,7 @@ export class LoadToolsService {
         - List, create, update, delete, and test webhooks (webhooksTool). Creating one past the plan webhook limit is refused. Do not reveal the signing secret
         - List approved apps and revoke one (approvedAppsTool). Do not create an OAuth client or return a secret
         - Read developer info (developerTool): whether the plan includes the public API, whether an API key exists, and the OAuth app's public fields. Never return or rotate the API key or client secret
+        - Read billing (billingTool): plan, status, renewal, credits, and usage, the same values as the billing screen. Return the customer portal URL, or a Dodo checkout URL for a plan or a credit pack only when that call returns a url. A workspace that already has a subscription is not changed. A workspace with no subscription cannot buy a credit pack. Do not cancel, refund, resume, or apply a coupon, and do not return an API key or secret
         - Generate pictures for posts
         - Generate videos for posts
         - Generate text for posts
