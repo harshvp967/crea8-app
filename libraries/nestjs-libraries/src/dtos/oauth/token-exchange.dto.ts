@@ -5,9 +5,15 @@ export class TokenExchangeDto {
   @IsDefined()
   grant_type: string;
 
+  // Required for authorization_code. refresh_token grants omit it.
+  // The service rejects an authorization_code request that arrives without one.
   @IsString()
-  @IsDefined()
-  code: string;
+  @IsOptional()
+  code?: string;
+
+  @IsString()
+  @IsOptional()
+  refresh_token?: string;
 
   // Optional here because client_secret_basic clients send the id and secret
   // in the Authorization header; the controller merges the two sources and

@@ -1,7 +1,10 @@
 import {
   CREA8_MCP_HOST,
+  mcpAuthorizationServerMetadata,
+  mcpAuthorizationServers,
   mcpCorsOrigins,
   mcpCorsPath,
+  mcpOauthAuthorizationServer,
   mcpPublicOrigin,
 } from './mcp.public.origin';
 
@@ -79,6 +82,30 @@ describe('mcp public origin', () => {
       expect(mcpCorsOrigins()).toContain('https://mcp.example.com');
       expect(mcpCorsOrigins()).toContain('https://mcp.crea8.one');
     });
+  });
+
+  it('advertises refresh_token on every MCP authorization server', () => {
+    const directoryPaths = ['/mcp-oauth-claude', '/mcp-oauth-dynamic', '/mcp-oauth-chatgpt'];
+    for (const host of ['https://mcp.crea8.one', 'https://api.crea8.one']) {
+      for (const mcpPath of directoryPaths) {
+        const issuerPath = mcpOauthAuthorizationServer[mcpPath];
+        const server = mcpAuthorizationServers[issuerPath];
+        const metadata = mcpAuthorizationServerMetadata(host, server, {
+          frontendUrl: 'https://app.crea8.one',
+          scopes: ['mcp:read', 'mcp:write'],
+        });
+        expect(metadata.issuer).toBe(`${host}${issuerPath}`);
+        expect(metadata.token_endpoint).toBe(`${host}/oauth/token`);
+        expect(metadata.grant_types_supported).toEqual([
+          'authorization_code',
+          'refresh_token',
+        ]);
+        expect(new URL(mcpPath, host).toString()).toBe(`${host}${mcpPath}`);
+      }
+    }
+    expect(mcpOauthAuthorizationServer['/mcp-oauth-claude']).toBe('/mcp-oauth-dynamic');
+    expect(mcpAuthorizationServers['/mcp-oauth-chatgpt'].registration).toBe(false);
+    expect(mcpAuthorizationServers['/mcp-oauth-dynamic'].registration).toBe(true);
   });
 
   it('treats oauth and mcp paths as cross-origin', () => {

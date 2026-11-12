@@ -97,6 +97,58 @@ export const mcpPublicOrigin = (req?: HeaderBag) => {
   return mcpFallbackOrigin();
 };
 
+// Issuers advertised from the MCP host. /mcp-oauth-claude uses the dynamic
+// issuer, so its authorization-server metadata is the dynamic document.
+export const mcpAuthorizationServers: Record<
+  string,
+  { path: string; registration: boolean }
+> = {
+  '/mcp-oauth-chatgpt': {
+    path: '/mcp-oauth-chatgpt',
+    registration: false,
+  },
+  '/mcp-oauth-dynamic': {
+    path: '/mcp-oauth-dynamic',
+    registration: true,
+  },
+};
+
+export const mcpOauthAuthorizationServer: Record<string, string> = {
+  '/mcp-oauth-chatgpt': '/mcp-oauth-chatgpt',
+  '/mcp-oauth': '/mcp-oauth-dynamic',
+  '/mcp-oauth-claude': '/mcp-oauth-dynamic',
+  '/mcp-oauth-dynamic': '/mcp-oauth-dynamic',
+};
+
+export const mcpGrantTypes = ['authorization_code', 'refresh_token'] as const;
+
+export const mcpAuthorizationServerMetadata = (
+  origin: string,
+  server: { path: string; registration: boolean },
+  options: { frontendUrl?: string; scopes: string[]; userinfo?: boolean }
+) => ({
+  // RFC 8414: metadata served at /.well-known/oauth-authorization-server/<path>
+  // belongs to the path-based issuer <origin>/<path>
+  issuer: new URL(server.path, origin).toString(),
+  authorization_endpoint: `${options.frontendUrl}/oauth/authorize`,
+  token_endpoint: `${origin}/oauth/token`,
+  ...(server.registration && {
+    registration_endpoint: `${origin}/oauth/register`,
+  }),
+  ...(options.userinfo && {
+    userinfo_endpoint: `${origin}/oauth/userinfo`,
+  }),
+  response_types_supported: ['code'],
+  grant_types_supported: [...mcpGrantTypes],
+  token_endpoint_auth_methods_supported: [
+    'client_secret_basic',
+    'client_secret_post',
+    'none',
+  ],
+  code_challenge_methods_supported: ['S256'],
+  scopes_supported: options.scopes,
+});
+
 export const mcpCorsPath = (path: string) => {
   const value = (path || '/').split('?')[0];
   return (

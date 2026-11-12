@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "one.crea8/mcp",
+  "title": "crea8.one",
+  "description": "Schedule posts, Link-in-Bio, Stalker, account, and billing on crea8.one.",
+  "version": "1.0.0",
+  "websiteUrl": "https://crea8.one",
+  "repository": {
+    "url": "https://github.com/harshvp967/crea8-app",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.crea8.one/mcp-oauth-dynamic"
+    }
+  ]
+}

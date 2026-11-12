@@ -21,6 +21,15 @@ export class GeneratePostsTool implements AgentToolInterface {
 Pass format and voice when the user names them. format defaults to short: short is one short post, long is one long post, thread_short is a thread of short posts, thread_long is a thread of long posts. A channel that supports threads gets several posts for a thread format. Any other channel gets one post inside its character limit.
 voice defaults to personal. Personal uses "I am happy to announce". Company uses "We are happy to announce".
 This uses the same credit and plan check as the Schedule panel and does not add a charge. It does not schedule, publish, attach media, or generate an image. The result field voice is true only when a saved brand voice was applied.`,
+      mcp: {
+        annotations: {
+          title: 'Generate Posts',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: true,
+        },
+      },
       inputSchema: z.object({
         idea: z.string().min(3).max(4000).describe('The idea, or a link to turn into drafts'),
         customer: z
