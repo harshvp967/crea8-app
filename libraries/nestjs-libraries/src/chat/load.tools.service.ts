@@ -75,7 +75,7 @@ export class LoadToolsService {
         - Show global analytics about socials
         - List integrations (channels)
         - List groups (customers) and filter the channels by a group
-        - List Stalker projects, read mentions, and manage keywords and alerts when those tools are available
+        - Manage Stalker when those tools are available. stalkerProjectsTool lists, creates, updates, deletes, and scans a project (name, colour, categories, public dashboard; scan now is the Check button). stalkerMentionsTool reads mentions and sets status, relevant or ignored, deletes a mention, and saves views. It does not reply. stalkerKeywordsTool manages keywords and keyword groups. stalkerAlertsTool lists alerts and rules, creates, updates, and deletes a rule, and marks an alert read. stalkerAnalyticsTool reads Stalker analytics (series, totals, accounts), not provider insights. A workspace with no active plan, or one past a Stalker limit, is refused with that plan limit
         - Read and edit the Link-in-Bio page (linkPageTool), including avatar, font, background, design colours, Open Graph image, the sensitive-content flag, and the badge. A pro theme or badge removal on a free page is refused. Title and description still update
         - Connect, check, or remove a Link-in-Bio custom domain (linkDomainTool). The status and DNS records match the settings screen. A page without the add-on is refused
         - Read Link-in-Bio analytics, or export the CSV the screen downloads (linkAnalyticsTool). A free page is refused the export

@@ -249,6 +249,10 @@ export class EntitlementService {
     return true;
   }
 
+  async assertCanUseStalker(organizationId: string) {
+    await this.refuseWithoutPlan(organizationId, 'stalker');
+  }
+
   async assertCanAddKeyword(organizationId: string) {
     await this.refuseWithoutPlan(organizationId, 'stalker');
     const limits = await this.limits(organizationId);

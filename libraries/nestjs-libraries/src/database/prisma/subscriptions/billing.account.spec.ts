@@ -15,7 +15,11 @@ import {
   webhookQuota,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { linkFeatureOpen } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
-import { BillingBlocked } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import {
+  BillingBlocked,
+  keywordUpgradeMessage,
+  manualCheckMessage,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   loadBillingAccount,
   subscriptionGrantsAccess,
@@ -639,6 +643,9 @@ describe('shared workspace billing', () => {
     await expect(entitlements.assertFeature('org-none', 'postingSets')).rejects.toBeInstanceOf(
       HttpException
     );
+    await expect(entitlements.assertCanUseStalker('org-none')).rejects.toThrow(
+      keywordUpgradeMessage('FREE')
+    );
 
     const trial = owner(sub('org-a', { status: 'trialing', subscriptionTier: 'STANDARD' }), {
       isTrailing: true,
@@ -661,5 +668,108 @@ describe('shared workspace billing', () => {
       })
     ).toBe(false);
     expect((await credits.balance('org-none')).packRemaining).toBe(0);
+  });
+
+  it('keeps Stalker open on a trial or a higher plan and closed when the plan is expired or cancelled', async () => {
+    const workspace = (
+      id: string,
+      subscription: ReturnType<typeof sub> | null,
+      keywords: { organizationId: string }[] = []
+    ) =>
+      workspaceDb({
+        orgs: [
+          {
+            id,
+            isTrailing: subscription?.status === 'trialing',
+            allowTrial: false,
+            paymentId: subscription ? 'cus' : null,
+            deletedAt: null,
+            subscription,
+          },
+        ],
+        members: [
+          {
+            userId: 'harsh',
+            organizationId: id,
+            role: 'SUPERADMIN',
+            disabled: false,
+            createdAt: new Date('2026-01-01'),
+          },
+        ],
+        keywords,
+      });
+
+    const trial = new EntitlementService(
+      workspace('org-trial', sub('org-trial', { status: 'trialing', subscriptionTier: 'STANDARD' })).api
+    );
+    await expect(trial.assertCanUseStalker('org-trial')).resolves.toBeUndefined();
+    await expect(trial.assertCanAddKeyword('org-trial')).resolves.toBeUndefined();
+
+    const expired = new EntitlementService(
+      workspace('org-expired', sub('org-expired', { status: 'expired', subscriptionTier: 'PRO' })).api
+    );
+    await expect(expired.assertCanUseStalker('org-expired')).rejects.toThrow(
+      keywordUpgradeMessage('FREE')
+    );
+
+    const ended = new EntitlementService(
+      workspace(
+        'org-ended',
+        sub('org-ended', {
+          status: 'cancelled',
+          subscriptionTier: 'TEAM',
+          deletedAt: new Date('2020-01-02'),
+          cancelAt: new Date('2020-01-01'),
+        })
+      ).api
+    );
+    await expect(ended.assertCanUseStalker('org-ended')).rejects.toThrow(keywordUpgradeMessage('FREE'));
+
+    const stillPaid = new EntitlementService(
+      workspace(
+        'org-open',
+        sub('org-open', {
+          status: 'cancelled',
+          subscriptionTier: 'PRO',
+          deletedAt: new Date(),
+          cancelAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        })
+      ).api
+    );
+    await expect(stillPaid.assertCanUseStalker('org-open')).resolves.toBeUndefined();
+
+    const creator = new EntitlementService(
+      workspace(
+        'org-creator',
+        sub('org-creator', { status: 'active', subscriptionTier: 'STANDARD' }),
+        [
+          { organizationId: 'org-creator' },
+          { organizationId: 'org-creator' },
+          { organizationId: 'org-creator' },
+        ]
+      ).api
+    );
+    await expect(creator.assertCanAddKeyword('org-creator')).rejects.toThrow(
+      keywordUpgradeMessage('STANDARD')
+    );
+    await expect(creator.assertCanManualCheck('org-creator')).resolves.toBeUndefined();
+
+    const team = new EntitlementService(
+      workspace(
+        'org-team',
+        sub('org-team', { status: 'active', subscriptionTier: 'TEAM' }),
+        [
+          { organizationId: 'org-team' },
+          { organizationId: 'org-team' },
+          { organizationId: 'org-team' },
+        ]
+      ).api
+    );
+    await expect(team.assertCanAddKeyword('org-team')).resolves.toBeUndefined();
+
+    const free = new EntitlementService(
+      workspace('org-free', sub('org-free', { status: 'active', subscriptionTier: 'FREE' })).api
+    );
+    await expect(free.assertCanManualCheck('org-free')).rejects.toThrow(manualCheckMessage(0));
   });
 });

@@ -11,7 +11,11 @@ import {
 } from '@gitroom/helpers/utils/billing.enabled';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 import { CreditsService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/credits.service';
-import { keywordUpgradeMessage } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
+import { PlanTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import {
+  keywordUpgradeMessage,
+  mentionHistoryMessage,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   Integration,
   Prisma,
@@ -301,6 +305,7 @@ const PROJECT_COLORS = [
 ];
 
 const DAILY_EMAIL_CAP = 3;
+const ANALYTICS_ALL_DAYS = 90;
 
 const HANDLE_FIELD: Record<
   string,
@@ -687,6 +692,13 @@ export class StalkerService {
     @Optional() private _webhooks?: WebhooksService
   ) {}
 
+  private async gate(organizationId: string) {
+    if (!isBillingEnforced(organizationId)) {
+      return;
+    }
+    await this._entitlements.assertCanUseStalker(organizationId);
+  }
+
   private async keywordLimit(organizationId: string, projectId?: string) {
     if (!isBillingEnforced(organizationId)) {
       return {
@@ -778,6 +790,7 @@ export class StalkerService {
 
   async createProject(organizationId: string, body: CreateStalkerProjectDto) {
     this.assertEnabled();
+    await this.gate(organizationId);
     const color = PROJECT_COLORS.find(
       (item) => item.toLowerCase() === body.color.toLowerCase()
     );
@@ -786,7 +799,8 @@ export class StalkerService {
     }
     const seenPhrases = new Set<string>();
     const keywords = [];
-    const keywordCap = (await this.keywordLimit(organizationId)).cap;
+    const limit = await this.keywordLimit(organizationId);
+    const keywordCap = limit.cap;
     const keywordsAlready = isBillingEnforced(organizationId)
       ? await this._entitlements.countKeywords(organizationId)
       : 0;
@@ -799,7 +813,13 @@ export class StalkerService {
       seenPhrases.add(key);
       if (keywordsAlready + keywords.length >= keywordCap) {
         if (isBillingEnforced(organizationId)) {
-          break;
+          throw new HttpException(
+            {
+              message: keywordUpgradeMessage((limit.tier || 'FREE') as PlanTier),
+              upgrade: true,
+            },
+            402
+          );
         }
         throw new BadRequestException(
           `You can save up to ${keywordCap} keywords`
@@ -901,21 +921,64 @@ export class StalkerService {
   async mentions(organizationId: string, query: StalkerMentionQueryDto) {
     this.assertEnabled();
     await this.requireProject(organizationId, query.projectId);
-    let next = query;
-    if (isBillingEnforced(organizationId)) {
-      const limits = await this._entitlements.limits(organizationId);
-      const days = limits?.plan.mentionRetentionDays;
-      if (days) {
-        const earliest = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .slice(0, 10);
-        const openEnded = !query.date || query.date === 'all';
-        if ((query.start && query.start < earliest) || (!query.start && openEnded)) {
-          next = { ...query, start: earliest };
-        }
-      }
-    }
+    const next = await this.clampMentionQuery(organizationId, query);
     return this._repository.listMentions(organizationId, next);
+  }
+
+  async assertMentionHistory(
+    organizationId: string,
+    query: { date?: string; start?: string; surface?: 'mentions' | 'analytics' }
+  ) {
+    this.assertEnabled();
+    await this._entitlements.assertCanUseStalker(organizationId);
+    const retention = await this.mentionRetention(organizationId);
+    if (!retention) {
+      return;
+    }
+    const preset =
+      query.date === '24h' ? 1 : query.date === '7d' ? 7 : query.date === '30d' ? 30 : 0;
+    const allDays =
+      query.surface === 'analytics' ? ANALYTICS_ALL_DAYS : Number.POSITIVE_INFINITY;
+    const asksForAll = query.date === 'all' && !query.start && allDays > retention.days;
+    const startTooOld = !!query.start && query.start < retention.earliest;
+    const presetTooLong = !query.start && preset > retention.days;
+    if (!retention.days || asksForAll || startTooOld || presetTooLong) {
+      throw new HttpException(
+        { message: mentionHistoryMessage(retention.tier), upgrade: true },
+        402
+      );
+    }
+  }
+
+  private async mentionRetention(organizationId: string) {
+    if (!isBillingEnforced(organizationId)) {
+      return null;
+    }
+    const limits = await this._entitlements.limits(organizationId);
+    const days = limits?.plan.mentionRetentionDays || 0;
+    if (!limits) {
+      return null;
+    }
+    return {
+      tier: limits.tier,
+      days,
+      earliest: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    };
+  }
+
+  private async clampMentionQuery<T extends { date?: string; start?: string }>(
+    organizationId: string,
+    query: T
+  ) {
+    const retention = await this.mentionRetention(organizationId);
+    if (!retention?.days) {
+      return query;
+    }
+    const openEnded = !query.date || query.date === 'all';
+    if ((query.start && query.start < retention.earliest) || (!query.start && openEnded)) {
+      return { ...query, start: retention.earliest };
+    }
+    return query;
   }
 
   async setMentionStatus(
@@ -1315,6 +1378,7 @@ export class StalkerService {
 
   async createGroup(organizationId: string, projectId: string, name: string) {
     this.assertEnabled();
+    await this.gate(organizationId);
     await this.requireProject(organizationId, projectId);
     const groups = await this._repository.ensureGroups(projectId);
     const clean = name.trim();
@@ -1370,6 +1434,7 @@ export class StalkerService {
     filters: Record<string, unknown>
   ) {
     this.assertEnabled();
+    await this.gate(organizationId);
     await this.requireProject(organizationId, projectId);
     const rules = await this._repository.listAlertRules(organizationId, projectId);
     if (rules.length >= 20) {
@@ -1527,7 +1592,11 @@ export class StalkerService {
     }
     await this.requireProject(organizationId, projectId);
     const window = ['24h', '7d', '30d', 'all'].includes(date) ? date : '30d';
-    const ranged = mentionRange(range?.start, range?.end, range?.tz);
+    const bounded = await this.clampMentionQuery(organizationId, {
+      date: window,
+      start: range?.start,
+    });
+    const ranged = mentionRange(bounded.start, range?.end, range?.tz);
     const rangedStart = ranged.start;
     const rangedEnd = ranged.end;
     const windowSince =
@@ -1536,12 +1605,12 @@ export class StalkerService {
         : window === '7d'
           ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
           : window === 'all'
-            ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+            ? new Date(Date.now() - ANALYTICS_ALL_DAYS * 24 * 60 * 60 * 1000)
             : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const scope = range?.group === 'competitors' || range?.group === 'compare' ? range.group : 'brand';
     const cardGroup = scope === 'competitors' ? 'competitors' : 'brand';
     const shared = {
-      start: range?.start,
+      start: bounded.start,
       end: range?.end,
       tz: range?.tz,
       source: range?.source,

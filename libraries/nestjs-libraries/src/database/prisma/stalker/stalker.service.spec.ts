@@ -15,6 +15,11 @@ jest.mock('@gitroom/nestjs-libraries/services/email.service', () => ({
 }));
 
 import { Integration } from '@prisma/client';
+import { PLANS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import {
+  keywordUpgradeMessage,
+  mentionHistoryMessage,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 import {
   nextScheduledScan,
   orderKeywordsForScan,
@@ -990,5 +995,95 @@ describe('Stalker analytics math', () => {
         }
       )
     ).toBe(false);
+  });
+});
+
+describe('stalker plan limits', () => {
+  const previousBilling = process.env.BILLING_ENABLED;
+  const previousStalker = process.env.STALKER_ENABLED;
+  const entitlements = {
+    assertCanUseStalker: jest.fn().mockResolvedValue(undefined),
+    limits: jest.fn(),
+    countKeywords: jest.fn(),
+  };
+  const repository = {
+    ownerContact: jest.fn().mockResolvedValue(null),
+    createProject: jest.fn().mockResolvedValue({ id: 'proj' }),
+    getProject: jest.fn().mockResolvedValue({
+      id: 'proj',
+      name: 'Crea8',
+      description: '',
+      color: '#71717a',
+      categories: [{ id: 'cat-1', name: 'Praise', description: '' }],
+    }),
+  };
+  const service = new StalkerService(
+    repository as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    entitlements as never,
+    {} as never
+  );
+  const body = {
+    name: 'Crea8',
+    color: '#71717a',
+    keywords: [{ phrase: 'crea8' }],
+    categories: [{ name: 'Praise' }],
+  };
+
+  beforeEach(() => {
+    process.env.BILLING_ENABLED = 'true';
+    process.env.STALKER_ENABLED = 'true';
+    entitlements.assertCanUseStalker.mockReset();
+    entitlements.assertCanUseStalker.mockResolvedValue(undefined);
+    entitlements.limits.mockReset();
+    entitlements.countKeywords.mockReset();
+    repository.createProject.mockClear();
+  });
+
+  afterEach(() => {
+    if (previousBilling === undefined) delete process.env.BILLING_ENABLED;
+    else process.env.BILLING_ENABLED = previousBilling;
+    if (previousStalker === undefined) delete process.env.STALKER_ENABLED;
+    else process.env.STALKER_ENABLED = previousStalker;
+  });
+
+  it('refuses project keywords past a lower plan and allows them on a higher plan', async () => {
+    entitlements.limits.mockResolvedValue({ tier: 'STANDARD', plan: PLANS.STANDARD });
+    entitlements.countKeywords.mockResolvedValue(3);
+
+    await expect(service.createProject('org', body as never)).rejects.toThrow(
+      keywordUpgradeMessage('STANDARD')
+    );
+    expect(repository.createProject).not.toHaveBeenCalled();
+
+    entitlements.limits.mockResolvedValue({ tier: 'TEAM', plan: PLANS.TEAM });
+    entitlements.countKeywords.mockResolvedValue(3);
+    jest.spyOn(service, 'requestScan').mockResolvedValue({} as never);
+    await service.createProject('org', body as never);
+    expect(repository.createProject).toHaveBeenCalled();
+  });
+
+  it('refuses mention history past a lower plan and allows it on a higher plan', async () => {
+    const start = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    entitlements.limits.mockResolvedValue({ tier: 'STANDARD', plan: PLANS.STANDARD });
+    await expect(
+      service.assertMentionHistory('org', { start, surface: 'analytics' })
+    ).rejects.toThrow(mentionHistoryMessage('STANDARD'));
+
+    entitlements.limits.mockResolvedValue({ tier: 'PRO', plan: PLANS.PRO });
+    await expect(
+      service.assertMentionHistory('org', { start, surface: 'analytics' })
+    ).resolves.toBeUndefined();
+    await expect(
+      service.assertMentionHistory('org', { date: '30d', surface: 'analytics' })
+    ).resolves.toBeUndefined();
+    await expect(
+      service.assertMentionHistory('org', { date: 'all', surface: 'mentions' })
+    ).rejects.toThrow(mentionHistoryMessage('PRO'));
   });
 });

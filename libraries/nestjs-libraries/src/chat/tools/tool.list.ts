@@ -28,6 +28,7 @@ import { StalkerProjectsTool } from '@gitroom/nestjs-libraries/chat/tools/stalke
 import { StalkerMentionsTool } from '@gitroom/nestjs-libraries/chat/tools/stalker.mentions.tool';
 import { StalkerKeywordsTool } from '@gitroom/nestjs-libraries/chat/tools/stalker.keywords.tool';
 import { StalkerAlertsTool } from '@gitroom/nestjs-libraries/chat/tools/stalker.alerts.tool';
+import { StalkerAnalyticsTool } from '@gitroom/nestjs-libraries/chat/tools/stalker.analytics.tool';
 import { LinkPageTool } from '@gitroom/nestjs-libraries/chat/tools/link.page.tool';
 import { LinkBlocksTool } from '@gitroom/nestjs-libraries/chat/tools/link.blocks.tool';
 import { LinkAnalyticsTool } from '@gitroom/nestjs-libraries/chat/tools/link.analytics.tool';
@@ -65,6 +66,7 @@ export const toolList = [
   StalkerMentionsTool,
   StalkerKeywordsTool,
   StalkerAlertsTool,
+  StalkerAnalyticsTool,
   LinkPageTool,
   LinkBlocksTool,
   LinkAnalyticsTool,

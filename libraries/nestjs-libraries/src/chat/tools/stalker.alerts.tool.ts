@@ -10,12 +10,16 @@ import {
   isStalkerEnabled,
   StalkerService,
 } from '@gitroom/nestjs-libraries/database/prisma/stalker/stalker.service';
+import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
 
 const plain = (value: unknown) => JSON.parse(JSON.stringify(value));
 
 @Injectable()
 export class StalkerAlertsTool implements AgentToolInterface {
-  constructor(private _stalkerService: StalkerService) {}
+  constructor(
+    private _stalkerService: StalkerService,
+    private _entitlements: EntitlementService
+  ) {}
   name = 'stalkerAlertsTool';
   available() {
     return isStalkerEnabled();
@@ -24,12 +28,13 @@ export class StalkerAlertsTool implements AgentToolInterface {
   run() {
     return createTool({
       id: 'stalkerAlertsTool',
-      description: `Manage Stalker alerts for a project. action "list" returns fired alerts. "rules" lists saved alert rules. "create" adds a rule (name plus optional filters such as sentiment, status, source, or q). "delete" removes a rule id. "read" marks one fired alert id as read. Confirm with the user before create or delete.`,
+      description: `Manage Stalker alerts for a project. action "list" returns fired alerts. "rules" lists saved alert rules. "create" adds a rule (name plus optional filters such as sentiment, status, source, or q). "update" edits a rule id the same way as the alerts screen: pass name, enabled, or filters, and anything you omit stays as it is. "delete" removes a rule id. "read" marks one fired alert id as read. Confirm with the user before create, update, or delete.`,
       inputSchema: z.object({
-        action: z.enum(['list', 'rules', 'create', 'delete', 'read']),
+        action: z.enum(['list', 'rules', 'create', 'update', 'delete', 'read']),
         projectId: z.string().optional().describe('Required for list, rules, and create'),
-        id: z.string().optional().describe('Alert id for read, rule id for delete'),
-        name: z.string().optional().describe('Rule name, required for create'),
+        id: z.string().optional().describe('Alert id for read. Rule id for update and delete'),
+        name: z.string().optional().describe('Rule name, required for create. Optional on update'),
+        enabled: z.boolean().optional().describe('Turn a rule on or off. Used by update'),
         cursor: z.string().optional(),
         take: z.number().int().min(1).max(50).optional(),
         filters: z
@@ -58,6 +63,7 @@ export class StalkerAlertsTool implements AgentToolInterface {
       execute: async (inputData, context) => {
         try {
           const org = organizationFromTool(inputData, context);
+          await this._entitlements.assertCanUseStalker(org.id);
           if (inputData.action === 'list' || inputData.action === 'rules' || inputData.action === 'create') {
             if (!inputData.projectId) {
               return { output: { error: 'projectId is required' } };
@@ -94,6 +100,22 @@ export class StalkerAlertsTool implements AgentToolInterface {
           }
           if (inputData.action === 'read') {
             return { output: await this._stalkerService.markAlertRead(org.id, inputData.id) };
+          }
+          if (inputData.action === 'update') {
+            const body: {
+              name?: string;
+              enabled?: boolean;
+              filters?: NonNullable<typeof inputData.filters>;
+            } = {};
+            if (typeof inputData.name === 'string') body.name = inputData.name;
+            if (typeof inputData.enabled === 'boolean') body.enabled = inputData.enabled;
+            if (inputData.filters) body.filters = inputData.filters;
+            if (!('name' in body) && !('enabled' in body) && !('filters' in body)) {
+              return { output: { error: 'name, enabled, or filters is required' } };
+            }
+            return {
+              output: await this._stalkerService.updateAlertRule(org.id, inputData.id, body),
+            };
           }
           return { output: await this._stalkerService.deleteAlertRule(org.id, inputData.id) };
         } catch (err) {
