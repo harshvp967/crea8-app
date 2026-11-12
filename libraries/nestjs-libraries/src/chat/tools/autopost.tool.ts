@@ -1,10 +1,9 @@
 import { AgentToolInterface } from '@gitroom/nestjs-libraries/chat/agent.tool.interface';
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 import { EntitlementService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/entitlement.service';
-import { PLANS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
   organizationFromTool,
   toolFailure,
@@ -54,16 +53,9 @@ export class AutopostTool implements AgentToolInterface {
       execute: async (inputData, context) => {
         try {
           const org = organizationFromTool(inputData, context);
-          const limits = await this._entitlements.limits(org.id);
-          const plan = limits?.plan || PLANS.ULTIMATE;
-          if (!plan.autoPost) {
-            throw new HttpException(
-              {
-                message: `${plan.displayName} does not include this. Upgrade your plan.`,
-                upgrade: true,
-              },
-              402
-            );
+          await this._entitlements.assertCanAutopost(org.id);
+          if (inputData.action === 'create') {
+            await this._entitlements.assertCanAddWebhook(org.id);
           }
           if (inputData.action === 'list') {
             return { output: await this._autopostService.getAutoposts(org.id) };

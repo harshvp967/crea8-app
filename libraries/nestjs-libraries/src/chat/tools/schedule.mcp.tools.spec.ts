@@ -51,6 +51,12 @@ import { AutopostTool } from '@gitroom/nestjs-libraries/chat/tools/autopost.tool
 import { ShortlinkPreferenceTool } from '@gitroom/nestjs-libraries/chat/tools/shortlink.preference.tool';
 import { IntegrationSchedulePostTool } from '@gitroom/nestjs-libraries/chat/tools/integration.schedule.post';
 import { PLANS } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import {
+  autopostUpgradeMessage,
+  channelUpgradeMessage,
+  postsUpgradeMessage,
+  webhookUpgradeMessage,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.rules';
 
 const postsStillAttached =
   'You have to delete all the posts associated with this channel before deleting it';
@@ -89,7 +95,7 @@ describe('schedule MCP tools', () => {
       expect(list).toContain(name);
     }
     expect(new PostDateTool({} as any).name).toBe('postDateTool');
-    expect(new PostContentTool({} as any).name).toBe('postContentTool');
+    expect(new PostContentTool({} as any, {} as any).name).toBe('postContentTool');
     expect(new IntegrationChannelTool({} as any, {} as any).name).toBe(
       'integrationChannelTool'
     );
@@ -168,7 +174,8 @@ describe('schedule MCP tools', () => {
       mapTypeToPost: jest.fn(),
       createPost: jest.fn(),
     };
-    const tool = new PostContentTool(posts as any);
+    const entitlements = { assertPostsThisPeriod: jest.fn() };
+    const tool = new PostContentTool(posts as any, entitlements as any);
     const existingDate = new Date('2026-11-20T10:00:00.000Z');
 
     const existing = (state: string) => [
@@ -193,6 +200,8 @@ describe('schedule MCP tools', () => {
       posts.validatePosts.mockReset();
       posts.mapTypeToPost.mockReset();
       posts.createPost.mockReset();
+      entitlements.assertPostsThisPeriod.mockReset();
+      entitlements.assertPostsThisPeriod.mockResolvedValue(undefined);
       posts.validatePosts.mockResolvedValue([
         { valid: true, errors: true, emptyContent: false, tooLong: false, name: 'LinkedIn' },
       ]);
@@ -266,6 +275,31 @@ describe('schedule MCP tools', () => {
       );
       expect(posts.createPost).not.toHaveBeenCalled();
       expect(posts.mapTypeToPost).not.toHaveBeenCalled();
+    });
+
+    it('blocks a lower plan and allows a higher plan to edit', async () => {
+      entitlements.assertPostsThisPeriod.mockRejectedValueOnce(
+        new HttpException({ message: postsUpgradeMessage('FREE'), upgrade: true }, 402)
+      );
+
+      const blocked = await run(tool, {
+        id: 'post-1',
+        posts: [{ content: '<p>new</p>' }],
+      });
+
+      expect(blocked.output.error).toBe(postsUpgradeMessage('FREE'));
+      expect(posts.getPostsRecursively).not.toHaveBeenCalled();
+
+      entitlements.assertPostsThisPeriod.mockResolvedValueOnce(undefined);
+      posts.getPostsRecursively.mockResolvedValue(existing('DRAFT'));
+      const allowed = await run(tool, {
+        id: 'post-1',
+        posts: [{ content: '<p>new</p>' }],
+      });
+
+      expect(entitlements.assertPostsThisPeriod).toHaveBeenCalledWith('org-1');
+      expect(posts.createPost).toHaveBeenCalled();
+      expect(allowed.output.postId).toBe('post-1');
     });
   });
 
@@ -351,6 +385,31 @@ describe('schedule MCP tools', () => {
       });
       expect(result.output.time).toEqual([{ time: 540 }, { time: 900 }]);
     });
+
+    it('blocks enable on a lower plan and allows it on a higher plan', async () => {
+      integration.enableChannel.mockRejectedValueOnce(
+        new HttpException(
+          { message: channelUpgradeMessage('STANDARD'), upgrade: true },
+          402
+        )
+      );
+
+      const blocked = await run(tool, { action: 'enable', id: 'ch-1' }, org);
+
+      expect(blocked.output.error).toBe(channelUpgradeMessage('STANDARD'));
+      expect(blocked.output.disabled).toBeUndefined();
+
+      integration.enableChannel.mockResolvedValueOnce(undefined);
+      const higher = { id: 'org-1', subscription: { totalChannels: PLANS.TEAM.channels } };
+      const allowed = await run(tool, { action: 'enable', id: 'ch-1' }, higher);
+
+      expect(integration.enableChannel).toHaveBeenLastCalledWith(
+        'org-1',
+        PLANS.TEAM.channels,
+        'ch-1'
+      );
+      expect(allowed.output).toEqual({ id: 'ch-1', disabled: false });
+    });
   });
 
   describe('sets', () => {
@@ -405,6 +464,32 @@ describe('schedule MCP tools', () => {
       );
       expect(sets.createSet).not.toHaveBeenCalled();
     });
+
+    it('blocks a free plan and allows a paid plan to save a set', async () => {
+      entitlements.assertFeature.mockImplementationOnce(freePlan);
+
+      const blocked = await run(tool, {
+        action: 'create',
+        name: 'Launch',
+        content: 'Hello',
+      });
+
+      expect(blocked.output.error).toBe(
+        'Free does not include this. Upgrade your plan.'
+      );
+      expect(sets.createSet).not.toHaveBeenCalled();
+
+      entitlements.assertFeature.mockResolvedValueOnce(undefined);
+      const allowed = await run(tool, {
+        action: 'create',
+        name: 'Launch',
+        content: 'Hello',
+      });
+
+      expect(entitlements.assertFeature).toHaveBeenCalledWith('org-1', 'postingSets');
+      expect(sets.createSet).toHaveBeenCalled();
+      expect(allowed.output).toEqual({ id: 'set-1' });
+    });
   });
 
   describe('signatures', () => {
@@ -451,6 +536,25 @@ describe('schedule MCP tools', () => {
       );
       expect(signatures.getDefaultSignature).not.toHaveBeenCalled();
     });
+
+    it('blocks a free plan and allows a paid plan to read the default', async () => {
+      entitlements.assertFeature.mockImplementationOnce(freePlan);
+
+      const blocked = await run(tool, { action: 'default' });
+
+      expect(blocked.output.error).toBe(
+        'Free does not include this. Upgrade your plan.'
+      );
+      expect(signatures.getDefaultSignature).not.toHaveBeenCalled();
+
+      const row = { id: 'sig-1', content: '— Harsh', autoAdd: true };
+      entitlements.assertFeature.mockResolvedValueOnce(undefined);
+      signatures.getDefaultSignature.mockResolvedValueOnce(row);
+      const allowed = await run(tool, { action: 'default' });
+
+      expect(entitlements.assertFeature).toHaveBeenCalledWith('org-1', 'postingSets');
+      expect(allowed.output).toEqual(row);
+    });
   });
 
   describe('autopost', () => {
@@ -461,34 +565,68 @@ describe('schedule MCP tools', () => {
       changeActive: jest.fn(),
       loadXML: jest.fn(),
     };
-    const entitlements = { limits: jest.fn() };
+    const entitlements = {
+      assertCanAutopost: jest.fn(),
+      assertCanAddWebhook: jest.fn(),
+    };
     const tool = new AutopostTool(autopost as any, entitlements as any);
 
     beforeEach(() => {
       Object.values(autopost).forEach((fn) => fn.mockReset());
-      entitlements.limits.mockReset();
+      entitlements.assertCanAutopost.mockReset();
+      entitlements.assertCanAddWebhook.mockReset();
+      entitlements.assertCanAutopost.mockResolvedValue(undefined);
+      entitlements.assertCanAddWebhook.mockResolvedValue(undefined);
     });
 
     it.each(['FREE', 'STANDARD'] as const)(
       'refuses a %s workspace because autopost is off',
       async (tier) => {
-        entitlements.limits.mockResolvedValue({ plan: PLANS[tier], tier });
+        entitlements.assertCanAutopost.mockRejectedValue(
+          new HttpException({ message: autopostUpgradeMessage(tier), upgrade: true }, 402)
+        );
 
         const result = await run(tool, {
           action: 'send',
           url: 'https://example.com/feed.xml',
         });
 
-        expect(result.output.error).toBe(
-          `${PLANS[tier].displayName} does not include this. Upgrade your plan.`
-        );
+        expect(result.output.error).toBe(autopostUpgradeMessage(tier));
+        expect(entitlements.assertCanAddWebhook).not.toHaveBeenCalled();
         expect(autopost.loadXML).not.toHaveBeenCalled();
         expect(autopost.createAutopost).not.toHaveBeenCalled();
       }
     );
 
+    it('blocks a create past the webhook limit and allows it on a higher plan', async () => {
+      entitlements.assertCanAddWebhook.mockRejectedValueOnce(
+        new HttpException({ message: webhookUpgradeMessage('TEAM'), upgrade: true }, 402)
+      );
+
+      const blocked = await run(tool, {
+        action: 'create',
+        title: 'Feed',
+        url: 'https://example.com/feed.xml',
+      });
+
+      expect(blocked.output.error).toBe(webhookUpgradeMessage('TEAM'));
+      expect(autopost.createAutopost).not.toHaveBeenCalled();
+
+      entitlements.assertCanAddWebhook.mockResolvedValueOnce(undefined);
+      autopost.createAutopost.mockResolvedValueOnce({ id: 'auto-1' });
+      const allowed = await run(tool, {
+        action: 'create',
+        title: 'Feed',
+        url: 'https://example.com/feed.xml',
+      });
+
+      expect(entitlements.assertCanAutopost).toHaveBeenCalledWith('org-1');
+      expect(entitlements.assertCanAddWebhook).toHaveBeenCalledWith('org-1');
+      expect(autopost.createAutopost).toHaveBeenCalled();
+      expect(allowed.output).toEqual({ id: 'auto-1' });
+    });
+
     it('sends a test through the same loadXML path as POST /autopost/send', async () => {
-      entitlements.limits.mockResolvedValue({ plan: PLANS.TEAM, tier: 'TEAM' });
       autopost.loadXML.mockResolvedValue({
         success: true,
         url: 'https://example.com/post',
@@ -504,6 +642,68 @@ describe('schedule MCP tools', () => {
         success: true,
         url: 'https://example.com/post',
       });
+    });
+  });
+
+  describe('schedule post quota', () => {
+    const posts = {
+      validatePosts: jest.fn(),
+      createPost: jest.fn(),
+    };
+    const integrations = { getIntegrationById: jest.fn() };
+    const entitlements = { assertPostsThisPeriod: jest.fn() };
+    const tool = new IntegrationSchedulePostTool(
+      posts as any,
+      integrations as any,
+      entitlements as any
+    );
+    const input = {
+      socialPost: [
+        {
+          integrationId: 'ch-1',
+          isPremium: false,
+          date: '2026-12-01T15:00:00',
+          shortLink: false,
+          type: 'draft' as const,
+          postsAndComments: [{ content: '<p>Hi</p>', attachments: [] as string[] }],
+          settings: [] as { key: string; value: string }[],
+        },
+      ],
+    };
+
+    beforeEach(() => {
+      posts.validatePosts.mockReset();
+      posts.createPost.mockReset();
+      integrations.getIntegrationById.mockReset();
+      entitlements.assertPostsThisPeriod.mockReset();
+    });
+
+    it('blocks a lower plan and allows a higher plan to create a draft', async () => {
+      entitlements.assertPostsThisPeriod.mockRejectedValueOnce(
+        new HttpException({ message: postsUpgradeMessage('FREE'), upgrade: true }, 402)
+      );
+
+      const blocked = await run(tool, input);
+
+      expect(blocked.output.errors).toBe(postsUpgradeMessage('FREE'));
+      expect(posts.createPost).not.toHaveBeenCalled();
+      expect(integrations.getIntegrationById).not.toHaveBeenCalled();
+
+      entitlements.assertPostsThisPeriod.mockResolvedValueOnce(undefined);
+      integrations.getIntegrationById.mockResolvedValue({
+        id: 'ch-1',
+        providerIdentifier: 'linkedin',
+      });
+      posts.validatePosts.mockResolvedValue([
+        { valid: true, errors: true, emptyContent: false, tooLong: false, name: 'LinkedIn' },
+      ]);
+      posts.createPost.mockResolvedValue([{ postId: 'post-1', integration: 'ch-1' }]);
+
+      const allowed = await run(tool, input);
+
+      expect(entitlements.assertPostsThisPeriod).toHaveBeenCalledWith('org-1');
+      expect(posts.createPost).toHaveBeenCalled();
+      expect(allowed.output).toEqual([{ postId: 'post-1', integration: 'ch-1' }]);
     });
   });
 
@@ -546,7 +746,7 @@ describe('schedule MCP tools', () => {
     );
 
     it('leaves the per-post shortLink flag on integrationSchedulePostTool', () => {
-      const schedule = new IntegrationSchedulePostTool({} as any, {} as any).run() as any;
+      const schedule = new IntegrationSchedulePostTool({} as any, {} as any, {} as any).run() as any;
       const shape =
         typeof schedule.inputSchema?._def?.shape === 'function'
           ? schedule.inputSchema._def.shape()
