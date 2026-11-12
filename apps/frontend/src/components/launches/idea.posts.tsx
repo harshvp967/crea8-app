@@ -46,6 +46,7 @@ type Draft = {
   name: string;
   picture?: string | null;
   content: string;
+  posts?: string[];
   publishAt: string;
   settings: Record<string, any>;
   media: DraftMedia[];
@@ -77,6 +78,7 @@ type StoredPanel = {
     name: string;
     picture?: string | null;
     content: string;
+    posts?: string[];
     publishAt: string;
     settings: Record<string, any>;
     media: DraftMedia[];
@@ -225,6 +227,7 @@ function storedDrafts(
     name: string;
     picture?: string | null;
     content: string;
+    posts?: string[];
     publishAt: string;
     settings?: Record<string, any>;
     media?: DraftMedia[];
@@ -237,6 +240,7 @@ function storedDrafts(
     name: item.name,
     picture: item.picture,
     content: item.content,
+    ...(item.posts?.length ? { posts: item.posts } : {}),
     publishAt: item.publishAt,
     settings: item.settings || {},
     media: item.media || [],
@@ -270,6 +274,26 @@ function panelEmpty(data: {
     !(data.drafts || []).length &&
     !(data.tray || []).length
   );
+}
+
+function draftParts(item: { content: string; posts?: string[] }) {
+  const posts = (item.posts || []).filter((part) => String(part || '').trim());
+  if (posts.length) {
+    return posts;
+  }
+  return [item.content || ''];
+}
+
+function postValues(item: Draft) {
+  const images = (item.media || []).map((file) => ({
+    id: file.id,
+    path: file.path,
+  }));
+  return draftParts(item).map((content, index) => ({
+    content: plainToPostHtml(content),
+    delay: 0,
+    image: index === 0 ? images : [],
+  }));
 }
 
 function htmlToPlain(html: string) {
@@ -688,14 +712,21 @@ const IdeaPostsPanel = ({
         return;
       }
       setDrafts(
-        (data.drafts || []).map((item: Draft) => ({
-          ...item,
-          publishAt: toLocalInput(item.publishAt),
-          settings: item.settings || {},
-          media: trayRef.current.filter((file) =>
-            channelAccepts(item.provider, file.kind)
-          ),
-        }))
+        (data.drafts || []).map((item: Draft) => {
+          const posts = Array.isArray(item.posts)
+            ? item.posts.map((part) => String(part || '')).filter((part) => part.trim())
+            : [];
+          return {
+            ...item,
+            content: posts.length ? posts.join('\n\n') : item.content,
+            ...(posts.length ? { posts } : {}),
+            publishAt: toLocalInput(item.publishAt),
+            settings: item.settings || {},
+            media: trayRef.current.filter((file) =>
+              channelAccepts(item.provider, file.kind)
+            ),
+          };
+        })
       );
     } catch {
       setError(
@@ -759,15 +790,23 @@ const IdeaPostsPanel = ({
                     return row;
                   }
                   const images = (post.value || []).flatMap((value) => value.image || []);
+                  const separated = (post.value || [])
+                    .map((value) => htmlToPlain(String(value.content || '')).trim())
+                    .filter(Boolean);
+                  const parts =
+                    (row.posts || []).length > 1
+                      ? separated.length
+                        ? separated
+                        : ['']
+                      : [separated.join('\n\n')];
                   return {
                     ...row,
                     integrationId: taken ? openedId : nextId,
                     provider: taken ? row.provider : integration?.identifier || row.provider,
                     name: taken ? row.name : integration?.name || row.name,
                     picture: taken ? row.picture : integration?.picture ?? row.picture,
-                    content: (post.value || [])
-                      .map((value) => htmlToPlain(String(value.content || '')))
-                      .join('\n\n'),
+                    content: parts.join('\n\n'),
+                    posts: parts,
                     media: images.flatMap((file) => {
                       const path = String(file?.path || '');
                       const id = String(file?.id || '');
@@ -786,15 +825,10 @@ const IdeaPostsPanel = ({
                 });
               });
             }}
-            onlyValues={[
-              {
-                content: plainToPostHtml(item.content),
-                image: (item.media || []).map((file) => ({
-                  id: file.id,
-                  path: file.path,
-                })),
-              },
-            ]}
+            onlyValues={postValues(item).map((value) => ({
+              content: value.content,
+              image: value.image,
+            }))}
           />
         ),
       });
@@ -836,16 +870,7 @@ const IdeaPostsPanel = ({
                 group: makeId(10),
                 date,
                 settings: item.settings || {},
-                value: [
-                  {
-                    content: plainToPostHtml(item.content),
-                    delay: 0,
-                    image: (item.media || []).map((file) => ({
-                      id: file.id,
-                      path: file.path,
-                    })),
-                  },
-                ],
+                value: postValues(item),
               },
             ],
           }),
@@ -991,15 +1016,7 @@ const IdeaPostsPanel = ({
             posts: drafts.map((item) => ({
               integration: { id: item.integrationId },
               settings: item.settings || {},
-              value: [
-                {
-                  content: plainToPostHtml(item.content),
-                  image: item.media.map((file) => ({
-                    id: file.id,
-                    path: file.path,
-                  })),
-                },
-              ],
+              value: postValues(item),
             })),
           }),
         });
@@ -1458,11 +1475,25 @@ const IdeaPostsPanel = ({
                 value={item.content}
                 onChange={(value) => {
                   setDrafts((current) =>
-                    current.map((row, rowIndex) =>
-                      rowIndex === index
-                        ? { ...row, content: value, saved: false, valid: undefined }
-                        : row
-                    )
+                    current.map((row, rowIndex) => {
+                      if (rowIndex !== index) {
+                        return row;
+                      }
+                      const threaded = (row.posts || []).length > 1;
+                      const posts = threaded
+                        ? value
+                            .split(/\n{2,}/)
+                            .map((part) => part.trim())
+                            .filter(Boolean)
+                        : [value];
+                      return {
+                        ...row,
+                        content: value,
+                        posts: posts.length ? posts : [value],
+                        saved: false,
+                        valid: undefined,
+                      };
+                    })
                   );
                 }}
               />

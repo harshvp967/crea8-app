@@ -45,6 +45,10 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     return 500;
   }
 
+  override supportsThread() {
+    return true;
+  }
+
   override handleErrors(body: string):
     | {
         type: 'refresh-token' | 'bad-body';

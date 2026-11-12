@@ -317,6 +317,11 @@ export abstract class SocialAbstract {
     return 'Match the usual length and tone of this platform.';
   }
 
+  // A follow-up item is its own post in a thread. Other channels get one post.
+  supportsThread() {
+    return false;
+  }
+
   protected socialHandle(profile?: string | null) {
     const value = (profile || '').trim().replace(/^@/, '');
     if (!value || value.length > 80 || /[\s<>"'`]/.test(value)) {

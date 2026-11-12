@@ -39,6 +39,10 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     return 100000;
   }
 
+  override supportsThread() {
+    return true;
+  }
+
   async customFields() {
     return [
       {

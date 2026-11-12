@@ -65,6 +65,164 @@ export function futureSlot(raw: string | null | undefined, now = new Date()): st
   return dayjs.utc(now).add(1, 'day').second(0).format('YYYY-MM-DDTHH:mm:ss');
 }
 
+export const IDEA_FORMATS = ['short', 'long', 'thread_short', 'thread_long'] as const;
+export type IdeaFormat = (typeof IDEA_FORMATS)[number];
+export const IDEA_VOICES = ['personal', 'company'] as const;
+export type IdeaVoice = (typeof IDEA_VOICES)[number];
+
+// Upstream short posts stay inside a tweet. A channel with a lower limit wins.
+export const SHORT_POST_CAP = 200;
+export const PERSONAL_ANNOUNCEMENT = 'I am happy to announce';
+export const COMPANY_ANNOUNCEMENT = 'We are happy to announce';
+
+export function normalizeIdeaFormat(value?: string | null): IdeaFormat {
+  if (value === 'long' || value === 'one_long') {
+    return 'long';
+  }
+  if (value === 'thread_short') {
+    return 'thread_short';
+  }
+  if (value === 'thread_long') {
+    return 'thread_long';
+  }
+  return 'short';
+}
+
+export function normalizeIdeaVoice(value?: string | null): IdeaVoice {
+  return value === 'company' ? 'company' : 'personal';
+}
+
+export function announcement(voice: IdeaVoice): string {
+  return voice === 'company' ? COMPANY_ANNOUNCEMENT : PERSONAL_ANNOUNCEMENT;
+}
+
+export function isThreadFormat(format: IdeaFormat): boolean {
+  return format === 'thread_short' || format === 'thread_long';
+}
+
+export function postLimit(format: IdeaFormat, maxLength: number): number {
+  const channel = !maxLength || maxLength < 1 ? 1000 : Math.floor(maxLength);
+  if (format === 'short' || format === 'thread_short') {
+    return Math.min(channel, SHORT_POST_CAP);
+  }
+  return channel;
+}
+
+function applyVoice(text: string, voice: IdeaVoice): string {
+  const line = announcement(voice);
+  const other = announcement(voice === 'company' ? 'personal' : 'company');
+  const body = (text || '').replace(/\s+/g, ' ').trim();
+  if (!body) {
+    return line;
+  }
+  const lower = body.toLowerCase();
+  if (lower.startsWith(line.toLowerCase())) {
+    return `${line}${body.slice(line.length)}`.replace(/\s+/g, ' ').trim();
+  }
+  if (lower.startsWith(other.toLowerCase())) {
+    return `${line}${body.slice(other.length)}`.replace(/\s+/g, ' ').trim();
+  }
+  return `${line} ${body}`;
+}
+
+function wordsWithin(text: string, limit: number): string[] {
+  if (limit < 1) {
+    return [];
+  }
+  const words = (text || '').split(/\s+/).filter(Boolean);
+  const chunks: string[] = [];
+  let current = '';
+  for (const word of words) {
+    const piece = word.length > limit ? word.slice(0, limit) : word;
+    if (!current) {
+      current = piece;
+      continue;
+    }
+    if (`${current} ${piece}`.length <= limit) {
+      current = `${current} ${piece}`;
+      continue;
+    }
+    chunks.push(current);
+    current = piece;
+  }
+  if (current) {
+    chunks.push(current);
+  }
+  return chunks;
+}
+
+function splitFitted(text: string): string[] {
+  const clean = (text || '').trim();
+  if (clean.length < 2) {
+    return clean ? [clean] : [];
+  }
+  const midpoint = Math.floor(clean.length / 2);
+  const space = clean.lastIndexOf(' ', midpoint);
+  const cut = space > 0 ? space : midpoint;
+  const first = clean.slice(0, cut).trim();
+  const second = clean.slice(cut).trim();
+  if (!first || !second) {
+    return [clean];
+  }
+  return [first, second];
+}
+
+function threadPosts(text: string, voice: IdeaVoice, limit: number): string[] {
+  const voiced = applyVoice(text, voice);
+  const packed = wordsWithin(voiced, limit)
+    .map((post) => clipPlain(post, limit))
+    .filter(Boolean);
+  if (packed.length >= 2) {
+    return packed;
+  }
+  const line = announcement(voice);
+  if (line.length < limit && voiced.toLowerCase().startsWith(line.toLowerCase())) {
+    const rest = voiced.slice(line.length).trim();
+    if (rest) {
+      return [clipPlain(line, limit), clipPlain(rest, limit)].filter(Boolean);
+    }
+  }
+  return splitFitted(packed[0] || clipPlain(voiced, limit))
+    .map((post) => clipPlain(post, limit))
+    .filter(Boolean);
+}
+
+function threadFromParts(parts: string[], voice: IdeaVoice, limit: number): string[] {
+  const posts = parts.flatMap((part, index) =>
+    wordsWithin(index === 0 ? applyVoice(part, voice) : part, limit)
+  );
+  if (posts.length >= 2) {
+    return posts.map((post) => clipPlain(post, limit)).filter(Boolean);
+  }
+  return threadPosts(parts.join(' '), voice, limit);
+}
+
+// One post per channel, or several when the format is a thread and the
+// channel publishes threads. Every post stays inside that channel's limit.
+export function shapeChannelPosts(input: {
+  text: string;
+  format?: string | null;
+  voice?: string | null;
+  maxLength: number;
+  supportsThread: boolean;
+}): string[] {
+  const format = normalizeIdeaFormat(input.format);
+  const voice = normalizeIdeaVoice(input.voice);
+  const limit = postLimit(format, input.maxLength);
+  const parts = (input.text || '')
+    .split(/\n{2,}/)
+    .map((part) => part.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  if (!isThreadFormat(format) || !input.supportsThread) {
+    const post = clipPlain(applyVoice(parts.join(' '), voice), limit);
+    return post ? [post] : [];
+  }
+  if (parts.length > 1) {
+    return threadFromParts(parts, voice, limit);
+  }
+  return threadPosts(parts[0] || '', voice, limit);
+}
+
 export function ideaPrompt(input: {
   source: string;
   channels: {
@@ -73,33 +231,56 @@ export function ideaPrompt(input: {
     provider: string;
     maxLength: number;
     style: string;
+    supportsThread?: boolean;
   }[];
   voice?: string | null;
+  format?: string | null;
+  speaker?: string | null;
 }): { system: string; user: string } {
-  const voice = (input.voice || '').trim();
+  const format = normalizeIdeaFormat(input.format);
+  const speaker = normalizeIdeaVoice(input.speaker);
+  const line = announcement(speaker);
+  const short = format === 'short' || format === 'thread_short';
+  const thread = isThreadFormat(format);
+  const brand = (input.voice || '').trim();
   const system = [
-    'You draft one social post per channel from a single idea.',
-    'Each post stands alone and matches that platform length and style.',
-    'Stay at or under maxLength characters. Plain text only. No HTML, no markdown.',
+    'You draft social posts from a single idea, one draft per channel.',
+    `Open every channel draft with "${line}".`,
+    speaker === 'personal'
+      ? 'Write in the first person, as the poster.'
+      : 'Write in the first person plural, as the company.',
+    short
+      ? 'Write a short post. Stay at or under postLimit for that channel, and never over maxLength.'
+      : 'Write a long post. Use the room up to postLimit, and never over maxLength.',
+    thread
+      ? 'When the channel says thread: yes, write several posts separated by a blank line. When it says thread: no, write one post.'
+      : 'Write one post for each channel.',
+    'Plain text only. No HTML, no markdown, no hashtags.',
     'Do not invent prices, quotes, or statistics that are not in the idea.',
     'Use the name crea8.one only when the idea is about that product.',
-    voice
-      ? `Write every draft in this brand voice:\n${voice.slice(0, 2000)}`
-      : '',
+    brand ? `Write every draft in this brand voice:\n${brand.slice(0, 2000)}` : '',
   ]
     .filter(Boolean)
     .join('\n');
 
   const channels = input.channels
-    .map(
-      (channel) =>
-        `- id: ${channel.id}\n  name: ${channel.name}\n  platform: ${channel.provider}\n  maxLength: ${channel.maxLength}\n  style: ${channel.style}`
-    )
+    .map((channel) => {
+      const askThread = thread && !!channel.supportsThread;
+      return [
+        `- id: ${channel.id}`,
+        `  name: ${channel.name}`,
+        `  platform: ${channel.provider}`,
+        `  maxLength: ${channel.maxLength}`,
+        `  postLimit: ${postLimit(format, channel.maxLength)}`,
+        `  thread: ${askThread ? 'yes' : 'no'}`,
+        `  style: ${channel.style}`,
+      ].join('\n');
+    })
     .join('\n');
 
   return {
     system,
-    user: `Idea:\n${input.source}\n\nChannels:\n${channels}\n\nReturn one post per channel id. Use the id exactly.`,
+    user: `Idea:\n${input.source}\n\nChannels:\n${channels}\n\nReturn one entry per channel id. Use the id exactly. Put the post in content. For a thread, separate the posts with a blank line.`,
   };
 }
 

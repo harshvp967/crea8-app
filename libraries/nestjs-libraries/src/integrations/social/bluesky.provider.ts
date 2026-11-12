@@ -312,6 +312,10 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     return 300;
   }
 
+  override supportsThread() {
+    return true;
+  }
+
   override async checkValidity(
     posts: Array<ValidityMedia[]>
   ): Promise<string | true> {

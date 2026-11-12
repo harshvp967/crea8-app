@@ -52,6 +52,10 @@ export class FarcasterProvider
   maxLength() {
     return 800;
   }
+
+  override supportsThread() {
+    return true;
+  }
   dto = FarcasterDto;
 
   override async checkValidity(

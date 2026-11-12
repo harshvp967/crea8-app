@@ -2,12 +2,14 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { Organization } from '@prisma/client';
 import { aiDraftsEnabledForOrg } from '@gitroom/nestjs-libraries/database/prisma/posts/ai.drafts.flag';
 import {
-  clipPlain,
   futureSlot,
   ideaPrompt,
   ideaSource,
   loneUrl,
+  normalizeIdeaFormat,
+  normalizeIdeaVoice,
   readAdditionalSettings,
+  shapeChannelPosts,
 } from '@gitroom/nestjs-libraries/database/prisma/posts/idea.posts';
 import { IdeaPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/idea.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -28,6 +30,7 @@ export type IdeaDraft = {
   name: string;
   picture?: string | null;
   content: string;
+  posts: string[];
   publishAt: string;
   settings: Record<string, string | boolean>;
   maxLength: number;
@@ -90,7 +93,9 @@ export class IdeaPostsService {
     }
 
     const source = await this.sourceFor(body.idea);
-    const voice = await this.brandVoice(org.id);
+    const format = normalizeIdeaFormat(body.format);
+    const speaker = normalizeIdeaVoice(body.voice);
+    const brand = await this.brandVoice(org.id);
     const prompt = ideaPrompt({
       source,
       channels: channels.map((channel) => ({
@@ -99,8 +104,11 @@ export class IdeaPostsService {
         provider: channel.provider,
         maxLength: channel.maxLength,
         style: channel.style,
+        supportsThread: channel.supportsThread,
       })),
-      voice,
+      voice: brand,
+      format,
+      speaker,
     });
 
     let posts: { id: string; content: string }[];
@@ -111,7 +119,7 @@ export class IdeaPostsService {
       );
     } catch {
       return {
-        voice: !!voice,
+        voice: !!brand,
         error: "Couldn't write your drafts. Your idea is still here. Nothing was added, and this try did not count.",
       };
     }
@@ -127,24 +135,32 @@ export class IdeaPostsService {
 
     const byId = new Map(posts.map((post) => [post.id, post.content]));
     const drafts = await Promise.all(
-      channels.map(async (channel) => ({
-        integrationId: channel.integrationId,
-        provider: channel.provider,
-        name: channel.name,
-        picture: channel.picture,
-        content:
-          clipPlain(byId.get(channel.integrationId) || '', channel.maxLength) ||
-          clipPlain(source, Math.min(channel.maxLength, 280)),
-        publishAt: futureSlot(
-          await this.suggest(org.id, channel.integrationId)
-        ),
-        settings: channel.settings,
-        maxLength: channel.maxLength,
-      }))
+      channels.map(async (channel) => {
+        const written = shapeChannelPosts({
+          text: (byId.get(channel.integrationId) || '').trim() || source,
+          format,
+          voice: speaker,
+          maxLength: channel.maxLength,
+          supportsThread: channel.supportsThread,
+        });
+        return {
+          integrationId: channel.integrationId,
+          provider: channel.provider,
+          name: channel.name,
+          picture: channel.picture,
+          content: written.join('\n\n'),
+          posts: written,
+          publishAt: futureSlot(
+            await this.suggest(org.id, channel.integrationId)
+          ),
+          settings: channel.settings,
+          maxLength: channel.maxLength,
+        };
+      })
     );
 
     return {
-      voice: !!voice,
+      voice: !!brand,
       drafts: drafts.filter((draft) => draft.content),
     };
   }
@@ -193,6 +209,7 @@ export class IdeaPostsService {
           name: row.name,
           picture: row.picture,
           maxLength: maxLength > 0 ? maxLength : 1000,
+          supportsThread: !!provider?.supportsThread?.(),
           style:
             provider?.draftStyle?.() ||
             'Match the usual length and tone of this platform.',

@@ -264,6 +264,10 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     return 'Short and conversational. One or two sentences. No title and no hashtag block.';
   }
 
+  override supportsThread() {
+    return true;
+  }
+
   maxLength(additionalSettings?: any, settings?: any) {
     // Articles are long-form content, the tweet character limit doesn't apply.
     if (settings?.post_type === 'article') {
