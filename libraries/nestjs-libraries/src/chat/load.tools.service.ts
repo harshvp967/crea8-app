@@ -69,6 +69,12 @@ export class LoadToolsService {
         - List, create, update, and delete sets (setsTool) and signatures (signaturesTool). A free workspace is refused
         - List, create, update, delete, turn on or off, and test an autopost feed (autopostTool) when the plan includes autopost
         - Read or set the workspace shortlink preference to ask, always, or never (shortlinkPreferenceTool). The per-post shortLink flag on integrationSchedulePostTool is separate
+        - Manage workspace members (teamMembersTool): list, invite, resend, invite link, cancel, role, and remove. A plan without team members is refused with that limit. Only an admin or the owner can do this
+        - Read or update profile name, bio, and picture, and rename the workspace (workspaceProfileTool). Only the owner can rename. Do not change a password, log out, or delete an account
+        - Read or update email notification toggles (emailNotificationsTool)
+        - List, create, update, delete, and test webhooks (webhooksTool). Creating one past the plan webhook limit is refused. Do not reveal the signing secret
+        - List approved apps and revoke one (approvedAppsTool). Do not create an OAuth client or return a secret
+        - Read developer info (developerTool): whether the plan includes the public API, whether an API key exists, and the OAuth app's public fields. Never return or rotate the API key or client secret
         - Generate pictures for posts
         - Generate videos for posts
         - Generate text for posts
