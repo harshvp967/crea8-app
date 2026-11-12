@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { HttpException } from '@nestjs/common';
+import { HttpException, NotFoundException } from '@nestjs/common';
 
 jest.mock('@gitroom/nestjs-libraries/database/prisma/posts/posts.service', () => ({
   PostsService: class PostsService {},
@@ -43,7 +43,8 @@ jest.mock(
 );
 
 import { PostDateTool } from '@gitroom/nestjs-libraries/chat/tools/post.date.tool';
-import { PostContentTool } from '@gitroom/nestjs-libraries/chat/tools/post.content.tool';
+import { UpdatePostTool } from '@gitroom/nestjs-libraries/chat/tools/update.post.tool';
+import { DeletePostTool } from '@gitroom/nestjs-libraries/chat/tools/delete.post.tool';
 import { IntegrationChannelTool } from '@gitroom/nestjs-libraries/chat/tools/integration.channel.tool';
 import { SetsTool } from '@gitroom/nestjs-libraries/chat/tools/sets.tool';
 import { SignaturesTool } from '@gitroom/nestjs-libraries/chat/tools/signatures.tool';
@@ -85,7 +86,8 @@ describe('schedule MCP tools', () => {
     const list = readFileSync(join(__dirname, 'tool.list.ts'), 'utf8');
     for (const name of [
       'PostDateTool',
-      'PostContentTool',
+      'UpdatePostTool',
+      'DeletePostTool',
       'IntegrationChannelTool',
       'SetsTool',
       'SignaturesTool',
@@ -94,8 +96,10 @@ describe('schedule MCP tools', () => {
     ]) {
       expect(list).toContain(name);
     }
+    expect(list).not.toContain('PostContentTool');
     expect(new PostDateTool({} as any).name).toBe('postDateTool');
-    expect(new PostContentTool({} as any, {} as any).name).toBe('postContentTool');
+    expect(new UpdatePostTool({} as any, {} as any).name).toBe('update_post');
+    expect(new DeletePostTool({} as any, {} as any).name).toBe('delete_post');
     expect(new IntegrationChannelTool({} as any, {} as any).name).toBe(
       'integrationChannelTool'
     );
@@ -167,7 +171,7 @@ describe('schedule MCP tools', () => {
     });
   });
 
-  describe('post content', () => {
+  describe('update_post', () => {
     const posts = {
       getPostsRecursively: jest.fn(),
       validatePosts: jest.fn(),
@@ -175,12 +179,12 @@ describe('schedule MCP tools', () => {
       createPost: jest.fn(),
     };
     const entitlements = { assertPostsThisPeriod: jest.fn() };
-    const tool = new PostContentTool(posts as any, entitlements as any);
+    const tool = new UpdatePostTool(posts as any, entitlements as any);
     const existingDate = new Date('2026-11-20T10:00:00.000Z');
 
-    const existing = (state: string) => [
+    const existing = (state: string, id = 'post-1', integrationId = 'int-1') => [
       {
-        id: 'post-1',
+        id,
         state,
         publishDate: existingDate,
         content: '<p>old</p>',
@@ -188,8 +192,12 @@ describe('schedule MCP tools', () => {
           { id: 'img-old', path: 'https://uploads.example/old.jpg' },
         ]),
         settings: JSON.stringify({ title: 'keep' }),
-        group: 'group-1',
-        integration: { id: 'int-1', providerIdentifier: 'linkedin', token: 'channel-token' },
+        group: id === 'post-1' ? 'group-1' : 'group-2',
+        integration: {
+          id: integrationId,
+          providerIdentifier: 'linkedin',
+          token: 'channel-token',
+        },
         tags: [{ tag: { name: 'news' } }],
         delay: 0,
       },
@@ -202,82 +210,243 @@ describe('schedule MCP tools', () => {
       posts.createPost.mockReset();
       entitlements.assertPostsThisPeriod.mockReset();
       entitlements.assertPostsThisPeriod.mockResolvedValue(undefined);
+      posts.getPostsRecursively.mockImplementation(async (id: string) =>
+        existing('QUEUE', id)
+      );
       posts.validatePosts.mockResolvedValue([
         { valid: true, errors: true, emptyContent: false, tooLong: false, name: 'LinkedIn' },
       ]);
       posts.mapTypeToPost.mockImplementation(async (body: unknown) => body);
-      posts.createPost.mockResolvedValue([{ postId: 'post-1', integration: 'int-1' }]);
+      posts.createPost.mockImplementation(async (_org: string, body: any) => [
+        {
+          postId: body.posts[0].value[0].id,
+          integration: body.posts[0].integration.id,
+        },
+      ]);
     });
 
-    it.each(['DRAFT', 'QUEUE'])(
-      'changes text and media of a %s post and keeps the date',
-      async (state) => {
-        posts.getPostsRecursively.mockResolvedValue(existing(state));
+    it('updates content, media, scheduled time, and the target channel', async () => {
+      const result = await run(tool, {
+        id: 'post-1',
+        date: '2026-12-01T15:00:00',
+        integrationId: 'int-2',
+        posts: [
+          {
+            content: '<p>new</p>',
+            attachments: ['https://uploads.example/new.jpg'],
+          },
+        ],
+      });
 
-        const result = await run(tool, {
-          id: 'post-1',
-          posts: [
-            {
-              content: '<p>new</p>',
-              attachments: ['https://uploads.example/new.jpg'],
-            },
-          ],
-        });
-
-        expect(posts.mapTypeToPost).toHaveBeenCalledWith(
+      expect(posts.getPostsRecursively).toHaveBeenCalledWith(
+        'post-1',
+        true,
+        'org-1',
+        true
+      );
+      expect(posts.validatePosts).toHaveBeenCalledWith(
+        'org-1',
+        [
           expect.objectContaining({
-            type: 'update',
-            date: '2026-11-20T10:00:00',
-            shortLink: false,
-            posts: [
+            integration: { id: 'int-2' },
+            value: [
               expect.objectContaining({
-                group: 'group-1',
-                value: [
-                  expect.objectContaining({
-                    id: 'post-1',
-                    content: '<p>new</p>',
-                    image: [
-                      expect.objectContaining({
-                        path: 'https://uploads.example/new.jpg',
-                      }),
-                    ],
-                  }),
-                ],
+                content: '<p>new</p>',
+                image: [expect.objectContaining({ path: 'https://uploads.example/new.jpg' })],
               }),
             ],
           }),
-          'org-1'
-        );
-        const saved = posts.createPost.mock.calls[0];
-        expect(saved[0]).toBe('org-1');
-        expect(saved[1].type).toBe('update');
-        expect(saved[1].date).toBe('2026-11-20T10:00:00');
-        expect(saved[2]).toBe('MCP');
-        expect(saved[3]).toBe(true);
-        expect(JSON.stringify(result)).not.toContain('channel-token');
-        expect(result.output).toEqual({
-          postId: 'post-1',
-          publishDate: '2026-11-20T10:00:00',
-        });
-      }
-    );
+        ]
+      );
+      const saved = posts.createPost.mock.calls[0];
+      expect(saved[0]).toBe('org-1');
+      expect(saved[1]).toMatchObject({
+        type: 'update',
+        date: '2026-12-01T15:00:00',
+        shortLink: false,
+        posts: [
+          expect.objectContaining({
+            group: 'group-1',
+            integration: { id: 'int-2' },
+            value: [
+              expect.objectContaining({
+                id: 'post-1',
+                content: '<p>new</p>',
+              }),
+            ],
+          }),
+        ],
+      });
+      expect(saved[1].republish).toBeUndefined();
+      expect(saved[2]).toBe('MCP');
+      expect(saved[3]).toBe(true);
+      expect(JSON.stringify(result)).not.toContain('channel-token');
+      expect(result.output).toEqual({
+        postId: 'post-1',
+        integration: 'int-2',
+        publishDate: '2026-12-01T15:00:00',
+        type: 'update',
+      });
+    });
 
-    it('refuses a published post', async () => {
-      posts.getPostsRecursively.mockResolvedValue(existing('PUBLISHED'));
+    it('saves one post per target channel', async () => {
+      posts.getPostsRecursively.mockImplementation(async (id: string) =>
+        existing(id === 'post-2' ? 'DRAFT' : 'QUEUE', id, id === 'post-2' ? 'int-2' : 'int-1')
+      );
 
+      await run(tool, {
+        id: 'post-1',
+        date: '2026-12-01T15:00:00',
+        channels: [
+          {
+            integrationId: 'int-1',
+            id: 'post-1',
+            group: 'group-1',
+            posts: [{ content: '<p>one</p>' }],
+          },
+          {
+            integrationId: 'int-2',
+            id: 'post-2',
+            group: 'group-2',
+            date: '2026-12-02T09:00:00',
+            posts: [{ content: '<p>two</p>', attachments: ['https://uploads.example/two.jpg'] }],
+          },
+        ],
+      });
+
+      const body = posts.createPost.mock.calls[0][1];
+      expect(body.posts).toEqual([
+        expect.objectContaining({
+          integration: { id: 'int-1' },
+          group: 'group-1',
+          value: [expect.objectContaining({ id: 'post-1', content: '<p>one</p>' })],
+        }),
+        expect.objectContaining({
+          integration: { id: 'int-2' },
+          group: 'group-2',
+          date: '2026-12-02T09:00:00',
+          value: [
+            expect.objectContaining({
+              id: 'post-2',
+              content: '<p>two</p>',
+              image: [expect.objectContaining({ path: 'https://uploads.example/two.jpg' })],
+            }),
+          ],
+        }),
+      ]);
+      expect(posts.getPostsRecursively).toHaveBeenCalledWith('post-2', true, 'org-1', true);
+    });
+
+    it('keeps the date and channel when they are omitted', async () => {
       const result = await run(tool, {
         id: 'post-1',
         posts: [{ content: '<p>new</p>' }],
       });
 
-      expect(result.output.error).toBe(
-        'Only scheduled posts that were not published yet (or drafts) can be updated'
-      );
-      expect(posts.createPost).not.toHaveBeenCalled();
-      expect(posts.mapTypeToPost).not.toHaveBeenCalled();
+      expect(posts.createPost.mock.calls[0][1]).toMatchObject({
+        type: 'update',
+        date: '2026-11-20T10:00:00',
+        posts: [
+          expect.objectContaining({
+            integration: { id: 'int-1' },
+            value: [
+              expect.objectContaining({
+                content: '<p>new</p>',
+                image: [expect.objectContaining({ path: 'https://uploads.example/old.jpg' })],
+              }),
+            ],
+          }),
+        ],
+      });
+      expect(result.output.publishDate).toBe('2026-11-20T10:00:00');
     });
 
-    it('blocks a lower plan and allows a higher plan to edit', async () => {
+    it('updates a published post with type update and does not republish', async () => {
+      posts.getPostsRecursively.mockResolvedValue(existing('PUBLISHED'));
+
+      const result = await run(tool, {
+        id: 'post-1',
+        posts: [{ content: '<p>details</p>' }],
+      });
+
+      expect(posts.createPost.mock.calls[0][1].type).toBe('update');
+      expect(posts.createPost.mock.calls[0][1].republish).toBeUndefined();
+      expect(result.output).toMatchObject({ postId: 'post-1', type: 'update' });
+    });
+
+    it('passes republish through only when the caller sets it', async () => {
+      posts.getPostsRecursively.mockResolvedValue(existing('PUBLISHED'));
+      posts.createPost.mockRejectedValueOnce(
+        new HttpException(
+          'This post was already published. To edit without republishing, use type update. To intentionally publish again, pass republish: true.',
+          400
+        )
+      );
+
+      const refused = await run(tool, {
+        id: 'post-1',
+        type: 'schedule',
+        date: '2026-12-01T15:00:00',
+        posts: [{ content: '<p>again</p>' }],
+      });
+
+      expect(posts.createPost.mock.calls[0][1].type).toBe('schedule');
+      expect(posts.createPost.mock.calls[0][1].republish).toBeUndefined();
+      expect(refused.output.error).toContain('republish: true');
+
+      posts.createPost.mockResolvedValueOnce([
+        { postId: 'post-1', integration: 'int-1' },
+      ]);
+      const allowed = await run(tool, {
+        id: 'post-1',
+        type: 'schedule',
+        republish: true,
+        date: '2026-12-01T15:00:00',
+        posts: [{ content: '<p>again</p>' }],
+      });
+
+      expect(posts.createPost.mock.calls[1][1].republish).toBe(true);
+      expect(allowed.output.postId).toBe('post-1');
+    });
+
+    it('blocks a post or target channel from another workspace', async () => {
+      posts.getPostsRecursively.mockResolvedValueOnce([]);
+
+      const missing = await run(tool, {
+        id: 'other-workspace-post',
+        posts: [{ content: '<p>new</p>' }],
+      });
+
+      expect(missing.output.error).toBe('Post not found');
+      expect(posts.createPost).not.toHaveBeenCalled();
+      expect(posts.getPostsRecursively).toHaveBeenCalledWith(
+        'other-workspace-post',
+        true,
+        'org-1',
+        true
+      );
+
+      posts.getPostsRecursively.mockImplementation(async (id: string) =>
+        existing('QUEUE', id)
+      );
+      posts.validatePosts.mockRejectedValueOnce(
+        new HttpException('Integration with id int-foreign not found', 400)
+      );
+      const foreignChannel = await run(tool, {
+        id: 'post-1',
+        integrationId: 'int-foreign',
+        posts: [{ content: '<p>new</p>' }],
+      });
+
+      expect(posts.validatePosts).toHaveBeenCalledWith(
+        'org-1',
+        [expect.objectContaining({ integration: { id: 'int-foreign' } })]
+      );
+      expect(foreignChannel.output.error).toContain('int-foreign');
+      expect(posts.createPost).not.toHaveBeenCalled();
+    });
+
+    it('blocks a lower plan and an expired, cancelled, or empty subscription', async () => {
       entitlements.assertPostsThisPeriod.mockRejectedValueOnce(
         new HttpException({ message: postsUpgradeMessage('FREE'), upgrade: true }, 402)
       );
@@ -289,9 +458,9 @@ describe('schedule MCP tools', () => {
 
       expect(blocked.output.error).toBe(postsUpgradeMessage('FREE'));
       expect(posts.getPostsRecursively).not.toHaveBeenCalled();
+      expect(posts.createPost).not.toHaveBeenCalled();
 
       entitlements.assertPostsThisPeriod.mockResolvedValueOnce(undefined);
-      posts.getPostsRecursively.mockResolvedValue(existing('DRAFT'));
       const allowed = await run(tool, {
         id: 'post-1',
         posts: [{ content: '<p>new</p>' }],
@@ -300,6 +469,137 @@ describe('schedule MCP tools', () => {
       expect(entitlements.assertPostsThisPeriod).toHaveBeenCalledWith('org-1');
       expect(posts.createPost).toHaveBeenCalled();
       expect(allowed.output.postId).toBe('post-1');
+    });
+  });
+
+  describe('delete_post', () => {
+    const posts = {
+      getPostsRecursively: jest.fn(),
+      getPostsByGroup: jest.fn(),
+      deletePost: jest.fn(),
+    };
+    const entitlements = { assertPostsThisPeriod: jest.fn() };
+    const tool = new DeletePostTool(posts as any, entitlements as any);
+
+    beforeEach(() => {
+      posts.getPostsRecursively.mockReset();
+      posts.getPostsByGroup.mockReset();
+      posts.deletePost.mockReset();
+      entitlements.assertPostsThisPeriod.mockReset();
+      entitlements.assertPostsThisPeriod.mockResolvedValue(undefined);
+      posts.getPostsRecursively.mockResolvedValue([{ id: 'post-1', group: 'group-1' }]);
+      posts.getPostsByGroup.mockResolvedValue({
+        group: 'group-1',
+        siblings: [{ group: 'group-2' }],
+      });
+      posts.deletePost.mockResolvedValue({ error: true });
+    });
+
+    it('deletes the post group', async () => {
+      const byId = await run(tool, { id: 'post-1', confirm: true });
+
+      expect(posts.getPostsRecursively).toHaveBeenCalledWith(
+        'post-1',
+        false,
+        'org-1',
+        true
+      );
+      expect(posts.deletePost).toHaveBeenCalledTimes(1);
+      expect(posts.deletePost).toHaveBeenCalledWith('org-1', 'group-1');
+      expect(byId.output).toEqual({ deleted: true, groups: ['group-1'] });
+
+      posts.deletePost.mockClear();
+      const byGroup = await run(tool, { group: 'group-9', confirm: true });
+
+      expect(posts.getPostsByGroup).toHaveBeenCalledWith('org-1', 'group-9');
+      expect(posts.deletePost).toHaveBeenCalledWith('org-1', 'group-9');
+      expect(byGroup.output.groups).toEqual(['group-9']);
+    });
+
+    it('deletes every channel when allChannels is true', async () => {
+      const result = await run(tool, {
+        id: 'post-1',
+        allChannels: true,
+        confirm: true,
+      });
+
+      expect(posts.getPostsByGroup).toHaveBeenCalledWith('org-1', 'group-1');
+      expect(posts.deletePost.mock.calls.map((call) => call[1])).toEqual([
+        'group-1',
+        'group-2',
+      ]);
+      expect(result.output).toEqual({
+        deleted: true,
+        groups: ['group-1', 'group-2'],
+      });
+    });
+
+    it.each([
+      ['missing', {}],
+      ['not true', { confirm: false }],
+    ] as const)('refuses a delete when confirm is %s', async (_label, extra) => {
+      const result = await run(tool, { id: 'post-1', ...extra });
+
+      expect(result.error).toBe(true);
+      expect(result.message).toContain('confirm');
+      expect(result.output).toBeUndefined();
+      expect(posts.deletePost).not.toHaveBeenCalled();
+      expect(posts.getPostsRecursively).not.toHaveBeenCalled();
+      expect(entitlements.assertPostsThisPeriod).not.toHaveBeenCalled();
+    });
+
+    it('requires confirm true in the schema and tells the client to confirm first', () => {
+      const built = tool.run() as any;
+      const shape =
+        typeof built.inputSchema?._def?.shape === 'function'
+          ? built.inputSchema._def.shape()
+          : built.inputSchema?.shape;
+
+      expect(shape.confirm._def.typeName).toBe('ZodLiteral');
+      expect(shape.confirm._def.value).toBe(true);
+      expect(built.description).toMatch(/Confirm with the user before calling/i);
+      expect(built.description).toMatch(/refused unless confirm is true/i);
+    });
+
+    it('blocks a post or group from another workspace', async () => {
+      posts.getPostsRecursively.mockResolvedValueOnce([]);
+
+      const byId = await run(tool, { id: 'other-workspace-post', confirm: true });
+
+      expect(byId.output.error).toBe('Post not found');
+      expect(posts.getPostsRecursively).toHaveBeenCalledWith(
+        'other-workspace-post',
+        false,
+        'org-1',
+        true
+      );
+      expect(posts.deletePost).not.toHaveBeenCalled();
+
+      posts.getPostsByGroup.mockRejectedValueOnce(new NotFoundException('Post not found'));
+      const byGroup = await run(tool, { group: 'other-group', confirm: true });
+
+      expect(posts.getPostsByGroup).toHaveBeenCalledWith('org-1', 'other-group');
+      expect(byGroup.output.error).toBe('Post not found');
+      expect(posts.deletePost).not.toHaveBeenCalled();
+    });
+
+    it('blocks a lower plan and an expired, cancelled, or empty subscription', async () => {
+      entitlements.assertPostsThisPeriod.mockRejectedValueOnce(
+        new HttpException({ message: postsUpgradeMessage('FREE'), upgrade: true }, 402)
+      );
+
+      const blocked = await run(tool, { id: 'post-1', confirm: true });
+
+      expect(blocked.output.error).toBe(postsUpgradeMessage('FREE'));
+      expect(posts.deletePost).not.toHaveBeenCalled();
+      expect(posts.getPostsRecursively).not.toHaveBeenCalled();
+
+      entitlements.assertPostsThisPeriod.mockResolvedValueOnce(undefined);
+      const allowed = await run(tool, { id: 'post-1', confirm: true });
+
+      expect(entitlements.assertPostsThisPeriod).toHaveBeenCalledWith('org-1');
+      expect(posts.deletePost).toHaveBeenCalledWith('org-1', 'group-1');
+      expect(allowed.output.deleted).toBe(true);
     });
   });
 

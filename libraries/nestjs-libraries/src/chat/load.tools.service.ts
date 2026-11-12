@@ -64,8 +64,9 @@ export class LoadToolsService {
         - List the posts scheduled between two dates (postsListTool)
         - Update the settings of a scheduled post or draft that was not published yet (postSettingsTool)
         - Move a post's publish time (postDateTool). This uses action update and does not republish, so a published post is not requeued
-        - Edit the text and media of a draft or scheduled post (postContentTool). The date stays the same, and a published post is refused
-        - Enable, disable, delete, rename, or set time slots on a channel that is already connected (integrationChannelTool). Never connect a new channel. If delete says posts are still attached, the user deletes those posts in the app
+        - Edit an existing post's content, media, publish time, and target channels (update_post). This is the same save as the Schedule composer. type update is the default and does not publish a post again, including one that was already published. Publishing it again needs type schedule or now and republish true. Confirm with the user before saving
+        - Delete a post or its whole group (delete_post) only after the user confirms. Pass confirm true. One call deletes that channel's post and comments. allChannels true also deletes the other channels created with it. Never delete without that confirmation
+        - Enable, disable, delete, rename, or set time slots on a channel that is already connected (integrationChannelTool). Never connect a new channel. If delete says posts are still attached, delete those posts with delete_post after the user confirms, then delete the channel
         - List, create, update, and delete sets (setsTool) and signatures (signaturesTool). A free workspace is refused
         - List, create, update, delete, turn on or off, and test an autopost feed (autopostTool) when the plan includes autopost
         - Read or set the workspace shortlink preference to ask, always, or never (shortlinkPreferenceTool). The per-post shortLink flag on integrationSchedulePostTool is separate
@@ -107,7 +108,8 @@ export class LoadToolsService {
       - To find or inspect existing posts, use postsListTool with a UTC start and end date - it returns every post scheduled in that window. To cover "all my upcoming posts", pass a wide window starting now.
       - To change the provider settings of an existing post that was not published yet (scheduled or draft), first find it with postsListTool, then use postSettingsTool with the post's id. It only updates the settings - the content and the publish date stay as they are - and only the keys you pass are changed (get them with the integrationSchema tool). Show the user which post and which settings will change and get their confirmation first.
       - Never open the "modal with populated content" to edit an existing post - that modal only CREATES a new post, so using it to edit would duplicate the post. It is only for brand new posts.
-      - You can create, schedule and update posts, but you CANNOT delete posts - there is no delete capability. Never offer to delete a post. If the user asks you to delete one, tell them deletion is a destructive action and they should delete it themselves in the Crea8one app (the calendar).
+      - To edit an existing post, use update_post. Do not use the new-post modal to edit, and do not use integrationSchedulePostTool, which only creates a post.
+      - To delete a post, use delete_post only after the user confirms. Pass confirm true. Never delete a post the user has not confirmed.
       - Between tools, we will reference things like: [output:name] and [input:name] to set the information right.
       - When outputting a date for the user, make sure it's human readable with time
       - The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can\'t have u and strong together), don't use a "code" box

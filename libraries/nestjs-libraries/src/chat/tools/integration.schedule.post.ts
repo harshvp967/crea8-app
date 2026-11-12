@@ -61,7 +61,7 @@ A single LinkedIn post with one comment
 - socialPost array length will be 20
 - postsAndComments array length will be one
 
-Do not use this to update or delete existing posts.
+Do not use this to update or delete existing posts. Use update_post to edit one and delete_post to delete one after the user confirms.
 If validation fails, the result contains output.errors describing what to fix; the call can be retried with corrected parameters.
 `,
       inputSchema: z.object({

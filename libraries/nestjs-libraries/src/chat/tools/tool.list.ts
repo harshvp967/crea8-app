@@ -14,9 +14,10 @@ import { IntegrationListTool } from '@gitroom/nestjs-libraries/chat/tools/integr
 import { GroupListTool } from '@gitroom/nestjs-libraries/chat/tools/group.list.tool';
 import { UploadFromUrlTool } from '@gitroom/nestjs-libraries/chat/tools/upload.from.url.tool';
 import { PostsListTool } from '@gitroom/nestjs-libraries/chat/tools/posts.list.tool';
+import { UpdatePostTool } from '@gitroom/nestjs-libraries/chat/tools/update.post.tool';
+import { DeletePostTool } from '@gitroom/nestjs-libraries/chat/tools/delete.post.tool';
 import { PostSettingsTool } from '@gitroom/nestjs-libraries/chat/tools/post.settings.tool';
 import { PostDateTool } from '@gitroom/nestjs-libraries/chat/tools/post.date.tool';
-import { PostContentTool } from '@gitroom/nestjs-libraries/chat/tools/post.content.tool';
 import { IntegrationChannelTool } from '@gitroom/nestjs-libraries/chat/tools/integration.channel.tool';
 import { SetsTool } from '@gitroom/nestjs-libraries/chat/tools/sets.tool';
 import { SignaturesTool } from '@gitroom/nestjs-libraries/chat/tools/signatures.tool';
@@ -50,9 +51,10 @@ export const toolList = [
   IntegrationTriggerTool,
   IntegrationSchedulePostTool,
   PostsListTool,
+  UpdatePostTool,
+  DeletePostTool,
   PostSettingsTool,
   PostDateTool,
-  PostContentTool,
   IntegrationChannelTool,
   SetsTool,
   SignaturesTool,
