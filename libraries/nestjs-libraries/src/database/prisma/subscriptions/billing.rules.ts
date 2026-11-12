@@ -732,6 +732,11 @@ export function keywordUpgradeMessage(tier: PlanTier) {
   return `${plan.displayName} includes ${plan.stalkerKeywords} Stalker keywords. Upgrade to track more.`;
 }
 
+export function mentionHistoryMessage(tier: PlanTier) {
+  const plan = PLANS[tier];
+  return `${plan.displayName} includes ${plan.mentionRetentionDays} days of mentions. Upgrade to see more.`;
+}
+
 export function manualCheckMessage(limit: number) {
   return `You have used today's ${limit} checks. Upgrade for more.`;
 }
