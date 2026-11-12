@@ -12,6 +12,7 @@ import {
   useMenuItem,
   useVisibleMenuItems,
 } from '@gitroom/frontend/components/layout/top.menu';
+import { insertComposer } from '@gitroom/frontend/components/layout/shell.nav';
 import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
@@ -173,14 +174,12 @@ export const C8Sidebar = ({
     : 'schedule';
 
   const rows = [
-    ...primary.slice(0, 1),
-    {
+    ...insertComposer(primary, {
       name: 'Composer',
       path: '/launches',
       icon: <HugeIcon name="pencil" size={18} />,
       onClick: openComposer,
-    },
-    ...primary.slice(1),
+    }),
     ...settings,
     ...extras,
   ];

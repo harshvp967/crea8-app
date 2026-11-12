@@ -11,6 +11,7 @@ import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { AgentMediaModal } from '@gitroom/frontend/components/layout/agent.media.modal';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { primaryNav } from '@gitroom/frontend/components/layout/shell.nav';
 
 /** Schedule and phone nav. Set true to show the UGC item again. */
 export const ugcNavEnabled = false;
@@ -39,38 +40,18 @@ export const useMenuItem = () => {
     });
   }, [openModal, t]);
 
-  const firstMenu = [
-    {
-      name: isGeneral ? t('calendar', 'Calendar') : t('launches', 'Launches'),
-      icon: <HugeIcon name="calendar" size={18} />,
-      path: '/launches',
-    },
-    {
-      name: 'Agent',
-      icon: <HugeIcon name="agent" size={18} />,
-      path: '/agents',
-    },
-    {
-      name: t('analytics', 'Analytics'),
-      icon: <HugeIcon name="analytics" size={18} />,
-      path: '/analytics',
-    },
-    {
-      name: t('media', 'Media'),
-      icon: <HugeIcon name="media" size={18} />,
-      path: '/media',
-    },
-    {
-      name: t('plugs', 'Plugs'),
-      icon: <HugeIcon name="plug" size={18} />,
-      path: '/plugs',
-    },
-    {
-      name: t('integrations', 'Integrations'),
-      icon: <HugeIcon name="puzzle" size={18} />,
-      path: '/third-party',
-    },
-  ] satisfies MenuItemInterface[] as MenuItemInterface[];
+  const firstMenu = primaryNav.map((item) => ({
+    name:
+      'name' in item
+        ? item.name
+        : item.otherFallback
+          ? isGeneral
+            ? t(item.labelKey, item.fallback)
+            : t('launches', item.otherFallback)
+          : t(item.labelKey, item.fallback),
+    icon: <HugeIcon name={item.icon} size={18} />,
+    path: item.path,
+  })) satisfies MenuItemInterface[] as MenuItemInterface[];
 
   const secondMenu = [
     {
