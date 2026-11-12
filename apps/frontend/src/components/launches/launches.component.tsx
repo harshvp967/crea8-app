@@ -26,7 +26,6 @@ import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
 import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
-import { GeneratorComponent } from './generator/generator';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NewPost } from '@gitroom/frontend/components/launches/new.post';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -636,14 +635,8 @@ export const LaunchesComponent = () => {
                 <HugeIcon name="chevron-left" size={16} />
               </div>
             </div>
-            <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
+            <div className="channel-rail-tools flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
-              <div className="sidebar-create flex gap-[8px] group-[.sidebar]:flex-col">
-                {channels?.length > 0 && <NewPost />}
-                {channels?.length > 0 &&
-                  user?.tier?.ai &&
-                  billingEnabled && <GeneratorComponent />}
-              </div>
             </div>
             <div className="gap-[32px] flex flex-col select-none flex-1">
               {channels.length === 0 && collapseMenu === '0' && (

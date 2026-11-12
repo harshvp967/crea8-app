@@ -1493,6 +1493,11 @@ body.c8-schedule .channel-rail .sidebar-create button:first-child {
   display: none;
 }
 
+/* The sparkle under Channels is gone. Create post keeps the generator. */
+body.c8-schedule .channel-rail .channel-rail-tools {
+  display: none;
+}
+
 body.c8-schedule[data-c8-view='week'] .date-range,
 body.c8-schedule[data-c8-view='day'] .date-range,
 body.c8-schedule:not([data-c8-view]) .date-range {

@@ -31,6 +31,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
 import { Button } from '@gitroom/react/form/button';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
+import { SegmentedControl } from '@gitroom/frontend/components/ui/segmented-control';
 
 dayjs.extend(utc);
 
@@ -61,6 +62,18 @@ type Draft = {
 
 const WEEK = 7 * 24 * 60 * 60 * 1000;
 
+const IDEA_FORMATS = ['short', 'long', 'thread_short', 'thread_long'] as const;
+type IdeaFormat = (typeof IDEA_FORMATS)[number];
+type IdeaSpeaker = 'personal' | 'company';
+
+function ideaFormat(value: unknown): IdeaFormat {
+  return IDEA_FORMATS.includes(value as IdeaFormat) ? (value as IdeaFormat) : 'short';
+}
+
+function ideaSpeaker(value: unknown): IdeaSpeaker {
+  return value === 'company' ? 'company' : 'personal';
+}
+
 class EmptySettings {
   @IsOptional()
   empty?: string;
@@ -71,6 +84,8 @@ type StoredPanel = {
   idea: string;
   allWhen: string;
   voice: boolean;
+  format?: IdeaFormat;
+  speaker?: IdeaSpeaker;
   tray: DraftMedia[];
   drafts: Array<{
     integrationId: string;
@@ -252,6 +267,8 @@ function panelSerial(data: {
   idea: string;
   allWhen: string;
   voice: boolean;
+  format?: IdeaFormat;
+  speaker?: IdeaSpeaker;
   tray: DraftMedia[];
   drafts: Parameters<typeof storedDrafts>[0];
 }) {
@@ -259,6 +276,8 @@ function panelSerial(data: {
     idea: data.idea || '',
     allWhen: data.allWhen || '',
     voice: !!data.voice,
+    format: ideaFormat(data.format),
+    speaker: ideaSpeaker(data.speaker),
     tray: data.tray || [],
     drafts: storedDrafts(data.drafts),
   });
@@ -556,6 +575,8 @@ const IdeaPostsPanel = ({
   const [phone, setPhone] = useState(false);
   const [idea, setIdea] = useState('');
   const [voice, setVoice] = useState(false);
+  const [format, setFormat] = useState<IdeaFormat>('short');
+  const [speaker, setSpeaker] = useState<IdeaSpeaker>('personal');
   const [focusId, setFocusId] = useState<string | null>(null);
   const [removeAsk, setRemoveAsk] = useState<{
     top: number;
@@ -659,6 +680,8 @@ const IdeaPostsPanel = ({
       setIdea('');
       setAllWhen('');
       setVoice(false);
+      setFormat('short');
+      setSpeaker('personal');
       setTray([]);
       setDrafts([]);
       setRestored(false);
@@ -672,6 +695,8 @@ const IdeaPostsPanel = ({
     setIdea(saved.idea);
     setAllWhen(saved.allWhen || '');
     setVoice(!!saved.voice);
+    setFormat(ideaFormat(saved.format));
+    setSpeaker(ideaSpeaker(saved.speaker));
     setTray(saved.tray || []);
     setDrafts(
       saved.drafts.map((item) => ({
@@ -695,6 +720,8 @@ const IdeaPostsPanel = ({
         method: 'POST',
         body: JSON.stringify({
           idea,
+          format,
+          voice: speaker,
           ...(customer ? { customer } : {}),
         }),
       });
@@ -735,7 +762,7 @@ const IdeaPostsPanel = ({
     } finally {
       setLoading(false);
     }
-  }, [customer, fetch, idea]);
+  }, [customer, fetch, format, idea, speaker]);
 
   const edit = useCallback(
     async (item: Draft) => {
@@ -1099,10 +1126,12 @@ const IdeaPostsPanel = ({
       idea,
       allWhen,
       voice,
+      format,
+      speaker,
       tray,
       drafts: storedDrafts(drafts),
     };
-  }, [allWhen, drafts, idea, tray, voice]);
+  }, [allWhen, drafts, format, idea, speaker, tray, voice]);
   packRef.current = packPanel;
   keyRef.current = key;
 
@@ -1210,6 +1239,8 @@ const IdeaPostsPanel = ({
     setAllWhen('');
     setError('');
     setVoice(false);
+    setFormat('short');
+    setSpeaker('personal');
     setRestored(false);
     setSettingsOpen({});
     seenInvalid.current = {};
@@ -1256,14 +1287,32 @@ const IdeaPostsPanel = ({
               <HugeIcon name="close" size={16} />
             </button>
           </div>
-          <div>
-            <p>
-              {t(
-                'one_idea_help',
-                'Type one idea or paste a link. You get one draft for each connected channel.'
-              )}
-            </p>
-          </div>
+        </div>
+        <div className="c8-idea-choices">
+          <label className="c8-idea-select">
+            <select
+              aria-label={t('format', 'Format')}
+              value={format}
+              onChange={(event) => setFormat(ideaFormat(event.target.value))}
+            >
+              <option value="short">{t('short_post', 'Short post')}</option>
+              <option value="long">{t('long_post', 'Long post')}</option>
+              <option value="thread_short">{t('thread_short_posts', 'Thread with short posts')}</option>
+              <option value="thread_long">{t('thread_long_posts', 'Thread with long posts')}</option>
+            </select>
+            <HugeIcon name="chevron-down" size={14} />
+          </label>
+          <SegmentedControl
+            variant="pill"
+            className="c8-idea-voice"
+            aria-label={t('voice', 'Voice')}
+            value={speaker}
+            onValueChange={(value) => setSpeaker(ideaSpeaker(value))}
+            options={[
+              { value: 'personal', label: t('personal', 'Personal') },
+              { value: 'company', label: t('company', 'Company') },
+            ]}
+          />
         </div>
         <input
           ref={fileRef}
@@ -1280,9 +1329,9 @@ const IdeaPostsPanel = ({
           }}
         />
         <div className="c8-idea-box">
-          <span>{t('your_idea_or_link', 'Your idea or link')}</span>
           <div className="c8-idea-input">
             <textarea
+              aria-label={t('your_idea_or_link', 'Your idea or link')}
               value={idea}
               maxLength={4000}
               onChange={(event) => setIdea(event.target.value)}
