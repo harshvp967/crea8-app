@@ -14,6 +14,13 @@ import { GroupListTool } from '@gitroom/nestjs-libraries/chat/tools/group.list.t
 import { UploadFromUrlTool } from '@gitroom/nestjs-libraries/chat/tools/upload.from.url.tool';
 import { PostsListTool } from '@gitroom/nestjs-libraries/chat/tools/posts.list.tool';
 import { PostSettingsTool } from '@gitroom/nestjs-libraries/chat/tools/post.settings.tool';
+import { PostDateTool } from '@gitroom/nestjs-libraries/chat/tools/post.date.tool';
+import { PostContentTool } from '@gitroom/nestjs-libraries/chat/tools/post.content.tool';
+import { IntegrationChannelTool } from '@gitroom/nestjs-libraries/chat/tools/integration.channel.tool';
+import { SetsTool } from '@gitroom/nestjs-libraries/chat/tools/sets.tool';
+import { SignaturesTool } from '@gitroom/nestjs-libraries/chat/tools/signatures.tool';
+import { AutopostTool } from '@gitroom/nestjs-libraries/chat/tools/autopost.tool';
+import { ShortlinkPreferenceTool } from '@gitroom/nestjs-libraries/chat/tools/shortlink.preference.tool';
 import { UploadWidgetTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.tool';
 import { UploadWidgetTicketTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.ticket.tool';
 import { UploadWidgetStatusTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.status.tool';
@@ -34,6 +41,13 @@ export const toolList = [
   IntegrationSchedulePostTool,
   PostsListTool,
   PostSettingsTool,
+  PostDateTool,
+  PostContentTool,
+  IntegrationChannelTool,
+  SetsTool,
+  SignaturesTool,
+  AutopostTool,
+  ShortlinkPreferenceTool,
   GenerateVideoOptionsTool,
   VideoFunctionTool,
   GenerateVideoTool,

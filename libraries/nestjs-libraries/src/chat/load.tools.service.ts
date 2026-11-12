@@ -63,6 +63,12 @@ export class LoadToolsService {
         - Schedule posts into the future, or now, adding texts, images and videos
         - List the posts scheduled between two dates (postsListTool)
         - Update the settings of a scheduled post or draft that was not published yet (postSettingsTool)
+        - Move a post's publish time (postDateTool). This uses action update and does not republish, so a published post is not requeued
+        - Edit the text and media of a draft or scheduled post (postContentTool). The date stays the same, and a published post is refused
+        - Enable, disable, delete, rename, or set time slots on a channel that is already connected (integrationChannelTool). Never connect a new channel. If delete says posts are still attached, the user deletes those posts in the app
+        - List, create, update, and delete sets (setsTool) and signatures (signaturesTool). A free workspace is refused
+        - List, create, update, delete, turn on or off, and test an autopost feed (autopostTool) when the plan includes autopost
+        - Read or set the workspace shortlink preference to ask, always, or never (shortlinkPreferenceTool). The per-post shortLink flag on integrationSchedulePostTool is separate
         - Generate pictures for posts
         - Generate videos for posts
         - Generate text for posts
