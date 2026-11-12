@@ -153,11 +153,17 @@ export const AppShellSkeleton = () => {
         <C8Sidebar name="" email="" picture="" menu={accountMenu} />
         <div className="c8-main">
           <header className="app-header flex items-center min-h-[64px] h-[64px] bg-newBgColorInner rounded-[26px] border border-newBorder gap-[8px] ps-[18px] pe-[12px] shrink-0">
-            <Skeleton className="h-[18px] w-[120px] rounded-full" />
-            <div className="ms-auto flex shrink-0 items-center gap-[8px]" aria-hidden>
-              <Skeleton className="h-[28px] w-[28px] rounded-full" />
-              <Skeleton className="h-[28px] w-[28px] rounded-full" />
-              <Skeleton className="hidden h-[28px] w-[28px] rounded-full md:block" />
+            <span className="app-logo">
+              <Logo />
+            </span>
+            <DashboardSwitcher />
+            <div className="navsep w-[1px] h-[24px] bg-blockSeparator hidden sm:block shrink-0" />
+            <div
+              className="header-tools flex items-center text-textItemBlur shrink-0 ms-auto gap-[8px]"
+              aria-hidden
+            >
+              <Skeleton className="h-[38px] w-[38px] shrink-0 rounded-[14px]" />
+              <Skeleton className="header-avatar" />
             </div>
           </header>
           <div className="app-stage flex-1 overflow-hidden flex flex-col min-h-0">
@@ -171,7 +177,6 @@ export const AppShellSkeleton = () => {
           </div>
         </div>
       </div>
-      <MobileTabBar />
     </div>
   );
 };
