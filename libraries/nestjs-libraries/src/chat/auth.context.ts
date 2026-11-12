@@ -18,6 +18,8 @@ export const checkAuth = (
 
 export type ToolOrganization = {
   id: string;
+  // Set for an OAuth token. Absent for an organization API key.
+  userId?: string;
   subscription?: {
     subscriptionTier?: string | null;
     isLifetime?: boolean | null;

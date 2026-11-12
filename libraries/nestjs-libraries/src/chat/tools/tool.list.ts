@@ -32,6 +32,7 @@ import { LinkPageTool } from '@gitroom/nestjs-libraries/chat/tools/link.page.too
 import { LinkBlocksTool } from '@gitroom/nestjs-libraries/chat/tools/link.blocks.tool';
 import { LinkAnalyticsTool } from '@gitroom/nestjs-libraries/chat/tools/link.analytics.tool';
 import { LinkLeadsTool } from '@gitroom/nestjs-libraries/chat/tools/link.leads.tool';
+import { LinkDomainTool } from '@gitroom/nestjs-libraries/chat/tools/link.domain.tool';
 
 export const toolList = [
   IntegrationListTool,
@@ -68,4 +69,5 @@ export const toolList = [
   LinkBlocksTool,
   LinkAnalyticsTool,
   LinkLeadsTool,
+  LinkDomainTool,
 ];
