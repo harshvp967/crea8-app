@@ -27,6 +27,7 @@ import { EmailNotificationsTool } from '@gitroom/nestjs-libraries/chat/tools/ema
 import { WebhooksTool } from '@gitroom/nestjs-libraries/chat/tools/webhooks.tool';
 import { ApprovedAppsTool } from '@gitroom/nestjs-libraries/chat/tools/approved.apps.tool';
 import { DeveloperTool } from '@gitroom/nestjs-libraries/chat/tools/developer.tool';
+import { BillingTool } from '@gitroom/nestjs-libraries/chat/tools/billing.tool';
 import { UploadWidgetTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.tool';
 import { UploadWidgetTicketTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.ticket.tool';
 import { UploadWidgetStatusTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.status.tool';
@@ -62,6 +63,7 @@ export const toolList = [
   WebhooksTool,
   ApprovedAppsTool,
   DeveloperTool,
+  BillingTool,
   GenerateVideoOptionsTool,
   VideoFunctionTool,
   GenerateVideoTool,
