@@ -32,16 +32,18 @@ export class BillingReadService {
 
   async overview(org: Organization): Promise<BillingOverview> {
     const enforced = isBillingEnforced(org.id);
-    const account = enforced ? await this._entitlements.account(org.id) : null;
-    const grandfathered = isGrandfatheredOrg(org.id) || !!account?.grandfathered;
-    const active = account?.subscription || null;
-    const latest = account?.latest || null;
-    const tier = await this._entitlements.tier(org.id);
+    let account = enforced ? await this._entitlements.account(org.id) : null;
     const paymentId = account?.paymentId || org.paymentId;
     const billingOrganizationId = account?.billingOrganizationId || org.id;
     if (enforced && paymentId) {
       await this._dodo.reconcileSucceededPacks(billingOrganizationId);
+      await this._dodo.reconcileLiveSubscriptions(billingOrganizationId);
+      account = await this._entitlements.account(org.id);
     }
+    const grandfathered = isGrandfatheredOrg(org.id) || !!account?.grandfathered;
+    const active = account?.subscription || null;
+    const latest = account?.latest || null;
+    const tier = await this._entitlements.tier(org.id);
     const balance = await this._credits.balance(org.id);
     const history = enforced ? await this._credits.history(org.id) : [];
     const usage = enforced

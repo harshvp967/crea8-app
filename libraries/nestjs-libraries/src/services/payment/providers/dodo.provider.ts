@@ -25,6 +25,10 @@ import {
   adoptIncomingSubscription,
   cancelAccessUntil,
   displayedPlanAfterEvent,
+  reconcileLiveSubscriptions,
+  remoteSubscriptionIsLive,
+  storedStatusForLiveSubscription,
+  type ListedSubscription,
   dodoCheckoutPrefill,
   dodoEnvironment,
   dodoProductId,
@@ -135,20 +139,16 @@ export class DodoProvider extends PaymentProviderAbstract {
     if (!organizationId) {
       return;
     }
-    const mapped = tierFromProductId(source.product_id) || {
-      tier: (source?.metadata?.billing || null) as PaidTier | null,
-      period: (source?.metadata?.period || 'MONTHLY') as 'MONTHLY' | 'YEARLY',
-    };
-    if (!mapped.tier || !PLANS[mapped.tier]) {
-      return;
-    }
     const status = String(source.status || 'active');
     const existing = await tx.subscription.findUnique({
       where: { organizationId },
     });
     const incomingId = String(source.subscription_id || '');
-    // A second subscription id must not replace the one already on this
-    // account. The other Dodo subscription is left as it is.
+    const customerId = source?.customer?.customer_id
+      ? String(source.customer.customer_id)
+      : null;
+    // A second subscription id must not replace the plan already shown.
+    // Cancel that Dodo subscription so the workspace keeps one.
     if (
       !adoptIncomingSubscription({
         storedId: existing?.identifier,
@@ -156,6 +156,19 @@ export class DodoProvider extends PaymentProviderAbstract {
         storedGrantsAccess: subscriptionGrantsAccess(existing),
       })
     ) {
+      await this.cancelListedStrays({
+        organizationId,
+        customerId,
+        keepId: existing?.identifier || null,
+        alsoCancel: remoteSubscriptionIsLive(status) ? [incomingId] : [],
+      });
+      return;
+    }
+    const mapped = tierFromProductId(source.product_id) || {
+      tier: (source?.metadata?.billing || null) as PaidTier | null,
+      period: (source?.metadata?.period || 'MONTHLY') as 'MONTHLY' | 'YEARLY',
+    };
+    if (!mapped.tier || !PLANS[mapped.tier]) {
       return;
     }
     const hadLive = !!existing && !existing.deletedAt && existing.status !== 'failed' && existing.status !== 'pending';
@@ -183,7 +196,6 @@ export class DodoProvider extends PaymentProviderAbstract {
       source.cancel_at_next_billing_date && source.next_billing_date
         ? new Date(source.next_billing_date)
         : null;
-    const customerId = source?.customer?.customer_id || null;
     const incomingEnd = source.next_billing_date
       ? new Date(source.next_billing_date).toISOString()
       : null;
@@ -258,6 +270,13 @@ export class DodoProvider extends PaymentProviderAbstract {
         monthlyCycleKey(String(cycleKey), grantingTrial),
         monthlyCreditAllowance(tier, grantingTrial)
       );
+    }
+    if (!ended && incomingId) {
+      await this.cancelListedStrays({
+        organizationId,
+        customerId,
+        keepId: incomingId,
+      });
     }
   }
 
@@ -394,7 +413,237 @@ export class DodoProvider extends PaymentProviderAbstract {
     }
   }
 
-  async subscribe(
+  private liveSync = new Map<string, { at: number; pending?: Promise<void> }>();
+
+  // Next billing read. Cancels every live Dodo subscription except the one
+  // the workspace already shows. When that stored id is not live, the row is
+  // rewritten to the single remaining subscription. Failures stay off the
+  // billing response and are retried on the next read.
+  override async reconcileLiveSubscriptions(organizationId: string) {
+    const now = Date.now();
+    const slot = this.liveSync.get(organizationId);
+    if (slot?.pending) {
+      try {
+        await slot.pending;
+      } catch {
+        return;
+      }
+      return;
+    }
+    if (slot && now - slot.at < 60_000) {
+      return;
+    }
+    const pending = this.reconcileLiveOnce(organizationId)
+      .then(() => {
+        this.liveSync.set(organizationId, { at: Date.now() });
+      })
+      .catch((err) => {
+        this.liveSync.delete(organizationId);
+        throw err;
+      });
+    this.liveSync.set(organizationId, { at: now, pending });
+    try {
+      await pending;
+    } catch (err) {
+      this._logger.warn(
+        `Could not reconcile subscriptions for ${organizationId}: ${
+          err instanceof Error ? err.message : err
+        }`
+      );
+    }
+  }
+
+  private async reconcileLiveOnce(organizationId: string) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId || !process.env.DODO_PAYMENTS_API_KEY) {
+      return;
+    }
+    const listed = await this.listedSubscriptions(String(org.paymentId));
+    const existing = await this._prisma.subscription.findUnique({
+      where: { organizationId },
+    });
+    const decision = reconcileLiveSubscriptions({
+      storedId: existing?.identifier,
+      listed,
+    });
+    await this.cancelStraySubscriptions(decision.cancelIds);
+    if (!decision.keepId || decision.keepId === (existing?.identifier || null)) {
+      return;
+    }
+    const keeper = listed.find((row) => row.subscriptionId === decision.keepId);
+    if (!keeper) {
+      return;
+    }
+    await this.adoptKeptSubscription(organizationId, keeper, !!existing);
+  }
+
+  private async replaceInsteadOfCheckout(
+    organizationId: string,
+    body: BillingSubscribeDto
+  ) {
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org?.paymentId || !process.env.DODO_PAYMENTS_API_KEY) {
+      return null;
+    }
+    const listed = await this.listedSubscriptions(String(org.paymentId));
+    const decision = reconcileLiveSubscriptions({ storedId: null, listed });
+    if (!decision.keepId) {
+      return null;
+    }
+    await this.cancelStraySubscriptions(decision.cancelIds);
+    const keeper = listed.find((row) => row.subscriptionId === decision.keepId);
+    const mapped = keeper?.productId ? tierFromProductId(keeper.productId) : null;
+    if (!keeper || !mapped) {
+      throw new HttpException(ACTIVE_SUBSCRIPTION_ERROR, 400);
+    }
+    const switchDecision = subscriptionSwitch({
+      grantsAccess: true,
+      identifier: decision.keepId,
+      canReplace: true,
+      currentTier: mapped.tier,
+      currentPeriod: mapped.period,
+      requestedTier: body.billing,
+      requestedPeriod: body.period,
+    });
+    if (switchDecision.action === 'current') {
+      return { changed: false, current: true };
+    }
+    if (switchDecision.action === 'replace') {
+      return this.changePlan(organizationId, switchDecision.identifier, body);
+    }
+    throw new HttpException(ACTIVE_SUBSCRIPTION_ERROR, 400);
+  }
+
+  private async cancelListedStrays(input: {
+    organizationId: string;
+    customerId?: string | null;
+    keepId?: string | null;
+    alsoCancel?: string[];
+  }) {
+    const cancel = new Set(
+      (input.alsoCancel || []).filter((id) => id && id !== input.keepId)
+    );
+    let customerId = input.customerId || null;
+    if (!customerId) {
+      const org = await this._organizationService.getOrgById(input.organizationId);
+      customerId = org?.paymentId ? String(org.paymentId) : null;
+    }
+    if (customerId && process.env.DODO_PAYMENTS_API_KEY) {
+      const listed = await this.listedSubscriptions(customerId);
+      const decision = reconcileLiveSubscriptions({
+        storedId: input.keepId,
+        listed,
+      });
+      for (const id of decision.cancelIds) {
+        cancel.add(id);
+      }
+    }
+    await this.cancelStraySubscriptions([...cancel]);
+  }
+
+  private async listedSubscriptions(customerId: string): Promise<ListedSubscription[]> {
+    const page = await this.client().subscriptions.list({
+      customer_id: customerId,
+      page_size: 100,
+    });
+    const rows: ListedSubscription[] = [];
+    for await (const row of page) {
+      const subscriptionId = String(row?.subscription_id || '');
+      if (!subscriptionId) {
+        continue;
+      }
+      rows.push({
+        subscriptionId,
+        status: row?.status ? String(row.status) : null,
+        createdAt: row?.created_at ? String(row.created_at) : null,
+        productId: row?.product_id ? String(row.product_id) : null,
+        nextBillingDate: row?.next_billing_date ? String(row.next_billing_date) : null,
+        customerId: row?.customer?.customer_id
+          ? String(row.customer.customer_id)
+          : customerId,
+        cancelAtNextBillingDate: !!row?.cancel_at_next_billing_date,
+      });
+      if (rows.length >= 100) {
+        break;
+      }
+    }
+    return rows;
+  }
+
+  private async cancelStraySubscriptions(ids: string[]) {
+    if (!process.env.DODO_PAYMENTS_API_KEY) {
+      return;
+    }
+    for (const id of ids) {
+      if (!id) {
+        continue;
+      }
+      try {
+        await this.client().subscriptions.update(id, { status: 'cancelled' });
+      } catch (err) {
+        if (this.alreadyCancelled(err)) {
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+
+  private alreadyCancelled(err: unknown) {
+    const status = (err as { status?: number })?.status;
+    if (status === 404) {
+      return true;
+    }
+    const message = (err instanceof Error ? err.message : String(err || '')).toLowerCase();
+    return message.includes('already') && message.includes('cancel');
+  }
+
+  private async adoptKeptSubscription(
+    organizationId: string,
+    keeper: ListedSubscription,
+    hasRow: boolean
+  ) {
+    const mapped = keeper.productId ? tierFromProductId(keeper.productId) : null;
+    if (!mapped || !PLANS[mapped.tier]) {
+      this._logger.warn(
+        `Left the stored plan in place for ${organizationId}. The live subscription ${keeper.subscriptionId} has no mapped product.`
+      );
+      return;
+    }
+    const cancelAt =
+      keeper.cancelAtNextBillingDate && keeper.nextBillingDate
+        ? new Date(keeper.nextBillingDate)
+        : null;
+    const currentPeriodEnd = keeper.nextBillingDate
+      ? new Date(keeper.nextBillingDate)
+      : null;
+    const row = (): Prisma.SubscriptionUncheckedCreateInput => ({
+      organizationId,
+      subscriptionTier: mapped.tier,
+      period: mapped.period,
+      identifier: keeper.subscriptionId,
+      provider: DODO_PROVIDER,
+      totalChannels: PLANS[mapped.tier].channels,
+      status: storedStatusForLiveSubscription(keeper),
+      pendingTier: null,
+      pendingPeriod: null,
+      deletedAt: null,
+      cancelAt,
+      currentPeriodEnd,
+    });
+    if (hasRow) {
+      const { organizationId: storedOrganizationId, ...changes } = row();
+      void storedOrganizationId;
+      await this._prisma.subscription.update({
+        where: { organizationId },
+        data: changes,
+      });
+      return;
+    }
+    await this._prisma.subscription.create({ data: row() });
+  }
+
+  override async subscribe(
     _uniqueId: string,
     organizationId: string,
     userId: string,
@@ -403,6 +652,18 @@ export class DodoProvider extends PaymentProviderAbstract {
   ) {
     const account = await loadBillingAccount(this._prisma, organizationId);
     const current = account.subscription;
+    if (current?.identifier && current.provider === DODO_PROVIDER) {
+      await this.cancelListedStrays({
+        organizationId: account.billingOrganizationId,
+        keepId: current.identifier,
+      }).catch((err) => {
+        this._logger.warn(
+          `Could not cancel a duplicate subscription for ${account.billingOrganizationId}: ${
+            err instanceof Error ? err.message : err
+          }`
+        );
+      });
+    }
     const decision = subscriptionSwitch({
       grantsAccess: !!current,
       identifier: current?.identifier,
@@ -428,6 +689,13 @@ export class DodoProvider extends PaymentProviderAbstract {
     if (decision.action === 'refuse') {
       throw new HttpException(ACTIVE_SUBSCRIPTION_ERROR, 400);
     }
+    const held = await this.replaceInsteadOfCheckout(
+      account.billingOrganizationId,
+      body
+    );
+    if (held) {
+      return held;
+    }
     return this.checkout(
       account.billingOrganizationId,
       userId,
@@ -437,7 +705,7 @@ export class DodoProvider extends PaymentProviderAbstract {
     );
   }
 
-  async embedded(
+  override async embedded(
     uniqueId: string,
     organizationId: string,
     userId: string,
@@ -447,7 +715,7 @@ export class DodoProvider extends PaymentProviderAbstract {
     return this.subscribe(uniqueId, organizationId, userId, body, allowTrial);
   }
 
-  async buyPack(
+  override async buyPack(
     organizationId: string,
     userId: string,
     packKey: string,
@@ -641,7 +909,7 @@ export class DodoProvider extends PaymentProviderAbstract {
     return { changed: true, upgrade, trial: inTrial, chargedNow: decision.chargeNow };
   }
 
-  async prorate(organizationId: string, body: BillingSubscribeDto) {
+  override async prorate(organizationId: string, body: BillingSubscribeDto) {
     const current = await this._prisma.subscription.findFirst({
       where: { organizationId, deletedAt: null, provider: DODO_PROVIDER },
     });
@@ -685,7 +953,7 @@ export class DodoProvider extends PaymentProviderAbstract {
     };
   }
 
-  async setToCancel(organizationId: string) {
+  override async setToCancel(organizationId: string) {
     const current = await this._prisma.subscription.findFirst({
       where: { organizationId, deletedAt: null, provider: DODO_PROVIDER },
     });
@@ -719,23 +987,41 @@ export class DodoProvider extends PaymentProviderAbstract {
     return { cancelAt: cancel ? until : null };
   }
 
-  async cancelAllSubscriptions(organizationId: string) {
+  override async cancelAllSubscriptions(organizationId: string) {
+    if (!process.env.DODO_PAYMENTS_API_KEY) {
+      return;
+    }
     const current = await this._prisma.subscription.findFirst({
       where: { organizationId, provider: DODO_PROVIDER, deletedAt: null },
     });
-    if (!current?.identifier || !process.env.DODO_PAYMENTS_API_KEY) {
+    const ids = new Set<string>();
+    if (current?.identifier) {
+      ids.add(current.identifier);
+    }
+    try {
+      const org = await this._organizationService.getOrgById(organizationId);
+      if (org?.paymentId) {
+        const listed = await this.listedSubscriptions(String(org.paymentId));
+        for (const row of listed) {
+          if (remoteSubscriptionIsLive(row.status)) {
+            ids.add(row.subscriptionId);
+          }
+        }
+      }
+    } catch {
+      // The stored id is still cancelled below when the list cannot be loaded.
+    }
+    if (!ids.size) {
       return;
     }
     try {
-      await this.client().subscriptions.update(current.identifier, {
-        status: 'cancelled',
-      });
+      await this.cancelStraySubscriptions([...ids]);
     } catch {
       return;
     }
   }
 
-  async portalLink(organizationId: string) {
+  override async portalLink(organizationId: string) {
     const org = await this._organizationService.getOrgById(organizationId);
     if (!org?.paymentId) {
       throw new HttpException('No billing customer yet', 400);
@@ -746,14 +1032,14 @@ export class DodoProvider extends PaymentProviderAbstract {
     return { url: session.link };
   }
 
-  async checkSubscription(organizationId: string, subscriptionId: string) {
+  override async checkSubscription(organizationId: string, subscriptionId: string) {
     const row = await this._prisma.subscription.findFirst({
       where: { organizationId, identifier: subscriptionId, deletedAt: null },
     });
     return !!row;
   }
 
-  async getPackages() {
+  override async getPackages() {
     return PAID_TIERS.map((tier) => ({
       tier,
       name: PLANS[tier].displayName,
@@ -762,7 +1048,7 @@ export class DodoProvider extends PaymentProviderAbstract {
     }));
   }
 
-  async getCharges(organizationId: string) {
+  override async getCharges(organizationId: string) {
     return this.invoices(organizationId);
   }
 
