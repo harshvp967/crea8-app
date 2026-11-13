@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+
+export const dynamic = 'force-dynamic';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ReactNode } from 'react';
 import clsx from 'clsx';

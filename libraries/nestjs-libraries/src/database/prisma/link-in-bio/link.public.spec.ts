@@ -420,18 +420,18 @@ describe('Link-in-Bio page and leads load', () => {
   });
 
   it('starts the link and leads reads with the shell, and leaves the calendar alone', () => {
-    expect(linkStartupKeys('/link')).toEqual({
+    expect(linkStartupKeys('/linkinbio')).toEqual({
       page: '/link-in-bio',
       posts: '/link-in-bio/posts',
       leads: null,
     });
-    expect(linkStartupKeys('/link/leads')).toEqual({
+    expect(linkStartupKeys('/linkinbio/leads')).toEqual({
       page: '/link-in-bio',
       posts: null,
       leads: '/link-in-bio/leads?status=&q=',
     });
-    expect(linkStartupKeys('/launches')).toEqual({ page: null, posts: null, leads: null });
-    expect(linkStartupKeys('/link/analytics').posts).toBeNull();
-    expect(linkStartupKeys('/link/analytics').leads).toBeNull();
+    expect(linkStartupKeys('/schedule')).toEqual({ page: null, posts: null, leads: null });
+    expect(linkStartupKeys('/linkinbio/analytics').posts).toBeNull();
+    expect(linkStartupKeys('/linkinbio/analytics').leads).toBeNull();
   });
 });

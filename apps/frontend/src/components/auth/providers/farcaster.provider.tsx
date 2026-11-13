@@ -15,7 +15,7 @@ export const FarcasterProvider = () => {
   const t = useT();
   const gotoLogin = useCallback(async (code: string) => {
     const state = await (await fetch('/auth/oauth/FARCASTER')).text();
-    window.location.href = `/auth?provider=FARCASTER&code=${encodeURIComponent(code)}&state=${state}`;
+    window.location.href = `/login?provider=FARCASTER&code=${encodeURIComponent(code)}&state=${state}`;
   }, []);
   const open = useCallback(() => {
     modal.openModal({

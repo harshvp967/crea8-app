@@ -168,7 +168,7 @@ export function RegisterAfter({
           fireEvents('register');
           return track(TrackEnum.CompleteRegistration).then(() => {
             if (response.headers.get('activate') === 'true') {
-              router.push('/auth/activate');
+              router.push('/activate');
             }
           });
         } else {
@@ -275,7 +275,7 @@ export function RegisterAfter({
                 </div>
                 <p className="mt-[12px] text-[14px]">
                   <Link
-                    href="/auth/login"
+                    href="/login"
                     className="cursor-pointer text-[color:var(--arc-accent-text)]"
                   >
                     {t('log_in', 'Log in')}

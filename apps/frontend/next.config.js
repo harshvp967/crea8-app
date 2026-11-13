@@ -115,7 +115,30 @@ const nextConfig = {
     ];
   },
   async rewrites() {
+    // The browser URL is the new path. These rewrites serve the existing pages.
+    // legacyRedirect() 301s the old URL before a rewrite can see it.
     return [
+      { source: '/login', destination: '/auth' },
+      { source: '/register', destination: '/auth/register' },
+      { source: '/activate', destination: '/auth/activate' },
+      { source: '/activate/:code', destination: '/auth/activate/:code' },
+      { source: '/forgot', destination: '/auth/forgot' },
+      { source: '/forgot/:token', destination: '/auth/forgot/:token' },
+      { source: '/login-required', destination: '/auth/login-required' },
+      { source: '/schedule', destination: '/launches' },
+      { source: '/schedule/analytics', destination: '/analytics' },
+      { source: '/schedule/media', destination: '/media' },
+      { source: '/schedule/plugs', destination: '/plugs' },
+      { source: '/schedule/agents', destination: '/agents' },
+      { source: '/schedule/agents/:id', destination: '/agents/:id' },
+      { source: '/schedule/integrations', destination: '/third-party' },
+      { source: '/schedule/p/:id', destination: '/p/:id' },
+      { source: '/linkinbio', destination: '/link' },
+      { source: '/linkinbio/:path*', destination: '/link/:path*' },
+      { source: '/stalker/preview/:page', destination: '/stalker-preview/:page' },
+      { source: '/account/billing', destination: '/billing' },
+      { source: '/account/billing/:path*', destination: '/billing/:path*' },
+      { source: '/invite', destination: '/join' },
       {
         source: '/uploads/:path*',
         destination:

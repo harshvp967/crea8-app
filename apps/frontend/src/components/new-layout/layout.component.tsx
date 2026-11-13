@@ -206,9 +206,12 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   // These used to start only after /user/self rendered the page. SWR keeps the
   // result, and the page hooks share these keys, so a mount inside the dedupe
   // window does not send them again.
-  const launchesRoute = pathname === '/launches';
+  const launchesRoute = pathname === '/schedule' || pathname === '/launches';
   const thirdPartyRoute =
-    pathname === '/third-party' || !!pathname?.startsWith('/third-party/');
+    pathname === '/schedule/integrations' ||
+    !!pathname?.startsWith('/schedule/integrations/') ||
+    pathname === '/third-party' ||
+    !!pathname?.startsWith('/third-party/');
   useIntegrationList(launchesRoute);
   useSWR(
     launchesRoute ? 'sets' : null,
@@ -239,7 +242,11 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   const stalker = !!pathname?.startsWith('/stalker');
-  const link = pathname === '/link' || !!pathname?.startsWith('/link/');
+  const link =
+    pathname === '/linkinbio' ||
+    !!pathname?.startsWith('/linkinbio/') ||
+    pathname === '/link' ||
+    !!pathname?.startsWith('/link/');
 
   if (!user) {
     if (stalker || link) {
@@ -257,13 +264,18 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   const needsPlan =
     user.tier === 'FREE' && isGeneral && (billingEnabled || user.billingEnabled);
-  const linkRoute = pathname === '/link' || !!pathname?.startsWith('/link/');
+  const linkRoute =
+    pathname === '/linkinbio' ||
+    !!pathname?.startsWith('/linkinbio/') ||
+    pathname === '/link' ||
+    !!pathname?.startsWith('/link/');
   const accountRoute = pathname === '/account' || !!pathname?.startsWith('/account/');
   const settingsRoute = !!pathname?.startsWith('/settings');
   const keptOpen =
     linkRoute ||
     accountRoute ||
     settingsRoute ||
+    pathname === '/invite' ||
     pathname === '/join' ||
     pathname === '/err' ||
     !!pathname?.startsWith('/admin');

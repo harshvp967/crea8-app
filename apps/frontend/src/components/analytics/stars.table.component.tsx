@@ -39,7 +39,7 @@ export const UpDown: FC<{
     (newState: string) => {
       const query =
         newState === 'none' ? `` : `?key=${param}&state=${newState}`;
-      router.replace(`/analytics${query}`);
+      router.replace(`/schedule/analytics${query}`);
     },
     [state, param]
   );
@@ -119,13 +119,13 @@ export const StarsTableComponent = () => {
     const local = dayjs.utc(date).local();
     const weekNumber = local.isoWeek();
     const year = local.year();
-    return `/launches?week=${weekNumber}&year=${year}`;
+    return `/schedule?week=${weekNumber}&year=${year}`;
   }, []);
   const changePage = useCallback(
     (type: 'increase' | 'decrease') => () => {
       const newPage = type === 'increase' ? page + 1 : page - 1;
       const keyAndState = key && state ? `&key=${key}&state=${state}` : '';
-      router.replace(`/analytics?page=${newPage}${keyAndState}`);
+      router.replace(`/schedule/analytics?page=${newPage}${keyAndState}`);
     },
     [page, key, state]
   );

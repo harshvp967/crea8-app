@@ -1,16 +1,12 @@
-import { Metadata } from 'next';
 import {
   LegalH2,
   LegalLink,
   LegalOperator,
   LegalShell,
 } from '@gitroom/frontend/components/legal/legal-shell';
+import { legalPageMetadata } from '@gitroom/frontend/components/layout/site.metadata';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service',
-  description:
-    'Terms of Service for Crea8one, a social media scheduling and insights tool.',
-};
+export const metadata = legalPageMetadata('Terms', '/terms');
 
 export default function TermsPage() {
   return (

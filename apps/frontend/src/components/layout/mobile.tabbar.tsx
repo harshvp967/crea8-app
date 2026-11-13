@@ -14,11 +14,17 @@ import { WorkspaceSwitchList } from '@gitroom/frontend/components/layout/organiz
 const phoneBarLimit = 5;
 
 export const MobileTabBar = () => {
-  const pathname = (usePathname() || '').replace(/^\/stalker-preview/, '/stalker');
+  const pathname = (usePathname() || '')
+    .replace(/^\/stalker\/preview/, '/stalker')
+    .replace(/^\/stalker-preview/, '/stalker');
   const router = useRouter();
   const openComposer = useOpenComposer();
   const stalker = pathname.startsWith('/stalker');
-  const link = pathname === '/link' || pathname.startsWith('/link/');
+  const link =
+    pathname === '/linkinbio' ||
+    pathname.startsWith('/linkinbio/') ||
+    pathname === '/link' ||
+    pathname.startsWith('/link/');
   const { firstMenu, secondMenu } = useMenuItem();
   const primary = useVisibleMenuItems(firstMenu);
   const extra = useVisibleMenuItems(secondMenu);
@@ -43,12 +49,12 @@ export const MobileTabBar = () => {
   });
 
   const openChannels = () => {
-    if (pathname.startsWith('/launches')) {
+    if (pathname === '/schedule' || pathname === '/launches') {
       window.dispatchEvent(new Event('c8-open-channels'));
       return;
     }
     sessionStorage.setItem('c8-open-channels', '1');
-    router.push('/launches');
+    router.push('/schedule');
   };
 
   const direct = link

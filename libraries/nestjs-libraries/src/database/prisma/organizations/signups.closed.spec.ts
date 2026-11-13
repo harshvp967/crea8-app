@@ -160,13 +160,13 @@ describe('closed sign-ups', () => {
     expect(sendEmail).toHaveBeenCalledWith(
       'new.person@example.com',
       'Activate your crea8.one account',
-      expect.stringContaining('/auth/activate/'),
+      expect.stringContaining('/activate/'),
       'top',
       undefined,
       { fullDocument: true }
     );
     const html = String(sendEmail.mock.calls[0][2]);
-    const token = html.match(/\/auth\/activate\/([^"<]+)/)?.[1] || '';
+    const token = html.match(/\/activate\/([^"<]+)/)?.[1] || '';
     expect(token).not.toBe(created.jwt);
     const activation = Password.verifyJWT(token) as Record<string, unknown>;
     expect(activation.id).toBe('new-user');
@@ -698,13 +698,13 @@ describe('closed sign-ups', () => {
     expect(sendEmail).toHaveBeenCalledWith(
       'new.person@example.com',
       'Activate your crea8.one account',
-      expect.stringContaining('/auth/activate/'),
+      expect.stringContaining('/activate/'),
       'top',
       undefined,
       { fullDocument: true }
     );
     const token =
-      String(sendEmail.mock.calls[0][2]).match(/\/auth\/activate\/([^"<]+)/)?.[1] || '';
+      String(sendEmail.mock.calls[0][2]).match(/\/activate\/([^"<]+)/)?.[1] || '';
     const activation = Password.verifyJWT(token) as Record<string, unknown>;
     expect(activation.id).toBe('new-user');
     expect(activation.expires).toEqual(expect.any(String));

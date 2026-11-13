@@ -33,7 +33,7 @@ const activeEnough = new Set(['active', 'trialing', 'past_due', 'on_hold', 'canc
 
 function ContinueToLink() {
   return (
-    <Link href="/link" className="lib-metric-label underline">
+    <Link href="/linkinbio" className="lib-metric-label underline">
       Continue to Link in Bio
     </Link>
   );

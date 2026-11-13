@@ -20,7 +20,7 @@ export function PublicPricing() {
         allowTrial
         trialDays={TRIAL_DAYS}
         onPeriod={setPeriod}
-        onChoose={() => router.push('/auth/register')}
+        onChoose={() => router.push('/register')}
       />
       <FAQComponent accordion trial />
     </section>

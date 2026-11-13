@@ -17,38 +17,38 @@ type LinkNavItem = {
 const links: LinkNavItem[] = [
   {
     label: 'Editor',
-    path: '/link',
+    path: '/linkinbio',
     icon: <HugeIcon name="pencil" size={18} />,
     tabIcon: <HugeIcon name="pencil" size={18} />,
   },
   {
     label: 'Appearance',
-    path: '/link/appearance',
+    path: '/linkinbio/appearance',
     icon: <HugeIcon name="palette" size={18} />,
     tabIcon: <HugeIcon name="palette" size={18} />,
   },
   {
     label: 'Settings',
-    path: '/link/settings',
+    path: '/linkinbio/settings',
     icon: <HugeIcon name="settings" size={18} />,
     tabIcon: <HugeIcon name="settings" size={18} />,
   },
   {
     label: 'Analytics',
-    path: '/link/analytics',
+    path: '/linkinbio/analytics',
     icon: <HugeIcon name="chart" size={18} />,
     tabIcon: <HugeIcon name="chart" size={18} />,
   },
   {
     label: 'Leads',
-    path: '/link/leads',
+    path: '/linkinbio/leads',
     icon: <HugeIcon name="mail" size={18} />,
     tabIcon: <HugeIcon name="mail" size={18} />,
   },
 ];
 
 const isActive = (pathname: string, path: string) =>
-  path === '/link' ? pathname === '/link' : pathname.startsWith(path);
+  path === '/linkinbio' ? pathname === '/linkinbio' : pathname.startsWith(path);
 
 export const linkNavLinks = links;
 

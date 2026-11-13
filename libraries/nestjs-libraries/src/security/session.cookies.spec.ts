@@ -20,7 +20,7 @@ describe('logout session cookies', () => {
     restore('NOT_SECURED', previous.NOT_SECURED);
   });
 
-  it('expires host-only and parent-domain cookies and lands on /auth/login', () => {
+  it('expires host-only and parent-domain cookies and lands on /login', () => {
     process.env.FRONTEND_URL = 'https://preview.example.com';
     process.env.NEXT_PUBLIC_BACKEND_URL = 'https://api.example.com';
     delete process.env.NOT_SECURED;
@@ -33,10 +33,10 @@ describe('logout session cookies', () => {
     });
 
     expect(logoutLoginUrl('https://app.crea8.one/auth/logout')).toBe(
-      'https://app.crea8.one/auth/login'
+      'https://app.crea8.one/login'
     );
     expect(logoutLoginUrl('https://app.crea8.one/auth/logout?next=/analytics')).toBe(
-      'https://app.crea8.one/auth/login'
+      'https://app.crea8.one/login'
     );
 
     for (const name of SESSION_COOKIE_NAMES) {

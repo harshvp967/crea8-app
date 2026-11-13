@@ -1015,7 +1015,7 @@ export const LinkEditorScreen = () => {
         {profileGaps.length || fewLinks ? (
           <div className="lib-nudge">
             {profileGaps.map((item) => (
-              <Link key={item.id} className="lib-nudge-chip" href="/link/appearance">
+              <Link key={item.id} className="lib-nudge-chip" href="/linkinbio/appearance">
                 {item.label}
               </Link>
             ))}

@@ -23,7 +23,7 @@ import { signupsClosed } from '@gitroom/nestjs-libraries/database/prisma/organiz
 
 function activationEmail(jwt: string) {
   return activationEmailHtml(
-    `${process.env.FRONTEND_URL}/auth/activate/${jwt}`
+    `${process.env.FRONTEND_URL}/activate/${jwt}`
   );
 }
 
@@ -322,7 +322,7 @@ export class AuthService {
     await this._notificationService.sendEmail(
       user.email,
       'Reset your password',
-      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
+      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
     );
   }
 

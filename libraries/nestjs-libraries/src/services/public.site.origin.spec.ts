@@ -38,7 +38,7 @@ describe('public site origin', () => {
     expect(robots()).toEqual({
       rules: {
         userAgent: '*',
-        allow: ['/p/', '/privacy', '/terms', '/data-deletion'],
+        allow: ['/privacy', '/terms', '/data-deletion', '/refund-policy'],
         disallow: ['/'],
       },
       sitemap: 'https://app.crea8.one/sitemap.xml',
@@ -47,6 +47,7 @@ describe('public site origin', () => {
       'https://app.crea8.one/privacy',
       'https://app.crea8.one/terms',
       'https://app.crea8.one/data-deletion',
+      'https://app.crea8.one/refund-policy',
     ]);
     env.FRONTEND_URL = 'http://127.0.0.1:4200/';
     expect(publicSiteOrigin()).toBe('https://app.crea8.one');

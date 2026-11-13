@@ -24,7 +24,7 @@ export const ReconnectText = ({ text }: { text: string }) => {
   return (
     <span>
       {before}
-      <Link href="/launches" className="underline">
+      <Link href="/schedule" className="underline">
         Reconnect YouTube
       </Link>
       {after}

@@ -1,4 +1,3 @@
-import { Metadata } from 'next';
 import {
   LegalH2,
   LegalH3,
@@ -7,12 +6,9 @@ import {
   LegalOperator,
   LegalShell,
 } from '@gitroom/frontend/components/legal/legal-shell';
+import { legalPageMetadata } from '@gitroom/frontend/components/layout/site.metadata';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description:
-    'Privacy Policy for Crea8one, a social media scheduling and insights tool.',
-};
+export const metadata = legalPageMetadata('Privacy', '/privacy');
 
 export default function PrivacyPage() {
   return (

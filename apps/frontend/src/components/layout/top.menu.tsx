@@ -66,7 +66,7 @@ export const useMenuItem = () => {
     {
       name: t('settings', 'Settings'),
       icon: <HugeIcon name="settings" size={18} />,
-      path: '/settings',
+      path: '/account',
       role: ['ADMIN', 'USER', 'SUPERADMIN'],
     },
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
@@ -86,7 +86,7 @@ export const useVisibleMenuItems = (
   const { isGeneral, billingEnabled } = useVariables();
 
   return items.filter((f) => {
-    if (options?.excludeSettings && f.path === '/settings') {
+    if (options?.excludeSettings && f.path === '/account') {
       return false;
     }
     if (f.hide) {
@@ -162,13 +162,13 @@ export const TopMenuUtilities: FC = () => {
   );
 };
 
-/** Existing Settings item — /settings route unchanged */
+/** Account settings. The /settings URL stays the GitHub and OIDC callback. */
 export const SettingsMenuItem: FC<{
   collapsed?: boolean;
   variant?: 'sidebar' | 'utility' | 'header';
 }> = ({ collapsed, variant = 'header' }) => {
   const { secondMenu } = useMenuItem();
-  const settings = secondMenu.find((item) => item.path === '/settings');
+  const settings = secondMenu.find((item) => item.path === '/account');
   const visible = useVisibleMenuItems(settings ? [settings] : []);
   const pathname = usePathname();
 
