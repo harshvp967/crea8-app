@@ -159,9 +159,11 @@ describe('closed sign-ups', () => {
     expect(repository.addUserToOrg).not.toHaveBeenCalled();
     expect(sendEmail).toHaveBeenCalledWith(
       'new.person@example.com',
-      'Activate your account',
+      'Activate your crea8.one account',
       expect.stringContaining('/auth/activate/'),
-      'top'
+      'top',
+      undefined,
+      { fullDocument: true }
     );
     const html = String(sendEmail.mock.calls[0][2]);
     const token = html.match(/\/auth\/activate\/([^"<]+)/)?.[1] || '';
@@ -693,6 +695,14 @@ describe('closed sign-ups', () => {
         'new.person@example.com'
       )
     ).resolves.toBe(true);
+    expect(sendEmail).toHaveBeenCalledWith(
+      'new.person@example.com',
+      'Activate your crea8.one account',
+      expect.stringContaining('/auth/activate/'),
+      'top',
+      undefined,
+      { fullDocument: true }
+    );
     const token =
       String(sendEmail.mock.calls[0][2]).match(/\/auth\/activate\/([^"<]+)/)?.[1] || '';
     const activation = Password.verifyJWT(token) as Record<string, unknown>;

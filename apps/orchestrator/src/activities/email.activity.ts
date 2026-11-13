@@ -17,6 +17,19 @@ export class EmailActivity {
   }
 
   @ActivityMethod()
+  async sendDocumentEmail(
+    to: string,
+    subject: string,
+    html: string,
+    fullDocument: boolean,
+    replyTo?: string
+  ) {
+    return this._emailService.sendEmailSync(to, subject, html, replyTo, {
+      fullDocument,
+    });
+  }
+
+  @ActivityMethod()
   async sendEmailAsync(to: string, subject: string, html: string, sendTo: 'top' | 'bottom', replyTo?: string) {
     return await this._emailService.sendEmail(to, subject, html, sendTo, replyTo);
   }

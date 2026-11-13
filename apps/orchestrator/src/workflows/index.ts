@@ -17,6 +17,7 @@ export * from './digest.email.workflow';
 export * from './digest.email.workflow.v2';
 export * from './missing.post.workflow';
 export * from './send.email.workflow';
+export * from './send.email.workflow.v2';
 export * from './refresh.token.workflow';
 export * from './streak.workflow';
 export * from './generate.video.workflow';
