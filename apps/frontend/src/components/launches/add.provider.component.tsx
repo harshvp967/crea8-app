@@ -230,12 +230,17 @@ export const AddProviderButton: FC<{
   const add = useAddProvider(update);
   const invite = useAddProvider(update, true);
   const t = useT();
+  const addLabel = t('add_channel', 'Add channel');
+  const inviteLabel = t('invite_link_title', 'Invite link');
 
   return (
     <div className="flex group-[.sidebar]:block gap-[8px]">
       <button
         type="button"
         data-action="add-channel"
+        aria-label={addLabel}
+        data-tooltip-id="tooltip"
+        data-tooltip-content={addLabel}
         className="channel-add flex-1 group-[.sidebar]:w-[100%] group-[.sidebar]:flex-none text-newTextColor bg-newBgColorInner border border-newBorder shadow-[var(--arc-shadow-resting)] h-[44px] pt-[12px] pb-[14px] ps-[16px] pe-[20px] justify-center items-center flex rounded-[18px] gap-[8px] hover:bg-newBoxHover transition-colors cursor-pointer"
         onClick={(event) => {
           event.stopPropagation();
@@ -246,21 +251,19 @@ export const AddProviderButton: FC<{
           <HugeIcon name="plus" size={20} />
         </div>
         <div className="text-start text-[14px] group-[.sidebar]:hidden">
-          {t('add_channel', 'Add channel')}
+          {addLabel}
         </div>
       </button>
       <button
         type="button"
         data-action="invite-link"
+        aria-label={inviteLabel}
         onClick={(event) => {
           event.stopPropagation();
           invite();
         }}
         data-tooltip-id="tooltip"
-        data-tooltip-content={t(
-          'invite_link',
-          'Send Invite Link to a customer to add channel'
-        )}
+        data-tooltip-content={inviteLabel}
         className="channel-invite group-[.sidebar]:hidden min-h-[44px] min-w-[44px] bg-newBgColorInner text-textItemBlur border border-newBorder shadow-[var(--arc-shadow-resting)] justify-center items-center flex rounded-[18px] cursor-pointer hover:text-newTextColor hover:bg-newBoxHover transition-colors"
       >
         <HugeIcon name="link" size={20} />

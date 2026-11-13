@@ -69,7 +69,7 @@ export const Menu: FC<{
   const modal = useModals();
   const [show, setShow] = useState<false | { x: number; y: number }>(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLButtonElement>(null);
   const showRef = useRef(undefined);
   const menuGap = 6;
   const menuPad = 10;
@@ -193,7 +193,7 @@ export const Menu: FC<{
   const findIntegration: any = useMemo(() => {
     return integrations.find((integration) => integration.id === id);
   }, [integrations, id]);
-  const changeShow: MouseEventHandler<HTMLDivElement> = useCallback(
+  const changeShow: MouseEventHandler<HTMLButtonElement> = useCallback(
     (e) => {
       e.stopPropagation();
       if (show) {
@@ -443,9 +443,19 @@ export const Menu: FC<{
     });
   }, [t]);
 
+  const channelMenuLabel = findIntegration?.name
+    ? `${findIntegration.name} menu`
+    : 'Channel menu';
+
   return (
-    <div
-      className="cursor-pointer relative select-none flex"
+    <button
+      type="button"
+      className="channel-menu-btn cursor-pointer relative select-none flex border-0 bg-transparent p-0"
+      aria-haspopup="menu"
+      aria-expanded={!!show}
+      aria-label={channelMenuLabel}
+      data-tooltip-id="tooltip"
+      data-tooltip-content={channelMenuLabel}
       onClick={changeShow}
       ref={ref}
     >
@@ -607,6 +617,6 @@ export const Menu: FC<{
         </div>,
           document.body
         )}
-    </div>
+    </button>
   );
 };
