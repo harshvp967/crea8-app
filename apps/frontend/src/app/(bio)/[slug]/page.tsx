@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { slugProblem } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.rules';
+import { bioParamDecision } from '@gitroom/helpers/paths/app.paths';
 import { loadPublicLink, presentPublicLink, publicShareMetadata, visitorSearch } from '@gitroom/frontend/components/link-in-bio/link.load';
 import { documentTitle } from '@gitroom/frontend/components/layout/site.metadata';
 import { LinkLive } from '@gitroom/frontend/components/link-in-bio/link.live';
@@ -11,15 +12,18 @@ async function load(slug: string, personalized = false) {
   return loadPublicLink(`/public/link/${encodeURIComponent(slug)}${query}`);
 }
 
-function bioSlug(slug: string) {
-  const lower = slug.toLowerCase();
-  return lower.startsWith('@') ? lower.slice(1) : lower;
+function bioName(param: string) {
+  const decision = bioParamDecision(param);
+  if (!decision) {
+    return '';
+  }
+  return decision.action === 'render' ? decision.slug : decision.location.slice(2);
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await props.params;
-  const name = bioSlug(slug);
-  if (slugProblem(name)) {
+  const name = bioName(slug);
+  if (!name || slugProblem(name)) {
     return { title: documentTitle('Page'), robots: { index: false, follow: false } };
   }
   const page = await load(name);
@@ -31,18 +35,17 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
 
 export default async function PublicLinkPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
-  const lower = slug.toLowerCase();
-  const name = bioSlug(slug);
-  if (!lower.startsWith('@')) {
-    redirect(`/@${name}`);
-  }
-  if (slug !== `@${name}`) {
-    redirect(`/@${name}`);
-  }
-  if (slugProblem(name)) {
+  const decision = bioParamDecision(slug);
+  if (!decision) {
     notFound();
   }
-  const page = await load(name, true);
+  if (decision.action === 'redirect') {
+    redirect(decision.location);
+  }
+  if (slugProblem(decision.slug)) {
+    notFound();
+  }
+  const page = await load(decision.slug, true);
   if (!page) {
     notFound();
   }

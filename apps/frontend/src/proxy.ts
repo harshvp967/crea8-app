@@ -302,5 +302,11 @@ export async function proxy(request: NextRequest) {
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: ['/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)', '/api/link/:path*'],
+  // Skip real files (f.js, robots.txt, favicon.ico). A dotted username such as
+  // crea8.one is not in that list, so /crea8.one can 301 to /@crea8.one.
+  // Keep the extension list in step with STATIC_ASSET in app.paths.ts.
+  matcher: [
+    '/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.(?:ico|png|jpe?g|gif|svg|webp|avif|js|mjs|css|map|txt|xml|json|webmanifest|woff2?|mp4|webm)).*)',
+    '/api/link/:path*',
+  ],
 };

@@ -173,19 +173,68 @@ export function isPublicAuthPath(pathname: string) {
   );
 }
 
+// Files the proxy skips. A dotted username such as crea8.one is not one of these.
+// The same list is inlined in apps/frontend/src/proxy.ts (the matcher must be a literal).
+const STATIC_ASSET =
+  /\.(?:ico|png|jpe?g|gif|svg|webp|avif|js|mjs|css|map|txt|xml|json|webmanifest|woff2?|mp4|webm)$/i;
+
+function decodePiece(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+// Next percent-encodes @ in a dynamic param (@ is a parallel-route marker).
+// /@pixcamm arrives as %40pixcamm. '/@' + that value is the 307 to /@%40pixcamm.
+function peelAt(value: string) {
+  let slug = value;
+  let marks = 0;
+  while (slug.startsWith('@') || slug.toLowerCase().startsWith('%40')) {
+    marks += 1;
+    slug = slug.startsWith('@') ? slug.slice(1) : slug.slice(3);
+  }
+  return { slug, marks };
+}
+
+export type BioParamDecision =
+  | { action: 'render'; slug: string }
+  | { action: 'redirect'; location: string };
+
+export function bioParamDecision(param: string): BioParamDecision | null {
+  const { slug, marks } = peelAt(decodePiece(param));
+  const name = slug.toLowerCase();
+  if (!name || /[/@\s]/.test(name) || name.includes('%')) {
+    return null;
+  }
+  // One @, or a second @ already in the param, renders. It does not redirect
+  // to a URL that adds another @.
+  if (marks > 0) {
+    return { action: 'render', slug: name };
+  }
+  return { action: 'redirect', location: `/@${name}` };
+}
+
 export function isPublicBioPath(pathname: string) {
   const path = stripTrailingSlash(pathname);
   if (path === '/bio-host' || path.startsWith('/subscribe/confirm/')) {
     return true;
   }
-  let slug = path.slice(1);
-  if (slug.startsWith('@')) {
-    slug = slug.slice(1);
-  }
-  if (!slug || slug.includes('/') || slug.includes('.')) {
+  if (!path.startsWith('/') || path === '/' || path.slice(1).includes('/')) {
     return false;
   }
-  return !isAppFirstSegment(slug);
+  const segment = decodePiece(path.slice(1));
+  const atForm = segment.startsWith('@') || segment.toLowerCase().startsWith('%40');
+  if (!atForm && STATIC_ASSET.test(segment)) {
+    return false;
+  }
+  const decision = bioParamDecision(segment);
+  if (!decision) {
+    return false;
+  }
+  const slug = decision.action === 'render' ? decision.slug : decision.location.slice(2);
+  return Boolean(slug) && !isAppFirstSegment(slug);
 }
 
 function withSearch(pathname: string, search: string) {
@@ -196,11 +245,15 @@ function withSearch(pathname: string, search: string) {
 }
 
 function bioRedirect(path: string) {
-  if (path.startsWith('/@') || path.includes('.') || path.slice(1).includes('/')) {
+  if (
+    path.startsWith('/@') ||
+    path.toLowerCase().startsWith('/%40') ||
+    path.slice(1).includes('/')
+  ) {
     return '';
   }
   const slug = path.slice(1);
-  if (!slug || isAppFirstSegment(slug)) {
+  if (!slug || isAppFirstSegment(slug) || STATIC_ASSET.test(slug)) {
     return '';
   }
   return `/@${slug.toLowerCase()}`;
