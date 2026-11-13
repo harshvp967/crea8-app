@@ -18,7 +18,9 @@ describe('activation email sender', () => {
   });
 
   it('uses crea8.one as the activation sender and leaves other mail on the configured name', () => {
-    expect(emailFromName('Activate your account', 'Postiz')).toBe('crea8.one');
+    expect(emailFromName('Activate your crea8.one account', 'Postiz')).toBe(
+      'crea8.one'
+    );
     expect(emailFromName('Reset your password', 'Postiz')).toBe('Postiz');
   });
 
@@ -35,14 +37,14 @@ describe('activation email sender', () => {
     await expect(
       service.sendEmailSync(
         'person@example.com',
-        'Activate your account',
+        'Activate your crea8.one account',
         'Click <a href="https://app.crea8.one/auth/activate/token">here</a> to activate your account'
       )
     ).resolves.toBe(true);
     const html = String(sendEmail.mock.calls[0][2]);
     expect(sendEmail).toHaveBeenCalledWith(
       'person@example.com',
-      'Activate your account',
+      'Activate your crea8.one account',
       expect.any(String),
       'crea8.one',
       'billing@example.com',

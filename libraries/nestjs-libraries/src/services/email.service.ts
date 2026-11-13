@@ -5,9 +5,14 @@ import { EmptyProvider } from '@gitroom/nestjs-libraries/emails/empty.provider';
 import { NodeMailerProvider } from '@gitroom/nestjs-libraries/emails/node.mailer.provider';
 import { TemporalService } from 'nestjs-temporal-core';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { ACTIVATION_EMAIL_SUBJECT } from '@gitroom/nestjs-libraries/emails/activation.email';
 
-export const ACTIVATION_EMAIL_SUBJECT = 'Activate your account';
+export { ACTIVATION_EMAIL_SUBJECT };
 export const BRAND_FROM_NAME = 'crea8.one';
+
+export type EmailSendOptions = {
+  fullDocument?: boolean;
+};
 
 export function emailFromName(subject: string, configured?: string | null) {
   if (subject === ACTIVATION_EMAIL_SUBJECT) {
@@ -49,25 +54,35 @@ export class EmailService {
     subject: string,
     html: string,
     addTo: 'top' | 'bottom',
-    replyTo?: string
+    replyTo?: string,
+    options?: EmailSendOptions
   ) {
+    const fullDocument = options?.fullDocument === true;
     return this._temporalService.client
       .getRawClient()
-      ?.workflow.signalWithStart('sendEmailWorkflow', {
-        taskQueue: 'main',
-        workflowId: 'send_email',
-        signal: 'sendEmail',
-        args: [{ queue: [] }],
-        signalArgs: [{ to, subject, html, replyTo, addTo }],
-        workflowIdConflictPolicy: 'USE_EXISTING',
-      });
+      ?.workflow.signalWithStart(
+        fullDocument ? 'sendEmailWorkflowV2' : 'sendEmailWorkflow',
+        {
+          taskQueue: 'main',
+          workflowId: fullDocument ? 'send_email_document' : 'send_email',
+          signal: fullDocument ? 'sendDocumentEmail' : 'sendEmail',
+          args: [{ queue: [] }],
+          signalArgs: [
+            fullDocument
+              ? { to, subject, html, replyTo, addTo, fullDocument }
+              : { to, subject, html, replyTo, addTo },
+          ],
+          workflowIdConflictPolicy: 'USE_EXISTING',
+        }
+      );
   }
 
   async sendEmailSync(
     to: string,
     subject: string,
     html: string,
-    replyTo?: string
+    replyTo?: string,
+    options?: EmailSendOptions
   ): Promise<boolean> {
     if (to.indexOf('@') === -1) {
       return false;
@@ -80,7 +95,10 @@ export class EmailService {
       return false;
     }
 
-    const modifiedHtml = `
+    const modifiedHtml =
+      options?.fullDocument === true
+        ? html
+        : `
     <div style="
         background: linear-gradient(to bottom right, #e6f2ff, #f0e6ff);
         display: flex;

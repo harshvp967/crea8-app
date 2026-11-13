@@ -13,13 +13,18 @@ import dayjs from 'dayjs';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
+import {
+  ACTIVATION_EMAIL_SUBJECT,
+  activationEmailHtml,
+} from '@gitroom/nestjs-libraries/emails/activation.email';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
 import { assertOAuthRedirect } from '@gitroom/helpers/auth/oauth.link';
 import { signupsClosed } from '@gitroom/nestjs-libraries/database/prisma/organizations/signups.closed';
 
 function activationEmail(jwt: string) {
-  const href = `${process.env.FRONTEND_URL}/auth/activate/${jwt}`;
-  return `<a href="${href}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:#00d9ff;color:#121016;font-family:Inter,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1;text-decoration:none;">crea8.one</a>`;
+  return activationEmailHtml(
+    `${process.env.FRONTEND_URL}/auth/activate/${jwt}`
+  );
 }
 
 @Injectable()
@@ -73,9 +78,11 @@ export class AuthService {
           };
           await this._emailService.sendEmail(
             body.email,
-            'Activate your account',
+            ACTIVATION_EMAIL_SUBJECT,
             activationEmail(this.activationJwt(createdUser.id)),
-            'top'
+            'top',
+            undefined,
+            { fullDocument: true }
           );
           return obj;
         }
@@ -365,9 +372,11 @@ export class AuthService {
 
     await this._emailService.sendEmail(
       user.email,
-      'Activate your account',
+      ACTIVATION_EMAIL_SUBJECT,
       activationEmail(this.activationJwt(user.id)),
-      'top'
+      'top',
+      undefined,
+      { fullDocument: true }
     );
 
     return true;
