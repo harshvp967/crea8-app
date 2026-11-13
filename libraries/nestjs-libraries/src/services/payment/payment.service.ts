@@ -37,10 +37,26 @@ export class PaymentService {
   // Subscription row + the platform (web / mobile) of the provider that owns it,
   // so clients can tell the user where to manage the subscription.
   async getSubscription(organizationId: string) {
-    const subscription =
+    const stored =
       await this._subscriptionService.getSubscriptionByOrganizationId(
         organizationId
       );
+    let subscription = stored;
+    try {
+      const provider = stored
+        ? this._paymentProviderManager.getProvider(stored.provider)
+        : this._paymentProviderManager.getDefaultProvider('web').provider;
+      await provider.reconcileLiveSubscriptions(organizationId);
+      const refreshed =
+        await this._subscriptionService.getSubscriptionByOrganizationId(
+          organizationId
+        );
+      if (refreshed) {
+        subscription = refreshed;
+      }
+    } catch {
+      subscription = stored;
+    }
     if (!subscription) {
       return null;
     }

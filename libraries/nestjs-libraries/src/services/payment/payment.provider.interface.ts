@@ -67,6 +67,12 @@ export abstract class PaymentProviderAbstract {
     void organizationId;
   }
 
+  // Cancel stray provider subscriptions so the workspace has one live plan.
+  // Default is a no-op. Dodo implements it.
+  async reconcileLiveSubscriptions(organizationId: string): Promise<void> {
+    void organizationId;
+  }
+
   async embedded(
     uniqueId: string,
     organizationId: string,

@@ -37,6 +37,9 @@ import {
   monthlyCreditAllowance,
   ACTIVE_SUBSCRIPTION_ERROR,
   adoptIncomingSubscription,
+  reconcileLiveSubscriptions,
+  remoteSubscriptionIsLive,
+  storedStatusForLiveSubscription,
   planChangeBilling,
   planSpend,
   subscriptionSwitch,
@@ -1019,6 +1022,63 @@ describe('one subscription per account', () => {
         currentPeriodEnd: '2026-12-07T00:00:00.000Z',
       })
     ).toEqual({ renewsAt: null, expiresAt: '2026-12-07T00:00:00.000Z' });
+  });
+});
+
+describe('one live Dodo subscription', () => {
+  it('keeps the subscription the app already shows when a second one is also active', () => {
+    expect(remoteSubscriptionIsLive('active')).toBe(true);
+    expect(remoteSubscriptionIsLive('on_hold')).toBe(true);
+    expect(remoteSubscriptionIsLive('cancelled')).toBe(false);
+    expect(remoteSubscriptionIsLive('expired')).toBe(false);
+    expect(
+      reconcileLiveSubscriptions({
+        storedId: 'sub_monthly',
+        listed: [
+          {
+            subscriptionId: 'sub_monthly',
+            status: 'active',
+            createdAt: '2026-11-07T00:00:00.000Z',
+          },
+          {
+            subscriptionId: 'sub_yearly',
+            status: 'active',
+            createdAt: '2026-11-13T00:00:00.000Z',
+          },
+        ],
+      })
+    ).toEqual({ keepId: 'sub_monthly', cancelIds: ['sub_yearly'] });
+  });
+
+  it('adopts the only live subscription when the stored one has ended', () => {
+    expect(
+      reconcileLiveSubscriptions({
+        storedId: 'sub_monthly',
+        listed: [
+          { subscriptionId: 'sub_monthly', status: 'cancelled', createdAt: '2026-11-01T00:00:00.000Z' },
+          { subscriptionId: 'sub_yearly', status: 'active', createdAt: '2026-10-01T00:00:00.000Z' },
+        ],
+      })
+    ).toEqual({ keepId: 'sub_yearly', cancelIds: [] });
+  });
+
+  it('keeps the newest live subscription when none of them is the stored row', () => {
+    expect(
+      reconcileLiveSubscriptions({
+        storedId: null,
+        listed: [
+          { subscriptionId: 'sub_old', status: 'active', createdAt: '2026-01-01T00:00:00.000Z' },
+          { subscriptionId: 'sub_new', status: 'pending', createdAt: '2026-06-01T00:00:00.000Z' },
+          { subscriptionId: 'sub_dead', status: 'failed', createdAt: '2026-07-01T00:00:00.000Z' },
+        ],
+      })
+    ).toEqual({ keepId: 'sub_new', cancelIds: ['sub_old'] });
+    expect(
+      storedStatusForLiveSubscription({
+        status: 'active',
+        cancelAtNextBillingDate: true,
+      })
+    ).toBe('cancel_scheduled');
   });
 });
 

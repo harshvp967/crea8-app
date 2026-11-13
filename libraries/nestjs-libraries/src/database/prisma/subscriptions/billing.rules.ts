@@ -1057,7 +1057,8 @@ export function subscriptionSwitch(input: {
 
 // A webhook for a different subscription id must not take over the row
 // while the stored subscription still grants access. Same id, or a
-// replacement after the stored one has ended, still applies.
+// replacement after the stored one has ended, still applies. The provider
+// cancels the subscription that is not adopted so it does not keep renewing.
 export function adoptIncomingSubscription(input: {
   storedId?: string | null;
   incomingId?: string | null;
@@ -1067,6 +1068,95 @@ export function adoptIncomingSubscription(input: {
     return true;
   }
   return !input.storedGrantsAccess;
+}
+
+const TERMINAL_SUBSCRIPTION_STATUS = new Set([
+  'cancelled',
+  'canceled',
+  'expired',
+  'failed',
+  'trial_ended',
+]);
+
+// A paid subscription still occupies the one slot while Dodo can renew it
+// or keep it active. Cancelled, expired, and failed rows do not.
+export function remoteSubscriptionIsLive(status?: string | null) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+  return !TERMINAL_SUBSCRIPTION_STATUS.has(normalized);
+}
+
+export type ListedSubscription = {
+  subscriptionId: string;
+  status?: string | null;
+  createdAt?: string | null;
+  productId?: string | null;
+  nextBillingDate?: string | null;
+  customerId?: string | null;
+  cancelAtNextBillingDate?: boolean | null;
+};
+
+export function storedStatusForLiveSubscription(input: {
+  status?: string | null;
+  cancelAtNextBillingDate?: boolean | null;
+}) {
+  const status = String(input.status || 'active').trim().toLowerCase() || 'active';
+  if (
+    input.cancelAtNextBillingDate &&
+    (status === 'active' || status === 'trialing')
+  ) {
+    return 'cancel_scheduled';
+  }
+  return status;
+}
+
+// One workspace keeps one live Dodo subscription. The id already stored is
+// the plan the app shows, so that one stays and every other live id is
+// cancelled. When the stored id is not live, the newest live subscription
+// is the one the app should show.
+export function reconcileLiveSubscriptions(input: {
+  storedId?: string | null;
+  listed: ListedSubscription[];
+}): { keepId: string | null; cancelIds: string[] } {
+  const byId = new Map<string, ListedSubscription>();
+  for (const row of input.listed) {
+    const subscriptionId = String(row?.subscriptionId || '').trim();
+    if (!subscriptionId || !remoteSubscriptionIsLive(row?.status)) {
+      continue;
+    }
+    byId.set(subscriptionId, { ...row, subscriptionId });
+  }
+  const live = [...byId.values()];
+  if (!live.length) {
+    return { keepId: input.storedId || null, cancelIds: [] };
+  }
+  const storedId = input.storedId || null;
+  const storedLive = storedId
+    ? live.find((row) => row.subscriptionId === storedId)
+    : undefined;
+  const keep = storedLive || newestLiveSubscription(live);
+  const keepId = keep.subscriptionId;
+  return {
+    keepId,
+    cancelIds: live
+      .map((row) => row.subscriptionId)
+      .filter((id) => id !== keepId),
+  };
+}
+
+function newestLiveSubscription(rows: ListedSubscription[]) {
+  return [...rows].sort((left, right) => {
+    const leftAt = Date.parse(left.createdAt || '');
+    const rightAt = Date.parse(right.createdAt || '');
+    const leftTime = Number.isFinite(leftAt) ? leftAt : 0;
+    const rightTime = Number.isFinite(rightAt) ? rightAt : 0;
+    if (leftTime !== rightTime) {
+      return rightTime - leftTime;
+    }
+    return left.subscriptionId < right.subscriptionId ? -1 : 1;
+  })[0];
 }
 
 export function planChangeBilling(input: {
