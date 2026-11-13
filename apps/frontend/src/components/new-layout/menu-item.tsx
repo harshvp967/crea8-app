@@ -13,7 +13,11 @@ export const MenuItem: FC<{
 }> = ({ label, icon, path, onClick, variant = 'horizontal' }) => {
   const currentPath = usePathname();
   const isActive =
-    path !== '#' && path.indexOf('http') !== 0 && currentPath.indexOf(path) === 0;
+    path !== '#' &&
+    path.indexOf('http') !== 0 &&
+    (path === '/schedule' || path === '/linkinbio' || path === '/account'
+      ? currentPath === path
+      : currentPath === path || currentPath.startsWith(`${path}/`));
 
   const className = clsx(
     'transition-colors font-[500] select-none',

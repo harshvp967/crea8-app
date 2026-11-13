@@ -43,7 +43,7 @@ const Frame = ({ page }: { page: string }) => {
         <div className="hidden h-[32px] shrink-0 items-center justify-center rounded-full border border-newBorder px-[12px] text-[12px] font-[600] text-textItemBlur sm:flex">
           Schedule | Stalker
         </div>
-        <StalkerTopNav force base="/stalker-preview" />
+        <StalkerTopNav force base="/stalker/preview" />
         <div className="ms-auto flex shrink-0 items-center gap-[8px] text-textItemBlur" aria-hidden>
           <span className="h-[28px] w-[28px] rounded-full border border-newBorder" />
           <span className="h-[28px] w-[28px] rounded-full border border-newBorder" />

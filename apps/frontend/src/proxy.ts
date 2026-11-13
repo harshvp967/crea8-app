@@ -13,6 +13,11 @@ import {
   headerName,
   languages,
 } from '@gitroom/react/translation/i18n.config';
+import {
+  isPublicAuthPath,
+  isPublicBioPath,
+  legacyRedirect,
+} from '@gitroom/helpers/paths/app.paths';
 acceptLanguage.languages(languages);
 
 const APP_HOSTS = new Set(['localhost', '127.0.0.1', 'crea8.one', 'www.crea8.one', 'app.crea8.one']);
@@ -22,30 +27,6 @@ const LINK_API_ORIGINS = new Set([
   'http://crea8.one',
   'http://www.crea8.one',
 ]);
-const APP_SECTIONS = new Set([
-  'account',
-  'admin',
-  'agents',
-  'analytics',
-  'auth',
-  'billing',
-  'err',
-  'icons',
-  'integrations',
-  'join',
-  'launches',
-  'link',
-  'media',
-  'modal',
-  'oauth',
-  'plugs',
-  'settings',
-  'stalker',
-  'stalker-preview',
-  'third-party',
-  'uploads',
-]);
-
 function configuredHosts() {
   const hosts = new Set<string>();
   for (const value of [process.env.FRONTEND_URL, process.env.MAIN_URL, process.env.NEXT_PUBLIC_BACKEND_URL]) {
@@ -69,16 +50,9 @@ function isAppHost(host: string) {
   return hostname.endsWith('.vercel.app') || hostname.endsWith('.crea8.one');
 }
 
-function publicBioPath(pathname: string) {
+function authTree(pathname: string) {
   const path = pathname.replace(/\/+$/, '') || '/';
-  if (path === '/bio-host' || path.startsWith('/subscribe/confirm/')) {
-    return true;
-  }
-  const slug = path.slice(1);
-  if (!slug || slug.includes('/') || slug.includes('.')) {
-    return false;
-  }
-  return !APP_SECTIONS.has(slug);
+  return path === '/auth' || path.startsWith('/auth/');
 }
 
 // Bios opened from crea8.one call this app's /api/link. Those routes are not
@@ -112,6 +86,10 @@ export async function proxy(request: NextRequest) {
     return linkCors;
   }
   const nextUrl = request.nextUrl;
+  const renamed = legacyRedirect(nextUrl.pathname, nextUrl.search);
+  if (renamed) {
+    return NextResponse.redirect(new URL(renamed.location, request.url), 301);
+  }
   const authCookie =
     request.cookies.get('auth') ||
     request.headers.get('auth') ||
@@ -145,18 +123,19 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } });
   }
 
-  if (publicBioPath(nextUrl.pathname)) {
+  if (isPublicBioPath(nextUrl.pathname)) {
     return topResponse;
   }
 
   if (nextUrl.pathname.startsWith('/modal/') && !authCookie) {
-    return NextResponse.redirect(new URL(`/auth/login-required`, nextUrl.href));
+    return NextResponse.redirect(new URL('/login-required', nextUrl.href));
   }
 
   const publicFile = nextUrl.pathname.replace(/\/+$/, '') || '/';
   if (
     publicFile === '/robots.txt' ||
     publicFile === '/sitemap.xml' ||
+    publicFile === '/llms.txt' ||
     publicFile === '/manifest.webmanifest' ||
     publicFile === '/.well-known/security.txt'
   ) {
@@ -166,10 +145,12 @@ export async function proxy(request: NextRequest) {
   if (
     nextUrl.pathname.startsWith('/uploads/') ||
     nextUrl.pathname.startsWith('/p/') ||
+    nextUrl.pathname.startsWith('/schedule/p/') ||
     nextUrl.pathname.startsWith('/provider/') ||
     nextUrl.pathname.startsWith('/icons/') ||
     nextUrl.pathname.startsWith('/share/') ||
-    nextUrl.pathname.startsWith('/stalker-preview/')
+    nextUrl.pathname.startsWith('/stalker-preview/') ||
+    nextUrl.pathname.startsWith('/stalker/preview/')
   ) {
     return topResponse;
   }
@@ -180,7 +161,8 @@ export async function proxy(request: NextRequest) {
   if (
     legalPath === '/privacy' ||
     legalPath === '/terms' ||
-    legalPath === '/data-deletion'
+    legalPath === '/data-deletion' ||
+    legalPath === '/refund-policy'
   ) {
     return topResponse;
   }
@@ -205,16 +187,22 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  const onAuth =
+    isPublicAuthPath(nextUrl.pathname) || authTree(nextUrl.pathname);
   if (
-    nextUrl.pathname.startsWith('/auth/register') &&
+    (nextUrl.pathname.startsWith('/register') ||
+      nextUrl.pathname.startsWith('/auth/register')) &&
     process.env.DISABLE_REGISTRATION === 'true'
   ) {
-    return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
+    return NextResponse.redirect(new URL('/login', nextUrl.href));
   }
 
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
-  if (!nextUrl.pathname.startsWith('/auth') && !authCookie) {
+  // /settings stays the GitHub and generic OIDC callback. A signed-out visit
+  // still continues to /login with the code and provider, the same handoff
+  // the old /auth page performed. The callback URL itself is not moved.
+  if (!onAuth && !authCookie) {
     const providers = ['google', 'settings'];
     const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
     const additional = !findIndex
@@ -227,15 +215,14 @@ export async function proxy(request: NextRequest) {
           : findIndex
         ).toUpperCase()}`;
     return NextResponse.redirect(
-      new URL(`/auth${url}${additional}`, nextUrl.href)
+      new URL(`/login${url}${additional}`, nextUrl.href)
     );
   }
 
-  // If the url is /auth and the cookie exists, redirect to /
-  if (nextUrl.pathname.startsWith('/auth') && authCookie) {
+  if (onAuth && authCookie) {
     return NextResponse.redirect(new URL(`/${url}`, nextUrl.href));
   }
-  if (nextUrl.pathname.startsWith('/auth') && !authCookie) {
+  if (onAuth && !authCookie) {
     if (org) {
       const redirect = NextResponse.redirect(new URL(`/`, nextUrl.href));
       redirect.cookies.set('org', org, {
@@ -274,7 +261,7 @@ export async function proxy(request: NextRequest) {
         : raw || 'This invite could not be used.';
       if (!response.ok || !payload.id) {
         return NextResponse.redirect(
-          new URL(`/join?error=${encodeURIComponent(message)}`, nextUrl.href)
+          new URL(`/invite?error=${encodeURIComponent(message)}`, nextUrl.href)
         );
       }
       const id = payload.id;
@@ -300,7 +287,7 @@ export async function proxy(request: NextRequest) {
     if (nextUrl.pathname === '/') {
       return NextResponse.redirect(
         new URL(
-          !!process.env.IS_GENERAL ? '/launches' : `/analytics`,
+          !!process.env.IS_GENERAL ? '/schedule' : '/schedule/analytics',
           nextUrl.href
         )
       );

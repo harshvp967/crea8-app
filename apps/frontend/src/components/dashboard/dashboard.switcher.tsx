@@ -21,7 +21,7 @@ export const DASHBOARDS = [
   {
     id: 'schedule',
     label: 'Schedule',
-    href: '/launches',
+    href: '/schedule',
     Icon: CalendarIcon,
     icon: 'calendar' as HugeIconName,
     tile: 'is-schedule',
@@ -29,7 +29,7 @@ export const DASHBOARDS = [
   {
     id: 'link',
     label: 'Link-in-Bio',
-    href: '/link',
+    href: '/linkinbio',
     Icon: LinkIcon,
     icon: 'link' as HugeIconName,
     tile: 'is-link',
@@ -72,7 +72,7 @@ export const DashboardSwitcher = () => {
 
   const active = pathname.startsWith('/stalker')
     ? 'stalker'
-    : pathname === '/link' || pathname.startsWith('/link/')
+    : pathname === '/linkinbio' || pathname.startsWith('/linkinbio/') || pathname === '/link' || pathname.startsWith('/link/')
     ? 'link'
     : 'schedule';
   const current = items.find((item) => item.id === active) || items[0];

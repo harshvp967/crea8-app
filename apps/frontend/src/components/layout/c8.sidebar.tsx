@@ -136,7 +136,7 @@ export const C8Sidebar = ({
   const { firstMenu, secondMenu } = useMenuItem();
   const primary = useVisibleMenuItems(firstMenu);
   const settings = useVisibleMenuItems(
-    secondMenu.filter((item) => item.path === '/settings')
+    secondMenu.filter((item) => item.path === '/account')
   );
   const extras = useVisibleMenuItems(secondMenu, { excludeSettings: true });
 
@@ -144,7 +144,7 @@ export const C8Sidebar = ({
     {
       id: 'schedule',
       label: 'Schedule',
-      href: '/launches',
+      href: '/schedule',
       icon: 'calendar' as HugeIconName,
       tile: 'is-schedule',
     },
@@ -162,21 +162,21 @@ export const C8Sidebar = ({
     {
       id: 'link',
       label: 'Link-in-Bio',
-      href: '/link',
+      href: '/linkinbio',
       icon: 'link' as HugeIconName,
       tile: 'is-link',
     },
   ];
   const activeApp = pathname.startsWith('/stalker')
     ? 'stalker'
-    : pathname === '/link' || pathname.startsWith('/link/')
+    : pathname === '/linkinbio' || pathname.startsWith('/linkinbio/') || pathname === '/link' || pathname.startsWith('/link/')
     ? 'link'
     : 'schedule';
 
   const rows = [
     ...insertComposer(primary, {
       name: 'Composer',
-      path: '/launches',
+      path: '/schedule',
       icon: <HugeIcon name="pencil" size={18} />,
       onClick: openComposer,
     }),
@@ -213,7 +213,7 @@ export const C8Sidebar = ({
       onScroll={hideTip}
     >
       <Link
-        href="/launches"
+        href="/schedule"
         className="c8-side-logo"
         aria-label="crea8.one"
         data-tip="crea8.one"
@@ -267,8 +267,8 @@ export const C8Sidebar = ({
                 aria-label={app.label}
                 {...tipProps(app.label)}
                 onClick={() => {
-                  if (pathname !== '/launches') {
-                    router.push('/launches');
+                  if (pathname !== '/schedule' && pathname !== '/launches') {
+                    router.push('/schedule');
                   }
                 }}
               >
@@ -297,10 +297,12 @@ export const C8Sidebar = ({
             !item.onClick &&
             item.path !== '#' &&
             (activeApp === 'link'
-              ? item.path === '/link'
-                ? pathname === '/link'
-                : pathname.startsWith(item.path)
-              : pathname.indexOf(item.path) === 0);
+              ? item.path === '/linkinbio'
+                ? pathname === '/linkinbio' || pathname === '/link'
+                : pathname === item.path || pathname.startsWith(`${item.path}/`)
+              : item.path === '/schedule'
+                ? pathname === '/schedule' || pathname === '/launches'
+                : pathname === item.path || pathname.startsWith(`${item.path}/`));
           const className = clsx('c8-side-link', active && 'is-active');
           const inner = (
             <>

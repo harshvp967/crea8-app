@@ -71,7 +71,7 @@ export function Forgot() {
                   </Button>
                 </div>
                 <p className="mt-4 text-sm">
-                  <Link href="/auth/login" className="underline cursor-pointer">
+                  <Link href="/login" className="underline cursor-pointer">
                     {t('go_back_to_login', 'Go back to login')}
                   </Link>
                 </p>
@@ -89,7 +89,7 @@ export function Forgot() {
                 )}
               </p>
               <p className="mt-4 text-sm">
-                <Link href="/auth/login" className="cursor-pointer">
+                <Link href="/login" className="cursor-pointer">
                   {t('go_back_to_login', 'Go back to login')}
                 </Link>
               </p>

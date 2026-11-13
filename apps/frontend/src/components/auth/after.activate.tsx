@@ -48,7 +48,7 @@ export const AfterActivate = () => {
         {t('user_already_activated', 'Already activated')}
       </h1>
       <p className="mt-[12px] text-[14px]">
-        <Link href="/auth/login" className="cursor-pointer text-[color:var(--arc-accent-text)]">
+        <Link href="/login" className="cursor-pointer text-[color:var(--arc-accent-text)]">
           {t('log_in', 'Log in')}
         </Link>
       </p>

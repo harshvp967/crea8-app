@@ -232,7 +232,7 @@ export const SettingsComponent = () => {
     });
   }, [user]);
   return (
-    <Link href="/settings" onClick={openModal}>
+    <Link href="/account" onClick={openModal}>
       <HugeIcon
         name="settings"
         size={40}

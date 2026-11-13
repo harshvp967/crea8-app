@@ -153,7 +153,7 @@ export function Login() {
                     )}
                   </p>
                   <Link
-                    href="/auth/activate"
+                    href="/activate"
                     className="text-amber-400 underline hover:font-bold text-sm"
                   >
                     {t('resend_activation_email', 'Resend Activation Email')}
@@ -163,7 +163,7 @@ export function Login() {
               <div className="text-center mt-[8px]">
                 <p className="mb-[12px] text-end text-[14px]">
                   <Link
-                    href="/auth/forgot"
+                    href="/forgot"
                     className="cursor-pointer text-[color:var(--arc-accent-text)]"
                   >
                     {t('forgot_password', 'Forgot password')}
@@ -180,7 +180,7 @@ export function Login() {
                 </div>
                 <p className="mt-[12px] text-[14px]">
                   <Link
-                    href="/auth/register"
+                    href="/register"
                     className="cursor-pointer text-[color:var(--arc-accent-text)]"
                   >
                     {t('sign_up', 'Sign Up')}

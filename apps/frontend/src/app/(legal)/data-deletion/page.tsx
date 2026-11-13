@@ -1,4 +1,3 @@
-import { Metadata } from 'next';
 import {
   LegalH2,
   LegalLink,
@@ -6,12 +5,9 @@ import {
   LegalOperator,
   LegalShell,
 } from '@gitroom/frontend/components/legal/legal-shell';
+import { legalPageMetadata } from '@gitroom/frontend/components/layout/site.metadata';
 
-export const metadata: Metadata = {
-  title: 'Data deletion',
-  description:
-    'How to ask Crea8one to delete your account and connected-platform data.',
-};
+export const metadata = legalPageMetadata('Data deletion', '/data-deletion');
 
 export default function DataDeletionPage() {
   return (

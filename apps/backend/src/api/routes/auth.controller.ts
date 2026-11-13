@@ -316,7 +316,7 @@ export class AuthController {
     @Res({ passthrough: false }) response: Response
   ) {
     if (!code) {
-      return response.redirect(303, `${process.env.FRONTEND_URL}/auth/login`);
+      return response.redirect(303, `${process.env.FRONTEND_URL}/login`);
     }
 
     const params = new URLSearchParams();
@@ -325,7 +325,7 @@ export class AuthController {
     params.set('provider', provider.toUpperCase());
     return response.redirect(
       303,
-      `${process.env.FRONTEND_URL}/auth?${params.toString()}`
+      `${process.env.FRONTEND_URL}/login?${params.toString()}`
     );
   }
 

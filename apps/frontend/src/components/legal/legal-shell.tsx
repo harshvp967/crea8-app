@@ -42,6 +42,12 @@ export function LegalShell({
           >
             Data Deletion
           </Link>
+          <Link
+            className="underline hover:text-newTextColor"
+            href="/refund-policy"
+          >
+            Refunds
+          </Link>
         </nav>
       </main>
     </div>

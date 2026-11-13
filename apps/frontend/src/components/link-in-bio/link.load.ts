@@ -83,6 +83,12 @@ export function publicShareMetadata(page: PublicLink): Metadata {
   const description = page.seoDescription || page.bio || '';
   const image = publicAsset(normalizeDesign(page.design).ogImage);
   const hidden = !page.isPublic || page.sensitive;
+  if ((process.env.SITE_STEALTH ?? 'true').trim().toLowerCase() !== 'false') {
+    return {
+      title: { absolute: 'crea8.one' },
+      robots: { index: false, follow: false },
+    };
+  }
   return {
     title,
     description,

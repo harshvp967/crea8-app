@@ -26,7 +26,7 @@ export default async function Index(props: {
       }
     }
     const suffix = query.toString();
-    redirect(suffix ? `/auth?${suffix}` : '/auth');
+    redirect(suffix ? `/login?${suffix}` : '/login');
   }
   return <LaunchesComponent />;
 }

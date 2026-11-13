@@ -6,7 +6,7 @@ import { Crea8oneWordmark } from '@gitroom/frontend/components/ui/logo-text.comp
 export const Logo = ({ compact = false }: { compact?: boolean }) => {
   return (
     <Link
-      href="/launches"
+      href="/schedule"
       prefetch={true}
       className="app-logo flex items-center shrink-0 ps-[4px] pe-[8px]"
       title="crea8.one"

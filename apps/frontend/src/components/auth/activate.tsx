@@ -69,7 +69,7 @@ export function Activate() {
   const emailError = form.formState.errors.email?.message as string | undefined;
   const loginLink = (
     <p className="mt-[12px] text-[14px]">
-      <Link href="/auth/login" className="cursor-pointer text-[color:var(--arc-accent-text)]">
+      <Link href="/login" className="cursor-pointer text-[color:var(--arc-accent-text)]">
         {t('log_in', 'Log in')}
       </Link>
     </p>
@@ -112,7 +112,7 @@ export function Activate() {
           </div>
           <div className="text-center mt-[8px]">
             <div className="w-full flex">
-              <Link href="/auth/login" className="flex flex-1">
+              <Link href="/login" className="flex flex-1">
                 <Button className="auth-submit flex-1 !rounded-[18px] !h-[50px]">
                   {t('log_in', 'Log in')}
                 </Button>

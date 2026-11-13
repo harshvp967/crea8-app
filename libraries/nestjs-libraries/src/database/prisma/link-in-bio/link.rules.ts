@@ -78,6 +78,8 @@ export const LINK_RANGES = ['7d', '28d', '30d', '90d', '365d', '12m'] as const;
 
 const RESERVED = new Set([
   'about',
+  'account',
+  'activate',
   'admin',
   'agents',
   'analytics',
@@ -101,6 +103,7 @@ const RESERVED = new Set([
   'domain',
   'editor',
   'err',
+  'forgot',
   'faq',
   'favicon.ico',
   'features',
@@ -113,8 +116,10 @@ const RESERVED = new Set([
   'leads',
   'legal',
   'link',
+  'linkinbio',
   'links',
   'login',
+  'login-required',
   'logout',
   'mail',
   'manifest.webmanifest',
@@ -133,6 +138,7 @@ const RESERVED = new Set([
   'refund-policy',
   'register',
   'robots.txt',
+  'schedule',
   'settings',
   'share',
   'signin',
@@ -529,7 +535,7 @@ export function pageUrl(slug: string, customDomain: string, domainStatus: string
   if (customDomain && domainStatus === 'LIVE') {
     return `https://${customDomain}`;
   }
-  return `${publicOrigin()}/${slug}`;
+  return `${publicOrigin()}/@${slug}`;
 }
 
 export function cleanCountry(value: string) {

@@ -209,7 +209,7 @@ export const Plugs = () => {
                 )}
               </p>
             </div>
-            <Button onClick={() => router.push('/launches')}>
+            <Button onClick={() => router.push('/schedule')}>
               <HugeIcon name="plus" size={18} />
               {t(
                 'go_to_the_calendar_to_add_channels',

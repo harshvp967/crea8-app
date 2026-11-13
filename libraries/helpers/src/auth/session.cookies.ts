@@ -109,7 +109,7 @@ export function clearSessionCookies(response: {
 }
 
 export function logoutLoginUrl(currentHref: string) {
-  return new URL('/auth/login', currentHref).href;
+  return new URL('/login', currentHref).href;
 }
 
 function cookieDomain(frontendUrl: string | undefined) {

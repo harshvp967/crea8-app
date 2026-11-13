@@ -11,12 +11,18 @@ async function load(slug: string, personalized = false) {
   return loadPublicLink(`/public/link/${encodeURIComponent(slug)}${query}`);
 }
 
+function bioSlug(slug: string) {
+  const lower = slug.toLowerCase();
+  return lower.startsWith('@') ? lower.slice(1) : lower;
+}
+
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await props.params;
-  if (slugProblem(slug)) {
+  const name = bioSlug(slug);
+  if (slugProblem(name)) {
     return { title: documentTitle('Page'), robots: { index: false, follow: false } };
   }
-  const page = await load(slug.toLowerCase());
+  const page = await load(name);
   if (!page) {
     return { title: documentTitle('Page not found'), robots: { index: false, follow: false } };
   }
@@ -26,13 +32,17 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
 export default async function PublicLinkPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
   const lower = slug.toLowerCase();
-  if (slug !== lower) {
-    redirect(`/${lower}`);
+  const name = bioSlug(slug);
+  if (!lower.startsWith('@')) {
+    redirect(`/@${name}`);
   }
-  if (slugProblem(lower)) {
+  if (slug !== `@${name}`) {
+    redirect(`/@${name}`);
+  }
+  if (slugProblem(name)) {
     notFound();
   }
-  const page = await load(lower, true);
+  const page = await load(name, true);
   if (!page) {
     notFound();
   }

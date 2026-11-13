@@ -270,7 +270,7 @@ export const LinkLeadsScreen = () => {
               <p className="max-w-[360px] text-[14px] font-[500] text-textItemBlur">
                 Turn on Email capture to collect subscribers from your page.
               </p>
-              <Link href="/link" className={`${linkPrimary} mt-[8px]`}>
+              <Link href="/linkinbio" className={`${linkPrimary} mt-[8px]`}>
                 Email capture
               </Link>
             </>

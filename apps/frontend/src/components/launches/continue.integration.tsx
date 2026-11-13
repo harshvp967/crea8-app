@@ -208,7 +208,7 @@ export const ContinueIntegration: FC<{
         if (data.status === HttpStatusCode.PreconditionFailed) {
           const { returnURL } = await data.json().catch(() => ({}));
           navigateOrShow(
-            `/launches?precondition=true`,
+            `/schedule?precondition=true`,
             returnURL,
             'Precondition failed'
           );
@@ -217,7 +217,7 @@ export const ContinueIntegration: FC<{
 
         if (data.status === HttpStatusCode.NotAcceptable) {
           const { msg, returnURL } = await data.json();
-          navigateOrShow(`/launches?msg=${msg}`, returnURL, msg);
+          navigateOrShow(`/schedule?msg=${msg}`, returnURL, msg);
           return;
         }
 
@@ -297,7 +297,7 @@ export const ContinueIntegration: FC<{
         }
 
         navigateOrShow(
-          `/launches?added=${provider}&msg=Channel Updated${
+          `/schedule?added=${provider}&msg=Channel Updated${
             onboarding ? '&onboarding=true' : ''
           }`,
           returnURL,
@@ -344,7 +344,7 @@ export const ContinueIntegration: FC<{
         }
 
         navigateOrShow(
-          `/launches?added=${provider}&msg=Channel Added${
+          `/schedule?added=${provider}&msg=Channel Added${
             twoStepState.onboarding ? '&onboarding=true' : ''
           }`,
           twoStepState.returnURL,
@@ -464,7 +464,7 @@ export const ContinueIntegration: FC<{
             {t('returning_to_calendar', 'Returning to the calendar in 3 seconds')}
           </p>
         )}
-        {returning && <Redirect url="/launches" delay={3000} />}
+        {returning && <Redirect url="/schedule" delay={3000} />}
       </ReturnFrame>
     );
   }

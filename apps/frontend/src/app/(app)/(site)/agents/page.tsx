@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  return redirect('/agents/new');
+  return redirect('/schedule/agents/new');
 }

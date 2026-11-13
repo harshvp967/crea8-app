@@ -1,12 +1,16 @@
 import type { MetadataRoute } from 'next';
+import { siteStealth } from '@gitroom/frontend/components/layout/site.metadata';
 import { publicSiteOrigin } from '@gitroom/frontend/components/layout/site.origin';
 
-const PUBLIC_PATHS = ['/privacy', '/terms', '/data-deletion'];
+export const dynamic = 'force-dynamic';
+
+const LEGAL = ['/privacy', '/terms', '/data-deletion', '/refund-policy'];
+const OPEN = [...LEGAL, '/pricing'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const origin = publicSiteOrigin();
-  return PUBLIC_PATHS.map((path) => ({
-    url: `${origin}${path}`,
+  const paths = siteStealth() ? LEGAL : OPEN;
+  return paths.map((path) => ({
+    url: `${publicSiteOrigin()}${path}`,
     lastModified: new Date('2026-10-10'),
   }));
 }

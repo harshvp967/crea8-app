@@ -87,6 +87,12 @@ describe('link-in-bio slug and domain rules', () => {
     expect(slugProblem('privacy')).toMatch(/reserved/);
     expect(slugProblem('terms')).toMatch(/reserved/);
     expect(slugProblem('refund-policy')).toMatch(/reserved/);
+    expect(slugProblem('schedule')).toMatch(/reserved/);
+    expect(slugProblem('linkinbio')).toMatch(/reserved/);
+    expect(slugProblem('activate')).toMatch(/reserved/);
+    expect(slugProblem('login')).toMatch(/reserved/);
+    expect(slugProblem('register')).toMatch(/reserved/);
+    expect(slugProblem('invite')).toMatch(/reserved/);
     expect(slugProblem('about')).toMatch(/reserved/);
     expect(slugProblem('contact')).toMatch(/reserved/);
     expect(slugProblem('features')).toMatch(/reserved/);
@@ -320,7 +326,7 @@ describe('link-in-bio analytics and leads', () => {
     expect(mapHostnameStatus({ status: 'active', sslStatus: 'active' })).toBe('LIVE');
     expect(mapHostnameStatus({ status: 'blocked', sslStatus: 'active' })).toBe('ERROR');
     expect(pageUrl('crea8one', 'links.yourbrand.com', 'LIVE')).toBe('https://links.yourbrand.com');
-    expect(pageUrl('crea8one', 'links.yourbrand.com', 'WAITING')).toBe('https://crea8.one/crea8one');
+    expect(pageUrl('crea8one', 'links.yourbrand.com', 'WAITING')).toBe('https://crea8.one/@crea8one');
   });
 });
 

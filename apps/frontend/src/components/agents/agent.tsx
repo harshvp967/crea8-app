@@ -345,7 +345,7 @@ const Threads: FC<{ onPick: () => void }> = ({ onPick }) => {
     <div className="absolute top-0 start-0 w-full h-full p-[16px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor flex flex-col">
       <div className="mb-[16px] shrink-0">
         <Link
-          href="/agents"
+          href="/schedule/agents"
           onClick={onPick}
           className="agent-new-chat whitespace-nowrap flex w-full min-h-[44px] rounded-[18px] items-center gap-[8px] px-[14px] outline-none font-[600]"
         >
@@ -365,7 +365,7 @@ const Threads: FC<{ onPick: () => void }> = ({ onPick }) => {
               'agent-thread overflow-ellipsis overflow-hidden whitespace-nowrap',
               p.id === id && 'is-current'
             )}
-            href={`/agents/${p.id}`}
+            href={`/schedule/agents/${p.id}`}
             key={p.id}
             onClick={onPick}
           >
