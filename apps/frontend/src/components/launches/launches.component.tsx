@@ -599,6 +599,11 @@ export const LaunchesComponent = () => {
     return <SchedulePageSkeleton />;
   }
 
+  const channelsPanelLabel =
+    collapseMenu === '1'
+      ? t('expand_channels', 'Expand channels')
+      : t('collapse_channels', 'Collapse channels');
+
   // @ts-ignore
   return (
     <DNDProvider>
@@ -626,14 +631,19 @@ export const LaunchesComponent = () => {
               <h2 className="group-[.sidebar]:hidden flex-1 text-[18px] font-[600] tracking-[-0.02em]">
                 {t('channels')}
               </h2>
-              <div
+              <button
+                type="button"
                 onClick={() =>
                   setCollapseMenu(collapseMenu === '1' ? '0' : '1')
                 }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-textItemBlur bg-transparent border border-transparent rounded-[14px] w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none hover:bg-newBoxHover hover:text-newTextColor transition-colors"
+                className="channel-collapse group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-textItemBlur bg-transparent border border-transparent rounded-[14px] w-[36px] h-[36px] flex items-center justify-center cursor-pointer select-none hover:bg-newBoxHover hover:text-newTextColor transition-colors"
+                aria-expanded={collapseMenu !== '1'}
+                aria-label={channelsPanelLabel}
+                data-tooltip-id="tooltip"
+                data-tooltip-content={channelsPanelLabel}
               >
                 <HugeIcon name="chevron-left" size={16} />
-              </div>
+              </button>
             </div>
             <div className="channel-rail-tools flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />

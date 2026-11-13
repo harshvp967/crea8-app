@@ -1357,12 +1357,14 @@ body :focus-visible {
     z-index: 210;
   }
 
-  .channel-menu > div {
+  .channel-menu > div,
+  .channel-menu > button {
     width: 100%;
     height: 100%;
   }
 
-  .channel-menu > div > svg {
+  .channel-menu > div > svg,
+  .channel-menu > button > svg {
     opacity: 0;
     width: 100%;
     height: 100%;

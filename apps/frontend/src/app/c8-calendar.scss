@@ -924,6 +924,58 @@ body.c8-schedule .phone-day-strip button.arc-selected {
   }
 }
 
+/* Phone loading shell uses the same fixed header as the loaded page.
+   The shell already reserves 61px (44px in short landscape). Without
+   position:fixed the skeleton header sits in that padding and jumps. */
+@media (max-width: 639px), (max-height: 500px) {
+  .c8-shell-loading .app-header {
+    display: flex !important;
+    position: fixed;
+    z-index: 60;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 61px;
+    min-height: 61px;
+    border-width: 0 0 1px;
+    border-radius: 0;
+    border-color: var(--c8-line);
+    background: var(--c8-surface);
+    box-shadow: none;
+  }
+
+  .c8-shell-loading .logo-word {
+    display: none !important;
+  }
+
+  .c8-shell-loading .logo-mark {
+    display: block !important;
+    height: 32px !important;
+    width: 32px !important;
+    max-width: 32px !important;
+    max-height: none !important;
+  }
+
+  .c8-shell-loading .app-logo::after {
+    content: none;
+  }
+}
+
+@media (max-height: 499px) {
+  .c8-shell-loading .app-header {
+    height: 44px !important;
+    min-height: 44px !important;
+  }
+}
+
+.channel-add:focus-visible,
+.channel-invite:focus-visible,
+.channel-collapse:focus-visible,
+.channel-menu-btn:focus-visible {
+  outline: 2px solid var(--c8-cyan);
+  outline-offset: 2px;
+}
+
 .c8-sidebar {
   --c8-side-w: 256px;
   width: var(--c8-side-w);

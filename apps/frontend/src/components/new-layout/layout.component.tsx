@@ -143,6 +143,7 @@ export const AppShellSkeleton = () => {
       className={clsx(
         'app-shell flex flex-col min-h-screen min-w-screen text-newTextColor p-[16px] gap-[12px]',
         'c8-shell',
+        'c8-shell-loading',
         jakartaSans.className
       )}
       role="status"
