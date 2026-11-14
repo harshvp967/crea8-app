@@ -12,7 +12,7 @@ export const metadata = legalPageMetadata('Privacy', '/privacy');
 
 export default function PrivacyPage() {
   return (
-    <LegalShell title="Privacy Policy" updated="October 6, 2026">
+    <LegalShell title="Privacy Policy" updated="November 14, 2026">
       <p>
         This Privacy Policy explains how Crea8one (crea8.one), a social media
         scheduling and insights tool, handles personal information. You connect
@@ -54,7 +54,32 @@ export default function PrivacyPage() {
           number or full payment card details. Dodo Payments shares limited
           billing details with us, such as plan and subscription status.
         </li>
+        <li>
+          An email address submitted on a public Link in Bio email-capture
+          block, a name if that page asks for one, and the country code and
+          referrer sent with the submission.
+        </li>
       </LegalList>
+
+      <LegalH2>Link in Bio email capture</LegalH2>
+      <p>
+        A public Link in Bio page can include an email-capture block. We store
+        a submission for the organization that owns the page. That organization
+        can view and export it.
+      </p>
+      <p>
+        If the page asks the person to confirm, we email a confirmation link
+        and keep the address pending until they confirm. If the organization
+        turned on subscriber notifications, we email the address to a member of
+        that organization. If the organization connected Mailchimp, ConvertKit,
+        or a webhook, we also send the address to that connection.
+      </p>
+      <p>
+        The workspace owner can delete a stored address in Link in Bio. A
+        person who submitted an address can email{' '}
+        <LegalLink href="mailto:support@crea8.one">support@crea8.one</LegalLink>{' '}
+        and ask us to delete it.
+      </p>
 
       <LegalH2>How we use information</LegalH2>
       <p>We use personal information to:</p>
