@@ -26,6 +26,8 @@ const EXACT: Record<string, string> = {
   '/link': '/linkinbio',
   '/billing': '/account/billing',
   '/join': '/invite',
+  '/dashboard': '/schedule',
+  '/stalker-preview': '/stalker/preview',
 };
 
 const PREFIXES: Array<[string, string]> = [
@@ -38,54 +40,105 @@ const PREFIXES: Array<[string, string]> = [
   ['/stalker-preview/', '/stalker/preview/'],
 ];
 
-// First URL segments that are app routes, so they can never be a bio username.
-// link.rules.ts keeps the same names for the username check.
-export const APP_FIRST_SEGMENTS = [
-  'account',
-  'activate',
-  'admin',
-  'agents',
-  'analytics',
-  'api',
-  'auth',
-  'billing',
-  'bio-host',
-  'data-deletion',
-  'err',
-  'forgot',
-  'icons',
-  'integrations',
-  'invite',
-  'join',
-  'launches',
-  'link',
-  'linkinbio',
-  'login',
-  'login-required',
-  'media',
-  'modal',
-  'oauth',
-  'p',
-  'payment',
-  'plugs',
-  'pricing',
-  'privacy',
-  'provider',
-  'refund-policy',
-  'register',
-  'schedule',
-  'settings',
-  'share',
-  'stalker',
-  'stalker-preview',
-  'subscribe',
-  'terms',
-  'third-party',
-  'uploads',
-  'webhooks',
-] as const;
+// One list for bio usernames and for the bare /{slug} → /@{slug} redirect.
+// link.rules.ts reads it through isReservedSlug. A name added here cannot be
+// claimed by that redirect. `app` and `static` have a document. `namespace`
+// is a real prefix whose exact URL has no document and must not move.
+// `block` is a username with no page.
+export type ReservedKind = 'app' | 'namespace' | 'static' | 'block';
 
-const APP_FIRST = new Set<string>(APP_FIRST_SEGMENTS);
+export const RESERVED_PATHS: ReadonlyArray<{ name: string; kind: ReservedKind }> = [
+  { name: '.well-known', kind: 'namespace' },
+  { name: 'about', kind: 'block' },
+  { name: 'account', kind: 'app' },
+  { name: 'activate', kind: 'app' },
+  { name: 'admin', kind: 'namespace' },
+  { name: 'agents', kind: 'app' },
+  { name: 'analytics', kind: 'app' },
+  { name: 'api', kind: 'namespace' },
+  { name: 'app', kind: 'block' },
+  { name: 'assets', kind: 'block' },
+  { name: 'auth', kind: 'app' },
+  { name: 'billing', kind: 'app' },
+  { name: 'bio', kind: 'block' },
+  { name: 'bio-host', kind: 'app' },
+  { name: 'blog', kind: 'block' },
+  { name: 'calendar', kind: 'block' },
+  { name: 'careers', kind: 'block' },
+  { name: 'changelog', kind: 'block' },
+  { name: 'confirm', kind: 'block' },
+  { name: 'contact', kind: 'block' },
+  { name: 'copilot', kind: 'block' },
+  { name: 'dashboard', kind: 'app' },
+  { name: 'data-deletion', kind: 'app' },
+  { name: 'docs', kind: 'block' },
+  { name: 'domain', kind: 'block' },
+  { name: 'editor', kind: 'block' },
+  { name: 'err', kind: 'namespace' },
+  { name: 'faq', kind: 'block' },
+  { name: 'favicon.ico', kind: 'static' },
+  { name: 'features', kind: 'block' },
+  { name: 'forgot', kind: 'app' },
+  { name: 'help', kind: 'block' },
+  { name: 'home', kind: 'block' },
+  { name: 'icons', kind: 'namespace' },
+  { name: 'index', kind: 'block' },
+  { name: 'integrations', kind: 'namespace' },
+  { name: 'invite', kind: 'app' },
+  { name: 'join', kind: 'app' },
+  { name: 'launches', kind: 'app' },
+  { name: 'leads', kind: 'block' },
+  { name: 'legal', kind: 'block' },
+  { name: 'link', kind: 'app' },
+  { name: 'linkinbio', kind: 'app' },
+  { name: 'links', kind: 'block' },
+  { name: 'llms.txt', kind: 'static' },
+  { name: 'login', kind: 'app' },
+  { name: 'login-required', kind: 'app' },
+  { name: 'logout', kind: 'block' },
+  { name: 'mail', kind: 'block' },
+  { name: 'manifest.webmanifest', kind: 'static' },
+  { name: 'media', kind: 'app' },
+  { name: 'modal', kind: 'namespace' },
+  { name: 'oauth', kind: 'namespace' },
+  { name: 'onboarding', kind: 'block' },
+  { name: 'p', kind: 'namespace' },
+  { name: 'payment', kind: 'namespace' },
+  { name: 'plugs', kind: 'app' },
+  { name: 'postiz', kind: 'block' },
+  { name: 'press', kind: 'block' },
+  { name: 'pricing', kind: 'app' },
+  { name: 'privacy', kind: 'app' },
+  { name: 'provider', kind: 'namespace' },
+  { name: 'public', kind: 'block' },
+  { name: 'refund-policy', kind: 'app' },
+  { name: 'register', kind: 'app' },
+  { name: 'robots.txt', kind: 'static' },
+  { name: 'schedule', kind: 'app' },
+  { name: 'settings', kind: 'app' },
+  { name: 'share', kind: 'namespace' },
+  { name: 'signin', kind: 'block' },
+  { name: 'signup', kind: 'block' },
+  { name: 'sitemap.xml', kind: 'static' },
+  { name: 'stalker', kind: 'app' },
+  { name: 'stalker-preview', kind: 'app' },
+  { name: 'static', kind: 'block' },
+  { name: 'status', kind: 'block' },
+  { name: 'subscribe', kind: 'namespace' },
+  { name: 'support', kind: 'block' },
+  { name: 'terms', kind: 'app' },
+  { name: 'third-party', kind: 'app' },
+  { name: 'uploads', kind: 'namespace' },
+  { name: 'waitlist', kind: 'block' },
+  { name: 'webhooks', kind: 'namespace' },
+  { name: 'www', kind: 'block' },
+];
+
+const RESERVED = new Map(RESERVED_PATHS.map((entry) => [entry.name, entry.kind]));
+
+export const APP_FIRST_SEGMENTS = RESERVED_PATHS.filter((entry) => entry.kind !== 'block').map(
+  (entry) => entry.name
+);
 
 export const KEPT_CALLBACKS: KeptCallback[] = [
   { path: '/settings', provider: 'GitHub, generic OIDC', kept: 'unchanged' },
@@ -156,8 +209,13 @@ export function isKeptCallback(pathname: string) {
   );
 }
 
+export function isReservedSlug(slug: string) {
+  return RESERVED.has(slug.trim().toLowerCase());
+}
+
 export function isAppFirstSegment(segment: string) {
-  return APP_FIRST.has(segment.toLowerCase());
+  const kind = RESERVED.get(segment.trim().toLowerCase());
+  return !!kind && kind !== 'block';
 }
 
 export function isPublicAuthPath(pathname: string) {
@@ -208,6 +266,10 @@ export function bioParamDecision(param: string): BioParamDecision | null {
   if (!name || /[/@\s]/.test(name) || name.includes('%')) {
     return null;
   }
+  // Reserved names are app routes or blocked usernames, never a bio.
+  if (isReservedSlug(name)) {
+    return null;
+  }
   // One @, or a second @ already in the param, renders. It does not redirect
   // to a URL that adds another @.
   if (marks > 0) {
@@ -231,10 +293,13 @@ export function isPublicBioPath(pathname: string) {
   }
   const decision = bioParamDecision(segment);
   if (!decision) {
-    return false;
+    const name = peelAt(segment).slug.toLowerCase();
+    // A blocked username has no document. Leave it public so a signed-out
+    // visitor gets the not-found page, not a login redirect.
+    return isReservedSlug(name) && !isAppFirstSegment(name);
   }
   const slug = decision.action === 'render' ? decision.slug : decision.location.slice(2);
-  return Boolean(slug) && !isAppFirstSegment(slug);
+  return Boolean(slug) && !isReservedSlug(slug);
 }
 
 function withSearch(pathname: string, search: string) {
@@ -253,7 +318,7 @@ function bioRedirect(path: string) {
     return '';
   }
   const slug = path.slice(1);
-  if (!slug || isAppFirstSegment(slug) || STATIC_ASSET.test(slug)) {
+  if (!slug || isReservedSlug(slug) || STATIC_ASSET.test(slug)) {
     return '';
   }
   return `/@${slug.toLowerCase()}`;
@@ -264,7 +329,7 @@ export function legacyRedirect(pathname: string, search = ''): PathRedirect | nu
   if (path === '/' || isKeptCallback(path)) {
     return null;
   }
-  const exact = EXACT[path];
+  const exact = EXACT[path.toLowerCase()];
   if (exact) {
     return { status: 301, location: withSearch(exact, search) };
   }
