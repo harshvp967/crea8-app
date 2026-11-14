@@ -10,7 +10,7 @@ export const metadata = legalPageMetadata('Terms', '/terms');
 
 export default function TermsPage() {
   return (
-    <LegalShell title="Terms of Service">
+    <LegalShell title="Terms of Service" updated="November 14, 2026">
       <p>
         These Terms of Service are a contract between you and Harsh Verma, a
         sole proprietor trading as Zero Print Plus (&quot;we&quot;,
@@ -108,6 +108,17 @@ export default function TermsPage() {
         renewal through the merchant&apos;s customer portal. Cancellation stops
         later charges. It does not, by itself, refund a period that has already
         started, unless a refund is required by law or granted by the merchant.
+      </p>
+
+      <LegalH2>Link in Bio email capture</LegalH2>
+      <p>
+        If you add an email-capture block to your public Link in Bio page, we
+        store each submitted email address for your organization, with a name
+        when you ask for one, and the country code and referrer sent with the
+        submission. Your organization can view and export those addresses. The
+        workspace owner can delete one. If you connected Mailchimp, ConvertKit,
+        or a webhook, we send the address there too. When a person asks you to
+        delete an address, the workspace owner deletes it in Link in Bio.
       </p>
 
       <LegalH2>Privacy and deletion</LegalH2>
