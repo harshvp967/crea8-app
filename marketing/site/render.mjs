@@ -34,26 +34,40 @@ const NAV = [
 ];
 
 const FOOTER = [
-  ['/schedule', 'Schedule'],
-  ['/link', 'Link in Bio'],
-  ['/stalker', 'Stalker'],
-  ['/channels', 'Channels'],
-  ['/pricing', 'Pricing'],
-  ['/agent', 'Agent'],
-  ['/mcp', 'MCP'],
-  ['/cli', 'CLI'],
-  ['/chatgpt', 'ChatGPT'],
-  ['/claude', 'Claude'],
-  ['/claude-code', 'Claude Code'],
-  ['/cursor', 'Cursor'],
-  ['/grok-bot', 'Grok Bot'],
-  ['/about', 'About'],
-  ['/contact', 'Contact'],
-  ['https://app.crea8.one/privacy', 'Privacy'],
-  ['https://app.crea8.one/terms', 'Terms'],
-  ['https://app.crea8.one/register', 'Start'],
-  ['https://app.crea8.one/login', 'Log in'],
-  ['mailto:support@crea8.one', 'support@crea8.one'],
+  [
+    'Product',
+    [
+      ['/schedule', 'Schedule'],
+      ['/link', 'Link in Bio'],
+      ['/stalker', 'Stalker'],
+      ['/channels', 'Channels'],
+      ['/pricing', 'Pricing'],
+    ],
+  ],
+  [
+    'Agent',
+    [
+      ['/agent', 'Agent'],
+      ['/mcp', 'MCP'],
+      ['/cli', 'CLI'],
+      ['/chatgpt', 'ChatGPT'],
+      ['/claude', 'Claude'],
+      ['/claude-code', 'Claude Code'],
+      ['/cursor', 'Cursor'],
+      ['/grok-bot', 'Grok Bot'],
+    ],
+  ],
+  [
+    'Account',
+    [
+      ['/about', 'About'],
+      ['/contact', 'Contact'],
+      ['https://app.crea8.one/register', 'Start'],
+      ['https://app.crea8.one/login', 'Log in'],
+      ['https://app.crea8.one/privacy', 'Privacy'],
+      ['https://app.crea8.one/terms', 'Terms'],
+    ],
+  ],
 ];
 
 function nav(path) {
@@ -64,7 +78,22 @@ function nav(path) {
 }
 
 function footer() {
-  return FOOTER.map(([href, label]) => `<a href="${href}">${label}</a>`).join('');
+  const columns = FOOTER.map(
+    ([title, links]) => `<div class="footer-col">
+      <h2>${title}</h2>
+      ${links.map(([href, label]) => `<a href="${href}">${label}</a>`).join('')}
+    </div>`
+  ).join('');
+  return `<div class="footer-brand">
+      <a class="brand" href="/" aria-label="crea8.one">
+        <img class="brand-mark" src="/crea8one-icon-cyan.svg" alt="">
+        <span class="brand-word">
+          <img class="wordmark-light" src="/crea8one-logo-horizontal-color.svg" alt="">
+          <img class="wordmark-dark" src="/crea8one-logo-horizontal-color-on-dark.svg" alt="">
+        </span>
+      </a>
+      <a href="mailto:support@crea8.one">support@crea8.one</a>
+    </div>${columns}`;
 }
 
 export function renderPage({ path, title, main }) {
@@ -107,7 +136,7 @@ export function renderPage({ path, title, main }) {
   </header>
   <main id="content" class="wrap">${main}</main>
   <footer class="site-footer">
-    <div class="wrap footer-links">${footer()}</div>
+    <div class="wrap footer-grid">${footer()}</div>
   </footer>
 </body>
 </html>
