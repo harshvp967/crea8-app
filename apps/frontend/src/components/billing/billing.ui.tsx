@@ -745,14 +745,29 @@ export function AccountBillingPlaceholder() {
   return <AccountBillingSkeleton />;
 }
 
+const NEW_FREE_PAYWALL_TITLE = 'Subscribe to crea8.one';
+const RETURNING_PAYWALL_TITLE = 'Subscribe to keep using crea8.one';
+
+export function paywallHeading(input: {
+  status?: BillingOverview['subscription']['status'] | null;
+  allowTrial?: boolean;
+}) {
+  if (input.status) {
+    return input.status === 'none' ? NEW_FREE_PAYWALL_TITLE : RETURNING_PAYWALL_TITLE;
+  }
+  return input.allowTrial ? NEW_FREE_PAYWALL_TITLE : RETURNING_PAYWALL_TITLE;
+}
+
 export function Paywall({
   children,
+  title = RETURNING_PAYWALL_TITLE,
 }: {
   children: ReactNode;
+  title?: string;
 }) {
   return (
     <section data-billing-state="paywall" className="link-screen billing-paywall flex w-full flex-col items-center gap-[28px] px-[16px] pb-[24px] pt-[36px] c8-tablet:px-[32px] c8-desktop:px-[40px]">
-      <h1 className="stk-title m-0 w-full text-center">Subscribe to keep using crea8.one</h1>
+      <h1 className="stk-title m-0 w-full text-center">{title}</h1>
       {children}
     </section>
   );

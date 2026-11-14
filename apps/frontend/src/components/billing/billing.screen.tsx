@@ -23,6 +23,7 @@ import {
   PlanPicker,
   StatusBanners,
   formatBillingDay,
+  paywallHeading,
 } from '@gitroom/frontend/components/billing/billing.ui';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { PricingSection } from '@gitroom/frontend/components/billing/pricing.section';
@@ -46,6 +47,7 @@ function SignInPaywall({
   trialDays,
   currentTier,
   currentPeriod,
+  subscriptionStatus,
   onPeriod,
   onChoose,
 }: {
@@ -55,11 +57,12 @@ function SignInPaywall({
   trialDays: number;
   currentTier?: PlanTier | null;
   currentPeriod?: 'MONTHLY' | 'YEARLY' | null;
+  subscriptionStatus?: BillingOverview['subscription']['status'] | null;
   onPeriod: (period: 'MONTHLY' | 'YEARLY') => void;
   onChoose: (tier: PaidTier) => void;
 }) {
   return (
-    <Paywall>
+    <Paywall title={paywallHeading({ status: subscriptionStatus, allowTrial })}>
       <PricingSection
         period={period}
         busy={busy}
@@ -506,6 +509,7 @@ export function BillingScreen({
                 trialDays={data.trialDays}
                 currentTier={data.subscription.tier}
                 currentPeriod={data.subscription.period}
+                subscriptionStatus={data.subscription.status}
                 onPeriod={setPeriod}
                 onChoose={(tier) => chooseTier(tier, data.plans)}
               />
