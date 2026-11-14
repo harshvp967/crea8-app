@@ -355,9 +355,11 @@ export const LinkSettingsScreen = () => {
         <div className="lib-toggle-row">
           <div className="min-w-0">
             <div className="lib-toggle-copy">Show “made with crea8.one”</div>
-            <p className="text-[13px] text-textItemBlur">
-              {linkLocked(data) ? 'Hiding the badge is on a paid plan' : data.paid ? 'Paid plans can hide the badge' : 'Paid plans can hide the badge. It stays open while plan gating is off.'}
-            </p>
+            {linkLocked(data) || data.paid ? (
+              <p className="text-[13px] text-textItemBlur">
+                {linkLocked(data) ? 'Hiding the badge is on a paid plan' : 'Paid plans can hide the badge'}
+              </p>
+            ) : null}
           </div>
           <span className="lib-toggle-actions">
             {linkLocked(data) ? <span className="lib-pill lib-pill-pro">★ Pro</span> : null}
