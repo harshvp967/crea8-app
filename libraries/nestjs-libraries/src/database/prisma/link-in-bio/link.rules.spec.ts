@@ -97,6 +97,11 @@ describe('link-in-bio slug and domain rules', () => {
     expect(slugProblem('contact')).toMatch(/reserved/);
     expect(slugProblem('features')).toMatch(/reserved/);
     expect(slugProblem('blog')).toMatch(/reserved/);
+    expect(slugProblem('dashboard')).toMatch(/reserved/);
+    expect(slugProblem('webhooks')).toMatch(/reserved/);
+    expect(slugProblem('icons')).toMatch(/reserved/);
+    expect(slugProblem('join')).toMatch(/reserved/);
+    expect(slugProblem('payment')).toMatch(/reserved/);
     expect(slugProblem('ab')).toMatch(/3 to 30/);
     expect(slugProblem('1abc')).toMatch(/letter/);
     expect(slugProblem('my..page')).toMatch(/dot or underscore/);

@@ -1,9 +1,12 @@
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { noPlanProductOpen } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { isReservedSlug } from '@gitroom/helpers/paths/app.paths';
 import {
   isBillingEnforced,
   isGrandfatheredOrg,
 } from '@gitroom/helpers/utils/billing.enabled';
+
+export { isReservedSlug };
 
 export const LINK_BLOCK_CAP = 2000;
 
@@ -76,87 +79,6 @@ export const LINK_SOCIALS = [
 ] as const;
 export const LINK_RANGES = ['7d', '28d', '30d', '90d', '365d', '12m'] as const;
 
-const RESERVED = new Set([
-  'about',
-  'account',
-  'activate',
-  'admin',
-  'agents',
-  'analytics',
-  'api',
-  'app',
-  'assets',
-  'auth',
-  'billing',
-  'bio',
-  'bio-host',
-  'blog',
-  'calendar',
-  'careers',
-  'changelog',
-  'confirm',
-  'contact',
-  'copilot',
-  'dashboard',
-  'data-deletion',
-  'docs',
-  'domain',
-  'editor',
-  'err',
-  'forgot',
-  'faq',
-  'favicon.ico',
-  'features',
-  'help',
-  'home',
-  'index',
-  'integrations',
-  'invite',
-  'launches',
-  'leads',
-  'legal',
-  'link',
-  'linkinbio',
-  'links',
-  'login',
-  'login-required',
-  'logout',
-  'mail',
-  'manifest.webmanifest',
-  'media',
-  'modal',
-  'oauth',
-  'onboarding',
-  'p',
-  'plugs',
-  'postiz',
-  'press',
-  'pricing',
-  'privacy',
-  'provider',
-  'public',
-  'refund-policy',
-  'register',
-  'robots.txt',
-  'schedule',
-  'settings',
-  'share',
-  'signin',
-  'signup',
-  'sitemap.xml',
-  'stalker',
-  'stalker-preview',
-  'static',
-  'status',
-  'subscribe',
-  'support',
-  'terms',
-  'third-party',
-  'uploads',
-  'waitlist',
-  'www',
-]);
-
 export type BlockScheduleState = 'live' | 'scheduled' | 'ended' | 'hidden';
 export type LinkPlan = {
   subscriptionTier?: string | null;
@@ -202,13 +124,9 @@ const PLATFORMS: Record<string, string> = {
   wordpress: 'WordPress',
 };
 
-export function isReservedSlug(slug: string) {
-  return RESERVED.has(slug);
-}
-
 export function slugProblem(raw: string): string | null {
   const slug = raw.trim().toLowerCase();
-  if (RESERVED.has(slug)) {
+  if (isReservedSlug(slug)) {
     return 'That username is reserved';
   }
   if (slug.length < 3 || slug.length > 30) {

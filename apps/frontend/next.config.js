@@ -135,6 +135,7 @@ const nextConfig = {
       { source: '/schedule/p/:id', destination: '/p/:id' },
       { source: '/linkinbio', destination: '/link' },
       { source: '/linkinbio/:path*', destination: '/link/:path*' },
+      { source: '/stalker/preview', destination: '/stalker-preview/mentions' },
       { source: '/stalker/preview/:page', destination: '/stalker-preview/:page' },
       { source: '/account/billing', destination: '/billing' },
       { source: '/account/billing/:path*', destination: '/billing/:path*' },
