@@ -1,3 +1,5 @@
+import { siteStealth } from './stealth.mjs';
+
 const THEME_SCRIPT = `(function () {
   var mode = 'dark';
   try {
@@ -64,8 +66,15 @@ const FOOTER = [
       ['/contact', 'Contact'],
       ['https://app.crea8.one/register', 'Start'],
       ['https://app.crea8.one/login', 'Log in'],
-      ['https://app.crea8.one/privacy', 'Privacy'],
-      ['https://app.crea8.one/terms', 'Terms'],
+    ],
+  ],
+  [
+    'Legal',
+    [
+      ['/privacy', 'Privacy'],
+      ['/terms', 'Terms'],
+      ['/data-deletion', 'Data deletion'],
+      ['/refund-policy', 'Refunds'],
     ],
   ],
 ];
@@ -96,14 +105,25 @@ function footer() {
     </div>${columns}`;
 }
 
-export function renderPage({ path, title, main }) {
+function escapeAttr(text) {
+  return String(text).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]);
+}
+
+export function renderPage({ path, title, main, description }) {
+  const stealth = siteStealth();
   const documentTitle = title === 'crea8.one' ? 'crea8.one' : `${title} · crea8.one`;
+  const robots = stealth ? 'noindex, nofollow' : 'index, follow';
+  const canonical = path === '/' ? 'https://crea8.one/' : `https://crea8.one${path}`;
+  const launchMeta = stealth
+    ? ''
+    : `${description ? `\n  <meta name="description" content="${escapeAttr(description)}">` : ''}
+  <link rel="canonical" href="${canonical}">`;
   return `<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
+  <meta name="robots" content="${robots}">${launchMeta}
   <title>${documentTitle}</title>
   <link rel="icon" href="/crea8one-favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/crea8one-favicon-32.png" sizes="32x32" type="image/png">
