@@ -1,3 +1,6 @@
+import { dataDeletion, privacy, refunds, terms } from './legal.mjs';
+import { PAGE_PATHS } from './paths.mjs';
+
 export const channels = [
   { name: 'X', icon: 'x.png' },
   { name: 'LinkedIn', icon: 'linkedin.png' },
@@ -134,6 +137,14 @@ const plans = [
   },
 ];
 
+const sharedLines = plans[0].lines.filter((line) => plans.every((plan) => plan.lines.includes(line)));
+const homeLine = (line) =>
+  /^\d|Unlimited team members|credits refill monthly|Stalker keywords/.test(line) &&
+  (line.endsWith('channels') ||
+    line.includes('team member') ||
+    line.includes('credits refill monthly') ||
+    line.includes('Stalker keywords'));
+
 const themes = [
   { label: 'Midnight', background: '#071418' },
   { label: 'Paper', background: '#f6f3ee' },
@@ -153,34 +164,53 @@ const socials = [
   { name: 'LinkedIn', icon: 'linkedin.png' },
   { name: 'TikTok', icon: 'tiktok.png' },
   { name: 'Threads', icon: 'threads.png' },
-  { name: 'Facebook', icon: 'facebook.png' },
-  { name: 'Bluesky', icon: 'bluesky.png' },
-  { name: 'Twitch', icon: 'twitch.png' },
-  { name: 'Pinterest', icon: 'pinterest.png' },
-  { name: 'Reddit', icon: 'reddit.png' },
-  { name: 'Website', icon: '' },
 ];
 
 const scheduleNav = ['Calendar', 'Composer', 'Agent', 'Analytics', 'Media', 'Plugs', 'Integrations', 'Settings'];
 const stalkerNav = ['Mentions', 'Analytics', 'Themes', 'Keywords', 'Alerts', 'Settings'];
 const linkNav = ['Editor', 'Appearance', 'Settings', 'Analytics', 'Leads'];
 
-const agentLinks = [
-  ['/mcp', 'MCP', 'mcp.crea8.one/mcp'],
-  ['/chatgpt', 'ChatGPT', 'mcp-oauth-chatgpt'],
-  ['/claude', 'Claude', 'mcp-oauth-claude'],
-  ['/claude-code', 'Claude Code', 'claude mcp add'],
-  ['/cursor', 'Cursor', 'mcp-oauth-dynamic'],
-  ['/grok-bot', 'Grok Bot', 'api.crea8.one'],
-  ['/cli', 'CLI', 'crea8'],
+const agentTiles = [
+  ['/chatgpt', 'ChatGPT'],
+  ['/claude', 'Claude'],
+  ['/claude-code', 'Claude Code'],
+  ['/cursor', 'Cursor'],
+  ['/grok-bot', 'Grok Bot'],
+  ['/cli', 'CLI'],
 ];
 
+const cursorOauth = JSON.stringify(
+  { mcpServers: { crea8one: { url: 'https://mcp.crea8.one/mcp-oauth-dynamic' } } },
+  null,
+  2
+);
+
+const cursorKey = JSON.stringify(
+  {
+    mcpServers: {
+      crea8one: {
+        url: 'https://mcp.crea8.one/mcp',
+        headers: { Authorization: 'Bearer <API key>' },
+      },
+    },
+  },
+  null,
+  2
+);
+
 function esc(text) {
-  return String(text).replace(/[&<>]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[char]);
+  return String(text).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]);
 }
 
 function pre(text) {
   return `<pre class="snippet">${esc(text)}</pre>`;
+}
+
+function heroActions() {
+  return `<div class="actions">
+      <a class="btn btn-primary" href="https://app.crea8.one/register">Start 7-day trial for $0</a>
+      <a class="btn btn-secondary" href="https://app.crea8.one/login">Log in</a>
+    </div>`;
 }
 
 function faq(items) {
@@ -195,9 +225,7 @@ function faq(items) {
 }
 
 function icon(file) {
-  if (!file) {
-    return '<span class="mark-web" aria-hidden="true"></span>';
-  }
+  if (!file) return '';
   return `<img src="/icons/${file}" alt="">`;
 }
 
@@ -213,19 +241,14 @@ function channelGrid(items, soon) {
     .join('')}</div>`;
 }
 
-function sourceRow(items) {
-  return `<div class="sources">${items
-    .map(
-      (item) => `<div class="source${item.soon ? ' is-soon' : ''}">
-        ${icon(item.icon)}
-        <span>${esc(item.name)}</span>
-        ${item.soon ? '<span class="soon">Coming soon</span>' : ''}
-      </div>`
-    )
-    .join('')}</div>`;
+function channelWall() {
+  return `<section class="block">
+      <h2><a href="/channels">Publish to 25+ channels</a></h2>
+      ${channelGrid(channels, false)}
+    </section>`;
 }
 
-function appFrame(active, links, current, body, hidden = true) {
+function appFrame(active, links, current, body) {
   const apps = [
     ['schedule', 'Schedule'],
     ['stalker', 'Stalker'],
@@ -240,8 +263,7 @@ function appFrame(active, links, current, body, hidden = true) {
   const linkHtml = links
     .map((label) => `<div class="app-link${label === current ? ' is-on' : ''}">${esc(label)}</div>`)
     .join('');
-  const hiddenAttr = hidden ? ' aria-hidden="true"' : '';
-  return `<div class="app"${hiddenAttr}><aside class="app-side"><div class="app-logo"><img src="/crea8one-icon-cyan.svg" alt=""></div><div class="app-apps">${appHtml}</div><div class="app-rule"></div><div class="app-links">${linkHtml}</div></aside><div class="app-main">${body}</div></div>`;
+  return `<div class="app" aria-hidden="true"><aside class="app-side"><div class="app-logo"><img src="/crea8one-icon-cyan.svg" alt=""></div><div class="app-apps">${appHtml}</div><div class="app-rule"></div><div class="app-links">${linkHtml}</div></aside><div class="app-main">${body}</div></div>`;
 }
 
 function calendarBody() {
@@ -256,9 +278,7 @@ function calendarBody() {
   ];
   const cells = days
     .map(([name, file, label]) => {
-      const slot = file
-        ? `<div class="slot">${icon(file)}<span>${esc(label)}</span></div>`
-        : '';
+      const slot = file ? `<div class="slot">${icon(file)}<span>${esc(label)}</span></div>` : '';
       return `<div class="day"><span class="dow">${name}</span><div class="slots">${slot}</div></div>`;
     })
     .join('');
@@ -296,32 +316,9 @@ function stalkerBody() {
     </div>`;
 }
 
-function phonePage(full) {
-  const more = full
-    ? `<div class="phone-heading">Heading</div>
-      <p class="phone-copy">Text</p>
-      <div class="phone-faq"><span>FAQ</span></div>
-      <div class="phone-discount">Discount</div>
-      <div class="phone-feature">Featured post</div>
-      <div class="phone-embed">Embed</div>
-      <div class="phone-carousel"><i></i><i></i><i></i><span>Image carousel</span></div>
-      <div class="phone-block">Contact form</div>
-      <div class="phone-block">Map</div>
-      <div class="phone-block">Calendly</div>
-      <div class="phone-block">Contact details</div>
-      <div class="phone-block">Events</div>
-      <div class="phone-block">Music</div>
-      <div class="phone-embed">Latest YouTube</div>`
-    : `<div class="phone-faq"><span>FAQ</span></div>`;
-  const social = socials
-    .slice(0, full ? socials.length : 6)
-    .map((item) => icon(item.icon))
-    .join('');
-  return `<div class="phone"><div class="phone-top">crea8.one/@username</div><div class="phone-page"><strong>Studio</strong><p>Links</p><div class="phone-socials">${social}</div><div class="phone-link">Link</div><div class="phone-email"><span>Email capture</span><i></i></div>${more}</div></div>`;
-}
-
-function linkBody(full) {
-  return `<div class="screen-title">Editor</div><div class="link-fit">${phonePage(full)}</div>`;
+function phonePreview() {
+  const social = socials.map((item) => icon(item.icon)).join('');
+  return `<div class="phone" aria-hidden="true"><div class="phone-top">crea8.one/@you</div><div class="phone-page"><strong>Studio</strong><p>Links</p><div class="phone-socials">${social}</div><div class="phone-link">Link</div><div class="phone-email"><span>Email capture</span><i></i></div></div></div>`;
 }
 
 function scheduleShot() {
@@ -336,21 +333,81 @@ function stalkerShot() {
   return appFrame('stalker', stalkerNav, 'Mentions', stalkerBody());
 }
 
-function linkShot(full) {
-  return appFrame('link', linkNav, 'Editor', linkBody(full), !full);
+function linkShot() {
+  return appFrame('link', linkNav, 'Editor', `<div class="screen-title">Editor</div><div class="link-fit">${phonePreview()}</div>`);
 }
 
-function planCards() {
-  return `<div class="plans">${plans
+function framed(shot) {
+  return `<div class="frame">${shot}</div>`;
+}
+
+function miniChannels() {
+  return `<div class="mini" aria-hidden="true">${['x.png', 'linkedin.png', 'instagram.png', 'youtube.png', 'reddit.png', 'tiktok.png'].map(icon).join('')}</div>`;
+}
+
+function miniComposer() {
+  return `<div class="mini-compose" aria-hidden="true"><span>Text</span><div class="composer-row">${icon('x.png')}${icon('linkedin.png')}<span class="tag">Draft</span><span class="tag">Publish now</span></div></div>`;
+}
+
+function miniMentions() {
+  return `<div class="mini-feed" aria-hidden="true">${mention('x.png', 'NEW')}${mention('reddit.png', 'REPLIED')}</div>`;
+}
+
+function miniKeyword() {
+  return `<div class="mini-compose" aria-hidden="true"><span>Keyword</span></div>`;
+}
+
+function steps(items) {
+  return `<div class="steps">${items
     .map(
-      (plan) => `<article class="plan">
-        <h3>${esc(plan.name)}</h3>
-        <p class="price">${esc(plan.month)} <span>${esc(plan.period)}</span></p>
-        <p class="price-year">${esc(plan.year)}</p>
-        <ul>${plan.lines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>
+      ([title, visual, line]) => `<article class="step">
+        <h3>${esc(title)}</h3>
+        ${visual}
+        ${line ? `<p>${esc(line)}</p>` : ''}
       </article>`
     )
     .join('')}</div>`;
+}
+
+function howItWorks() {
+  return `<section class="block">
+      <h2>How it works</h2>
+      ${steps([
+        ['Connect your channels', miniChannels(), ''],
+        ['Create or schedule', miniComposer(), ''],
+        ['Track and grow', miniMentions(), ''],
+      ])}
+    </section>`;
+}
+
+function themeSwatches() {
+  return `<div class="swatches">${themes
+    .map(
+      (theme) =>
+        `<div class="swatch"><i style="background:${theme.background}"></i><span>${esc(theme.label)}</span></div>`
+    )
+    .join('')}</div>`;
+}
+
+function planCards(mode) {
+  return `<div class="plans">${plans
+    .map((plan) => {
+      const lines = mode === 'home' ? plan.lines.filter(homeLine) : plan.lines.filter((line) => !sharedLines.includes(line));
+      return `<article class="plan">
+        <h3>${esc(plan.name)}</h3>
+        <p class="price">${esc(plan.month)} <span>${esc(plan.period)}</span></p>
+        <p class="price-year">${esc(plan.year)}</p>
+        <ul>${lines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>
+      </article>`;
+    })
+    .join('')}</div>`;
+}
+
+function everyPlan() {
+  return `<section class="block">
+      <h2>Every plan</h2>
+      <ul class="shared">${sharedLines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>
+    </section>`;
 }
 
 function packCards() {
@@ -370,287 +427,208 @@ function packCards() {
     .join('')}</div>`;
 }
 
-function agentTiles() {
-  return `<div class="agents">${agentLinks
-    .map(
-      ([href, name, path]) =>
-        `<a class="agent-card" href="${href}"><h3>${esc(name)}</h3><code>${esc(path)}</code></a>`
-    )
-    .join('')}</div>`;
+function agentBoard() {
+  return `<div class="agent-board">
+      <a class="mcp-card" href="/mcp"><h3>MCP</h3></a>
+      <div class="agent-tiles">${agentTiles
+        .map(([href, name]) => `<a class="agent-card" href="${href}"><h3>${esc(name)}</h3></a>`)
+        .join('')}</div>
+    </div>`;
 }
 
-function themeSwatches() {
-  return `<div class="swatches">${themes
-    .map(
-      (theme) =>
-        `<div class="swatch"><i style="background:${theme.background}"></i><span>${esc(theme.label)}</span></div>`
-    )
-    .join('')}</div>`;
+function banner(title) {
+  return `<section class="banner">
+      <h2>${esc(title)}</h2>
+      ${heroActions()}
+    </section>`;
 }
 
-function layoutCards() {
-  return `<div class="layouts">
-    <div class="layout"><div class="wire wire-classic"><i></i><i></i><i></i></div><span>Classic</span></div>
-    <div class="layout"><div class="wire wire-featured"><b></b><i></i><i></i></div><span>Featured</span></div>
-    <div class="layout"><div class="wire wire-card"><b></b></div><span>Card</span></div>
-    <div class="layout"><div class="wire wire-tile"><i></i><i></i><i></i><i></i></div><span>Tile</span></div>
-  </div>`;
-}
-
-function cta() {
+function finalCta() {
   return `<section class="cta">
-    <h2>Start</h2>
-    <div class="actions">
-      <a class="btn btn-primary" href="https://app.crea8.one/register">Start</a>
-      <a class="btn btn-secondary" href="https://app.crea8.one/login">Log in</a>
-    </div>
-  </section>`;
+      <h2>Start your 7-day trial</h2>
+      ${heroActions()}
+    </section>`;
 }
 
-const cursorOauth = JSON.stringify(
-  { mcpServers: { crea8one: { url: 'https://mcp.crea8.one/mcp-oauth-dynamic' } } },
-  null,
-  2
-);
+function pageHero(title) {
+  return `<section class="page-hero">
+      <h1>${esc(title)}</h1>
+      ${heroActions()}
+    </section>`;
+}
 
-const cursorKey = JSON.stringify(
-  {
-    mcpServers: {
-      crea8one: {
-        url: 'https://mcp.crea8.one/mcp',
-        headers: { Authorization: 'Bearer <API key>' },
-      },
-    },
-  },
-  null,
-  2
-);
+const homeFaq = [
+  [
+    'What does the trial cost?',
+    'The 7-day trial checks out at $0 and includes 50 credits. You are not charged today. GST is added at checkout.',
+  ],
+  [
+    'What are the prices?',
+    'Creator is $19 a month or $190 a year. Team is $39 a month or $390 a year. Pro is $59 a month or $590 a year. Agency is $99 a month or $990 a year. Prices are USD. GST is added at checkout.',
+  ],
+  [
+    'Can I cancel?',
+    'Cancel anytime from billing. Cancellation stops later charges. It does not, by itself, refund a period that has already started, unless a refund is required by law or granted by the merchant of record.',
+  ],
+  [
+    'Where is MCP?',
+    'https://mcp.crea8.one/mcp takes an API key as Authorization: Bearer. https://mcp.crea8.one/mcp/<API key> puts the key in the URL. https://mcp.crea8.one/mcp-oauth-dynamic is the OAuth URL for a client that registers itself. https://api.crea8.one is the same API.',
+  ],
+  [
+    'Where do I sign in?',
+    'Start at https://app.crea8.one/register. Log in at https://app.crea8.one/login.',
+  ],
+];
+
+const pricingFaq = [
+  [
+    'When is the trial charged?',
+    'You are not charged today. The 7-day trial checks out at $0. GST is added at checkout. Dodo Payments is the merchant of record. You can pay by card or UPI where Dodo offers it, and cancel anytime from billing. Email support@crea8.one if you need help.',
+  ],
+  [
+    'When do plan credits start?',
+    'The trial includes 50 credits. The plan monthly credits apply on the first successful charge.',
+  ],
+];
 
 const home = `
-  <section class="hero">
-    <div class="hero-copy">
-      <h1>crea8.one</h1>
-      <div class="actions">
-        <a class="btn btn-primary" href="/agent">Agent</a>
-        <a class="btn btn-secondary" href="/schedule">Schedule</a>
-      </div>
-    </div>
-    <div class="shot">${scheduleShot()}</div>
-  </section>
+  <div class="fold">
+    <section class="hero">
+      <h1>Schedule to 25+ channels from one app</h1>
+      <p class="lead">crea8.one publishes your posts, runs your link in bio and finds every mention, for creators, teams and agencies.</p>
+      ${heroActions()}
+    </section>
+    ${framed(scheduleShot())}
+  </div>
   <section class="block">
-    <h2>Who it's for</h2>
+    <h2>Who is crea8.one for?</h2>
     <div class="who">
-      <article class="who-card"><h3>AI-first marketers</h3></article>
-      <article class="who-card"><h3>Developers</h3></article>
-      <article class="who-card"><h3>Automation teams</h3></article>
+      <article class="who-card"><h3>Creators</h3><p>Your channels on one calendar.</p></article>
+      <article class="who-card"><h3>Teams</h3><p>One workspace for the people who post.</p></article>
+      <article class="who-card"><h3>Agencies</h3><p>One login for client workspaces.</p></article>
     </div>
   </section>
+  ${howItWorks()}
+  ${channelWall()}
   <section class="block">
-    <h2><a href="/channels">Channels</a></h2>
-    ${channelGrid(channels, false)}
-    <h2>Coming soon</h2>
-    ${channelGrid(comingSoon, true)}
-  </section>
-  <section class="feature">
-    <div class="feature-copy">
-      <h2><a href="/schedule">Schedule</a></h2>
+    <h2>One app. Three tools.</h2>
+    <div class="tools">
+      <article class="feature">
+        <div class="feature-copy">
+          <h3><a href="/schedule">Schedule</a></h3>
+          <p class="lead">Post to 25+ channels from one calendar.</p>
+        </div>
+        <div class="shot">${scheduleShot()}</div>
+      </article>
+      <article class="feature feature-flip">
+        <div class="shot">${linkShot()}</div>
+        <div class="feature-copy">
+          <h3><a href="/link">Link in Bio</a></h3>
+          <p class="lead">Your page at crea8.one/@you.</p>
+        </div>
+      </article>
+      <article class="feature">
+        <div class="feature-copy">
+          <h3><a href="/stalker">Stalker</a></h3>
+          <p class="lead">Every mention of your brand, in one inbox.</p>
+        </div>
+        <div class="shot">${stalkerShot()}</div>
+      </article>
     </div>
-    <div class="shot">${composerShot()}</div>
   </section>
-  <section class="feature feature-flip">
-    <div class="shot">${linkShot(false)}</div>
-    <div class="feature-copy">
-      <h2><a href="/link">Link in Bio</a></h2>
-    </div>
-  </section>
-  <section class="feature">
-    <div class="feature-copy">
-      <h2><a href="/stalker">Stalker</a></h2>
-    </div>
-    <div class="shot">${stalkerShot()}</div>
-  </section>
+  ${banner('Try crea8.one for $0')}
   <section class="block">
-    <h2><a href="/agent">Agent</a></h2>
-    ${agentTiles()}
-    ${pre('https://mcp.crea8.one/mcp\nAuthorization: Bearer <API key>\n\nhttps://mcp.crea8.one/mcp-oauth-dynamic')}
+    <h2>Run it from your AI agent</h2>
+    ${agentBoard()}
   </section>
   <section class="block">
     <h2><a href="/pricing">Pricing</a></h2>
-    <p class="lead">USD.</p>
-    ${planCards()}
-    ${packCards()}
+    ${planCards('home')}
+    <h2>Every plan</h2>
+    <ul class="shared">${sharedLines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>
+    <a class="compare" href="/pricing">Compare plans</a>
   </section>
   <section class="block">
     <h2>FAQ</h2>
-    ${faq([
-      [
-        'What does the trial cost?',
-        'The 7-day trial checks out at $0 and includes 50 credits. You are not charged today. GST is added at checkout.',
-      ],
-      [
-        'What are the prices?',
-        'Creator is $19 a month or $190 a year. Team is $39 a month or $390 a year. Pro is $59 a month or $590 a year. Agency is $99 a month or $990 a year. Prices are USD.',
-      ],
-      [
-        'Where is MCP?',
-        'https://mcp.crea8.one/mcp takes an API key as Authorization: Bearer. https://mcp.crea8.one/mcp-oauth-dynamic is the OAuth URL for a client that registers itself.',
-      ],
-      [
-        'Where do I sign in?',
-        'Start at https://app.crea8.one/register. Log in at https://app.crea8.one/login.',
-      ],
-    ])}
+    ${faq(homeFaq)}
   </section>
-  ${cta()}
+  ${finalCta()}
 `;
 
 const schedule = `
-  <section class="page-hero">
-    <h1>Schedule</h1>
-    <p class="lead">Schedule stays closed until a plan or the trial exists.</p>
-  </section>
-  <div class="shot">${scheduleShot()}</div>
-  <section class="block">
-    <h2>Composer</h2>
+  ${pageHero('Post to 25+ channels from one calendar')}
+  ${framed(scheduleShot())}
+  ${howItWorks()}
+  <section class="feature">
+    <div class="feature-copy">
+      <h2>Composer</h2>
+      <p class="lead">One post, then the channels and the time.</p>
+    </div>
     <div class="shot">${composerShot()}</div>
   </section>
-  ${cta()}
+  ${banner('Start your 7-day trial')}
+  ${channelWall()}
 `;
 
 const link = `
-  <section class="page-hero">
-    <h1>Link in Bio</h1>
-    <p class="lead">Link in Bio stays open without a plan or trial.</p>
-  </section>
-  <div class="shot">${linkShot(true)}</div>
+  ${pageHero('Your page at crea8.one/@you')}
   <section class="block">
-    <h2>Address</h2>
-    <p class="lead">The public URL is https://crea8.one/@username. A live custom domain replaces that URL.</p>
+    <h2>How it works</h2>
+    ${steps([
+      ['Claim your address', '<p class="address-chip">crea8.one/@you</p>', ''],
+      ['Pick a theme', themeSwatches(), 'Every theme is on every plan.'],
+      ['Share and track', phonePreview(), ''],
+    ])}
   </section>
-  <section class="block">
-    <h2>Themes</h2>
-    <p class="lead">Every theme is free on every plan.</p>
-    ${themeSwatches()}
-  </section>
-  <section class="block">
-    <h2>Layouts</h2>
-    ${layoutCards()}
-  </section>
-  <section class="block">
-    <h2>Buttons</h2>
-    <div class="samples">
-      <span class="sample is-pill">Pill</span>
-      <span class="sample is-rounded">Rounded</span>
-      <span class="sample is-square">Square</span>
-    </div>
-  </section>
-  <section class="block">
-    <h2>Fonts</h2>
-    <div class="fonts">
-      <span style="font-family: Inter, sans-serif">Plus Jakarta Sans</span>
-      <span style="font-family: Georgia, serif">Georgia</span>
-      <span style="font-family: Palatino, 'Palatino Linotype', serif">Palatino</span>
-      <span style="font-family: 'Trebuchet MS', sans-serif">Trebuchet MS</span>
-      <span style="font-family: 'Courier New', monospace">Courier New</span>
-    </div>
-  </section>
-  <section class="block">
-    <h2>Socials</h2>
-    ${sourceRow(socials)}
-  </section>
-  ${cta()}
+  <article class="plan preview-card">
+    <h2>Link in Bio</h2>
+    ${phonePreview()}
+  </article>
 `;
 
 const stalker = `
-  <section class="page-hero">
-    <h1>Stalker</h1>
-    <p class="lead">Stalker stays closed until a plan or the trial exists.</p>
-  </section>
-  <div class="shot">${stalkerShot()}</div>
+  ${pageHero('Every mention of your brand, in one inbox')}
+  ${framed(stalkerShot())}
   <section class="block">
-    <h2>Search</h2>
-    ${sourceRow([
-      { name: 'X', icon: 'x.png' },
-      { name: 'Reddit', icon: 'reddit.png' },
-      { name: 'YouTube', icon: 'youtube.png' },
-      { name: 'LinkedIn', icon: 'linkedin.png', soon: true },
+    <h2>How it works</h2>
+    ${steps([
+      ['Add keywords', miniKeyword(), ''],
+      ['Get every mention', miniMentions(), ''],
+      ['Reply in one place', miniComposer(), 'Replies are reviewed before sending.'],
     ])}
   </section>
-  <section class="block">
-    <h2>Comments</h2>
-    ${sourceRow([
-      { name: 'YouTube', icon: 'youtube.png' },
-      { name: 'Instagram', icon: 'instagram.png' },
-      { name: 'Facebook', icon: 'facebook.png' },
-    ])}
-  </section>
-  <section class="block">
-    <h2>Reply</h2>
-    <p class="lead">A reply is reviewed before it is sent. Nothing is sent or scheduled automatically.</p>
-    ${sourceRow([
-      { name: 'YouTube', icon: 'youtube.png' },
-      { name: 'Facebook', icon: 'facebook.png' },
-      { name: 'Instagram', icon: 'instagram.png' },
-      { name: 'X', icon: 'x.png' },
-    ])}
-  </section>
-  <section class="block">
-    <h2>Screens</h2>
-    <div class="picker">${stalkerNav.map((name) => `<div class="pick"><span>${esc(name)}</span></div>`).join('')}</div>
-  </section>
-  <section class="block">
-    <h2>API</h2>
-    <p class="lead">Stalker commands on the API require STALKER_ENABLED to be the string true.</p>
-  </section>
-  ${cta()}
 `;
 
 const channelPage = `
-  <section class="page-hero">
-    <h1>Channels</h1>
-  </section>
+  ${pageHero('25+ channels')}
   ${channelGrid(channels, false)}
   <section class="block">
     <h2>Coming soon</h2>
     ${channelGrid(comingSoon, true)}
   </section>
-  ${cta()}
 `;
 
 const pricing = `
-  <section class="page-hero">
-    <h1>Pricing</h1>
-    <p class="lead">USD. GST is added at checkout.</p>
+  ${pageHero('Every plan starts with a 7-day trial for $0.')}
+  <section class="block">
+    <p class="lead">Prices are USD. GST is added at checkout.</p>
+    ${planCards('differ')}
   </section>
-  ${planCards()}
-  ${packCards()}
-  ${faq([
-    [
-      'When is the trial charged?',
-      'You are not charged today. The 7-day trial checks out at $0. GST is added at checkout. Dodo Payments is the merchant of record. You can pay by card or UPI where Dodo offers it, and cancel anytime from billing. Email support@crea8.one if you need help.',
-    ],
-    [
-      'When do plan credits start?',
-      'The trial includes 50 credits. The plan monthly credits apply on the first successful charge.',
-    ],
-  ])}
-  ${cta()}
+  ${everyPlan()}
+  <section class="block">
+    <h2>Credits</h2>
+    ${packCards()}
+  </section>
+  ${faq(pricingFaq)}
 `;
 
 const agent = `
-  <section class="page-hero">
-    <h1>Agent</h1>
-  </section>
-  ${agentTiles()}
-  ${pre('https://mcp.crea8.one/mcp\nAuthorization: Bearer <API key>\n\nhttps://mcp.crea8.one/mcp-oauth-dynamic\nhttps://mcp.crea8.one/mcp-oauth-chatgpt\nhttps://mcp.crea8.one/mcp-oauth-claude')}
-  ${cta()}
+  ${pageHero('Run it from your AI agent')}
+  ${agentBoard()}
 `;
 
 const mcp = `
-  <section class="page-hero">
-    <h1>MCP</h1>
-    <p class="lead">https://api.crea8.one is the same API and keeps the same paths.</p>
-  </section>
+  ${pageHero('MCP')}
   <section class="block">
     <h2>API key</h2>
     ${pre('https://mcp.crea8.one/mcp\nAuthorization: Bearer <API key>')}
@@ -661,32 +639,16 @@ const mcp = `
   </section>
   <section class="block">
     <h2>OAuth</h2>
-    <p class="lead">OAuth is authorization code with PKCE (S256).</p>
+    <p class="lead">Authorization code with PKCE (S256). https://api.crea8.one is the same API and keeps the same paths.</p>
     ${pre('https://mcp.crea8.one/mcp-oauth-dynamic')}
-  </section>
-  <section class="block">
-    <h2>ChatGPT</h2>
-    ${pre('https://mcp.crea8.one/mcp-oauth-chatgpt')}
-  </section>
-  <section class="block">
-    <h2>Claude</h2>
-    ${pre('https://mcp.crea8.one/mcp-oauth-claude')}
-  </section>
-  <section class="block">
-    <h2>Issuer metadata</h2>
-    <p class="lead">Both list authorization_code and refresh_token. /mcp-oauth-claude uses the dynamic issuer.</p>
-    ${pre('https://mcp.crea8.one/.well-known/oauth-authorization-server/mcp-oauth-dynamic\nhttps://mcp.crea8.one/.well-known/oauth-authorization-server/mcp-oauth-chatgpt')}
   </section>
 `;
 
 const chatgpt = `
-  <section class="page-hero">
-    <h1>ChatGPT</h1>
-    <p class="lead">In ChatGPT go to Settings &gt; Connectors &gt; Create and paste this URL.</p>
-  </section>
+  ${pageHero('ChatGPT')}
   <section class="block">
     <h2>Custom connector</h2>
-    ${pre('https://mcp.crea8.one/mcp-oauth-dynamic')}
+    <p class="lead">In ChatGPT go to Settings, Connectors, Create, and paste this URL.</p>
     ${pre('https://mcp.crea8.one/mcp-oauth-chatgpt')}
   </section>
   <section class="block">
@@ -696,13 +658,10 @@ const chatgpt = `
 `;
 
 const claude = `
-  <section class="page-hero">
-    <h1>Claude</h1>
-    <p class="lead">In Claude go to Settings &gt; Connectors &gt; Add custom connector and paste this URL.</p>
-  </section>
+  ${pageHero('Claude')}
   <section class="block">
     <h2>Custom connector</h2>
-    ${pre('https://mcp.crea8.one/mcp-oauth-dynamic')}
+    <p class="lead">In Claude go to Settings, Connectors, Add custom connector, and paste this URL.</p>
     ${pre('https://mcp.crea8.one/mcp-oauth-claude')}
   </section>
   <section class="block">
@@ -712,10 +671,7 @@ const claude = `
 `;
 
 const claudeCode = `
-  <section class="page-hero">
-    <h1>Claude Code</h1>
-    <p class="lead">Run this command in your terminal.</p>
-  </section>
+  ${pageHero('Claude Code')}
   <section class="block">
     <h2>OAuth</h2>
     ${pre('claude mcp add crea8one --transport http "https://mcp.crea8.one/mcp-oauth-dynamic"')}
@@ -727,12 +683,10 @@ const claudeCode = `
 `;
 
 const cursor = `
-  <section class="page-hero">
-    <h1>Cursor</h1>
-    <p class="lead">Add to .cursor/mcp.json in your project root.</p>
-  </section>
+  ${pageHero('Cursor')}
   <section class="block">
     <h2>OAuth</h2>
+    <p class="lead">Add to .cursor/mcp.json in your project root.</p>
     ${pre(cursorOauth)}
   </section>
   <section class="block">
@@ -742,76 +696,26 @@ const cursor = `
 `;
 
 const grok = `
-  <section class="page-hero">
-    <h1>Grok Bot</h1>
-    <p class="lead">Paste this into the chat. The agent will ask you for your API key.</p>
-  </section>
+  ${pageHero('Grok Bot')}
   <section class="block">
-    <h2>Chat</h2>
-    ${pre('Ask me for my crea8.one API key and send requests to the crea8.one API with it as the Authorization header.')}
-    ${pre('https://api.crea8.one\nAuthorization: Bearer <API key>')}
+    <h2>API key</h2>
+    <p class="lead">Paste this into the chat. The agent will ask you for your API key.</p>
+    ${pre('Ask me for my crea8.one API key and send requests to the crea8.one API with it as the Authorization header.\n\nhttps://api.crea8.one\nAuthorization: Bearer <API key>')}
   </section>
 `;
 
 const cli = `
-  <section class="page-hero">
-    <h1>CLI</h1>
-    <p class="lead">The command is crea8. It reads CREA8_API_KEY.</p>
-  </section>
-  <section class="block">
-    <h2>Origin</h2>
-    <p class="lead">CRE8_API_KEY still works and is deprecated. CRE8_API_URL overrides the API origin. The default origin is https://api.crea8.one.</p>
-  </section>
+  ${pageHero('CLI')}
   <section class="block">
     <h2>Install</h2>
-    <p class="lead">Run it with Node 22 from skills/crea8one-agent/bin/crea8.mjs. npx skills add installs that folder from this repository.</p>
+    <p class="lead">The command is crea8. It reads CREA8_API_KEY. CRE8_API_KEY still works and is deprecated. CRE8_API_URL overrides the API origin. The default origin is https://api.crea8.one. npx skills add installs skills/crea8one-agent from this repository. Run it with Node 22.</p>
     ${pre('export CREA8_API_KEY=your_api_key\nnode skills/crea8one-agent/bin/crea8.mjs integrations:list')}
   </section>
   <section class="block">
-    <h2>Posts</h2>
+    <h2>Examples</h2>
     ${pre(`crea8 integrations:list
-crea8 groups:list
-crea8 integrations:settings <integration-id>
-crea8 integrations:trigger <integration-id> <methodName> --data '{"subreddit":"programming"}'
 crea8 posts:create --content "Hello" --date "2026-10-14T09:00:00.000Z" --integration "id-one,id-two"
-crea8 posts:create --json campaign.json
-crea8 posts:list
-crea8 posts:delete <post-id>
-crea8 posts:settings <post-id> --settings '{"title":"New title"}'
-crea8 posts:create --draft
-crea8 posts:create --now
-crea8 posts:create --media https://...
-crea8 upload ./file.png
-crea8 analytics:platform <integration-id> --days 30
-crea8 analytics:post <post-id> --days 7`)}
-  </section>
-  <section class="block">
-    <h2>Stalker</h2>
-    <p class="lead">Stalker commands require STALKER_ENABLED on the API.</p>
-    ${pre(`crea8 stalker:projects
-crea8 stalker:mentions --project <project-id> --date 7d
-crea8 stalker:keywords --project <project-id>
-crea8 stalker:keywords:add --project <project-id> --phrase "brand" --reddit
-crea8 stalker:keywords:delete <keyword-id>
-crea8 stalker:alerts --project <project-id>
-crea8 stalker:rules --project <project-id>
-crea8 stalker:rules:add --project <project-id> --name "Negatives" --filters '{"sentiment":"NEGATIVE"}'
-crea8 stalker:rules:delete <rule-id>
-crea8 stalker:alerts:read <alert-id>`)}
-  </section>
-  <section class="block">
-    <h2>Link in Bio</h2>
-    ${pre(`crea8 link:get
-crea8 link:update --json '{"name":"Studio","bio":"Links"}'
-crea8 link:slug my-name
-crea8 link:blocks:add --type LINK --title "Site" --url "https://example.com"
-crea8 link:blocks:update <block-id> --json '{"title":"New title"}'
-crea8 link:blocks:delete <block-id>
-crea8 link:analytics --range 30d
-crea8 link:leads`)}
-  </section>
-  <section class="block">
-    <h2>Result</h2>
+crea8 link:get`)}
     <p class="lead">Every command prints JSON. A non-zero exit means the API rejected the call. The body is on stderr.</p>
   </section>
 `;
@@ -819,31 +723,25 @@ crea8 link:leads`)}
 const about = `
   <section class="page-hero">
     <h1>About</h1>
+    <p class="lead">crea8.one publishes your posts, runs your link in bio and finds every mention.</p>
+    <p class="lead">Connect your channels, schedule a post, and read mentions from one login.</p>
+    ${heroActions()}
   </section>
-  <div class="who">
-    <a class="who-card" href="/schedule"><h3>Schedule</h3></a>
-    <a class="who-card" href="/link"><h3>Link in Bio</h3></a>
-    <a class="who-card" href="/stalker"><h3>Stalker</h3></a>
-    <a class="who-card" href="/mcp"><h3>MCP</h3></a>
-    <a class="who-card" href="/cli"><h3>CLI</h3></a>
-    <a class="who-card" href="/channels"><h3>Channels</h3></a>
-  </div>
-  <p class="lead"><a href="mailto:support@crea8.one">support@crea8.one</a></p>
+  <article class="support-card">
+    <h2>support@crea8.one</h2>
+    <a href="mailto:support@crea8.one">support@crea8.one</a>
+  </article>
 `;
 
 const contact = `
-  <section class="page-hero">
-    <h1>Contact</h1>
-    <p class="contact-mail"><a href="mailto:support@crea8.one">support@crea8.one</a></p>
-    <p class="lead">Email support@crea8.one if you need help.</p>
-  </section>
+  ${pageHero('Contact')}
 `;
 
 const missing = `
   <section class="not-found">
     <p class="not-code">404</p>
     <h1>This page could not be found.</h1>
-    <a class="btn btn-primary" href="/">Back to home</a>
+    ${heroActions()}
   </section>
 `;
 
@@ -864,24 +762,23 @@ export const pages = [
   { path: '/cli', title: 'CLI', file: 'cli/index.html', main: cli },
   { path: '/about', title: 'About', file: 'about/index.html', main: about },
   { path: '/contact', title: 'Contact', file: 'contact/index.html', main: contact },
+  { path: '/privacy', title: 'Privacy', file: 'privacy/index.html', main: privacy, description: 'Privacy for crea8.one.' },
+  { path: '/terms', title: 'Terms', file: 'terms/index.html', main: terms, description: 'Terms for crea8.one.' },
+  {
+    path: '/data-deletion',
+    title: 'Data deletion',
+    file: 'data-deletion/index.html',
+    main: dataDeletion,
+    description: 'Data deletion for crea8.one.',
+  },
+  {
+    path: '/refund-policy',
+    title: 'Refunds',
+    file: 'refund-policy/index.html',
+    main: refunds,
+    description: 'Refunds for crea8.one.',
+  },
   { path: '/404', title: '404', file: '404.html', main: missing },
 ];
 
-export const REQUIRED_PATHS = [
-  '/',
-  '/schedule',
-  '/link',
-  '/stalker',
-  '/channels',
-  '/pricing',
-  '/agent',
-  '/mcp',
-  '/chatgpt',
-  '/claude',
-  '/claude-code',
-  '/cursor',
-  '/grok-bot',
-  '/cli',
-  '/about',
-  '/contact',
-];
+export const REQUIRED_PATHS = PAGE_PATHS;

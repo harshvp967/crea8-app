@@ -469,8 +469,9 @@ main {
 
 .hero h1,
 .page-hero h1,
-.cta h2 {
-  font-size: clamp(44px, 7vw, 68px);
+.cta h2,
+.banner h2 {
+  font-size: clamp(40px, 6vw, 64px);
 }
 
 .feature {
@@ -546,11 +547,20 @@ main {
 
 .who-card {
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
   min-height: 168px;
   padding: 22px;
   text-decoration: none;
   background-image: linear-gradient(180deg, var(--arc-selected), transparent 48%), var(--c8-surface);
+}
+
+.who-card p {
+  color: var(--c8-ink);
+  font-size: 15px;
+  font-weight: 500;
 }
 
 a.who-card:hover,
@@ -565,9 +575,9 @@ a.agent-card:hover {
 .agent-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 28px;
-  min-height: 148px;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 112px;
   padding: 20px;
   text-decoration: none;
 }
@@ -1372,11 +1382,289 @@ a.agent-card:hover {
   font-size: clamp(32px, 6vw, 48px);
 }
 
+.fold,
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  width: 100%;
+  min-width: 0;
+}
+
+.frame {
+  padding: 12px;
+  border: 1px solid var(--c8-line);
+  border-radius: var(--arc-radius-surface);
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(0, 217, 255, 0.28), transparent 56%),
+    radial-gradient(80% 80% at 100% 100%, rgba(0, 217, 255, 0.12), transparent 48%),
+    var(--c8-surface);
+}
+
+html.light .frame {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(0, 217, 255, 0.34), transparent 56%),
+    radial-gradient(80% 70% at 100% 0%, rgba(0, 145, 173, 0.14), transparent 46%),
+    var(--c8-surface);
+}
+
+.steps,
+.agent-tiles,
+.shared {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.shared {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shared li {
+  padding: 10px 14px;
+  border: 1px solid var(--c8-line);
+  border-radius: 999px;
+  background: var(--c8-surface);
+  color: var(--c8-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+}
+
+.step p,
+.address-chip {
+  color: var(--c8-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.address-chip,
+.mini-compose {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--c8-line);
+  border-radius: 16px;
+  background: var(--arc-canvas);
+}
+
+.mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mini img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.mini-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mini-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.step .swatches {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.step .swatch i {
+  height: 48px;
+}
+
+.step .phone {
+  width: min(100%, 240px);
+}
+
+.banner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  padding: 28px;
+  border: 1px solid var(--c8-line);
+  border-radius: var(--arc-radius-surface);
+  background-image: var(--arc-wave), linear-gradient(var(--c8-surface), var(--c8-surface));
+}
+
+.agent-board {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.agent-tiles {
+  grid-template-columns: 1fr 1fr;
+}
+
+.mcp-card {
+  display: flex;
+  align-items: flex-end;
+  min-height: 160px;
+  padding: 22px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background-image: linear-gradient(180deg, var(--arc-selected), transparent 62%), var(--c8-surface);
+  color: var(--c8-ink);
+  text-decoration: none;
+}
+
+.mcp-card:hover,
+.compare:hover,
+.support-card a:hover,
+.tools h3 a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.tools h3 {
+  font-size: clamp(28px, 4vw, 40px);
+}
+
+.tools h3 a,
+.compare {
+  color: var(--c8-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.preview-card {
+  align-items: center;
+  width: min(100%, 420px);
+}
+
+.support-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(100%, 420px);
+  padding: 22px;
+  border: 1px solid var(--c8-line);
+  border-radius: 24px;
+  background: var(--c8-surface);
+}
+
+.support-card a {
+  color: var(--arc-accent-text);
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.legal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(100%, 760px);
+  color: var(--c8-ink);
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 500;
+}
+
+.legal h1 {
+  font-size: clamp(32px, 5vw, 44px);
+}
+
+.legal h2 {
+  margin-top: 8px;
+  font-size: 22px;
+}
+
+.legal h3 {
+  font-size: 16px;
+}
+
+.legal ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.legal a {
+  color: var(--arc-accent-text);
+}
+
+.legal address,
+.operator {
+  font-style: normal;
+}
+
+.legal .updated {
+  color: var(--c8-muted);
+  font-size: 14px;
+}
+
+.legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 420px) {
+  .hero .actions,
+  .page-hero .actions,
+  .cta .actions,
+  .banner .actions,
+  .not-found .actions {
+    width: 100%;
+  }
+
+  .hero .actions .btn,
+  .page-hero .actions .btn,
+  .cta .actions .btn,
+  .banner .actions .btn,
+  .not-found .actions .btn {
+    width: 100%;
+  }
+}
+
 @media (min-width: 800px) {
   .who,
   .agents,
-  .packs {
+  .packs,
+  .steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .agent-board {
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 2fr);
+  }
+
+  .agent-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .footer-grid {
+    grid-template-columns: 1.2fr 1fr 1fr;
   }
 
   .plans {
@@ -1391,11 +1679,6 @@ a.agent-card:hover {
   .fonts {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
-
-  .footer-grid {
-    grid-template-columns: 1.2fr 1fr 1fr 1fr;
-    gap: 32px;
-  }
 }
 
 @media (min-width: 1100px) {
@@ -1405,6 +1688,11 @@ a.agent-card:hover {
 
   .agents {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .footer-grid {
+    grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr));
+    gap: 24px;
   }
 }
 
