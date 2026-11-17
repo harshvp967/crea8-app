@@ -1,0 +1,25 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "crea8-frontend",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-13",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // Self-reference required by the OpenNext adapter.
+      // https://opennext.js.org/cloudflare/caching
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "crea8-frontend"
+    }
+  ],
+  // Do not set BACKEND_INTERNAL_URL here. A deploy must use the same public
+  // API origin the app uses today. A railway.internal host is not reachable.
+  // No IMAGES binding: the Next.js image optimizer stays off.
+  "vars": {
+    "PUBLIC_LINK_CACHE_SECONDS": "0"
+  }
+}
