@@ -11,6 +11,7 @@ import {
   getSsrfSafeAxios,
   getSsrfSafeDispatcher,
 } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { isPartnerVideoUrl, openPartnerVideo } from '@gitroom/nestjs-libraries/partner/gta6clips.host';
 import sharp from 'sharp';
 import { createReadStream, statSync } from 'fs';
 import { Readable } from 'stream';
@@ -445,6 +446,18 @@ export abstract class SocialAbstract {
   // Resolves the total byte size of the media without loading it into memory:
   // a HEAD request for remote URLs, statSync for local files.
   protected async mediaSize(path: string, identifier = ''): Promise<number> {
+    if (isPartnerVideoUrl(path)) {
+      const head = await openPartnerVideo(path, {
+        method: 'HEAD',
+        headers: { 'accept-encoding': 'identity' },
+      });
+      const length = Number(head.headers.get('content-length'));
+      await head.body?.cancel();
+      if (!head.ok || !Number.isFinite(length) || length <= 0) {
+        throw new BadBody(identifier, '{}', Buffer.from('{}'), 'The video link is no longer available.');
+      }
+      return length;
+    }
     if (path.indexOf('http') === 0) {
       // the media path is user-influenced, keep the SSRF-safe dispatcher that
       // this.fetch applies to every other outbound request. identity encoding
@@ -482,6 +495,21 @@ export abstract class SocialAbstract {
     end: number,
     identifier = ''
   ): Promise<Buffer> {
+    if (isPartnerVideoUrl(path)) {
+      const response = await openPartnerVideo(path, {
+        headers: { Range: `bytes=${start}-${end}`, 'accept-encoding': 'identity' },
+      });
+      if (response.status !== 206) {
+        await response.body?.cancel();
+        throw new BadBody(
+          identifier,
+          '{}',
+          Buffer.from('{}'),
+          `The video link did not return the requested byte range (status ${response.status})`
+        );
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }
     if (path.indexOf('http') === 0) {
       setHeartbeatDetails(
         `media chunk ${start}-${end} ${stripQuery(path)}`
@@ -523,6 +551,16 @@ export abstract class SocialAbstract {
     path: string,
     identifier = ''
   ): Promise<Readable> {
+    if (isPartnerVideoUrl(path)) {
+      const response = await openPartnerVideo(path, {
+        headers: { 'accept-encoding': 'identity' },
+      });
+      if (!response.ok || !response.body) {
+        await response.body?.cancel();
+        throw new BadBody(identifier, '{}', Buffer.from('{}'), 'The video link is no longer available.');
+      }
+      return Readable.fromWeb(response.body as any);
+    }
     if (path.indexOf('http') !== 0) {
       return createReadStream(path);
     }

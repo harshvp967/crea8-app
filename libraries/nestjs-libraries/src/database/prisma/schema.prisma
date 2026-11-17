@@ -56,6 +56,8 @@ model Organization {
   stalkerScanRuns     StalkerScanRun[]
   linkPage            LinkPage?
   brandVoice          BrandVoice?
+  partnerAccount      PartnerAccount?
+  partnerLinkUses     PartnerLinkUse[]
   organizationInvites OrganizationInvite[]
   creditBalance       CreditBalance?
   creditLedger        CreditLedger[]
@@ -77,6 +79,54 @@ model BrandVoice {
   organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
+}
+
+// Additive. Not applied to production from this change.
+// One gta6clips member (sub) per workspace. The jti row is the used login link.
+model PartnerAccount {
+  id             String       @id @default(uuid())
+  partner        String
+  sub            String
+  email          String
+  plan           String
+  userId         String
+  organizationId String       @unique
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([partner, sub])
+  @@index([userId])
+  @@index([email])
+  @@index([organizationId])
+}
+
+model PartnerLinkUse {
+  jti            String        @id
+  partner        String
+  sub            String
+  email          String
+  organizationId String?
+  createdAt      DateTime      @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([sub])
+}
+
+model PartnerLinkPending {
+  id        String   @id @default(uuid())
+  jti       String   @unique
+  sub       String
+  email     String
+  video     String?
+  caption   String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
 }
 
 // Additive. Not applied to production from this change.
@@ -158,6 +208,7 @@ model User {
   agencies              SocialMediaAgency?
   picture               Media?               @relation(fields: [pictureId], references: [id])
   organizations         UserOrganization[]
+  partnerAccounts       PartnerAccount[]
   sendSuccessEmails     Boolean              @default(true)
   sendFailureEmails     Boolean              @default(true)
   sendStreakEmails      Boolean              @default(true)

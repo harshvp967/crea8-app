@@ -182,6 +182,27 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
 
 export const PAID_TIERS: PaidTier[] = ['STANDARD', 'TEAM', 'PRO', 'ULTIMATE'];
 
+// Partner workspaces are not a Dodo product. The id lives here so channel
+// counts and the scheduler lock use the same limits as the paid plans.
+export const GTA6CLIPS_PLAN_ID = 'gta6clips_free' as const;
+export const CREA8_PRICING_URL = 'https://crea8.one/pricing';
+export const GTA6CLIPS_VIDEO_GRACE_DAYS = 7;
+export const GTA6CLIPS_FREE = {
+  id: GTA6CLIPS_PLAN_ID,
+  channels: 3,
+  allowedProviders: ['tiktok', 'youtube', 'instagram', 'instagram-standalone'] as const,
+  // Link in Bio is included. Badge removal and a custom domain are not.
+  open: ['compose', 'schedule', 'calendar', 'link'] as const,
+} as const;
+
+export function isGta6clipsPlan(plan: string | null | undefined) {
+  return plan === GTA6CLIPS_PLAN_ID;
+}
+
+export function gta6clipsProviderAllowed(identifier: string) {
+  return (GTA6CLIPS_FREE.allowedProviders as readonly string[]).includes(identifier);
+}
+
 export const PRODUCT_KEYS = [
   'STANDARD_MONTHLY',
   'STANDARD_YEARLY',

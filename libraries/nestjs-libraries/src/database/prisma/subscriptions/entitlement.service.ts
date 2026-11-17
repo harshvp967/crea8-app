@@ -6,10 +6,13 @@ import {
   isGrandfatheredOrg,
 } from '@gitroom/helpers/utils/billing.enabled';
 import {
+  GTA6CLIPS_FREE,
+  GTA6CLIPS_PLAN_ID,
   PLANS,
   PlanCardKey,
   PlanTier,
   cardLimitAllows,
+  gta6clipsProviderAllowed,
   noPlanProductOpen,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
@@ -45,6 +48,19 @@ export class EntitlementService {
 
   async latestSubscription(organizationId: string) {
     return (await this.account(organizationId)).latest;
+  }
+
+  async partnerPlanId(organizationId: string) {
+    // Billing tests build a partial client. No partner table means no grant.
+    const accounts = this._prisma.partnerAccount;
+    if (!accounts?.findUnique) {
+      return null;
+    }
+    const row = await accounts.findUnique({
+      where: { organizationId },
+      select: { plan: true },
+    });
+    return row?.plan === GTA6CLIPS_PLAN_ID ? row.plan : null;
   }
 
   async tier(organizationId: string): Promise<PlanTier> {
@@ -197,7 +213,33 @@ export class EntitlementService {
     );
   }
 
-  async assertCanConnect(organizationId: string, internalId?: string) {
+  async assertCanConnect(organizationId: string, internalId?: string, provider?: string) {
+    const partner = await this.partnerPlanId(organizationId);
+    if (partner) {
+      if (provider && !gta6clipsProviderAllowed(provider)) {
+        throw new HttpException(
+          { message: 'This channel is not on this plan.', locked: true },
+          402
+        );
+      }
+      const channels = await this.activeChannels(organizationId);
+      if (
+        internalId &&
+        channels.some(
+          (channel) =>
+            channel.internalId === internalId && channel.organizationId === organizationId
+        )
+      ) {
+        return;
+      }
+      if (channels.length >= GTA6CLIPS_FREE.channels) {
+        throw new HttpException(
+          { message: 'This plan includes 3 channels.', locked: true },
+          402
+        );
+      }
+      return;
+    }
     await this.refuseWithoutPlan(organizationId, 'paid');
     const limits = await this.limits(organizationId);
     if (!limits) {
@@ -273,6 +315,14 @@ export class EntitlementService {
   }
 
   async assertCanPost(organizationId: string, integrationId: string) {
+    if (await this.partnerPlanId(organizationId)) {
+      const channels = await this.activeChannels(organizationId);
+      const allowed = postableChannelIds(channels, GTA6CLIPS_FREE.channels);
+      if (!allowed.includes(integrationId)) {
+        throw new BillingBlocked('This plan includes 3 channels.');
+      }
+      return;
+    }
     await this.refuseWithoutPlan(organizationId, 'schedule');
     const limits = await this.limits(organizationId);
     if (!limits) {

@@ -1,5 +1,5 @@
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { noPlanProductOpen } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import { isGta6clipsPlan, noPlanProductOpen } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { isReservedSlug } from '@gitroom/helpers/paths/app.paths';
 import {
   isBillingEnforced,
@@ -240,7 +240,14 @@ function creatorOrAbove(organizationId: string, subscription?: LinkPlan) {
 
 // Themes are free on every plan. Badge removal starts at Creator (STANDARD)
 // once billing is enforced. A custom domain is never included with a plan.
-export function badgeRemovalOpen(organizationId: string, subscription?: LinkPlan) {
+export function badgeRemovalOpen(
+  organizationId: string,
+  subscription?: LinkPlan,
+  partnerPlan?: string | null
+) {
+  if (isGta6clipsPlan(partnerPlan)) {
+    return false;
+  }
   if (!isBillingEnforced(organizationId)) {
     return linkFeatureOpen(subscription);
   }
@@ -250,8 +257,12 @@ export function badgeRemovalOpen(organizationId: string, subscription?: LinkPlan
 export function customDomainBillingOpen(
   organizationId: string,
   _subscription?: LinkPlan,
-  org?: { customDomainAddon?: boolean | null } | null
+  org?: { customDomainAddon?: boolean | null } | null,
+  partnerPlan?: string | null
 ) {
+  if (isGta6clipsPlan(partnerPlan)) {
+    return false;
+  }
   if (!isBillingEnforced(organizationId)) {
     return linkDomainOpen(org);
   }

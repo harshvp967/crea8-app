@@ -249,6 +249,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     !!pathname?.startsWith('/link/');
 
   if (!user) {
+    if (pathname === '/compose') {
+      return <>{children}</>;
+    }
     if (stalker || link) {
       return <AppShellSkeleton />;
     }

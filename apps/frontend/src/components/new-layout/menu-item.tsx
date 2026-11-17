@@ -3,6 +3,8 @@ import { FC, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { partnerHref } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 
 export const MenuItem: FC<{
   label: string;
@@ -12,6 +14,8 @@ export const MenuItem: FC<{
   variant?: 'horizontal' | 'vertical' | 'utility' | 'sidebar';
 }> = ({ label, icon, path, onClick, variant = 'horizontal' }) => {
   const currentPath = usePathname();
+  const user = useUser();
+  const href = partnerHref(user?.partnerPlan, path);
   const isActive =
     path !== '#' &&
     path.indexOf('http') !== 0 &&
@@ -80,7 +84,7 @@ export const MenuItem: FC<{
   return (
     <Link
       prefetch={true}
-      href={path}
+      href={href}
       title={label}
       {...(path.indexOf('http') === 0 && { target: '_blank' })}
       className={className}

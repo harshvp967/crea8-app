@@ -22,6 +22,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { createReadStream } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { isPartnerVideoUrl, openPartnerVideo } from '@gitroom/nestjs-libraries/partner/gta6clips.host';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -716,6 +717,24 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
   // read stream for local files.
   private async tiktokChunkStream(path: string, start: number, end: number) {
+    if (isPartnerVideoUrl(path)) {
+      const response = await openPartnerVideo(path, {
+        headers: {
+          Range: `bytes=${start}-${end}`,
+          'accept-encoding': 'identity',
+        },
+      });
+      if (response.status !== 206) {
+        await response.body?.cancel();
+        throw new BadBody(
+          'tiktok-error-upload',
+          '{}',
+          '{}',
+          'The video link did not return the requested byte range'
+        );
+      }
+      return response.body;
+    }
     if (path.indexOf('http') === 0) {
       // identity encoding so the store keeps content-length and can answer
       // with the requested range, matching every other media read

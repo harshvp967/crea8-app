@@ -63,6 +63,8 @@ import { StalkerSourceManager } from '@gitroom/nestjs-libraries/stalker/stalker.
 import { LinkRepository } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.repository';
 import { LinkService } from '@gitroom/nestjs-libraries/database/prisma/link-in-bio/link.service';
 import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/services/cloudflare.custom-hostname.service';
+import { Gta6clipsRepository } from '@gitroom/nestjs-libraries/partner/gta6clips.repository';
+import { Gta6clipsService } from '@gitroom/nestjs-libraries/partner/gta6clips.service';
 
 @Global()
 @Module({
@@ -134,6 +136,8 @@ import { CloudflareCustomHostnameService } from '@gitroom/nestjs-libraries/servi
     StalkerSourceManager,
     LinkRepository,
     LinkService,
+    Gta6clipsRepository,
+    Gta6clipsService,
     CloudflareCustomHostnameService,
   ],
   get exports() {

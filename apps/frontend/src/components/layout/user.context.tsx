@@ -30,6 +30,7 @@ export const UserContext = createContext<
       aiDrafts?: boolean;
       picture?: { id: string; path: string } | null;
       billingEnabled?: boolean;
+      partnerPlan?: string | null;
       credits?: CreditUsage | null;
     })
 >(undefined);

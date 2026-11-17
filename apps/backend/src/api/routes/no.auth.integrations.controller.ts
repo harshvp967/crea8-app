@@ -289,7 +289,7 @@ export class NoAuthIntegrationsController {
     }
 
     if (!refresh) {
-      await this._entitlements.assertCanConnect(org.id, String(id));
+      await this._entitlements.assertCanConnect(org.id, String(id), integration);
     }
 
     const createUpdate =

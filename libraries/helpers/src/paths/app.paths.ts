@@ -66,6 +66,7 @@ export const RESERVED_PATHS: ReadonlyArray<{ name: string; kind: ReservedKind }>
   { name: 'calendar', kind: 'block' },
   { name: 'careers', kind: 'block' },
   { name: 'changelog', kind: 'block' },
+  { name: 'compose', kind: 'app' },
   { name: 'confirm', kind: 'block' },
   { name: 'contact', kind: 'block' },
   { name: 'copilot', kind: 'block' },

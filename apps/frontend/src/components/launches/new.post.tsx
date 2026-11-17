@@ -41,6 +41,23 @@ export const openCreatePost = async ({
 }) => {
   const again = () =>
     openCreatePost({ fetch, modal, t, integrations, sets, reload, customer });
+  let onlyValues: { content: string; image?: { id: string; path: string }[] }[] | undefined;
+  try {
+    const raw = typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem('crea8.partner.prefill');
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed && (parsed.caption || parsed.video)) {
+      onlyValues = [
+        {
+          content: String(parsed.caption || ''),
+          ...(parsed.video
+            ? { image: [{ id: '', path: String(parsed.video) }] }
+            : {}),
+        },
+      ];
+    }
+  } catch {
+    onlyValues = undefined;
+  }
   const channels = composerChannels({
     catalog: integrations,
     customer,
@@ -97,6 +114,7 @@ export const openCreatePost = async ({
           ? { selectedChannels: channels.selectedChannels }
           : {})}
         customer={customer || undefined}
+        {...(onlyValues ? { onlyValues } : {})}
         reopenModal={again}
         mutate={reload}
         integrations={channels.allIntegrations}
