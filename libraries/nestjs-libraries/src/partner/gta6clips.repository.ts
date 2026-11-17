@@ -6,6 +6,11 @@ import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id'
 import { GTA6CLIPS_PLAN_ID } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { PartnerStore } from '@gitroom/nestjs-libraries/partner/gta6clips.flow';
 import { grantDecision } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
+import {
+  Gta6clipsPlanClaim,
+  gta6clipsPlanRecord,
+  storedGta6clipsPlan,
+} from '@gitroom/nestjs-libraries/partner/gta6clips.token';
 
 const PARTNER = 'gta6clips';
 
@@ -104,11 +109,18 @@ export class Gta6clipsRepository implements PartnerStore {
     });
   }
 
-  async grant(input: { organizationId: string; userId: string; sub: string; email: string }) {
+  async grant(input: {
+    organizationId: string;
+    userId: string;
+    sub: string;
+    email: string;
+    gta6clipsPlan: Gta6clipsPlanClaim;
+    recordedAt: Date;
+  }) {
     const [org, sub] = await Promise.all([
       this._prisma.partnerAccount.findUnique({
         where: { organizationId: input.organizationId },
-        select: { sub: true, plan: true, partner: true },
+        select: { sub: true, partner: true },
       }),
       this.findBySub(input.sub),
     ]);
@@ -121,23 +133,28 @@ export class Gta6clipsRepository implements PartnerStore {
     if (decision === 'reject') {
       return 'rejected' as const;
     }
+    const claim: Gta6clipsPlanClaim = input.gta6clipsPlan === 'paid' ? 'paid' : 'free';
+    const data = {
+      plan: claim === 'paid' ? GTA6CLIPS_PLAN_ID : '',
+      metadata: gta6clipsPlanRecord(claim, input.recordedAt),
+    };
     if (decision === 'grant') {
       await this._prisma.partnerAccount.create({
         data: {
           partner: PARTNER,
           sub: input.sub,
           email: input.email,
-          plan: GTA6CLIPS_PLAN_ID,
           userId: input.userId,
           organizationId: input.organizationId,
+          ...data,
         },
       });
       return 'granted' as const;
     }
-    if (org?.partner === PARTNER && org.plan !== GTA6CLIPS_PLAN_ID) {
+    if (org?.partner === PARTNER) {
       await this._prisma.partnerAccount.update({
         where: { organizationId: input.organizationId },
-        data: { plan: GTA6CLIPS_PLAN_ID },
+        data,
       });
     }
     return 'idempotent' as const;
@@ -151,6 +168,7 @@ export class Gta6clipsRepository implements PartnerStore {
     video: string | null;
     caption: string;
     expiresAt: Date;
+    gta6clipsPlan: Gta6clipsPlanClaim;
   }) {
     return this._prisma.partnerLinkPending
       .create({
@@ -162,6 +180,7 @@ export class Gta6clipsRepository implements PartnerStore {
           video: row.video,
           caption: row.caption,
           expiresAt: row.expiresAt,
+          metadata: { gta6clips_plan: row.gta6clipsPlan },
         },
       })
       .then(() => undefined);
@@ -172,7 +191,15 @@ export class Gta6clipsRepository implements PartnerStore {
     if (!row || row.expiresAt.getTime() <= now.getTime()) {
       return null;
     }
-    return row;
+    return {
+      id: row.id,
+      jti: row.jti,
+      sub: row.sub,
+      email: row.email,
+      video: row.video,
+      caption: row.caption || '',
+      gta6clipsPlan: storedGta6clipsPlan(row.metadata),
+    };
   }
 
   planForOrg(organizationId: string) {

@@ -4,6 +4,8 @@ export const GTA6CLIPS_ISS = 'gta6clips.app';
 export const GTA6CLIPS_AUD = 'crea8.one';
 export const GTA6CLIPS_MAX_TTL_SEC = 600;
 
+export type Gta6clipsPlanClaim = 'paid' | 'free';
+
 export type Gta6clipsClaims = {
   sub: string;
   email: string;
@@ -11,7 +13,27 @@ export type Gta6clipsClaims = {
   jti: string;
   iat: number;
   exp: number;
+  gta6clips_plan: Gta6clipsPlanClaim;
 };
+
+// Only the exact string "paid" is paid. Missing, "free", and every other value fail closed.
+export function gta6clipsPlanClaim(value: unknown): Gta6clipsPlanClaim {
+  return value === 'paid' ? 'paid' : 'free';
+}
+
+export function gta6clipsPlanRecord(plan: Gta6clipsPlanClaim, recordedAt: Date) {
+  return {
+    gta6clips_plan: plan,
+    recordedAt: recordedAt.toISOString(),
+  };
+}
+
+export function storedGta6clipsPlan(metadata: unknown): Gta6clipsPlanClaim {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return 'free';
+  }
+  return gta6clipsPlanClaim((metadata as { gta6clips_plan?: unknown }).gta6clips_plan);
+}
 
 export type TokenFailure =
   | 'disabled'
@@ -89,23 +111,38 @@ export function verifyGta6clipsToken(
 
   return {
     ok: true,
-    claims: { sub, email, email_verified: true, jti, iat, exp },
+    claims: {
+      sub,
+      email,
+      email_verified: true,
+      jti,
+      iat,
+      exp,
+      gta6clips_plan: gta6clipsPlanClaim(payload.gta6clips_plan),
+    },
   };
 }
 
 export function signGta6clipsToken(
-  claims: Omit<Gta6clipsClaims, 'email_verified'> & { email_verified?: true },
+  claims: Omit<Gta6clipsClaims, 'email_verified' | 'gta6clips_plan'> & {
+    email_verified?: true;
+    gta6clips_plan?: unknown;
+  },
   secret: string
 ) {
+  const payload: Record<string, unknown> = {
+    sub: claims.sub,
+    email: claims.email,
+    email_verified: true,
+    jti: claims.jti,
+    iat: claims.iat,
+    exp: claims.exp,
+  };
+  if (Object.prototype.hasOwnProperty.call(claims, 'gta6clips_plan')) {
+    payload.gta6clips_plan = claims.gta6clips_plan;
+  }
   return sign(
-    {
-      sub: claims.sub,
-      email: claims.email,
-      email_verified: true,
-      jti: claims.jti,
-      iat: claims.iat,
-      exp: claims.exp,
-    },
+    payload,
     secret,
     {
       algorithm: 'HS256',

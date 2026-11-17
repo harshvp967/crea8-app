@@ -15,6 +15,7 @@ import {
   partnerRouteAllowed,
   sidebarAppLocked,
 } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
+import { signGta6clipsToken, verifyGta6clipsToken } from '@gitroom/nestjs-libraries/partner/gta6clips.token';
 
 type PartnerRow = {
   partner: string;
@@ -23,7 +24,33 @@ type PartnerRow = {
   plan: string;
   userId: string;
   organizationId: string;
+  metadata?: { gta6clips_plan?: unknown; recordedAt?: string } | null;
 };
+
+const SECRET = 'test-link-secret';
+const NOW = 1_700_000_000;
+
+function claimToken(gta6clipsPlan?: unknown, jti = 'jti-1') {
+  const claims: Record<string, unknown> = {
+    sub: 'member-1',
+    email: 'ada@example.com',
+    jti,
+    iat: NOW,
+    exp: NOW + 600,
+  };
+  if (gta6clipsPlan !== undefined) {
+    claims.gta6clips_plan = gta6clipsPlan;
+  }
+  return signGta6clipsToken(claims as never, SECRET);
+}
+
+function verifiedPlan(gta6clipsPlan?: unknown, jti = 'jti-1') {
+  const checked = verifyGta6clipsToken(claimToken(gta6clipsPlan, jti), SECRET, new Set(), NOW + 5);
+  if (!checked.ok) {
+    throw new Error('token');
+  }
+  return checked.claims;
+}
 
 type Channel = {
   id: string;
@@ -155,6 +182,8 @@ describe('gta6clips entitlement', () => {
       userId: 'user-new',
       sub: 'member-new',
       email: 'crea8.one+g6qa1@mail.grokbot.com',
+      gta6clipsPlan: 'paid',
+      recordedAt: new Date('2026-03-01T00:00:00.000Z'),
     });
     const entitlements = new EntitlementService(db.prisma as never);
     const tier = await entitlements.tier('org-new');
@@ -194,11 +223,17 @@ describe('gta6clips entitlement', () => {
         userId: 'user-free',
         sub: 'member-free',
         email: 'ada@example.com',
+        gta6clipsPlan: 'paid',
+        recordedAt: new Date('2026-03-01T00:00:00.000Z'),
       })
     ).toBe('granted');
     const entitlements = new EntitlementService(db.prisma as never);
     expect(await entitlements.tier('org-free')).toBe(GTA6CLIPS_PLAN_ID);
     expect(db.partners.get('org-free')?.plan).toBe(GTA6CLIPS_PLAN_ID);
+    expect(db.partners.get('org-free')?.metadata).toEqual({
+      gta6clips_plan: 'paid',
+      recordedAt: '2026-03-01T00:00:00.000Z',
+    });
     expect(billingPaywallForTier(await entitlements.tier('org-free'))).toBe(false);
     expect(db.orgs.get('org-free')?.subscription).toBeNull();
   });
@@ -216,11 +251,23 @@ describe('gta6clips entitlement', () => {
     });
     addChannels(db, 'org-paid', 3);
     const repo = new Gta6clipsRepository(db.prisma as never);
+    const paid = verifiedPlan('paid', 'jti-dodo-paid');
     await repo.grant({
       organizationId: 'org-paid',
       userId: 'user-paid',
       sub: 'member-paid',
       email: 'paid@example.com',
+      gta6clipsPlan: paid.gta6clips_plan,
+      recordedAt: new Date((NOW + 5) * 1000),
+    });
+    const later = verifiedPlan('free', 'jti-dodo-free');
+    await repo.grant({
+      organizationId: 'org-paid',
+      userId: 'user-paid',
+      sub: 'member-paid',
+      email: 'paid@example.com',
+      gta6clipsPlan: later.gta6clips_plan,
+      recordedAt: new Date((NOW + 9) * 1000),
     });
     const entitlements = new EntitlementService(db.prisma as never);
     expect(await entitlements.tier('org-paid')).toBe('STANDARD');
@@ -251,6 +298,7 @@ describe('gta6clips entitlement', () => {
       sub: 'member-cap',
       email: 'cap@example.com',
       plan: GTA6CLIPS_PLAN_ID,
+      metadata: { gta6clips_plan: 'paid', recordedAt: '2026-03-01T00:00:00.000Z' },
       userId: 'user-cap',
       organizationId: 'org-cap',
     });
@@ -297,7 +345,7 @@ describe('gta6clips entitlement', () => {
     );
   });
 
-  it('fills an empty gta6clips plan on read and ignores every other org', async () => {
+  it('a missing stored claim denies gta6clips_free and does not rewrite the row', async () => {
     const db = harness();
     db.orgs.set('org-old', {
       id: 'org-old',
@@ -317,7 +365,8 @@ describe('gta6clips entitlement', () => {
       partner: 'gta6clips',
       sub: 'member-old',
       email: 'old@example.com',
-      plan: '',
+      plan: GTA6CLIPS_PLAN_ID,
+      metadata: null,
       userId: 'user-old',
       organizationId: 'org-old',
     });
@@ -330,11 +379,131 @@ describe('gta6clips entitlement', () => {
       organizationId: 'org-other',
     });
     const entitlements = new EntitlementService(db.prisma as never);
-    expect(await entitlements.tier('org-old')).toBe(GTA6CLIPS_PLAN_ID);
+    expect(await entitlements.tier('org-old')).toBe('FREE');
+    expect(billingPaywallForTier(await entitlements.tier('org-old'))).toBe(true);
+    expect(await entitlements.partnerPlanId('org-old')).toBeNull();
+    expect(db.partners.get('org-old')?.metadata).toBeNull();
     expect(db.partners.get('org-old')?.plan).toBe(GTA6CLIPS_PLAN_ID);
     expect(await entitlements.tier('org-other')).toBe('FREE');
-    expect(billingPaywallForTier(await entitlements.tier('org-other'))).toBe(true);
     expect(db.partners.get('org-other')?.plan).toBe('');
-    expect(db.writes).toEqual(['update:org-old']);
+    expect(db.writes).toEqual([]);
+    await expect(entitlements.assertCanPost('org-old', 'missing')).rejects.toBeInstanceOf(BillingBlocked);
+    await expect(entitlements.assertCanUseStalker('org-old')).rejects.toBeInstanceOf(HttpException);
+  });
+
+  it('a paid gta6clips_plan claim grants gta6clips_free', async () => {
+    const db = harness();
+    db.orgs.set('org-1', emptyOrg('org-1'));
+    const claims = verifiedPlan('paid');
+    const repo = new Gta6clipsRepository(db.prisma as never);
+    await repo.grant({
+      organizationId: 'org-1',
+      userId: 'user-1',
+      sub: claims.sub,
+      email: claims.email,
+      gta6clipsPlan: claims.gta6clips_plan,
+      recordedAt: new Date((NOW + 5) * 1000),
+    });
+    const entitlements = new EntitlementService(db.prisma as never);
+    expect(claims.gta6clips_plan).toBe('paid');
+    expect(await entitlements.tier('org-1')).toBe(GTA6CLIPS_PLAN_ID);
+    expect(await entitlements.partnerPlanId('org-1')).toBe(GTA6CLIPS_PLAN_ID);
+    expect(billingPaywallForTier(await entitlements.tier('org-1'))).toBe(false);
+    expect(db.partners.get('org-1')?.metadata).toEqual({
+      gta6clips_plan: 'paid',
+      recordedAt: new Date((NOW + 5) * 1000).toISOString(),
+    });
+    expect(db.partners.get('org-1')?.metadata).not.toHaveProperty('paid');
+    expect(db.partners.get('org-1')?.metadata).not.toHaveProperty('plan');
+    expect(db.orgs.get('org-1')?.subscription).toBeNull();
+    addChannels(db, 'org-1', 1);
+    await expect(entitlements.assertCanPost('org-1', 'org-1-ch-1')).resolves.toBeUndefined();
+    expect(sidebarAppLocked(GTA6CLIPS_PLAN_ID, GTA6CLIPS_PLAN_ID, '/schedule', 'schedule', true)).toBe(false);
+    expect(sidebarAppLocked(GTA6CLIPS_PLAN_ID, GTA6CLIPS_PLAN_ID, '/linkinbio', 'link', true)).toBe(false);
+  });
+
+  it('a free gta6clips_plan claim denies gta6clips_free', async () => {
+    const db = harness();
+    db.orgs.set('org-1', emptyOrg('org-1'));
+    const claims = verifiedPlan('free', 'jti-free');
+    await exchangeClaim(db, claims, new Date((NOW + 5) * 1000));
+    const entitlements = new EntitlementService(db.prisma as never);
+    expect(await entitlements.tier('org-1')).toBe('FREE');
+    expect(await entitlements.partnerPlanId('org-1')).toBeNull();
+    expect(billingPaywallForTier(await entitlements.tier('org-1'))).toBe(true);
+    expect(db.partners.get('org-1')?.metadata?.gta6clips_plan).toBe('free');
+    expect(sidebarAppLocked('FREE', null, '/schedule', 'schedule', true)).toBe(true);
+    expect(sidebarAppLocked('FREE', null, '/stalker/mentions', 'stalker', true)).toBe(true);
+    expect(sidebarAppLocked('FREE', null, '/linkinbio', 'link', true)).toBe(false);
+    await expect(entitlements.assertCanPost('org-1', 'missing')).rejects.toBeInstanceOf(BillingBlocked);
+    await expect(entitlements.assertCanUseStalker('org-1')).rejects.toBeInstanceOf(HttpException);
+  });
+
+  it('a missing gta6clips_plan claim denies gta6clips_free', async () => {
+    const db = harness();
+    db.orgs.set('org-1', emptyOrg('org-1'));
+    const claims = verifiedPlan(undefined, 'jti-missing');
+    expect(claims.gta6clips_plan).toBe('free');
+    await exchangeClaim(db, claims, new Date((NOW + 5) * 1000));
+    const entitlements = new EntitlementService(db.prisma as never);
+    expect(await entitlements.tier('org-1')).toBe('FREE');
+    expect(billingPaywallForTier(await entitlements.tier('org-1'))).toBe(true);
+    expect(await entitlements.partnerPlanId('org-1')).toBeNull();
+    await expect(entitlements.assertCanPost('org-1', 'missing')).rejects.toBeInstanceOf(BillingBlocked);
+  });
+
+  it('a later free token revokes the perk', async () => {
+    const db = harness();
+    db.orgs.set('org-1', emptyOrg('org-1'));
+    const paid = verifiedPlan('paid', 'jti-paid');
+    await exchangeClaim(db, paid, new Date((NOW + 5) * 1000));
+    const entitlements = new EntitlementService(db.prisma as never);
+    expect(await entitlements.tier('org-1')).toBe(GTA6CLIPS_PLAN_ID);
+    const free = verifiedPlan('free', 'jti-later');
+    await exchangeClaim(db, free, new Date((NOW + 9) * 1000));
+    expect(await entitlements.tier('org-1')).toBe('FREE');
+    expect(await entitlements.partnerPlanId('org-1')).toBeNull();
+    expect(billingPaywallForTier(await entitlements.tier('org-1'))).toBe(true);
+    expect(db.partners.get('org-1')?.metadata).toEqual({
+      gta6clips_plan: 'free',
+      recordedAt: new Date((NOW + 9) * 1000).toISOString(),
+    });
+    expect(db.orgs.get('org-1')?.subscription).toBeNull();
+    await expect(entitlements.assertCanPost('org-1', 'missing')).rejects.toBeInstanceOf(BillingBlocked);
+    await expect(entitlements.assertCanUseStalker('org-1')).rejects.toBeInstanceOf(HttpException);
+    expect(sidebarAppLocked('FREE', null, '/schedule', 'schedule', true)).toBe(true);
+    expect(sidebarAppLocked('FREE', null, '/linkinbio', 'link', true)).toBe(false);
   });
 });
+
+function emptyOrg(id: string): {
+  id: string;
+  isTrailing: boolean;
+  allowTrial: boolean;
+  paymentId: null;
+  subscription: null;
+} {
+  return {
+    id,
+    isTrailing: false,
+    allowTrial: false,
+    paymentId: null,
+    subscription: null,
+  };
+}
+
+async function exchangeClaim(
+  db: ReturnType<typeof harness>,
+  claims: { sub: string; email: string; gta6clips_plan: 'paid' | 'free' },
+  recordedAt: Date
+) {
+  const repo = new Gta6clipsRepository(db.prisma as never);
+  await repo.grant({
+    organizationId: 'org-1',
+    userId: 'user-1',
+    sub: claims.sub,
+    email: claims.email,
+    gta6clipsPlan: claims.gta6clips_plan,
+    recordedAt,
+  });
+}

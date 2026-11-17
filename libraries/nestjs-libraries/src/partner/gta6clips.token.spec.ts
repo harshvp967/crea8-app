@@ -24,6 +24,45 @@ describe('gta6clips token', () => {
     if (checked.ok) {
       expect(checked.claims.sub).toBe('member-1');
       expect(checked.claims.email).toBe('ada@gta6clips.app');
+      expect(checked.claims.gta6clips_plan).toBe('free');
+    }
+  });
+
+  it('keeps paid only when gta6clips_plan is exactly paid', () => {
+    const paid = verifyGta6clipsToken(token({ gta6clips_plan: 'paid' }), SECRET, new Set(), NOW + 10);
+    const free = verifyGta6clipsToken(token({ gta6clips_plan: 'free' }), SECRET, new Set(), NOW + 10);
+    const other = verifyGta6clipsToken(token({ gta6clips_plan: 'pro' }), SECRET, new Set(), NOW + 10);
+    const flag = verifyGta6clipsToken(token({ gta6clips_plan: true }), SECRET, new Set(), NOW + 10);
+    expect(paid.ok && paid.claims.gta6clips_plan).toBe('paid');
+    expect(free.ok && free.claims.gta6clips_plan).toBe('free');
+    expect(other.ok && other.claims.gta6clips_plan).toBe('free');
+    expect(flag.ok && flag.claims.gta6clips_plan).toBe('free');
+  });
+
+  it('does not read a paid or plan claim', () => {
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+    const body = Buffer.from(
+      JSON.stringify({
+        sub: 'member-1',
+        email: 'ada@gta6clips.app',
+        email_verified: true,
+        jti: 'jti-paid-flag',
+        iat: NOW,
+        exp: NOW + 60,
+        iss: 'gta6clips.app',
+        aud: 'crea8.one',
+        paid: true,
+        plan: 'gold',
+      })
+    ).toString('base64url');
+    const { createHmac } = require('crypto') as typeof import('crypto');
+    const sig = createHmac('sha256', SECRET).update(`${header}.${body}`).digest('base64url');
+    const checked = verifyGta6clipsToken(`${header}.${body}.${sig}`, SECRET, new Set(), NOW + 10);
+    expect(checked.ok).toBe(true);
+    if (checked.ok) {
+      expect(checked.claims.gta6clips_plan).toBe('free');
+      expect(checked.claims).not.toHaveProperty('paid');
+      expect(checked.claims).not.toHaveProperty('plan');
     }
   });
 

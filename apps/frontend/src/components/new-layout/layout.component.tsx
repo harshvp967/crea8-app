@@ -53,6 +53,7 @@ import {
   markPartnerHandoff,
   notePartnerToken,
   partnerArrivedWithToken,
+  partnerComposeStaysOpen,
   partnerSessionReleased,
   shouldHoldUserSelf,
   subscribePartnerSession,
@@ -305,6 +306,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     linkRoute ||
     accountRoute ||
     settingsRoute ||
+    partnerComposeStaysOpen(pathname || '', searchParams.toString()) ||
     pathname === '/invite' ||
     pathname === '/join' ||
     pathname === '/err' ||

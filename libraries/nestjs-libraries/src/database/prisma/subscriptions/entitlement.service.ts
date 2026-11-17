@@ -21,6 +21,7 @@ import {
   BillingAccount,
   loadBillingAccount,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.account';
+import { storedGta6clipsPlan } from '@gitroom/nestjs-libraries/partner/gta6clips.token';
 import {
   BillingBlocked,
   accessTier,
@@ -96,20 +97,13 @@ export class EntitlementService {
     }
     const row = await accounts.findUnique({
       where: { organizationId },
-      select: { plan: true, partner: true },
+      select: { partner: true, metadata: true },
     });
     if (!row || row.partner !== 'gta6clips') {
       return null;
     }
-    if (row.plan !== GTA6CLIPS_PLAN_ID && accounts.update) {
-      try {
-        await accounts.update({
-          where: { organizationId },
-          data: { plan: GTA6CLIPS_PLAN_ID },
-        });
-      } catch {
-        // The read still grants. The next read tries the write again.
-      }
+    if (storedGta6clipsPlan(row.metadata) !== 'paid') {
+      return null;
     }
     return GTA6CLIPS_PLAN_ID;
   }
