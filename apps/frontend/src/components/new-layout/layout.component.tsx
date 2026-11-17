@@ -1,7 +1,7 @@
 'use client';
 
 import { csrfHeaders } from '@gitroom/helpers/utils/custom.fetch.func';
-import React, { ReactNode, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
@@ -48,6 +48,14 @@ import { FirstBillingComponent } from '@gitroom/frontend/components/billing/firs
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
 import { DashboardSwitcher } from '@gitroom/frontend/components/dashboard/dashboard.switcher';
+import {
+  markPartnerHandoff,
+  notePartnerToken,
+  partnerArrivedWithToken,
+  partnerSessionReleased,
+  shouldHoldUserSelf,
+  subscribePartnerSession,
+} from '@gitroom/frontend/components/partner/compose.partner.flow';
 import { SettingsPageSkeleton } from '@gitroom/frontend/components/layout/settings.component';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { HeaderOverflow } from '@gitroom/frontend/components/layout/header.overflow';
@@ -193,10 +201,28 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const accountMenu = useAccountMenu();
   const accountRef = useRef<HTMLDivElement>(null);
   const headerAvatarRef = useRef<HTMLButtonElement>(null);
+  const token = searchParams.get('token') || '';
+  const pending = searchParams.get('pending') || '';
+  if (typeof window !== 'undefined' && pathname === '/compose' && (token || pending)) {
+    if (token) {
+      notePartnerToken();
+    }
+    markPartnerHandoff(window.sessionStorage);
+  }
+  const released = useSyncExternalStore(
+    subscribePartnerSession,
+    partnerSessionReleased,
+    () => false
+  );
+  const holdUserSelf = shouldHoldUserSelf({
+    pathname: pathname || '',
+    arrivedWithToken: !!token || (typeof window !== 'undefined' && partnerArrivedWithToken()),
+    released,
+  });
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, [fetch]);
-  const { data: user, mutate } = useSWR('/user/self', load, {
+  const { data: user, mutate } = useSWR(holdUserSelf ? null : '/user/self', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,

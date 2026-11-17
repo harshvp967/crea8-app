@@ -35,6 +35,19 @@ export function authRateLimit() {
   };
 }
 
+export const PARTNER_EXCHANGE_SCOPE = 'partner-exchange-ip';
+
+export function partnerExchangeRateLimit() {
+  return {
+    limit: positive(process.env.PARTNER_EXCHANGE_RATE_LIMIT, 30),
+    ttl: positive(process.env.PARTNER_EXCHANGE_RATE_WINDOW_MS, 10 * 60 * 1000),
+  };
+}
+
+export function partnerExchangeRateKey(ip: string) {
+  return rateLimitKey(PARTNER_EXCHANGE_SCOPE, ip);
+}
+
 export function mcpRateLimit() {
   return {
     limit: positive(process.env.MCP_RATE_LIMIT, 120),
@@ -151,6 +164,23 @@ export class AuthRateLimitGuard implements CanActivate {
       if (!result.ok) {
         tooMany(context.switchToHttp().getResponse(), result.retryAfter);
       }
+    }
+    return true;
+  }
+}
+
+@Injectable()
+export class PartnerExchangeRateLimitGuard implements CanActivate {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest<Request>();
+    const { limit, ttl } = partnerExchangeRateLimit();
+    const result = await consumeFixedWindow(
+      partnerExchangeRateKey(clientIp(req)),
+      limit,
+      ttl
+    );
+    if (!result.ok) {
+      tooMany(context.switchToHttp().getResponse(), result.retryAfter);
     }
     return true;
   }

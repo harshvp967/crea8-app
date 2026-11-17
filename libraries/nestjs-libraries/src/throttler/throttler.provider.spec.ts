@@ -6,6 +6,8 @@ import {
   isPublicApiPath,
   LINK_PUBLIC_LIMITS,
   mcpRateLimit,
+  partnerExchangeRateKey,
+  partnerExchangeRateLimit,
   publicApiRateLimit,
   rateLimitKey,
 } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
@@ -14,6 +16,8 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 describe('rate limit rules', () => {
   const previous = {
     AUTH_RATE_LIMIT: process.env.AUTH_RATE_LIMIT,
+    PARTNER_EXCHANGE_RATE_LIMIT: process.env.PARTNER_EXCHANGE_RATE_LIMIT,
+    PARTNER_EXCHANGE_RATE_WINDOW_MS: process.env.PARTNER_EXCHANGE_RATE_WINDOW_MS,
     API_LIMIT: process.env.API_LIMIT,
     API_LIMIT_READ: process.env.API_LIMIT_READ,
     MCP_RATE_LIMIT: process.env.MCP_RATE_LIMIT,
@@ -34,6 +38,19 @@ describe('rate limit rules', () => {
     expect(authRateLimit()).toEqual({ limit: 5, ttl: 15 * 60 * 1000 });
     process.env.AUTH_RATE_LIMIT = '8';
     expect(authRateLimit().limit).toBe(8);
+  });
+
+  it('gives the gta6clips exchange its own looser limit', () => {
+    delete process.env.AUTH_RATE_LIMIT;
+    delete process.env.PARTNER_EXCHANGE_RATE_LIMIT;
+    delete process.env.PARTNER_EXCHANGE_RATE_WINDOW_MS;
+    const auth = authRateLimit();
+    const partner = partnerExchangeRateLimit();
+    expect(partner).toEqual({ limit: 30, ttl: 10 * 60 * 1000 });
+    expect(partner.limit).toBeGreaterThan(auth.limit);
+    const ip = '203.0.113.9';
+    expect(partnerExchangeRateKey(ip)).not.toBe(rateLimitKey('auth-ip', ip));
+    expect(partnerExchangeRateKey(ip).startsWith('partner-exchange-ip:')).toBe(true);
   });
 
   it('gives public writes a tighter budget than public reads', () => {
