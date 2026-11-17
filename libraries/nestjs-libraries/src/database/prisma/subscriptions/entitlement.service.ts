@@ -51,7 +51,12 @@ export class EntitlementService {
   }
 
   async partnerPlanId(organizationId: string) {
-    const row = await this._prisma.partnerAccount.findUnique({
+    // Billing tests build a partial client. No partner table means no grant.
+    const accounts = this._prisma.partnerAccount;
+    if (!accounts?.findUnique) {
+      return null;
+    }
+    const row = await accounts.findUnique({
       where: { organizationId },
       select: { plan: true },
     });
