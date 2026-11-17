@@ -5,6 +5,11 @@ import { FetchWrapperComponent } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useReturnUrl } from '@gitroom/frontend/app/(app)/auth/return.url.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import {
+  readPartnerHandoff,
+  skipComposeAuthRedirect,
+  unauthenticated401Destination,
+} from '@gitroom/frontend/components/partner/compose.partner.flow';
 export default function LayoutContext(params: { children: ReactNode }) {
   if (params?.children) {
     // eslint-disable-next-line react/no-children-prop
@@ -70,7 +75,28 @@ function LayoutContextInner(params: { children: ReactNode }) {
       if (impersonate) {
         setCookie('impersonate', impersonate, 365);
       }
-      if (logout && !isSecured) {
+      const onSocialCallback =
+        typeof window !== 'undefined' &&
+        window.location.pathname.startsWith('/integrations/social/');
+      const partnerCompose =
+        typeof window !== 'undefined' &&
+        skipComposeAuthRedirect(
+          window.location.pathname,
+          window.location.search,
+          readPartnerHandoff(window.sessionStorage)
+        );
+      const authBounce =
+        typeof window === 'undefined'
+          ? null
+          : unauthenticated401Destination({
+              pathname: window.location.pathname,
+              search: window.location.search,
+              handoff: readPartnerHandoff(window.sessionStorage),
+              status: response.status,
+              logout: !!logout,
+              onSocialCallback,
+            });
+      if (logout && !isSecured && !partnerCompose) {
         setCookie('auth', '', -10);
         setCookie('showorg', '', -10);
         setCookie('impersonate', '', -10);
@@ -99,13 +125,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
         return true;
       }
 
-      const onSocialCallback =
-        typeof window !== 'undefined' &&
-        window.location.pathname.startsWith('/integrations/social/');
-      if (
-        (response.status === 401 || response?.headers?.get('logout')) &&
-        !onSocialCallback
-      ) {
+      if (authBounce === '/') {
         if (!isSecured) {
           setCookie('auth', '', -10);
           setCookie('showorg', '', -10);

@@ -6,6 +6,7 @@ import { Gta6clipsService } from '@gitroom/nestjs-libraries/partner/gta6clips.se
 import { sessionCookieOptions } from '@gitroom/helpers/auth/session.cookies';
 import {
   AuthRateLimitGuard,
+  PartnerExchangeRateLimitGuard,
 } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -13,7 +14,6 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 
 @ApiTags('Partner')
 @Controller('/partner/gta6clips')
-@UseGuards(AuthRateLimitGuard)
 export class Gta6clipsController {
   constructor(
     private _partner: Gta6clipsService,
@@ -21,6 +21,7 @@ export class Gta6clipsController {
     private _organizations: OrganizationService
   ) {}
 
+  @UseGuards(PartnerExchangeRateLimitGuard)
   @Post('/exchange')
   async exchange(
     @Body() body: Gta6clipsExchangeDto,
@@ -35,6 +36,7 @@ export class Gta6clipsController {
     return rest;
   }
 
+  @UseGuards(AuthRateLimitGuard)
   @Post('/link')
   async link(
     @Body() body: Gta6clipsLinkDto,
