@@ -345,7 +345,41 @@ describe('gta6clips entitlement', () => {
     );
   });
 
-  it('a missing stored claim denies gta6clips_free and does not rewrite the row', async () => {
+  it('an existing partner org with no subscription lands without the free paywall', async () => {
+    const db = harness();
+    db.orgs.set('org-old', {
+      id: 'org-old',
+      isTrailing: false,
+      allowTrial: false,
+      paymentId: null,
+      subscription: null,
+    });
+    db.partners.set('org-old', {
+      partner: 'gta6clips',
+      sub: 'member-old',
+      email: 'old@example.com',
+      plan: GTA6CLIPS_PLAN_ID,
+      metadata: null,
+      userId: 'user-old',
+      organizationId: 'org-old',
+    });
+    const entitlements = new EntitlementService(db.prisma as never);
+    const tier = await entitlements.tier('org-old');
+    expect(tier).toBe(GTA6CLIPS_PLAN_ID);
+    expect(await entitlements.partnerPlanId('org-old')).toBe(GTA6CLIPS_PLAN_ID);
+    expect(billingPaywallForTier(tier)).toBe(false);
+    expect(db.orgs.get('org-old')?.subscription).toBeNull();
+    expect(db.partners.get('org-old')?.metadata).toBeNull();
+    expect(db.writes).toEqual([]);
+    expect(sidebarAppLocked(tier, GTA6CLIPS_PLAN_ID, '/schedule', 'schedule', true)).toBe(false);
+    expect(sidebarAppLocked(tier, GTA6CLIPS_PLAN_ID, '/stalker/mentions', 'stalker', true)).toBe(true);
+    expect(sidebarAppLocked(tier, GTA6CLIPS_PLAN_ID, '/linkinbio', 'link', true)).toBe(false);
+    addChannels(db, 'org-old', 1);
+    await expect(entitlements.assertCanPost('org-old', 'org-old-ch-1')).resolves.toBeUndefined();
+    await expect(entitlements.assertCanUseStalker('org-old')).rejects.toBeInstanceOf(HttpException);
+  });
+
+  it('a gta6clips row with no plan and no claim stays on the free paywall', async () => {
     const db = harness();
     db.orgs.set('org-old', {
       id: 'org-old',
@@ -365,7 +399,7 @@ describe('gta6clips entitlement', () => {
       partner: 'gta6clips',
       sub: 'member-old',
       email: 'old@example.com',
-      plan: GTA6CLIPS_PLAN_ID,
+      plan: '',
       metadata: null,
       userId: 'user-old',
       organizationId: 'org-old',
@@ -383,7 +417,7 @@ describe('gta6clips entitlement', () => {
     expect(billingPaywallForTier(await entitlements.tier('org-old'))).toBe(true);
     expect(await entitlements.partnerPlanId('org-old')).toBeNull();
     expect(db.partners.get('org-old')?.metadata).toBeNull();
-    expect(db.partners.get('org-old')?.plan).toBe(GTA6CLIPS_PLAN_ID);
+    expect(db.partners.get('org-old')?.plan).toBe('');
     expect(await entitlements.tier('org-other')).toBe('FREE');
     expect(db.partners.get('org-other')?.plan).toBe('');
     expect(db.writes).toEqual([]);

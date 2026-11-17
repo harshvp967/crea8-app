@@ -29,8 +29,16 @@ export function gta6clipsPlanRecord(plan: Gta6clipsPlanClaim, recordedAt: Date) 
 }
 
 export function storedGta6clipsPlan(metadata: unknown): Gta6clipsPlanClaim {
+  return explicitGta6clipsPlan(metadata) || 'free';
+}
+
+// Null when the exchange never recorded a claim. "free" is only an explicit downgrade.
+export function explicitGta6clipsPlan(metadata: unknown): Gta6clipsPlanClaim | null {
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
-    return 'free';
+    return null;
+  }
+  if (!Object.prototype.hasOwnProperty.call(metadata, 'gta6clips_plan')) {
+    return null;
   }
   return gta6clipsPlanClaim((metadata as { gta6clips_plan?: unknown }).gta6clips_plan);
 }

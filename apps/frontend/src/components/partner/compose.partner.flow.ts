@@ -102,7 +102,8 @@ export function partnerComposeStaysOpen(pathname: string, search: string) {
     params.has('pending') ||
     params.has('connect') ||
     params.has('caption') ||
-    params.has('video')
+    params.has('video') ||
+    params.get('partner') === 'gta6clips'
   );
 }
 

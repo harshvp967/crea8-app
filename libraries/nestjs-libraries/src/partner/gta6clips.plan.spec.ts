@@ -1,9 +1,15 @@
 import {
+  copilotRuntimeUrl,
   grantDecision,
   loginDecision,
   partnerChannelOpen,
   partnerFeatureOpen,
   partnerRouteAllowed,
+  paymentDialogFor,
+  showSubscribeScreen,
+  sidebarAppLocked,
+  sidebarPartnerPlan,
+  sidebarTier,
 } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 import { GTA6CLIPS_FREE } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
@@ -165,6 +171,50 @@ describe('gta6clips plan', () => {
       customDomainBillingOpen('org-1', null, { customDomainAddon: true }, 'gta6clips_free')
     ).toBe(false);
     expect(badgeRemovalOpen('org-1', null)).toBe(true);
+  });
+});
+
+describe('gta6clips compose shell', () => {
+  const search = 'partner=gta6clips&video=https%3A%2F%2Fgta6clips.app%2Fa.mp4&caption=hello&token=once';
+
+  it('an existing partner org with no subscription lands on compose with no paywall', () => {
+    expect(
+      showSubscribeScreen({
+        tier: 'gta6clips_free',
+        partnerPlan: 'gta6clips_free',
+        pathname: '/compose',
+        search,
+        billingOn: true,
+      })
+    ).toBe(false);
+    expect(sidebarTier('gta6clips_free', 'gta6clips_free')).toBe('gta6clips_free');
+    expect(sidebarAppLocked(sidebarTier('gta6clips_free', 'gta6clips_free'), sidebarPartnerPlan('gta6clips_free', 'gta6clips_free'), '/schedule', 'schedule', true)).toBe(false);
+    expect(sidebarAppLocked(sidebarTier('gta6clips_free', 'gta6clips_free'), sidebarPartnerPlan('gta6clips_free', 'gta6clips_free'), '/stalker/mentions', 'stalker', true)).toBe(true);
+    expect(copilotRuntimeUrl('gta6clips_free', 'gta6clips_free', 'https://api.crea8.one')).toBeNull();
+    expect(paymentDialogFor(402, { locked: true })).toBe(false);
+  });
+
+  it('a gta6clips_free layout makes no copilot request and a locked background 402 shows no dialog', () => {
+    expect(copilotRuntimeUrl('gta6clips_free', null, 'https://api.crea8.one')).toBeNull();
+    expect(copilotRuntimeUrl('FREE', null, 'https://api.crea8.one')).toBe('https://api.crea8.one/copilot/chat');
+    expect(paymentDialogFor(402, { locked: true })).toBe(false);
+    expect(paymentDialogFor(402, { locked: false })).toBe(true);
+    expect(paymentDialogFor(402, null)).toBe(true);
+    expect(paymentDialogFor(200, { locked: true })).toBe(false);
+  });
+
+  it('a normal free signup still sees the subscribe screen and both locks', () => {
+    expect(
+      showSubscribeScreen({
+        tier: 'FREE',
+        partnerPlan: null,
+        pathname: '/schedule',
+        search: '',
+        billingOn: true,
+      })
+    ).toBe(true);
+    expect(sidebarAppLocked('FREE', null, '/schedule', 'schedule', true)).toBe(true);
+    expect(sidebarAppLocked('FREE', null, '/stalker/mentions', 'stalker', true)).toBe(true);
   });
 });
 

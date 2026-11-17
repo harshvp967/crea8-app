@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Login } from '@gitroom/frontend/components/auth/login';
 import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.provider.component';
@@ -39,6 +39,7 @@ export const ComposePartner = () => {
   const params = useSearchParams();
   const pathname = usePathname() || '';
   const fetch = useFetch();
+  const { mutate } = useSWRConfig();
   const user = useUser();
   const openComposer = useOpenComposer();
   // The shell remounts this screen once /user/self resolves, so the guard has to outlive the render.
@@ -135,6 +136,9 @@ export const ComposePartner = () => {
         if (cancelled) {
           return;
         }
+        if (result.view === 'navigate' || result.view === 'compose') {
+          await mutate('/user/self');
+        }
         if (
           (result.view === 'wait' && result.needSession) ||
           result.view === 'used' ||
@@ -206,7 +210,7 @@ export const ComposePartner = () => {
     return () => {
       cancelled = true;
     };
-  }, [session, fetch, openComposer, params]);
+  }, [session, fetch, openComposer, params, mutate]);
 
   if (phase === 'collision') {
     return <Login email={email} />;
