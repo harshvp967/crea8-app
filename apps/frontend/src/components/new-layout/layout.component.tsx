@@ -28,6 +28,7 @@ import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscri
 import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
+import { billingPaywallForTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { CopilotKit } from '@copilotkit/react-core';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
@@ -292,7 +293,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   }
 
   const needsPlan =
-    user.tier === 'FREE' && isGeneral && (billingEnabled || user.billingEnabled);
+    billingPaywallForTier(user.tier) && isGeneral && (billingEnabled || user.billingEnabled);
   const linkRoute =
     pathname === '/linkinbio' ||
     !!pathname?.startsWith('/linkinbio/') ||

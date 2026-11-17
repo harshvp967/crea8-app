@@ -216,7 +216,14 @@ export class DodoProvider extends PaymentProviderAbstract {
       eventTier: mapped.tier,
       eventPeriod: mapped.period,
     });
-    const tier = shown.tier;
+    // A partner plan is not a Dodo product. A live Dodo event stores its own tier.
+    const tier: PaidTier =
+      shown.tier === 'STANDARD' ||
+      shown.tier === 'TEAM' ||
+      shown.tier === 'PRO' ||
+      shown.tier === 'ULTIMATE'
+        ? shown.tier
+        : mapped.tier;
     await tx.organization.update({
       where: { id: organizationId },
       data: {

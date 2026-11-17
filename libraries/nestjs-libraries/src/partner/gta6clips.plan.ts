@@ -2,6 +2,7 @@ import {
   CREA8_PRICING_URL,
   GTA6CLIPS_FREE,
   GTA6CLIPS_PLAN_ID,
+  billingPaywallForTier,
   gta6clipsProviderAllowed,
   isGta6clipsPlan,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
@@ -31,6 +32,20 @@ export function linkProductOpenForPlan(plan: string | null | undefined, fallback
 
 export function partnerHref(plan: string | null | undefined, path: string) {
   return partnerSurfaceLocked(plan, path) ? CREA8_PRICING_URL : path;
+}
+
+export function sidebarAppLocked(
+  tier: string | null | undefined,
+  partnerPlan: string | null | undefined,
+  href: string,
+  id: string,
+  billingOn: boolean
+) {
+  const planLocked = billingOn && billingPaywallForTier(tier);
+  return (
+    partnerSurfaceLocked(partnerPlan, href) ||
+    (planLocked && (id === 'schedule' || id === 'stalker'))
+  );
 }
 
 export function partnerSurfaceLocked(plan: string | null | undefined, path: string) {

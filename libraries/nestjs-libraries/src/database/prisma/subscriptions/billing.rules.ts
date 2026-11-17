@@ -7,6 +7,7 @@ import {
 import {
   CREDIT_COSTS,
   CREDIT_PACKS,
+  GTA6CLIPS_PLAN_ID,
   PLANS,
   PaidTier,
   PlanTier,
@@ -37,6 +38,9 @@ export function accessTier(
   }
   if (isGrandfatheredOrg(organizationId)) {
     return 'ULTIMATE';
+  }
+  if (subscriptionTier === GTA6CLIPS_PLAN_ID) {
+    return GTA6CLIPS_PLAN_ID;
   }
   if (
     subscriptionTier === 'STANDARD' ||

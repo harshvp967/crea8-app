@@ -37,7 +37,7 @@ export const CREDIT_PACKS = [
 
 export type CreditPackKey = (typeof CREDIT_PACKS)[number]['key'];
 export type PaidTier = 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE';
-export type PlanTier = 'FREE' | PaidTier;
+export type PlanTier = 'FREE' | 'gta6clips_free' | PaidTier;
 export type BillingPeriod = 'MONTHLY' | 'YEARLY';
 
 export type PlanConfig = {
@@ -107,6 +107,31 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     yearPriceInr: 0,
     channels: 0,
     postsPerMonth: 0,
+    teamMemberLimit: 1,
+    monthlyCredits: 0,
+    stalkerKeywords: 0,
+    stalkerScanHours: 12,
+    stalkerManualChecksPerDay: 0,
+    mentionRetentionDays: 30,
+    webhooks: 0,
+    ai: false,
+    communityFeatures: false,
+    featuredByGitroom: false,
+    importFromChannels: false,
+    imageGenerator: false,
+    publicApi: false,
+    autoPost: false,
+  },
+  // Not a Dodo product. Same record the paywall and channel gate read.
+  gta6clips_free: {
+    key: 'gta6clips_free',
+    displayName: 'Free',
+    monthPriceUsd: 0,
+    yearPriceUsd: 0,
+    monthPriceInr: 0,
+    yearPriceInr: 0,
+    channels: 3,
+    postsPerMonth: 1000000,
     teamMemberLimit: 1,
     monthlyCredits: 0,
     stalkerKeywords: 0,
@@ -311,7 +336,7 @@ export function planCardLines(plan: PlanConfig): PlanCardLine[] {
     { key: 'analytics', text: 'Analytics' },
     { key: 'linkThemes', text: 'Link in Bio, all themes' }
   );
-  if (plan.key !== 'FREE') {
+  if ((PAID_TIERS as readonly string[]).includes(plan.key)) {
     lines.push({ key: 'badgeRemoved', text: 'Badge removed' });
   }
   return lines;
@@ -382,8 +407,14 @@ export function cardLimitAllows(key: PlanCardKey, plan: PlanConfig, usage: numbe
     case 'postingSets':
     case 'analytics':
     case 'badgeRemoved':
-      return plan.key !== 'FREE';
+      return (PAID_TIERS as readonly string[]).includes(plan.key);
   }
+}
+
+// The compose paywall, the sidebar lock, and the channel gate all key off the
+// tier on the entitlement. gta6clips_free is a plan, so it does not paywall.
+export function billingPaywallForTier(tier: string | null | undefined) {
+  return tier === 'FREE';
 }
 
 // Where each card line is enforced. Feature lines have no second numeric cap.
