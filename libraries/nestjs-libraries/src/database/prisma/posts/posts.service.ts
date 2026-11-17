@@ -14,6 +14,10 @@ import {
   validationCacheKey,
 } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { editorLoadedPost } from '@gitroom/nestjs-libraries/database/prisma/posts/post.failure';
+import {
+  assertVideosCoverSchedule,
+  partnerFailureMessage,
+} from '@gitroom/nestjs-libraries/partner/gta6clips.video';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -1050,6 +1054,14 @@ export class PostsService {
           'createPost'
         );
       }
+      const publishAt = channelPublishDate(body.type, body.date, post.date);
+      const window = assertVideosCoverSchedule(
+        (post.value || []).flatMap((item) => item.image || []),
+        publishAt
+      );
+      if (!window.ok) {
+        throw new BadRequestException(partnerFailureMessage(window.reason));
+      }
       const provider = this._integrationManager.getSocialIntegration(
         (post.settings as any)?.__type
       );
@@ -1073,7 +1085,7 @@ export class PostsService {
       const { posts } = await this._postRepository.createOrUpdatePost(
         body.type,
         orgId,
-        channelPublishDate(body.type, body.date, post.date),
+        publishAt,
         post,
         body.tags,
         creationMethod,
@@ -1297,6 +1309,10 @@ export class PostsService {
 
     if (action === 'schedule' && !republish) {
       this.guardAgainstRepublish(getPostById, 'changeDate');
+    }
+    const window = assertVideosCoverSchedule(JSON.parse(getPostById.image || '[]'), new Date(date));
+    if (!window.ok) {
+      throw new BadRequestException(partnerFailureMessage(window.reason));
     }
 
     // schedule: Set status to QUEUE and change date (reschedule the post)

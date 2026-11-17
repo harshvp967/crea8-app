@@ -64,6 +64,8 @@ import { StalkerPublicController } from '@gitroom/backend/api/routes/stalker.pub
 import { LinkController } from '@gitroom/backend/api/routes/link.controller';
 import { LinkPublicController } from '@gitroom/backend/api/routes/link.public.controller';
 import { PublicLinksController } from '@gitroom/backend/api/routes/public.links.controller';
+import { Gta6clipsController } from '@gitroom/backend/api/routes/gta6clips.controller';
+import { Gta6clipsLockMiddleware } from '@gitroom/backend/services/auth/gta6clips.lock.middleware';
 
 const authenticatedController = [
   UsersController,
@@ -112,6 +114,7 @@ const authenticatedController = [
         MonitorController,
         EnterpriseController,
         NoAuthIntegrationsController,
+        Gta6clipsController,
         OAuthController,
         MediaWidgetController,
         ClippingWidgetController,
@@ -127,6 +130,7 @@ const authenticatedController = [
     OpenaiService,
     ExtractContentService,
     AuthMiddleware,
+    Gta6clipsLockMiddleware,
     UploadWidgetAuthMiddleware,
     PoliciesGuard,
     PermissionsService,
@@ -149,6 +153,7 @@ const authenticatedController = [
 export class ApiModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(AuthMiddleware).forRoutes(...authenticatedController);
+    consumer.apply(Gta6clipsLockMiddleware).forRoutes(...authenticatedController);
     consumer.apply(UploadWidgetAuthMiddleware).forRoutes(MediaWidgetController);
     consumer
       .apply(ClippingWidgetAuthMiddleware)

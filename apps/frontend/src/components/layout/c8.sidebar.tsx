@@ -20,6 +20,7 @@ import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post'
 import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
 import { useWorkspaceSwitch } from '@gitroom/frontend/components/layout/organization.selector';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { partnerHref } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 
 const SIDEBAR_KEY = 'c8.sidebar.collapsed';
 
@@ -127,6 +128,7 @@ export const C8Sidebar = ({
     }
   };
   const user = useUser();
+  const hrefFor = (path: string) => partnerHref(user?.partnerPlan, path);
   const { current } = useWorkspaceSwitch();
   const workspaceLine = current?.name ? `Workspace - ${current.name}` : '';
   const openComposer = useOpenComposer();
@@ -279,7 +281,7 @@ export const C8Sidebar = ({
           return (
             <Link
               key={app.id}
-              href={app.href}
+              href={hrefFor(app.href)}
               className={className}
               aria-current={app.id === activeApp ? 'page' : undefined}
               aria-label={app.label}
@@ -328,7 +330,7 @@ export const C8Sidebar = ({
           return (
             <Link
               key={item.path + item.name}
-              href={item.path}
+              href={hrefFor(item.path)}
               className={className}
               aria-label={item.name}
               aria-current={active ? 'page' : undefined}

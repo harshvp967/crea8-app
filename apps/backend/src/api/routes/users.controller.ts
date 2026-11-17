@@ -218,6 +218,7 @@ export class UsersController {
       allowTrial,
       streakSince: organization?.streakSince || null,
       aiDrafts: aiDraftsEnabledForOrg(organization.id),
+      partnerPlan: await this._entitlements.partnerPlanId(organization.id),
       publicApi:
         // @ts-ignore
         organization?.users[0]?.role === 'SUPERADMIN' ||

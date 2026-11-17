@@ -41,6 +41,11 @@ import {
   BadBody,
   Disconnect,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { isPartnerVideoUrl, openPartnerVideo } from '@gitroom/nestjs-libraries/partner/gta6clips.host';
+import {
+  classifyFetch,
+  partnerFailureMessage,
+} from '@gitroom/nestjs-libraries/partner/gta6clips.video';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
@@ -359,13 +364,14 @@ export class PostActivity {
     // the ones on their own HTTP client (x, youtube, bluesky) are still
     // narrowed down to the step they hung on.
     setHeartbeatDetails('subscription lookup');
+    const partnerPlan = await this._entitlements.partnerPlanId(integration.organizationId);
     if (isBillingEnforced(integration.organizationId)) {
-      if ((await this._entitlements.tier(integration.organizationId)) === 'FREE') {
+      if (!partnerPlan && (await this._entitlements.tier(integration.organizationId)) === 'FREE') {
         throw ApplicationFailure.nonRetryable(
           'No active subscription found for this organization.'
         );
       }
-    } else if (process.env.STRIPE_SECRET_KEY) {
+    } else if (!partnerPlan && process.env.STRIPE_SECRET_KEY) {
       const subscription = await this._subscriptionService.getSubscription(
         integration.organizationId
       );
@@ -384,6 +390,36 @@ export class PostActivity {
       integration.organizationId,
       posts
     );
+
+    setHeartbeatDetails('partner video');
+    for (const post of newPosts || []) {
+      const images = JSON.parse(post.image || '[]') as Array<{ path?: string }>;
+      for (const image of images) {
+        if (!isPartnerVideoUrl(image?.path)) {
+          continue;
+        }
+        try {
+          const response = await openPartnerVideo(image.path!, {
+            method: 'HEAD',
+            headers: { 'accept-encoding': 'identity' },
+          });
+          const failure = classifyFetch(
+            response.status,
+            response.headers.get('content-type') || '',
+            Number(response.headers.get('content-length'))
+          );
+          await response.body?.cancel();
+          if (failure) {
+            throw new BadBody('gta6clips', '{}', '{}', partnerFailureMessage(failure));
+          }
+        } catch (err) {
+          if (err instanceof BadBody) {
+            throw err;
+          }
+          throw new BadBody('gta6clips', '{}', '{}', partnerFailureMessage('expired'));
+        }
+      }
+    }
 
     setHeartbeatDetails('resolve media');
     const mappedPosts = await Promise.all(

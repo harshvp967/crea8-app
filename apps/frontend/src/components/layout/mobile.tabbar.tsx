@@ -9,6 +9,8 @@ import { useMenuItem, useVisibleMenuItems } from '@gitroom/frontend/components/l
 import { stalkerNavLinks } from '@gitroom/frontend/components/stalker/stalker.nav';
 import { linkNavLinks } from '@gitroom/frontend/components/link-in-bio/link.nav';
 import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { partnerHref } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 import { WorkspaceSwitchList } from '@gitroom/frontend/components/layout/organization.selector';
 
 const phoneBarLimit = 5;
@@ -19,6 +21,8 @@ export const MobileTabBar = () => {
     .replace(/^\/stalker-preview/, '/stalker');
   const router = useRouter();
   const openComposer = useOpenComposer();
+  const user = useUser();
+  const hrefFor = (path: string) => partnerHref(user?.partnerPlan, path);
   const stalker = pathname.startsWith('/stalker');
   const link =
     pathname === '/linkinbio' ||
@@ -138,7 +142,7 @@ export const MobileTabBar = () => {
             return (
               <Link
                 key={item.path + item.name}
-                href={item.path}
+                href={hrefFor(item.path)}
                 onClick={() => setMore(false)}
                 className={clsx(active(item.path) && 'arc-selected')}
               >
@@ -159,7 +163,7 @@ export const MobileTabBar = () => {
           ) : (
             <Link
               key={item.path + item.name}
-              href={item.path}
+              href={hrefFor(item.path)}
               className={clsx(active(item.path) && 'arc-selected')}
               aria-current={active(item.path) ? 'page' : undefined}
             >

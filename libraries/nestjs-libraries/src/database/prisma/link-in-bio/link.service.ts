@@ -133,6 +133,16 @@ export class LinkService {
     @Optional() private _webhooks?: WebhooksService
   ) {}
 
+  private async editorOpen(record: {
+    organizationId: string;
+    organization: { subscription?: any };
+  }) {
+    if ((await this._entitlements?.partnerPlanId(record.organizationId)) === 'gta6clips_free') {
+      return true;
+    }
+    return linkFeatureOpen(await this.ownerSubscription(record));
+  }
+
   private ownerSubscription(record: {
     organizationId: string;
     organization: { subscription?: any };
@@ -152,7 +162,11 @@ export class LinkService {
     const record = await this.ensure(org);
     if (
       body.hideBadge &&
-      !badgeRemovalOpen(record.organizationId, await this.ownerSubscription(record))
+      !badgeRemovalOpen(
+        record.organizationId,
+        await this.ownerSubscription(record),
+        await this._entitlements?.partnerPlanId(record.organizationId)
+      )
     ) {
       throw new HttpException(
         { message: 'Removing the badge is on a paid plan', upgrade: true },
@@ -164,11 +178,11 @@ export class LinkService {
       : undefined;
     if (design) {
       const kind = designProKind(body.theme || record.theme, design);
-      if (kind && !linkFeatureOpen(await this.ownerSubscription(record))) {
+      if (kind && !(await this.editorOpen(record))) {
         throw new HttpException({ message: paidFeatureProblem(false, kind), upgrade: true }, HttpStatus.PAYMENT_REQUIRED);
       }
     }
-    if (body.theme && themeIsPro(body.theme) && !linkFeatureOpen(await this.ownerSubscription(record))) {
+    if (body.theme && themeIsPro(body.theme) && !(await this.editorOpen(record))) {
       throw new HttpException({ message: paidFeatureProblem(false, 'theme'), upgrade: true }, HttpStatus.PAYMENT_REQUIRED);
     }
     if (body.timezone && !isValidTimeZone(body.timezone)) {
@@ -402,7 +416,7 @@ export class LinkService {
 
   async analytics(org: PlanOrg, range: string, from = '', to = '') {
     const record = await this.ensure(org);
-    const open = linkFeatureOpen(await this.ownerSubscription(record));
+    const open = (await this.editorOpen(record));
     const custom = from || to ? customWindow(from, to) : null;
     if ((from || to) && !open) {
       throw new HttpException(
@@ -426,7 +440,7 @@ export class LinkService {
 
   async exportAnalytics(org: PlanOrg, range: string, from = '', to = '') {
     const record = await this.ensure(org);
-    if (!linkFeatureOpen(await this.ownerSubscription(record))) {
+    if (!(await this.editorOpen(record))) {
       throw new HttpException(
         { message: paidFeatureProblem(false, 'deepAnalytics'), upgrade: true },
         HttpStatus.PAYMENT_REQUIRED
@@ -495,7 +509,7 @@ export class LinkService {
 
   async integrations(org: PlanOrg, body: UpdateLinkIntegrationsDto) {
     const record = await this.ensure(org);
-    const paid = linkFeatureOpen(await this.ownerSubscription(record));
+    const paid = (await this.editorOpen(record));
     const writesSecret =
       !!body.mailchimpKey ||
       !!body.convertkitKey ||
@@ -550,7 +564,8 @@ export class LinkService {
       !customDomainBillingOpen(
         record.organizationId,
         await this.ownerSubscription(record),
-        record.organization
+        record.organization,
+        await this._entitlements?.partnerPlanId(record.organizationId)
       )
     ) {
       throw new HttpException(
@@ -973,7 +988,7 @@ export class LinkService {
     record: LinkPageRecord,
     window: { from: Date; to: Date; previousFrom: Date }
   ) {
-    const paid = linkFeatureOpen(await this.ownerSubscription(record));
+    const paid = (await this.editorOpen(record));
     const [views, clicks, subscribers, previousViews, previousClicks, previousSubscribers, series, countries, sources, linkClicks, devices, browsers, utm] =
       await Promise.all([
         this._repository.countEvents(record.id, 'VIEW', window.from, window.to),
@@ -1059,7 +1074,7 @@ export class LinkService {
     record: LinkPageRecord,
     lead: { email: string; name: string; source: string; kind: string }
   ) {
-    if (!linkFeatureOpen(await this.ownerSubscription(record))) {
+    if (!(await this.editorOpen(record))) {
       return;
     }
     const jobs: Array<Promise<unknown>> = [];
@@ -1255,7 +1270,9 @@ export class LinkService {
     if (body.thumbnail && imagePathProblem(body.thumbnail)) {
       throw new BadRequestException('Use an uploaded image');
     }
-    const open = linkFeatureOpen(subscription);
+    const open =
+      (await this._entitlements?.partnerPlanId(orgId)) === 'gta6clips_free' ||
+      linkFeatureOpen(subscription);
     if (body.spotlight && type === 'LINK' && !open && !current?.spotlight) {
       throw new HttpException(
         { message: paidFeatureProblem(false, 'spotlight'), upgrade: true },
@@ -1438,13 +1455,15 @@ export class LinkService {
       this.accounts(record.organizationId, design),
     ]);
     const byBlock = new Map(clicks.filter((row) => row.blockId).map((row) => [row.blockId, row._count._all]));
+    const partner = await this._entitlements?.partnerPlanId(record.organizationId);
     const paid = isPaidPlan(subscription);
-    const open = linkFeatureOpen(subscription);
-    const badgePaid = badgeRemovalOpen(record.organizationId, subscription);
+    const open = partner === 'gta6clips_free' || linkFeatureOpen(subscription);
+    const badgePaid = badgeRemovalOpen(record.organizationId, subscription, partner);
     const domainPaid = customDomainBillingOpen(
       record.organizationId,
       subscription,
-      record.organization
+      record.organization,
+      partner
     );
     const customDomainAddon = hasCustomDomainAddon(record.organization);
     const hostname = record.customDomain || '';
@@ -1591,7 +1610,7 @@ export class LinkService {
   }
 
   private async toPublic(record: LinkPageRecord, visitor = normalizeVisitor({})) {
-    const open = linkFeatureOpen(await this.ownerSubscription(record));
+    const open = (await this.editorOpen(record));
     const design = normalizeDesign(record.design);
     const accounts = await this.accounts(record.organizationId, design);
     const visible = record.isPublic
@@ -1642,7 +1661,11 @@ export class LinkService {
       sensitive: record.sensitive,
       showBadge: showBadge(
         record.hideBadge,
-        badgeRemovalOpen(record.organizationId, await this.ownerSubscription(record))
+        badgeRemovalOpen(
+          record.organizationId,
+          await this.ownerSubscription(record),
+          await this._entitlements?.partnerPlanId(record.organizationId)
+        )
       ),
       socials: this.mergedSocials(record.socials, accounts),
       redirectUrl: redirect && !urlProblem(redirect.url) ? redirect.url : '',

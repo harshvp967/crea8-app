@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { CREA8_PRICING_URL } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
   LinkEditor,
   LinkRequestError,
@@ -54,6 +56,7 @@ const checkedLabel = (iso: string | null) => {
 export const LinkSettingsScreen = () => {
   const fetch = useFetch();
   const toast = useToaster();
+  const partner = useUser()?.partnerPlan === 'gta6clips_free';
   const { data, error, isLoading, mutate } = useLinkPage();
   const [slug, setSlug] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
@@ -367,6 +370,10 @@ export const LinkSettingsScreen = () => {
               checked={!hideBadge}
               label="Show made with crea8.one"
               onChange={(show) => {
+                if (!show && partner) {
+                  window.location.href = CREA8_PRICING_URL;
+                  return;
+                }
                 if (!show && linkLocked(data)) {
                   setBadgeUpsell(true);
                   toast.show('Removing the badge is on a paid plan', 'warning');
@@ -381,7 +388,7 @@ export const LinkSettingsScreen = () => {
         {linkLocked(data) || badgeUpsell ? (
           <p className="mt-[8px] text-[13px] text-textItemBlur">
             Removing the badge is on a paid plan.{' '}
-            <Link href="/account?section=billing" className="text-[#00D9FF]">
+            <Link href={partner ? CREA8_PRICING_URL : '/account?section=billing'} className="text-[#00D9FF]">
               Upgrade
             </Link>
           </p>
@@ -445,14 +452,14 @@ export const LinkSettingsScreen = () => {
                 aria-label="Custom domain"
               />
             </div>
-            {!data.gating || data.customDomainAddon ? (
+            {partner || (data.gating && !data.customDomainAddon) ? (
+              <Link href={partner ? CREA8_PRICING_URL : '/account?section=billing'} className={linkSecondary}>
+                Get the add-on
+              </Link>
+            ) : (
               <button type="button" className={`${linkSecondary} lib-domain-connect`} disabled={busy || !domain.trim()} onClick={connect}>
                 Connect domain
               </button>
-            ) : (
-              <Link href="/account?section=billing" className={linkSecondary}>
-                Get the add-on
-              </Link>
             )}
           </div>
         ) : (

@@ -30,7 +30,7 @@ type Inputs = {
   providerToken: '';
   provider: 'LOCAL';
 };
-export function Login() {
+export function Login({ email = '' }: { email?: string }) {
   const t = useT();
   const [loading, setLoading] = useState(false);
   const [notActivated, setNotActivated] = useState(false);
@@ -48,6 +48,7 @@ export function Login() {
   const form = useForm<Inputs>({
     resolver,
     defaultValues: {
+      email,
       providerToken: '',
       provider: 'LOCAL',
     },

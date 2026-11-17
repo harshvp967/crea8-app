@@ -25,6 +25,7 @@ import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { isPartnerVideoUrl, openPartnerVideo } from '@gitroom/nestjs-libraries/partner/gta6clips.host';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import {
@@ -458,6 +459,23 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   // Resolves the total byte size of the media without loading it into memory:
   // a HEAD request for remote URLs, statSync for local files.
   private async youtubeMediaSize(path: string): Promise<number> {
+    if (isPartnerVideoUrl(path)) {
+      const head = await openPartnerVideo(path, {
+        method: 'HEAD',
+        headers: { 'accept-encoding': 'identity' },
+      });
+      const length = Number(head.headers.get('content-length'));
+      await head.body?.cancel();
+      if (!head.ok || !Number.isFinite(length) || length <= 0) {
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'Could not determine the video size for the YouTube upload'
+        );
+      }
+      return length;
+    }
     if (path.indexOf('http') === 0) {
       // the media path is user-influenced, keep the SSRF-safe dispatcher that
       // this.fetch applies to every other outbound request. identity encoding
@@ -488,6 +506,24 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
   // read stream for local files.
   private async youtubeChunkStream(path: string, start: number, end: number) {
+    if (isPartnerVideoUrl(path)) {
+      const response = await openPartnerVideo(path, {
+        headers: {
+          Range: `bytes=${start}-${end}`,
+          'accept-encoding': 'identity',
+        },
+      });
+      if (response.status !== 206) {
+        await response.body?.cancel();
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'The video link did not return the requested byte range'
+        );
+      }
+      return response.body;
+    }
     if (path.indexOf('http') === 0) {
       // identity encoding so the store keeps content-length and can answer
       // with the requested range: a transformed (compressed) response loses

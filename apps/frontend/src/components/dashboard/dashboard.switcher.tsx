@@ -12,6 +12,8 @@ import {
   StalkerIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { HugeIcon } from '@gitroom/frontend/components/icons/hugeicons';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import { partnerHref } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 import type { HugeIconName } from '@gitroom/frontend/components/icons/hugeicons/paths';
 
 // Add a future dashboard by appending an item and a flag check.
@@ -58,6 +60,7 @@ const ProductMark = ({
 
 export const DashboardSwitcher = () => {
   const pathname = usePathname() || '';
+  const user = useUser();
   const { stalkerEnabled } = useVariables();
   const [open, setOpen] = useState(false);
   const [seenPath, setSeenPath] = useState(pathname);
@@ -106,7 +109,7 @@ export const DashboardSwitcher = () => {
             {items.map((item) => (
               <Link
                 key={item.id}
-                href={item.href}
+                href={partnerHref(user?.partnerPlan, item.href)}
                 role="menuitem"
                 className={item.id === active ? 'arc-selected' : undefined}
                 onClick={() => setOpen(false)}

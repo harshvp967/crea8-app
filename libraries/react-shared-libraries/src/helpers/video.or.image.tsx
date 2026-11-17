@@ -9,7 +9,13 @@ export const VideoOrImage: FC<{
   videoClassName?: string;
 }> = (props) => {
   const { src, autoplay, isContain, imageClassName, videoClassName } = props;
-  if (hasExtension(src, 'mp4')) {
+  let partnerVideo = false;
+  try {
+    partnerVideo = new URL(src).hostname.toLowerCase() === 'gta6clips.app';
+  } catch {
+    partnerVideo = false;
+  }
+  if (partnerVideo || hasExtension(src, 'mp4')) {
     return (
       <video
         src={src}

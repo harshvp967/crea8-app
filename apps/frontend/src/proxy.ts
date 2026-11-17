@@ -189,6 +189,10 @@ export async function proxy(request: NextRequest) {
 
   const onAuth =
     isPublicAuthPath(nextUrl.pathname) || authTree(nextUrl.pathname);
+  const composePath = nextUrl.pathname.replace(/\/+$/, '') || '/';
+  if (composePath === '/compose') {
+    return topResponse;
+  }
   if (
     (nextUrl.pathname.startsWith('/register') ||
       nextUrl.pathname.startsWith('/auth/register')) &&
