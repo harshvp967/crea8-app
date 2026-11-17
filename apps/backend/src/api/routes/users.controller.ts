@@ -151,7 +151,7 @@ export class UsersController {
     } | null = null;
     if (enforced) {
       tier = await this._entitlements.tier(organization.id);
-      totalChannels = pricing[tier as 'FREE'].channel;
+      totalChannels = pricing[tier]?.channel ?? pricing.FREE.channel;
       allowTrial = !!account?.allowTrial;
       isLifetime = !!account?.isLifetime;
       const billingOrganizationId = account?.billingOrganizationId || organization.id;

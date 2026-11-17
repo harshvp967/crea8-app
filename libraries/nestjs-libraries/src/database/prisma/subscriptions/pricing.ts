@@ -61,6 +61,7 @@ function toPricing(tier: PlanTier): PricingInnerInterface {
 
 export const pricing: PricingInterface = {
   FREE: toPricing('FREE'),
+  gta6clips_free: toPricing('gta6clips_free'),
   STANDARD: toPricing('STANDARD'),
   TEAM: toPricing('TEAM'),
   PRO: toPricing('PRO'),

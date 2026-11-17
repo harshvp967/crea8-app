@@ -108,7 +108,7 @@ export class Gta6clipsRepository implements PartnerStore {
     const [org, sub] = await Promise.all([
       this._prisma.partnerAccount.findUnique({
         where: { organizationId: input.organizationId },
-        select: { sub: true },
+        select: { sub: true, plan: true, partner: true },
       }),
       this.findBySub(input.sub),
     ]);
@@ -133,6 +133,12 @@ export class Gta6clipsRepository implements PartnerStore {
         },
       });
       return 'granted' as const;
+    }
+    if (org?.partner === PARTNER && org.plan !== GTA6CLIPS_PLAN_ID) {
+      await this._prisma.partnerAccount.update({
+        where: { organizationId: input.organizationId },
+        data: { plan: GTA6CLIPS_PLAN_ID },
+      });
     }
     return 'idempotent' as const;
   }

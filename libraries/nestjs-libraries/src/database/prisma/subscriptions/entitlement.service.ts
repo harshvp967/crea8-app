@@ -6,17 +6,18 @@ import {
   isGrandfatheredOrg,
 } from '@gitroom/helpers/utils/billing.enabled';
 import {
-  GTA6CLIPS_FREE,
   GTA6CLIPS_PLAN_ID,
   PLANS,
   PlanCardKey,
   PlanTier,
   cardLimitAllows,
   gta6clipsProviderAllowed,
+  isGta6clipsPlan,
   noPlanProductOpen,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import {
+  AccountSubscription,
   BillingAccount,
   loadBillingAccount,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.account';
@@ -38,8 +39,19 @@ import {
 export class EntitlementService {
   constructor(private _prisma: PrismaService) {}
 
-  account(organizationId: string) {
-    return loadBillingAccount(this._prisma, organizationId);
+  async account(organizationId: string) {
+    const account = await loadBillingAccount(this._prisma, organizationId);
+    if (!isBillingEnforced(organizationId) || this.paidCovers(organizationId, account)) {
+      return account;
+    }
+    // The paywall, sidebar, and channel gate read this subscription. A partner
+    // grant belongs here, not on a second check.
+    const plan = await this.ensurePartnerPlan(organizationId);
+    if (!plan) {
+      return account;
+    }
+    const subscription = partnerSubscription(organizationId);
+    return { ...account, subscription, latest: subscription, isLifetime: false };
   }
 
   async activeSubscription(organizationId: string) {
@@ -51,6 +63,32 @@ export class EntitlementService {
   }
 
   async partnerPlanId(organizationId: string) {
+    const plan = await this.ensurePartnerPlan(organizationId);
+    if (!plan) {
+      return null;
+    }
+    if (!isBillingEnforced(organizationId)) {
+      return plan;
+    }
+    const account = await loadBillingAccount(this._prisma, organizationId);
+    if (this.paidCovers(organizationId, account)) {
+      return null;
+    }
+    return plan;
+  }
+
+  private paidCovers(organizationId: string, account: BillingAccount) {
+    if (isGrandfatheredOrg(organizationId) || account.grandfathered) {
+      return true;
+    }
+    if (!account.subscription) {
+      return false;
+    }
+    const tier = accessTier(organizationId, account.subscription.subscriptionTier);
+    return !isGta6clipsPlan(tier) && tier !== 'FREE';
+  }
+
+  private async ensurePartnerPlan(organizationId: string) {
     // Billing tests build a partial client. No partner table means no grant.
     const accounts = this._prisma.partnerAccount;
     if (!accounts?.findUnique) {
@@ -58,9 +96,22 @@ export class EntitlementService {
     }
     const row = await accounts.findUnique({
       where: { organizationId },
-      select: { plan: true },
+      select: { plan: true, partner: true },
     });
-    return row?.plan === GTA6CLIPS_PLAN_ID ? row.plan : null;
+    if (!row || row.partner !== 'gta6clips') {
+      return null;
+    }
+    if (row.plan !== GTA6CLIPS_PLAN_ID && accounts.update) {
+      try {
+        await accounts.update({
+          where: { organizationId },
+          data: { plan: GTA6CLIPS_PLAN_ID },
+        });
+      } catch {
+        // The read still grants. The next read tries the write again.
+      }
+    }
+    return GTA6CLIPS_PLAN_ID;
   }
 
   async tier(organizationId: string): Promise<PlanTier> {
@@ -191,6 +242,15 @@ export class EntitlementService {
       return;
     }
     const account = await this.account(organizationId);
+    if (isGta6clipsPlan(account.subscription?.subscriptionTier)) {
+      if (product === 'stalker') {
+        throw new HttpException(
+          { message: keywordUpgradeMessage('FREE'), upgrade: true },
+          402
+        );
+      }
+      return;
+    }
     if (
       account.subscription ||
       account.grandfathered ||
@@ -214,36 +274,16 @@ export class EntitlementService {
   }
 
   async assertCanConnect(organizationId: string, internalId?: string, provider?: string) {
-    const partner = await this.partnerPlanId(organizationId);
-    if (partner) {
-      if (provider && !gta6clipsProviderAllowed(provider)) {
-        throw new HttpException(
-          { message: 'This channel is not on this plan.', locked: true },
-          402
-        );
-      }
-      const channels = await this.activeChannels(organizationId);
-      if (
-        internalId &&
-        channels.some(
-          (channel) =>
-            channel.internalId === internalId && channel.organizationId === organizationId
-        )
-      ) {
-        return;
-      }
-      if (channels.length >= GTA6CLIPS_FREE.channels) {
-        throw new HttpException(
-          { message: 'This plan includes 3 channels.', locked: true },
-          402
-        );
-      }
-      return;
-    }
     await this.refuseWithoutPlan(organizationId, 'paid');
     const limits = await this.limits(organizationId);
     if (!limits) {
       return;
+    }
+    if (isGta6clipsPlan(limits.tier) && provider && !gta6clipsProviderAllowed(provider)) {
+      throw new HttpException(
+        { message: 'This channel is not on this plan.', locked: true },
+        402
+      );
     }
     const channels = await this.activeChannels(organizationId);
     if (
@@ -315,14 +355,6 @@ export class EntitlementService {
   }
 
   async assertCanPost(organizationId: string, integrationId: string) {
-    if (await this.partnerPlanId(organizationId)) {
-      const channels = await this.activeChannels(organizationId);
-      const allowed = postableChannelIds(channels, GTA6CLIPS_FREE.channels);
-      if (!allowed.includes(integrationId)) {
-        throw new BillingBlocked('This plan includes 3 channels.');
-      }
-      return;
-    }
     await this.refuseWithoutPlan(organizationId, 'schedule');
     const limits = await this.limits(organizationId);
     if (!limits) {
@@ -406,6 +438,25 @@ export class EntitlementService {
       );
     }
   }
+}
+
+function partnerSubscription(organizationId: string): AccountSubscription {
+  return {
+    organizationId,
+    subscriptionTier: GTA6CLIPS_PLAN_ID,
+    status: 'active',
+    period: 'MONTHLY',
+    cancelAt: null,
+    currentPeriodEnd: null,
+    pendingTier: null,
+    pendingPeriod: null,
+    isLifetime: false,
+    provider: 'gta6clips',
+    identifier: GTA6CLIPS_PLAN_ID,
+    deletedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 }
 
 function utcDayStart() {
