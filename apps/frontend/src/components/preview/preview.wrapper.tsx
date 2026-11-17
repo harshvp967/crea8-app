@@ -9,6 +9,7 @@ import { Toaster } from '@gitroom/react/toaster/toaster';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { CopilotKit } from '@copilotkit/react-core';
+import { copilotRuntimeUrl } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
 export const PreviewWrapper = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
@@ -23,12 +24,19 @@ export const PreviewWrapper = ({ children }: { children: ReactNode }) => {
     refreshWhenOffline: false,
     refreshWhenHidden: false,
   });
+  const runtimeUrl = user
+    ? copilotRuntimeUrl(user.tier, user.partnerPlan, backendUrl)
+    : null;
   return (
     <ContextWrapper user={user}>
       <CopilotKit
-        credentials="include"
-        headers={csrfHeaders}
-        runtimeUrl={backendUrl + '/copilot/chat'}
+        {...(runtimeUrl
+          ? {
+              credentials: 'include' as const,
+              headers: csrfHeaders(),
+              runtimeUrl,
+            }
+          : {})}
         useSingleEndpoint={true}
         showDevConsole={false}
       >

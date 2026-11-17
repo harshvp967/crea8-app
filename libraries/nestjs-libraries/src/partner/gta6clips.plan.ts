@@ -34,6 +34,73 @@ export function partnerHref(plan: string | null | undefined, path: string) {
   return partnerSurfaceLocked(plan, path) ? CREA8_PRICING_URL : path;
 }
 
+export function showSubscribeScreen(input: {
+  tier?: string | null;
+  partnerPlan?: string | null;
+  pathname: string;
+  search: string;
+  billingOn: boolean;
+}) {
+  if (isGta6clipsPlan(input.partnerPlan) || isGta6clipsPlan(input.tier)) {
+    return false;
+  }
+  const path = (input.pathname || '/').replace(/\/+$/, '') || '/';
+  const params = new URLSearchParams(
+    input.search.startsWith('?') ? input.search.slice(1) : input.search
+  );
+  if (
+    path === '/compose' &&
+    (params.has('token') ||
+      params.has('pending') ||
+      params.has('connect') ||
+      params.get('partner') === 'gta6clips')
+  ) {
+    return false;
+  }
+  return input.billingOn && billingPaywallForTier(input.tier);
+}
+
+export function copilotRuntimeUrl(
+  tier: string | null | undefined,
+  partnerPlan: string | null | undefined,
+  backendUrl: string
+) {
+  if (isGta6clipsPlan(tier) || isGta6clipsPlan(partnerPlan)) {
+    return null;
+  }
+  return `${backendUrl}/copilot/chat`;
+}
+
+export function paymentDialogFor(status: number, body: { locked?: boolean } | null) {
+  if (status !== 402) {
+    return false;
+  }
+  return body?.locked !== true;
+}
+
+export function sidebarTier(
+  tier: string | null | undefined,
+  partnerPlan: string | null | undefined
+) {
+  if (isGta6clipsPlan(partnerPlan) || isGta6clipsPlan(tier)) {
+    return GTA6CLIPS_PLAN_ID;
+  }
+  return tier;
+}
+
+export function sidebarPartnerPlan(
+  tier: string | null | undefined,
+  partnerPlan: string | null | undefined
+) {
+  if (isGta6clipsPlan(partnerPlan)) {
+    return partnerPlan;
+  }
+  if (isGta6clipsPlan(tier) || isGta6clipsPlan(sidebarTier(tier, partnerPlan))) {
+    return GTA6CLIPS_PLAN_ID;
+  }
+  return partnerPlan;
+}
+
 export function sidebarAppLocked(
   tier: string | null | undefined,
   partnerPlan: string | null | undefined,

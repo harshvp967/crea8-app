@@ -91,6 +91,22 @@ export function clearPartnerHandoff(storage: StorageLike | null) {
   }
 }
 
+export function partnerComposeStaysOpen(pathname: string, search: string) {
+  const path = (pathname || '/').replace(/\/+$/, '') || '/';
+  if (path !== '/compose') {
+    return false;
+  }
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  return (
+    params.has('token') ||
+    params.has('pending') ||
+    params.has('connect') ||
+    params.has('caption') ||
+    params.has('video') ||
+    params.get('partner') === 'gta6clips'
+  );
+}
+
 export function skipComposeAuthRedirect(pathname: string, search: string, handoff = false) {
   const path = (pathname || '/').replace(/\/+$/, '') || '/';
   if (path !== '/compose') {

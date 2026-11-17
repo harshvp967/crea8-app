@@ -21,6 +21,7 @@ import {
   BillingAccount,
   loadBillingAccount,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.account';
+import { explicitGta6clipsPlan } from '@gitroom/nestjs-libraries/partner/gta6clips.token';
 import {
   BillingBlocked,
   accessTier,
@@ -96,22 +97,19 @@ export class EntitlementService {
     }
     const row = await accounts.findUnique({
       where: { organizationId },
-      select: { plan: true, partner: true },
+      select: { partner: true, plan: true, metadata: true },
     });
     if (!row || row.partner !== 'gta6clips') {
       return null;
     }
-    if (row.plan !== GTA6CLIPS_PLAN_ID && accounts.update) {
-      try {
-        await accounts.update({
-          where: { organizationId },
-          data: { plan: GTA6CLIPS_PLAN_ID },
-        });
-      } catch {
-        // The read still grants. The next read tries the write again.
-      }
+    const recorded = explicitGta6clipsPlan(row.metadata);
+    // An exchange that recorded "free" (or anything other than "paid") removes the perk.
+    if (recorded) {
+      return recorded === 'paid' ? GTA6CLIPS_PLAN_ID : null;
     }
-    return GTA6CLIPS_PLAN_ID;
+    // Rows written before the claim existed keep the perk in PartnerAccount.plan.
+    // Null metadata is not a downgrade, and this read does not backfill it.
+    return row.plan === GTA6CLIPS_PLAN_ID ? GTA6CLIPS_PLAN_ID : null;
   }
 
   async tier(organizationId: string): Promise<PlanTier> {

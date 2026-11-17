@@ -1,5 +1,8 @@
 import { randomUUID } from 'crypto';
-import { verifyGta6clipsToken } from '@gitroom/nestjs-libraries/partner/gta6clips.token';
+import {
+  Gta6clipsPlanClaim,
+  verifyGta6clipsToken,
+} from '@gitroom/nestjs-libraries/partner/gta6clips.token';
 import { isPartnerVideoUrl } from '@gitroom/nestjs-libraries/partner/gta6clips.host';
 import { loginDecision } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 import { GTA6CLIPS_PLAN_ID } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
@@ -23,9 +26,36 @@ export type PartnerStore = {
     linkedSub: string | null;
   } | null>;
   createAccount(input: { email: string; sub: string }): Promise<{ userId: string; organizationId: string }>;
-  grant(input: { organizationId: string; userId: string; sub: string; email: string }): Promise<'granted' | 'idempotent' | 'rejected'>;
-  savePending(row: { id: string; jti: string; sub: string; email: string; video: string | null; caption: string; expiresAt: Date }): Promise<void>;
-  readPending(id: string, now: Date): Promise<{ id: string; jti: string; sub: string; email: string; video: string | null; caption: string } | null>;
+  grant(input: {
+    organizationId: string;
+    userId: string;
+    sub: string;
+    email: string;
+    gta6clipsPlan: Gta6clipsPlanClaim;
+    recordedAt: Date;
+  }): Promise<'granted' | 'idempotent' | 'rejected'>;
+  savePending(row: {
+    id: string;
+    jti: string;
+    sub: string;
+    email: string;
+    video: string | null;
+    caption: string;
+    expiresAt: Date;
+    gta6clipsPlan: Gta6clipsPlanClaim;
+  }): Promise<void>;
+  readPending(
+    id: string,
+    now: Date
+  ): Promise<{
+    id: string;
+    jti: string;
+    sub: string;
+    email: string;
+    video: string | null;
+    caption: string;
+    gta6clipsPlan: Gta6clipsPlanClaim;
+  } | null>;
 };
 
 function clip(caption: string | undefined) {
@@ -55,6 +85,8 @@ export async function arrivePartnerLink(
   if (await store.jtiUsed(checked.claims.jti)) {
     return { status: 'replay', grant: false, caption, video };
   }
+  const gta6clipsPlan = checked.claims.gta6clips_plan;
+  const recordedAt = new Date((input.nowSec ?? Math.floor(Date.now() / 1000)) * 1000);
   const saved = await store.saveJti({
     jti: checked.claims.jti,
     sub: checked.claims.sub,
@@ -86,6 +118,7 @@ export async function arrivePartnerLink(
       video,
       caption,
       expiresAt: new Date((checked.claims.exp || 0) * 1000),
+      gta6clipsPlan,
     });
     return { status: 'collision', grant: false, pendingId, email: checked.claims.email, caption, video };
   }
@@ -101,6 +134,8 @@ export async function arrivePartnerLink(
     userId: account.userId,
     sub: checked.claims.sub,
     email: checked.claims.email,
+    gta6clipsPlan,
+    recordedAt,
   });
   if (grant === 'rejected') {
     return { status: 'refused', grant: false, caption, video };
@@ -135,6 +170,8 @@ export async function completePartnerLink(
     userId: existingOrg?.userId || input.userId,
     sub: pending.sub,
     email: pending.email,
+    gta6clipsPlan: pending.gta6clipsPlan,
+    recordedAt: input.now || new Date(),
   });
   if (grant === 'rejected') {
     return { status: 'refused', grant: false, caption: pending.caption, video: pending.video };

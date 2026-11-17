@@ -2,6 +2,7 @@ import {
   LINK_ALREADY_USED,
   createPartnerVisit,
   loginHop,
+  partnerComposeStaysOpen,
   runPartnerStep,
   selfStillPending,
   sessionOf,
@@ -173,6 +174,21 @@ describe('gta6clips partner compose', () => {
       expect(result.href).toContain('connect=1');
       expect(result.href).not.toContain('/login');
     }
+  });
+
+  it('keeps a partner compose arrival open and leaves a bare compose on the paywall', () => {
+    expect(
+      partnerComposeStaysOpen('/compose', 'connect=1&caption=hello&video=https://gta6clips.app/a.mp4')
+    ).toBe(true);
+    expect(partnerComposeStaysOpen('/compose', '?token=once')).toBe(true);
+    expect(partnerComposeStaysOpen('/compose', '')).toBe(false);
+    expect(partnerComposeStaysOpen('/schedule', 'caption=hello')).toBe(false);
+    expect(
+      partnerComposeStaysOpen(
+        '/compose',
+        'partner=gta6clips&video=https://gta6clips.app/a.mp4&caption=hello&token=once'
+      )
+    ).toBe(true);
   });
 
   it('still points a signed-out home 401 at the login hop', () => {

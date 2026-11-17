@@ -28,7 +28,10 @@ import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscri
 import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
-import { billingPaywallForTier } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
+import {
+  copilotRuntimeUrl,
+  showSubscribeScreen,
+} from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 import { CopilotKit } from '@copilotkit/react-core';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
@@ -53,6 +56,7 @@ import {
   markPartnerHandoff,
   notePartnerToken,
   partnerArrivedWithToken,
+  partnerComposeStaysOpen,
   partnerSessionReleased,
   shouldHoldUserSelf,
   subscribePartnerSession,
@@ -292,8 +296,14 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     return <AppShellSkeleton />;
   }
 
-  const needsPlan =
-    billingPaywallForTier(user.tier) && isGeneral && (billingEnabled || user.billingEnabled);
+  const billingOn = !!isGeneral && !!(billingEnabled || user.billingEnabled);
+  const needsPlan = showSubscribeScreen({
+    tier: user.tier,
+    partnerPlan: user.partnerPlan,
+    pathname: pathname || '',
+    search: searchParams.toString(),
+    billingOn,
+  });
   const linkRoute =
     pathname === '/linkinbio' ||
     !!pathname?.startsWith('/linkinbio/') ||
@@ -305,18 +315,23 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     linkRoute ||
     accountRoute ||
     settingsRoute ||
+    partnerComposeStaysOpen(pathname || '', searchParams.toString()) ||
     pathname === '/invite' ||
     pathname === '/join' ||
     pathname === '/err' ||
     !!pathname?.startsWith('/admin');
   const showPlanPicker = needsPlan && !keptOpen;
 
-  return (
-    <ContextWrapper user={user}>
+  const runtimeUrl = copilotRuntimeUrl(user.tier, user.partnerPlan, backendUrl);
+  const shell = (
       <CopilotKit
-        credentials="include"
-        headers={csrfHeaders}
-        runtimeUrl={backendUrl + '/copilot/chat'}
+        {...(runtimeUrl
+          ? {
+              credentials: 'include' as const,
+              headers: csrfHeaders(),
+              runtimeUrl,
+            }
+          : {})}
         useSingleEndpoint={true}
         showDevConsole={false}
       >
@@ -416,6 +431,6 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
           </CheckPayment>
         </MantineWrapper>
       </CopilotKit>
-    </ContextWrapper>
   );
+  return <ContextWrapper user={user}>{shell}</ContextWrapper>;
 };

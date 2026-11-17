@@ -1,9 +1,15 @@
 import {
+  copilotRuntimeUrl,
   grantDecision,
   loginDecision,
   partnerChannelOpen,
   partnerFeatureOpen,
   partnerRouteAllowed,
+  paymentDialogFor,
+  showSubscribeScreen,
+  sidebarAppLocked,
+  sidebarPartnerPlan,
+  sidebarTier,
 } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 import { GTA6CLIPS_FREE } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/billing.config';
 import {
@@ -19,15 +25,15 @@ const SECRET = 'test-link-secret';
 const NOW = 1_700_000_000;
 
 function memoryStore(): PartnerStore & {
-  grants: Map<string, { sub: string; userId: string; email: string }>;
+  grants: Map<string, { sub: string; userId: string; email: string; gta6clipsPlan: 'paid' | 'free'; recordedAt: string }>;
   bySub: Map<string, { userId: string; email: string; organizationId: string }>;
   emails: Map<string, { userId: string; email: string; organizationId: string | null; linkedSub: string | null }>;
 } {
   const jtis = new Set<string>();
-  const grants = new Map<string, { sub: string; userId: string; email: string }>();
+  const grants = new Map<string, { sub: string; userId: string; email: string; gta6clipsPlan: 'paid' | 'free'; recordedAt: string }>();
   const bySub = new Map<string, { userId: string; email: string; organizationId: string }>();
   const emails = new Map<string, { userId: string; email: string; organizationId: string | null; linkedSub: string | null }>();
-  const pending = new Map<string, { id: string; jti: string; sub: string; email: string; video: string | null; caption: string; expiresAt: Date }>();
+  const pending = new Map<string, { id: string; jti: string; sub: string; email: string; video: string | null; caption: string; expiresAt: Date; gta6clipsPlan: 'paid' | 'free' }>();
   const store: PartnerStore = {
     async jtiUsed(jti) {
       return jtis.has(jti);
@@ -65,7 +71,13 @@ function memoryStore(): PartnerStore & {
       if (decision === 'reject') {
         return 'rejected';
       }
-      grants.set(input.organizationId, { sub: input.sub, userId: input.userId, email: input.email });
+      grants.set(input.organizationId, {
+        sub: input.sub,
+        userId: input.userId,
+        email: input.email,
+        gta6clipsPlan: input.gta6clipsPlan,
+        recordedAt: input.recordedAt.toISOString(),
+      });
       bySub.set(input.sub, {
         userId: input.userId,
         email: input.email,
@@ -162,25 +174,73 @@ describe('gta6clips plan', () => {
   });
 });
 
+describe('gta6clips compose shell', () => {
+  const search = 'partner=gta6clips&video=https%3A%2F%2Fgta6clips.app%2Fa.mp4&caption=hello&token=once';
+
+  it('an existing partner org with no subscription lands on compose with no paywall', () => {
+    expect(
+      showSubscribeScreen({
+        tier: 'gta6clips_free',
+        partnerPlan: 'gta6clips_free',
+        pathname: '/compose',
+        search,
+        billingOn: true,
+      })
+    ).toBe(false);
+    expect(sidebarTier('gta6clips_free', 'gta6clips_free')).toBe('gta6clips_free');
+    expect(sidebarAppLocked(sidebarTier('gta6clips_free', 'gta6clips_free'), sidebarPartnerPlan('gta6clips_free', 'gta6clips_free'), '/schedule', 'schedule', true)).toBe(false);
+    expect(sidebarAppLocked(sidebarTier('gta6clips_free', 'gta6clips_free'), sidebarPartnerPlan('gta6clips_free', 'gta6clips_free'), '/stalker/mentions', 'stalker', true)).toBe(true);
+    expect(copilotRuntimeUrl('gta6clips_free', 'gta6clips_free', 'https://api.crea8.one')).toBeNull();
+    expect(paymentDialogFor(402, { locked: true })).toBe(false);
+  });
+
+  it('a gta6clips_free layout makes no copilot request and a locked background 402 shows no dialog', () => {
+    expect(copilotRuntimeUrl('gta6clips_free', null, 'https://api.crea8.one')).toBeNull();
+    expect(copilotRuntimeUrl('FREE', null, 'https://api.crea8.one')).toBe('https://api.crea8.one/copilot/chat');
+    expect(paymentDialogFor(402, { locked: true })).toBe(false);
+    expect(paymentDialogFor(402, { locked: false })).toBe(true);
+    expect(paymentDialogFor(402, null)).toBe(true);
+    expect(paymentDialogFor(200, { locked: true })).toBe(false);
+  });
+
+  it('a normal free signup still sees the subscribe screen and both locks', () => {
+    expect(
+      showSubscribeScreen({
+        tier: 'FREE',
+        partnerPlan: null,
+        pathname: '/schedule',
+        search: '',
+        billingOn: true,
+      })
+    ).toBe(true);
+    expect(sidebarAppLocked('FREE', null, '/schedule', 'schedule', true)).toBe(true);
+    expect(sidebarAppLocked('FREE', null, '/stalker/mentions', 'stalker', true)).toBe(true);
+  });
+});
+
 describe('gta6clips silent login', () => {
-  it('creates a passwordless account and grants the plan', async () => {
+  it('creates a passwordless account and grants the plan for a paid claim', async () => {
     const store = memoryStore();
     const result = await arrivePartnerLink(
-      { token: link(), secret: SECRET, caption: 'hello', video: 'https://gta6clips.app/a.mp4', nowSec: NOW + 5 },
+      { token: link({ gta6clips_plan: 'paid' }), secret: SECRET, caption: 'hello', video: 'https://gta6clips.app/a.mp4', nowSec: NOW + 5 },
       store
     );
-    expect(result).toMatchObject({ status: 'session', grant: true, created: true });
-    expect(store.grants.get('org-1')?.sub).toBe('member-1');
+    expect(result).toMatchObject({ status: 'session', grant: true, created: true, caption: 'hello', video: 'https://gta6clips.app/a.mp4' });
+    expect(store.grants.get('org-1')).toMatchObject({
+      sub: 'member-1',
+      gta6clipsPlan: 'paid',
+      recordedAt: new Date((NOW + 5) * 1000).toISOString(),
+    });
   });
 
   it('logs in again for the same sub and email', async () => {
     const store = memoryStore();
     await arrivePartnerLink(
-      { token: link(), secret: SECRET, nowSec: NOW + 5 },
+      { token: link({ gta6clips_plan: 'paid' }), secret: SECRET, nowSec: NOW + 5 },
       store
     );
     const again = await arrivePartnerLink(
-      { token: link({ jti: 'jti-2' }), secret: SECRET, nowSec: NOW + 5 },
+      { token: link({ jti: 'jti-2', gta6clips_plan: 'paid' }), secret: SECRET, nowSec: NOW + 6 },
       store
     );
     expect(again).toMatchObject({ status: 'session', grant: true, created: false });
@@ -196,7 +256,7 @@ describe('gta6clips silent login', () => {
       linkedSub: null,
     });
     const result = await arrivePartnerLink(
-      { token: link(), secret: SECRET, nowSec: NOW + 5 },
+      { token: link({ gta6clips_plan: 'paid' }), secret: SECRET, nowSec: NOW + 5 },
       store
     );
     expect(result.status).toBe('collision');
@@ -214,6 +274,7 @@ describe('gta6clips silent login', () => {
       store
     );
     expect(linked).toMatchObject({ status: 'session', grant: true, organizationId: 'org-existing' });
+    expect(store.grants.get('org-existing')?.gta6clipsPlan).toBe('paid');
     const takeover = await completePartnerLink(
       {
         pendingId: result.pendingId,
@@ -265,6 +326,64 @@ describe('gta6clips silent login', () => {
     );
     expect(attached.status).toBe('refused');
     expect(store.grants.get('org-1')?.sub).toBe('member-1');
+  });
+
+  it('a free claim signs in and stores free', async () => {
+    const store = memoryStore();
+    const result = await arrivePartnerLink(
+      {
+        token: link({ gta6clips_plan: 'free' }),
+        secret: SECRET,
+        caption: 'clip',
+        video: 'https://gta6clips.app/a.mp4',
+        nowSec: NOW + 5,
+      },
+      store
+    );
+    expect(result).toMatchObject({
+      status: 'session',
+      caption: 'clip',
+      video: 'https://gta6clips.app/a.mp4',
+    });
+    expect(store.grants.get('org-1')?.gta6clipsPlan).toBe('free');
+  });
+
+  it('a missing claim signs in and stores free', async () => {
+    const store = memoryStore();
+    const result = await arrivePartnerLink(
+      { token: link(), secret: SECRET, caption: 'clip', video: 'https://gta6clips.app/a.mp4', nowSec: NOW + 5 },
+      store
+    );
+    expect(result.status).toBe('session');
+    expect(store.grants.get('org-1')?.gta6clipsPlan).toBe('free');
+  });
+
+  it('any other gta6clips_plan value signs in and stores free', async () => {
+    const store = memoryStore();
+    const result = await arrivePartnerLink(
+      { token: link({ gta6clips_plan: 'pro' }), secret: SECRET, nowSec: NOW + 5 },
+      store
+    );
+    expect(result.status).toBe('session');
+    expect(store.grants.get('org-1')?.gta6clipsPlan).toBe('free');
+  });
+
+  it('a later free token revokes a paid perk', async () => {
+    const store = memoryStore();
+    await arrivePartnerLink(
+      { token: link({ gta6clips_plan: 'paid' }), secret: SECRET, nowSec: NOW + 5 },
+      store
+    );
+    expect(store.grants.get('org-1')?.gta6clipsPlan).toBe('paid');
+    const again = await arrivePartnerLink(
+      { token: link({ jti: 'jti-free', gta6clips_plan: 'free' }), secret: SECRET, nowSec: NOW + 8 },
+      store
+    );
+    expect(again).toMatchObject({ status: 'session', created: false });
+    expect(store.grants.get('org-1')).toMatchObject({
+      gta6clipsPlan: 'free',
+      recordedAt: new Date((NOW + 8) * 1000).toISOString(),
+    });
   });
 
   it('opens compose and grants nothing when the secret is missing', async () => {

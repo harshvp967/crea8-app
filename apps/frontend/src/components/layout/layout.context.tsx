@@ -10,6 +10,7 @@ import {
   skipComposeAuthRedirect,
   unauthenticated401Destination,
 } from '@gitroom/frontend/components/partner/compose.partner.flow';
+import { paymentDialogFor } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 export default function LayoutContext(params: { children: ReactNode }) {
   if (params?.children) {
     // eslint-disable-next-line react/no-children-prop
@@ -150,11 +151,18 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 402) {
+        let body: { locked?: boolean; message?: string } | null = null;
+        try {
+          body = await response.clone().json();
+        } catch {
+          body = null;
+        }
+        if (!paymentDialogFor(response.status, body)) {
+          return true;
+        }
         if (
           await deleteDialog(
-            (
-              await response.json()
-            ).message,
+            body?.message,
             'Move to billing',
             'Payment required',
             'Cancel',

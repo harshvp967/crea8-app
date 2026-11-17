@@ -20,7 +20,12 @@ import { useOpenComposer } from '@gitroom/frontend/components/launches/new.post'
 import { AccountMenu } from '@gitroom/frontend/components/layout/account.menu';
 import { useWorkspaceSwitch } from '@gitroom/frontend/components/layout/organization.selector';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { partnerHref, sidebarAppLocked } from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
+import {
+  partnerHref,
+  sidebarAppLocked,
+  sidebarPartnerPlan,
+  sidebarTier,
+} from '@gitroom/nestjs-libraries/partner/gta6clips.plan';
 
 const SIDEBAR_KEY = 'c8.sidebar.collapsed';
 
@@ -244,8 +249,8 @@ export const C8Sidebar = ({
       <nav id="c8-side-apps" className="c8-side-apps" aria-label="Apps">
         {apps.map((app) => {
           const locked = sidebarAppLocked(
-            user?.tier?.current,
-            user?.partnerPlan,
+            sidebarTier(user?.tier?.current, user?.partnerPlan),
+            sidebarPartnerPlan(user?.tier?.current, user?.partnerPlan),
             app.href,
             app.id,
             billingOn

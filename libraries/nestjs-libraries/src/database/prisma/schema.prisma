@@ -89,6 +89,9 @@ model PartnerAccount {
   sub            String
   email          String
   plan           String
+  // Latest gta6clips_plan claim ("paid" or "free") and when it was recorded.
+  // Null until an exchange writes it. Additive nullable column, applied on deploy by prisma db push.
+  metadata       Json?
   userId         String
   organizationId String       @unique
   createdAt      DateTime     @default(now())
@@ -122,6 +125,9 @@ model PartnerLinkPending {
   email     String
   video     String?
   caption   String?
+  // The verified gta6clips_plan claim, held until the login finishes.
+  // Additive nullable column, applied on deploy by prisma db push.
+  metadata  Json?
   expiresAt DateTime
   createdAt DateTime @default(now())
 
