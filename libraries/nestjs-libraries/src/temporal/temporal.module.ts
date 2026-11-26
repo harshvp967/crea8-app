@@ -75,6 +75,26 @@ export const getTemporalModule = (
                   // Sending every 15s keeps the recorded heartbeat fresh even
                   // when individual sends fail or fire late.
                   maxHeartbeatThrottleInterval: '15s',
+                  // Provider queues are idle most of the time. A fixed 10 pollers per
+                  // queue (the SDK default) keeps ~10 long-polls open on each of the
+                  // ~30 provider queues even with nothing to do, which costs CPU on
+                  // this server and on Temporal. Autoscaling keeps 1 open when idle
+                  // and scales back up to the same 10 under load, so throughput and
+                  // per-provider concurrency are unchanged. The main queue keeps the
+                  // SDK default. WORKER_POLLER_AUTOSCALING=false restores the old
+                  // fixed behaviour.
+                  ...(taskQueue !== 'main' &&
+                  process.env.WORKER_POLLER_AUTOSCALING !== 'false'
+                    ? {
+                        activityTaskPollerBehavior: {
+                          type: 'autoscaling' as const,
+                          minimum: 1,
+                          initial: 1,
+                          // Same ceiling as the SDK default: min(10, this queue's cap).
+                          maximum: Math.min(10, concurrency || 10),
+                        },
+                      }
+                    : {}),
                 },
               };
             }),
