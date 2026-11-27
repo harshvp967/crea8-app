@@ -23,6 +23,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
+import { remoteMediaInfo } from '@gitroom/nestjs-libraries/integrations/remote.media.size';
 import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { isPartnerVideoUrl, openPartnerVideo } from '@gitroom/nestjs-libraries/partner/gta6clips.host';
@@ -457,7 +458,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   private static readonly YOUTUBE_UPLOAD_BATCH_MS = 4 * 60 * 1000;
 
   // Resolves the total byte size of the media without loading it into memory:
-  // a HEAD request for remote URLs, statSync for local files.
+  // remoteMediaInfo for remote URLs, statSync for local files.
   private async youtubeMediaSize(path: string): Promise<number> {
     if (isPartnerVideoUrl(path)) {
       const head = await openPartnerVideo(path, {
@@ -477,18 +478,12 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       return length;
     }
     if (path.indexOf('http') === 0) {
-      // the media path is user-influenced, keep the SSRF-safe dispatcher that
-      // this.fetch applies to every other outbound request. identity encoding
-      // so content-length matches the bytes a later GET actually streams
-      // (fetch transparently decompresses encoded bodies).
+      // remoteMediaInfo keeps the SSRF-safe dispatcher and falls back to a
+      // ranged GET when HEAD is refused. A URL presigned for GetObject answers
+      // HEAD with 403, and that error body's length is not the video size.
       setHeartbeatDetails(`youtube: media size ${stripQuery(path)}`);
-      const head = await fetch(path, {
-        method: 'HEAD',
-        headers: { 'accept-encoding': 'identity' },
-        dispatcher: getSsrfSafeDispatcher(),
-      } as any);
-      const length = head.headers.get('content-length');
-      if (!length) {
+      const info = await remoteMediaInfo(path);
+      if (!info) {
         throw new BadBody(
           this.identifier,
           '{}',
@@ -496,7 +491,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           'Could not determine the video size for the YouTube upload'
         );
       }
-      return Number(length);
+      return info.size;
     }
 
     return statSync(path).size;

@@ -6,6 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { remoteMediaInfo } from '@gitroom/nestjs-libraries/integrations/remote.media.size';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   getSsrfSafeAxios,
@@ -459,20 +460,12 @@ export abstract class SocialAbstract {
       return length;
     }
     if (path.indexOf('http') === 0) {
-      // the media path is user-influenced, keep the SSRF-safe dispatcher that
-      // this.fetch applies to every other outbound request. identity encoding
-      // so content-length matches the bytes a later GET actually streams
-      // (fetch transparently decompresses encoded bodies).
+      // the media path is user-influenced; remoteMediaInfo keeps the SSRF-safe
+      // dispatcher and falls back to a ranged GET when HEAD is refused (a URL
+      // presigned for GetObject answers HEAD with 403).
       setHeartbeatDetails(`media size ${stripQuery(path)}`);
-      const head = await fetch(path, {
-        method: 'HEAD',
-        headers: { 'accept-encoding': 'identity' },
-        dispatcher: getSsrfSafeDispatcher(),
-      } as any);
-      const length = Number(head.headers.get('content-length'));
-      // A failed HEAD can still carry a content-length (of the error body),
-      // and a zero/NaN size would poison chunk-count math downstream.
-      if (!head.ok || !Number.isFinite(length) || length <= 0) {
+      const info = await remoteMediaInfo(path);
+      if (!info) {
         throw new BadBody(
           identifier,
           '{}',
@@ -480,7 +473,7 @@ export abstract class SocialAbstract {
           'Could not determine the media size for upload'
         );
       }
-      return length;
+      return info.size;
     }
 
     return statSync(path).size;
