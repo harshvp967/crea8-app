@@ -1,3 +1,4 @@
+import { remoteMediaInfo } from '@gitroom/nestjs-libraries/integrations/remote.media.size';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { BadBody, SocialAbstract } from '../social.abstract';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
@@ -207,21 +208,12 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
     const fileIds: string[] = [];
 
     for (const item of media) {
-      // Size and type come from a HEAD request; the PUT below streams the
+      // Size and type come from remoteMediaInfo; the PUT below streams the
       // bytes so the file is never buffered in memory.
-      const headResponse = await fetch(item.path, {
-        method: 'HEAD',
-        // identity encoding so content-length matches the bytes the GET streams
-        headers: { 'accept-encoding': 'identity' },
-        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
-        dispatcher: getSsrfSafeDispatcher(),
-      });
-      const contentType =
-        headResponse.headers.get('content-type') || 'application/octet-stream';
-      const contentLength = Number(
-        headResponse.headers.get('content-length') || 0
-      );
-      if (!headResponse.ok || !contentLength) {
+      // remoteMediaInfo keeps the SSRF-safe dispatcher and falls back to a
+      // ranged GET when HEAD is refused (presigned GetObject URLs 403 a HEAD).
+      const info = await remoteMediaInfo(item.path);
+      if (!info) {
         // A permanent condition - fail fast instead of letting Temporal retry
         throw new BadBody(
           this.identifier,
@@ -230,6 +222,8 @@ export class SkoolProvider extends SocialAbstract implements SocialProvider {
           'Could not determine the media size for upload'
         );
       }
+      const contentType = info.contentType;
+      const contentLength = info.size;
       const fileName = item.path.split('/').pop() || 'file';
 
       const createFileResponse = await (
