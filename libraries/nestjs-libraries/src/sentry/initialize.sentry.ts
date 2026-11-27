@@ -37,8 +37,27 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
   // not set a DSN. Load the addon after the DSN check so a boot with
   // Sentry disabled does not touch it. When a DSN is set, the same
   // nodeProfilingIntegration() is still passed to Sentry.init below.
-  const { nodeProfilingIntegration } =
-    require('@sentry/profiling-node') as typeof import('@sentry/profiling-node');
+  // Profiling keeps a native sampler running in every process, which costs CPU
+  // around the clock on an otherwise idle server. It is opt-in: set
+  // SENTRY_PROFILING=true to turn it on (development always profiles).
+  const profiling =
+    process.env.NODE_ENV === 'development' ||
+    process.env.SENTRY_PROFILING === 'true';
+  const profilingIntegrations = profiling
+    ? [
+        (
+          require('@sentry/profiling-node') as typeof import('@sentry/profiling-node')
+        ).nodeProfilingIntegration(),
+      ]
+    : [];
+
+  // Console lines sent to Sentry Logs. Every level used to be sent, which on the
+  // orchestrator is a steady stream of worker state lines. Default is warn and
+  // error; SENTRY_LOG_LEVELS takes a comma-separated list to widen it again.
+  const consoleLevels = (process.env.SENTRY_LOG_LEVELS || 'warn,error,assert')
+    .split(',')
+    .map((l) => l.trim())
+    .filter(Boolean) as ('log' | 'info' | 'warn' | 'error' | 'debug' | 'assert' | 'trace')[];
 
   try {
     Sentry.init({
@@ -57,9 +76,8 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
       dsn,
       spotlight: process.env.SENTRY_SPOTLIGHT === '1',
       integrations: [
-        // Add our Profiling integration
-        nodeProfilingIntegration(),
-        Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
+        ...profilingIntegrations,
+        Sentry.consoleLoggingIntegration({ levels: consoleLevels }),
         Sentry.openAIIntegration({
           recordInputs: true,
           recordOutputs: true,
@@ -83,8 +101,13 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
       enableLogs: true,
 
       // Profiling
-      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.2,
-      profileLifecycle: 'trace',
+      ...(profiling
+        ? {
+            profileSessionSampleRate:
+              process.env.NODE_ENV === 'development' ? 1.0 : 0.2,
+            profileLifecycle: 'trace' as const,
+          }
+        : {}),
     });
   } catch (err) {
     console.log(err);
